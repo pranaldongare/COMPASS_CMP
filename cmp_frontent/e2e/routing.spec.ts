@@ -12,6 +12,7 @@
  */
 import { expect, test } from "@playwright/test";
 
+import { expectNoSidewaysScroll } from "./support/layout";
 import { statePath } from "./support/session";
 
 test.describe.configure({ mode: "serial" });
@@ -115,6 +116,7 @@ test.describe("DCO Admin on an approved project", () => {
 
     const namer = page.getByRole("button", { name: /who runs it/i }).first();
     await expect(namer).toBeVisible();
+    await expectNoSidewaysScroll(page);
     await namer.click();
 
     const dialog = page.getByRole("dialog");

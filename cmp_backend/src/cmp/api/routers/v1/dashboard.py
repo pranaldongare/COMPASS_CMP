@@ -18,6 +18,7 @@ from cmp.db.pool import connection, transaction
 from cmp.db.repositories import audit as audit_repo
 from cmp.db.repositories import entities as entity_repo
 from cmp.db.repositories import projects as project_repo
+from cmp.db.repositories import rights as rights_repo
 from cmp.db.repositories import users as user_repo
 from cmp.db.sql import fetch_all, fetch_one
 from cmp.schemas.common import Acknowledged, Out
@@ -169,6 +170,12 @@ async def _dpo(conn: Any) -> dict[str, Any]:
     # sitting because nothing about it looks stalled.
     amendments = await project_repo.pending_processor_requests(conn)
     denials = await audit_repo.denial_counts(conn, days=7)
+    # Rights requests run on a statutory clock, which is what makes them the
+    # most time-bound work on this screen. Soonest due first, and the retained
+    # erasures whose floor has passed - the ones nothing else would surface.
+    rights_counts = await rights_repo.counts(conn)
+    rights_queue = await rights_repo.queue(conn, role=Role.DPO, user_id=0)
+    floors = await rights_repo.floor_queue(conn, _today())
     # Full audit rows, resolved, so the dashboard panel and the audit page are
     # the same renderer over the same data. The partial projection this replaced
     # could not carry an entity reference, which is the half that says *what*
@@ -178,13 +185,16 @@ async def _dpo(conn: Any) -> dict[str, Any]:
         "role": "dpo",
         "counts": {
             **_ints(counts),
+            **_ints(rights_counts),
             "access_denials_7d": denials,
             "pending_processors": len(amendments),
         },
         "queues": [
+            {"name": "Rights requests, soonest due first", "items": rights_queue},
             {"name": "In Draft", "items": draft_queue},
             {"name": "Pending Approval", "items": approval_queue},
             {"name": "New collectors awaiting your decision", "items": amendments},
+            {"name": "Retention floors passed - erasure due", "items": floors},
         ],
         "recent": recent,
     }
@@ -357,14 +367,19 @@ async def _admin(conn: Any) -> dict[str, Any]:
              AND l.occurred_at > now() - interval '24 hours'
            ORDER BY l.occurred_at DESC LIMIT 25""",
     )
+    # Grievances about the DPO: the one kind of rights request that reaches the
+    # administrator, as the reviewer the DPO cannot be.
+    escalated = await rights_repo.queue(conn, role=Role.ADMIN, user_id=0)
     return {
         "role": "admin",
         "counts": {
             **{f"users_{k}": v for k, v in by_status.items()},
             **{f"role_{k}": v for k, v in by_role.items()},
             "suspended_registry_rows": len(suspended),
+            "grievances_about_dpo": len(escalated),
         },
         "queues": [
+            {"name": "Grievances about the DPO - yours to review", "items": escalated},
             {"name": "Lockouts (24h)", "items": lockouts},
             {"name": "Suspended sources and processors", "items": suspended},
         ],
@@ -392,7 +407,19 @@ async def _subject(conn: Any, user_id: int) -> dict[str, Any]:
         {"u": user_id},
     )
     recent = await audit_repo.for_subject(conn, user_id, limit=10)
-    return {"role": "data_subject", "counts": _ints(counts), "queues": [], "recent": recent}
+    requests = await rights_repo.subject_counts(conn, user_id)
+    return {
+        "role": "data_subject",
+        "counts": {**_ints(counts), **_ints(requests)},
+        "queues": [],
+        "recent": recent,
+    }
+
+
+def _today() -> Any:
+    from datetime import UTC, datetime
+
+    return datetime.now(UTC).date()
 
 
 def _ints(row: dict[str, Any] | None) -> dict[str, int]:
@@ -432,9 +459,7 @@ async def notifications(
         # events about herself, and every one of them used to link into a staff
         # console - `auth_user` to the administrator's account register, which
         # is where following her own registration notification took her.
-        rows = await entity_repo.attach(
-            conn, rows, for_subject=principal.role is Role.DATA_SUBJECT
-        )
+        rows = await entity_repo.attach(conn, rows, for_subject=principal.role is Role.DATA_SUBJECT)
     return {"items": rows, "next_cursor": None, "total": len(rows)}
 
 

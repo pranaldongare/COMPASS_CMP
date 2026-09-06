@@ -13,12 +13,13 @@ from typing import Any
 
 from cmp.core.pagination import PageRequest, build_page
 from cmp.db.sql import Conn, Row, execute, fetch_all, fetch_one, keyset_clause, require_one
+from cmp.validation import normalise_contact, normalise_mobile
 
 # The columns any caller may see. `password_hash` is not among them and must
 # never be added: a SELECT * here is one refactor away from a response body.
 PUBLIC_COLUMNS = """
   u.uuid, u.username, u.full_name, u.email, u.mobile, u.organization_id,
-  u.role, u.person_type, u.status, u.dob,
+  u.role, u.person_type, u.status, u.dob, u.mobile_verified_at, u.email_verified_at,
   -- Derived in SQL rather than in Python, because more than one caller asks and
   -- the answer changes on a birthday without the row being written to. NULL
   -- when the date of birth is unknown, which is not the same as adult.
@@ -76,22 +77,55 @@ async def by_email(conn: Conn, email: str) -> Row | None:
 
 
 async def by_contact(conn: Conn, contact: str) -> Row | None:
-    """Resolve a data subject by email or mobile - the two things they know."""
+    """Resolve a data subject by email or mobile - the two things they know.
+
+    The mobile is compared as stored - digits and a leading plus - whatever
+    spacing was typed. See `normalise_mobile`.
+    """
+    wanted = normalise_contact(contact)
     return await fetch_one(
         conn,
         f"""
         SELECT u.id, {PUBLIC_COLUMNS} FROM auth_user u
-        WHERE lower(u.email) = lower(%s) OR u.mobile = %s
+        WHERE lower(u.email) = %s OR u.mobile = %s
         """,
-        (contact, contact),
+        (wanted, wanted),
     )
+
+
+def unverified_mediums(user: Row) -> list[str]:
+    """The contacts on the account that no code has yet come back from."""
+    return [
+        medium
+        for medium, contact, verified_at in (
+            ("mobile", user.get("mobile"), user.get("mobile_verified_at")),
+            ("email", user.get("email"), user.get("email_verified_at")),
+        )
+        if contact and not verified_at
+    ]
+
+
+async def mark_contact_verified(conn: Conn, user_id: int, medium: str) -> Row:
+    """A code sent to this medium came back. The first time stands."""
+    column = {"mobile": "mobile_verified_at", "email": "email_verified_at"}[medium]
+    row = await fetch_one(
+        conn,
+        f"""
+        UPDATE auth_user u SET {column} = coalesce({column}, now())
+         WHERE u.id = %s
+        RETURNING u.id, {PUBLIC_COLUMNS}
+        """,
+        (user_id,),
+    )
+    assert row is not None
+    return row
 
 
 async def create(
     conn: Conn,
     *,
     full_name: str,
-    email: str,
+    email: str | None,
     role: str,
     username: str | None = None,
     mobile: str | None = None,
@@ -121,7 +155,7 @@ async def create(
             username,
             full_name,
             email,
-            mobile,
+            normalise_mobile(mobile) if mobile else None,
             organization_id,
             role,
             person_type,
@@ -158,7 +192,7 @@ async def update_profile(
                   role, person_type, status, dob, cmp_is_minor(dob) AS is_minor,
                   created_at, updated_at
         """,
-        (full_name, mobile, organization_id, dob, user_id),
+        (full_name, normalise_mobile(mobile) if mobile else None, organization_id, dob, user_id),
     )
     assert row is not None
     return row

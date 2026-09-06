@@ -20,10 +20,17 @@ from __future__ import annotations
 from typing import Any
 
 from cmp.auth.authentication import otp
+from cmp.auth.authorization.roles import requires_mfa
 from cmp.auth.rate_limit import service as ratelimit
 from cmp.auth.sessions import service as sessions
 from cmp.core.config import settings
-from cmp.core.errors import BadRequest, Forbidden, RateLimited, Unauthenticated
+from cmp.core.errors import (
+    BadRequest,
+    Forbidden,
+    RateLimited,
+    Unauthenticated,
+    ValidationFailed,
+)
 from cmp.core.logging import get_logger
 from cmp.core.permissions import Role, nav_for
 from cmp.core.security import hash_password, password_needs_rehash, verify_password
@@ -31,6 +38,7 @@ from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
+from cmp.validation import is_mobile, normalise_mobile
 
 log = get_logger("cmp.auth")
 
@@ -107,7 +115,7 @@ async def authenticate(
         await user_repo.set_password(conn, user["id"], hash_password(password))
         log.info("auth.password_rehashed", user_id=user["id"])
 
-    mfa_needed = user["role"] in settings.mfa_required_roles
+    mfa_needed = requires_mfa(user["role"])
 
     token, session = await sessions.create(
         user_id=user["id"],
@@ -256,9 +264,22 @@ async def verify_subject_otp(
 
     await otp.require(otp.Scope.SUBJECT_LOGIN, str(user["uuid"]), code)
 
+    user = await user_repo.mark_contact_verified(
+        conn, user["id"], "mobile" if is_mobile(contact) else "email"
+    )
     if user["status"] == "pending":
-        # Verifying a code proves control of the contact, which is what `pending`
-        # was waiting for.
+        # A code proves the medium it came to. Sign-up authenticates every
+        # medium she gave, so a pending account with one still unanswered is
+        # not finished - and finishing it is the sign-up page's job. The codes
+        # go out again so that she can.
+        if user_repo.unverified_mediums(user):
+            await _send_registration_codes(user)
+            raise BadRequest(
+                "Your account is not finished. Enter the codes we have just sent to your "
+                "mobile and email on the sign-up page.",
+                code="registration_incomplete",
+                field="code",
+            )
         await user_repo.set_status(conn, user["id"], "active")
 
     token, session = await sessions.create(
@@ -413,9 +434,9 @@ async def register_data_subject(
     conn: Conn,
     *,
     full_name: str,
-    email: str,
+    mobile: str,
     dob: str,
-    mobile: str | None = None,
+    email: str | None = None,
 ) -> None:
     """Self-registration, for a data principal and nobody else.
 
@@ -435,24 +456,34 @@ async def register_data_subject(
     link. Section 9 makes it the input to whether this is a child's account, and
     a self-registration is the one moment the platform can ask.
     """
-    await ratelimit.enforce(
-        "subject_register",
-        email.lower(),
-        limit=settings.otp_requests_per_contact_per_hour,
-        window_s=3600,
-        message="Too many registration attempts for this contact.",
-    )
-
+    mobile = normalise_mobile(mobile)
+    email = email.strip().lower() if email and email.strip() else None
+    if not mobile:
+        raise ValidationFailed("A mobile number is required", field="mobile")
+    for contact in (mobile, email):
+        if contact:
+            await ratelimit.enforce(
+                "subject_register",
+                contact,
+                limit=settings.otp_requests_per_contact_per_hour,
+                window_s=3600,
+                message="Too many registration attempts for this contact.",
+            )
     from cmp.tasks.authentication import send_login_code
     from cmp.tasks.dispatch import dispatch_required
 
-    existing = await user_repo.by_contact(conn, email)
+    existing = await user_repo.by_contact(conn, mobile)
+    if not existing and email:
+        existing = await user_repo.by_contact(conn, email)
     if existing:
-        # Not an error, and not a different code path the caller can time. They
-        # get a sign-in code, exactly as if they had asked for one.
-        if existing["status"] in ("active", "pending"):
+        if existing["status"] == "active":
+            # Already hers: a sign-in code to the contact she just typed.
+            to = existing["mobile"] if existing["mobile"] == mobile else existing["email"]
             issued = await otp.issue(otp.Scope.SUBJECT_LOGIN, str(existing["uuid"]))
-            dispatch_required(send_login_code, str(existing["uuid"]), email, issued.code)
+            dispatch_required(send_login_code, str(existing["uuid"]), to, issued.code)
+        elif existing["status"] == "pending":
+            # Started and never finished: the same codes again, so she can.
+            await _send_registration_codes(existing)
         log.info("auth.register_existing_contact")
         return
 
@@ -481,6 +512,95 @@ async def register_data_subject(
         },
     )
 
-    issued = await otp.issue(otp.Scope.SUBJECT_LOGIN, str(user["uuid"]))
-    dispatch_required(send_login_code, str(user["uuid"]), email, issued.code)
+    await _send_registration_codes(user)
     log.info("auth.registered", is_minor=user["is_minor"])
+
+
+async def _send_registration_codes(user: dict[str, Any]) -> None:
+    """A code to every medium on the account. Each is authenticated at sign-up."""
+    from cmp.tasks.authentication import send_registration_code
+    from cmp.tasks.dispatch import dispatch_required
+
+    for medium in ("mobile", "email"):
+        contact = user.get(medium)
+        if contact:
+            issued = await otp.issue(otp.Scope.SUBJECT_REGISTER, f"{user['uuid']}:{medium}")
+            dispatch_required(send_registration_code, str(user["uuid"]), str(contact), issued.code)
+
+
+async def confirm_registration(
+    conn: Conn,
+    *,
+    mobile: str,
+    mobile_code: str | None,
+    email_code: str | None,
+    ip_address: str | None,
+    user_agent: str | None,
+) -> dict[str, Any]:
+    """Finish sign-up: every medium she gave answers with its code, then she is in.
+
+    Both codes are checked before either is spent, so a wrong email code does
+    not burn a right mobile code and leave her unable to retry. A medium that
+    has already answered - a retry after a partial success - needs no code.
+    Failures are the same sentence whatever the reason, as everywhere a
+    stranger can type a contact.
+    """
+    user = await user_repo.by_contact(conn, normalise_mobile(mobile))
+    if (
+        not user
+        or user["role"] != Role.DATA_SUBJECT.value
+        or user["status"] not in ("pending", "active")
+    ):
+        raise BadRequest("Invalid or expired code", code="otp_invalid", field="mobile_code")
+    uuid = str(user["uuid"])
+    outstanding = user_repo.unverified_mediums(user)
+    codes = {"mobile": mobile_code, "email": email_code}
+    for medium in outstanding:
+        if not codes[medium]:
+            where = "mobile" if medium == "mobile" else "email as well"
+            raise ValidationFailed(
+                f"Enter the code we sent to your {where}", field=f"{medium}_code"
+            )
+    for medium in outstanding:
+        await otp.require(
+            otp.Scope.SUBJECT_REGISTER,
+            f"{uuid}:{medium}",
+            str(codes[medium]),
+            field=f"{medium}_code",
+            consume=False,
+        )
+    for medium in outstanding:
+        await otp.discard(otp.Scope.SUBJECT_REGISTER, f"{uuid}:{medium}")
+        user = await user_repo.mark_contact_verified(conn, user["id"], medium)
+    if user["status"] == "pending":
+        await user_repo.set_status(conn, user["id"], "active")
+        refreshed = await user_repo.by_id(conn, user["id"])
+        assert refreshed is not None
+        user = refreshed
+    token, session = await sessions.create(
+        user_id=user["id"],
+        user_uuid=uuid,
+        role=user["role"],
+        ip_address=ip_address,
+        user_agent=user_agent,
+        mfa_verified=True,
+    )
+    await audit.record(
+        conn,
+        event=Event.OTP_VERIFIED,
+        entity_type="auth_user",
+        entity_id=user["id"],
+        subject_user_id=user["id"],
+        actor_user_id=user["id"],
+        detail={"flow": "registration", "mediums": outstanding},
+    )
+    await audit.record(
+        conn,
+        event=Event.LOGIN_SUCCEEDED,
+        entity_type="auth_user",
+        entity_id=user["id"],
+        subject_user_id=user["id"],
+        actor_user_id=user["id"],
+        detail={"method": "registration"},
+    )
+    return {"token": token, "session": session, "user": user, "max_age": settings.session_ttl_s}

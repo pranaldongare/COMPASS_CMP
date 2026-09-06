@@ -18,16 +18,23 @@ from cmp.core.permissions import Role
 
 #: Everyone who works for the fiduciary. Excludes the data subject, who is not
 #: staff and whose entire surface is `/me`.
-STAFF_ROLES: frozenset[Role] = frozenset({Role.DPO, Role.DCO, Role.RND_USER, Role.ADMIN})
+#:
+#: Derived rather than listed. The list this replaced named four roles and was
+#: never updated when the DCO Admin and the RCO arrived, so `is_staff()` said
+#: they were not - harmlessly, because the route guards derive their own list,
+#: but a second definition that disagrees with the first is a bug waiting for a
+#: caller.
+STAFF_ROLES: frozenset[Role] = frozenset(r for r in Role if r is not Role.DATA_SUBJECT)
 
-#: Roles that can see across every project, or provision accounts. These are the
-#: two that get a second factor — not because they are more trusted, but because
-#: a compromise of either is unbounded.
+#: Roles that can see across every project, or provision accounts. Not because
+#: they are more trusted, but because a compromise of either is unbounded. They
+#: were the first two to get a second factor; every staff role has one now, and
+#: the set stays because it still answers other questions.
 PRIVILEGED_ROLES: frozenset[Role] = frozenset({Role.DPO, Role.ADMIN})
 
 #: Roles that may act on behalf of the organisation in the consent record. A
 #: data subject acts for herself; these act for the fiduciary.
-FIDUCIARY_ROLES: frozenset[Role] = frozenset({Role.DPO, Role.DCO})
+FIDUCIARY_ROLES: frozenset[Role] = frozenset({Role.DPO, Role.DCO, Role.DCO_ADMIN, Role.RCO})
 
 
 def is_staff(role: Role | str) -> bool:
@@ -47,10 +54,10 @@ def is_privileged(role: Role | str) -> bool:
 def requires_mfa(role: Role | str, *, configured: tuple[str, ...] | None = None) -> bool:
     """Whether this role must complete a second factor to hold a full session.
 
-    Reads the configured list rather than `PRIVILEGED_ROLES` so a deployment can
-    widen it — some organisations will want MFA on every staff role — without
-    editing code. It can be widened, and narrowing it below the configured
-    default is a deployment's decision to answer for.
+    Every staff role, by default: a password alone is one phished credential
+    away from a signed consent record. Reads the configured list rather than
+    `STAFF_ROLES` so a deployment can narrow it without editing code - and
+    narrowing it is a decision that deployment answers for.
     """
     from cmp.core.config import settings
 

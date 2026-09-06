@@ -29,6 +29,14 @@ only question that matters.
 points at the one it replaces. The earlier record survives as evidence of what
 was agreed at the time — which is what makes the trail worth anything.
 
+**A rights request is a record with a clock.** A data principal asks for
+access, correction, erasure or raises a grievance (ss.11-14) from her account,
+from the public rights page, or through a nominee she named; the DPO verifies
+her, confirms what was asked, tickets every holder of her data and responds
+within the published period - partial and on time rather than late. An asset
+holding more than one person is redacted, never erased. See
+[`cmp_backend/docs/architecture/rights.md`](cmp_backend/docs/architecture/rights.md).
+
 **The evidence is enforced by the database, not by the application.** Notices
 freeze on publication, evidence tables refuse `UPDATE` and `DELETE` at the
 trigger level, and the application role has those grants revoked. The audit log
@@ -83,17 +91,22 @@ uv run celery -A cmp.tasks.app beat -l info
 ## Seeded accounts
 
 Created by `scripts/seed.py`, which refuses to run when `ENVIRONMENT=production`.
-Password for all four: `SeedPassw0rd!2026`
+Password for all six: `SeedPassw0rd!2026`. Every staff sign-in then asks for a
+code, which a local deployment writes to `cmp_backend/var/outbox.log`.
 
-| Role | Sign-in | Notes |
-|---|---|---|
-| Data Protection Officer | `dpo@cmp.local` | MFA required — the code is written to `var/outbox.log` |
-| Data Collection Owner | `dco@cmp.local` | |
-| R&D User | `rnd@cmp.local` | |
-| Administrator | `admin@cmp.local` | MFA required |
+| Role | Sign-in |
+|---|---|
+| Data Protection Officer | `dpo@cmp.local` |
+| Administrator | `admin@cmp.local` |
+| Data Collection Owner | `dco@cmp.local` |
+| DCO Admin | `dcoadmin@cmp.local` |
+| Research Collection Owner | `rco@cmp.local` |
+| R&D User | `rnd@cmp.local` |
 
-A data subject has no password. They sign in with a one-time code sent to the
-contact they registered with.
+A data subject has no password. They register with a mobile and, optionally, an
+email, confirm each with a code, and sign in afterwards with a code sent to
+whichever of the two they choose. The seeded principal is `subject@cmp.local`,
+mobile `+919000000001`.
 
 ---
 

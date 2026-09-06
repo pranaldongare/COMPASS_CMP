@@ -179,7 +179,7 @@ class TestTheNamedPersonCanActuallyWork:
     async def test_they_reach_the_project_though_the_rig_is_not_theirs(
         self, conn: Any, seeded: dict[str, Any]
     ) -> None:
-        """"The new DCO user will work with same site although it is not tagged
+        """ "The new DCO user will work with same site although it is not tagged
         to him." Row scope has to agree, or somebody is named on a screen they
         cannot open.
         """
@@ -264,9 +264,7 @@ class TestTheNamedPersonCanActuallyWork:
 
 
 class TestTheExceptionIsAccountable:
-    async def test_it_records_who_made_it_and_when(
-        self, conn: Any, seeded: dict[str, Any]
-    ) -> None:
+    async def test_it_records_who_made_it_and_when(self, conn: Any, seeded: dict[str, Any]) -> None:
         usual = await _user(conn, "dco", "attr.owner@test.local")
         stand_in = await _user(conn, "dco", "attr.standin@test.local")
         rig = await _rig(conn, seeded, "SRC-ATTR-OV", usual)

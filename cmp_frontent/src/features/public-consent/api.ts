@@ -42,9 +42,16 @@ export function getLink(token: string): Promise<LinkView> {
 
 export interface RegistrationInput {
   full_name: string;
-  email: string;
-  mobile?: string;
+  /** Required: the code that confirms her goes here. */
+  mobile: string;
+  email?: string;
   person_type: string;
+}
+
+/** One contact confirmed; `complete` once every contact given has been. */
+export interface ContactVerified extends Acknowledged {
+  complete: boolean;
+  remaining: ("mobile" | "email")[];
 }
 
 export function register(token: string, body: RegistrationInput): Promise<Acknowledged> {
@@ -58,8 +65,8 @@ export function requestOtp(token: string, contact: string): Promise<Acknowledged
 export function verifyOtp(
   token: string,
   body: { contact: string; code: string },
-): Promise<Acknowledged> {
-  return apiPost<Acknowledged>(`/c/${token}/otp/verify`, body);
+): Promise<ContactVerified> {
+  return apiPost<ContactVerified>(`/c/${token}/otp/verify`, body);
 }
 
 /**

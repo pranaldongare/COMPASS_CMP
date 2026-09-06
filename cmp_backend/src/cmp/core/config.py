@@ -13,6 +13,8 @@ from typing import Annotated, Literal
 from pydantic import SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+from cmp.core.permissions import Role
+
 Environment = Literal["local", "test", "staging", "production"]
 
 
@@ -72,10 +74,23 @@ class Settings(BaseSettings):
     otp_requests_per_contact_per_hour: int = 5
     otp_requests_per_token_per_hour: int = 20
 
-    # MFA — staff step-up
-    mfa_required_roles: Annotated[tuple[str, ...], NoDecode] = ("dpo", "admin")
+    # MFA — every staff role steps up with a code sent to the account's email.
+    # It started as the two roles whose compromise is unbounded, the DPO and the
+    # administrator; on 2026-09-06 it became every internal role, because the
+    # others can still mint consent links, see consent records and move data.
+    # The data subject is not in the list: she has no password to step up from,
+    # and her sign-in *is* a one-time code. Derived from the role enum rather
+    # than listed, so a role added later is covered on the day it arrives. A
+    # deployment may narrow it through MFA_REQUIRED_ROLES, and answers for that.
+    mfa_required_roles: Annotated[tuple[str, ...], NoDecode] = tuple(
+        role.value for role in Role if role is not Role.DATA_SUBJECT
+    )
     mfa_ttl_s: int = 60 * 5
     mfa_max_verify_attempts: int = 5
+
+    # Where the console is reached from outside: the base of every link the
+    # platform puts in an email, such as a nomination's acceptance link.
+    public_base_url: str = "http://localhost:3000"
 
     # ---------------------------------------------------------------- CORS
     cors_origins: Annotated[tuple[str, ...], NoDecode] = ("http://localhost:3000",)
@@ -100,6 +115,29 @@ class Settings(BaseSettings):
     default_page_size: int = 50
     max_page_size: int = 200
     public_link_rate_per_minute: int = 60
+
+    # ------------------------------------------------------------------ rights
+    # "D" - the response period we publish for a rights request, in days. Rule
+    # 14 sets an outer limit of ninety days and requires the period to be
+    # published, so ninety is the default and the value here is what the rights
+    # page and every acknowledgement state. Copied onto each request at receipt,
+    # so changing it does not move a clock already running.
+    rights_response_period_days: int = 90
+    # Grievances may run on a different period from requests. Same default.
+    grievance_response_period_days: int = 90
+    # The relative checkpoints on the clock: acknowledge, ticket the holders,
+    # and stop collecting to collate - as days after receipt, and before D.
+    rights_acknowledge_within_days: int = 2
+    rights_tickets_within_days: int = 5
+    rights_collate_before_days: int = 5
+    # How long a released response stays downloadable from her dashboard.
+    rights_download_ttl_days: int = 30
+    # A request from the public form whose contact never verified is closed as
+    # unverified after this many days, and audited. The neutral reply she got
+    # said nothing either way; this is where the record says so too.
+    rights_unverified_close_days: int = 7
+    # How long a nominee has to accept a nomination before the link lapses.
+    nomination_accept_ttl_days: int = 30
 
     # ---------------------------------------------------------------- external
     notification_email_from: str = "privacy@example.org"

@@ -6,6 +6,7 @@
  * server's answer instead of re-deriving one.
  */
 
+export * from "@/lib/security/public-routes";
 export * from "@/lib/security/sanitize";
 export * from "@/lib/security/session-timeout";
 export { useHydrated } from "@/lib/security/use-hydrated";

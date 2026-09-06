@@ -259,7 +259,7 @@ export default function ProjectDetailPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           <TransitionControls
             projectUuid={uuid}
             currentStatus={p.project_status}
@@ -384,7 +384,7 @@ export default function ProjectDetailPage() {
                 {sites.data.map((site) => (
                   <li
                     key={site.site_uuid}
-                    className="flex items-center justify-between gap-4 px-5 py-3"
+                    className="flex flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
                   >
                     <div className="min-w-0">
                       <p className="text-sm font-medium">{site.site_label}</p>
@@ -403,7 +403,7 @@ export default function ProjectDetailPage() {
                         <OverrideBadge site={site} />
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {typeof site.active_links === "number" && site.active_links > 0 && (
                         <span className="text-xs text-text-subtle">
                           {site.active_links} active link(s)
@@ -547,7 +547,7 @@ export default function ProjectDetailPage() {
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Details</CardTitle>
@@ -725,12 +725,12 @@ export default function ProjectDetailPage() {
 
 function DetailSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <Skeleton className="h-8 w-72" />
       <Skeleton className="h-4 w-96" />
       <Skeleton className="h-10 w-full max-w-xl" />
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           <Skeleton className="h-40" />
           <Skeleton className="h-48" />
         </div>

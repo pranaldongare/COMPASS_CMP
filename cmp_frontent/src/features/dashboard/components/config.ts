@@ -37,6 +37,12 @@ export const COUNT_LABELS: Record<string, string> = {
   active: "Active consents",
   withdrawn: "Withdrawn",
   declined: "Declined",
+  requests_open: "Open rights requests",
+  requests_overdue: "Rights requests overdue",
+  requests_due_7d: "Rights requests due within 7 days",
+  requests_unverified: "Requests awaiting verification",
+  grievances_about_dpo: "Grievances about the DPO",
+  requests_closed: "Closed requests",
 };
 
 /**
@@ -74,6 +80,12 @@ export const COUNT_LINKS: Record<string, string> = {
   exports: "/exports",
   flagged_assets: "/collections",
   access_denials_7d: "/audit",
+
+  requests_open: "/requests",
+  requests_overdue: "/requests?overdue=1",
+  requests_due_7d: "/requests",
+  requests_unverified: "/requests?status=received",
+  grievances_about_dpo: "/requests?type=grievance",
 };
 
 /** The data subject's own figures point at her own records, not the register. */
@@ -83,6 +95,8 @@ export const SUBJECT_LINKS: Record<string, string> = {
   declined: "/my-consents",
   consents: "/my-consents",
   times_shared: "/my-consents",
+  requests_open: "/my-requests",
+  requests_closed: "/my-requests",
 };
 
 /** Counts that are a problem when non-zero, rather than a neutral statistic. */
@@ -90,6 +104,8 @@ export const WARNING_COUNTS = new Set([
   "flagged_assets",
   "unapproved_languages",
   "access_denials_7d",
+  "requests_overdue",
+  "grievances_about_dpo",
 ]);
 
 /** The project state machine, in the order it is walked.

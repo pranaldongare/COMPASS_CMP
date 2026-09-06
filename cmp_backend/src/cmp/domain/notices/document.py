@@ -39,7 +39,9 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from cmp.core.enums import LanguageCode
 from cmp.core.errors import ValidationFailed
+from cmp.validation import spell_choices
 
 # ---------------------------------------------------------------- vocabularies
 # Mirrors of the database enums. Kept as literals rather than read from the
@@ -540,24 +542,40 @@ def _language_code(name: str) -> str:
     rendition beside an existing one instead of replacing it, and a notice would
     quietly carry the same language twice.
 
-    An unrecognised name passes through rather than failing. The Eighth Schedule
-    list is not ours to police, and a notice in a language absent from the map
-    below is still a notice.
+    Documents write the cell in more than one shape: "Hindi", "English (en-IN)",
+    "en", "Bengali / Bangla". The name is whatever comes before a bracket, slash,
+    dash or comma; a bare code resolves through the map below; a region suffix
+    is dropped, because a rendition is a language, not a locale.
+
+    A language this platform does not store is refused here, by name and with
+    the ones it does. It used to pass through - and PostgreSQL refused it
+    instead, as a 500 the uploader could do nothing about.
     """
-    key = re.sub(r"[^a-z ]", "", _norm(name).lower()).strip()
-    if not key:
-        return "english"
+    text = _norm(name)
+    if not text:
+        return LanguageCode.ENGLISH.value
+    head = re.split(r"[(\[/,:;_\-\u2013\u2014]", text, maxsplit=1)[0]
+    key = re.sub(r"[^a-z ]", "", head.lower()).strip()
     # A document that gives a code where a name belongs still resolves.
-    iso = {
+    by_code = {
         "en": "english",
+        "eng": "english",
         "hi": "hindi",
+        "hin": "hindi",
         "bn": "bengali",
+        "ben": "bengali",
+        "bangla": "bengali",
         "mr": "marathi",
+        "mar": "marathi",
         "te": "telugu",
+        "tel": "telugu",
         "ta": "tamil",
+        "tam": "tamil",
         "gu": "gujarati",
-        "ur": "urdu",
+        "guj": "gujarati",
         "kn": "kannada",
+        "kan": "kannada",
+        "ur": "urdu",
         "or": "odia",
         "ml": "malayalam",
         "pa": "punjabi",
@@ -566,4 +584,11 @@ def _language_code(name: str) -> str:
         "sd": "sindhi",
         "sa": "sanskrit",
     }
-    return iso.get(key, key.replace(" ", "_"))
+    resolved = by_code.get(key, key.replace(" ", "_"))
+    if resolved not in {member.value for member in LanguageCode}:
+        raise ValidationFailed(
+            f"The document says its language is '{text}', which is not one this platform "
+            f"stores notices in. Use {spell_choices(LanguageCode)}.",
+            field="language_of_this_notice",
+        )
+    return resolved

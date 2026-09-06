@@ -376,6 +376,53 @@ async def test_the_dry_run_offers_duplicates_rather_than_merging_them(
     assert all(d["similarity"] >= 0.82 for d in report["possible_duplicates"])
 
 
+# ------------------------------------------------------------- the language cell
+# The template's cell says "Language in which this notice is presented", and
+# people fill it the way they would anywhere: "English (en-IN)". That used to
+# become the enum value "english_enin", which PostgreSQL refused - as a 500.
+
+
+@pytest.mark.parametrize(
+    ("written", "stored"),
+    [
+        ("English (en-IN)", "english"),
+        ("en-IN", "english"),
+        ("en", "english"),
+        ("Hindi / हिन्दी", "hindi"),
+        ("Bangla", "bengali"),
+        ("kn", "kannada"),
+        ("Tamil - ta", "tamil"),
+    ],
+)
+def test_the_language_resolves_however_the_cell_is_written(
+    document: bytes, written: str, stored: str
+) -> None:
+    parsed = parse(_retext(document, ">English<", f">{written}<"))
+    assert parsed.language_code == stored
+
+
+def test_a_language_the_platform_does_not_store_is_refused_by_name(document: bytes) -> None:
+    with pytest.raises(ValidationFailed) as refused:
+        parse(_retext(document, ">English<", ">Odia<"))
+    assert "Odia" in refused.value.message
+    assert "english, hindi" in refused.value.message
+    assert refused.value.field == "language_of_this_notice"
+
+
+async def test_a_rendition_in_an_unknown_language_is_refused_before_the_database(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    with pytest.raises(ValidationFailed) as refused:
+        await service.set_language(
+            conn,
+            notice_id=seeded["notice"]["notice_id"],
+            language_code="english_enin",
+            rendered_text="A rendition.",
+            actor_id=seeded["users"]["dpo"]["id"],
+        )
+    assert refused.value.field == "language_code"
+
+
 async def _count(conn: Any, table: str) -> int:
     assert re.match(r"^[a-z_]+$", table)
     cur = await conn.execute(f"SELECT count(*) AS n FROM {table}")

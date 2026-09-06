@@ -1,6 +1,6 @@
 """Scheduled work.
 
-Four jobs, each on its own cadence, each idempotent because `acks_late` means any
+Five jobs, each on its own cadence, each idempotent because `acks_late` means any
 of them can be redelivered.
 
 None of them are interactive, so they all route to the `default` queue — a
@@ -12,10 +12,12 @@ from cmp.tasks.maintenance.assets import flag_unmapped_assets
 from cmp.tasks.maintenance.audit import verify_audit_chain
 from cmp.tasks.maintenance.consent_links import expire_consent_links
 from cmp.tasks.maintenance.retention import apply_retention_lapse
+from cmp.tasks.maintenance.rights import sweep_rights_requests
 
 __all__ = [
     "apply_retention_lapse",
     "expire_consent_links",
     "flag_unmapped_assets",
+    "sweep_rights_requests",
     "verify_audit_chain",
 ]

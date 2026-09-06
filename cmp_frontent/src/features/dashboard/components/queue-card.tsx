@@ -41,19 +41,27 @@ export function QueueCard({
         <ul className="divide-y divide-border">
           {items.map((item, index) => {
             const uuid =
-              (item.project_uuid as string) ?? (item.collection_uuid as string) ?? null;
-            const href = item.project_uuid
-              ? `/projects/${item.project_uuid}`
-              : item.collection_uuid
-                ? `/collections/${item.collection_uuid}`
-                : null;
+              (item.request_uuid as string) ??
+              (item.project_uuid as string) ??
+              (item.collection_uuid as string) ??
+              null;
+            const href = item.request_uuid
+              ? `/requests/${item.request_uuid}`
+              : item.project_uuid
+                ? `/projects/${item.project_uuid}`
+                : item.collection_uuid
+                  ? `/collections/${item.collection_uuid}`
+                  : null;
 
-            const title =
-              (item.project_name as string) ??
-              (item.source_collection_ref as string) ??
-              (item.full_name as string) ??
-              (item.name as string) ??
-              "Item";
+            // A rights request reads as its reference and the person; the
+            // clock is what makes it urgent, so the due date joins the title.
+            const title = item.reference
+              ? `${String(item.reference)} · ${String(item.subject_name ?? "")}`
+              : ((item.project_name as string) ??
+                (item.source_collection_ref as string) ??
+                (item.full_name as string) ??
+                (item.name as string) ??
+                "Item");
 
             const Row = (
               <div className="group flex items-center justify-between gap-4 px-5 py-3 transition-colors hover:bg-surface-hover">
@@ -61,6 +69,18 @@ export function QueueCard({
                   <p className="truncate text-sm font-medium">{title}</p>
                   {typeof item.action === "string" && (
                     <p className="mt-0.5 text-xs text-text-muted">{item.action}</p>
+                  )}
+                  {typeof item.due_at === "string" && (
+                    <p
+                      className={
+                        item.overdue
+                          ? "mt-0.5 text-xs font-medium text-danger-text"
+                          : "mt-0.5 text-xs text-text-subtle"
+                      }
+                    >
+                      {item.overdue ? "Overdue - due " : "Due "}
+                      {formatDateTime(item.due_at)}
+                    </p>
                   )}
                   {typeof item.declared_asset_count === "number" && (
                     <p className="mt-0.5 text-xs text-warning-text">

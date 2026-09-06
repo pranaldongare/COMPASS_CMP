@@ -42,6 +42,8 @@ from cmp.api.dependencies.common import (
     RequireDPO,
     RequireDPOorAdmin,
     RequireStaff,
+    RightsReader,
+    RightsWriter,
 )
 from cmp.api.dependencies.csrf import UNSAFE_METHODS, verify_csrf
 from cmp.api.dependencies.filters import reject_unknown_filters
@@ -72,6 +74,8 @@ __all__ = [
     "RequireResource",
     "RequireRole",
     "RequireStaff",
+    "RightsReader",
+    "RightsWriter",
     "clear_session_cookies",
     "current_principal",
     "optional_principal",

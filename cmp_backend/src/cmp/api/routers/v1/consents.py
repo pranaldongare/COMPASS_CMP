@@ -263,9 +263,12 @@ async def link_stats(link_uuid: UUID, principal: LinkReader) -> dict[str, Any]:
 async def remint_link(link_uuid: UUID, principal: LinkReader) -> dict[str, Any]:
     """Revoke this link and mint a replacement for the same site.
 
-    This exists because the token cannot be shown twice. What the database holds
-    is a keyed digest, so a link whose URL was lost at mint time is unusable and
-    unrecoverable - and the honest fix is a new link, not a weaker store.
+    This predates 0011, when the token genuinely could not be shown twice: the
+    database held only a keyed digest, and a link whose URL was lost at mint time
+    was unrecoverable. Links minted since are sealed as well as digested, so the
+    URL can be read back from the register - but replacing a link is still the
+    right move when one has leaked rather than been lost, and for the links
+    minted before sealing existed.
 
     Both halves happen in one transaction. A revoke that succeeded without its
     replacement would leave a site with no way to collect and somebody wondering
@@ -322,8 +325,8 @@ async def remint_link(link_uuid: UUID, principal: LinkReader) -> dict[str, Any]:
         "expires_at": fresh["expires_at"],
         "max_uses": fresh["max_uses"],
         "warning": (
-            "This token is shown once and cannot be retrieved again. The previous "
-            "link has been revoked and no longer resolves."
+            "The previous link has been revoked and no longer resolves. The new "
+            "link can be read back from the register if it is lost."
         ),
     }
 

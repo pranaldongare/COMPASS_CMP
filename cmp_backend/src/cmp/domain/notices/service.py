@@ -18,6 +18,7 @@ import re
 from datetime import UTC, datetime
 from typing import Any
 
+from cmp.core.enums import LanguageCode
 from cmp.core.errors import Conflict, NotFound, NoticeImmutable, NoticeIncomplete, ValidationFailed
 from cmp.core.logging import get_logger
 from cmp.core.security import content_hash
@@ -27,6 +28,7 @@ from cmp.db.repositories import registry as registry_repo
 from cmp.db.sql import Conn
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
+from cmp.validation import choice
 
 log = get_logger("cmp.notices")
 
@@ -343,13 +345,14 @@ async def set_language(
     Re-uploading a rendition clears its approval: text that changed after a
     lawyer signed it off has not been signed off.
     """
+    language = choice(LanguageCode, language_code, field="language_code")
     await _require_draft(conn, notice_id)
     digest = content_hash(rendered_text)
 
     row = await repo.upsert_language(
         conn,
         notice_id=notice_id,
-        language_code=language_code,
+        language_code=language.value,
         rendered_text=rendered_text,
         content_hash=digest,
         created_by=actor_id,

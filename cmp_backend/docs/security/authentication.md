@@ -4,8 +4,12 @@ Two populations, two mechanisms, and the difference is deliberate.
 
 ## Staff
 
-Password sign-in, Argon2id. The privileged roles — DPO and admin — step up with a
-second factor.
+Password sign-in, Argon2id, and then a second factor for **every** staff role: a
+code to the account's email. It began with the two roles whose compromise is
+unbounded, the DPO and the administrator; since 2026-09-06 it covers every
+internal role, because the others can still mint consent links, read consent
+records and move data. The list is `MFA_REQUIRED_ROLES`, derived from the role
+enum by default; a deployment may narrow it, and answers for that.
 
 A **partial session** exists between password verification and MFA. It authorises
 exactly one route, the verify endpoint; every other endpoint answers 401 with
@@ -16,8 +20,13 @@ exactly one route, the verify endpoint; every other endpoint answers 401 with
 ## Data subjects
 
 **No password at all.** `password_hash` is nullable for exactly this reason. A
-data subject signs in with a one-time code sent to the contact they registered
-with.
+data subject registers with a mobile and, if she likes, an email (since
+2026-09-06: mobile first, because the codes that *are* her sign-in should go to
+the thing she carries). Every contact given is authenticated with its own code
+before the account is hers - at self-registration and through a consent link
+alike - and a later sign-in sends a code to whichever of the two she chooses.
+Mobiles are stored as digits with a leading plus, so "+91 90000 00001" and
+"+919000000001" are one number.
 
 The reasoning: a data subject who could set a password would have an account
 worth phishing, and would reuse a password they use elsewhere. One who receives a

@@ -28,7 +28,7 @@ from cmp.db.sql import fetch_one
 
 #: What a data principal's console actually consists of. Everything else in the
 #: product is staff-facing, and a link to any of it is the bug.
-HER_PAGES = ("/my-consents", "/profile", "/rights", "/dashboard")
+HER_PAGES = ("/my-consents", "/my-requests", "/profile", "/rights", "/dashboard")
 
 
 def test_no_entity_can_send_her_to_a_staff_console() -> None:
@@ -109,4 +109,4 @@ def test_her_navigation_offers_only_her_own_sections() -> None:
     bug needed a link from outside the sidebar to happen at all. Pinned so a
     section added to her nav has to be a decision rather than a slip.
     """
-    assert set(nav_for(Role.DATA_SUBJECT)) == {"consents", "notifications", "profile"}
+    assert set(nav_for(Role.DATA_SUBJECT)) == {"consents", "requests", "notifications", "profile"}

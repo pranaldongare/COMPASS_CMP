@@ -191,6 +191,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/register/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Finish sign-up: every medium given answers with its code */
+        post: operations["register_verify_auth_register_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/otp/verify": {
         parameters: {
             query?: never;
@@ -501,6 +518,154 @@ export interface paths {
         get: operations["rights_rights_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rights/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Make a request without an account
+         * @description Recorded either way. A code goes to the channel we already hold - if we hold one.
+         */
+        post: operations["public_request_rights_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rights/requests/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm the code */
+        post: operations["public_verify_rights_requests_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rights/nominations/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The acceptance link
+         * @description What he is being asked to accept. Every failure is the same 404.
+         */
+        get: operations["nomination_view_rights_nominations__token__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rights/nominations/{token}/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A code to one of the contacts recorded on the nomination */
+        post: operations["nomination_code_rights_nominations__token__code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rights/nominations/{token}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept a nomination */
+        post: operations["nomination_accept_rights_nominations__token__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rights/nominations/{token}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decline a nomination */
+        post: operations["nomination_decline_rights_nominations__token__decline_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rights/nominee/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A nominee identifies himself
+         * @description The code goes to the contact *she* recorded, not the one he types now.
+         */
+        post: operations["nominee_start_rights_nominee_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rights/nominee/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A nominee makes a request on her behalf
+         * @description Runs as normal once the DPO has decided the event is evidenced.
+         */
+        post: operations["nominee_request_rights_nominee_requests_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -926,6 +1091,131 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My requests */
+        get: operations["my_requests_me_requests_get"];
+        put?: never;
+        /**
+         * Make a request, signed in
+         * @description From the dashboard. The session is the verification, so the clock starts
+         *     and the acknowledgement goes out in the same moment.
+         */
+        post: operations["make_request_me_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/requests/{request_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My Request */
+        get: operations["my_request_me_requests__request_uuid__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/requests/{request_uuid}/trail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What was recorded about my request */
+        get: operations["my_request_trail_me_requests__request_uuid__trail_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/requests/{request_uuid}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The response, while the window is open */
+        get: operations["my_download_me_requests__request_uuid__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/requests/{request_uuid}/dispute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dispute the response - a grievance under s.13 */
+        post: operations["dispute_me_requests__request_uuid__dispute_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/nominations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whom I have nominated */
+        get: operations["my_nominations_me_nominations_get"];
+        put?: never;
+        /** Nominate somebody - s.14 */
+        post: operations["nominate_me_nominations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/nominations/{nomination_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke a nomination */
+        delete: operations["revoke_nomination_me_nominations__nomination_uuid__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2292,9 +2582,12 @@ export interface paths {
          * Replace a link with a fresh one
          * @description Revoke this link and mint a replacement for the same site.
          *
-         *     This exists because the token cannot be shown twice. What the database holds
-         *     is a keyed digest, so a link whose URL was lost at mint time is unusable and
-         *     unrecoverable - and the honest fix is a new link, not a weaker store.
+         *     This predates 0011, when the token genuinely could not be shown twice: the
+         *     database held only a keyed digest, and a link whose URL was lost at mint time
+         *     was unrecoverable. Links minted since are sealed as well as digested, so the
+         *     URL can be read back from the register - but replacing a link is still the
+         *     right move when one has leaked rather than been lost, and for the links
+         *     minted before sealing existed.
          *
          *     Both halves happen in one transaction. A revoke that succeeded without its
          *     replacement would leave a site with no way to collect and somebody wondering
@@ -2776,6 +3069,547 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every request in scope
+         * @description The register. Soonest due is the sort that matters; newest first is the default.
+         */
+        get: operations["list_requests_requests_get"];
+        put?: never;
+        /**
+         * Log a request received by email
+         * @description Email to the DPO makes the same record as the dashboard and the notice link.
+         *
+         *     Verification stays pending: the DPO records how identity was established
+         *     as a separate act, with a reason, so the record says *how* rather than
+         *     only that somebody was satisfied.
+         */
+        post: operations["log_request_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Request */
+        get: operations["get_request_requests__request_uuid__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/transitions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Transitions
+         * @description What may happen next for this role, and why anything else is blocked.
+         */
+        get: operations["get_transitions_requests__request_uuid__transitions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/trail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Everything recorded about this request */
+        get: operations["get_trail_requests__request_uuid__trail_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/acknowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send (or re-send) the acknowledgement */
+        post: operations["acknowledge_requests__request_uuid__acknowledge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/verification/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a code to the stored channel */
+        post: operations["send_code_requests__request_uuid__verification_code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/verification/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enter the code she read back */
+        post: operations["confirm_code_requests__request_uuid__verification_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/verification/manual": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verified by hand, with the reason recorded */
+        post: operations["verify_manually_requests__request_uuid__verification_manual_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/verification/fail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** No match, or verification not satisfied */
+        post: operations["fail_verification_requests__request_uuid__verification_fail_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/classify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm, or reclassify, what this is */
+        post: operations["classify_requests__request_uuid__classify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/refuse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Not a rights request, or refused - with reasons */
+        post: operations["refuse_requests__request_uuid__refuse_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/withdrawal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** She meant withdrawal, not erasure */
+        post: operations["as_withdrawal_requests__request_uuid__withdrawal_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/intent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** She means erasure - confirmed */
+        post: operations["confirm_intent_requests__request_uuid__intent_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/event": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Is the triggering event evidenced? */
+        post: operations["event_evidence_requests__request_uuid__event_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/event/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download the triggering-event evidence */
+        get: operations["event_evidence_file_requests__request_uuid__event_evidence_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/escalate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The complaint is about the DPO */
+        post: operations["escalate_requests__request_uuid__escalate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/reviewer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Name the independent reviewer */
+        post: operations["assign_reviewer_requests__request_uuid__reviewer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transition */
+        post: operations["transition_requests__request_uuid__transition_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/holders/derive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Holders derived from export_line and asset_consent */
+        post: operations["derive_holders_requests__request_uuid__holders_derive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/holders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A holder the records missed */
+        post: operations["add_holder_requests__request_uuid__holders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/holders/{holder_uuid}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Holder */
+        post: operations["confirm_holder_requests__request_uuid__holders__holder_uuid__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Issue a ticket to every confirmed holder */
+        post: operations["issue_tickets_requests__request_uuid__tickets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/holders/{holder_uuid}/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record what the holder returned */
+        post: operations["return_ticket_requests__request_uuid__holders__holder_uuid__return_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/holders/{holder_uuid}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a holder's return evidence */
+        get: operations["holder_evidence_requests__request_uuid__holders__holder_uuid__evidence_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/holders/{holder_uuid}/escalate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A holder missed its date - escalate once */
+        post: operations["escalate_ticket_requests__request_uuid__holders__holder_uuid__escalate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/scope/derive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Every appearance of her in a collected asset */
+        post: operations["derive_scope_requests__request_uuid__scope_derive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/scope/{item_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** What can go, what must stay, and why */
+        put: operations["decide_item_requests__request_uuid__scope__item_uuid__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/scope/{item_uuid}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set her junction row - the asset survives */
+        post: operations["apply_item_requests__request_uuid__scope__item_uuid__apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/respond": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Release and close */
+        post: operations["respond_requests__request_uuid__respond_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decide a grievance */
+        post: operations["decide_grievance_requests__request_uuid__decide_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The released response file */
+        get: operations["download_response_requests__request_uuid__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/audit": {
         parameters: {
             query?: never;
@@ -3067,6 +3901,37 @@ export interface components {
              */
             document: string;
         };
+        /** Body_nominee_request_rights_nominee_requests_post */
+        Body_nominee_request_rights_nominee_requests_post: {
+            /**
+             * Nomination Uuid
+             * Format: uuid
+             */
+            nomination_uuid: string;
+            /** Code */
+            code: string;
+            /** Request Type */
+            request_type: string;
+            /** Request Text */
+            request_text: string;
+            /** Trigger Event */
+            trigger_event: string;
+            /**
+             * Evidence
+             * @description Evidence of death or incapacity
+             */
+            evidence?: string | null;
+        };
+        /** Body_return_ticket_requests__request_uuid__holders__holder_uuid__return_post */
+        Body_return_ticket_requests__request_uuid__holders__holder_uuid__return_post: {
+            /** Summary */
+            summary: string;
+            /**
+             * Evidence
+             * @description Optional evidence, max 25 MB
+             */
+            evidence?: string | null;
+        };
         /** Body_validate_import_imports_validate_post */
         Body_validate_import_imports_validate_post: {
             /**
@@ -3101,6 +3966,65 @@ export interface components {
             approved_language_count: number;
             /** Site Count */
             site_count: number;
+        };
+        /** ClassifyIn */
+        ClassifyIn: {
+            /** Request Type */
+            request_type: string;
+            /** Note */
+            note?: string | null;
+        };
+        /** ClockOut */
+        ClockOut: {
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /**
+             * Acknowledge By
+             * Format: date-time
+             */
+            acknowledge_by: string;
+            /**
+             * Tickets By
+             * Format: date-time
+             */
+            tickets_by: string;
+            /**
+             * Halfway At
+             * Format: date-time
+             */
+            halfway_at: string;
+            /**
+             * Collate By
+             * Format: date-time
+             */
+            collate_by: string;
+            /** Days Remaining */
+            days_remaining: number;
+            /** Overdue */
+            overdue: boolean;
+            /** At Risk */
+            at_risk: boolean;
+            /** Progress */
+            progress: number;
+            /** Checkpoints */
+            checkpoints: {
+                [key: string]: unknown;
+            }[];
+            /** Next Checkpoint */
+            next_checkpoint: string | null;
+        };
+        /** CodeIn */
+        CodeIn: {
+            /** Code */
+            code: string;
         };
         /** CollectionAssetOut */
         CollectionAssetOut: {
@@ -3249,6 +4173,13 @@ export interface components {
             email: string;
             /** Role */
             role: string;
+        };
+        /** ConfirmHolderIn */
+        ConfirmHolderIn: {
+            /** Responder Name */
+            responder_name?: string | null;
+            /** Responder Contact */
+            responder_contact?: string | null;
         };
         /**
          * ConsentArtefactOut
@@ -3527,6 +4458,23 @@ export interface components {
             /** Purpose Count */
             purpose_count: number;
         };
+        /** ContactVerified */
+        ContactVerified: {
+            /**
+             * Ok
+             * @default true
+             */
+            ok: boolean;
+            /** Message */
+            message?: string | null;
+            /**
+             * Complete
+             * @default true
+             */
+            complete: boolean;
+            /** Remaining */
+            remaining?: string[];
+        };
         /** ContactVerify */
         ContactVerify: {
             /** Contact */
@@ -3572,6 +4520,17 @@ export interface components {
             recent: {
                 [key: string]: unknown;
             }[];
+        };
+        /** DecideIn */
+        DecideIn: {
+            /** Decision */
+            decision: string;
+            /** Basis */
+            basis: string;
+            /** Retain Until */
+            retain_until?: string | null;
+            /** Holder Uuid */
+            holder_uuid?: string | null;
         };
         /** DelegationGranted */
         DelegationGranted: {
@@ -3656,6 +4615,23 @@ export interface components {
             created_at: string;
             /** Is Active */
             is_active: boolean;
+        };
+        /** DisputeIn */
+        DisputeIn: {
+            /** Text */
+            text: string;
+            /**
+             * About Dpo
+             * @default false
+             */
+            about_dpo: boolean;
+        };
+        /** EvidenceIn */
+        EvidenceIn: {
+            /** Evidenced */
+            evidenced: boolean;
+            /** Note */
+            note?: string | null;
         };
         /** ExportListRow */
         ExportListRow: {
@@ -3745,6 +4721,20 @@ export interface components {
             /** Granted */
             granted: boolean;
         };
+        /** GrievanceDecisionIn */
+        GrievanceDecisionIn: {
+            /** Upheld */
+            upheld: boolean;
+            /** Remedy Text */
+            remedy_text?: string | null;
+            /** Response Text */
+            response_text: string;
+            /**
+             * Rerun
+             * @default false
+             */
+            rerun: boolean;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -3758,6 +4748,68 @@ export interface components {
             service: string;
             /** Version */
             version: string;
+        };
+        /** HolderIn */
+        HolderIn: {
+            /** Label */
+            label?: string | null;
+            /** Processor Uuid */
+            processor_uuid?: string | null;
+            /** Responder Name */
+            responder_name?: string | null;
+            /** Responder Contact */
+            responder_contact?: string | null;
+        };
+        /** HolderOut */
+        HolderOut: {
+            /**
+             * Holder Uuid
+             * Format: uuid
+             */
+            holder_uuid: string;
+            /** Label */
+            label: string;
+            /** Derived From */
+            derived_from: string;
+            /** Evidence */
+            evidence: {
+                [key: string]: unknown;
+            };
+            /** Processor Uuid */
+            processor_uuid: string | null;
+            /** Processor Name */
+            processor_name: string | null;
+            /** Is In House */
+            is_in_house: boolean | null;
+            /** Confirmed At */
+            confirmed_at: string | null;
+            /** Confirmed By Name */
+            confirmed_by_name: string | null;
+            /** Ticket Status */
+            ticket_status: string;
+            /** Instruction */
+            instruction: string | null;
+            /** Responder Name */
+            responder_name: string | null;
+            /** Responder Contact */
+            responder_contact: string | null;
+            /** Issued At */
+            issued_at: string | null;
+            /** Due At */
+            due_at: string | null;
+            /** Escalated At */
+            escalated_at: string | null;
+            /** Returned At */
+            returned_at: string | null;
+            /** Return Summary */
+            return_summary: string | null;
+            /** Return Evidence Hash */
+            return_evidence_hash: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** ImportBatchOut */
         ImportBatchOut: {
@@ -3803,6 +4855,78 @@ export interface components {
             imported_by_uuid: string;
             /** Imported By Name */
             imported_by_name: string;
+        };
+        /** IssueTicketsIn */
+        IssueTicketsIn: {
+            /** Instruction */
+            instruction?: string | null;
+            /** Due At */
+            due_at?: string | null;
+        };
+        /** ItemOut */
+        ItemOut: {
+            /**
+             * Item Uuid
+             * Format: uuid
+             */
+            item_uuid: string;
+            /** Other Subjects */
+            other_subjects: number;
+            /** State */
+            state: string;
+            /** Decision */
+            decision: string | null;
+            /** Basis */
+            basis: string | null;
+            /** Retain Until */
+            retain_until: string | null;
+            /** Floor Passed At */
+            floor_passed_at: string | null;
+            /** Decided At */
+            decided_at: string | null;
+            /** Decided By Name */
+            decided_by_name: string | null;
+            /** Applied At */
+            applied_at: string | null;
+            /** Disposition */
+            disposition: string | null;
+            /** Disposition At */
+            disposition_at: string | null;
+            /** Subject Role */
+            subject_role: string;
+            /**
+             * Asset Uuid
+             * Format: uuid
+             */
+            asset_uuid: string;
+            /** Asset Type */
+            asset_type: string;
+            /** Source Asset Ref */
+            source_asset_ref: string;
+            /** Source Code */
+            source_code: string;
+            /** Source Name */
+            source_name: string;
+            /** Processor Name */
+            processor_name: string | null;
+            /**
+             * Project Uuid
+             * Format: uuid
+             */
+            project_uuid: string;
+            /** Project Name */
+            project_name: string;
+            /**
+             * Collected On
+             * Format: date
+             */
+            collected_on: string;
+            /** Holder Uuid */
+            holder_uuid: string | null;
+            /** Holder Label */
+            holder_label: string | null;
+            /** Holder Ticket Status */
+            holder_ticket_status: string | null;
         };
         /** LanguageIn */
         LanguageIn: {
@@ -3944,6 +5068,27 @@ export interface components {
              */
             already_registered: boolean;
         };
+        /**
+         * LogRequest
+         * @description A request that arrived by email, logged by the DPO. Same record as the others.
+         */
+        LogRequest: {
+            /** Request Type */
+            request_type: string;
+            /** Contact */
+            contact: string;
+            /** Name */
+            name?: string | null;
+            /** Request Text */
+            request_text: string;
+            /** Subject Uuid */
+            subject_uuid?: string | null;
+            /**
+             * About Dpo
+             * @default false
+             */
+            about_dpo: boolean;
+        };
         /** LoginRequest */
         LoginRequest: {
             /**
@@ -3962,6 +5107,11 @@ export interface components {
             user_uuid?: string | null;
             /** Message */
             message: string;
+        };
+        /** ManualVerifyIn */
+        ManualVerifyIn: {
+            /** Note */
+            note: string;
         };
         /** MeProfile */
         MeProfile: {
@@ -4024,6 +5174,95 @@ export interface components {
         MfaVerifyRequest: {
             /** Code */
             code: string;
+        };
+        /** NominationActIn */
+        NominationActIn: {
+            /** Code */
+            code: string;
+        };
+        /** NominationCodeIn */
+        NominationCodeIn: {
+            /** Medium */
+            medium: string;
+        };
+        /** NominationIn */
+        NominationIn: {
+            /** Nominee Name */
+            nominee_name: string;
+            /** Nominee Mobile */
+            nominee_mobile: string;
+            /** Nominee Email */
+            nominee_email?: string | null;
+            /** Rights */
+            rights: string[];
+        };
+        /** NominationOut */
+        NominationOut: {
+            /**
+             * Nomination Uuid
+             * Format: uuid
+             */
+            nomination_uuid: string;
+            /** Nominee Name */
+            nominee_name: string;
+            /** Nominee Mobile */
+            nominee_mobile: string | null;
+            /** Nominee Email */
+            nominee_email: string | null;
+            /** Rights */
+            rights: string[];
+            /** Status */
+            status: string;
+            /** Accept Expires At */
+            accept_expires_at: string | null;
+            /** Accepted At */
+            accepted_at: string | null;
+            /** Declined At */
+            declined_at: string | null;
+            /** Revoked At */
+            revoked_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** NominationView */
+        NominationView: {
+            /** Principal Name */
+            principal_name: string;
+            /** Nominee Name */
+            nominee_name: string;
+            /** Rights */
+            rights: string[];
+            /** Accept Expires At */
+            accept_expires_at: unknown;
+            /** Mediums */
+            mediums: {
+                [key: string]: string;
+            }[];
+        };
+        /** NomineeRequestOut */
+        NomineeRequestOut: {
+            /** Reference */
+            reference: string;
+            /** Message */
+            message: string;
+        };
+        /** NomineeStartIn */
+        NomineeStartIn: {
+            /**
+             * Nomination Uuid
+             * Format: uuid
+             */
+            nomination_uuid: string;
+            /** Contact */
+            contact: string;
+        };
+        /** NoteIn */
+        NoteIn: {
+            /** Note */
+            note?: string | null;
         };
         /**
          * NoticeAudience
@@ -4359,6 +5598,21 @@ export interface components {
              */
             total?: number | null;
         };
+        /** Page[RequestRow] */
+        Page_RequestRow_: {
+            /** Items */
+            items: components["schemas"]["RequestRow"][];
+            /**
+             * Next Cursor
+             * @description Opaque. Pass back as ?cursor= for the next page.
+             */
+            next_cursor?: string | null;
+            /**
+             * Total
+             * @description Total matching rows where it is cheap to know. Null means not counted.
+             */
+            total?: number | null;
+        };
         /** Page[SiteListRow] */
         Page_SiteListRow_: {
             /** Items */
@@ -4577,6 +5831,43 @@ export interface components {
             /** Requesting Team */
             requesting_team?: string | null;
         };
+        /**
+         * PublicRequestIn
+         * @description From the notice link. Nothing here identifies anyone to the caller.
+         */
+        PublicRequestIn: {
+            /** Request Type */
+            request_type: string;
+            /** Contact */
+            contact: string;
+            /** Name */
+            name?: string | null;
+            /** Request Text */
+            request_text: string;
+        };
+        /** PublicRequestOut */
+        PublicRequestOut: {
+            /** Reference */
+            reference: string;
+            /** Message */
+            message: string;
+        };
+        /** PublicVerifyIn */
+        PublicVerifyIn: {
+            /** Reference */
+            reference: string;
+            /** Code */
+            code: string;
+        };
+        /** PublicVerifyOut */
+        PublicVerifyOut: {
+            /** Ok */
+            ok: boolean;
+            /** Reference */
+            reference: string;
+            /** Message */
+            message: string;
+        };
         /** PurposeIn */
         PurposeIn: {
             /** Purpose Code */
@@ -4779,6 +6070,335 @@ export interface components {
             /** Detail */
             detail?: string | null;
         };
+        /** RefuseIn */
+        RefuseIn: {
+            /** Reason */
+            reason: string;
+        };
+        /** RegisterVerifyBody */
+        RegisterVerifyBody: {
+            /** Mobile */
+            mobile: string;
+            /** Mobile Code */
+            mobile_code?: string | null;
+            /** Email Code */
+            email_code?: string | null;
+        };
+        /** RequestDetail */
+        RequestDetail: {
+            /**
+             * Request Uuid
+             * Format: uuid
+             */
+            request_uuid: string;
+            /** Reference */
+            reference: string;
+            /** Request Type */
+            request_type: string;
+            /** Original Type */
+            original_type: string | null;
+            /** Status */
+            status: string;
+            /** Outcome */
+            outcome: string | null;
+            /** Channel */
+            channel: string;
+            /** Subject Uuid */
+            subject_uuid: string | null;
+            /** Subject Name */
+            subject_name: string | null;
+            /** Submitted Name */
+            submitted_name: string | null;
+            /** Submitted Contact */
+            submitted_contact: string;
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Acknowledged At */
+            acknowledged_at: string | null;
+            /** Verification Status */
+            verification_status: string;
+            /** About Dpo */
+            about_dpo: boolean;
+            /** Linked Reference */
+            linked_reference: string | null;
+            /** Holder Count */
+            holder_count: number;
+            /** Tickets Outstanding */
+            tickets_outstanding: number;
+            /** Closed At */
+            closed_at: string | null;
+            clock: components["schemas"]["ClockOut"];
+            /** Request Text */
+            request_text: string;
+            /** Subject Email */
+            subject_email: string | null;
+            /** Subject Mobile */
+            subject_mobile: string | null;
+            /** Verification Method */
+            verification_method: string | null;
+            /** Verified At */
+            verified_at: string | null;
+            /** Verified By Name */
+            verified_by_name: string | null;
+            /** Verification Note */
+            verification_note: string | null;
+            /** Classified At */
+            classified_at: string | null;
+            /** Refusal Reason */
+            refusal_reason: string | null;
+            /** Intent Confirmed At */
+            intent_confirmed_at: string | null;
+            /** Linked Request Uuid */
+            linked_request_uuid: string | null;
+            /** Linked Request Type */
+            linked_request_type: string | null;
+            /** Nomination Uuid */
+            nomination_uuid: string | null;
+            /** Nominee Name */
+            nominee_name: string | null;
+            /** Nominee Contact */
+            nominee_contact: string | null;
+            /** Trigger Event */
+            trigger_event: string | null;
+            /** Trigger Evidence Hash */
+            trigger_evidence_hash: string | null;
+            /** Trigger Evidenced At */
+            trigger_evidenced_at: string | null;
+            /** Reviewer Uuid */
+            reviewer_uuid: string | null;
+            /** Reviewer Name */
+            reviewer_name: string | null;
+            /** Escalated At */
+            escalated_at: string | null;
+            /** Grievance Upheld */
+            grievance_upheld: boolean | null;
+            /** Remedy Text */
+            remedy_text: string | null;
+            /** Response Text */
+            response_text: string | null;
+            /** Response File Hash */
+            response_file_hash: string | null;
+            /** Responded At */
+            responded_at: string | null;
+            /** Download Expires At */
+            download_expires_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Holders Confirmed */
+            holders_confirmed: number;
+            /** Tickets Issued */
+            tickets_issued: number;
+            /** Tickets Returned */
+            tickets_returned: number;
+            /** Item Count */
+            item_count: number;
+            /** Items Undecided */
+            items_undecided: number;
+            /** Holders */
+            holders: components["schemas"]["HolderOut"][];
+            /** Items */
+            items: components["schemas"]["ItemOut"][];
+            /** Transitions */
+            transitions: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** RequestOut */
+        RequestOut: {
+            /**
+             * Request Uuid
+             * Format: uuid
+             */
+            request_uuid: string;
+            /** Reference */
+            reference: string;
+            /** Request Type */
+            request_type: string;
+            /** Original Type */
+            original_type: string | null;
+            /** Status */
+            status: string;
+            /** Outcome */
+            outcome: string | null;
+            /** Channel */
+            channel: string;
+            /** Subject Uuid */
+            subject_uuid: string | null;
+            /** Subject Name */
+            subject_name: string | null;
+            /** Submitted Name */
+            submitted_name: string | null;
+            /** Submitted Contact */
+            submitted_contact: string;
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Acknowledged At */
+            acknowledged_at: string | null;
+            /** Verification Status */
+            verification_status: string;
+            /** About Dpo */
+            about_dpo: boolean;
+            /** Linked Reference */
+            linked_reference: string | null;
+            /** Holder Count */
+            holder_count: number;
+            /** Tickets Outstanding */
+            tickets_outstanding: number;
+            /** Closed At */
+            closed_at: string | null;
+            clock: components["schemas"]["ClockOut"];
+            /** Request Text */
+            request_text: string;
+            /** Subject Email */
+            subject_email: string | null;
+            /** Subject Mobile */
+            subject_mobile: string | null;
+            /** Verification Method */
+            verification_method: string | null;
+            /** Verified At */
+            verified_at: string | null;
+            /** Verified By Name */
+            verified_by_name: string | null;
+            /** Verification Note */
+            verification_note: string | null;
+            /** Classified At */
+            classified_at: string | null;
+            /** Refusal Reason */
+            refusal_reason: string | null;
+            /** Intent Confirmed At */
+            intent_confirmed_at: string | null;
+            /** Linked Request Uuid */
+            linked_request_uuid: string | null;
+            /** Linked Request Type */
+            linked_request_type: string | null;
+            /** Nomination Uuid */
+            nomination_uuid: string | null;
+            /** Nominee Name */
+            nominee_name: string | null;
+            /** Nominee Contact */
+            nominee_contact: string | null;
+            /** Trigger Event */
+            trigger_event: string | null;
+            /** Trigger Evidence Hash */
+            trigger_evidence_hash: string | null;
+            /** Trigger Evidenced At */
+            trigger_evidenced_at: string | null;
+            /** Reviewer Uuid */
+            reviewer_uuid: string | null;
+            /** Reviewer Name */
+            reviewer_name: string | null;
+            /** Escalated At */
+            escalated_at: string | null;
+            /** Grievance Upheld */
+            grievance_upheld: boolean | null;
+            /** Remedy Text */
+            remedy_text: string | null;
+            /** Response Text */
+            response_text: string | null;
+            /** Response File Hash */
+            response_file_hash: string | null;
+            /** Responded At */
+            responded_at: string | null;
+            /** Download Expires At */
+            download_expires_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Holders Confirmed */
+            holders_confirmed: number;
+            /** Tickets Issued */
+            tickets_issued: number;
+            /** Tickets Returned */
+            tickets_returned: number;
+            /** Item Count */
+            item_count: number;
+            /** Items Undecided */
+            items_undecided: number;
+        };
+        /** RequestRow */
+        RequestRow: {
+            /**
+             * Request Uuid
+             * Format: uuid
+             */
+            request_uuid: string;
+            /** Reference */
+            reference: string;
+            /** Request Type */
+            request_type: string;
+            /** Original Type */
+            original_type: string | null;
+            /** Status */
+            status: string;
+            /** Outcome */
+            outcome: string | null;
+            /** Channel */
+            channel: string;
+            /** Subject Uuid */
+            subject_uuid: string | null;
+            /** Subject Name */
+            subject_name: string | null;
+            /** Submitted Name */
+            submitted_name: string | null;
+            /** Submitted Contact */
+            submitted_contact: string;
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Acknowledged At */
+            acknowledged_at: string | null;
+            /** Verification Status */
+            verification_status: string;
+            /** About Dpo */
+            about_dpo: boolean;
+            /** Linked Reference */
+            linked_reference: string | null;
+            /** Holder Count */
+            holder_count: number;
+            /** Tickets Outstanding */
+            tickets_outstanding: number;
+            /** Closed At */
+            closed_at: string | null;
+            clock: components["schemas"]["ClockOut"];
+        };
         /** ResetConfirm */
         ResetConfirm: {
             /**
@@ -4798,6 +6418,21 @@ export interface components {
              * Format: email
              */
             email: string;
+        };
+        /** RespondIn */
+        RespondIn: {
+            /** Outcome */
+            outcome: string;
+            /** Response Text */
+            response_text: string;
+        };
+        /** ReviewerIn */
+        ReviewerIn: {
+            /**
+             * Reviewer Uuid
+             * Format: uuid
+             */
+            reviewer_uuid: string;
         };
         /** RoleChange */
         RoleChange: {
@@ -5009,12 +6644,97 @@ export interface components {
             /** Is Authoritative For */
             is_authoritative_for?: string[] | null;
         };
+        /** SubjectRequestIn */
+        SubjectRequestIn: {
+            /** Request Type */
+            request_type: string;
+            /** Request Text */
+            request_text: string;
+            /**
+             * About Dpo
+             * @default false
+             */
+            about_dpo: boolean;
+        };
+        /**
+         * SubjectRequestOut
+         * @description What she sees of her own request. No verification notes, no holders -
+         *     the holders are in the response itself, and the notes are ours.
+         */
+        SubjectRequestOut: {
+            /**
+             * Request Uuid
+             * Format: uuid
+             */
+            request_uuid: string;
+            /** Reference */
+            reference: string;
+            /** Request Type */
+            request_type: string;
+            /** Status */
+            status: string;
+            /** Outcome */
+            outcome: string | null;
+            /** Channel */
+            channel: string;
+            /** Request Text */
+            request_text: string;
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Acknowledged At */
+            acknowledged_at: string | null;
+            /** Verification Status */
+            verification_status: string;
+            /** Responded At */
+            responded_at: string | null;
+            /** Response Text */
+            response_text: string | null;
+            /** Refusal Reason */
+            refusal_reason: string | null;
+            /** Remedy Text */
+            remedy_text: string | null;
+            /** Grievance Upheld */
+            grievance_upheld: boolean | null;
+            /** Download Available */
+            download_available: boolean;
+            /** Download Expires At */
+            download_expires_at: string | null;
+            /** Linked Reference */
+            linked_reference: string | null;
+            /** Closed At */
+            closed_at: string | null;
+            clock: components["schemas"]["ClockOut"];
+        };
+        /** TransitionIn */
+        TransitionIn: {
+            /** To */
+            to: string;
+            /** Reason */
+            reason?: string | null;
+        };
         /** TransitionRequest */
         TransitionRequest: {
             /** To */
             to: string;
             /** Reason */
             reason?: string | null;
+        };
+        /** TransitionsOut */
+        TransitionsOut: {
+            /** Current */
+            current: string;
+            /** Available */
+            available: {
+                [key: string]: unknown;
+            }[];
         };
         /** UpdateMe */
         UpdateMe: {
@@ -5117,13 +6837,10 @@ export interface components {
         cmp__api__routers__public__consent__RegisterBody: {
             /** Full Name */
             full_name: string;
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
             /** Mobile */
-            mobile?: string | null;
+            mobile: string;
+            /** Email */
+            email?: string | null;
             /** Organization Id */
             organization_id?: string | null;
             /** Person Type */
@@ -5139,19 +6856,16 @@ export interface components {
         cmp__api__routers__v1__auth__RegisterBody: {
             /** Full Name */
             full_name: string;
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
+            /** Mobile */
+            mobile: string;
             /**
              * Dob
              * Format: date
              * @description Date of birth, YYYY-MM-DD
              */
             dob: string;
-            /** Mobile */
-            mobile?: string | null;
+            /** Email */
+            email?: string | null;
         };
     };
     responses: never;
@@ -5399,6 +7113,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OtpRequestBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_verify_auth_register_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterVerifyBody"];
             };
         };
         responses: {
@@ -5765,7 +7512,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Acknowledged"];
+                    "application/json": components["schemas"]["ContactVerified"];
                 };
             };
             /** @description Validation Error */
@@ -5904,6 +7651,274 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    public_request_rights_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_verify_rights_requests_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicVerifyIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicVerifyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    nomination_view_rights_nominations__token__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NominationView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    nomination_code_rights_nominations__token__code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NominationCodeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    nomination_accept_rights_nominations__token__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NominationActIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    nomination_decline_rights_nominations__token__decline_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NominationActIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    nominee_start_rights_nominee_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NomineeStartIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    nominee_request_rights_nominee_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_nominee_request_rights_nominee_requests_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NomineeRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -6637,6 +8652,273 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_requests_me_requests_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubjectRequestOut"][];
+                };
+            };
+        };
+    };
+    make_request_me_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubjectRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubjectRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_request_me_requests__request_uuid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubjectRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_request_trail_me_requests__request_uuid__trail_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_download_me_requests__request_uuid__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dispute_me_requests__request_uuid__dispute_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DisputeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubjectRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_nominations_me_nominations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NominationOut"][];
+                };
+            };
+        };
+    };
+    nominate_me_nominations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NominationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NominationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_nomination_me_nominations__nomination_uuid__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                nomination_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NominationOut"];
                 };
             };
             /** @description Validation Error */
@@ -10101,6 +12383,1080 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_requests_requests_get: {
+        parameters: {
+            query?: {
+                type?: string | null;
+                status?: string | null;
+                overdue?: boolean;
+                q?: string | null;
+                limit?: number | null;
+                cursor?: string | null;
+                sort?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_RequestRow_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    log_request_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_request_requests__request_uuid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_transitions_requests__request_uuid__transitions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransitionsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_trail_requests__request_uuid__trail_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    acknowledge_requests__request_uuid__acknowledge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_code_requests__request_uuid__verification_code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_code_requests__request_uuid__verification_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_manually_requests__request_uuid__verification_manual_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualVerifyIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    fail_verification_requests__request_uuid__verification_fail_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    classify_requests__request_uuid__classify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClassifyIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refuse_requests__request_uuid__refuse_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefuseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    as_withdrawal_requests__request_uuid__withdrawal_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_intent_requests__request_uuid__intent_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    event_evidence_requests__request_uuid__event_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvidenceIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    event_evidence_file_requests__request_uuid__event_evidence_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    escalate_requests__request_uuid__escalate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assign_reviewer_requests__request_uuid__reviewer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewerIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transition_requests__request_uuid__transition_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    derive_holders_requests__request_uuid__holders_derive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_holder_requests__request_uuid__holders_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HolderIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_holder_requests__request_uuid__holders__holder_uuid__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmHolderIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    issue_tickets_requests__request_uuid__tickets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssueTicketsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    return_ticket_requests__request_uuid__holders__holder_uuid__return_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_return_ticket_requests__request_uuid__holders__holder_uuid__return_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    holder_evidence_requests__request_uuid__holders__holder_uuid__evidence_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    escalate_ticket_requests__request_uuid__holders__holder_uuid__escalate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    derive_scope_requests__request_uuid__scope_derive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_item_requests__request_uuid__scope__item_uuid__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                item_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecideIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_item_requests__request_uuid__scope__item_uuid__apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                item_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    respond_requests__request_uuid__respond_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RespondIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_grievance_requests__request_uuid__decide_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GrievanceDecisionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_response_requests__request_uuid__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

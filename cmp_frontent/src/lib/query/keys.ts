@@ -133,6 +133,17 @@ export const keys = {
     all: ["delegations", "all"] as const,
   },
 
+  /**
+   * Rights requests. The register is a cross-request list; everything about
+   * one request - holders, scope, transitions, trail - hangs off its uuid so
+   * one invalidation reaches all of it.
+   */
+  rights: {
+    list: (params?: Params) => ["all", "requests", params ?? {}] as const,
+    detail: (uuid: Uuid) => ["request", uuid] as const,
+    trail: (uuid: Uuid) => ["request", uuid, "trail"] as const,
+  },
+
   users: {
     list: (params?: Params) => ["users", params ?? {}] as const,
     sessions: ["users", "sessions"] as const,
@@ -149,6 +160,10 @@ export const keys = {
     consentNotice: (uuid: Uuid) => ["me", "consent", uuid, "notice"] as const,
     consentTrail: (uuid: Uuid) => ["me", "consent", uuid, "trail"] as const,
     disclosures: ["me", "disclosures"] as const,
+    requests: ["me", "requests"] as const,
+    request: (uuid: Uuid) => ["me", "request", uuid] as const,
+    requestTrail: (uuid: Uuid) => ["me", "request", uuid, "trail"] as const,
+    nominations: ["me", "nominations"] as const,
   },
 } as const;
 
@@ -166,4 +181,6 @@ export const prefixes = {
   anyConsent: ["consent"] as const,
   anyCollection: ["collection"] as const,
   anyImport: ["import"] as const,
+  anyRequest: ["request"] as const,
+  anyRequestList: ["all", "requests"] as const,
 } as const;

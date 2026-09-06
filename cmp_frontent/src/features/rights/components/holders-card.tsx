@@ -1,0 +1,370 @@
+/**
+ * Steps 6 to 8: holders derived, DPO confirms; tickets issued; returns recorded.
+ *
+ * The list is derived from the records - export_line says who received a file
+ * with her in it, asset_consent says whose rig captured her - and then
+ * confirmed by the DPO, who adds what the records miss. A derived holder is
+ * not a confirmed one; the button is the difference.
+ *
+ * A ticket falls due early on purpose, halfway by default, so a holder that
+ * misses it can be escalated once and the response still go out on time.
+ * "Escalate once" is literal: the button disappears after it.
+ */
+"use client";
+
+import { AlertTriangle, ExternalLink, Plus, Send, Wand2 } from "lucide-react";
+import * as React from "react";
+
+import { FileInput } from "@/components/forms";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Field,
+  Input,
+  Select,
+  Textarea,
+} from "@/components/ui/primitives";
+import { useProcessors } from "@/features/registry";
+import { TicketBadge } from "@/features/rights/components/copy";
+import {
+  useAddHolder,
+  useConfirmHolder,
+  useDeriveHolders,
+  useEscalateTicket,
+  useIssueTickets,
+  useReturnTicket,
+} from "@/features/rights/mutations";
+import { config } from "@/lib/config";
+import { formatDate, formatDateTime } from "@/lib/format";
+import { useToast } from "@/providers";
+import type { RightsHolder, RightsRequestDetail } from "@/types";
+
+function messageOf(err: unknown, fallback: string): string {
+  return err && typeof err === "object" && "userMessage" in err
+    ? (err as { userMessage: () => string }).userMessage()
+    : fallback;
+}
+
+export function HoldersCard({ request: r }: { request: RightsRequestDetail }) {
+  const toast = useToast();
+  const uuid = r.request_uuid;
+  const derive = useDeriveHolders(uuid);
+  const issue = useIssueTickets(uuid);
+  const [adding, setAdding] = React.useState(false);
+  const [issuing, setIssuing] = React.useState(false);
+  const [instruction, setInstruction] = React.useState("");
+  const [dueAt, setDueAt] = React.useState("");
+
+  const open = r.status !== "closed";
+  const canWork = open && r.status !== "received";
+  const confirmedPending = r.holders.filter((h) => h.confirmed_at && h.ticket_status === "pending");
+  const isErasure = r.request_type === "erasure";
+
+  async function run<T>(fn: () => Promise<T>, title: string, description?: string) {
+    try {
+      await fn();
+      toast.success(title, description);
+    } catch (err) {
+      toast.error("Not done", messageOf(err, "The server refused."));
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <CardTitle>{isErasure ? "7–9 · Holders, instructions, confirmations" : "6–8 · Holders, tickets, returns"}</CardTitle>
+          <p className="mt-1 text-xs text-text-muted">
+            export_line and asset_consent are exact - the DPO adds what they miss.
+          </p>
+        </div>
+        {canWork && (
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" loading={derive.isPending} onClick={() => run(() => derive.mutateAsync(), "Holders derived", "Confirm each one, then issue tickets.")}>
+              <Wand2 className="size-4" />
+              Derive from the records
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setAdding(true)}>
+              <Plus className="size-4" />
+              Add a holder
+            </Button>
+          </div>
+        )}
+      </CardHeader>
+
+      <CardBody className="space-y-4">
+        {r.holders.length === 0 ? (
+          <p className="text-sm text-text-muted">
+            No holders yet.{" "}
+            {canWork
+              ? "Derive them from the records, or add what you know."
+              : r.status === "received"
+                ? "Start the request first."
+                : "Nothing was held anywhere."}
+          </p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {r.holders.map((h) => (
+              <HolderRow key={h.holder_uuid} request={r} holder={h} canWork={canWork} />
+            ))}
+          </ul>
+        )}
+
+        {canWork && confirmedPending.length > 0 && (
+          <div className="rounded-md border border-accent-border bg-accent-subtle p-3">
+            <p className="text-sm font-medium text-accent-text">
+              {confirmedPending.length} confirmed holder{confirmedPending.length === 1 ? "" : "s"} waiting for a ticket
+            </p>
+            {issuing ? (
+              <div className="mt-2 space-y-3">
+                <Field label="Instruction" hint="Leave empty for the standard instruction for this kind of request.">
+                  {(p) => <Textarea {...p} rows={3} value={instruction} onChange={(e) => setInstruction(e.target.value)} />}
+                </Field>
+                <Field label="Due" hint={`Halfway (${formatDate(r.clock.halfway_at)}) unless you set a date. Early on purpose: a miss can be escalated once and the response still go out on time.`}>
+                  {(p) => <Input {...p} type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />}
+                </Field>
+                <div className="flex gap-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    loading={issue.isPending}
+                    onClick={() =>
+                      run(
+                        () =>
+                          issue.mutateAsync({
+                            instruction: instruction.trim() || null,
+                            due_at: dueAt ? new Date(`${dueAt}T12:00:00`).toISOString() : null,
+                          }),
+                        "Tickets issued",
+                        "The request is now awaiting holders.",
+                      ).then(() => setIssuing(false))
+                    }
+                  >
+                    <Send className="size-4" />
+                    Issue {confirmedPending.length === 1 ? "the ticket" : "the tickets"}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setIssuing(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button variant="primary" size="sm" className="mt-2" onClick={() => setIssuing(true)}>
+                <Send className="size-4" />
+                Issue tickets
+              </Button>
+            )}
+          </div>
+        )}
+      </CardBody>
+
+      <Dialog open={adding} onOpenChange={(next) => !next && setAdding(false)}>
+        <DialogContent title="Add a holder" description="A party the records did not name. Added and confirmed in one step - you are the source.">
+          <AddHolderForm request={r} onDone={() => setAdding(false)} />
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
+function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestDetail; holder: RightsHolder; canWork: boolean }) {
+  const toast = useToast();
+  const confirm = useConfirmHolder(r.request_uuid);
+  const escalate = useEscalateTicket(r.request_uuid);
+  const [returning, setReturning] = React.useState(false);
+  const [responderName, setResponderName] = React.useState(h.responder_name ?? "");
+  const [responderContact, setResponderContact] = React.useState(h.responder_contact ?? "");
+
+  const overdue = h.due_at && (h.ticket_status === "issued" || h.ticket_status === "escalated") && new Date(h.due_at) < new Date();
+  const evidence = (h.evidence.exports?.length ?? 0) + (h.evidence.assets?.length ?? 0);
+
+  async function run<T>(fn: () => Promise<T>, title: string) {
+    try {
+      await fn();
+      toast.success(title);
+    } catch (err) {
+      toast.error("Not done", messageOf(err, "The server refused."));
+    }
+  }
+
+  return (
+    <li className="space-y-2 py-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
+            {h.label}
+            <TicketBadge status={h.ticket_status} />
+            {h.confirmed_at ? (
+              <Badge tone="success" dot={false}>confirmed</Badge>
+            ) : (
+              <Badge tone="warning" dot={false}>derived, not confirmed</Badge>
+            )}
+            {h.is_in_house && <Badge tone="neutral" dot={false}>in-house</Badge>}
+          </p>
+          <p className="mt-0.5 text-xs text-text-muted">
+            {h.derived_from === "manual"
+              ? "Added by the DPO"
+              : `Named by ${h.evidence.exports?.length ?? 0} export${(h.evidence.exports?.length ?? 0) === 1 ? "" : "s"} and ${h.evidence.assets?.length ?? 0} asset${(h.evidence.assets?.length ?? 0) === 1 ? "" : "s"}`}
+            {evidence === 0 && h.derived_from !== "manual" && " (no evidence attached)"}
+            {h.responder_name && ` · responder ${h.responder_name}`}
+            {h.responder_contact && ` (${h.responder_contact})`}
+          </p>
+          {h.issued_at && (
+            <p className={overdue ? "mt-0.5 flex items-center gap-1 text-xs font-medium text-danger-text" : "mt-0.5 text-xs text-text-subtle"}>
+              {overdue && <AlertTriangle className="size-3.5" aria-hidden="true" />}
+              Issued {formatDateTime(h.issued_at)} · due {h.due_at ? formatDate(h.due_at) : "-"}
+              {h.escalated_at && ` · escalated ${formatDateTime(h.escalated_at)}`}
+              {h.returned_at && ` · returned ${formatDateTime(h.returned_at)}`}
+            </p>
+          )}
+          {h.return_summary && (
+            <p className="mt-1 rounded-md bg-bg-inset p-2 text-xs">
+              <span className="font-medium">Returned: </span>
+              {h.return_summary}
+              {h.return_evidence_hash && (
+                <a
+                  className="ml-2 inline-flex items-center gap-1 text-accent-text underline underline-offset-2"
+                  href={`${config.apiUrl}/requests/${r.request_uuid}/holders/${h.holder_uuid}/evidence`}
+                >
+                  evidence <ExternalLink className="size-3" aria-hidden="true" />
+                </a>
+              )}
+            </p>
+          )}
+        </div>
+
+        {canWork && (
+          <div className="flex flex-wrap gap-2">
+            {!h.confirmed_at && (
+              <Button variant="primary" size="sm" loading={confirm.isPending} onClick={() => run(() => confirm.mutateAsync({ holderUuid: h.holder_uuid, responder_name: responderName || null, responder_contact: responderContact || null }), "Holder confirmed")}>
+                Confirm
+              </Button>
+            )}
+            {(h.ticket_status === "issued" || h.ticket_status === "escalated") && (
+              <Button variant="secondary" size="sm" onClick={() => setReturning(true)}>
+                Record the return
+              </Button>
+            )}
+            {h.ticket_status === "issued" && overdue && (
+              <Button variant="subtle" size="sm" loading={escalate.isPending} onClick={() => run(() => escalate.mutateAsync(h.holder_uuid), "Escalated once")}>
+                Escalate
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {canWork && !h.confirmed_at && (
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Field label="Responder name">
+            {(p) => <Input {...p} value={responderName} onChange={(e) => setResponderName(e.target.value)} />}
+          </Field>
+          <Field label="Responder contact" hint="The instruction is emailed here when a ticket is issued.">
+            {(p) => <Input {...p} value={responderContact} onChange={(e) => setResponderContact(e.target.value)} />}
+          </Field>
+        </div>
+      )}
+
+      <Dialog open={returning} onOpenChange={(next) => !next && setReturning(false)}>
+        <DialogContent title={`What ${h.label} returned`} description="A confirmation of what was done and how - not an assurance. Evidence is optional and kept with the ticket.">
+          <ReturnForm request={r} holder={h} onDone={() => setReturning(false)} />
+        </DialogContent>
+      </Dialog>
+    </li>
+  );
+}
+
+function ReturnForm({ request: r, holder: h, onDone }: { request: RightsRequestDetail; holder: RightsHolder; onDone: () => void }) {
+  const toast = useToast();
+  const ret = useReturnTicket(r.request_uuid);
+  const [summary, setSummary] = React.useState("");
+  const [file, setFile] = React.useState<File | null>(null);
+
+  return (
+    <form
+      method="post"
+      noValidate
+      onSubmit={async (e) => {
+        e.preventDefault();
+        try {
+          await ret.mutateAsync({ holderUuid: h.holder_uuid, summary, evidence: file });
+          toast.success("Return recorded");
+          onDone();
+        } catch (err) {
+          toast.error("Not recorded", messageOf(err, "The server refused."));
+        }
+      }}
+    >
+      <div className="space-y-4">
+        <Field label="Summary of the return" required>
+          {(p) => <Textarea {...p} rows={4} value={summary} onChange={(e) => setSummary(e.target.value)} />}
+        </Field>
+        <FileInput label="Evidence" hint="PDF, image, CSV or text, up to 25 MB." accept="application/pdf,image/png,image/jpeg,text/csv,text/plain" maxBytes={25 * 1024 * 1024} file={file} onChange={setFile} />
+      </div>
+      <DialogFooter>
+        <Button type="button" variant="ghost" onClick={onDone}>Cancel</Button>
+        <Button type="submit" variant="primary" disabled={summary.trim().length === 0} loading={ret.isPending}>
+          Record
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
+function AddHolderForm({ request: r, onDone }: { request: RightsRequestDetail; onDone: () => void }) {
+  const toast = useToast();
+  const add = useAddHolder(r.request_uuid);
+  const processors = useProcessors({ limit: 100 });
+  const [processor, setProcessor] = React.useState("");
+  const [label, setLabel] = React.useState("");
+  const [name, setName] = React.useState("");
+  const [contact, setContact] = React.useState("");
+
+  return (
+    <form
+      method="post"
+      noValidate
+      onSubmit={async (e) => {
+        e.preventDefault();
+        try {
+          await add.mutateAsync({ label: label || null, processor_uuid: processor || null, responder_name: name || null, responder_contact: contact || null });
+          toast.success("Holder added and confirmed");
+          onDone();
+        } catch (err) {
+          toast.error("Not added", messageOf(err, "The server refused."));
+        }
+      }}
+    >
+      <div className="space-y-4">
+        <Field label="A registered processor" hint="Optional. Pick one and the label follows.">
+          {(p) => (
+            <Select {...p} value={processor} onChange={(e) => setProcessor(e.target.value)}>
+              <option value="">Not in the registry</option>
+              {(processors.data?.items ?? []).map((pr) => (
+                <option key={pr.processor_uuid} value={pr.processor_uuid}>{pr.legal_name}</option>
+              ))}
+            </Select>
+          )}
+        </Field>
+        <Field label="Label" hint="Who holds it, in words, where the registry does not know them." required={!processor}>
+          {(p) => <Input {...p} value={label} onChange={(e) => setLabel(e.target.value)} />}
+        </Field>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Field label="Responder name">{(p) => <Input {...p} value={name} onChange={(e) => setName(e.target.value)} />}</Field>
+          <Field label="Responder contact">{(p) => <Input {...p} value={contact} onChange={(e) => setContact(e.target.value)} />}</Field>
+        </div>
+      </div>
+      <DialogFooter>
+        <Button type="button" variant="ghost" onClick={onDone}>Cancel</Button>
+        <Button type="submit" variant="primary" disabled={!processor && label.trim().length === 0} loading={add.isPending}>
+          Add
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+}

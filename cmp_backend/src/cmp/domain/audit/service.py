@@ -61,6 +61,13 @@ ENTITY_TYPES: Final[frozenset[str]] = frozenset(
         "data_asset",
         "asset_consent",
         "audit_log",
+        "delegation",
+        # The rights module: a data principal's request, the holders it was
+        # ticketed to, the erasure scope it decided, and a nomination.
+        "rights_request",
+        "rights_request_holder",
+        "rights_request_item",
+        "nomination",
     }
 )
 
@@ -180,6 +187,39 @@ class Event:
     IMPORT_REJECTED = "import.rejected"
     ASSET_DISPOSITION_CHANGED = "asset.disposition_changed"
 
+    # rights - sections 11 to 14. One vocabulary for four flows, because the
+    # trail a data principal reads is the same rows the DPO's is drawn from.
+    RIGHTS_REQUEST_RECEIVED = "rights.request_received"
+    RIGHTS_ACKNOWLEDGED = "rights.acknowledged"
+    RIGHTS_VERIFICATION_CODE_SENT = "rights.verification_code_sent"
+    RIGHTS_VERIFIED = "rights.verified"
+    RIGHTS_VERIFICATION_FAILED = "rights.verification_failed"
+    RIGHTS_CLASSIFIED = "rights.classified"
+    RIGHTS_INTENT_CONFIRMED = "rights.intent_confirmed"
+    RIGHTS_EVENT_EVIDENCED = "rights.event_evidenced"
+    RIGHTS_ESCALATED = "rights.escalated"
+    RIGHTS_REVIEWER_ASSIGNED = "rights.reviewer_assigned"
+    RIGHTS_STATUS_CHANGED = "rights.status_changed"
+    RIGHTS_HOLDERS_DERIVED = "rights.holders_derived"
+    RIGHTS_HOLDER_ADDED = "rights.holder_added"
+    RIGHTS_HOLDER_CONFIRMED = "rights.holder_confirmed"
+    RIGHTS_TICKET_ISSUED = "rights.ticket_issued"
+    RIGHTS_TICKET_RETURNED = "rights.ticket_returned"
+    RIGHTS_TICKET_ESCALATED = "rights.ticket_escalated"
+    RIGHTS_SCOPE_DERIVED = "rights.scope_derived"
+    RIGHTS_SCOPE_DECIDED = "rights.scope_decided"
+    RIGHTS_SCOPE_APPLIED = "rights.scope_applied"
+    RIGHTS_FLOOR_PASSED = "rights.retention_floor_passed"
+    RIGHTS_RESPONDED = "rights.responded"
+    RIGHTS_RESPONSE_DOWNLOADED = "rights.response_downloaded"
+    RIGHTS_CLOSED = "rights.closed"
+    RIGHTS_GRIEVANCE_DECIDED = "rights.grievance_decided"
+    NOMINATION_CREATED = "nomination.created"
+    NOMINATION_ACCEPTED = "nomination.accepted"
+    NOMINATION_DECLINED = "nomination.declined"
+    NOMINATION_REVOKED = "nomination.revoked"
+    NOMINATION_INVOKED = "nomination.invoked"
+
     # platform
     AUDIT_VERIFIED = "audit.verified"
 
@@ -212,7 +252,7 @@ async def record(
         # A programming error, and one that silently corrupts the DSAR query if
         # it reaches production. Fail here, in review and in tests, not there.
         raise ValueError(
-            f"entity_type must be a table name; {entity_type!r} is not one of the 22 tables"
+            f"entity_type must be a table name; {entity_type!r} is not in ENTITY_TYPES"
         )
 
     ctx = current_context()

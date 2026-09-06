@@ -321,6 +321,100 @@ class Disposition(StrEnum):
     QUARANTINED = "quarantined"
 
 
+# ================================================================= rights ====
+class RightsRequestType(StrEnum):
+    """What a data principal may ask for: ss.11, 12, 12(3) and 13."""
+
+    ACCESS = "access"
+    CORRECTION = "correction"
+    ERASURE = "erasure"
+    GRIEVANCE = "grievance"
+
+
+class RightsRequestStatus(StrEnum):
+    """Five states, walked in one direction. Closure carries an outcome."""
+
+    RECEIVED = "received"
+    IN_PROGRESS = "in_progress"
+    AWAITING_HOLDERS = "awaiting_holders"
+    COLLATING = "collating"
+    CLOSED = "closed"
+
+
+class RightsRequestOutcome(StrEnum):
+    COMPLETE = "complete"
+    PARTIAL = "partial"
+    NO_RECORDS = "no_records"
+    REFUSED = "refused"
+    NOT_VERIFIED = "not_verified"
+    RECLASSIFIED_WITHDRAWAL = "reclassified_withdrawal"
+    UPHELD = "upheld"
+    NOT_UPHELD = "not_upheld"
+
+
+class RightsRequestChannel(StrEnum):
+    """Where it came in. All four make the same record."""
+
+    PORTAL = "portal"
+    PUBLIC_FORM = "public_form"
+    STAFF_LOGGED = "staff_logged"
+    NOMINEE = "nominee"
+
+
+class RightsVerificationMethod(StrEnum):
+    SESSION = "session"
+    CODE = "code"
+    MANUAL = "manual"
+
+
+class RightsVerificationStatus(StrEnum):
+    PENDING = "pending"
+    VERIFIED = "verified"
+    FAILED = "failed"
+
+
+class RightsHolderSource(StrEnum):
+    EXPORT_LINE = "export_line"
+    ASSET_CONSENT = "asset_consent"
+    MANUAL = "manual"
+
+
+class RightsTicketStatus(StrEnum):
+    PENDING = "pending"
+    ISSUED = "issued"
+    ESCALATED = "escalated"
+    RETURNED = "returned"
+    #: The request was answered without this holder's return. Named in the
+    #: response as the gap.
+    UNRETURNED = "unreturned"
+
+
+class RightsItemState(StrEnum):
+    PROPOSED = "proposed"
+    DECIDED = "decided"
+    INSTRUCTED = "instructed"
+    APPLIED = "applied"
+
+
+class RightsScopeDecision(StrEnum):
+    ERASE = "erase"
+    REDACT = "redact"
+    RETAIN = "retain"
+    QUARANTINE = "quarantine"
+
+
+class RightsTriggerEvent(StrEnum):
+    DEATH = "death"
+    INCAPACITY = "incapacity"
+
+
+class NominationStatus(StrEnum):
+    PENDING = "pending"
+    ACTIVE = "active"
+    DECLINED = "declined"
+    REVOKED = "revoked"
+
+
 #: Every enum in this module, keyed by its PostgreSQL type name. Used by the
 #: reference endpoint that feeds the frontend's dropdowns, and by the test that
 #: asserts this file has not drifted from the schema.
@@ -352,4 +446,16 @@ BY_PG_TYPE: dict[str, type[StrEnum]] = {
     "subject_role": SubjectRole,
     "user_role": UserRole,
     "user_status": UserStatus,
+    "rights_request_type": RightsRequestType,
+    "rights_request_status": RightsRequestStatus,
+    "rights_request_outcome": RightsRequestOutcome,
+    "rights_request_channel": RightsRequestChannel,
+    "rights_verification_method": RightsVerificationMethod,
+    "rights_verification_status": RightsVerificationStatus,
+    "rights_holder_source": RightsHolderSource,
+    "rights_ticket_status": RightsTicketStatus,
+    "rights_item_state": RightsItemState,
+    "rights_scope_decision": RightsScopeDecision,
+    "rights_trigger_event": RightsTriggerEvent,
+    "nomination_status": NominationStatus,
 }

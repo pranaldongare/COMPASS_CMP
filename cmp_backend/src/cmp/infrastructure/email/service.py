@@ -58,6 +58,43 @@ class EmailService:
         subject, body = templates.withdrawal_confirmation(project_name, withdrawn)
         return dict(self._transport.send(to=to, subject=subject, body=body))
 
+    # ---------------------------------------------------------------- rights
+    def send_rights_acknowledgement(
+        self, to: str, reference: str, request_type: str, due_on: str, period_days: int
+    ) -> dict[str, Any]:
+        subject, body = templates.rights_acknowledgement(
+            reference, request_type, due_on, period_days
+        )
+        return dict(self._transport.send(to=to, subject=subject, body=body))
+
+    def send_rights_verification_code(self, to: str, code: str, reference: str) -> dict[str, Any]:
+        subject, body = templates.rights_verification_code(code, reference)
+        return dict(self._transport.send(to=to, subject=subject, body=body))
+
+    def send_rights_response_ready(
+        self, to: str, reference: str, expires_on: str | None
+    ) -> dict[str, Any]:
+        subject, body = templates.rights_response_ready(reference, expires_on)
+        return dict(self._transport.send(to=to, subject=subject, body=body))
+
+    def send_rights_closed(
+        self, to: str, reference: str, outcome: str, explanation: str
+    ) -> dict[str, Any]:
+        subject, body = templates.rights_closed(reference, outcome, explanation)
+        return dict(self._transport.send(to=to, subject=subject, body=body))
+
+    def send_nomination_invitation(
+        self, to: str, principal_name: str, accept_url: str, expires_on: str
+    ) -> dict[str, Any]:
+        subject, body = templates.nomination_invitation(principal_name, accept_url, expires_on)
+        return dict(self._transport.send(to=to, subject=subject, body=body))
+
+    def send_holder_instruction(
+        self, to: str, reference: str, holder_label: str, instruction: str, due_on: str
+    ) -> dict[str, Any]:
+        subject, body = templates.holder_instruction(reference, holder_label, instruction, due_on)
+        return dict(self._transport.send(to=to, subject=subject, body=body))
+
 
 @lru_cache(maxsize=1)
 def email_service() -> EmailService:

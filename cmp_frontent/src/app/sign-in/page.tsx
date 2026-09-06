@@ -3,7 +3,7 @@
  *
  * Two flows behind one form:
  *
- * - Password. Where MFA applies (DPO, admin), the response says `mfa_required`
+ * - Password. Every staff role then steps up: the response says `mfa_required`
  *   and we move to the verification step; the partial session the server issued
  *   authorises nothing else.
  * - Data subject. No password exists - `password_hash` is nullable for exactly
@@ -48,8 +48,9 @@ export default function SignInPage() {
   return (
     <AuthLayout
       title="Sign in"
-      subtitle="Staff sign in with a password. If you consented to a project, choose
-        “Data subject” and we will send you a one-time code instead."
+      subtitle="Staff sign in with a password, then a code sent to their email. If you
+        consented to a project, choose “Data subject” and we will send you a one-time code
+        instead."
       footer={
         <div className="space-y-3">
           {/* Outside both tab panels on purpose. This lived inside the
@@ -280,6 +281,11 @@ function SubjectForm() {
   const params = useSearchParams();
   const [sent, setSent] = React.useState(false);
   const [contact, setContact] = React.useState("");
+  // Mobile first: it is where her sign-in codes go by default. An email that
+  // arrived in the URL from sign-up switches the choice for her.
+  const [medium, setMedium] = React.useState<"mobile" | "email">(() =>
+    (params.get("contact") ?? "").includes("@") ? "email" : "mobile",
+  );
 
   // Prefilled when arriving from sign-up, which sends the address it just
   // registered. Retyping an address you entered one screen ago is the kind of
@@ -323,9 +329,34 @@ function SubjectForm() {
 
   return (
     <form method="post" id="subject-panel" role="tabpanel" onSubmit={onSubmit} className="space-y-4" noValidate>
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium">Sign in with</legend>
+        <div className="flex gap-4 text-sm">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="medium"
+              value="mobile"
+              checked={medium === "mobile"}
+              onChange={() => setMedium("mobile")}
+            />
+            Mobile
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="medium"
+              value="email"
+              checked={medium === "email"}
+              onChange={() => setMedium("email")}
+            />
+            Email
+          </label>
+        </div>
+      </fieldset>
       <Field
-        label="Email or mobile"
-        hint="The one you gave when you consented. We will send a one-time code."
+        label={medium === "mobile" ? "Mobile number" : "Email address"}
+        hint="The one you registered with. We will send a one-time code there."
         error={form.formState.errors.contact?.message}
         required
       >
@@ -333,9 +364,9 @@ function SubjectForm() {
           <Input
             {...props}
             {...form.register("contact")}
-            type="text"
-            autoComplete="email"
-            placeholder="you@example.org"
+            type={medium === "mobile" ? "tel" : "email"}
+            autoComplete={medium === "mobile" ? "tel" : "email"}
+            placeholder={medium === "mobile" ? "+91 ..." : "you@example.org"}
           />
         )}
       </Field>

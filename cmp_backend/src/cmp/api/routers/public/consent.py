@@ -50,8 +50,8 @@ class LinkView(Out):
 
 class RegisterBody(Schema):
     full_name: ShortText
-    email: EmailStr
-    mobile: Mobile | None = None
+    mobile: Mobile
+    email: EmailStr | None = None
     organization_id: Annotated[str | None, Field(default=None, max_length=60)] = None
     person_type: str | None = None
 
@@ -63,6 +63,12 @@ class OtpBody(Schema):
 class OtpVerifyBody(Schema):
     contact: Annotated[str, Field(min_length=3, max_length=255)]
     code: OtpCode
+
+
+class ContactVerified(Acknowledged):
+    #: False while another contact given at registration still has to answer.
+    complete: bool = True
+    remaining: list[str] = Field(default_factory=list)
 
 
 class ConsentBody(Schema):
@@ -123,15 +129,15 @@ async def register(token: TokenPath, body: RegisterBody, response: Response) -> 
             conn,
             token=token,
             full_name=body.full_name,
-            email=str(body.email),
             mobile=body.mobile,
+            email=str(body.email) if body.email else None,
             organization_id=body.organization_id,
             person_type=body.person_type,
         )
     return {
         "ok": True,
         "message": (
-            "Registered. We have sent a code to confirm your contact details."
+            "Registered. We have sent a code to each contact you gave; enter them all."
             if result["created"]
             else "We already have your details. We have sent a code to confirm them."
         ),
@@ -148,7 +154,7 @@ async def request_code(token: TokenPath, body: OtpBody, response: Response) -> d
 
 @router.post(
     "/c/{token}/otp/verify",
-    response_model=Acknowledged,
+    response_model=ContactVerified,
     summary="5 attempts, then the code is discarded",
 )
 async def verify_code(
@@ -160,6 +166,13 @@ async def verify_code(
         result = await service.verify_contact_code(
             conn, token=token, contact=body.contact, code=body.code
         )
+    if not result["complete"]:
+        return {
+            "ok": True,
+            "complete": False,
+            "remaining": result["remaining"],
+            "message": "Confirmed. One more code to enter.",
+        }
 
     user = result["user"]
     raw, session = await sessions.create(
@@ -171,7 +184,12 @@ async def verify_code(
         mfa_verified=True,
     )
     set_session_cookies(response, raw, session.csrf_token, max_age=settings.session_ttl_s)
-    return {"ok": True, "message": "Verified. You can now read the notice."}
+    return {
+        "ok": True,
+        "complete": True,
+        "remaining": [],
+        "message": "Verified. You can now read the notice.",
+    }
 
 
 @router.get("/c/{token}/notice", summary="Render the notice - stamps served_at")

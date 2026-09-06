@@ -45,7 +45,7 @@ export default function ConsentPage() {
 
   const [step, setStep] = React.useState<Step>("loading");
   const [link, setLink] = React.useState<LinkView | null>(null);
-  const [contact, setContact] = React.useState("");
+  const [contacts, setContacts] = React.useState<string[]>([]);
   const [language, setLanguage] = React.useState<LanguageCode>("english");
   const [notice, setNotice] = React.useState<ServedNotice | null>(null);
   const [receipt, setReceipt] = React.useState<{ uuid: string; declined: boolean } | null>(null);
@@ -134,8 +134,8 @@ export default function ConsentPage() {
       {step === "register" && (
         <RegisterStep
           token={token}
-          onDone={(email) => {
-            setContact(email);
+          onDone={(given) => {
+            setContacts(given);
             setError(null);
             setStep("verify");
           }}
@@ -146,7 +146,7 @@ export default function ConsentPage() {
       {step === "verify" && (
         <VerifyStep
           token={token}
-          contact={contact}
+          contacts={contacts}
           onDone={async () => {
             setError(null);
             try {

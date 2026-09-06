@@ -32,9 +32,19 @@ from typing import Any
 import pytest
 
 from cmp.auth.authentication import service as auth_service
+from cmp.db.redis import K_RATE
+from cmp.db.redis import key as rkey
 from cmp.db.repositories import users as user_repo
 
 pytestmark = pytest.mark.anyio
+
+
+@pytest.fixture(autouse=True)
+async def _unthrottled(redis_conn: Any) -> None:
+    """Registration is limited per contact per hour, and this file registers the
+    same contacts on every run. The limiter is not what is under test here."""
+    async for key in redis_conn.scan_iter(match=rkey(K_RATE, "subject_register", "*")):
+        await redis_conn.delete(key)
 
 
 def _years_ago(n: int) -> str:
@@ -76,7 +86,11 @@ async def test_a_minor_is_identified_as_one(
 ) -> None:
     """Section 9 turns on this, so it is asserted rather than assumed."""
     await auth_service.register_data_subject(
-        conn, full_name="Child Account", email="child@example.org", dob=_years_ago(12)
+        conn,
+        full_name="Child Account",
+        mobile="+915550000012",
+        email="child@example.org",
+        dob=_years_ago(12),
     )
 
     user = await user_repo.by_contact(conn, "child@example.org")
@@ -132,7 +146,11 @@ async def test_registration_cannot_choose_its_own_role(
     assert "person_type" not in params
 
     await auth_service.register_data_subject(
-        conn, full_name="Not A DPO", email="notadpo@example.org", dob=_years_ago(40)
+        conn,
+        full_name="Not A DPO",
+        mobile="+915550000040",
+        email="notadpo@example.org",
+        dob=_years_ago(40),
     )
     assert (await user_repo.by_contact(conn, "notadpo@example.org"))["role"] == "data_subject"
 
@@ -149,7 +167,11 @@ async def test_registering_a_known_contact_creates_nothing_and_does_not_say_so(
     before = await _count(conn)
 
     await auth_service.register_data_subject(
-        conn, full_name="Impostor", email="dpo@test.local", dob=_years_ago(33)
+        conn,
+        full_name="Impostor",
+        mobile="+915550000033",
+        email="dpo@test.local",
+        dob=_years_ago(33),
     )
 
     assert await _count(conn) == before, "no account created for an existing contact"

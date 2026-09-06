@@ -1,6 +1,6 @@
 """Delivering one-time codes.
 
-Four tasks, all on `high_priority`, all required rather than optional. A person
+Five tasks, all on `high_priority`, all required rather than optional. A person
 is waiting for each of these with a code box open.
 """
 
@@ -9,6 +9,7 @@ from cmp.tasks.authentication.otp import (
     send_login_code,
     send_mfa_code,
     send_password_reset,
+    send_registration_code,
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "send_login_code",
     "send_mfa_code",
     "send_password_reset",
+    "send_registration_code",
 ]

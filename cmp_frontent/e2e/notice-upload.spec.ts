@@ -13,6 +13,7 @@
  */
 import { expect, test } from "@playwright/test";
 
+import { expectNoSidewaysScroll } from "./support/layout";
 import { statePath } from "./support/session";
 
 test.describe.configure({ mode: "serial" });
@@ -39,6 +40,7 @@ test.describe("R&D User", () => {
     await expect(page.getByRole("heading", { name: /^notices$/i })).toBeVisible({
       timeout: 15_000,
     });
+    await expectNoSidewaysScroll(page);
 
     // From the card, not the page header. The header carries one too, and this
     // test is about the other one — the control on the card that says there is

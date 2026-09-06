@@ -29,22 +29,20 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-/** Routes that must be reachable with no session at all.
- *
- * `/sign-up` belongs here for the obvious reason and one less obvious: a person
- * registering has no session by definition, so gating it behind one redirects
- * them to sign in, which is the thing they cannot yet do.
+import { isPublicPath } from "@/lib/security/public-routes";
+
+/**
+ * Routes that must be reachable with no session at all live in
+ * `lib/security/public-routes`, shared with the auth provider so the two cannot
+ * disagree about whether a person registering has to be signed in first.
  */
-const PUBLIC_PREFIXES = ["/sign-in", "/sign-up", "/rights", "/c/"] as const;
 
 /** Static assets and internals — never redirect, never CSP-nonce. */
 const SKIP_PREFIXES = ["/_next", "/api", "/favicon", "/icon", "/apple-icon", "/robots", "/sitemap"] as const;
 
 const SESSION_COOKIE = process.env.NEXT_PUBLIC_SESSION_COOKIE ?? "cmp_session";
 
-function isPublic(pathname: string): boolean {
-  return pathname === "/" || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
-}
+const isPublic = isPublicPath;
 
 function shouldSkip(pathname: string): boolean {
   return SKIP_PREFIXES.some((p) => pathname.startsWith(p)) || pathname.includes(".");

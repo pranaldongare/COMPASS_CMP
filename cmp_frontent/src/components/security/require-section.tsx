@@ -49,6 +49,8 @@ const SECTION_OF: ReadonlyArray<readonly [prefix: string, key: string]> = [
   ["/sites", "sites"],
   ["/consents", "consents"],
   ["/my-consents", "consents"],
+  ["/requests", "requests"],
+  ["/my-requests", "requests"],
   ["/links", "links"],
   ["/exports", "exports"],
   ["/imports", "imports"],

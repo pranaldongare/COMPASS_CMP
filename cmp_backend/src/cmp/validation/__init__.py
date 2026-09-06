@@ -16,6 +16,7 @@ is a circular import waiting for the next person to add a field.
 
 from __future__ import annotations
 
+from cmp.validation.choices import choice, spell_choices
 from cmp.validation.common import (
     normalise_login,
     reject_unknown_keys,
@@ -23,7 +24,15 @@ from cmp.validation.common import (
     require_future,
     require_non_empty,
 )
-from cmp.validation.contacts import Contact, Email, Mobile
+from cmp.validation.contacts import (
+    Contact,
+    Email,
+    Mobile,
+    is_mobile,
+    mask_contact,
+    normalise_contact,
+    normalise_mobile,
+)
 from cmp.validation.files import MANIFEST, PROOF, UploadRules, check_upload, safe_suffix
 from cmp.validation.identifiers import InternalId, LinkToken, OrganizationId, Uuid
 from cmp.validation.pagination import Cursor, PageLimit, SearchTerm, SortSpec
@@ -58,10 +67,16 @@ __all__ = [
     "UploadRules",
     "Uuid",
     "check_upload",
+    "choice",
+    "is_mobile",
+    "mask_contact",
+    "normalise_contact",
     "normalise_login",
+    "normalise_mobile",
     "reject_unknown_keys",
     "require_aware",
     "require_future",
     "require_non_empty",
     "safe_suffix",
+    "spell_choices",
 ]

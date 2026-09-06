@@ -9,7 +9,7 @@ Router), React 19, TypeScript strict, Tailwind 4, TanStack Query.
 
 ```bash
 npm install
-cp .env.example .env.local     # point NEXT_PUBLIC_API_URL at the API
+cp .env.example .env.local     # leave NEXT_PUBLIC_API_URL unset: /api is proxied to the API
 npm run dev
 ```
 
@@ -37,21 +37,46 @@ check, the linter and the unit tests together.
 
 ```
 src/
+  proxy.ts                the first thing that touches a request: CSP nonce,
+                          cookie-presence redirect (Next 16's middleware.ts)
   app/                    routes
-    (app)/                authenticated — wrapped in RequireAuth + AppShell
+    (app)/                authenticated — RequireAuth, AppShell, RequireSection
     c/[token]/            the public consent flow
-    sign-in/              staff password + MFA, data-subject OTP
-    rights/               public rights information (Rule 9, Rule 14(1))
+    sign-in/              staff password + MFA step-up, data-subject code, reset
+    sign-up/              data-principal self-registration
+    rights/               public rights information and requests (Rule 9, 14)
+  features/<name>/        one folder per business area:
+    api.ts                thin endpoint functions - no React
+    queries.ts            useQuery hooks, keyed from lib/query/keys
+    mutations.ts          useMutation hooks and what they invalidate
+    schemas.ts            zod form schemas, mirroring the API's validation
+    components/           the feature's own forms and dialogs
+    index.ts              the barrel pages import from
   components/
-    ui/                   primitives and status rendering
-    project/              transition controls
+    ui/                   primitives, status badges, charts, dialog, graphics
+    data-display/         resource list, activity feed, audit detail
+    forms/                useApiForm, file input, checkbox group
+    layout/               the app shell and the auth layout
+    security/             Can, RequireSection, SessionWarning - courtesies,
+                          never a boundary
+    feedback/             the error boundary
   lib/
-    api-client.ts         axios: credentials, CSRF, error normalisation, 401
-    api-error.ts          the API's error contract, as a type
-    queries.ts            one hook per endpoint, with the query keys
-    types.ts              curated API types
-  providers/              query, theme, toast, auth
+    api/                  axios: credentials, CSRF, request id, error normalisation
+    errors/               ApiError - the API's error contract, as a type
+    query/                every query key, and the shared hook options
+    permissions/          reads me.nav; holds no copy of the matrix
+    security/             public routes, sanitising, session timeout
+    config/  format/      environment with defaults; dates, durations, hashes
+  providers/              error boundary, query, theme, toast, auth - in that order
+  schemas/                shared zod primitives (contacts, files, security)
+  types/                  curated API types per domain, contract-tested against
+                          the generated api-schema.d.ts
+  styles/                 tokens → themes → bridge → base → utilities → print
+  test/                   MSW server, fixtures, render helpers
 ```
+
+Design tokens live in `src/styles/tokens.css`; `globals.css` only imports the
+style layers in dependency order.
 
 ### The rules the frontend follows
 
@@ -105,7 +130,7 @@ decisions in it are not cosmetic:
 
 ## Design system
 
-Tokens live in `src/app/globals.css` and nowhere else. Colour is OKLCH, so equal
+Tokens live in `src/styles/tokens.css` and nowhere else. Colour is OKLCH, so equal
 lightness steps look equal and the palette stays balanced when inverted for dark
 mode instead of turning muddy.
 

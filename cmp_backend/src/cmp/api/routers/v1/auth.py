@@ -28,6 +28,7 @@ from cmp.db.pool import connection, transaction
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.schemas.common import Acknowledged, OtpCode, Out, Password, Schema
+from cmp.validation import Mobile
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -56,9 +57,9 @@ class RegisterBody(Schema):
     """
 
     full_name: Annotated[str, Field(min_length=2, max_length=120)]
-    email: EmailStr
+    mobile: Mobile
     dob: Annotated[date, Field(description="Date of birth, YYYY-MM-DD")]
-    mobile: Annotated[str | None, Field(default=None, max_length=20)] = None
+    email: EmailStr | None = None
 
     @field_validator("dob")
     @classmethod
@@ -206,9 +207,9 @@ async def register(body: RegisterBody) -> dict[str, Any]:
         await auth_service.register_data_subject(
             conn,
             full_name=body.full_name,
-            email=body.email,
-            dob=body.dob.isoformat(),
             mobile=body.mobile,
+            dob=body.dob.isoformat(),
+            email=str(body.email) if body.email else None,
         )
     # Identical whether the contact was new or already registered.
     return {"ok": True, "message": "Check your email for a sign-in code."}
@@ -220,6 +221,35 @@ async def otp_request(body: OtpRequestBody) -> dict[str, Any]:
         await auth_service.request_subject_otp(conn, contact=body.contact)
     # Identical response whether or not the contact is registered.
     return {"ok": True, "message": "If that contact is registered, a code has been sent."}
+
+
+class RegisterVerifyBody(Schema):
+    mobile: Mobile
+    mobile_code: OtpCode | None = None
+    email_code: OtpCode | None = None
+
+
+@router.post(
+    "/register/verify",
+    response_model=Acknowledged,
+    summary="Finish sign-up: every medium given answers with its code",
+)
+async def register_verify(
+    body: RegisterVerifyBody, request: Request, response: Response
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        result = await auth_service.confirm_registration(
+            conn,
+            mobile=body.mobile,
+            mobile_code=body.mobile_code,
+            email_code=body.email_code,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+        )
+    set_session_cookies(
+        response, result["token"], result["session"].csrf_token, max_age=result["max_age"]
+    )
+    return {"ok": True, "message": "Your account is ready. You are signed in."}
 
 
 @router.post("/otp/verify", response_model=Acknowledged, summary="Data-subject sign-in")

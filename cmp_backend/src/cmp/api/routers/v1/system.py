@@ -188,6 +188,28 @@ _ENUMS: dict[str, list[str]] = {
     "asset_type": ["image", "video", "audio", "sensor", "document", "other"],
     "subject_role": ["consented", "incidental", "unidentified"],
     "disposition": ["active", "redacted", "erased", "quarantined"],
+    "rights_request_type": ["access", "correction", "erasure", "grievance"],
+    "rights_request_status": [
+        "received",
+        "in_progress",
+        "awaiting_holders",
+        "collating",
+        "closed",
+    ],
+    "rights_request_outcome": [
+        "complete",
+        "partial",
+        "no_records",
+        "refused",
+        "not_verified",
+        "reclassified_withdrawal",
+        "upheld",
+        "not_upheld",
+    ],
+    "rights_scope_decision": ["erase", "redact", "retain", "quarantine"],
+    "rights_ticket_status": ["pending", "issued", "escalated", "returned", "unreturned"],
+    "rights_trigger_event": ["death", "incapacity"],
+    "nomination_status": ["pending", "active", "declined", "revoked"],
 }
 
 # Human labels live with the values so a dropdown does not need a second lookup

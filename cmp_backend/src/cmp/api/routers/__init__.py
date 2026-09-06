@@ -26,6 +26,9 @@ ROUTERS: tuple[APIRouter, ...] = (
     # Identity and the reference registry.
     v1.users_router,
     v1.me_router,
+    # The principal's own requests and nomination live under /me with the rest
+    # of her surface; the DPO's register is its own area, in the oversight group.
+    v1.rights_subject_router,
     v1.delegations_router,
     v1.registry_router,
     # The project lifecycle, in the order it is walked.
@@ -34,6 +37,7 @@ ROUTERS: tuple[APIRouter, ...] = (
     v1.consents_router,
     v1.exchange_router,
     # Oversight.
+    v1.rights_router,
     v1.audit_router,
     v1.dashboard_router,
 )

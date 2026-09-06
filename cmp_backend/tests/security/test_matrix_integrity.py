@@ -150,13 +150,14 @@ class TestRoleListsAreDerivedRatherThanTyped:
             "collections": "collection",
             "audit": "audit",
             "users": "user",
+            "requests": "rights_request",
         }
 
         # One key means two things. A data subject's "consents" is her own
         # record, served by the data-subject routes and guarded by
         # `RequireDataSubject`, not the staff register the matrix is about. The
         # sidebar resolves the same key to `/my-consents` for her.
-        aliased = {(Role.DATA_SUBJECT, "consents")}
+        aliased = {(Role.DATA_SUBJECT, "consents"), (Role.DATA_SUBJECT, "requests")}
 
         broken: list[str] = []
         for role in Role:

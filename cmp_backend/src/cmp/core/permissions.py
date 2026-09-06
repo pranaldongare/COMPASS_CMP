@@ -242,6 +242,15 @@ MATRIX: dict[str, dict[Role, Grant]] = {
     "me": {
         Role.DATA_SUBJECT: Grant(Scope.OWN, write=True),
     },
+    # A data principal's request under ss.11-14, and everything the DPO does
+    # with it. The administrator's row is scoped to the one case the DPO must
+    # not decide: a grievance about the DPO's own handling, where the
+    # administrator stands in as the independent reviewer. The principal
+    # reaches her own requests through `me`, never through this resource.
+    "rights_request": {
+        Role.DPO: Grant(Scope.ALL, write=True),
+        Role.ADMIN: Grant(Scope.SCOPED, write=True),
+    },
 }
 
 
@@ -267,6 +276,15 @@ def scope_of(resource: str, role: Role | str) -> Scope:
 
 # Navigation the SPA renders on first paint — returned by GET /auth/me so the
 # frontend never has to guess, and never has to hold a second copy of the matrix.
+
+#: The sections about the signed-in person rather than about the work: their
+#: notifications and their own account. Every role has both pages, and for a
+#: while only the data subject's nav said so - so the console's "You" section
+#: was invisible to every member of staff, and `/account` was reachable only by
+#: typing the URL. Spelled once and spliced into every row, so a role added
+#: later cannot lose them the same way.
+PERSONAL: tuple[str, ...] = ("notifications", "profile")
+
 NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     Role.DPO: (
         "dashboard",
@@ -279,6 +297,8 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "links",
         "exports",
         "imports",
+        # Rights requests: the DPO owns every one, and the clock on each.
+        "requests",
         "audit",
         "users",
         # Cover is for the roles whose access is defined by assignment. An R&D
@@ -286,6 +306,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         # somebody else can stand in for - so it is absent there, deliberately,
         # rather than forgotten.
         "cover",
+        *PERSONAL,
     ),
     Role.DCO: (
         "dashboard",
@@ -301,6 +322,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "imports",
         "collections",
         "cover",
+        *PERSONAL,
     ),
     # A DCO Admin does a DCO's job across every third-party project, and one
     # thing besides: routing. `sources` is what makes that possible - the queue
@@ -316,6 +338,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "imports",
         "collections",
         "cover",
+        *PERSONAL,
     ),
     # An RCO is a DCO for collection the R&D team does itself - same nav, and
     # the same registry, restricted to in-house processors rather than a third
@@ -331,6 +354,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "imports",
         "collections",
         "cover",
+        *PERSONAL,
     ),
     # `notices` and `processors` because the R&D User now writes the notice and
     # names who will collect. Both were the DPO's, and both were things the DPO
@@ -343,11 +367,24 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "approvals",
         "imports",
         "collections",
+        *PERSONAL,
     ),
     # An administrator does not arrange their own cover - they have no assigned
     # rows - but they can see and arrange it for anybody who is unreachable.
-    Role.ADMIN: ("dashboard", "users", "processors", "sources", "audit", "cover"),
-    Role.DATA_SUBJECT: ("consents", "notifications", "profile"),
+    # `requests` for the administrator is the escalated grievances only - the
+    # ones about the DPO, which the DPO must not review.
+    Role.ADMIN: (
+        "dashboard",
+        "users",
+        "processors",
+        "sources",
+        "requests",
+        "audit",
+        "cover",
+        *PERSONAL,
+    ),
+    # Her own requests and her nomination, on her own pages.
+    Role.DATA_SUBJECT: ("consents", "requests", "notifications", "profile"),
 }
 
 

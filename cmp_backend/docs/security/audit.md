@@ -29,6 +29,15 @@ needs.
 `GET /audit/verify` recomputes it. `cmp.maintenance.verify_audit_chain` runs it
 daily, because a claim nobody checks is a claim nobody should believe.
 
+Rows are chained in the order a transaction-level advisory lock is granted, and
+since migration 0014 a row's `log_id` is drawn from the sequence *inside* that
+lock rather than by a column default. The two orders are therefore one order,
+which is what verification, walking by id, assumes. Before 0014, inserts
+arriving together could carry ids in one order and predecessors in the other,
+and verification reported a break that was not tampering. Rows written that way
+stay as they are - the trail is append-only - and verification keeps naming the
+first of them until the database is rebuilt.
+
 ## Reading it
 
 The trail records `notice#42` — a table name and a surrogate key — because that

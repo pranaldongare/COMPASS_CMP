@@ -29,6 +29,7 @@ import {
   MapPin,
   Menu,
   Moon,
+  Scale,
   ScrollText,
   ShieldCheck,
   Sun,
@@ -109,6 +110,13 @@ const SECTIONS: NavSection[] = [
         icon: FileText,
         roles: ["data_subject"],
       },
+      {
+        key: "requests",
+        href: "/my-requests",
+        label: "My requests",
+        icon: Scale,
+        roles: ["data_subject"],
+      },
       { key: "links", href: "/links", label: "Consent links", icon: Link2 },
       { key: "sites", href: "/sites", label: "Collection sites", icon: MapPin },
     ],
@@ -131,6 +139,16 @@ const SECTIONS: NavSection[] = [
   {
     title: "Oversight",
     items: [
+      // The DPO's register of rights requests, and - for the administrator -
+      // the grievances escalated away from the DPO. A data principal's key of
+      // the same name resolves to her own page, below.
+      {
+        key: "requests",
+        href: "/requests",
+        label: "Rights requests",
+        icon: Scale,
+        roles: STAFF_ROLES,
+      },
       { key: "audit", href: "/audit", label: "Audit trail", icon: ShieldCheck },
       { key: "users", href: "/users", label: "Users", icon: Users },
       { key: "cover", href: "/cover", label: "Cover", icon: HandHelping },
@@ -403,7 +421,7 @@ export function PageHeader({
             <p className="mt-1.5 max-w-2xl text-sm text-text-muted">{description}</p>
           )}
         </div>
-        {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+        {actions && <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">{actions}</div>}
       </div>
       {/* A hairline that fades out to the right: it closes the header without
           drawing a hard box around every page. */}

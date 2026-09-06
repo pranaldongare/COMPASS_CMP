@@ -1,6 +1,6 @@
 """The things a permission can be about.
 
-Sixteen names, each corresponding to one row of the API reference's permission
+Seventeen names, each corresponding to one row of the API reference's permission
 tables. They are strings rather than an enum for one reason: a route names its
 resource inline — `RequireResource("project")` — and an enum member there would
 be noise without adding safety, because `verify_resources()` below checks the
@@ -45,6 +45,9 @@ ASSET: Final = "asset"
 # ----------------------------------------------------------------- audit
 AUDIT: Final = "audit"
 
+# ---------------------------------------------------------------- rights
+RIGHTS_REQUEST: Final = "rights_request"
+
 #: Every resource this system knows about. `verify_resources()` asserts the
 #: matrix and this set agree, so a resource named in one and not the other is an
 #: import-time failure rather than a silent deny in production.
@@ -66,5 +69,6 @@ ALL: Final[frozenset[str]] = frozenset(
         COLLECTION,
         ASSET,
         AUDIT,
+        RIGHTS_REQUEST,
     }
 )

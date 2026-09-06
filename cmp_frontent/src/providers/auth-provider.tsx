@@ -19,6 +19,7 @@ import * as React from "react";
 
 import { apiGet, apiPost, setUnauthenticatedHandler } from "@/lib/api";
 import { ApiError } from "@/lib/errors";
+import { isPublicPath } from "@/lib/security/public-routes";
 import type { Me, Role } from "@/types";
 
 interface AuthContextValue {
@@ -46,11 +47,10 @@ export function useAuth(): AuthContextValue {
 export const ME_QUERY_KEY = ["auth", "me"] as const;
 
 /** Routes that render without a session. Everything else redirects. */
-const PUBLIC_PREFIXES = ["/sign-in", "/c/", "/notice/", "/rights", "/verify"];
-
-function isPublic(pathname: string): boolean {
-  return PUBLIC_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix));
-}
+// The one list of public routes, shared with the proxy. A private copy here once
+// omitted `/sign-up`, and every visitor to the registration page was redirected
+// to sign in by the 401 their own "who am I" request produced.
+const isPublic = isPublicPath;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();

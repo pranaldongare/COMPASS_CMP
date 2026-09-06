@@ -1,8 +1,11 @@
 /**
- * Rights information — public, no authentication.
+ * Rights information and the request form — public, no authentication.
  *
  * Rule 9 and Rule 14(1). Published so someone who has lost their notice can
- * still find out what they are entitled to and how to ask for it.
+ * still find out what they are entitled to and how to ask for it - and, since
+ * Rule 3 puts the grievance route in every notice, ask for it from here without
+ * an account. The form answers with one neutral sentence whatever happened,
+ * and the verification code goes to the contact already on file.
  *
  * The Board complaint route is stated alongside the internal one, not instead of
  * it. Telling someone only about the grievance process misstates the remedy
@@ -10,17 +13,23 @@
  */
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
 import { BrandMark, SignalField } from "@/components/ui/graphics";
-import { Alert, Card, CardBody, CardHeader, CardTitle, Skeleton } from "@/components/ui/primitives";
+import { Alert, Card, CardBody, CardHeader, CardTitle, Mono, Skeleton } from "@/components/ui/primitives";
 import { getRights, type RightsPayload } from "@/features/rights";
+import { PublicRequestForm } from "@/features/rights/components/request-form";
+import { VerifyForm } from "@/features/rights/components/verify-form";
+import type { PublicRequestReceipt, PublicVerifyResult } from "@/types";
 
 export default function RightsPage() {
   const [data, setData] = React.useState<RightsPayload | null>(null);
   const [failed, setFailed] = React.useState(false);
+  const [receipt, setReceipt] = React.useState<PublicRequestReceipt | null>(null);
+  const [verified, setVerified] = React.useState<PublicVerifyResult | null>(null);
+  const [verifyOnly, setVerifyOnly] = React.useState(false);
 
   React.useEffect(() => {
     getRights()
@@ -41,8 +50,8 @@ export default function RightsPage() {
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/80">
             Under the Digital Personal Data Protection Act 2023, you have rights over
-            the personal data we hold about you. This page explains what they are and
-            how to use them.
+            the personal data we hold about you. This page explains what they are, how
+            to use them, and lets you make a request without an account.
           </p>
         </div>
       </header>
@@ -82,6 +91,54 @@ export default function RightsPage() {
             </CardBody>
           </Card>
 
+          <Card id="request">
+            <CardHeader>
+              <CardTitle>Make a request</CardTitle>
+              <p className="mt-1 text-xs text-text-muted">
+                {data.response_time}{" "}
+                <Link href="/sign-in" className="text-accent-text underline underline-offset-2">
+                  Signed in
+                </Link>
+                , your request is verified at once; from here, we send a code to the contact we
+                already hold for you.
+              </p>
+            </CardHeader>
+            <CardBody className="space-y-4">
+              {verified ? (
+                <Alert tone="success" title="Verified">
+                  <p>{verified.message}</p>
+                  <p className="mt-1 text-xs">
+                    Your reference is <Mono>{verified.reference}</Mono>. Keep it.
+                  </p>
+                </Alert>
+              ) : receipt ? (
+                <>
+                  <Alert tone="info" title="Recorded">
+                    <p>{receipt.message}</p>
+                    <p className="mt-1 text-xs">
+                      Your reference is <Mono>{receipt.reference}</Mono>. Quote it if you contact us.
+                    </p>
+                  </Alert>
+                  <VerifyForm reference={receipt.reference} onDone={setVerified} />
+                </>
+              ) : verifyOnly ? (
+                <>
+                  <VerifyForm onDone={setVerified} />
+                  <button type="button" className="text-xs text-text-subtle underline underline-offset-2" onClick={() => setVerifyOnly(false)}>
+                    Make a new request instead
+                  </button>
+                </>
+              ) : (
+                <>
+                  <PublicRequestForm onDone={setReceipt} />
+                  <button type="button" className="text-xs text-text-subtle underline underline-offset-2" onClick={() => setVerifyOnly(true)}>
+                    Already have a reference and a code? Verify it here.
+                  </button>
+                </>
+              )}
+            </CardBody>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Withdrawing your consent</CardTitle>
@@ -101,6 +158,22 @@ export default function RightsPage() {
                 It does not by itself delete data already collected — ask for
                 erasure if that is what you want.
               </p>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Acting for someone who nominated you</CardTitle>
+            </CardHeader>
+            <CardBody className="space-y-2">
+              <p className="text-sm leading-relaxed text-text-muted">
+                Under section 14 a person may name somebody to exercise these rights if they die
+                or cannot act. If that person is you, and the time has come, start here.
+              </p>
+              <Link href="/rights/nominee" className="inline-flex items-center gap-1 text-sm text-accent-text underline underline-offset-2">
+                Make a request as a nominee
+                <ArrowRight className="size-3.5" aria-hidden="true" />
+              </Link>
             </CardBody>
           </Card>
 

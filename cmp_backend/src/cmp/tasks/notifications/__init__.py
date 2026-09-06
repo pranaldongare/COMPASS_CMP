@@ -9,6 +9,26 @@ message is a courtesy on top of it.
 """
 
 from cmp.tasks.notifications.consent import send_consent_receipt
+from cmp.tasks.notifications.rights import (
+    send_holder_instruction,
+    send_nomination_invitation,
+    send_rights_acknowledgement,
+    send_rights_closed,
+    send_rights_response_ready,
+    send_rights_verification_code,
+)
 from cmp.tasks.notifications.withdrawal import send_withdrawal_confirmation
 
-__all__ = ["send_consent_receipt", "send_withdrawal_confirmation"]
+# A module not imported here is a task the worker never registers: the API
+# queues it by name, the worker answers "unregistered task", and the message is
+# lost quietly. `tests/unit/tasks/test_registry.py` checks the roster.
+__all__ = [
+    "send_consent_receipt",
+    "send_holder_instruction",
+    "send_nomination_invitation",
+    "send_rights_acknowledgement",
+    "send_rights_closed",
+    "send_rights_response_ready",
+    "send_rights_verification_code",
+    "send_withdrawal_confirmation",
+]

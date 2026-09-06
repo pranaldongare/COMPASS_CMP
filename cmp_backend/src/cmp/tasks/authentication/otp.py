@@ -75,6 +75,21 @@ def send_login_code(user_uuid: str, contact: str, code: str) -> dict[str, Any]:
     )
 
 
+@shared_task(name="cmp.notifications.send_registration_code", **RETRY_KW)
+def send_registration_code(user_uuid: str, contact: str, code: str) -> dict[str, Any]:
+    """One per medium given at sign-up: every medium is authenticated."""
+    channel = "email" if "@" in contact else "sms"
+    return _deliver(
+        channel=channel,
+        to=contact,
+        subject="Your verification code",
+        body=(
+            f"Your verification code is {code}. Enter it to finish creating your account. "
+            f"It expires in {settings.otp_ttl_s // 60} minutes."
+        ),
+    )
+
+
 @shared_task(name="cmp.notifications.send_consent_code", **RETRY_KW)
 def send_consent_code(contact: str, code: str) -> dict[str, Any]:
     channel = "email" if "@" in contact else "sms"

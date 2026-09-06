@@ -16,12 +16,16 @@
  */
 
 import type {
+  Clock,
   ConsentListRow,
   Me,
+  MyRequest,
   NoticeListRow,
   Page,
   Project,
   Purpose,
+  RightsRequestDetail,
+  RightsRequestRow,
   Role,
   User,
 } from "@/types";
@@ -38,14 +42,13 @@ const NOW = "2026-02-02T11:05:00+05:30";
  */
 const NAV: Record<Role, string[]> = {
   admin: [
-    "dashboard", "projects", "notices", "purposes", "processors", "sources",
-    "sites", "consents", "links", "exports", "imports", "collections",
-    "approvals", "audit", "users", "notifications", "profile",
+    "dashboard", "users", "processors", "sources", "requests", "audit", "cover",
+    "notifications", "profile",
   ],
   dpo: [
     "dashboard", "projects", "notices", "purposes", "processors", "sources",
-    "consents", "links", "exports", "collections", "approvals", "audit",
-    "notifications", "profile",
+    "consents", "links", "exports", "imports", "requests", "audit", "users",
+    "cover", "notifications", "profile",
   ],
   rnd_user: ["dashboard", "projects", "notices", "consents", "notifications", "profile"],
   dco: [
@@ -60,7 +63,7 @@ const NAV: Record<Role, string[]> = {
     "dashboard", "projects", "sites", "sources", "consents", "links",
     "collections", "imports", "notifications", "profile",
   ],
-  data_subject: ["profile"],
+  data_subject: ["consents", "requests", "notifications", "profile"],
 };
 
 export function makeMe(overrides: Partial<Me> = {}): Me {
@@ -182,6 +185,139 @@ export function makeConsentRow(overrides: Partial<ConsentListRow> = {}): Consent
     refused_count: 0,
     project_uuid: "22222222-2222-4222-8222-222222222222",
     project_name: "Retail footfall study",
+    ...overrides,
+  };
+}
+
+/* ==========================================================================
+   Rights requests
+   ========================================================================== */
+
+const RECEIVED = "2026-09-01T09:00:00+05:30";
+const DUE = "2026-11-30T09:00:00+05:30";
+
+/** The clock as the server returns it: every checkpoint laid out, nothing derived here. */
+export function makeClock(overrides: Partial<Clock> = {}): Clock {
+  return {
+    received_at: RECEIVED,
+    due_at: DUE,
+    acknowledge_by: "2026-09-03T09:00:00+05:30",
+    tickets_by: "2026-09-06T09:00:00+05:30",
+    halfway_at: "2026-10-16T09:00:00+05:30",
+    collate_by: "2026-11-25T09:00:00+05:30",
+    days_remaining: 90,
+    overdue: false,
+    at_risk: false,
+    progress: 0,
+    checkpoints: [
+      { key: "received", label: "Received", at: RECEIVED, passed: true },
+      { key: "acknowledge", label: "Acknowledge", at: "2026-09-03T09:00:00+05:30", passed: false },
+      { key: "tickets", label: "Tickets issued", at: "2026-09-06T09:00:00+05:30", passed: false },
+      { key: "halfway", label: "Halfway", at: "2026-10-16T09:00:00+05:30", passed: false },
+      { key: "collate", label: "Collate", at: "2026-11-25T09:00:00+05:30", passed: false },
+      { key: "due", label: "Respond", at: DUE, passed: false },
+    ],
+    next_checkpoint: "acknowledge",
+    ...overrides,
+  };
+}
+
+export function makeRequestRow(overrides: Partial<RightsRequestRow> = {}): RightsRequestRow {
+  return {
+    request_uuid: "99999999-9999-4999-8999-999999999999",
+    reference: "RR-2026-000001",
+    request_type: "access",
+    original_type: null,
+    status: "received",
+    outcome: null,
+    channel: "portal",
+    subject_uuid: "77777777-7777-4777-8777-777777777777",
+    subject_name: "Meera Iyer",
+    submitted_name: "Meera Iyer",
+    submitted_contact: "meera.iyer@example.com",
+    received_at: RECEIVED,
+    due_at: DUE,
+    acknowledged_at: RECEIVED,
+    verification_status: "verified",
+    about_dpo: false,
+    linked_reference: null,
+    holder_count: 0,
+    tickets_outstanding: 0,
+    closed_at: null,
+    clock: makeClock(),
+    ...overrides,
+  };
+}
+
+/** The DPO's full view. Fresh, verified, not yet classified. */
+export function makeRequestDetail(overrides: Partial<RightsRequestDetail> = {}): RightsRequestDetail {
+  return {
+    ...makeRequestRow(),
+    request_text: "What do you hold about me, and who has it?",
+    subject_email: "meera.iyer@example.com",
+    subject_mobile: null,
+    verification_method: "session",
+    verified_at: RECEIVED,
+    verified_by_name: null,
+    verification_note: null,
+    classified_at: null,
+    refusal_reason: null,
+    intent_confirmed_at: null,
+    linked_request_uuid: null,
+    linked_request_type: null,
+    nomination_uuid: null,
+    nominee_name: null,
+    nominee_contact: null,
+    trigger_event: null,
+    trigger_evidence_hash: null,
+    trigger_evidenced_at: null,
+    reviewer_uuid: null,
+    reviewer_name: null,
+    escalated_at: null,
+    grievance_upheld: null,
+    remedy_text: null,
+    response_text: null,
+    response_file_hash: null,
+    responded_at: null,
+    download_expires_at: null,
+    created_at: RECEIVED,
+    updated_at: RECEIVED,
+    holders_confirmed: 0,
+    tickets_issued: 0,
+    tickets_returned: 0,
+    item_count: 0,
+    items_undecided: 0,
+    holders: [],
+    items: [],
+    transitions: [],
+    ...overrides,
+  };
+}
+
+/** Her own view: what she is entitled to see, and nothing that is ours. */
+export function makeMyRequest(overrides: Partial<MyRequest> = {}): MyRequest {
+  return {
+    request_uuid: "99999999-9999-4999-8999-999999999999",
+    reference: "RR-2026-000001",
+    request_type: "access",
+    status: "received",
+    outcome: null,
+    channel: "portal",
+    request_text: "What do you hold about me, and who has it?",
+    received_at: RECEIVED,
+    due_at: DUE,
+    acknowledged_at: RECEIVED,
+    verification_status: "verified",
+    responded_at: null,
+    response_text: null,
+    refusal_reason: null,
+    remedy_text: null,
+    grievance_upheld: null,
+    download_available: false,
+    download_expires_at: null,
+    linked_reference: null,
+    closed_at: null,
+    clock: makeClock(),
     ...overrides,
   };
 }

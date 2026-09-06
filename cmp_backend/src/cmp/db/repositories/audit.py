@@ -121,6 +121,26 @@ async def for_subject(conn: Conn, subject_user_id: int, *, limit: int = 50) -> l
     )
 
 
+async def for_reference(conn: Conn, reference: str, *, limit: int = 200) -> list[Row]:
+    """Every row about one rights request, whichever table each names.
+
+    A request's trail spans four tables - the request, its holders, its scope
+    items, a nomination - so matching on the entity would need four branches
+    and miss the next one. Every rights event carries the reference in its
+    detail instead, and this reads that. Oldest first: a trail is a story.
+    """
+    return await fetch_all(
+        conn,
+        f"""
+        SELECT {_SELECT}{_FROM}
+        WHERE l.detail_json->>'reference' = %s
+        ORDER BY l.occurred_at ASC, l.log_id ASC
+        LIMIT %s
+        """,
+        (reference, limit),
+    )
+
+
 async def event_counts(conn: Conn, *, days: int = 7) -> list[Row]:
     return await fetch_all(
         conn,

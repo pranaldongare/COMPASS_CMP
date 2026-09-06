@@ -4,7 +4,7 @@ Two questions, deliberately answered by different things.
 
 ## 1. May this role call this at all?
 
-A static matrix: 16 resources × 5 roles → a grant. Checked before any work is
+A static matrix: 17 resources × 7 roles → a grant. Checked before any work is
 done, by `RequireResource` or `RequireRole`.
 
 Two conventions:

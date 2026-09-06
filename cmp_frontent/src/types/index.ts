@@ -24,3 +24,4 @@ export * from "@/types/audit";
 export * from "@/types/dashboard";
 export * from "@/types/meta";
 export * from "@/types/public";
+export * from "@/types/rights";

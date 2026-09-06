@@ -89,30 +89,47 @@ class TestTokenGeneration:
         assert set(new_token(48)) <= allowed
 
 
-class TestMfaAppliesToPrivilegedRoles:
-    """A second factor on the two roles whose compromise is unbounded.
+class TestMfaAppliesToEveryStaffRole:
+    """A second factor on every internal role.
 
-    The DPO can read every consent record on the platform; the admin can grant
-    themselves any role. Neither is more trustworthy than the others — the
-    difference is the blast radius.
+    It began with the two roles whose compromise is unbounded - the DPO reads
+    every consent record, the admin can grant any role. The others were left on
+    a password alone, and a password alone is one phished credential away from
+    a minted consent link or a moved data set. Since 2026-09-06 every staff
+    role steps up; the data subject does not, because her sign-in already *is*
+    a one-time code and there is no password to step up from.
     """
 
-    def test_dpo_and_admin_require_mfa(self) -> None:
-        from cmp.auth.authorization.roles import requires_mfa
+    def test_every_staff_role_requires_mfa(self) -> None:
+        from cmp.auth.authorization.roles import STAFF_ROLES, requires_mfa
 
-        assert requires_mfa("dpo")
-        assert requires_mfa("admin")
+        for role in STAFF_ROLES:
+            assert requires_mfa(role), role
+
+    def test_the_data_subject_does_not(self) -> None:
+        from cmp.auth.authorization.roles import requires_mfa
+        from cmp.core.permissions import Role
+
+        assert not requires_mfa(Role.DATA_SUBJECT)
+
+    def test_the_default_is_derived_from_the_roles_not_listed(self) -> None:
+        """The default and `STAFF_ROLES` cannot drift: both come from the enum."""
+        from cmp.auth.authorization.roles import STAFF_ROLES
+        from cmp.core.config import Settings
+
+        default = Settings.model_fields["mfa_required_roles"].default
+        assert set(default) == {role.value for role in STAFF_ROLES}
 
     def test_the_configured_list_is_what_is_enforced(self) -> None:
-        """Read from configuration, not hardcoded, so a deployment can widen it.
+        """Read from configuration, not hardcoded, so a deployment can narrow it.
 
         Narrowing it below the default is a decision a deployment has to answer
         for; the code does not prevent it, and should not pretend to.
         """
-        from cmp.core.config import settings
+        from cmp.auth.authorization.roles import requires_mfa
 
-        assert "dpo" in settings.mfa_required_roles
-        assert "admin" in settings.mfa_required_roles
+        assert requires_mfa("dpo", configured=("dpo",))
+        assert not requires_mfa("dco", configured=("dpo",))
 
 
 class TestPartialSessionsAuthoriseAlmostNothing:

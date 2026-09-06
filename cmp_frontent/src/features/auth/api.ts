@@ -38,10 +38,18 @@ export function signInWithPassword(body: PasswordCredentials): Promise<LoginResp
 /** Ask for a one-time code. Answers the same way whether the contact is known. */
 export interface RegistrationDetails {
   full_name: string;
-  email: string;
+  /** Required: her sign-in codes go here. */
+  mobile: string;
   /** ISO date, YYYY-MM-DD. */
   dob: string;
-  mobile?: string | null;
+  email?: string | null;
+}
+
+/** The second step of sign-up: a code for every contact given, checked together. */
+export interface RegistrationVerification {
+  mobile: string;
+  mobile_code?: string | null;
+  email_code?: string | null;
 }
 
 /**
@@ -59,6 +67,10 @@ export interface RegistrationDetails {
  */
 export function register(body: RegistrationDetails): Promise<Acknowledged> {
   return apiPost<Acknowledged>("/auth/register", body);
+}
+
+export function registerVerify(body: RegistrationVerification): Promise<Acknowledged> {
+  return apiPost<Acknowledged>("/auth/register/verify", body);
 }
 
 export function requestOtp(body: { contact: string }): Promise<Acknowledged> {

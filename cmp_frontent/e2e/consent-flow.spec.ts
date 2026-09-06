@@ -62,12 +62,13 @@ test.describe("consent journey", () => {
 
     const email = `e2e.${Date.now()}@example.org`;
     await page.getByLabel(/full name/i).fill("E2E Test Subject");
+    await page.getByLabel(/^mobile/i).fill("+915550000600");
     await page.getByLabel(/^email/i).fill(email);
     await page.getByRole("button", { name: /continue/i }).click();
 
     // Step 2: a confirmation code is requested. We cannot read the mailbox from
     // here, so the assertion is that the flow advanced and is asking for one.
-    await expect(page.getByText(/confirm your email/i)).toBeVisible();
+    await expect(page.getByText(/confirm your mobile/i)).toBeVisible();
     await expect(page.getByLabel(/six-digit code/i)).toBeVisible();
   });
 
@@ -76,6 +77,7 @@ test.describe("consent journey", () => {
 
     const email = `e2e.${Date.now()}@example.org`;
     await page.getByLabel(/full name/i).fill("E2E Test Subject");
+    await page.getByLabel(/^mobile/i).fill("+915550000600");
     await page.getByLabel(/^email/i).fill(email);
     await page.getByRole("button", { name: /continue/i }).click();
 

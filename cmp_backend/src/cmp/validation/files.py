@@ -43,6 +43,22 @@ MANIFEST = UploadRules(
     allowed_suffixes=(".csv", ".txt"),
 )
 
+#: Evidence attached to a rights request: a holder's confirmation of what was
+#: removed, or a nominee's evidence of death or incapacity. Documents and
+#: images, because that is what a lab or a hospital produces.
+EVIDENCE = UploadRules(
+    field="evidence",
+    max_bytes=25 * 1024 * 1024,
+    allowed_mime=(
+        "application/pdf",
+        "image/png",
+        "image/jpeg",
+        "text/csv",
+        "text/plain",
+    ),
+    allowed_suffixes=(".pdf", ".png", ".jpg", ".jpeg", ".csv", ".txt"),
+)
+
 
 def check_upload(payload: bytes, content_type: str | None, rules: UploadRules) -> None:
     """Refuse an upload that breaks the rules, naming the field that failed.

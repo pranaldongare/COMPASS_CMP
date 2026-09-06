@@ -23,25 +23,35 @@ import { ApiError } from "@/lib/errors";
 
 export function VerifyStep({
   token,
-  contact,
+  contacts,
   onDone,
   onError,
 }: {
   token: string;
-  contact: string;
+  /** Every contact given at registration, mobile first. Each answers in turn. */
+  contacts: string[];
   onDone: () => void;
   onError: (message: string | null) => void;
 }) {
+  const [index, setIndex] = React.useState(0);
   const [code, setCode] = React.useState("");
   const [busy, setBusy] = React.useState(false);
+  const contact = contacts[index] ?? contacts[0] ?? "";
+  const isEmail = contact.includes("@");
+  const last = index >= contacts.length - 1;
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
     onError(null);
     try {
-      await verifyOtp(token, { contact, code });
-      await onDone();
+      const result = await verifyOtp(token, { contact, code });
+      if (result.complete) {
+        await onDone();
+      } else {
+        setCode("");
+        setIndex((i) => i + 1);
+      }
     } catch (err) {
       onError(err instanceof ApiError ? err.userMessage() : "Verification failed.");
     } finally {
@@ -52,7 +62,7 @@ export function VerifyStep({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Confirm your email</CardTitle>
+        <CardTitle>{isEmail ? "Confirm your email" : "Confirm your mobile"}</CardTitle>
         <p className="mt-1 text-sm text-text-muted">
           We have sent a six-digit code to <strong>{contact}</strong>. It expires in
           ten minutes.
@@ -81,7 +91,7 @@ export function VerifyStep({
             loading={busy}
             disabled={code.length !== 6}
           >
-            Confirm and read the notice
+            {last ? "Confirm and read the notice" : "Confirm and continue"}
           </Button>
         </form>
       </CardBody>

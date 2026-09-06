@@ -37,6 +37,17 @@ class Scope:
     CONSENT_LINK = "consent_link"
     STAFF_MFA = "staff_mfa"
     CONTACT_VERIFY = "contact_verify"
+    #: A rights request from the public form, verified against the stored
+    #: channel. Keyed on the request reference.
+    RIGHTS_VERIFY = "rights_verify"
+    #: A nominee acting under s.14, verified against the contact she recorded.
+    NOMINEE_VERIFY = "nominee_verify"
+    #: Sign-up authenticating every medium given. Keyed on the account and the
+    #: medium: "<uuid>:mobile", "<uuid>:email".
+    SUBJECT_REGISTER = "subject_register"
+    #: A nominee proving a recorded contact before the link's accept or decline
+    #: counts. Keyed on the nomination uuid.
+    NOMINATION_ACCEPT = "nomination_accept"
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,8 +85,13 @@ async def issue(scope: str, identity: str, *, ttl_s: int | None = None) -> Issue
     return Issued(code=code, expires_in_s=ttl)
 
 
-async def verify(scope: str, identity: str, code: str) -> bool:
-    """Check a code once. Consumes it on success; discards it after N failures."""
+async def verify(scope: str, identity: str, code: str, *, consume: bool = True) -> bool:
+    """Check a code once. Consumes it on success; discards it after N failures.
+
+    `consume=False` checks without spending: a flow that has to see two codes
+    pass before it acts uses it for the first, so a wrong second code does not
+    burn a first that was right. Failures count against the code either way.
+    """
     r = get_redis()
     ck, ak = _ckey(scope, identity), _akey(scope, identity)
 
@@ -85,11 +101,12 @@ async def verify(scope: str, identity: str, code: str) -> bool:
         return False
 
     if tokens_equal(stored, hash_otp(code, scope=scope)):
-        pipe = r.pipeline()
-        pipe.delete(ck)  # single use
-        pipe.delete(ak)
-        await pipe.execute()
-        log.info("otp.verified", scope=scope)
+        if consume:
+            pipe = r.pipeline()
+            pipe.delete(ck)  # single use
+            pipe.delete(ak)
+            await pipe.execute()
+        log.info("otp.verified", scope=scope, consumed=consume)
         return True
 
     pipe = r.pipeline()
@@ -111,13 +128,15 @@ async def verify(scope: str, identity: str, code: str) -> bool:
     return False
 
 
-async def require(scope: str, identity: str, code: str) -> None:
+async def require(
+    scope: str, identity: str, code: str, *, field: str = "code", consume: bool = True
+) -> None:
     """Verify or raise. The message is identical for a wrong code and an expired
     one - distinguishing them tells an attacker which half of the problem to fix."""
     if not code.isdigit() or len(code) != settings.otp_length:
-        raise BadRequest("Invalid code", code="otp_invalid", field="code")
-    if not await verify(scope, identity, code):
-        raise BadRequest("Invalid or expired code", code="otp_invalid", field="code")
+        raise BadRequest("Invalid code", code="otp_invalid", field=field)
+    if not await verify(scope, identity, code, consume=consume):
+        raise BadRequest("Invalid or expired code", code="otp_invalid", field=field)
 
 
 async def discard(scope: str, identity: str) -> None:

@@ -245,8 +245,9 @@ async def seeded(conn: Any, request_context: Any) -> dict[str, Any]:
 
     subject = await fetch_one(
         conn,
-        """INSERT INTO auth_user (full_name, email, role, status, registered_via_link_id)
-           VALUES ('Test Subject', 'subject@test.local', 'data_subject', 'active', %s)
+        """INSERT INTO auth_user (full_name, email, mobile, role, status, registered_via_link_id)
+           VALUES ('Test Subject', 'subject@test.local', '+915550000001', 'data_subject',
+                   'active', %s)
            RETURNING id, uuid""",
         (link["link_id"],),
     )

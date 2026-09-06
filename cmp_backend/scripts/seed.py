@@ -142,6 +142,16 @@ async def demo_project(
         (project["project_id"], ids["rnd_user"]),
     )
 
+    # Who collects. Naming the third-party processor is what routes an approved
+    # project to a DCO Admin; without this row the demo project was approved and
+    # invisible to the role whose job it is to set its collection up.
+    await conn.execute(
+        """INSERT INTO project_processor (project_id, processor_id, added_by, decided_by,
+                                          decided_at)
+           VALUES (%s, %s, %s, %s, now())""",
+        (project["project_id"], processor["processor_id"], ids["rnd_user"], ids["dpo"]),
+    )
+
     # The rig belongs to somebody, and the site deploys it. Without this the
     # seed asserted a project owner directly while leaving the source unowned -
     # two answers to "who runs Pune", and the derivation says the source wins.
@@ -158,6 +168,52 @@ async def demo_project(
            RETURNING site_id, site_uuid""",
         (project["project_id"], processor["processor_id"], source["source_id"]),
     )
+
+    # Two collection owners on one study, as the live report that shaped the
+    # site scope described: a third party's campus run by the DCO, and an
+    # in-house lab run by an RCO. Each follows add_site's rule - a site is a
+    # source standing somewhere, so its label is the source's name and its
+    # owner is the source's owner - which is what lets each owner see their own
+    # site and nobody else's. The in-house collector is named on the project
+    # too; a site under a processor the project never approved is a state the
+    # UI refuses to create.
+    for code, owner, location in (
+        ("SRC-SEED-CIT", "dco", "CIT campus, Coimbatore"),
+        ("SRC-SRIB-SE", "rco", "SRIB lab, Bengaluru"),
+    ):
+        deployed = await fetch_one(
+            conn,
+            """UPDATE data_source SET owner_user_id = %s
+                WHERE source_code = %s
+            RETURNING source_id, processor_id, name""",
+            (ids[owner], code),
+        )
+        await conn.execute(
+            """INSERT INTO project_processor (project_id, processor_id, added_by, decided_by,
+                                              decided_at)
+               SELECT %s, %s, %s, %s, now()
+                WHERE NOT EXISTS (SELECT 1 FROM project_processor
+                                   WHERE project_id = %s AND processor_id = %s)""",
+            (
+                project["project_id"],
+                deployed["processor_id"],
+                ids["rnd_user"],
+                ids["dpo"],
+                project["project_id"],
+                deployed["processor_id"],
+            ),
+        )
+        await conn.execute(
+            """INSERT INTO project_site (project_id, processor_id, source_id, site_label, location)
+               VALUES (%s, %s, %s, %s, %s)""",
+            (
+                project["project_id"],
+                deployed["processor_id"],
+                deployed["source_id"],
+                deployed["name"],
+                location,
+            ),
+        )
 
     # --------------------------------------------------------- notice
     notice = await fetch_one(

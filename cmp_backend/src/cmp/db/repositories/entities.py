@@ -194,6 +194,57 @@ _SPECS: dict[str, _Spec] = {
         href="/users",
         noun="Person type change",
     ),
+    "delegation": _Spec(
+        sql="""SELECT d.delegation_id AS id, d.delegation_uuid::text AS uuid,
+                      de.full_name || ' covering for ' || dr.full_name AS label
+               FROM delegation d
+               JOIN auth_user dr ON dr.id = d.delegator_user_id
+               JOIN auth_user de ON de.id = d.delegate_user_id
+               WHERE d.delegation_id = ANY(%s)""",
+        href="/cover",
+        noun="Cover arrangement",
+    ),
+    "rights_request": _Spec(
+        sql="""SELECT r.request_id AS id, r.request_uuid::text AS uuid,
+                      r.reference || ' — ' || r.request_type::text
+                        || coalesce(' — ' || s.full_name, '') AS label
+               FROM rights_request r LEFT JOIN auth_user s ON s.id = r.subject_user_id
+               WHERE r.request_id = ANY(%s)""",
+        href="/requests/{uuid}",
+        # Her own request, on her own page. The staff console refuses her.
+        subject_href="/my-requests",
+        noun="Rights request",
+    ),
+    "rights_request_holder": _Spec(
+        sql="""SELECT h.holder_id AS id, r.request_uuid::text AS uuid,
+                      h.label || ' — ' || r.reference AS label
+               FROM rights_request_holder h JOIN rights_request r ON r.request_id = h.request_id
+               WHERE h.holder_id = ANY(%s)""",
+        href="/requests/{uuid}",
+        subject_href="/my-requests",
+        noun="Holder ticket",
+    ),
+    "rights_request_item": _Spec(
+        sql="""SELECT i.item_id AS id, r.request_uuid::text AS uuid,
+                      da.source_asset_ref || ' — ' || r.reference AS label
+               FROM rights_request_item i
+               JOIN rights_request r ON r.request_id = i.request_id
+               JOIN asset_consent ac ON ac.asset_consent_id = i.asset_consent_id
+               JOIN data_asset da    ON da.asset_id = ac.asset_id
+               WHERE i.item_id = ANY(%s)""",
+        href="/requests/{uuid}",
+        subject_href="/my-requests",
+        noun="Erasure scope item",
+    ),
+    "nomination": _Spec(
+        sql="""SELECT n.nomination_id AS id, n.nomination_uuid::text AS uuid,
+                      n.nominee_name || ' for ' || p.full_name AS label
+               FROM nomination n JOIN auth_user p ON p.id = n.principal_user_id
+               WHERE n.nomination_id = ANY(%s)""",
+        href=None,
+        subject_href="/my-requests",
+        noun="Nomination",
+    ),
 }
 
 

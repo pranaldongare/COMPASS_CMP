@@ -80,6 +80,9 @@ celery_app.conf.update(
         "cmp.notifications.send_login_code": {"queue": "high_priority"},
         "cmp.notifications.send_consent_code": {"queue": "high_priority"},
         "cmp.notifications.send_password_reset": {"queue": "high_priority"},
+        "cmp.notifications.send_rights_verification_code": {"queue": "high_priority"},
+        "cmp.notifications.send_registration_code": {"queue": "high_priority"},
+        "cmp.notifications.send_nomination_code": {"queue": "high_priority"},
         "cmp.notifications.*": {"queue": "notifications"},
         "cmp.exports.*": {"queue": "documents"},
         "cmp.imports.*": {"queue": "documents"},
@@ -103,6 +106,12 @@ celery_app.conf.update(
         "flag-unmapped-assets": {
             "task": "cmp.maintenance.flag_unmapped_assets",
             "schedule": crontab(hour="*/6", minute="30"),
+        },
+        # Rights requests: close what never verified, and note retention floors
+        # that have passed so the erasure they deferred reaches the DPO's queue.
+        "sweep-rights-requests": {
+            "task": "cmp.maintenance.sweep_rights_requests",
+            "schedule": crontab(hour="2", minute="30"),
         },
     },
 )

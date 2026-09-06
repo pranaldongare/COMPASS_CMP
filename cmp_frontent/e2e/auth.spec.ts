@@ -25,14 +25,23 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
+import { freshCode, latestCodeFor } from "./support/outbox";
+
 const LOGIN = process.env.E2E_STAFF_LOGIN;
 const PASSWORD = process.env.E2E_STAFF_PASSWORD;
 
 async function signIn(page: Page) {
+  const before = latestCodeFor(LOGIN!);
   await page.goto("/sign-in");
   await page.getByLabel(/email or username/i).fill(LOGIN!);
   await page.getByLabel(/^password/i).fill(PASSWORD!);
   await page.getByRole("button", { name: /^sign in$/i }).click();
+  // Every staff role steps up with a code; it is in the dev outbox.
+  await page.waitForURL(/dashboard|verify/, { timeout: 20_000 });
+  if (page.url().includes("verify")) {
+    await page.getByLabel(/digit code/i).fill(await freshCode(LOGIN!, before));
+    await page.getByRole("button", { name: /verify and continue/i }).click();
+  }
 }
 
 test.describe("security headers", () => {

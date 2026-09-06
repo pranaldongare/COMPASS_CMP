@@ -36,6 +36,7 @@ from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
+from cmp.validation import is_mobile, normalise_contact, normalise_mobile
 
 log = get_logger("cmp.consent")
 
@@ -150,8 +151,8 @@ async def register_subject(
     *,
     token: str,
     full_name: str,
-    email: str,
-    mobile: str | None,
+    mobile: str,
+    email: str | None,
     organization_id: str | None,
     person_type: str | None,
 ) -> dict[str, Any]:
@@ -163,14 +164,19 @@ async def register_subject(
     who otherwise leaves no artefact to trace.
     """
     link = await resolve_link(conn, token)
-
-    existing = await user_repo.by_email(conn, email)
+    mobile = normalise_mobile(mobile)
+    email = email.strip().lower() if email and email.strip() else None
+    if not mobile:
+        raise ValidationFailed("A mobile number is required", field="mobile")
+    existing = await user_repo.by_contact(conn, mobile)
+    if not existing and email:
+        existing = await user_repo.by_contact(conn, email)
     if existing:
         if existing["role"] != "data_subject":
             # A staff account arriving through a consent link is either a mistake
             # or an attempt to bind staff identity to a subject record.
             raise Conflict(
-                "That email belongs to a staff account. Sign in instead.",
+                "Those details belong to a staff account. Sign in instead.",
                 code="staff_account",
             )
         user = existing
@@ -206,10 +212,11 @@ async def register_subject(
 
 async def send_contact_code(conn: Conn, *, token: str, contact: str) -> None:
     link = await resolve_link(conn, token)
+    contact = normalise_contact(contact)
 
     await ratelimit.enforce(
         "consent_otp_contact",
-        contact.lower(),
+        contact,
         limit=settings.otp_requests_per_contact_per_hour,
         window_s=3600,
         message="Too many code requests for this contact.",
@@ -222,7 +229,7 @@ async def send_contact_code(conn: Conn, *, token: str, contact: str) -> None:
         message="Too many code requests for this link.",
     )
 
-    issued = await otp.issue(otp.Scope.CONSENT_LINK, f"{link['link_uuid']}:{contact.lower()}")
+    issued = await otp.issue(otp.Scope.CONSENT_LINK, f"{link['link_uuid']}:{contact}")
     from cmp.tasks.authentication import send_consent_code
     from cmp.tasks.dispatch import dispatch_required
 
@@ -236,14 +243,22 @@ async def verify_contact_code(conn: Conn, *, token: str, contact: str, code: str
     the session established here, never from the request body.
     """
     link = await resolve_link(conn, token)
-    await otp.require(otp.Scope.CONSENT_LINK, f"{link['link_uuid']}:{contact.lower()}", code)
+    contact = normalise_contact(contact)
+    await otp.require(otp.Scope.CONSENT_LINK, f"{link['link_uuid']}:{contact}", code)
 
     user = await user_repo.by_contact(conn, contact)
     if not user:
         raise NotFound("Registration")
 
-    if user["status"] == "pending":
-        await user_repo.set_status(conn, user["id"], "active")
+    # The medium answered. Every medium given at registration has to, and the
+    # account - and the session - waits for the last of them.
+    user = await user_repo.mark_contact_verified(
+        conn, user["id"], "mobile" if is_mobile(contact) else "email"
+    )
+    remaining = user_repo.unverified_mediums(user)
+    complete = not remaining
+    if complete and user["status"] == "pending":
+        user = await user_repo.set_status(conn, user["id"], "active")
 
     await audit.record(
         conn,
@@ -252,9 +267,9 @@ async def verify_contact_code(conn: Conn, *, token: str, contact: str, code: str
         entity_id=user["id"],
         subject_user_id=user["id"],
         actor_user_id=user["id"],
-        detail={"flow": "consent_link", "link": str(link["link_uuid"])},
+        detail={"flow": "consent_link", "link": str(link["link_uuid"]), "complete": complete},
     )
-    return {"user": user, "link": link}
+    return {"user": user, "link": link, "complete": complete, "remaining": remaining}
 
 
 async def serve_notice(
@@ -380,6 +395,35 @@ async def capture(
                 f"'{purpose['name']}' cannot be refused on this notice",
                 field="grants",
             )
+
+    # Section 9. A child's personal data may only be processed with verifiable
+    # consent from a parent or lawful guardian, which this platform does not
+    # collect - so a purpose the registry has not marked as permitted for
+    # minors cannot be granted by a data principal it knows to be one. Unknown
+    # age is neither: most accounts were registered through a link that never
+    # asked, and treating "we did not ask" as "adult" is the mistake the
+    # nullable column exists to avoid. The gap is recorded rather than decided.
+    granted_uuids = [u for u, v in grants.items() if v]
+    if granted_uuids:
+        age = await (
+            await conn.execute(
+                "SELECT cmp_is_minor(dob) AS is_minor FROM auth_user WHERE id = %s", (user_id,)
+            )
+        ).fetchone()
+        if age and age["is_minor"] is True:
+            blocked = sorted(
+                purpose["name"]
+                for u, purpose in by_uuid.items()
+                if u in granted_uuids and not purpose.get("permitted_for_minors")
+            )
+            if blocked:
+                raise ConsentDefective(
+                    "This notice includes purposes that cannot be processed for a person "
+                    "under eighteen without a parent or guardian's verifiable consent "
+                    f"(s.9): {', '.join(blocked)}. Please contact the Privacy Office.",
+                    code="consent_minor_not_permitted",
+                    details={"blocked": blocked},
+                )
 
     existing = await repo.current_for_user_notice(
         conn, user_id=user_id, notice_id=link["notice_id"]

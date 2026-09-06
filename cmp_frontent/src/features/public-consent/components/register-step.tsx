@@ -1,8 +1,8 @@
 /**
  * Step one: who is this.
  *
- * The mobile number is optional and the email is not, because the one-time code
- * goes to the email — asking for a number that will not be used is asking for
+ * The mobile is required and the email optional, because the one-time code
+ * goes to the mobile first — asking for a number that will not be used is asking for
  * personal data with no purpose, which is the thing this whole system exists to
  * prevent.
  */
@@ -28,7 +28,7 @@ export function RegisterStep({
   onError,
 }: {
   token: string;
-  onDone: (email: string) => void;
+  onDone: (contacts: string[]) => void;
   onError: (message: string | null) => void;
 }) {
   const [form, setForm] = React.useState({ full_name: "", email: "", mobile: "" });
@@ -41,12 +41,16 @@ export function RegisterStep({
     try {
       await register(token, {
         full_name: form.full_name,
-        email: form.email,
-        mobile: form.mobile || undefined,
+        mobile: form.mobile,
+        email: form.email || undefined,
         person_type: "external",
       });
-      await requestOtp(token, form.email);
-      onDone(form.email);
+      // A code to every contact given: each is confirmed before she reads.
+      const contacts = [form.mobile, ...(form.email ? [form.email] : [])];
+      for (const contact of contacts) {
+        await requestOtp(token, contact);
+      }
+      onDone(contacts);
     } catch (err) {
       onError(err instanceof ApiError ? err.userMessage() : "Could not register.");
     } finally {
@@ -76,19 +80,7 @@ export function RegisterStep({
               />
             )}
           </Field>
-          <Field label="Email" hint="We will send a six-digit code to confirm it." required>
-            {(props) => (
-              <Input
-                {...props}
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                autoComplete="email"
-                required
-              />
-            )}
-          </Field>
-          <Field label="Mobile" hint="Optional.">
+          <Field label="Mobile" hint="We will send a six-digit code to confirm it." required>
             {(props) => (
               <Input
                 {...props}
@@ -97,6 +89,18 @@ export function RegisterStep({
                 onChange={(e) => setForm({ ...form, mobile: e.target.value })}
                 autoComplete="tel"
                 placeholder="+91 ..."
+                required
+              />
+            )}
+          </Field>
+          <Field label="Email" hint="Optional. If you give one, we will confirm it too.">
+            {(props) => (
+              <Input
+                {...props}
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                autoComplete="email"
               />
             )}
           </Field>
