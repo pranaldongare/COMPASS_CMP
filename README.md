@@ -3,12 +3,13 @@
 A consent management platform built to India's **Digital Personal Data Protection
 Act 2023** and the DPDP Rules 2025.
 
-Two projects in one repository:
+Three projects in one repository:
 
 | Path | Stack | What it is |
 |---|---|---|
 | [`cmp_backend/`](cmp_backend) | FastAPI · PostgreSQL 16 · Redis · Celery | The API. 144 endpoints, raw SQL over psycopg 3, no ORM. |
-| [`cmp_frontent/`](cmp_frontent) | Next.js 16 · React 19 · Tailwind 4 | The console and the public consent flow. |
+| [`cmp_internal_user_interface/`](cmp_internal_user_interface) | Next.js 16 · React 19 · Tailwind 4 | The staff console: password + MFA sign-in, the registers, the DPO's rights queue. Port 3000. |
+| [`cmp_public_user_interface/`](cmp_public_user_interface) | Next.js 16 · React 19 · Tailwind 4 | The data principal's portal: the public consent flow, sign-up, one-time-code sign-in, the rights pages, her own records. Port 3001. |
 
 ---
 
@@ -64,19 +65,35 @@ uv run python -m cmp --port 8000
 The API is on `http://127.0.0.1:8000`, with interactive docs at `/docs` outside
 production.
 
-### Frontend
+### Staff console
 
 ```bash
-cd cmp_frontent
+cd cmp_internal_user_interface
 cp .env.example .env.local
 npm install
 npm run dev
 ```
 
-The console is on `http://localhost:3000`. Requests to `/api/*` are proxied to
-the API by `next.config.ts`, so the session cookie stays first-party — a
-cross-site cookie is silently dropped by the browser and looks exactly like a
-broken login.
+The console is on `http://localhost:3000`.
+
+### Data-principal portal
+
+```bash
+cd cmp_public_user_interface
+cp .env.example .env.local
+npm install
+npm run dev
+```
+
+The portal is on `http://localhost:3001`. Set the backend's `PUBLIC_BASE_URL`
+to it, because the links the API puts in emails - a nominee's acceptance link,
+for one - land here.
+
+In both, requests to `/api/*` are proxied to the API by `next.config.ts`, so
+the session cookie stays first-party — a cross-site cookie is silently dropped
+by the browser and looks exactly like a broken login. Each portal points the
+wrong kind of account at the other (`NEXT_PUBLIC_SUBJECT_PORTAL_URL` and
+`NEXT_PUBLIC_STAFF_PORTAL_URL`).
 
 ### Background workers
 
@@ -116,11 +133,13 @@ mobile `+919000000001`.
 # Backend — 128 tests. Integration tests need a live PostgreSQL.
 cd cmp_backend && uv run pytest
 
-# Frontend — unit
-cd cmp_frontent && npm run test
+# Frontends — unit
+cd cmp_internal_user_interface && npm run test
+cd cmp_public_user_interface && npm run test
 
-# Frontend — end to end, against a running API and console
-cd cmp_frontent && E2E_BASE_URL=http://localhost:3000 npx playwright test
+# Frontends — end to end, against a running API and the portal in question
+cd cmp_internal_user_interface && E2E_BASE_URL=http://localhost:3000 npx playwright test
+cd cmp_public_user_interface && E2E_BASE_URL=http://localhost:3001 npx playwright test
 ```
 
 CI runs lint, `mypy --strict`, both test suites, and exercises the migrations
@@ -142,10 +161,15 @@ cmp_backend/
   migrations/     4 Alembic revisions, all raw SQL
   tests/          89 unit, 39 integration
 
-cmp_frontent/
-  src/app/        App Router — 29 routes
+cmp_internal_user_interface/
+  src/app/        App Router — the staff routes
   src/components/ primitives, charts, forms, the app shell
   src/lib/        typed API client, queries, mutations, types
+  e2e/            Playwright
+
+cmp_public_user_interface/
+  src/app/        c/[token], sign-up, sign-in, rights/*, my-consents, my-requests
+  src/features/   public-consent, my-consents, the public + /me halves of rights
   e2e/            Playwright
 ```
 

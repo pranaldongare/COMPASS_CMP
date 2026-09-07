@@ -876,7 +876,7 @@ cmp_backend/
 Generated artefacts are omitted: `.venv`, `node_modules`, `__pycache__`, `.next`, build output, test results, and anything holding secrets or uploads.
 
 ```
-cmp_frontent/
+cmp_internal_user_interface/
 ├── e2e/
 │   ├── support/
 │   │   └── session.ts
