@@ -5,7 +5,7 @@ TypeScript strict, Tailwind 4, TanStack Query.
 
 Everything a data principal uses - the public consent flow, sign-up, the
 public rights pages, her own consents and requests - lives in
-[`../cmp_public_user_interface`](../cmp_public_user_interface), a separate
+[`../cmp_public_ui`](../cmp_public_ui), a separate
 deployment on its own port. This console has no route for any of it. A data
 subject who signs in here is pointed at that portal
 (`NEXT_PUBLIC_SUBJECT_PORTAL_URL`), and the sign-in page links to it.

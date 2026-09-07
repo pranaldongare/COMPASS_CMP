@@ -5,7 +5,7 @@ registration, the public rights pages, and a signed-in view of her own consents
 and rights requests. Next.js 16 (App Router), React 19, TypeScript strict,
 Tailwind 4, TanStack Query.
 
-Split out of `cmp_internal_user_interface`, which is the staff console alone. The two
+Split out of `cmp_internal_ui`, which is the staff console alone. The two
 share a backend, a design system and most of `src/lib`, but nothing a member of
 staff uses ships here, and nothing a data principal uses ships there.
 

@@ -8,8 +8,8 @@ Three projects in one repository:
 | Path | Stack | What it is |
 |---|---|---|
 | [`cmp_backend/`](cmp_backend) | FastAPI · PostgreSQL 16 · Redis · Celery | The API. 144 endpoints, raw SQL over psycopg 3, no ORM. |
-| [`cmp_internal_user_interface/`](cmp_internal_user_interface) | Next.js 16 · React 19 · Tailwind 4 | The staff console: password + MFA sign-in, the registers, the DPO's rights queue. Port 3000. |
-| [`cmp_public_user_interface/`](cmp_public_user_interface) | Next.js 16 · React 19 · Tailwind 4 | The data principal's portal: the public consent flow, sign-up, one-time-code sign-in, the rights pages, her own records. Port 3001. |
+| [`cmp_internal_ui/`](cmp_internal_ui) | Next.js 16 · React 19 · Tailwind 4 | The staff console: password + MFA sign-in, the registers, the DPO's rights queue. Port 3000. |
+| [`cmp_public_ui/`](cmp_public_ui) | Next.js 16 · React 19 · Tailwind 4 | The data principal's portal: the public consent flow, sign-up, one-time-code sign-in, the rights pages, her own records. Port 3001. |
 
 ---
 
@@ -68,7 +68,7 @@ production.
 ### Staff console
 
 ```bash
-cd cmp_internal_user_interface
+cd cmp_internal_ui
 cp .env.example .env.local
 npm install
 npm run dev
@@ -79,7 +79,7 @@ The console is on `http://localhost:3000`.
 ### Data-principal portal
 
 ```bash
-cd cmp_public_user_interface
+cd cmp_public_ui
 cp .env.example .env.local
 npm install
 npm run dev
@@ -134,12 +134,12 @@ mobile `+919000000001`.
 cd cmp_backend && uv run pytest
 
 # Frontends — unit
-cd cmp_internal_user_interface && npm run test
-cd cmp_public_user_interface && npm run test
+cd cmp_internal_ui && npm run test
+cd cmp_public_ui && npm run test
 
 # Frontends — end to end, against a running API and the portal in question
-cd cmp_internal_user_interface && E2E_BASE_URL=http://localhost:3000 npx playwright test
-cd cmp_public_user_interface && E2E_BASE_URL=http://localhost:3001 npx playwright test
+cd cmp_internal_ui && E2E_BASE_URL=http://localhost:3000 npx playwright test
+cd cmp_public_ui && E2E_BASE_URL=http://localhost:3001 npx playwright test
 ```
 
 CI runs lint, `mypy --strict`, both test suites, and exercises the migrations
@@ -161,13 +161,13 @@ cmp_backend/
   migrations/     4 Alembic revisions, all raw SQL
   tests/          89 unit, 39 integration
 
-cmp_internal_user_interface/
+cmp_internal_ui/
   src/app/        App Router — the staff routes
   src/components/ primitives, charts, forms, the app shell
   src/lib/        typed API client, queries, mutations, types
   e2e/            Playwright
 
-cmp_public_user_interface/
+cmp_public_ui/
   src/app/        c/[token], sign-up, sign-in, rights/*, my-consents, my-requests
   src/features/   public-consent, my-consents, the public + /me halves of rights
   e2e/            Playwright
