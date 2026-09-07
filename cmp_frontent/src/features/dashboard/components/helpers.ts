@@ -19,20 +19,7 @@ import { Segment } from "@/components/ui/charts";
 export function consentComposition(
   counts: Record<string, number>,
 ): { segments: Segment[]; consumed: string[] } | null {
-  // The data subject's own record: explicit states, nothing to derive.
-  if ("active" in counts && ("withdrawn" in counts || "declined" in counts)) {
-    return {
-      segments: [
-        { key: "active", label: "Active", value: counts.active ?? 0, color: "var(--viz-1)" },
-        { key: "withdrawn", label: "Withdrawn", value: counts.withdrawn ?? 0, color: "var(--viz-3)" },
-        // Declined is grey rather than red: it is a valid answer, not a fault.
-        { key: "declined", label: "Declined", value: counts.declined ?? 0, color: "var(--viz-neutral)" },
-      ],
-      consumed: ["active", "withdrawn", "declined"],
-    };
-  }
-
-  // Staff view: the register reports a total and the withdrawals within it.
+  // The register reports a total and the withdrawals within it.
   if ("total_consents" in counts && "withdrawals" in counts) {
     const withdrawn = counts.withdrawals ?? 0;
     const standing = Math.max(0, (counts.total_consents ?? 0) - withdrawn);
@@ -63,6 +50,6 @@ export function roleBlurb(role: string | null | undefined): string {
     case "admin":
       return "Accounts, lockouts, and the state of the processor and source registry.";
     default:
-      return "Your consents and what has happened to your data.";
+      return "What is waiting for you, and the state of the platform.";
   }
 }

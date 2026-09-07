@@ -48,9 +48,7 @@ const SECTION_OF: ReadonlyArray<readonly [prefix: string, key: string]> = [
   ["/sources", "sources"],
   ["/sites", "sites"],
   ["/consents", "consents"],
-  ["/my-consents", "consents"],
   ["/requests", "requests"],
-  ["/my-requests", "requests"],
   ["/links", "links"],
   ["/exports", "exports"],
   ["/imports", "imports"],
@@ -64,7 +62,7 @@ export function RequireSection({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { me } = useAuth();
 
-  // Longest prefix wins, so `/my-consents` is not matched by `/consents`.
+  // Longest prefix wins.
   const match = [...SECTION_OF]
     .sort((a, b) => b[0].length - a[0].length)
     .find(([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`));

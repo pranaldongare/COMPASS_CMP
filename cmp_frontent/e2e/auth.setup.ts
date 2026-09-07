@@ -46,27 +46,13 @@ const STAFF = [
 ];
 
 /**
- * The data principal, who has no password at all.
- *
- * `password_hash` is nullable for exactly this reason: she never chose one and
- * was never given one. She signs in with a one-time code from a different form
- * on the same page, so her session cannot be produced by the helpers above -
- * and until this existed the suite had no way to drive her console at all.
- */
-const SUBJECT = { role: "subject", contact: "subject@cmp.local" };
-
-/**
  * Is a saved session still good?
  *
- * The data principal signs in with a one-time code, and the API allows only a
- * handful per contact per hour — a control that is working, and one the suite
- * should live within rather than switch off. Signing her in on every run spends
- * that budget on nothing: her session outlives a single run, so the cheapest
- * correct thing is to check the one already on disk before asking for another.
- *
- * Since every staff sign-in also spends a code, the same check applies to all
- * of them. `e2e/auth.spec.ts` still signs in from scratch, because the thing it
- * tests *is* the sign-in.
+ * Every staff sign-in spends an MFA code from a per-account budget the suite
+ * should live within rather than switch off. A session outlives a single run,
+ * so the cheapest correct thing is to check the one already on disk before
+ * asking for another. `e2e/auth.spec.ts` still signs in from scratch, because
+ * the thing it tests *is* the sign-in.
  */
 async function sessionStillWorks(browser: Browser, role: string): Promise<boolean> {
   if (!fs.existsSync(statePath(role))) return false;
@@ -121,25 +107,3 @@ for (const { role, login } of STAFF) {
     await context.storageState({ path: statePath(role) });
   });
 }
-
-setup(`sign in as ${SUBJECT.role}`, async ({ page, context, browser }) => {
-  // Reuse before spending a one-time code. See `sessionStillWorks`.
-  if (await sessionStillWorks(browser, SUBJECT.role)) return;
-
-  const before = latestCodeFor(SUBJECT.contact);
-
-  await page.goto("/sign-in");
-  await page.getByRole("tab", { name: /data subject/i }).click();
-  await page.getByRole("radio", { name: /^email$/i }).check();
-  await page.getByLabel(/email address/i).fill(SUBJECT.contact);
-  await page.getByRole("button", { name: /send.*code|continue/i }).click();
-
-  await page.getByLabel(/six-digit code/i).fill(await freshCode(SUBJECT.contact, before));
-  await page.getByRole("button", { name: /^verify$/i }).click();
-
-  // Her console has no staff sidebar to wait on, so wait for the page itself.
-  await page.waitForURL(/\/(dashboard|my-consents)/, { timeout: 20_000 });
-
-  fs.mkdirSync(STATE_DIR, { recursive: true });
-  await context.storageState({ path: statePath(SUBJECT.role) });
-});

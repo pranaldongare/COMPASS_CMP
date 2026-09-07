@@ -26,6 +26,10 @@ export const config = {
 
   appName: process.env.NEXT_PUBLIC_APP_NAME ?? "Consent Management Platform",
 
+  /** The data principal's portal: consent links, sign-up, rights, her own
+   *  records. A data subject who signs in here is sent there. */
+  subjectPortalUrl: process.env.NEXT_PUBLIC_SUBJECT_PORTAL_URL ?? "http://localhost:3001",
+
   /** Matches the backend's csrf_header_name. Changing one without the other
    *  breaks every write, so both read from the same documented default. */
   csrfHeader: process.env.NEXT_PUBLIC_CSRF_HEADER ?? "X-CSRF-Token",

@@ -49,7 +49,7 @@ test.describe("security headers", () => {
     page,
   }) => {
     const first = await page.goto("/sign-in");
-    const second = await page.goto("/rights");
+    const second = await page.goto("/sign-in/reset");
 
     const policyOf = (r: NonNullable<Awaited<ReturnType<Page["goto"]>>>) =>
       r.headers()["content-security-policy"] ?? "";
@@ -154,7 +154,7 @@ test.describe("route protection", () => {
   });
 
   test("public routes stay reachable with no session", async ({ page }) => {
-    for (const path of ["/sign-in", "/rights", "/c/notarealtokenatall1234567890"]) {
+    for (const path of ["/sign-in", "/sign-in/reset"]) {
       const response = await page.goto(path);
       expect(response!.status(), `${path} should not redirect`).toBeLessThan(400);
       await expect(page).toHaveURL(new RegExp(path.split("/")[1]));

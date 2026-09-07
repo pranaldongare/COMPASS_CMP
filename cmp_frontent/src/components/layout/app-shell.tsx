@@ -46,7 +46,6 @@ import { BrandMark } from "@/components/ui/graphics";
 import { Button } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { config } from "@/lib/config";
-import type { Role } from "@/types";
 import { cn, initials } from "@/lib/format";
 import { useAuth, useTheme } from "@/providers";
 
@@ -57,22 +56,12 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  /** Some keys mean different destinations for different roles - a data
-   *  subject's "consents" is her own record, not the staff register. */
-  roles?: Role[];
 }
 
 interface NavSection {
   title: string;
   items: NavItem[];
 }
-
-/** Everyone who is not a data principal.
- *
- *  Derived by exclusion so that adding a role does not require remembering to
- *  add it here — the one thing that distinguishes a data subject is the thing
- *  the list is actually about. */
-const STAFF_ROLES: Role[] = ["dpo", "dco", "dco_admin", "rco", "rnd_user", "admin"];
 
 const SECTIONS: NavSection[] = [
   {
@@ -91,32 +80,7 @@ const SECTIONS: NavSection[] = [
   {
     title: "Consent",
     items: [
-      // Staff see the consent register; a data subject sees only her own records.
-      //
-      // Listed as "every staff role" rather than by name. Naming them meant a
-      // role added later silently lost the section — the server said they had
-      // it, the sidebar disagreed, and nothing failed.
-      {
-        key: "consents",
-        href: "/consents",
-        label: "Consents",
-        icon: FileText,
-        roles: STAFF_ROLES,
-      },
-      {
-        key: "consents",
-        href: "/my-consents",
-        label: "My consents",
-        icon: FileText,
-        roles: ["data_subject"],
-      },
-      {
-        key: "requests",
-        href: "/my-requests",
-        label: "My requests",
-        icon: Scale,
-        roles: ["data_subject"],
-      },
+      { key: "consents", href: "/consents", label: "Consents", icon: FileText },
       { key: "links", href: "/links", label: "Consent links", icon: Link2 },
       { key: "sites", href: "/sites", label: "Collection sites", icon: MapPin },
     ],
@@ -140,15 +104,8 @@ const SECTIONS: NavSection[] = [
     title: "Oversight",
     items: [
       // The DPO's register of rights requests, and - for the administrator -
-      // the grievances escalated away from the DPO. A data principal's key of
-      // the same name resolves to her own page, below.
-      {
-        key: "requests",
-        href: "/requests",
-        label: "Rights requests",
-        icon: Scale,
-        roles: STAFF_ROLES,
-      },
+      // the grievances escalated away from the DPO.
+      { key: "requests", href: "/requests", label: "Rights requests", icon: Scale },
       { key: "audit", href: "/audit", label: "Audit trail", icon: ShieldCheck },
       { key: "users", href: "/users", label: "Users", icon: Users },
       { key: "cover", href: "/cover", label: "Cover", icon: HandHelping },
@@ -176,14 +133,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     [pathname],
   );
 
-  // Two filters, both necessary: the server says which sections this role has,
-  // and `roles` disambiguates the keys that mean different destinations.
+  // The server says which sections this role has; nothing renders that it
+  // did not grant.
   const sections = SECTIONS.map((section) => ({
     ...section,
-    items: section.items.filter(
-      (item) =>
-        me?.nav.includes(item.key) && (!item.roles || (me && item.roles.includes(me.role))),
-    ),
+    items: section.items.filter((item) => me?.nav.includes(item.key)),
   })).filter((section) => section.items.length > 0);
 
   return (

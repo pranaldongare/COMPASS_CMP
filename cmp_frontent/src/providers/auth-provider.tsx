@@ -18,6 +18,7 @@ import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 
 import { apiGet, apiPost, setUnauthenticatedHandler } from "@/lib/api";
+import { config } from "@/lib/config";
 import { ApiError } from "@/lib/errors";
 import { isPublicPath } from "@/lib/security/public-routes";
 import type { Me, Role } from "@/types";
@@ -143,7 +144,7 @@ export function RequireAuth({
   roles?: Role[];
   fallback?: React.ReactNode;
 }) {
-  const { me, isResolved, needsMfa } = useAuth();
+  const { me, isResolved, needsMfa, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -159,6 +160,36 @@ export function RequireAuth({
   }, [isResolved, me, needsMfa, router, pathname]);
 
   if (!isResolved || !me) return <>{fallback ?? null}</>;
+
+  // The session cookie is shared with the data principal's portal when both
+  // run on the same host, so somebody who signed in there and opened this
+  // console arrives signed in. Nothing here is for her; say where she belongs.
+  if (me.role === "data_subject") {
+    return (
+      <div className="mx-auto max-w-lg px-6 py-16 text-center">
+        <h1 className="text-lg font-semibold">This console is for staff</h1>
+        <p className="mt-2 text-sm text-text-muted">
+          You are signed in as {me.full_name}. Your consents, your requests and
+          your rights are on the consent portal.
+        </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <a
+            href={config.subjectPortalUrl}
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white"
+          >
+            Go to the consent portal
+          </a>
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium"
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (roles && !roles.includes(me.role)) {
     return (

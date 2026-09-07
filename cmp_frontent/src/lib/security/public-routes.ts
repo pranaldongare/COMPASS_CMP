@@ -12,8 +12,14 @@
  * Kept free of imports so the proxy can use it on the edge runtime.
  */
 
-/** Path prefixes reachable with no session at all. */
-export const PUBLIC_PREFIXES = ["/sign-in", "/sign-up", "/rights", "/c/"] as const;
+/**
+ * Path prefixes reachable with no session at all.
+ *
+ * Only sign-in and its reset and verify steps. Sign-up, the public rights
+ * pages and consent links belong to the data principal's portal, which is a
+ * separate deployment.
+ */
+export const PUBLIC_PREFIXES = ["/sign-in"] as const;
 
 /**
  * Is this path public?

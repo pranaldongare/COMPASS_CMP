@@ -1,7 +1,14 @@
-# CMP — Consent Management Platform (frontend)
+# CMP — Consent Management Platform (staff console)
 
-The console and the public consent flow for the CMP backend. Next.js 16 (App
-Router), React 19, TypeScript strict, Tailwind 4, TanStack Query.
+The staff console for the CMP backend. Next.js 16 (App Router), React 19,
+TypeScript strict, Tailwind 4, TanStack Query.
+
+Everything a data principal uses - the public consent flow, sign-up, the
+public rights pages, her own consents and requests - lives in
+[`../cmp_datasubject_frontent`](../cmp_datasubject_frontent), a separate
+deployment on its own port. This console has no route for any of it. A data
+subject who signs in here is pointed at that portal
+(`NEXT_PUBLIC_SUBJECT_PORTAL_URL`), and the sign-in page links to it.
 
 ---
 
@@ -41,10 +48,7 @@ src/
                           cookie-presence redirect (Next 16's middleware.ts)
   app/                    routes
     (app)/                authenticated — RequireAuth, AppShell, RequireSection
-    c/[token]/            the public consent flow
-    sign-in/              staff password + MFA step-up, data-subject code, reset
-    sign-up/              data-principal self-registration
-    rights/               public rights information and requests (Rule 9, 14)
+    sign-in/              staff password + MFA step-up, reset
   features/<name>/        one folder per business area:
     api.ts                thin endpoint functions - no React
     queries.ts            useQuery hooks, keyed from lib/query/keys
@@ -106,28 +110,6 @@ would corrupt the disclosure record.
 
 ---
 
-## The consent flow
-
-`src/app/c/[token]` is the only screen a data subject is required to use, and the
-decisions in it are not cosmetic:
-
-- **Nothing is pre-ticked.** Consent has to be an affirmative action; a
-  pre-ticked box is not one.
-- **Accept and Decline have equal prominence.** Making refusal harder to find
-  than agreement is the pattern the statute is aimed at, and withdrawal must be
-  as easy as consent was.
-- **Every purpose must be answered.** Silence is not consent, so the submit
-  button stays disabled until each one has an explicit yes or no. Declining
-  answers them all with a no rather than sending a partial set.
-- **`served_at` comes from the server** and is echoed back untouched. It is what
-  evidences s.5(1) — that the notice was given before consent was asked for — and
-  a client-supplied timestamp would make that unfalsifiable.
-- **An invalid link renders no notice content**, and does not say *which* of
-  expired, revoked or mistyped it was. Naming one tells a token-guesser which of
-  their guesses was structurally valid.
-
----
-
 ## Design system
 
 Tokens live in `src/styles/tokens.css` and nowhere else. Colour is OKLCH, so equal
@@ -149,7 +131,6 @@ rather than red — it is a right being exercised, not an error.
 ```bash
 npm test                                    # unit
 npm run e2e                                 # end-to-end
-E2E_CONSENT_TOKEN=<token> npm run e2e       # includes the consent journey
 ```
 
 Unit tests cover the pieces where a mistake is invisible in review: error
@@ -157,8 +138,7 @@ classification, and the formatting of values a data subject reads (a retention
 period rendered as `P3Y` instead of "3 years" is a notice nobody understands).
 
 End-to-end tests run in a real browser because that is the only place the things
-being tested exist: the HttpOnly cookie, the CSRF header, and the multi-step
-consent journey. They assert the security properties too — that an unauthenticated
+being tested exist: the HttpOnly cookie and the CSRF header. They assert the security properties too — that an unauthenticated
 visitor never sees a flash of the page before redirecting, and that a failed
 sign-in does not reveal whether the account exists.
 

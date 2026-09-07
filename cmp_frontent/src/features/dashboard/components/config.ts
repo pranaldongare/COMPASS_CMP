@@ -52,9 +52,6 @@ export const COUNT_LABELS: Record<string, string> = {
  * question is always "which ones", and making them find the list by hand is the
  * difference between a dashboard and a poster.
  *
- * Keys that mean different things to different roles resolve at render time —
- * "consents" is the staff register for staff and her own record for a data
- * subject.
  */
 export const COUNT_LINKS: Record<string, string> = {
   total: "/projects",
@@ -86,17 +83,6 @@ export const COUNT_LINKS: Record<string, string> = {
   requests_due_7d: "/requests",
   requests_unverified: "/requests?status=received",
   grievances_about_dpo: "/requests?type=grievance",
-};
-
-/** The data subject's own figures point at her own records, not the register. */
-export const SUBJECT_LINKS: Record<string, string> = {
-  active: "/my-consents",
-  withdrawn: "/my-consents",
-  declined: "/my-consents",
-  consents: "/my-consents",
-  times_shared: "/my-consents",
-  requests_open: "/my-requests",
-  requests_closed: "/my-requests",
 };
 
 /** Counts that are a problem when non-zero, rather than a neutral statistic. */

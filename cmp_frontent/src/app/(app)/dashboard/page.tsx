@@ -33,7 +33,6 @@ import {
   LIFECYCLE,
   QueueCard,
   RecentCard,
-  SUBJECT_LINKS,
   WARNING_COUNTS,
   consentComposition,
   roleBlurb,
@@ -45,7 +44,6 @@ export default function DashboardPage() {
   const { me } = useAuth();
   const { data, isLoading, error } = useDashboard();
 
-  const isSubject = me?.role === "data_subject";
   const counts = data?.counts ?? {};
   const lifecycle = LIFECYCLE.filter((k) => k in counts).map((k) => ({
     key: k,
@@ -85,9 +83,7 @@ export default function DashboardPage() {
               {tiles.map(([key, value]) => {
                 const alarming = WARNING_COUNTS.has(key) && value > 0;
                 const Icon = COUNT_ICONS[key];
-                const href = isSubject
-                  ? (SUBJECT_LINKS[key] ?? COUNT_LINKS[key])
-                  : (COUNT_LINKS[key] ?? (key === "consents" ? "/consents" : undefined));
+                const href = COUNT_LINKS[key] ?? (key === "consents" ? "/consents" : undefined);
                 return (
                   <StatTile
                     key={key}

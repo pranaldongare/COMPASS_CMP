@@ -106,7 +106,7 @@ export default defineConfig({
      */
     {
       name: "localhost-cookies",
-      testMatch: /(auth|consent-flow)\.spec\.ts/,
+      testMatch: /auth\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], baseURL: LOCALHOST_URL },
     },
 

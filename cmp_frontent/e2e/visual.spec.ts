@@ -96,13 +96,6 @@ test.describe("sign-in", () => {
     await expect(page).toHaveScreenshot("sign-in-dark.png", { fullPage: true });
   });
 
-  test("the data-subject tab", async ({ page }) => {
-    await page.goto("/sign-in");
-    await page.getByRole("tab", { name: /data subject/i }).click();
-    await settle(page);
-    await expect(page.locator("main")).toHaveScreenshot("sign-in-subject-tab.png");
-  });
-
   test("narrow", async ({ page }) => {
     // The brand panel is hidden below `lg`, and the layout it leaves behind is
     // a different composition rather than the same one squeezed.
@@ -110,22 +103,6 @@ test.describe("sign-in", () => {
     await page.goto("/sign-in");
     await settle(page);
     await expect(page).toHaveScreenshot("sign-in-narrow.png", { fullPage: true });
-  });
-});
-
-test.describe("public pages", () => {
-  test("rights", async ({ page }) => {
-    await page.goto("/rights");
-    await settle(page);
-    await expect(page).toHaveScreenshot("rights.png", { fullPage: true });
-  });
-
-  test("an invalid consent link", async ({ page }) => {
-    // Worth pinning: this is what somebody sees when a link has expired, and
-    // the whole design of the page is about being unhelpful in a kind way.
-    await page.goto("/c/thisisnotarealtokenatall12345678");
-    await settle(page);
-    await expect(page.locator("main")).toHaveScreenshot("consent-link-invalid.png");
   });
 });
 

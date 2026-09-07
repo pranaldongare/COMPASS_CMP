@@ -13,7 +13,7 @@
 
 import { z } from "zod";
 
-import { contact, email, mobile } from "@/schemas/contacts";
+import { email, mobile } from "@/schemas/contacts";
 import { optional, shortText } from "@/schemas/primitives";
 import { otpCode, password, passwordWithConfirmation } from "@/schemas/security";
 
@@ -29,13 +29,6 @@ export const passwordSignInSchema = z.object({
 });
 
 export type PasswordSignInValues = z.infer<typeof passwordSignInSchema>;
-
-/** Data subject sign-in: a one-time code to an email or mobile. */
-export const otpRequestSchema = z.object({
-  contact,
-});
-
-export type OtpRequestValues = z.infer<typeof otpRequestSchema>;
 
 /**
  * The second factor.

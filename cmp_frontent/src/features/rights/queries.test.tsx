@@ -4,16 +4,15 @@
  * Same discipline as the project tests: the real axios client, interceptors
  * and query wiring run; only the server is replaced. What these pin down is
  * that the register asks the right URL with its filters in the query string,
- * that a data principal's requests come from `/me`, and that a 403 on the
- * register surfaces as something the page can branch on without retrying.
+ * and that a 403 on the register surfaces as something the page can branch on without retrying.
  */
 
 import { waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { useMyRequests, useRequest, useRequests } from "@/features/rights";
+import { useRequest, useRequests } from "@/features/rights";
 import { keys } from "@/lib/query";
-import { makeClock, makeMyRequest, makeRequestRow } from "@/test/fixtures";
+import { makeRequestRow } from "@/test/fixtures";
 import { API, HttpResponse, errorResponse, http, server } from "@/test/server";
 import { renderHook } from "@/test/render";
 
@@ -71,15 +70,6 @@ describe("useRequest", () => {
     renderHook(() => useRequest(undefined));
     await new Promise((r) => setTimeout(r, 20));
     expect(calls).toBe(0);
-  });
-});
-
-describe("useMyRequests", () => {
-  it("reads the principal's own requests from /me", async () => {
-    server.use(http.get(`${API}/me/requests`, () => HttpResponse.json([makeMyRequest()])));
-    const { result } = renderHook(() => useMyRequests());
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data?.[0].clock.days_remaining).toBe(makeClock().days_remaining);
   });
 });
 

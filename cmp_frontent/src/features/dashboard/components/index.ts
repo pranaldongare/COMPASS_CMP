@@ -10,7 +10,6 @@
 export {
   COUNT_LABELS,
   COUNT_LINKS,
-  SUBJECT_LINKS,
   WARNING_COUNTS,
   LIFECYCLE,
 } from "@/features/dashboard/components/config";

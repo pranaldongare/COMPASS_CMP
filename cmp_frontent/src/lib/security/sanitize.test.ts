@@ -22,7 +22,7 @@ describe("safeHref", () => {
   });
 
   it("allows a same-origin path", () => {
-    expect(safeHref("/my-consents")).toBe("/my-consents");
+    expect(safeHref("/consents")).toBe("/consents");
   });
 
   it("refuses javascript:", () => {

@@ -1,0 +1,17 @@
+/* The console's stylesheet.
+ *
+ * Split by concern rather than kept as one file, because the parts change on
+ * different schedules and for different reasons: the tokens are a design
+ * decision, the bridge is mechanical, the utilities accrete. Order matters and
+ * is dependency order - a token has to exist before the bridge names it, and
+ * the bridge before a utility uses the class it produces.
+ */
+
+@import "tailwindcss";
+
+@import "../styles/tokens.css";
+@import "../styles/themes.css";
+@import "../styles/bridge.css";
+@import "../styles/base.css";
+@import "../styles/utilities.css";
+@import "../styles/print.css";
