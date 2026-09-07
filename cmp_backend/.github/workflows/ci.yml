@@ -151,12 +151,20 @@ jobs:
 
       # Known CVEs in the locked dependency set.
       - name: Audit dependencies
-        run: uv run pip-audit --strict --desc
+        # Against the exported lock, not the environment: pip-audit refuses the
+        # project itself, which `uv sync` installs as an editable distribution
+        # that is not on PyPI, and stops there without auditing anything.
+        run: |
+          uv export --no-emit-project --no-hashes --all-extras -o requirements-audit.txt
+          uv run pip-audit --strict --desc -r requirements-audit.txt
 
       # Bandit rules are already part of ruff's `S` selection, so this step is
       # the belt to that pipeline's braces rather than a duplicate.
       - name: Static security scan
-        run: uv run ruff check src --select S --output-format=github
+        # `--ignore S101` restated here: any selector given on the command line
+        # re-enables S101 over the ignore in pyproject, and this codebase
+        # uses `assert` for RETURNING invariants on purpose - see the note there.
+        run: uv run ruff check src --extend-select S --ignore S101 --output-format=github
 
       - name: Secret scan
         uses: gitleaks/gitleaks-action@v2

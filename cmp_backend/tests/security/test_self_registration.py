@@ -36,7 +36,11 @@ from cmp.db.redis import K_RATE
 from cmp.db.redis import key as rkey
 from cmp.db.repositories import users as user_repo
 
-pytestmark = pytest.mark.anyio
+# Deliberately *not* marked `anyio`. Every other module here runs under
+# pytest-asyncio's auto mode, and mixing the two plugins in one module had
+# pytest-asyncio build `redis_conn` on one event loop while anyio ran the test
+# body on another - which redis-py reports as "attached to a different loop"
+# from inside the rate limiter, and which failed closed as ServiceUnavailable.
 
 
 @pytest.fixture(autouse=True)

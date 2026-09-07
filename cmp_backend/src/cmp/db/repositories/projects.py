@@ -909,7 +909,8 @@ async def list_sites(
 
     Every other caller passes a viewer.
     """
-    pred, params = ("TRUE", [])
+    pred: str = "TRUE"
+    params: list[Any] = []
     if role is not None and user_id is not None:
         pred, params = site_scope_predicate(role, user_id)
 

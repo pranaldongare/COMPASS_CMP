@@ -11,18 +11,50 @@
  * state*, not about whether the button exists somewhere on the page. A control
  * that exists but that nobody looking for it will find is not a control.
  */
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { expectNoSidewaysScroll } from "./support/layout";
 import { statePath } from "./support/session";
 
 test.describe.configure({ mode: "serial" });
 
+/**
+ * A draft project to open the upload from.
+ *
+ * The seed's own project has moved on to approval, and the drafts this suite
+ * otherwise contains are made by another spec that may not have run yet - the
+ * projects run in parallel. Without one the list is empty and the test fails
+ * for a reason that has nothing to do with the upload, so it makes its own
+ * through the API, as the same user, with the same cookie and CSRF token the
+ * browser would send.
+ */
+async function ensureDraftProject(page: Page) {
+  await page.goto("/projects?status=in_draft");
+  const links = page.locator('a[href^="/projects/"]');
+  await links.first().waitFor({ state: "attached", timeout: 5_000 }).catch(() => {});
+  if ((await links.count()) > 0) return;
+
+  const csrf = (await page.context().cookies()).find((c) => c.name === "cmp_csrf")?.value ?? "";
+  const processors = await page.request.get("/api/processors");
+  expect(processors.ok(), "the R&D user can list processors").toBeTruthy();
+  const { items } = (await processors.json()) as { items: { processor_uuid: string }[] };
+  const created = await page.request.post("/api/projects", {
+    headers: { "X-CSRF-Token": csrf },
+    data: {
+      project_name: `E2E draft ${Date.now()}`,
+      description: "Created by the notice-upload journey so it has a draft to open.",
+      processor_uuids: items.slice(0, 1).map((p) => p.processor_uuid),
+    },
+  });
+  expect(created.ok(), await created.text()).toBeTruthy();
+  await page.goto("/projects?status=in_draft");
+}
+
 test.describe("R&D User", () => {
   test.use({ storageState: statePath("rnd") });
 
   test("can reach the notice upload from a draft project's notices card", async ({ page }) => {
-    await page.goto("/projects?status=in_draft");
+    await ensureDraftProject(page);
 
     // Selected by where the link goes, not by its text. Matching on a name like
     // /Project/ also matches the sidebar entry and the breadcrumb, and clicking

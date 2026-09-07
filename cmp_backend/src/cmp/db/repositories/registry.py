@@ -271,7 +271,8 @@ async def list_sources(
     in_house: bool | None = None,
     q: str | None = None,
 ) -> tuple[list[Row], str | None, int]:
-    where, params = ["1 = 1"], []
+    where: list[str] = ["1 = 1"]
+    params: list[Any] = []
     if status:
         where.append("s.status = %s::record_status")
         params.append(status)

@@ -44,6 +44,23 @@ test.describe("invalid consent link", () => {
   });
 });
 
+/**
+ * A contact nobody has used before.
+ *
+ * Registration is rate limited per contact - five an hour - and this journey
+ * runs in three projects, twice each. A fixed number was therefore registered
+ * six times a run; the sixth was refused, the form stayed on its first step,
+ * and the test waited for a button that never came. Unique per call, so no
+ * test shares a contact with another, or with a previous run.
+ */
+function freshContact() {
+  const stamp = `${Date.now()}${Math.floor(Math.random() * 1000)}`.slice(-9);
+  return {
+    email: `e2e.${stamp}@example.org`,
+    mobile: `+9155${stamp.padStart(9, "0").slice(-8)}`,
+  };
+}
+
 test.describe("consent journey", () => {
   test.skip(!TOKEN, "set E2E_CONSENT_TOKEN to a seeded link token");
 
@@ -60,9 +77,9 @@ test.describe("consent journey", () => {
     // Step 1: the link resolves and names the project and site.
     await expect(page.getByText(/your details/i).first()).toBeVisible();
 
-    const email = `e2e.${Date.now()}@example.org`;
+    const { email, mobile } = freshContact();
     await page.getByLabel(/full name/i).fill("E2E Test Subject");
-    await page.getByLabel(/^mobile/i).fill("+915550000600");
+    await page.getByLabel(/^mobile/i).fill(mobile);
     await page.getByLabel(/^email/i).fill(email);
     await page.getByRole("button", { name: /continue/i }).click();
 
@@ -75,14 +92,14 @@ test.describe("consent journey", () => {
   test("a wrong code is refused without advancing", async ({ page }) => {
     await page.goto(`/c/${TOKEN}`);
 
-    const email = `e2e.${Date.now()}@example.org`;
+    const { email, mobile } = freshContact();
     await page.getByLabel(/full name/i).fill("E2E Test Subject");
-    await page.getByLabel(/^mobile/i).fill("+915550000600");
+    await page.getByLabel(/^mobile/i).fill(mobile);
     await page.getByLabel(/^email/i).fill(email);
     await page.getByRole("button", { name: /continue/i }).click();
 
     await page.getByLabel(/six-digit code/i).fill("000000");
-    await page.getByRole("button", { name: /confirm and read/i }).click();
+    await page.getByRole("button", { name: /confirm and continue/i }).click();
 
     // Scoped to main: Next appends its own role="alert" route announcer to the
     // body, so an unscoped getByRole("alert") matches two elements and fails
@@ -125,10 +142,12 @@ test.describe("sign-in", () => {
 
     // The same screen whether or not the contact exists. Anything more
     // specific turns the form into an oracle for who consented to a project.
-    const alert = page.locator("main").getByRole("alert").first();
-    await expect(alert).toBeVisible();
-    await expect(alert).toContainText(/if .* is registered/i);
-    await expect(alert).not.toContainText(/no such|not found|does not exist|unknown/i);
+    // An informational notice, not an error: role="status", because nothing
+    // went wrong from the visitor's point of view whichever way it went.
+    const notice = page.locator("main").getByRole("status").first();
+    await expect(notice).toBeVisible();
+    await expect(notice).toContainText(/if .* is registered/i);
+    await expect(notice).not.toContainText(/no such|not found|does not exist|unknown/i);
   });
 });
 
