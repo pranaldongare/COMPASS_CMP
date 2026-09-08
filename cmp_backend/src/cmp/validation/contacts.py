@@ -10,7 +10,30 @@ from __future__ import annotations
 import re
 from typing import Annotated
 
+import email_validator
 from pydantic import EmailStr, StringConstraints
+
+from cmp.core.config import settings
+
+#: The reserved top-level names a development deployment is allowed to use.
+#:
+#: `email-validator` refuses any address under `.local`, `.localhost` or
+#: `.test`, because RFC 6761/6762 reserve them and no mail can be delivered
+#: there. That is right in production. It is wrong everywhere else: the seed
+#: creates every staff account as `name@cmp.local`, the README tells people to
+#: sign in with those, and an administrator provisioning `dco2@cmp.local` from
+#: the console was refused with "the part after the @-sign is a special-use or
+#: reserved name" - which reads as an error about the @ itself.
+#:
+#: Edited on the library's own list, which is the mechanism it documents for
+#: this, so pydantic's `EmailStr` and every other caller agree. Never removed in
+#: production, where an address nobody can reach is a locked-out account.
+DEVELOPMENT_DOMAINS: frozenset[str] = frozenset({"local", "localhost", "test"})
+
+if not settings.is_production:
+    for _name in DEVELOPMENT_DOMAINS:
+        if _name in email_validator.SPECIAL_USE_DOMAIN_NAMES:
+            email_validator.SPECIAL_USE_DOMAIN_NAMES.remove(_name)
 
 #: Validated by `email-validator`, which checks the domain's syntax rather than
 #: guessing at a regex. Length is bounded by the RFC and by the column.

@@ -11,7 +11,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, status
-from pydantic import EmailStr, Field
+from pydantic import Field
 
 from cmp.api.dependencies import (
     Paging,
@@ -32,6 +32,7 @@ from cmp.db.sql import unique_violation
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.schemas.common import Acknowledged, Mobile, Out, Page, Schema, ShortText
+from cmp.validation import Email
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -64,7 +65,7 @@ class UserOut(Out):
 
 class CreateUser(Schema):
     full_name: ShortText
-    email: EmailStr
+    email: Email
     role: str
     username: Annotated[str | None, Field(default=None, max_length=120)] = None
     mobile: Mobile | None = None
