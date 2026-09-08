@@ -1693,19 +1693,28 @@ async def respond(
     file_ref: str | None = None
     file_hash: str | None = None
     expires: datetime | None = None
-    if row["request_type"] == Kind.ACCESS and result is not Outcome.NO_RECORDS:
-        from cmp.core.security import file_hash as digest
+    digest_for_mail = ""
+    # The record goes back to her whatever the kind of request and whatever
+    # the outcome. "No records held anywhere" is an answer about the holders;
+    # her consents, the notices she read and the disclosures made are what the
+    # platform itself holds, and they are attached regardless - that is the
+    # answer to "what do you hold", even when it is all of it. Only a request
+    # with no account behind it has nothing to attach.
+    if row.get("subject_user_id") is not None:
+        from cmp.core.security import file_hash as file_digest
         from cmp.domain.rights import package
         from cmp.infrastructure.storage.service import storage
 
-        payload = await package.build_access_package(
+        built = await package.build_response(
             conn,
-            row,
+            {**row, "outcome": result.value},
             holders=holders,
             response_text=response_text.strip(),
             generated_at=now,
         )
-        file_hash = digest(payload)
+        payload = package.encode(built)
+        digest_for_mail = package.digest_text(built)
+        file_hash = file_digest(payload)
         file_ref = storage().save(
             payload, subdir="responses", suggested_name=f"{row['reference']}.json"
         )
@@ -1743,11 +1752,17 @@ async def respond(
     )
     contact = contact_for(row)
     if contact:
+        # The response itself, not a pointer to it: the decision, the words,
+        # and the record - with the file waiting on her account.
         _dispatch(
-            "send_rights_response_ready",
+            "send_rights_response",
             contact,
             row["reference"],
+            result.value,
+            response_text.strip(),
+            digest_for_mail,
             expires.date().isoformat() if expires else None,
+            f"{settings.public_base_url.rstrip('/')}/my-requests",
         )
     return row
 

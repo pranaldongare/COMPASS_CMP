@@ -65,6 +65,22 @@ def send_rights_response_ready(
     return _deliver(to=contact, subject=subject, body=body)
 
 
+@shared_task(name="cmp.notifications.send_rights_response", **RETRY_KW)
+def send_rights_response(
+    contact: str,
+    reference: str,
+    outcome: str,
+    response_text: str,
+    digest: str,
+    expires_on: str | None,
+    account_url: str,
+) -> dict[str, Any]:
+    subject, body = templates.rights_response(
+        reference, outcome, response_text, digest, expires_on, account_url
+    )
+    return _deliver(to=contact, subject=subject, body=body)
+
+
 @shared_task(name="cmp.notifications.send_rights_closed", **RETRY_KW)
 def send_rights_closed(
     contact: str, reference: str, outcome: str, explanation: str

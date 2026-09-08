@@ -360,15 +360,32 @@ class TestAccessRequest:
             role=DPO,
             actor_id=dpo,
         )
+        # She has a consent on the platform. "No records held anywhere" is an
+        # answer about the holders; the platform's own record still goes back
+        # to her, attached and spelled out - that record is the answer.
+        await _consent(conn, seeded)
         row = await service.respond(
             conn,
             row,
             outcome="no_records",
-            response_text="We hold nothing.",
+            response_text="We hold nothing beyond your consent record.",
             role=DPO,
             actor_id=dpo,
         )
-        assert row["outcome"] == "no_records" and row["response_file_hash"] is None
+        assert row["outcome"] == "no_records"
+        assert row["response_file_hash"] and row["download_expires_at"] is not None
+        payload, _, _ = await service.download(conn, row, actor_id=dpo, as_subject=False)
+        import json
+
+        from cmp.domain.rights import package
+
+        record = json.loads(payload)
+        assert record["outcome"] == "no_records"
+        assert record["summary"]["consents"] == 1 and record["summary"]["holders"] == 0
+        assert record["consents"][0]["purposes"], "the purposes she answered are listed"
+        digest = package.digest_text(record)
+        assert "YOUR CONSENTS ON RECORD" in digest and "Consent on" in digest
+        assert "No party beyond the platform itself was asked" in digest
 
 
 # ------------------------------------------------------------------- erasure

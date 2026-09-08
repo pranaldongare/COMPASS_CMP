@@ -51,7 +51,34 @@ async def build_access_package(
     response_text: str,
     generated_at: datetime,
 ) -> bytes:
-    """Assemble the response for one request. Read-only; the caller stores it."""
+    """The response as bytes. See `build_response`."""
+    return encode(
+        await build_response(
+            conn, request, holders=holders, response_text=response_text, generated_at=generated_at
+        )
+    )
+
+
+def encode(package: dict[str, Any]) -> bytes:
+    return json.dumps(package, indent=2, default=str, ensure_ascii=False).encode("utf-8")
+
+
+async def build_response(
+    conn: Conn,
+    request: dict[str, Any],
+    *,
+    holders: list[dict[str, Any]],
+    response_text: str,
+    generated_at: datetime,
+) -> dict[str, Any]:
+    """Assemble the response for one request. Read-only; the caller stores it.
+
+    Built for every request that is linked to an account, whatever its kind
+    and whatever the outcome. "No records held anywhere" is an answer about
+    the holders; her consents, the notices she read and the disclosures made
+    are the platform's own record, and they go back to her regardless - that
+    record *is* the answer to "what do you hold", even when it is all of it.
+    """
     subject_id = int(request["subject_user_id"])
     subject = await user_repo.by_id(conn, subject_id) or {}
 
@@ -93,7 +120,15 @@ async def build_access_package(
             "date_of_birth": subject.get("dob"),
         },
         "response": response_text,
+        "outcome": request.get("outcome"),
         "scope": _SCOPE_NOTE,
+        "summary": {
+            "consents": len(consents),
+            "consents_withdrawn": sum(1 for c in consents if c.get("is_withdrawal")),
+            "disclosures": len(disclosures),
+            "holders": len(holders),
+            "holders_returned": sum(1 for h in holders if h["ticket_status"] == "returned"),
+        },
         "consents": consents,
         "disclosures": disclosures,
         "holders": [
@@ -122,4 +157,90 @@ async def build_access_package(
             ),
         },
     }
-    return json.dumps(package, indent=2, default=str, ensure_ascii=False).encode("utf-8")
+    return package
+
+
+def digest_text(package: dict[str, Any]) -> str:
+    """The response as prose, for the mail that carries it.
+
+    Everything the file says, at the level a person reads in an inbox: what
+    was decided, every consent and withdrawal with its purposes, every
+    disclosure, what each holder returned, and what is still outstanding.
+    The file itself stays on the platform, downloaded from her account.
+    """
+
+    def day(value: Any) -> str:
+        text = str(value or "")
+        return text[:10] if text else "-"
+
+    def names(purposes: list[dict[str, Any]], *, granted: bool) -> list[str]:
+        return [
+            str(x.get("purpose_name") or x.get("name") or x.get("purpose_code") or "purpose")
+            for x in purposes
+            if bool(x.get("granted")) is granted
+        ]
+
+    lines: list[str] = ["YOUR CONSENTS ON RECORD"]
+    consents = package.get("consents", [])
+    if consents:
+        for c in consents:
+            kind = "Withdrawal" if c.get("is_withdrawal") else "Consent"
+            where = " · ".join(str(x) for x in (c.get("project_name"), c.get("site_label")) if x)
+            lines.append(
+                f"- {kind} on {day(c.get('affirmative_action_at'))}"
+                + (f" · {where}" if where else "")
+            )
+            agreed = names(c.get("purposes", []), granted=True)
+            declined = names(c.get("purposes", []), granted=False)
+            if agreed:
+                lines.append(f"    agreed: {', '.join(agreed)}")
+            if declined:
+                lines.append(f"    declined: {', '.join(declined)}")
+            held = c.get("assets_held") or []
+            if held:
+                lines.append(f"    collected material recorded against this consent: {len(held)}")
+    else:
+        lines.append("- None. No consent is recorded for you on the platform.")
+
+    lines += ["", "DISCLOSURES OF YOUR DATA"]
+    disclosures = package.get("disclosures", [])
+    if disclosures:
+        for d in disclosures:
+            to = (
+                d.get("processor_name")
+                or d.get("recipient")
+                or d.get("legal_name")
+                or "a processor"
+            )
+            when = day(d.get("exported_at") or d.get("disclosed_at"))
+            lines.append(
+                f"- {when} to {to}"
+                + (f" for {d.get('project_name')}" if d.get("project_name") else "")
+            )
+    else:
+        lines.append("- None recorded.")
+
+    lines += ["", "WHAT EACH PARTY HOLDING YOUR DATA RETURNED"]
+    holders = package.get("holders", [])
+    if holders:
+        for h in holders:
+            if h.get("ticket_status") == "returned":
+                lines.append(
+                    f"- {h['holder']}: {h.get('return_summary') or 'returned without a summary'}"
+                )
+            else:
+                lines.append(f"- {h['holder']}: not returned ({h.get('ticket_status')})")
+    else:
+        lines.append(
+            "- No party beyond the platform itself was asked; nothing names one as holding "
+            "your data."
+        )
+    gaps = package.get("gaps", [])
+    if gaps:
+        lines += [
+            "",
+            "STILL OUTSTANDING: "
+            + ", ".join(map(str, gaps))
+            + ". This response is partial; the gap is named rather than hidden.",
+        ]
+    return "\n".join(lines)

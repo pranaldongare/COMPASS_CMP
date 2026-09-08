@@ -128,6 +128,43 @@ def rights_response_ready(reference: str, expires_on: str | None) -> tuple[str, 
     )
 
 
+def rights_response(
+    reference: str,
+    outcome: str,
+    response_text: str,
+    digest: str,
+    expires_on: str | None,
+    account_url: str,
+) -> tuple[str, str]:
+    """The response itself, in the mail - not a note that it exists.
+
+    The decision, the Privacy Office's words, and the record the platform
+    holds about her: every consent, every disclosure, every return. The full
+    file is downloaded from her account, where it is authenticated and
+    time-limited; the mail carries what a person needs to read to know what
+    was answered.
+    """
+    headline = {
+        "complete": "Our response to your request is complete.",
+        "partial": "Our response to your request is partial: one or more parties have not "
+        "returned what they hold, and the gap is named below.",
+        "no_records": "No party beyond the platform itself holds records about you. What the "
+        "platform holds is set out below in full.",
+    }.get(outcome, "Our response to your request is below.")
+    window = (
+        f"\n\nThe full record, as a file, is available from your account until {expires_on}: "
+        f"{account_url}"
+        if expires_on
+        else f"\n\nThe full record is available from your account: {account_url}"
+    )
+    return (
+        f"Our response to your request {reference}",
+        f"Regarding your request {reference}: {headline}\n\n"
+        f"FROM THE PRIVACY OFFICE\n{response_text}\n\n"
+        f"{digest}{window}" + _BOARD_ROUTE + _SIGN_OFF,
+    )
+
+
 def rights_closed(reference: str, outcome: str, explanation: str) -> tuple[str, str]:
     """A refusal, a reclassification or a decision: reasoned, in writing, with the route onward."""
     headline = {
