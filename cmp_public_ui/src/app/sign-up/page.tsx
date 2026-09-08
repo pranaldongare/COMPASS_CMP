@@ -47,6 +47,9 @@ type Values = z.infer<typeof schema>;
 export default function SignUpPage() {
   const [given, setGiven] = React.useState<{ mobile: string; email: string | null } | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  // A contact that already belongs to an account. The message goes on that
+  // field so it can be changed, and sign-in is offered with it filled in.
+  const [taken, setTaken] = React.useState<{ field: "mobile" | "email"; value: string } | null>(null);
 
   const form = useForm<Values>({
     resolver: zodResolver(schema),
@@ -55,6 +58,7 @@ export default function SignUpPage() {
 
   const onSubmit = form.handleSubmit(async (values) => {
     setError(null);
+    setTaken(null);
     try {
       await registerAccount({
         full_name: values.full_name,
@@ -64,6 +68,13 @@ export default function SignUpPage() {
       });
       setGiven({ mobile: values.mobile, email: values.email ? values.email : null });
     } catch (caught) {
+      if (caught instanceof ApiError && caught.code === "contact_taken") {
+        const field = caught.field === "email" ? "email" : "mobile";
+        form.setError(field, { message: caught.userMessage() });
+        setTaken({ field, value: field === "email" ? (values.email ?? "") : values.mobile });
+        form.setFocus(field);
+        return;
+      }
       setError(
         caught instanceof ApiError && caught.status === 429
           ? caught.userMessage()
@@ -91,6 +102,22 @@ export default function SignUpPage() {
     >
       <form method="post" onSubmit={onSubmit} noValidate className="space-y-4">
         {error && <Alert tone="danger">{error}</Alert>}
+        {taken && (
+          <Alert tone="warning" title={`That ${taken.field} is already registered`}>
+            <p>
+              If it is yours, sign in with it - there is no password, we send a code. Otherwise
+              change it below.
+            </p>
+            <p className="mt-2">
+              <Link
+                href={`/sign-in?contact=${encodeURIComponent(taken.value)}`}
+                className="font-medium text-accent-text underline underline-offset-2"
+              >
+                Sign in with this {taken.field}
+              </Link>
+            </p>
+          </Alert>
+        )}
 
         <Field label="Full name" error={form.formState.errors.full_name?.message} required>
           {(p) => <Input {...p} {...form.register("full_name")} autoComplete="name" />}

@@ -14,6 +14,9 @@ import { freshCode, latestCodeFor } from "./support/outbox";
 
 test.skip(({ isMobile }) => Boolean(isMobile), "one registration per run is enough");
 
+// Serial: the second test needs the account the first one made.
+test.describe.configure({ mode: "serial" });
+
 const stamp = Date.now().toString();
 const MOBILE = `+91555${stamp.slice(-7)}`;
 const EMAIL = `signup-${stamp.slice(-6)}@example.org`;
@@ -50,4 +53,26 @@ test("sign-up authenticates every contact given, then signs her in", async ({ pa
 
   await expect(page).toHaveURL(/\/my-consents/, { timeout: 15_000 });
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+});
+
+test("a contact that is already registered is refused on its field, with sign-in offered", async ({
+  page,
+}) => {
+  // The mobile the first test registered, with a different email. The form
+  // must say which field is taken, stay on the details step so it can be
+  // changed, and offer sign-in with that contact filled in - the person
+  // typing it is most likely its owner, who has no password to remember.
+  await page.goto("/sign-up");
+  await page.getByLabel(/full name/i).fill("Signup Principal Again");
+  await page.getByLabel(/mobile number/i).fill(MOBILE);
+  await page.getByLabel(/email address/i).fill(`again-${stamp.slice(-6)}@example.org`);
+  await page.getByLabel(/date of birth/i).fill("1990-01-01");
+  await page.getByRole("button", { name: /continue|create/i }).click();
+
+  await expect(page.getByText(/that mobile is already registered/i)).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole("heading", { name: /create your account/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /confirm your contacts/i })).toHaveCount(0);
+  const signIn = page.getByRole("link", { name: /sign in with this mobile/i });
+  await expect(signIn).toBeVisible();
+  expect(await signIn.getAttribute("href")).toContain(encodeURIComponent(MOBILE));
 });

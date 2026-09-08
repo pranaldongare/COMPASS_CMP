@@ -9,9 +9,11 @@ is how a sign-up form mints a DPO. The service writes the role itself; these
 tests assert that a caller cannot influence it.
 
 **Account enumeration.** A consent register's user list is close to "who is in
-this study". A sign-up that answers differently for a known address turns the
-form into a membership oracle, so registering an existing contact must be
-indistinguishable from registering a new one.
+this study", and a sign-up that answers differently for a known contact is an
+oracle for it. The product accepts that cost - the form names the field that
+is taken so it can be corrected - and the rate limits are what remain. What
+these tests hold is the line that must not move: a taken contact creates no
+account, and changes nothing on the account that holds it.
 
 The date of birth is not a profile field here. Section 9 of the DPDP Act treats
 a person under eighteen as a child and requires verifiable parental consent, so
@@ -159,24 +161,39 @@ async def test_registration_cannot_choose_its_own_role(
     assert (await user_repo.by_contact(conn, "notadpo@example.org"))["role"] == "data_subject"
 
 
-async def test_registering_a_known_contact_creates_nothing_and_does_not_say_so(
+async def test_registering_a_taken_contact_is_refused_and_names_the_field(
     conn: Any, seeded: dict[str, Any], redis_conn: Any
 ) -> None:
-    """Sign-up must not become a membership oracle.
+    """A contact on an active account is refused, on the field that has to change.
 
-    The DPO's address already exists. Registering it must not create a second
-    account, must not raise, and must not behave observably differently from
-    registering a new one - the caller learns nothing either way.
+    A product decision, taken knowing it makes sign-up an oracle for "is this
+    person registered" - see `register_data_subject`. What it must still never
+    do is create a second account or touch the existing one.
     """
+    from cmp.core.errors import Conflict
+
     before = await _count(conn)
 
-    await auth_service.register_data_subject(
-        conn,
-        full_name="Impostor",
-        mobile="+915550000033",
-        email="dpo@test.local",
-        dob=_years_ago(33),
-    )
+    with pytest.raises(Conflict) as taken_email:
+        await auth_service.register_data_subject(
+            conn,
+            full_name="Impostor",
+            mobile="+915550000033",
+            email="dpo@test.local",
+            dob=_years_ago(33),
+        )
+    assert taken_email.value.code == "contact_taken"
+    assert taken_email.value.field == "email"
+
+    with pytest.raises(Conflict) as taken_mobile:
+        await auth_service.register_data_subject(
+            conn,
+            full_name="Impostor",
+            mobile="+915550000001",  # the seeded data subject's
+            email="someone.new@example.org",
+            dob=_years_ago(33),
+        )
+    assert taken_mobile.value.field == "mobile"
 
     assert await _count(conn) == before, "no account created for an existing contact"
     # And the existing account is untouched - not renamed, not demoted.

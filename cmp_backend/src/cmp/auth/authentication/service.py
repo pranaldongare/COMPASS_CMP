@@ -26,6 +26,7 @@ from cmp.auth.sessions import service as sessions
 from cmp.core.config import settings
 from cmp.core.errors import (
     BadRequest,
+    Conflict,
     Forbidden,
     RateLimited,
     Unauthenticated,
@@ -445,12 +446,19 @@ async def register_data_subject(
     becomes a privilege escalation, and no amount of validation downstream is as
     reliable as never reading the field.
 
-    **The response is identical whether or not the contact is already
-    registered.** Sign-up is unauthenticated, so a form that says "this email is
-    taken" is a membership oracle for "who is a data principal on this
-    platform" - which, for a consent register, is close to "who is in this
-    study". An address that already has an account is sent a sign-in code
-    instead, which is what that person actually needed.
+    **A contact that already belongs to an active account is refused, and the
+    refusal names which one.** This is a product decision taken with its cost
+    in view: sign-up is unauthenticated, so a form that says "this mobile is
+    taken" lets anyone test whether a person is a data principal here - which,
+    for a consent register, is close to "who is in this study". The brakes
+    that remain are the per-contact limit above and the per-address limit on
+    the route. What it buys is a form that can be corrected: the earlier,
+    neutral behaviour sent the existing account a *sign-in* code while the form
+    advanced to the *registration*-code step, where that code could never
+    verify, and the person was stuck without knowing why.
+
+    A registration that was started and never finished is not a conflict: the
+    same codes are sent again so it can be completed.
 
     Date of birth is required here, unlike on accounts created through a consent
     link. Section 9 makes it the input to whether this is a child's account, and
@@ -469,23 +477,27 @@ async def register_data_subject(
                 window_s=3600,
                 message="Too many registration attempts for this contact.",
             )
-    from cmp.tasks.authentication import send_login_code
-    from cmp.tasks.dispatch import dispatch_required
 
     existing = await user_repo.by_contact(conn, mobile)
+    taken = "mobile"
     if not existing and email:
         existing = await user_repo.by_contact(conn, email)
+        taken = "email"
     if existing:
-        if existing["status"] == "active":
-            # Already hers: a sign-in code to the contact she just typed.
-            to = existing["mobile"] if existing["mobile"] == mobile else existing["email"]
-            issued = await otp.issue(otp.Scope.SUBJECT_LOGIN, str(existing["uuid"]))
-            dispatch_required(send_login_code, str(existing["uuid"]), to, issued.code)
-        elif existing["status"] == "pending":
+        if existing["status"] == "pending":
             # Started and never finished: the same codes again, so she can.
             await _send_registration_codes(existing)
-        log.info("auth.register_existing_contact")
-        return
+            log.info("auth.register_resumed")
+            return
+        # Named field, so the form can put the message on the input that has
+        # to change and offer sign-in with it.
+        log.info("auth.register_contact_taken", field=taken)
+        raise Conflict(
+            f"An account already exists with this {taken}. Sign in with it instead, "
+            f"or use a different {taken}.",
+            code="contact_taken",
+            field=taken,
+        )
 
     user = await user_repo.create(
         conn,

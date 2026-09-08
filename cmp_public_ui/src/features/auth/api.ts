@@ -46,11 +46,12 @@ export interface RegistrationVerification {
  * and there is no field here to carry one, which is what stops a public form
  * from minting staff accounts.
  *
- * The response is identical whether or not the address already has an account.
- * A sign-up that said "already registered" would let anyone test whether a
- * person is on a consent register, which for a study is close to asking whether
- * they took part. Someone who is already registered receives a sign-in code,
- * which is what they needed anyway.
+ * A contact that already belongs to an active account is refused with
+ * `contact_taken` and the field named, so the form can say which one to change
+ * and offer sign-in with it. A product decision taken with its cost in view: it
+ * lets a stranger test whether an address is registered here, and the server's
+ * rate limits are what remain against that. A registration that was started
+ * and never finished is not a conflict; its codes are sent again.
  */
 export function register(body: RegistrationDetails): Promise<Acknowledged> {
   return apiPost<Acknowledged>("/auth/register", body);
