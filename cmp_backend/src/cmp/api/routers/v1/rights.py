@@ -22,6 +22,7 @@ from pydantic import Field
 from cmp.api.dependencies import (
     Paging,
     RequireDataSubject,
+    RequireResource,
     RightsReader,
     RightsWriter,
     reject_unknown_filters,
@@ -146,6 +147,43 @@ class HolderOut(Out):
     return_summary: str | None
     return_evidence_hash: str | None
     created_at: datetime
+    #: How this holder is reached. "portal": the responder has an account here
+    #: and the ticket is in their console. "email": the instruction is mailed
+    #: and the Privacy Office tracks it by hand, on `contact_log`.
+    channel: str = "email"
+    respondent_uuid: UUID | None = None
+    responder_user_uuid: UUID | None = None
+    responder_user_name: str | None = None
+    contact_log: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class ContactIn(Schema):
+    """One line on a holder's contact log, optionally sending the mail too."""
+
+    kind: str = "note"
+    note: Annotated[str | None, Field(default=None, max_length=2000)] = None
+    #: Re-send the instruction to the address on record, and log that it went.
+    send: bool = False
+
+
+class TicketOut(Out):
+    """A ticket as its respondent sees it: what is asked, of whom, by when."""
+
+    holder_uuid: UUID
+    request_uuid: UUID
+    reference: str
+    request_type: str
+    request_status: str
+    label: str
+    subject_name: str | None
+    instruction: str | None
+    ticket_status: str
+    issued_at: datetime | None
+    due_at: datetime | None
+    escalated_at: datetime | None
+    returned_at: datetime | None
+    return_summary: str | None
+    return_evidence_hash: str | None
 
 
 class ItemOut(Out):
@@ -300,6 +338,9 @@ class HolderIn(Schema):
 
 
 class ConfirmHolderIn(Schema):
+    #: One of the processor's registered respondents. Chosen instead of typing
+    #: a name and address; decides the channel with it.
+    respondent_uuid: UUID | None = None
     responder_name: ShortText | None = None
     responder_contact: Contact | None = None
 
@@ -744,6 +785,31 @@ async def confirm_holder(
             responder_contact=body.responder_contact,
             role=principal.role,
             actor_id=principal.user_id,
+            respondent_uuid=str(body.respondent_uuid) if body.respondent_uuid else None,
+        )
+
+
+@router.post(
+    "/{request_uuid}/holders/{holder_uuid}/contact",
+    response_model=HolderOut,
+    summary="Record a mail sent, a chase, or a reply - and optionally send the mail",
+)
+async def log_contact(
+    request_uuid: UUID, holder_uuid: UUID, body: ContactIn, principal: RightsWriter
+) -> dict[str, Any]:
+    """The trail for a holder reached by email, kept on the request rather than
+    in one person's inbox."""
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        return await service.log_contact(
+            conn,
+            row,
+            holder_uuid=str(holder_uuid),
+            kind=body.kind,
+            note=body.note,
+            send=body.send,
+            role=principal.role,
+            actor_id=principal.user_id,
         )
 
 
@@ -1117,4 +1183,51 @@ async def revoke_nomination(nomination_uuid: UUID, principal: RequireDataSubject
     async with transaction() as conn:
         return await service.revoke_nomination(
             conn, nomination_uuid=str(nomination_uuid), principal_user_id=principal.user_id
+        )
+
+
+# ------------------------------------------------------ the respondent's side
+ticket_router = APIRouter(prefix="/tickets", tags=["tickets"])
+
+TicketReader = Annotated[Any, Depends(RequireResource("ticket"))]
+TicketWriter = Annotated[Any, Depends(RequireResource("ticket", write=True))]
+
+
+@ticket_router.get("", response_model=list[TicketOut], summary="Tickets addressed to me")
+async def my_tickets(principal: TicketReader) -> list[dict[str, Any]]:
+    """The portal channel's inbox: the holders of a rights request that are one
+    of our own teams answer here, not by email. Scope OWN - only what is
+    addressed to this account, and only what the instruction says."""
+    async with connection() as conn:
+        return await service.tickets_for(conn, principal.user_id)
+
+
+@ticket_router.post(
+    "/{holder_uuid}/return",
+    response_model=TicketOut,
+    summary="Return a ticket addressed to me",
+)
+async def return_my_ticket(
+    holder_uuid: UUID,
+    principal: TicketWriter,
+    summary: Annotated[str, Form(min_length=1, max_length=20_000)],
+    evidence: Annotated[UploadFile | None, File(description="Optional evidence, max 25 MB")] = None,
+) -> dict[str, Any]:
+    evidence_ref: str | None = None
+    evidence_hash: str | None = None
+    if evidence is not None:
+        payload = await evidence.read()
+        check_upload(payload, evidence.content_type, EVIDENCE)
+        evidence_hash = file_hash(payload)
+        evidence_ref = storage().save(
+            payload, subdir="rights", suggested_name=evidence.filename or "evidence"
+        )
+    async with transaction() as conn:
+        return await service.return_own_ticket(
+            conn,
+            user_id=principal.user_id,
+            holder_uuid=str(holder_uuid),
+            summary=summary,
+            evidence_ref=evidence_ref,
+            evidence_hash=evidence_hash,
         )

@@ -362,3 +362,19 @@ async def collection_owners(conn: Conn) -> list[Row]:
            WHERE u.role IN ('dco', 'rco') AND u.status = 'active'
            ORDER BY u.role, u.full_name""",
     )
+
+
+async def staff_directory(conn: Conn) -> list[Row]:
+    """Active members of staff, for naming one as a processor's respondent.
+
+    The minimum that makes the choice possible: who they are, enough to tell
+    two people with the same name apart, and their role. Offered only to the
+    roles that manage the registry.
+    """
+    return await fetch_all(
+        conn,
+        """SELECT u.uuid, u.full_name, u.email, u.role
+           FROM auth_user u
+           WHERE u.role <> 'data_subject' AND u.status = 'active'
+           ORDER BY u.full_name""",
+    )

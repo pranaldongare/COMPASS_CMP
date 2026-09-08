@@ -23,6 +23,7 @@ import {
   FolderKanban,
   Gauge,
   HandHelping,
+  Inbox,
   Layers,
   Link2,
   LogOut,
@@ -114,6 +115,9 @@ const SECTIONS: NavSection[] = [
   {
     title: "You",
     items: [
+      // A rights request's holder that is one of our own teams is answered
+      // here, by whoever that team named - whatever their role.
+      { key: "tickets", href: "/tickets", label: "Tickets for you", icon: Inbox },
       { key: "notifications", href: "/notifications", label: "Notifications", icon: Bell },
       { key: "profile", href: "/account", label: "Your profile", icon: UserRound },
     ],

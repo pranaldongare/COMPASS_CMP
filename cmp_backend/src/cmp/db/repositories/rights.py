@@ -311,10 +311,15 @@ _HOLDER_SELECT = """
   h.issued_at, h.due_at, h.escalated_at, h.returned_at, h.return_summary,
   h.return_evidence_ref, h.return_evidence_hash, h.created_at,
   h.processor_id, pr.processor_uuid, pr.legal_name AS processor_name, pr.is_in_house,
-  cb.full_name AS confirmed_by_name
+  cb.full_name AS confirmed_by_name,
+  h.respondent_id, rs.respondent_uuid, h.responder_user_id, h.channel, h.contact_log,
+  ru.uuid AS responder_user_uuid, ru.full_name AS responder_user_name,
+  ru.email AS responder_user_email
   FROM rights_request_holder h
   LEFT JOIN processor pr ON pr.processor_id = h.processor_id
   LEFT JOIN auth_user cb ON cb.id = h.confirmed_by
+  LEFT JOIN processor_respondent rs ON rs.respondent_id = h.respondent_id
+  LEFT JOIN auth_user ru ON ru.id = h.responder_user_id
 """
 
 
@@ -390,6 +395,9 @@ async def add_holder(
     evidence: dict[str, Any],
     responder_name: str | None = None,
     responder_contact: str | None = None,
+    respondent_id: int | None = None,
+    responder_user_id: int | None = None,
+    channel: str = "email",
 ) -> Row:
     """One row per processor per request. Deriving twice refreshes the
     evidence rather than adding a second holder."""
@@ -398,8 +406,8 @@ async def add_holder(
         """
         INSERT INTO rights_request_holder
           (request_id, processor_id, label, derived_from, evidence,
-           responder_name, responder_contact)
-        VALUES (%s, %s, %s, %s::rights_holder_source, %s, %s, %s)
+           responder_name, responder_contact, respondent_id, responder_user_id, channel)
+        VALUES (%s, %s, %s, %s::rights_holder_source, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (request_id, processor_id) WHERE processor_id IS NOT NULL
         DO UPDATE SET evidence = EXCLUDED.evidence
         RETURNING holder_id, holder_uuid, (xmax = 0) AS inserted
@@ -412,6 +420,9 @@ async def add_holder(
             Jsonb(evidence),
             responder_name,
             responder_contact,
+            respondent_id,
+            responder_user_id,
+            channel,
         ),
     )
     assert row is not None
@@ -433,8 +444,64 @@ _HOLDER_MUTABLE = frozenset(
         "return_summary",
         "return_evidence_ref",
         "return_evidence_hash",
+        "respondent_id",
+        "responder_user_id",
+        "channel",
     }
 )
+
+
+async def append_contact(conn: Conn, holder_id: int, entry: dict[str, Any]) -> None:
+    """One more line on the holder's contact log. Appended, never rewritten."""
+    await conn.execute(
+        """UPDATE rights_request_holder
+              SET contact_log = contact_log || %s::jsonb
+            WHERE holder_id = %s""",
+        (Jsonb([entry]), holder_id),
+    )
+
+
+_TICKET_SELECT = f"""
+  {_HOLDER_SELECT.split("FROM rights_request_holder h")[0]},
+  r.request_uuid, r.reference, r.request_type, r.status AS request_status,
+  r.due_at AS request_due_at, r.received_at, s.full_name AS subject_name
+  FROM rights_request_holder h
+  JOIN rights_request r ON r.request_id = h.request_id
+  LEFT JOIN auth_user s ON s.id = r.subject_user_id
+  LEFT JOIN processor pr ON pr.processor_id = h.processor_id
+  LEFT JOIN auth_user cb ON cb.id = h.confirmed_by
+  LEFT JOIN processor_respondent rs ON rs.respondent_id = h.respondent_id
+  LEFT JOIN auth_user ru ON ru.id = h.responder_user_id
+"""
+
+
+async def tickets_for_user(conn: Conn, user_id: int, *, open_only: bool = False) -> list[Row]:
+    """Tickets addressed to this member of staff: the portal channel's inbox.
+
+    Scope OWN, realised here as the predicate: only holders whose responder is
+    this account, and only ones that have actually been issued - a pending
+    holder is the DPO's business, not yet the team's.
+    """
+    status = (
+        "AND h.ticket_status IN ('issued', 'escalated')"
+        if open_only
+        else "AND h.ticket_status <> 'pending'"
+    )
+    return await fetch_all(
+        conn,
+        f"""SELECT {_TICKET_SELECT}
+             WHERE h.responder_user_id = %s {status}
+             ORDER BY (h.ticket_status IN ('issued', 'escalated')) DESC, h.due_at, h.holder_id""",
+        (user_id,),
+    )
+
+
+async def ticket_for_user(conn: Conn, user_id: int, holder_uuid: str) -> Row | None:
+    return await fetch_one(
+        conn,
+        f"SELECT {_TICKET_SELECT} WHERE h.responder_user_id = %s AND h.holder_uuid = %s",
+        (user_id, holder_uuid),
+    )
 
 
 async def update_holder(conn: Conn, holder_id: int, **cols: Any) -> None:

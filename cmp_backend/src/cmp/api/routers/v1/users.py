@@ -17,6 +17,7 @@ from cmp.api.dependencies import (
     Paging,
     RequireAdmin,
     RequireDPOorAdmin,
+    RequireRole,
     RequireStaff,
     reject_unknown_filters,
 )
@@ -118,6 +119,21 @@ class CollectionOwner(Out):
     full_name: str
     email: str
     role: str
+
+
+@router.get(
+    "/staff",
+    response_model=list[CollectionOwner],
+    summary="Active staff, for naming a processor's respondent",
+)
+async def staff_directory(
+    principal: Annotated[Any, Depends(RequireRole(Role.DPO, Role.ADMIN))],
+) -> list[dict[str, Any]]:
+    """Naming who answers a rights-request ticket for an in-house processor
+    means picking an account. Four fields, active staff only, and only for the
+    two roles that manage the registry - not a way around the register."""
+    async with connection() as conn:
+        return await repo.staff_directory(conn)
 
 
 @router.get(

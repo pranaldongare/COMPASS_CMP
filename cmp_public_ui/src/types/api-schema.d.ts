@@ -672,6 +672,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Active staff, for naming a processor's respondent
+         * @description Naming who answers a rights-request ticket for an in-house processor
+         *     means picking an account. Four fields, active staff only, and only for the
+         *     two roles that manage the registry - not a way around the register.
+         */
+        get: operations["staff_directory_users_staff_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/collection-owners": {
         parameters: {
             query?: never;
@@ -1472,6 +1494,50 @@ export interface paths {
         /** Create Processor */
         post: operations["create_processor_processors_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/processors/{processor_uuid}/respondents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Who answers a rights-request ticket for this processor */
+        get: operations["list_respondents_processors__processor_uuid__respondents_get"];
+        put?: never;
+        /**
+         * Name a respondent for this processor
+         * @description A respondent is how a holder's ticket gets answered.
+         *
+         *     An in-house processor's respondent must be an account: the team answers on
+         *     the portal, where the ticket is in front of them when they sign in. A third
+         *     party's is a name and an address, and the Privacy Office mails them and
+         *     tracks the exchange by hand. The two are not interchangeable, and the rule
+         *     is held here rather than left to whoever fills the form.
+         */
+        post: operations["add_respondent_processors__processor_uuid__respondents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/processors/{processor_uuid}/respondents/{respondent_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a respondent */
+        delete: operations["remove_respondent_processors__processor_uuid__respondents__respondent_uuid__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3466,6 +3532,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/requests/{request_uuid}/holders/{holder_uuid}/contact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record a mail sent, a chase, or a reply - and optionally send the mail
+         * @description The trail for a holder reached by email, kept on the request rather than
+         *     in one person's inbox.
+         */
+        post: operations["log_contact_requests__request_uuid__holders__holder_uuid__contact_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/requests/{request_uuid}/tickets": {
         parameters: {
             query?: never;
@@ -3630,6 +3717,45 @@ export interface paths {
         get: operations["download_response_requests__request_uuid__download_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tickets addressed to me
+         * @description The portal channel's inbox: the holders of a rights request that are one
+         *     of our own teams answer here, not by email. Scope OWN - only what is
+         *     addressed to this account, and only what the instruction says.
+         */
+        get: operations["my_tickets_tickets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tickets/{holder_uuid}/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Return a ticket addressed to me */
+        post: operations["return_my_ticket_tickets__holder_uuid__return_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3948,6 +4074,16 @@ export interface components {
              */
             evidence?: string | null;
         };
+        /** Body_return_my_ticket_tickets__holder_uuid__return_post */
+        Body_return_my_ticket_tickets__holder_uuid__return_post: {
+            /** Summary */
+            summary: string;
+            /**
+             * Evidence
+             * @description Optional evidence, max 25 MB
+             */
+            evidence?: string | null;
+        };
         /** Body_return_ticket_requests__request_uuid__holders__holder_uuid__return_post */
         Body_return_ticket_requests__request_uuid__holders__holder_uuid__return_post: {
             /** Summary */
@@ -4202,6 +4338,8 @@ export interface components {
         };
         /** ConfirmHolderIn */
         ConfirmHolderIn: {
+            /** Respondent Uuid */
+            respondent_uuid?: string | null;
             /** Responder Name */
             responder_name?: string | null;
             /** Responder Contact */
@@ -4483,6 +4621,24 @@ export interface components {
             granted_count: number;
             /** Purpose Count */
             purpose_count: number;
+        };
+        /**
+         * ContactIn
+         * @description One line on a holder's contact log, optionally sending the mail too.
+         */
+        ContactIn: {
+            /**
+             * Kind
+             * @default note
+             */
+            kind: string;
+            /** Note */
+            note?: string | null;
+            /**
+             * Send
+             * @default false
+             */
+            send: boolean;
         };
         /** ContactVerified */
         ContactVerified: {
@@ -4836,6 +4992,21 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /**
+             * Channel
+             * @default email
+             */
+            channel: string;
+            /** Respondent Uuid */
+            respondent_uuid?: string | null;
+            /** Responder User Uuid */
+            responder_user_uuid?: string | null;
+            /** Responder User Name */
+            responder_user_name?: string | null;
+            /** Contact Log */
+            contact_log?: {
+                [key: string]: unknown;
+            }[];
         };
         /** ImportBatchOut */
         ImportBatchOut: {
@@ -6485,6 +6656,36 @@ export interface components {
             /** Response Text */
             response_text: string;
         };
+        /** RespondentIn */
+        RespondentIn: {
+            /** Name */
+            name?: string | null;
+            /** Contact */
+            contact?: string | null;
+            /** User Uuid */
+            user_uuid?: string | null;
+        };
+        /**
+         * RespondentOut
+         * @description Who answers a rights-request ticket for a processor.
+         */
+        RespondentOut: {
+            /**
+             * Respondent Uuid
+             * Format: uuid
+             */
+            respondent_uuid: string;
+            /** Name */
+            name: string;
+            /** Contact */
+            contact: string;
+            /** User Uuid */
+            user_uuid?: string | null;
+            /** User Role */
+            user_role?: string | null;
+            /** Created At */
+            created_at: unknown;
+        };
         /** ReviewerIn */
         ReviewerIn: {
             /**
@@ -6771,6 +6972,48 @@ export interface components {
             /** Closed At */
             closed_at: string | null;
             clock: components["schemas"]["ClockOut"];
+        };
+        /**
+         * TicketOut
+         * @description A ticket as its respondent sees it: what is asked, of whom, by when.
+         */
+        TicketOut: {
+            /**
+             * Holder Uuid
+             * Format: uuid
+             */
+            holder_uuid: string;
+            /**
+             * Request Uuid
+             * Format: uuid
+             */
+            request_uuid: string;
+            /** Reference */
+            reference: string;
+            /** Request Type */
+            request_type: string;
+            /** Request Status */
+            request_status: string;
+            /** Label */
+            label: string;
+            /** Subject Name */
+            subject_name: string | null;
+            /** Instruction */
+            instruction: string | null;
+            /** Ticket Status */
+            ticket_status: string;
+            /** Issued At */
+            issued_at: string | null;
+            /** Due At */
+            due_at: string | null;
+            /** Escalated At */
+            escalated_at: string | null;
+            /** Returned At */
+            returned_at: string | null;
+            /** Return Summary */
+            return_summary: string | null;
+            /** Return Evidence Hash */
+            return_evidence_hash: string | null;
         };
         /** TransitionIn */
         TransitionIn: {
@@ -7978,6 +8221,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    staff_directory_users_staff_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionOwner"][];
                 };
             };
         };
@@ -9451,6 +9714,104 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProcessorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_respondents_processors__processor_uuid__respondents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                processor_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespondentOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_respondent_processors__processor_uuid__respondents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                processor_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RespondentIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespondentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_respondent_processors__processor_uuid__respondents__respondent_uuid__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                processor_uuid: string;
+                respondent_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
                 };
             };
             /** @description Validation Error */
@@ -13212,6 +13573,42 @@ export interface operations {
             };
         };
     };
+    log_contact_requests__request_uuid__holders__holder_uuid__contact_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContactIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     issue_tickets_requests__request_uuid__tickets_post: {
         parameters: {
             query?: never;
@@ -13536,6 +13933,61 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_tickets_tickets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketOut"][];
+                };
+            };
+        };
+    };
+    return_my_ticket_tickets__holder_uuid__return_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_return_my_ticket_tickets__holder_uuid__return_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketOut"];
                 };
             };
             /** @description Validation Error */

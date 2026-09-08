@@ -45,7 +45,9 @@ export function QueueCard({
               (item.project_uuid as string) ??
               (item.collection_uuid as string) ??
               null;
-            const href = item.request_uuid
+            const href = item.ticket
+              ? "/tickets"
+              : item.request_uuid
               ? `/requests/${item.request_uuid}`
               : item.project_uuid
                 ? `/projects/${item.project_uuid}`

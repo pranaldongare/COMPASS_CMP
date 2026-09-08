@@ -7,7 +7,7 @@
  * draft -> active -> retired, and a retired purpose is still readable.
  */
 
-import { apiGet, apiPost, apiPut, queryString } from "@/lib/api";
+import { apiDelete, apiGet, apiPost, apiPut, queryString } from "@/lib/api";
 import type {
   Acknowledged,
   DataSource,
@@ -16,6 +16,7 @@ import type {
   Purpose,
   PurposeUsageEntry,
   Uuid,
+  ProcessorRespondent,
 } from "@/types";
 
 /**
@@ -164,4 +165,26 @@ export function assignSourceOwner(
 
 export function suspendSource(uuid: Uuid): Promise<Acknowledged> {
   return apiPost<Acknowledged>(`/sources/${uuid}/suspend`);
+}
+
+/* ------------------------------------------------------------ respondents */
+
+export interface RespondentInput {
+  /** A third party: a name and an address. */
+  name?: string | null;
+  contact?: string | null;
+  /** An in-house processor: the account, and the name and address follow. */
+  user_uuid?: Uuid | null;
+}
+
+export function listRespondents(processorUuid: Uuid): Promise<ProcessorRespondent[]> {
+  return apiGet<ProcessorRespondent[]>(`/processors/${processorUuid}/respondents`);
+}
+
+export function addRespondent(processorUuid: Uuid, body: RespondentInput): Promise<ProcessorRespondent> {
+  return apiPost<ProcessorRespondent>(`/processors/${processorUuid}/respondents`, body);
+}
+
+export function removeRespondent(processorUuid: Uuid, respondentUuid: Uuid): Promise<Acknowledged> {
+  return apiDelete<Acknowledged>(`/processors/${processorUuid}/respondents/${respondentUuid}`);
 }

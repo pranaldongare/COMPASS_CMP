@@ -12,12 +12,13 @@
  */
 "use client";
 
-import { AlertTriangle, ExternalLink, Plus, Send, Wand2 } from "lucide-react";
+import { AlertTriangle, ExternalLink, Mail, MailPlus, Monitor, Plus, Send, Wand2 } from "lucide-react";
 import * as React from "react";
 
 import { FileInput } from "@/components/forms";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import {
+  Alert,
   Badge,
   Button,
   Card,
@@ -29,7 +30,7 @@ import {
   Select,
   Textarea,
 } from "@/components/ui/primitives";
-import { useProcessors } from "@/features/registry";
+import { useProcessors, useRespondents } from "@/features/registry";
 import { TicketBadge } from "@/features/rights/components/copy";
 import {
   useAddHolder,
@@ -37,6 +38,7 @@ import {
   useDeriveHolders,
   useEscalateTicket,
   useIssueTickets,
+  useLogContact,
   useReturnTicket,
 } from "@/features/rights/mutations";
 import { config } from "@/lib/config";
@@ -177,8 +179,13 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
   const confirm = useConfirmHolder(r.request_uuid);
   const escalate = useEscalateTicket(r.request_uuid);
   const [returning, setReturning] = React.useState(false);
+  const [contacting, setContacting] = React.useState(false);
   const [responderName, setResponderName] = React.useState(h.responder_name ?? "");
   const [responderContact, setResponderContact] = React.useState(h.responder_contact ?? "");
+  // The processor's registered respondents, offered instead of typing. An
+  // account among them means the portal; a name and address means email.
+  const respondents = useRespondents(h.processor_uuid ?? undefined);
+  const [respondentUuid, setRespondentUuid] = React.useState(h.respondent_uuid ?? "");
 
   const overdue = h.due_at && (h.ticket_status === "issued" || h.ticket_status === "escalated") && new Date(h.due_at) < new Date();
   const evidence = (h.evidence.exports?.length ?? 0) + (h.evidence.assets?.length ?? 0);
@@ -205,6 +212,17 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
               <Badge tone="warning" dot={false}>derived, not confirmed</Badge>
             )}
             {h.is_in_house && <Badge tone="neutral" dot={false}>in-house</Badge>}
+            {h.channel === "portal" ? (
+              <Badge tone="info" dot={false}>
+                <Monitor className="mr-1 size-3" aria-hidden="true" />
+                on the portal
+              </Badge>
+            ) : (
+              <Badge tone="neutral" dot={false}>
+                <Mail className="mr-1 size-3" aria-hidden="true" />
+                by mail
+              </Badge>
+            )}
           </p>
           <p className="mt-0.5 text-xs text-text-muted">
             {h.derived_from === "manual"
@@ -213,7 +231,26 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
             {evidence === 0 && h.derived_from !== "manual" && " (no evidence attached)"}
             {h.responder_name && ` · responder ${h.responder_name}`}
             {h.responder_contact && ` (${h.responder_contact})`}
+            {h.channel === "portal" && " · returns it in their console"}
           </p>
+          {h.contact_log.length > 0 && (
+            <details className="mt-1 text-xs">
+              <summary className="cursor-pointer text-text-muted">
+                Contact log · {h.contact_log.length}
+              </summary>
+              <ul className="mt-1 space-y-0.5 border-l-2 border-border pl-2">
+                {h.contact_log.map((c, i) => (
+                  <li key={i} className="text-text-muted">
+                    <span className="font-medium text-text">{CONTACT_LABEL[c.kind] ?? c.kind}</span>
+                    {" · "}
+                    {formatDateTime(c.at)}
+                    {c.to && ` · to ${c.to}`}
+                    {c.note && ` - ${c.note}`}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
           {h.issued_at && (
             <p className={overdue ? "mt-0.5 flex items-center gap-1 text-xs font-medium text-danger-text" : "mt-0.5 text-xs text-text-subtle"}>
               {overdue && <AlertTriangle className="size-3.5" aria-hidden="true" />}
@@ -241,13 +278,34 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
         {canWork && (
           <div className="flex flex-wrap gap-2">
             {!h.confirmed_at && (
-              <Button variant="primary" size="sm" loading={confirm.isPending} onClick={() => run(() => confirm.mutateAsync({ holderUuid: h.holder_uuid, responder_name: responderName || null, responder_contact: responderContact || null }), "Holder confirmed")}>
+              <Button
+                variant="primary"
+                size="sm"
+                loading={confirm.isPending}
+                onClick={() =>
+                  run(
+                    () =>
+                      confirm.mutateAsync(
+                        respondentUuid
+                          ? { holderUuid: h.holder_uuid, respondent_uuid: respondentUuid }
+                          : { holderUuid: h.holder_uuid, responder_name: responderName || null, responder_contact: responderContact || null },
+                      ),
+                    "Holder confirmed",
+                  )
+                }
+              >
                 Confirm
+              </Button>
+            )}
+            {(h.ticket_status === "issued" || h.ticket_status === "escalated") && h.channel === "email" && (
+              <Button variant="secondary" size="sm" onClick={() => setContacting(true)}>
+                <MailPlus className="size-4" />
+                Mail · log a contact
               </Button>
             )}
             {(h.ticket_status === "issued" || h.ticket_status === "escalated") && (
               <Button variant="secondary" size="sm" onClick={() => setReturning(true)}>
-                Record the return
+                {h.channel === "portal" ? "Record the return for them" : "Record the return"}
               </Button>
             )}
             {h.ticket_status === "issued" && overdue && (
@@ -260,15 +318,44 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
       </div>
 
       {canWork && !h.confirmed_at && (
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Field label="Responder name">
-            {(p) => <Input {...p} value={responderName} onChange={(e) => setResponderName(e.target.value)} />}
-          </Field>
-          <Field label="Responder contact" hint="The instruction is emailed here when a ticket is issued.">
-            {(p) => <Input {...p} value={responderContact} onChange={(e) => setResponderContact(e.target.value)} />}
-          </Field>
+        <div className="space-y-2">
+          {(respondents.data?.length ?? 0) > 0 && (
+            <Field
+              label="Respondent"
+              hint="Registered on the processor. An account answers on the portal; a name and address are mailed."
+            >
+              {(p) => (
+                <Select {...p} value={respondentUuid} onChange={(e) => setRespondentUuid(e.target.value)}>
+                  <option value="">Type one below instead…</option>
+                  {respondents.data!.map((rs) => (
+                    <option key={rs.respondent_uuid} value={rs.respondent_uuid}>
+                      {rs.name} · {rs.contact} · {rs.user_uuid ? "portal" : "mail"}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+          )}
+          {!respondentUuid && (
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Field label="Responder name">
+                {(p) => <Input {...p} value={responderName} onChange={(e) => setResponderName(e.target.value)} />}
+              </Field>
+              <Field label="Responder contact" hint="The instruction is emailed here when a ticket is issued, and you track the reply by hand.">
+                {(p) => <Input {...p} value={responderContact} onChange={(e) => setResponderContact(e.target.value)} />}
+              </Field>
+            </div>
+          )}
         </div>
       )}
+      <Dialog open={contacting} onOpenChange={(next) => !next && setContacting(false)}>
+        <DialogContent
+          title={`${h.label} · by mail`}
+          description="The mail lives in your inbox; this is the record on the request that it was sent, chased, or answered."
+        >
+          <ContactForm request={r} holder={h} onDone={() => setContacting(false)} />
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={returning} onOpenChange={(next) => !next && setReturning(false)}>
         <DialogContent title={`What ${h.label} returned`} description="A confirmation of what was done and how - not an assurance. Evidence is optional and kept with the ticket.">
@@ -276,6 +363,72 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
         </DialogContent>
       </Dialog>
     </li>
+  );
+}
+
+const CONTACT_LABEL: Record<string, string> = {
+  mail_sent: "Instruction mailed",
+  ticket_on_portal: "Ticket on the portal",
+  chased: "Chased",
+  reply_noted: "Reply noted",
+  note: "Note",
+  escalated: "Escalated",
+  returned_on_portal: "Returned on the portal",
+};
+
+function ContactForm({ request: r, holder: h, onDone }: { request: RightsRequestDetail; holder: RightsHolder; onDone: () => void }) {
+  const toast = useToast();
+  const log = useLogContact(r.request_uuid);
+  const [kind, setKind] = React.useState<"mail_sent" | "chased" | "reply_noted" | "note">("chased");
+  const [send, setSend] = React.useState(false);
+  const [note, setNote] = React.useState("");
+  const [error, setError] = React.useState<string | null>(null);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    try {
+      await log.mutateAsync({ holderUuid: h.holder_uuid, kind, note: note.trim() || null, send });
+      toast.success(send ? "Instruction mailed and logged" : "Contact logged");
+      onDone();
+    } catch (err) {
+      setError(messageOf(err, "Could not log the contact."));
+    }
+  }
+
+  return (
+    <form method="post" onSubmit={submit} noValidate>
+      <div className="space-y-4">
+        {error && <Alert tone="danger">{error}</Alert>}
+        <label className="flex items-start gap-2 text-sm">
+          <input type="checkbox" className="mt-0.5 size-4" checked={send} onChange={(e) => setSend(e.target.checked)} />
+          <span>
+            Send the instruction to {h.responder_contact ?? "the address on record"} now
+            <span className="block text-xs text-text-subtle">The same instruction and date as the ticket. Logged as sent.</span>
+          </span>
+        </label>
+        {!send && (
+          <Field label="What happened">
+            {(p) => (
+              <Select {...p} value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}>
+                <option value="mail_sent">I mailed them from my own inbox</option>
+                <option value="chased">I chased them</option>
+                <option value="reply_noted">They replied</option>
+                <option value="note">A note</option>
+              </Select>
+            )}
+          </Field>
+        )}
+        <Field label="Note" hint="What was said, or where the mail is.">
+          {(p) => <Textarea {...p} rows={3} maxLength={2000} value={note} onChange={(e) => setNote(e.target.value)} />}
+        </Field>
+      </div>
+      <DialogFooter>
+        <Button type="submit" variant="primary" loading={log.isPending}>
+          {send ? "Send and log" : "Log it"}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
 

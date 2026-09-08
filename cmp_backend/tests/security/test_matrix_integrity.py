@@ -151,6 +151,7 @@ class TestRoleListsAreDerivedRatherThanTyped:
             "audit": "audit",
             "users": "user",
             "requests": "rights_request",
+            "tickets": "ticket",
         }
 
         # One key means two things. A data subject's "consents" is her own

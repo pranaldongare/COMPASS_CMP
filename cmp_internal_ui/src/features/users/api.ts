@@ -8,7 +8,7 @@
  */
 
 import { apiGet, apiPatch, apiPost, http, queryString } from "@/lib/api";
-import type { Acknowledged, Page, User, Uuid } from "@/types";
+import type { StaffMember, Acknowledged, Page, User, Uuid } from "@/types";
 
 export function listUsers(filters: Record<string, unknown> = {}): Promise<Page<User>> {
   return apiGet<Page<User>>(`/users${queryString(filters)}`);
@@ -61,4 +61,9 @@ export function resetMfa(uuid: Uuid): Promise<Acknowledged> {
 export async function forceLogout(uuid: Uuid): Promise<Acknowledged> {
   const { data } = await http.delete<Acknowledged>(`/users/${uuid}/sessions`);
   return data;
+}
+
+/** Active staff, four fields, for naming a processor's respondent. DPO and admin only. */
+export function listStaff(): Promise<StaffMember[]> {
+  return apiGet<StaffMember[]>("/users/staff");
 }

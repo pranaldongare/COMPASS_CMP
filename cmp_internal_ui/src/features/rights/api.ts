@@ -23,6 +23,7 @@ import type {
   RightsScopeItem,
   RightsTransitionOption,
   Uuid,
+  MyTicket,
 } from "@/types";
 
 /* ==========================================================================
@@ -101,11 +102,23 @@ export interface HolderInput {
 }
 export const addHolder = (uuid: Uuid, body: HolderInput) =>
   apiPost<RightsHolder>(action(uuid, "holders"), body);
-export const confirmHolder = (
-  uuid: Uuid,
-  holderUuid: Uuid,
-  body: { responder_name?: string | null; responder_contact?: string | null },
-) => apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/confirm`), body);
+export interface ConfirmHolderInput {
+  responder_name?: string | null;
+  responder_contact?: string | null;
+  /** One of the processor's registered respondents; decides the channel. */
+  respondent_uuid?: Uuid | null;
+}
+export const confirmHolder = (uuid: Uuid, holderUuid: Uuid, body: ConfirmHolderInput) =>
+  apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/confirm`), body);
+
+export interface ContactInput {
+  kind: "mail_sent" | "chased" | "reply_noted" | "note";
+  note?: string | null;
+  /** Re-send the instruction to the address on record, and log that it went. */
+  send?: boolean;
+}
+export const logContact = (uuid: Uuid, holderUuid: Uuid, body: ContactInput) =>
+  apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/contact`), body);
 export const issueTickets = (uuid: Uuid, body: { instruction?: string | null; due_at?: string | null }) =>
   apiPost<RightsHolder[]>(action(uuid, "tickets"), body);
 export function returnTicket(
@@ -147,4 +160,22 @@ export const decideGrievance = (uuid: Uuid, body: GrievanceDecisionInput) =>
 
 export function downloadResponse(uuid: Uuid) {
   return apiDownload(`/requests/${uuid}/download`);
+}
+
+/* ===========================================================================
+   The respondent's side - tickets addressed to me
+   =========================================================================== */
+
+export function listMyTickets(): Promise<MyTicket[]> {
+  return apiGet<MyTicket[]>("/tickets");
+}
+
+export function returnMyTicket(
+  holderUuid: Uuid,
+  input: { summary: string; evidence: File | null },
+): Promise<MyTicket> {
+  const form = new FormData();
+  form.set("summary", input.summary);
+  if (input.evidence) form.set("evidence", input.evidence);
+  return apiPost<MyTicket>(`/tickets/${holderUuid}/return`, form);
 }

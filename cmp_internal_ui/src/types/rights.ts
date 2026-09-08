@@ -129,6 +129,43 @@ export interface RightsHolder {
   return_summary: string | null;
   return_evidence_hash: string | null;
   created_at: Timestamp;
+  /** How this holder is reached: an account on the portal, or a mailed
+   *  instruction the Privacy Office tracks by hand on `contact_log`. */
+  channel: HolderChannel;
+  respondent_uuid: Uuid | null;
+  responder_user_uuid: Uuid | null;
+  responder_user_name: string | null;
+  contact_log: HolderContact[];
+}
+
+export type HolderChannel = "portal" | "email";
+
+/** One line on a holder's contact log: what passed, when, to whom. */
+export interface HolderContact {
+  at: Timestamp;
+  kind: string;
+  to: string | null;
+  by: number | null;
+  note: string | null;
+}
+
+/** A ticket as the team it is addressed to sees it. */
+export interface MyTicket {
+  holder_uuid: Uuid;
+  request_uuid: Uuid;
+  reference: string;
+  request_type: RightsRequestType;
+  request_status: string;
+  label: string;
+  subject_name: string | null;
+  instruction: string | null;
+  ticket_status: RightsTicketStatus;
+  issued_at: Timestamp | null;
+  due_at: Timestamp | null;
+  escalated_at: Timestamp | null;
+  returned_at: Timestamp | null;
+  return_summary: string | null;
+  return_evidence_hash: string | null;
 }
 
 /**

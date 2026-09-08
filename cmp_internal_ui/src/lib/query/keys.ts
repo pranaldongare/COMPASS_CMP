@@ -85,7 +85,13 @@ export const keys = {
     purposeUsage: (uuid: Uuid) => ["purpose", uuid, "usage"] as const,
     purposeVersions: (uuid: Uuid) => ["purpose", uuid, "versions"] as const,
     processors: (params?: Params) => ["processors", params ?? {}] as const,
+    respondents: (uuid: Uuid) => ["processor", uuid, "respondents"] as const,
     sources: (params?: Params) => ["sources", params ?? {}] as const,
+  },
+
+  /** Tickets addressed to the signed-in member of staff - the portal channel. */
+  tickets: {
+    mine: ["tickets", "mine"] as const,
   },
 
   consent: {
@@ -146,6 +152,7 @@ export const keys = {
 
   users: {
     list: (params?: Params) => ["users", params ?? {}] as const,
+    staff: ["users", "staff"] as const,
     sessions: ["users", "sessions"] as const,
     collectionOwners: ["users", "collection-owners"] as const,
   },

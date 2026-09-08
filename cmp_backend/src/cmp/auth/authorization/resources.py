@@ -47,6 +47,9 @@ AUDIT: Final = "audit"
 
 # ---------------------------------------------------------------- rights
 RIGHTS_REQUEST: Final = "rights_request"
+#: A ticket on a rights request, addressed to a member of staff: the portal
+#: channel for a holder that is one of our own teams.
+TICKET: Final = "ticket"
 
 #: Every resource this system knows about. `verify_resources()` asserts the
 #: matrix and this set agree, so a resource named in one and not the other is an
@@ -70,5 +73,6 @@ ALL: Final[frozenset[str]] = frozenset(
         ASSET,
         AUDIT,
         RIGHTS_REQUEST,
+        TICKET,
     }
 )

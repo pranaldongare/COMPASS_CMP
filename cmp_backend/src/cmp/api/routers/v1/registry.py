@@ -19,6 +19,7 @@ from cmp.api.dependencies import (
     RequireDPO,
     RequireDPOorAdmin,
     RequireResource,
+    RequireRole,
     reject_unknown_filters,
 )
 from cmp.core.errors import Conflict, NotFound, PurposeInUse, ValidationFailed
@@ -31,6 +32,7 @@ from cmp.db.sql import unique_violation
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.schemas.common import Acknowledged, CodeText, LongText, Out, Page, Schema, ShortText
+from cmp.validation import Email
 
 router = APIRouter(tags=["registry"])
 
@@ -316,6 +318,27 @@ class ProcessorIn(Schema):
         return v
 
 
+class RespondentOut(Out):
+    """Who answers a rights-request ticket for a processor."""
+
+    respondent_uuid: UUID
+    name: str
+    contact: str
+    #: Set when the respondent is an account here: an in-house team's contact,
+    #: reached on the portal rather than by email.
+    user_uuid: UUID | None = None
+    user_role: str | None = None
+    created_at: Any
+
+
+class RespondentIn(Schema):
+    #: For a third party: a name and an address. For an in-house processor:
+    #: the account, and the name and address follow from it.
+    name: ShortText | None = None
+    contact: Email | None = None
+    user_uuid: UUID | None = None
+
+
 class ProcessorUpdate(Schema):
     legal_name: ShortText | None = None
     contract_ref: Annotated[str | None, Field(default=None, max_length=120)] = None
@@ -362,6 +385,118 @@ async def create_processor(
             },
         )
     return processor
+
+
+@router.get(
+    "/processors/{processor_uuid}/respondents",
+    response_model=list[RespondentOut],
+    summary="Who answers a rights-request ticket for this processor",
+)
+async def list_respondents(
+    processor_uuid: UUID,
+    principal: Annotated[Any, Depends(RequireResource("processor"))],
+) -> list[dict[str, Any]]:
+    async with connection() as conn:
+        processor = await repo.processor_by_uuid(conn, str(processor_uuid))
+        if not processor:
+            raise NotFound("Processor")
+        return await repo.respondents_of(conn, int(processor["processor_id"]))
+
+
+@router.post(
+    "/processors/{processor_uuid}/respondents",
+    response_model=RespondentOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Name a respondent for this processor",
+)
+async def add_respondent(
+    processor_uuid: UUID,
+    body: RespondentIn,
+    principal: Annotated[Any, Depends(RequireRole(Role.DPO, Role.ADMIN))],
+) -> dict[str, Any]:
+    """A respondent is how a holder's ticket gets answered.
+
+    An in-house processor's respondent must be an account: the team answers on
+    the portal, where the ticket is in front of them when they sign in. A third
+    party's is a name and an address, and the Privacy Office mails them and
+    tracks the exchange by hand. The two are not interchangeable, and the rule
+    is held here rather than left to whoever fills the form.
+    """
+    async with transaction() as conn:
+        processor = await repo.processor_by_uuid(conn, str(processor_uuid))
+        if not processor:
+            raise NotFound("Processor")
+        user_id: int | None = None
+        name = (body.name or "").strip()
+        contact = (body.contact or "").strip()
+        if processor["is_in_house"]:
+            if body.user_uuid is None:
+                raise ValidationFailed(
+                    "An in-house processor's respondent must be a CMP account, so they "
+                    "answer on the portal",
+                    field="user_uuid",
+                )
+            account = await users_repo.by_uuid(conn, str(body.user_uuid))
+            if not account or account["role"] == "data_subject" or account["status"] != "active":
+                raise ValidationFailed("Choose an active member of staff", field="user_uuid")
+            user_id = int(account["id"])
+            name = str(account["full_name"])
+            contact = str(account["email"])
+        else:
+            if body.user_uuid is not None:
+                raise ValidationFailed(
+                    "A third party's respondent is a name and an address, not an account here",
+                    field="user_uuid",
+                )
+            if not name:
+                raise ValidationFailed("Name the respondent", field="name")
+            if not contact:
+                raise ValidationFailed("An address to send the instruction to", field="contact")
+        created = await repo.add_respondent(
+            conn, int(processor["processor_id"]), name=name, contact=contact, user_id=user_id
+        )
+        await audit.record(
+            conn,
+            event=Event.PROCESSOR_RESPONDENT_ADDED,
+            entity_type="processor",
+            entity_id=int(processor["processor_id"]),
+            detail={"respondent": str(created["respondent_uuid"]), "portal": user_id is not None},
+        )
+        fresh = await repo.respondent_by_uuid(
+            conn, int(processor["processor_id"]), str(created["respondent_uuid"])
+        )
+        assert fresh is not None
+        return fresh
+
+
+@router.delete(
+    "/processors/{processor_uuid}/respondents/{respondent_uuid}",
+    response_model=Acknowledged,
+    summary="Remove a respondent",
+)
+async def remove_respondent(
+    processor_uuid: UUID,
+    respondent_uuid: UUID,
+    principal: Annotated[Any, Depends(RequireRole(Role.DPO, Role.ADMIN))],
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        processor = await repo.processor_by_uuid(conn, str(processor_uuid))
+        if not processor:
+            raise NotFound("Processor")
+        rs = await repo.respondent_by_uuid(
+            conn, int(processor["processor_id"]), str(respondent_uuid)
+        )
+        if not rs:
+            raise NotFound("Respondent")
+        await repo.remove_respondent(conn, int(rs["respondent_id"]))
+        await audit.record(
+            conn,
+            event=Event.PROCESSOR_RESPONDENT_REMOVED,
+            entity_type="processor",
+            entity_id=int(processor["processor_id"]),
+            detail={"respondent": str(respondent_uuid)},
+        )
+    return {"ok": True, "message": "Removed. Tickets already sent to them are unchanged."}
 
 
 @router.get("/processors/{processor_uuid}", response_model=ProcessorOut)

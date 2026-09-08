@@ -38,6 +38,8 @@ ROUTERS: tuple[APIRouter, ...] = (
     v1.exchange_router,
     # Oversight.
     v1.rights_router,
+    # A team's own tickets on rights requests - the portal channel.
+    v1.tickets_router,
     v1.audit_router,
     v1.dashboard_router,
 )

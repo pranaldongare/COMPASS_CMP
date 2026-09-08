@@ -494,3 +494,57 @@ async def purpose_is_published_anywhere(conn: Conn, purpose_id: int) -> bool:
         (purpose_id,),
     )
     return bool((row or {}).get("live"))
+
+
+# --------------------------------------------------------------- respondents
+
+_RESPONDENT_SELECT = """
+  rs.respondent_id, rs.respondent_uuid, rs.processor_id, rs.name, rs.contact,
+  rs.user_id, rs.created_at, rs.removed_at,
+  u.uuid AS user_uuid, u.full_name AS user_name, u.email AS user_email, u.role AS user_role
+  FROM processor_respondent rs
+  LEFT JOIN auth_user u ON u.id = rs.user_id
+"""
+
+
+async def respondents_of(conn: Conn, processor_id: int) -> list[Row]:
+    """Who answers a ticket for this processor. Live rows only, oldest first -
+    the oldest is the default a holder inherits."""
+    return await fetch_all(
+        conn,
+        f"""SELECT {_RESPONDENT_SELECT}
+             WHERE rs.processor_id = %s AND rs.removed_at IS NULL
+             ORDER BY rs.created_at, rs.respondent_id""",
+        (processor_id,),
+    )
+
+
+async def respondent_by_uuid(conn: Conn, processor_id: int, respondent_uuid: str) -> Row | None:
+    return await fetch_one(
+        conn,
+        f"""SELECT {_RESPONDENT_SELECT}
+             WHERE rs.processor_id = %s AND rs.respondent_uuid = %s AND rs.removed_at IS NULL""",
+        (processor_id, respondent_uuid),
+    )
+
+
+async def add_respondent(
+    conn: Conn, processor_id: int, *, name: str, contact: str, user_id: int | None
+) -> Row:
+    row = await fetch_one(
+        conn,
+        """INSERT INTO processor_respondent (processor_id, name, contact, user_id)
+           VALUES (%s, %s, %s, %s)
+           RETURNING respondent_id, respondent_uuid""",
+        (processor_id, name, contact, user_id),
+    )
+    assert row is not None
+    return row
+
+
+async def remove_respondent(conn: Conn, respondent_id: int) -> None:
+    """Stamped, not deleted: a holder on a closed request still points here."""
+    await conn.execute(
+        "UPDATE processor_respondent SET removed_at = now() WHERE respondent_id = %s",
+        (respondent_id,),
+    )

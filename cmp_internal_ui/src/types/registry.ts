@@ -33,6 +33,22 @@ export interface Purpose {
   display_order?: number;
 }
 
+/**
+ * Who answers a rights-request ticket for a processor.
+ *
+ * For an in-house processor this is an account (`user_uuid` set): the ticket
+ * is in their console. For a third party it is a name and an address, and the
+ * Privacy Office mails them and tracks the exchange by hand.
+ */
+export interface ProcessorRespondent {
+  respondent_uuid: Uuid;
+  name: string;
+  contact: string;
+  user_uuid: Uuid | null;
+  user_role: string | null;
+  created_at: Timestamp;
+}
+
 export interface Processor {
   processor_uuid: Uuid;
   legal_name: string;

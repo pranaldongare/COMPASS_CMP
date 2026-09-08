@@ -15,6 +15,7 @@ import type { ApiError } from "@/lib/errors";
 import { keys, prefixes, type Result } from "@/lib/query";
 import type {
   GrievanceDecisionResult,
+  MyTicket,
   RightsHolder,
   RightsRequest,
   RightsScopeItem,
@@ -89,10 +90,15 @@ export const useDeriveHolders = (uuid: Uuid) =>
 export const useAddHolder = (uuid: Uuid) =>
   useRequestAction<RightsHolder, api.HolderInput>(uuid, (body) => api.addHolder(uuid, body));
 export const useConfirmHolder = (uuid: Uuid) =>
-  useRequestAction<
-    RightsHolder,
-    { holderUuid: Uuid; responder_name?: string | null; responder_contact?: string | null }
-  >(uuid, ({ holderUuid, ...body }) => api.confirmHolder(uuid, holderUuid, body));
+  useRequestAction<RightsHolder, { holderUuid: Uuid } & api.ConfirmHolderInput>(
+    uuid,
+    ({ holderUuid, ...body }) => api.confirmHolder(uuid, holderUuid, body),
+  );
+export const useLogContact = (uuid: Uuid) =>
+  useRequestAction<RightsHolder, { holderUuid: Uuid } & api.ContactInput>(
+    uuid,
+    ({ holderUuid, ...body }) => api.logContact(uuid, holderUuid, body),
+  );
 export const useIssueTickets = (uuid: Uuid) =>
   useRequestAction<RightsHolder[], Parameters<typeof api.issueTickets>[1]>(uuid, (body) =>
     api.issueTickets(uuid, body),
@@ -123,3 +129,16 @@ export const useDecideGrievance = (uuid: Uuid) =>
   useRequestAction<GrievanceDecisionResult, api.GrievanceDecisionInput>(uuid, (body) =>
     api.decideGrievance(uuid, body),
   );
+
+/* --------------------------------------------------- the respondent's side */
+
+export function useReturnMyTicket(): Result<MyTicket, { holderUuid: Uuid; summary: string; evidence: File | null }> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ holderUuid, ...input }) => api.returnMyTicket(holderUuid, input),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: keys.tickets.mine });
+      void qc.invalidateQueries({ queryKey: keys.dashboard.all });
+    },
+  });
+}

@@ -6,6 +6,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
+  addRespondent,
+  removeRespondent,
+  type RespondentInput,
   activatePurpose,
   assignSourceOwner,
   createProcessor,
@@ -24,7 +27,7 @@ import {
 } from "@/features/registry/api";
 import type { ApiError } from "@/lib/errors";
 import { keys, prefixes, type Result } from "@/lib/query";
-import type { Acknowledged, Processor, Purpose, Uuid } from "@/types";
+import type { Acknowledged, Processor, ProcessorRespondent, Purpose, Uuid } from "@/types";
 
 
 export function useActivatePurpose() {
@@ -132,5 +135,21 @@ export function useUpdateSource(uuid: Uuid): Result<unknown, Partial<SourceInput
   return useMutation({
     mutationFn: (body: Partial<SourceInput>) => updateSource(uuid, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["sources"] }),
+  });
+}
+
+export function useAddRespondent(processorUuid: Uuid) {
+  const qc = useQueryClient();
+  return useMutation<ProcessorRespondent, ApiError, RespondentInput>({
+    mutationFn: (body) => addRespondent(processorUuid, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.registry.respondents(processorUuid) }),
+  });
+}
+
+export function useRemoveRespondent(processorUuid: Uuid) {
+  const qc = useQueryClient();
+  return useMutation<Acknowledged, ApiError, Uuid>({
+    mutationFn: (respondentUuid) => removeRespondent(processorUuid, respondentUuid),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.registry.respondents(processorUuid) }),
   });
 }

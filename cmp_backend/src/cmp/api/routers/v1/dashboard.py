@@ -6,6 +6,7 @@ differs by role but the call does not, so the SPA has one loading path.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -33,27 +34,56 @@ class Dashboard(Out):
     recent: list[dict[str, Any]]
 
 
+async def _tickets_for_me(conn: Any, user_id: int) -> tuple[int, list[dict[str, Any]]]:
+    """Open tickets addressed to this account: a holder on somebody's rights
+    request that is one of our own teams, answered on the portal."""
+    rows = await rights_repo.tickets_for_user(conn, user_id, open_only=True)
+    items = [
+        {
+            "holder_uuid": str(r["holder_uuid"]),
+            "reference": r["reference"],
+            "subject_name": r.get("subject_name"),
+            "action": f"Return the ticket for {r['label']}",
+            "due_at": r["due_at"].isoformat() if r.get("due_at") else None,
+            "overdue": bool(r.get("due_at") and r["due_at"] < datetime.now(UTC)),
+            "ticket": True,
+        }
+        for r in rows
+    ]
+    return len(items), items
+
+
 @router.get("/dashboard", response_model=Dashboard, summary="Role-aware aggregate")
 async def dashboard(principal: CurrentUser) -> dict[str, Any]:
     async with connection() as conn:
+        data: dict[str, Any]
         match principal.role:
             case Role.RND_USER:
-                return await _rnd(conn, principal.user_id)
+                data = await _rnd(conn, principal.user_id)
             case Role.DPO:
-                return await _dpo(conn)
+                data = await _dpo(conn)
             case Role.DCO | Role.RCO:
                 # One dashboard. An RCO is accountable for collection the R&D
                 # team does itself and a DCO for a third party's, but the work
                 # in front of them - links, consents, import gaps - is the same
                 # work, and two near-identical dashboards would drift.
-                return await _dco(conn, principal.user_id, role=principal.role)
+                data = await _dco(conn, principal.user_id, role=principal.role)
             case Role.DCO_ADMIN:
-                return await _dco_admin(conn, principal.user_id)
+                data = await _dco_admin(conn, principal.user_id)
             case Role.ADMIN:
-                return await _admin(conn)
+                data = await _admin(conn)
             case Role.DATA_SUBJECT:
                 return await _subject(conn, principal.user_id)
-    raise Forbidden("No dashboard for this role")
+            case _:
+                raise Forbidden("No dashboard for this role")
+        # Every member of staff, whatever their role: a rights request's
+        # holder that is one of our own teams is answered by whoever that team
+        # named, and their ticket has to be in front of them.
+        count, items = await _tickets_for_me(conn, principal.user_id)
+        data["counts"]["tickets_for_me"] = count
+        if items:
+            data["queues"].append({"name": "Tickets addressed to you", "items": items})
+        return data
 
 
 async def _recent_activity(conn: Any, *, project_ids: list[int], actor_id: int) -> list[Any]:

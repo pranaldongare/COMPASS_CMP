@@ -43,6 +43,7 @@ export const COUNT_LABELS: Record<string, string> = {
   requests_unverified: "Requests awaiting verification",
   grievances_about_dpo: "Grievances about the DPO",
   requests_closed: "Closed requests",
+  tickets_for_me: "Tickets addressed to you",
 };
 
 /**
@@ -83,6 +84,7 @@ export const COUNT_LINKS: Record<string, string> = {
   requests_due_7d: "/requests",
   requests_unverified: "/requests?status=received",
   grievances_about_dpo: "/requests?type=grievance",
+  tickets_for_me: "/tickets",
 };
 
 /** Counts that are a problem when non-zero, rather than a neutral statistic. */

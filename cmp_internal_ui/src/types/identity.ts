@@ -47,6 +47,14 @@ export interface SessionInfo {
   current: boolean;
 }
 
+/** A member of staff, as offered to a picker: enough to tell two apart. */
+export interface StaffMember {
+  uuid: Uuid;
+  full_name: string;
+  email: string;
+  role: Role;
+}
+
 export interface User {
   uuid: Uuid;
   username: string | null;

@@ -7,13 +7,14 @@ import { useQuery } from "@tanstack/react-query";
 
 import {
   getRequest,
+  listMyTickets,
   getRequestTrail,
   listRequests,
   type RequestFilters,
 } from "@/features/rights/api";
 import type { ApiError } from "@/lib/errors";
 import { keys } from "@/lib/query";
-import type { AuditEntry, Page, RightsRequestDetail, RightsRequestRow, Uuid } from "@/types";
+import type { AuditEntry, MyTicket, Page, RightsRequestDetail, RightsRequestRow, Uuid } from "@/types";
 
 /* ------------------------------------------------------------- the DPO */
 
@@ -37,5 +38,14 @@ export function useRequestTrail(uuid: Uuid | undefined) {
     queryKey: keys.rights.trail(uuid ?? ""),
     queryFn: () => getRequestTrail(uuid!),
     enabled: Boolean(uuid),
+  });
+}
+
+/* --------------------------------------------------- the respondent's side */
+
+export function useMyTickets() {
+  return useQuery<MyTicket[], ApiError>({
+    queryKey: keys.tickets.mine,
+    queryFn: listMyTickets,
   });
 }

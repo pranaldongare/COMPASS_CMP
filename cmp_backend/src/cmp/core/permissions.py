@@ -251,6 +251,18 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.DPO: Grant(Scope.ALL, write=True),
         Role.ADMIN: Grant(Scope.SCOPED, write=True),
     },
+    # A ticket on a rights request, addressed to a member of staff because the
+    # holder is one of our own teams. Every staff role: which team holds the
+    # data is not a function of role. OWN: the tickets addressed to *you*, and
+    # nothing about the request beyond what the instruction says.
+    "ticket": {
+        Role.DPO: Grant(Scope.OWN, write=True),
+        Role.ADMIN: Grant(Scope.OWN, write=True),
+        Role.DCO: Grant(Scope.OWN, write=True),
+        Role.DCO_ADMIN: Grant(Scope.OWN, write=True),
+        Role.RCO: Grant(Scope.OWN, write=True),
+        Role.RND_USER: Grant(Scope.OWN, write=True),
+    },
 }
 
 
@@ -283,7 +295,10 @@ def scope_of(resource: str, role: Role | str) -> Scope:
 #: was invisible to every member of staff, and `/account` was reachable only by
 #: typing the URL. Spelled once and spliced into every row, so a role added
 #: later cannot lose them the same way.
-PERSONAL: tuple[str, ...] = ("notifications", "profile")
+#: Tickets addressed to the signed-in member of staff, then the personal pages.
+#: Every staff role has tickets: a holder that is one of our own teams is
+#: answered by whoever that team names, whatever their role here.
+PERSONAL: tuple[str, ...] = ("tickets", "notifications", "profile")
 
 NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     Role.DPO: (

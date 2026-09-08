@@ -32,6 +32,7 @@ from cmp.core.errors import BadRequest, Conflict, Forbidden, NotFound, Validatio
 from cmp.core.logging import get_logger
 from cmp.core.permissions import Role
 from cmp.core.security import new_token, token_fingerprint
+from cmp.db.repositories import registry as registry_repo
 from cmp.db.repositories import rights as repo
 from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn, fetch_one
@@ -698,6 +699,9 @@ async def derive_holders(conn: Conn, row: Row, *, role: Role | str, actor_id: in
         )
         if result.get("inserted"):
             added += 1
+            # Who answers for this processor, if the registry knows. The DPO
+            # can still pick another of its respondents when confirming.
+            await _apply_respondent(conn, int(result["holder_id"]), int(c["processor_id"]))
     await _record(
         conn,
         row,
@@ -748,6 +752,8 @@ async def add_holder(
     await repo.update_holder(
         conn, int(result["holder_id"]), confirmed_at=datetime.now(UTC), confirmed_by=actor_id
     )
+    if processor_id is not None and not (responder_name or responder_contact):
+        await _apply_respondent(conn, int(result["holder_id"]), processor_id)
     await _record(
         conn,
         row,
@@ -771,6 +777,7 @@ async def confirm_holder(
     responder_contact: str | None,
     role: Role | str,
     actor_id: int,
+    respondent_uuid: str | None = None,
 ) -> Row:
     _may_act(row, role)
     _open(row)
@@ -780,10 +787,27 @@ async def confirm_holder(
     cols: dict[str, Any] = {}
     if holder["confirmed_at"] is None:
         cols.update(confirmed_at=datetime.now(UTC), confirmed_by=actor_id)
-    if responder_name is not None:
-        cols["responder_name"] = responder_name
-    if responder_contact is not None:
-        cols["responder_contact"] = responder_contact
+    if respondent_uuid:
+        # One of the processor's registered respondents, chosen by the DPO.
+        # Decides the channel with it: an account answers on the portal.
+        if holder["processor_id"] is None:
+            raise ValidationFailed(
+                "Only a registered processor has respondents to choose from", field="respondent"
+            )
+        chosen = await registry_repo.respondent_by_uuid(
+            conn, int(holder["processor_id"]), respondent_uuid
+        )
+        if chosen is None:
+            raise NotFound("Respondent")
+        cols.update(_respondent_columns(chosen))
+    else:
+        if responder_name is not None:
+            cols["responder_name"] = responder_name
+        if responder_contact is not None:
+            cols["responder_contact"] = responder_contact
+        if (responder_name or responder_contact) and holder.get("channel") == "portal":
+            # Typing over an account's details means: not the portal after all.
+            cols.update(respondent_id=None, responder_user_id=None, channel="email")
     await repo.update_holder(conn, int(holder["holder_id"]), **cols)
     await _record(
         conn,
@@ -870,15 +894,9 @@ async def issue_tickets(
             entity_id=int(h["holder_id"]),
             detail={"label": h["label"], "due_at": when.isoformat()},
         )
-        if h.get("responder_contact"):
-            _dispatch(
-                "send_holder_instruction",
-                str(h["responder_contact"]),
-                row["reference"],
-                str(h["label"]),
-                text,
-                when.date().isoformat(),
-            )
+        await _deliver_ticket(
+            conn, h, reference=str(row["reference"]), text=text, due=when, actor_id=actor_id
+        )
     if row["status"] == Status.IN_PROGRESS:
         fresh = await reload(conn, row)
         await transition(
@@ -964,16 +982,228 @@ async def escalate_ticket(
         entity_id=int(holder["holder_id"]),
         detail={"label": holder["label"]},
     )
-    if holder.get("responder_contact"):
+    to = _ticket_address(holder)
+    if to:
         _dispatch(
             "send_holder_instruction",
-            str(holder["responder_contact"]),
+            to,
             row["reference"],
             str(holder["label"]),
             "ESCALATION - the date for this ticket has passed. " + str(holder["instruction"] or ""),
             (holder["due_at"] or datetime.now(UTC)).date().isoformat(),
         )
+    await repo.append_contact(
+        conn,
+        int(holder["holder_id"]),
+        _contact_entry("escalated", to=to, by=actor_id, note="Escalation sent" if to else None),
+    )
     fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    assert fresh is not None
+    return fresh
+
+
+# ------------------------------------------------- respondents and channels
+def _respondent_columns(rs: Row) -> dict[str, Any]:
+    """The holder columns a chosen respondent sets. An account means the
+    portal; a name and address mean email."""
+    if rs.get("user_id"):
+        return {
+            "respondent_id": int(rs["respondent_id"]),
+            "responder_user_id": int(rs["user_id"]),
+            "responder_name": str(rs.get("user_name") or rs["name"]),
+            "responder_contact": str(rs.get("user_email") or rs["contact"]),
+            "channel": "portal",
+        }
+    return {
+        "respondent_id": int(rs["respondent_id"]),
+        "responder_user_id": None,
+        "responder_name": str(rs["name"]),
+        "responder_contact": str(rs["contact"]),
+        "channel": "email",
+    }
+
+
+async def _apply_respondent(conn: Conn, holder_id: int, processor_id: int) -> None:
+    """The processor's first respondent, where it has one. Nothing otherwise."""
+    respondents = await registry_repo.respondents_of(conn, processor_id)
+    if respondents:
+        await repo.update_holder(conn, holder_id, **_respondent_columns(respondents[0]))
+
+
+def _ticket_address(holder: Row) -> str | None:
+    """Where a ticket's message goes. An account's own address on the portal
+    channel - a courtesy copy; the ticket itself is in their console."""
+    if holder.get("channel") == "portal":
+        return (
+            str(holder.get("responder_user_email") or holder.get("responder_contact") or "") or None
+        )
+    return str(holder.get("responder_contact") or "") or None
+
+
+def _contact_entry(
+    kind: str, *, to: str | None, by: int | None, note: str | None = None
+) -> dict[str, Any]:
+    return {
+        "at": datetime.now(UTC).isoformat(),
+        "kind": kind,
+        "to": to,
+        "by": by,
+        "note": note,
+    }
+
+
+async def _deliver_ticket(
+    conn: Conn, holder: Row, *, reference: str, text: str, due: datetime, actor_id: int
+) -> None:
+    """Send the instruction the way this holder is reached, and write down
+    that it was sent. On the portal the ticket is in the team's console the
+    moment it is issued; the message is a copy so they hear about it."""
+    to = _ticket_address(holder)
+    if to:
+        _dispatch(
+            "send_holder_instruction",
+            to,
+            reference,
+            str(holder["label"]),
+            text,
+            due.date().isoformat(),
+        )
+    kind = "ticket_on_portal" if holder.get("channel") == "portal" else "mail_sent"
+    await repo.append_contact(
+        conn,
+        int(holder["holder_id"]),
+        _contact_entry(
+            kind,
+            to=to,
+            by=actor_id,
+            note="Instruction sent" if to else "No address on record - nothing was sent",
+        ),
+    )
+
+
+CONTACT_KINDS: frozenset[str] = frozenset({"mail_sent", "chased", "reply_noted", "note"})
+
+
+async def log_contact(
+    conn: Conn,
+    row: Row,
+    *,
+    holder_uuid: str,
+    kind: str,
+    note: str | None,
+    send: bool,
+    role: Role | str,
+    actor_id: int,
+) -> Row:
+    """What passed between the Privacy Office and a holder reached by email.
+
+    The mail itself lives in an inbox; this is the record on the request that
+    it was sent, chased, or answered - so the trail is here and not in one
+    person's mailbox. `send` re-sends the instruction to the address on record
+    and logs that it did.
+    """
+    _may_act(row, role)
+    _open(row)
+    holder = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    if not holder:
+        raise NotFound("Holder")
+    if kind not in CONTACT_KINDS:
+        raise ValidationFailed("Say what kind of contact this was", field="kind")
+    to: str | None = None
+    if send:
+        if holder.get("channel") == "portal":
+            raise Conflict(
+                "This holder answers on the portal; there is no mail to send", code="portal_holder"
+            )
+        to = _ticket_address(holder)
+        if not to:
+            raise ValidationFailed(
+                "No address on record for this holder", field="responder_contact"
+            )
+        if not holder.get("issued_at"):
+            raise Conflict("Issue the ticket first, then send or chase it", code="ticket_not_open")
+        _dispatch(
+            "send_holder_instruction",
+            to,
+            row["reference"],
+            str(holder["label"]),
+            str(holder.get("instruction") or _default_instruction(row)),
+            (holder["due_at"] or datetime.now(UTC)).date().isoformat(),
+        )
+        kind = "mail_sent"
+    await repo.append_contact(
+        conn,
+        int(holder["holder_id"]),
+        _contact_entry(kind, to=to, by=actor_id, note=(note or "").strip() or None),
+    )
+    await _record(
+        conn,
+        row,
+        Event.RIGHTS_HOLDER_CONTACTED,
+        actor_user_id=actor_id,
+        entity_type="rights_request_holder",
+        entity_id=int(holder["holder_id"]),
+        detail={"label": holder["label"], "kind": kind, "sent": bool(to)},
+    )
+    fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    assert fresh is not None
+    return fresh
+
+
+# ---------------------------------------------------- the respondent's side
+async def tickets_for(conn: Conn, user_id: int) -> list[Row]:
+    """The tickets addressed to this member of staff, open ones first."""
+    return await repo.tickets_for_user(conn, user_id)
+
+
+async def return_own_ticket(
+    conn: Conn,
+    *,
+    user_id: int,
+    holder_uuid: str,
+    summary: str,
+    evidence_ref: str | None,
+    evidence_hash: str | None,
+) -> Row:
+    """A team returns its own ticket on the portal.
+
+    The same record the DPO would write on their behalf, made by the person
+    it was addressed to. Scope is the predicate: a ticket not addressed to
+    this account is not found, not forbidden.
+    """
+    holder = await repo.ticket_for_user(conn, user_id, holder_uuid)
+    if not holder:
+        raise NotFound("Ticket")
+    if holder["ticket_status"] not in (Ticket.ISSUED, Ticket.ESCALATED):
+        raise Conflict("This ticket is not open", code="ticket_not_open")
+    if not summary.strip():
+        raise ValidationFailed("Say what was done", field="summary")
+    row = await repo.by_id(conn, int(holder["request_id"]))
+    assert row is not None
+    await repo.update_holder(
+        conn,
+        int(holder["holder_id"]),
+        ticket_status=Ticket.RETURNED.value,
+        returned_at=datetime.now(UTC),
+        return_summary=summary.strip(),
+        return_evidence_ref=evidence_ref,
+        return_evidence_hash=evidence_hash,
+    )
+    await repo.append_contact(
+        conn,
+        int(holder["holder_id"]),
+        _contact_entry("returned_on_portal", to=None, by=user_id),
+    )
+    await _record(
+        conn,
+        row,
+        Event.RIGHTS_TICKET_RETURNED,
+        actor_user_id=user_id,
+        entity_type="rights_request_holder",
+        entity_id=int(holder["holder_id"]),
+        detail={"label": holder["label"], "evidence_sha256": evidence_hash, "channel": "portal"},
+    )
+    fresh = await repo.ticket_for_user(conn, user_id, holder_uuid)
     assert fresh is not None
     return fresh
 

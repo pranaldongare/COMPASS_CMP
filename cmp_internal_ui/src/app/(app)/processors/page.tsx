@@ -10,7 +10,7 @@
  */
 "use client";
 
-import { Ban, Pencil, Plus } from "lucide-react";
+import { Ban, Pencil, Plus, UsersRound } from "lucide-react";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
@@ -22,6 +22,7 @@ import {
   useCursorStack,
 } from "@/components/data-display/resource-list";
 import { ProcessorForm } from "@/features/registry/components/forms";
+import { RespondentsPanel } from "@/features/registry/components/respondents";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyRecords } from "@/components/ui/graphics";
 import { Button, Td, Tr } from "@/components/ui/primitives";
@@ -40,6 +41,7 @@ export default function ProcessorsPage() {
   const [q, setQ] = React.useState("");
   const [creating, setCreating] = React.useState(false);
   const [editing, setEditing] = React.useState<Processor | null>(null);
+  const [respondentsFor, setRespondentsFor] = React.useState<Processor | null>(null);
   const suspend = useSuspendProcessor();
 
   const { data: enums } = useEnums();
@@ -124,6 +126,11 @@ export default function ProcessorsPage() {
               <StatusBadge kind="record" value={p.status} />
             </Td>
             <Td>
+              <div className="flex flex-wrap gap-1">
+                <Button variant="ghost" size="sm" onClick={() => setRespondentsFor(p)}>
+                  <UsersRound className="size-4" />
+                  Respondents
+                </Button>
               {canSuspend && (
                 <div className="flex gap-1">
                   <Button variant="ghost" size="sm" onClick={() => setEditing(p)}>
@@ -143,6 +150,7 @@ export default function ProcessorsPage() {
                   )}
                 </div>
               )}
+              </div>
             </Td>
           </Tr>
         )}
@@ -154,6 +162,15 @@ export default function ProcessorsPage() {
           description="Rule 6(1)(f): the security confirmation date is evidence, not paperwork."
         >
           <ProcessorForm onDone={() => setCreating(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(respondentsFor)} onOpenChange={(o) => !o && setRespondentsFor(null)}>
+        <DialogContent
+          title={respondentsFor ? `Respondents · ${respondentsFor.legal_name}` : "Respondents"}
+          description="Who answers a rights-request ticket for this processor, and how it reaches them."
+        >
+          {respondentsFor && <RespondentsPanel processor={respondentsFor} />}
         </DialogContent>
       </Dialog>
 
