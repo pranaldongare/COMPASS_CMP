@@ -3532,6 +3532,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/requests/{request_uuid}/holders/{holder_uuid}/thread": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The ticket's thread, as the office reads it */
+        get: operations["holder_thread_requests__request_uuid__holders__holder_uuid__thread_get"];
+        put?: never;
+        /**
+         * Write to the holder on the ticket
+         * @description Kept on the thread, and the holder is told the way it is reached: on the
+         *     portal with a copy by mail, or by mail alone.
+         */
+        post: operations["post_to_holder_requests__request_uuid__holders__holder_uuid__thread_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/requests/{request_uuid}/holders/{holder_uuid}/contact": {
         parameters: {
             query?: never;
@@ -3739,6 +3761,46 @@ export interface paths {
         get: operations["my_tickets_tickets_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tickets/{holder_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One ticket, with its brief and thread
+         * @description Reading it marks the office's messages read.
+         */
+        get: operations["my_ticket_tickets__holder_uuid__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tickets/{holder_uuid}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write to the Privacy Office on my ticket
+         * @description Kept on the thread, and every DPO is told.
+         */
+        post: operations["message_office_tickets__holder_uuid__messages_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5007,6 +5069,20 @@ export interface components {
             contact_log?: {
                 [key: string]: unknown;
             }[];
+            /** Brief */
+            brief?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Message Count
+             * @default 0
+             */
+            message_count: number;
+            /**
+             * Unread For Office
+             * @default 0
+             */
+            unread_for_office: number;
         };
         /** ImportBatchOut */
         ImportBatchOut: {
@@ -5366,6 +5442,34 @@ export interface components {
             session_expires_at: string;
             /** Nav */
             nav: string[];
+        };
+        /** MessageIn */
+        MessageIn: {
+            /** Body */
+            body: string;
+        };
+        /** MessageOut */
+        MessageOut: {
+            /**
+             * Message Uuid
+             * Format: uuid
+             */
+            message_uuid: string;
+            /** Author Side */
+            author_side: string;
+            /** Author Name */
+            author_name: string | null;
+            /** Kind */
+            kind: string;
+            /** Body */
+            body: string;
+            /** Evidence Hash */
+            evidence_hash: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** MfaVerifyRequest */
         MfaVerifyRequest: {
@@ -6973,6 +7077,18 @@ export interface components {
             closed_at: string | null;
             clock: components["schemas"]["ClockOut"];
         };
+        /** ThreadOut */
+        ThreadOut: {
+            holder: components["schemas"]["HolderOut"];
+            /** Messages */
+            messages: components["schemas"]["MessageOut"][];
+        };
+        /** TicketDetailOut */
+        TicketDetailOut: {
+            ticket: components["schemas"]["TicketOut"];
+            /** Messages */
+            messages: components["schemas"]["MessageOut"][];
+        };
         /**
          * TicketOut
          * @description A ticket as its respondent sees it: what is asked, of whom, by when.
@@ -7014,6 +7130,20 @@ export interface components {
             return_summary: string | null;
             /** Return Evidence Hash */
             return_evidence_hash: string | null;
+            /** Brief */
+            brief?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Message Count
+             * @default 0
+             */
+            message_count: number;
+            /**
+             * Unread For Holder
+             * @default 0
+             */
+            unread_for_holder: number;
         };
         /** TransitionIn */
         TransitionIn: {
@@ -13573,6 +13703,74 @@ export interface operations {
             };
         };
     };
+    holder_thread_requests__request_uuid__holders__holder_uuid__thread_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_to_holder_requests__request_uuid__holders__holder_uuid__thread_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     log_contact_requests__request_uuid__holders__holder_uuid__contact_post: {
         parameters: {
             query?: never;
@@ -13962,6 +14160,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TicketOut"][];
+                };
+            };
+        };
+    };
+    my_ticket_tickets__holder_uuid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    message_office_tickets__holder_uuid__messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

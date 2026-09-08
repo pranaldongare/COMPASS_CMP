@@ -89,9 +89,24 @@ def send_nomination_accepted(
     return _deliver(to=contact, subject=subject, body=body)
 
 
+@shared_task(name="cmp.notifications.send_ticket_message", **RETRY_KW)
+def send_ticket_message(
+    contact: str, reference: str, holder_label: str, author: str, body: str, where: str | None
+) -> dict[str, Any]:
+    subject, text = templates.ticket_message(reference, holder_label, author, body, where)
+    return _deliver(to=contact, subject=subject, body=text)
+
+
 @shared_task(name="cmp.notifications.send_holder_instruction", **RETRY_KW)
 def send_holder_instruction(
-    contact: str, reference: str, holder_label: str, instruction: str, due_on: str
+    contact: str,
+    reference: str,
+    holder_label: str,
+    instruction: str,
+    due_on: str,
+    brief_text: str = "",
 ) -> dict[str, Any]:
-    subject, body = templates.holder_instruction(reference, holder_label, instruction, due_on)
+    subject, body = templates.holder_instruction(
+        reference, holder_label, instruction, due_on, brief_text
+    )
     return _deliver(to=contact, subject=subject, body=body)

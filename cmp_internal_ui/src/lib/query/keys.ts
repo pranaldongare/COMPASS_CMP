@@ -92,6 +92,7 @@ export const keys = {
   /** Tickets addressed to the signed-in member of staff - the portal channel. */
   tickets: {
     mine: ["tickets", "mine"] as const,
+    detail: (uuid: Uuid) => ["tickets", "detail", uuid] as const,
   },
 
   consent: {
@@ -148,6 +149,7 @@ export const keys = {
     list: (params?: Params) => ["all", "requests", params ?? {}] as const,
     detail: (uuid: Uuid) => ["request", uuid] as const,
     trail: (uuid: Uuid) => ["request", uuid, "trail"] as const,
+    thread: (uuid: Uuid, holderUuid: Uuid) => ["request", uuid, "thread", holderUuid] as const,
   },
 
   users: {

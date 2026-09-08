@@ -314,7 +314,18 @@ _HOLDER_SELECT = """
   cb.full_name AS confirmed_by_name,
   h.respondent_id, rs.respondent_uuid, h.responder_user_id, h.channel, h.contact_log,
   ru.uuid AS responder_user_uuid, ru.full_name AS responder_user_name,
-  ru.email AS responder_user_email
+  ru.email AS responder_user_email,
+  h.brief, h.office_read_at, h.holder_read_at,
+  (SELECT count(*) FROM rights_ticket_message m WHERE m.holder_id = h.holder_id)
+    AS message_count,
+  (SELECT count(*) FROM rights_ticket_message m
+    WHERE m.holder_id = h.holder_id AND m.author_side = 'holder'
+      AND m.created_at > coalesce(h.office_read_at, 'epoch'::timestamptz))
+    AS unread_for_office,
+  (SELECT count(*) FROM rights_ticket_message m
+    WHERE m.holder_id = h.holder_id AND m.author_side IN ('office', 'system')
+      AND m.created_at > coalesce(h.holder_read_at, 'epoch'::timestamptz))
+    AS unread_for_holder
   FROM rights_request_holder h
   LEFT JOIN processor pr ON pr.processor_id = h.processor_id
   LEFT JOIN auth_user cb ON cb.id = h.confirmed_by
@@ -447,8 +458,202 @@ _HOLDER_MUTABLE = frozenset(
         "respondent_id",
         "responder_user_id",
         "channel",
+        "brief",
+        "office_read_at",
+        "holder_read_at",
     }
 )
+
+
+async def mark_thread_read(conn: Conn, holder_id: int, *, side: str) -> None:
+    """One side has seen the thread up to now."""
+    column = "office_read_at" if side == "office" else "holder_read_at"
+    # clock_timestamp(), not now(): now() is frozen for the transaction, and a
+    # read stamped in the same transaction as the message it follows would tie
+    # with it and count it as unread forever - or read before it was written.
+    await conn.execute(
+        f"UPDATE rights_request_holder SET {column} = clock_timestamp() WHERE holder_id = %s",
+        (holder_id,),
+    )
+
+
+# ------------------------------------------------------------ the thread
+
+_MESSAGE_SELECT = """
+  m.message_id, m.message_uuid, m.holder_id, m.author_user_id, m.author_side, m.kind,
+  m.body, m.evidence_ref, m.evidence_hash, m.created_at,
+  a.full_name AS author_name
+  FROM rights_ticket_message m
+  LEFT JOIN auth_user a ON a.id = m.author_user_id
+"""
+
+
+async def messages_of(conn: Conn, holder_id: int) -> list[Row]:
+    return await fetch_all(
+        conn,
+        f"SELECT {_MESSAGE_SELECT} WHERE m.holder_id = %s ORDER BY m.message_id",
+        (holder_id,),
+    )
+
+
+async def add_message(
+    conn: Conn,
+    holder_id: int,
+    *,
+    side: str,
+    kind: str,
+    body: str,
+    author_user_id: int | None = None,
+    evidence_ref: str | None = None,
+    evidence_hash: str | None = None,
+) -> Row:
+    """One more message on the thread. Append-only at the trigger level."""
+    row = await fetch_one(
+        conn,
+        """INSERT INTO rights_ticket_message
+             (holder_id, author_user_id, author_side, kind, body, evidence_ref, evidence_hash,
+              created_at)
+           VALUES (%s, %s, %s, %s, %s, %s, %s, clock_timestamp())
+           RETURNING message_id, message_uuid""",
+        (holder_id, author_user_id, side, kind, body, evidence_ref, evidence_hash),
+    )
+    assert row is not None
+    return row
+
+
+async def holders_awaiting_office(conn: Conn, *, limit: int = 25) -> list[Row]:
+    """Open holders whose team has written and the Privacy Office has not read it."""
+    return await fetch_all(
+        conn,
+        """SELECT r.request_uuid, r.reference, r.due_at, s.full_name AS subject_name,
+                  h.holder_uuid, h.label,
+                  (SELECT count(*) FROM rights_ticket_message m
+                    WHERE m.holder_id = h.holder_id AND m.author_side = 'holder'
+                      AND m.created_at > coalesce(h.office_read_at, 'epoch'::timestamptz))
+                    AS unread
+           FROM rights_request_holder h
+           JOIN rights_request r ON r.request_id = h.request_id
+           LEFT JOIN auth_user s ON s.id = r.subject_user_id
+           WHERE r.status <> 'closed'
+             AND EXISTS (SELECT 1 FROM rights_ticket_message m
+                          WHERE m.holder_id = h.holder_id AND m.author_side = 'holder'
+                            AND m.created_at > coalesce(h.office_read_at, 'epoch'::timestamptz))
+           ORDER BY r.due_at, h.holder_id
+           LIMIT %s""",
+        (limit,),
+    )
+
+
+# ------------------------------------------------------------- the brief
+
+
+async def holder_brief(
+    conn: Conn, *, subject_user_id: int, processor_id: int | None
+) -> dict[str, Any]:
+    """What the platform already knows, for the ticket to open with.
+
+    The person, and every record on the platform that names this holder as
+    holding something of hers: the consents given at its sites, the exports
+    that carried her record to it, the assets it collected that she appears
+    in. The ticket's question is then what the holder has *beyond* these -
+    not who she is, which the platform knew all along.
+    """
+    subject = await fetch_one(
+        conn,
+        "SELECT uuid, full_name, email, mobile FROM auth_user WHERE id = %s",
+        (subject_user_id,),
+    )
+    brief: dict[str, Any] = {
+        "subject": {
+            "uuid": str(subject["uuid"]) if subject else None,
+            "full_name": subject["full_name"] if subject else None,
+            "email": subject["email"] if subject else None,
+            "mobile": subject["mobile"] if subject else None,
+        },
+        "consents": [],
+        "exports": [],
+        "assets": [],
+    }
+    if processor_id is None:
+        return brief
+    consents = await fetch_all(
+        conn,
+        """SELECT ca.consent_uuid, ca.affirmative_action_at, ca.is_withdrawal,
+                  p.project_name, s.site_label,
+                  array_remove(array_agg(pu.name ORDER BY pu.name)
+                               FILTER (WHERE g.granted), NULL) AS granted,
+                  array_remove(array_agg(pu.name ORDER BY pu.name)
+                               FILTER (WHERE NOT g.granted), NULL) AS declined
+           FROM consent_artefact ca
+           JOIN consent_link cl ON cl.link_id = ca.link_id
+           JOIN project_site s ON s.site_id = cl.site_id
+           JOIN project p ON p.project_id = s.project_id
+           LEFT JOIN consent_purpose_grant g ON g.consent_id = ca.consent_id
+           LEFT JOIN purpose pu ON pu.purpose_id = g.purpose_id
+           WHERE ca.auth_user_id = %(u)s AND s.processor_id = %(p)s
+           GROUP BY ca.consent_id, ca.consent_uuid, ca.affirmative_action_at, ca.is_withdrawal,
+                    p.project_name, s.site_label
+           ORDER BY ca.affirmative_action_at""",
+        {"u": subject_user_id, "p": processor_id},
+    )
+    exports = await fetch_all(
+        conn,
+        """SELECT e.export_uuid, e.exported_at, e.export_type, p.project_name
+           FROM export_line el
+           JOIN export_log e ON e.export_id = el.export_id
+           JOIN project_site s ON s.site_id = e.site_id
+           JOIN project p ON p.project_id = e.project_id
+           WHERE el.auth_user_id = %(u)s AND s.processor_id = %(p)s
+           ORDER BY e.exported_at""",
+        {"u": subject_user_id, "p": processor_id},
+    )
+    assets = await fetch_all(
+        conn,
+        """SELECT da.asset_uuid, da.source_asset_ref, da.asset_type, ds.name AS source_name,
+                  c.collected_on, ac.subject_role, ac.disposition
+           FROM asset_consent ac
+           JOIN consent_artefact ca ON ca.consent_id = ac.consent_id
+           JOIN data_asset da ON da.asset_id = ac.asset_id
+           JOIN data_source ds ON ds.source_id = da.source_id
+           LEFT JOIN collection c ON c.collection_id = da.collection_id
+           WHERE ca.auth_user_id = %(u)s AND ds.processor_id = %(p)s
+           ORDER BY c.collected_on, da.asset_id""",
+        {"u": subject_user_id, "p": processor_id},
+    )
+    brief["consents"] = [
+        {
+            "consent_uuid": str(c["consent_uuid"]),
+            "at": c["affirmative_action_at"].isoformat() if c["affirmative_action_at"] else None,
+            "withdrawal": bool(c["is_withdrawal"]),
+            "project": c["project_name"],
+            "site": c["site_label"],
+            "granted": list(c["granted"] or []),
+            "declined": list(c["declined"] or []),
+        }
+        for c in consents
+    ]
+    brief["exports"] = [
+        {
+            "export_uuid": str(e["export_uuid"]),
+            "at": e["exported_at"].isoformat() if e["exported_at"] else None,
+            "type": str(e["export_type"]),
+            "project": e["project_name"],
+        }
+        for e in exports
+    ]
+    brief["assets"] = [
+        {
+            "asset_uuid": str(a["asset_uuid"]),
+            "ref": a["source_asset_ref"],
+            "type": str(a["asset_type"]) if a["asset_type"] else None,
+            "source": a["source_name"],
+            "collected_on": a["collected_on"].isoformat() if a["collected_on"] else None,
+            "role": str(a["subject_role"]) if a["subject_role"] else None,
+            "disposition": str(a["disposition"]) if a["disposition"] else None,
+        }
+        for a in assets
+    ]
+    return brief
 
 
 async def append_contact(conn: Conn, holder_id: int, entry: dict[str, Any]) -> None:
@@ -505,6 +710,8 @@ async def ticket_for_user(conn: Conn, user_id: int, holder_uuid: str) -> Row | N
 
 
 async def update_holder(conn: Conn, holder_id: int, **cols: Any) -> None:
+    if "brief" in cols and cols["brief"] is not None and not isinstance(cols["brief"], Jsonb):
+        cols["brief"] = Jsonb(cols["brief"])
     unknown = set(cols) - _HOLDER_MUTABLE
     if unknown:
         raise ValueError(f"not a mutable holder column: {sorted(unknown)}")

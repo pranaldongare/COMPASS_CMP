@@ -136,6 +136,59 @@ export interface RightsHolder {
   responder_user_uuid: Uuid | null;
   responder_user_name: string | null;
   contact_log: HolderContact[];
+  /** What the platform knew when the ticket was issued. Null before that. */
+  brief: HolderBrief | null;
+  message_count: number;
+  /** Messages from the holder the office has not read. */
+  unread_for_office: number;
+}
+
+/**
+ * The brief a ticket opens with: the person, and every record on the
+ * platform that names this holder as holding something of theirs.
+ */
+export interface HolderBrief {
+  subject: { uuid: Uuid | null; full_name: string | null; email: string | null; mobile: string | null };
+  consents: {
+    consent_uuid: Uuid;
+    at: Timestamp | null;
+    withdrawal: boolean;
+    project: string;
+    site: string;
+    granted: string[];
+    declined: string[];
+  }[];
+  exports: { export_uuid: Uuid; at: Timestamp | null; type: string; project: string }[];
+  assets: {
+    asset_uuid: Uuid;
+    ref: string | null;
+    type: string | null;
+    source: string;
+    collected_on: string | null;
+    role: string | null;
+    disposition: string | null;
+  }[];
+}
+
+/** One message on a ticket's thread. */
+export interface TicketMessage {
+  message_uuid: Uuid;
+  author_side: "office" | "holder" | "system";
+  author_name: string | null;
+  kind: "brief" | "instruction" | "message" | "return" | "escalation";
+  body: string;
+  evidence_hash: string | null;
+  created_at: Timestamp;
+}
+
+export interface HolderThread {
+  holder: RightsHolder;
+  messages: TicketMessage[];
+}
+
+export interface TicketDetail {
+  ticket: MyTicket;
+  messages: TicketMessage[];
 }
 
 export type HolderChannel = "portal" | "email";
@@ -166,6 +219,10 @@ export interface MyTicket {
   returned_at: Timestamp | null;
   return_summary: string | null;
   return_evidence_hash: string | null;
+  brief: HolderBrief | null;
+  message_count: number;
+  /** Messages from the office the team has not read. */
+  unread_for_holder: number;
 }
 
 /**

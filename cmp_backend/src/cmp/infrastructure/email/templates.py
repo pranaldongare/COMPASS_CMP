@@ -191,15 +191,33 @@ def nomination_accepted(principal_name: str, reference: str, nominee_url: str) -
 
 
 def holder_instruction(
-    reference: str, holder_label: str, instruction: str, due_on: str
+    reference: str, holder_label: str, instruction: str, due_on: str, brief_text: str = ""
 ) -> tuple[str, str]:
-    """One ticket, to one holder of her data, with a date set early on purpose."""
+    """One ticket, to one holder of her data, with a date set early on purpose.
+
+    Opens with the brief where there is one: who the person is, and what the
+    platform already holds from this holder - so the team is not asked to
+    discover either, and the question is what they hold beyond it.
+    """
+    opening = f"{brief_text}\n\n" if brief_text else ""
     return (
         f"Action required by {due_on} - rights request {reference}",
-        f"To {holder_label}:\n\n{instruction}\n\n"
+        f"To {holder_label}:\n\n{opening}{instruction}\n\n"
         f"Please return your confirmation by {due_on}. The Privacy Office responds to the "
         "person concerned on a fixed statutory clock, and a return after this date may "
         "mean our response has to name your part as outstanding.",
+    )
+
+
+def ticket_message(
+    reference: str, holder_label: str, author: str, body: str, where: str | None
+) -> tuple[str, str]:
+    """A message on a ticket's thread, copied to the other side by mail."""
+    onward = f"\n\nReply on the portal: {where}" if where else "\n\nReply to this message."
+    return (
+        f"Rights request {reference} - {holder_label}: message from {author}",
+        f"{author} wrote on the ticket for {holder_label} (rights request {reference}):\n\n"
+        f"{body}{onward}",
     )
 
 

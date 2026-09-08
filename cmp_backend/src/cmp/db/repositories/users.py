@@ -378,3 +378,13 @@ async def staff_directory(conn: Conn) -> list[Row]:
            WHERE u.role <> 'data_subject' AND u.status = 'active'
            ORDER BY u.full_name""",
     )
+
+
+async def active_emails_for_role(conn: Conn, role: str) -> list[str]:
+    """Where to tell a role something: every active account holding it."""
+    rows = await fetch_all(
+        conn,
+        "SELECT u.email FROM auth_user u WHERE u.role = %s::user_role AND u.status = 'active'",
+        (role,),
+    )
+    return [str(r["email"]) for r in rows if r.get("email")]

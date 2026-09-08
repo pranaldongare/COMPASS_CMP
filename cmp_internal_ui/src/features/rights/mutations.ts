@@ -15,10 +15,12 @@ import type { ApiError } from "@/lib/errors";
 import { keys, prefixes, type Result } from "@/lib/query";
 import type {
   GrievanceDecisionResult,
+  HolderThread,
   MyTicket,
   RightsHolder,
   RightsRequest,
   RightsScopeItem,
+  TicketDetail,
   Uuid,
 } from "@/types";
 
@@ -94,6 +96,18 @@ export const useConfirmHolder = (uuid: Uuid) =>
     uuid,
     ({ holderUuid, ...body }) => api.confirmHolder(uuid, holderUuid, body),
   );
+export function usePostToHolder(
+  uuid: Uuid,
+): Result<HolderThread, { holderUuid: Uuid; body: string }> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ holderUuid, body }) => api.postToHolder(uuid, holderUuid, body),
+    onSuccess: (_data, { holderUuid }) => {
+      void qc.invalidateQueries({ queryKey: keys.rights.thread(uuid, holderUuid) });
+      void qc.invalidateQueries({ queryKey: keys.rights.detail(uuid) });
+    },
+  });
+}
 export const useLogContact = (uuid: Uuid) =>
   useRequestAction<RightsHolder, { holderUuid: Uuid } & api.ContactInput>(
     uuid,
@@ -136,9 +150,21 @@ export function useReturnMyTicket(): Result<MyTicket, { holderUuid: Uuid; summar
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ holderUuid, ...input }) => api.returnMyTicket(holderUuid, input),
-    onSuccess: () => {
+    onSuccess: (_data, { holderUuid }) => {
       void qc.invalidateQueries({ queryKey: keys.tickets.mine });
+      void qc.invalidateQueries({ queryKey: keys.tickets.detail(holderUuid) });
       void qc.invalidateQueries({ queryKey: keys.dashboard.all });
+    },
+  });
+}
+
+export function useMessageOffice(): Result<TicketDetail, { holderUuid: Uuid; body: string }> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ holderUuid, body }) => api.messageOffice(holderUuid, body),
+    onSuccess: (_data, { holderUuid }) => {
+      void qc.invalidateQueries({ queryKey: keys.tickets.detail(holderUuid) });
+      void qc.invalidateQueries({ queryKey: keys.tickets.mine });
     },
   });
 }

@@ -877,6 +877,15 @@ async def issue_tickets(
     text = (instruction or "").strip() or _default_instruction(row)
     now = datetime.now(UTC)
     for h in to_issue:
+        # What the platform already knows, written for this holder, before it
+        # is asked for anything. Kept on the holder as it stood on the day.
+        brief: dict[str, Any] | None = None
+        if row.get("subject_user_id") is not None:
+            brief = await repo.holder_brief(
+                conn,
+                subject_user_id=int(row["subject_user_id"]),
+                processor_id=int(h["processor_id"]) if h.get("processor_id") else None,
+            )
         await repo.update_holder(
             conn,
             int(h["holder_id"]),
@@ -884,7 +893,21 @@ async def issue_tickets(
             instruction=text,
             issued_at=now,
             due_at=when,
+            brief=brief,
         )
+        if brief is not None:
+            await repo.add_message(
+                conn, int(h["holder_id"]), side="system", kind="brief", body=brief_text(brief)
+            )
+        await repo.add_message(
+            conn,
+            int(h["holder_id"]),
+            side="office",
+            kind="instruction",
+            body=f"{text}\n\nPlease return by {when.date().isoformat()}.",
+            author_user_id=actor_id,
+        )
+        await repo.mark_thread_read(conn, int(h["holder_id"]), side="office")
         await _record(
             conn,
             row,
@@ -895,7 +918,13 @@ async def issue_tickets(
             detail={"label": h["label"], "due_at": when.isoformat()},
         )
         await _deliver_ticket(
-            conn, h, reference=str(row["reference"]), text=text, due=when, actor_id=actor_id
+            conn,
+            h,
+            reference=str(row["reference"]),
+            text=text,
+            due=when,
+            actor_id=actor_id,
+            brief_text=brief_text(brief) if brief else "",
         )
     if row["status"] == Status.IN_PROGRESS:
         fresh = await reload(conn, row)
@@ -939,6 +968,16 @@ async def return_ticket(
         return_summary=summary.strip(),
         return_evidence_ref=evidence_ref,
         return_evidence_hash=evidence_hash,
+    )
+    await repo.add_message(
+        conn,
+        int(holder["holder_id"]),
+        side="office",
+        kind="return",
+        body=summary.strip(),
+        author_user_id=actor_id,
+        evidence_ref=evidence_ref,
+        evidence_hash=evidence_hash,
     )
     await _record(
         conn,
@@ -997,6 +1036,14 @@ async def escalate_ticket(
         int(holder["holder_id"]),
         _contact_entry("escalated", to=to, by=actor_id, note="Escalation sent" if to else None),
     )
+    await repo.add_message(
+        conn,
+        int(holder["holder_id"]),
+        side="office",
+        kind="escalation",
+        body="The date for this ticket has passed. Please return it now.",
+        author_user_id=actor_id,
+    )
     fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
     assert fresh is not None
     return fresh
@@ -1053,7 +1100,14 @@ def _contact_entry(
 
 
 async def _deliver_ticket(
-    conn: Conn, holder: Row, *, reference: str, text: str, due: datetime, actor_id: int
+    conn: Conn,
+    holder: Row,
+    *,
+    reference: str,
+    text: str,
+    due: datetime,
+    actor_id: int,
+    brief_text: str = "",
 ) -> None:
     """Send the instruction the way this holder is reached, and write down
     that it was sent. On the portal the ticket is in the team's console the
@@ -1067,6 +1121,7 @@ async def _deliver_ticket(
             str(holder["label"]),
             text,
             due.date().isoformat(),
+            brief_text,
         )
     kind = "ticket_on_portal" if holder.get("channel") == "portal" else "mail_sent"
     await repo.append_contact(
@@ -1150,6 +1205,186 @@ async def log_contact(
     return fresh
 
 
+# ------------------------------------------------------------- the brief
+def brief_text(brief: dict[str, Any]) -> str:
+    """The brief as prose, for the mail and the opening message of a thread."""
+    s = brief.get("subject") or {}
+    who = [s.get("full_name") or "the person named"]
+    contacts = ", ".join(str(c) for c in (s.get("email"), s.get("mobile")) if c)
+    lines = [f"About: {who[0]}" + (f" ({contacts})" if contacts else "") + "."]
+    consents, exports, assets = (
+        brief.get("consents", []),
+        brief.get("exports", []),
+        brief.get("assets", []),
+    )
+    if not (consents or exports or assets):
+        lines.append(
+            "The platform holds no consent, export or asset record naming you as holding "
+            "anything of theirs. Please tell us what, if anything, you hold, and where it "
+            "came from."
+        )
+        return "\n".join(lines)
+    lines.append("What the platform already records you as holding of theirs:")
+    for c in consents:
+        what = ", ".join(c.get("granted") or []) or "no purpose granted"
+        kind = "withdrawal" if c.get("withdrawal") else "consent"
+        lines.append(
+            f"- {kind} on {(c.get('at') or '')[:10]} for {c.get('project')} "
+            f"at {c.get('site')}: {what}"
+        )
+    for e in exports:
+        lines.append(
+            f"- export ({e.get('type')}) on {(e.get('at') or '')[:10]} for {e.get('project')}"
+        )
+    for a in assets:
+        lines.append(
+            f"- asset {a.get('ref') or a.get('asset_uuid')} from {a.get('source')}"
+            + (f", collected {a.get('collected_on')}" if a.get("collected_on") else "")
+            + (f" ({a.get('role')})" if a.get("role") else "")
+        )
+    lines.append(
+        "Please confirm these, and tell us anything else you hold about them beyond this list - "
+        "copies, derived data, backups, anything shared onward - and where it is."
+    )
+    return "\n".join(lines)
+
+
+# ----------------------------------------------------------- the thread
+def _console_url(path: str) -> str:
+    return f"{settings.console_base_url.rstrip('/')}{path}"
+
+
+async def _tell_holder(conn: Conn, row: Row, holder: Row, *, author_id: int, body: str) -> None:
+    """The office wrote; the holder hears about it the way it is reached."""
+    author = await user_repo.by_id(conn, author_id)
+    name = str(author["full_name"]) if author else "The Privacy Office"
+    to = _ticket_address(holder)
+    if not to:
+        return
+    where = _console_url("/tickets") if holder.get("channel") == "portal" else None
+    _dispatch(
+        "send_ticket_message", to, str(row["reference"]), str(holder["label"]), name, body, where
+    )
+    if holder.get("channel") != "portal":
+        await repo.append_contact(
+            conn,
+            int(holder["holder_id"]),
+            _contact_entry("mail_sent", to=to, by=author_id, note="Message on the ticket"),
+        )
+
+
+async def _tell_office(conn: Conn, row: Row, holder: Row, *, author_id: int, body: str) -> None:
+    """The holder wrote; every active DPO hears, and the dashboard queues it."""
+    author = await user_repo.by_id(conn, author_id)
+    name = str(author["full_name"]) if author else str(holder["label"])
+    where = _console_url(f"/requests/{row['request_uuid']}")
+    for to in await user_repo.active_emails_for_role(conn, Role.DPO.value):
+        _dispatch(
+            "send_ticket_message",
+            to,
+            str(row["reference"]),
+            str(holder["label"]),
+            name,
+            body,
+            where,
+        )
+
+
+async def thread_for_office(
+    conn: Conn, row: Row, *, holder_uuid: str, role: Role | str
+) -> dict[str, Any]:
+    """The whole thread, as the office reads it - which marks it read."""
+    _may_act(row, role)
+    holder = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    if not holder:
+        raise NotFound("Holder")
+    await repo.mark_thread_read(conn, int(holder["holder_id"]), side="office")
+    fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    return {"holder": fresh, "messages": await repo.messages_of(conn, int(holder["holder_id"]))}
+
+
+async def post_office_message(
+    conn: Conn, row: Row, *, holder_uuid: str, body: str, role: Role | str, actor_id: int
+) -> dict[str, Any]:
+    """The office writes on the thread. Logged, and the holder is told."""
+    _may_act(row, role)
+    _open(row)
+    holder = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    if not holder:
+        raise NotFound("Holder")
+    if not holder.get("issued_at"):
+        raise Conflict("Issue the ticket first; the thread opens with it", code="ticket_not_open")
+    text = body.strip()
+    if not text:
+        raise ValidationFailed("Write something", field="body")
+    await repo.add_message(
+        conn,
+        int(holder["holder_id"]),
+        side="office",
+        kind="message",
+        body=text,
+        author_user_id=actor_id,
+    )
+    await repo.mark_thread_read(conn, int(holder["holder_id"]), side="office")
+    await _record(
+        conn,
+        row,
+        Event.RIGHTS_TICKET_MESSAGE,
+        actor_user_id=actor_id,
+        entity_type="rights_request_holder",
+        entity_id=int(holder["holder_id"]),
+        detail={"label": holder["label"], "side": "office"},
+    )
+    await _tell_holder(conn, row, holder, author_id=actor_id, body=text)
+    return await thread_for_office(conn, row, holder_uuid=holder_uuid, role=role)
+
+
+async def ticket_detail_for(conn: Conn, user_id: int, holder_uuid: str) -> dict[str, Any]:
+    """A ticket with its brief and thread, as its respondent reads it."""
+    holder = await repo.ticket_for_user(conn, user_id, holder_uuid)
+    if not holder:
+        raise NotFound("Ticket")
+    await repo.mark_thread_read(conn, int(holder["holder_id"]), side="holder")
+    fresh = await repo.ticket_for_user(conn, user_id, holder_uuid)
+    return {"ticket": fresh, "messages": await repo.messages_of(conn, int(holder["holder_id"]))}
+
+
+async def post_holder_message(
+    conn: Conn, *, user_id: int, holder_uuid: str, body: str
+) -> dict[str, Any]:
+    """The team writes on its ticket. Logged, and the Privacy Office is told."""
+    holder = await repo.ticket_for_user(conn, user_id, holder_uuid)
+    if not holder:
+        raise NotFound("Ticket")
+    if holder["ticket_status"] == Ticket.PENDING:
+        raise Conflict("This ticket has not been issued", code="ticket_not_open")
+    text = body.strip()
+    if not text:
+        raise ValidationFailed("Write something", field="body")
+    row = await repo.by_id(conn, int(holder["request_id"]))
+    assert row is not None
+    await repo.add_message(
+        conn,
+        int(holder["holder_id"]),
+        side="holder",
+        kind="message",
+        body=text,
+        author_user_id=user_id,
+    )
+    await repo.mark_thread_read(conn, int(holder["holder_id"]), side="holder")
+    await _record(
+        conn,
+        row,
+        Event.RIGHTS_TICKET_MESSAGE,
+        actor_user_id=user_id,
+        entity_type="rights_request_holder",
+        entity_id=int(holder["holder_id"]),
+        detail={"label": holder["label"], "side": "holder"},
+    )
+    await _tell_office(conn, row, holder, author_id=user_id, body=text)
+    return await ticket_detail_for(conn, user_id, holder_uuid)
+
+
 # ---------------------------------------------------- the respondent's side
 async def tickets_for(conn: Conn, user_id: int) -> list[Row]:
     """The tickets addressed to this member of staff, open ones first."""
@@ -1194,6 +1429,18 @@ async def return_own_ticket(
         int(holder["holder_id"]),
         _contact_entry("returned_on_portal", to=None, by=user_id),
     )
+    await repo.add_message(
+        conn,
+        int(holder["holder_id"]),
+        side="holder",
+        kind="return",
+        body=summary.strip(),
+        author_user_id=user_id,
+        evidence_ref=evidence_ref,
+        evidence_hash=evidence_hash,
+    )
+    await repo.mark_thread_read(conn, int(holder["holder_id"]), side="holder")
+    await _tell_office(conn, row, holder, author_id=user_id, body=f"Returned: {summary.strip()}")
     await _record(
         conn,
         row,

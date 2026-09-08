@@ -28,10 +28,12 @@ import {
   Field,
   Input,
   Select,
+  Skeleton,
   Textarea,
 } from "@/components/ui/primitives";
 import { useProcessors, useRespondents } from "@/features/registry";
 import { TicketBadge } from "@/features/rights/components/copy";
+import { BriefPanel, ReplyBox, Thread, UnreadBadge } from "@/features/rights/components/thread";
 import {
   useAddHolder,
   useConfirmHolder,
@@ -39,8 +41,10 @@ import {
   useEscalateTicket,
   useIssueTickets,
   useLogContact,
+  usePostToHolder,
   useReturnTicket,
 } from "@/features/rights/mutations";
+import { useHolderThread } from "@/features/rights/queries";
 import { config } from "@/lib/config";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { useToast } from "@/providers";
@@ -180,6 +184,7 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
   const escalate = useEscalateTicket(r.request_uuid);
   const [returning, setReturning] = React.useState(false);
   const [contacting, setContacting] = React.useState(false);
+  const [talking, setTalking] = React.useState(false);
   const [responderName, setResponderName] = React.useState(h.responder_name ?? "");
   const [responderContact, setResponderContact] = React.useState(h.responder_contact ?? "");
   // The processor's registered respondents, offered instead of typing. An
@@ -223,6 +228,7 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
                 by mail
               </Badge>
             )}
+            <UnreadBadge count={h.unread_for_office} />
           </p>
           <p className="mt-0.5 text-xs text-text-muted">
             {h.derived_from === "manual"
@@ -297,6 +303,11 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
                 Confirm
               </Button>
             )}
+            {h.issued_at && (
+              <Button variant="secondary" size="sm" onClick={() => setTalking(true)}>
+                Thread{h.message_count ? ` · ${h.message_count}` : ""}
+              </Button>
+            )}
             {(h.ticket_status === "issued" || h.ticket_status === "escalated") && h.channel === "email" && (
               <Button variant="secondary" size="sm" onClick={() => setContacting(true)}>
                 <MailPlus className="size-4" />
@@ -348,6 +359,18 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
           )}
         </div>
       )}
+      <Dialog open={talking} onOpenChange={(next) => !next && setTalking(false)}>
+        <DialogContent
+          title={`${h.label} · the ticket's thread`}
+          description={
+            h.channel === "portal"
+              ? "The team reads this in their console and is told by mail when you write."
+              : "The holder is reached by mail: what you write here is sent to the address on record and logged."
+          }
+        >
+          {talking && <HolderThreadPanel request={r} holder={h} canWork={canWork} />}
+        </DialogContent>
+      </Dialog>
       <Dialog open={contacting} onOpenChange={(next) => !next && setContacting(false)}>
         <DialogContent
           title={`${h.label} · by mail`}
@@ -363,6 +386,36 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
         </DialogContent>
       </Dialog>
     </li>
+  );
+}
+
+function HolderThreadPanel({ request: r, holder: h, canWork }: { request: RightsRequestDetail; holder: RightsHolder; canWork: boolean }) {
+  const thread = useHolderThread(r.request_uuid, h.holder_uuid);
+  const post = usePostToHolder(r.request_uuid);
+  if (thread.isLoading) return <Skeleton className="h-40" />;
+  if (thread.error) return <Alert tone="danger">{thread.error.userMessage()}</Alert>;
+  const brief = thread.data?.holder.brief ?? h.brief;
+  return (
+    <div className="space-y-4">
+      {brief && <BriefPanel brief={brief} />}
+      <Thread
+        messages={thread.data?.messages ?? []}
+        you="office"
+        evidenceHref={(m) =>
+          m.kind === "return" && m.evidence_hash
+            ? `${config.apiUrl}/requests/${r.request_uuid}/holders/${h.holder_uuid}/evidence`
+            : null
+        }
+      />
+      <ReplyBox
+        pending={post.isPending}
+        placeholder="Write to the team, or ask for more."
+        disabledReason={canWork ? null : "The request is closed; the thread is kept as it stands."}
+        onSend={async (body) => {
+          await post.mutateAsync({ holderUuid: h.holder_uuid, body });
+        }}
+      />
+    </div>
   );
 }
 

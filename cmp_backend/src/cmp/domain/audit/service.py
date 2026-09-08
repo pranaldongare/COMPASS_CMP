@@ -207,6 +207,7 @@ class Event:
     RIGHTS_TICKET_RETURNED = "rights.ticket_returned"
     RIGHTS_TICKET_ESCALATED = "rights.ticket_escalated"
     RIGHTS_HOLDER_CONTACTED = "rights.holder_contacted"
+    RIGHTS_TICKET_MESSAGE = "rights.ticket_message"
     PROCESSOR_RESPONDENT_ADDED = "registry.respondent_added"
     PROCESSOR_RESPONDENT_REMOVED = "registry.respondent_removed"
     RIGHTS_SCOPE_DERIVED = "rights.scope_derived"

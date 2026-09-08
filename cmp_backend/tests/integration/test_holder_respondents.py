@@ -15,6 +15,7 @@ import pytest
 
 from cmp.core.errors import Conflict, NotFound
 from cmp.db.repositories import registry as registry_repo
+from cmp.db.repositories import rights as repo
 from cmp.db.sql import fetch_one
 from cmp.domain.rights import service
 
@@ -289,3 +290,121 @@ class TestChannels:
             (row["request_id"],),
         )
         assert held["n"] == 2
+
+
+class TestThread:
+    async def _issued(self, conn: Any, seeded: dict[str, Any]) -> tuple[dict[str, Any], dict]:
+        in_house = await _processor(conn, name="Thread Lab", in_house=True)
+        await registry_repo.add_respondent(
+            conn,
+            int(in_house["processor_id"]),
+            name="x",
+            contact="x",
+            user_id=int(seeded["users"]["dco"]["id"]),
+        )
+        row = await _request(conn, seeded)
+        dpo = seeded["users"]["dpo"]["id"]
+        await service.add_holder(
+            conn,
+            row,
+            label="",
+            processor_uuid=str(in_house["processor_uuid"]),
+            responder_name=None,
+            responder_contact=None,
+            role="dpo",
+            actor_id=dpo,
+        )
+        row = await service.classify(
+            conn, row, request_type="access", note=None, role="dpo", actor_id=dpo
+        )
+        row = await service.transition(
+            conn, row, to="in_progress", reason=None, role="dpo", actor_id=dpo
+        )
+        holders = await service.issue_tickets(
+            conn, row, instruction=None, due_at=None, role="dpo", actor_id=dpo
+        )
+        return dict(await service.reload(conn, row)), dict(holders[0])
+
+    async def test_the_ticket_opens_with_the_brief_and_the_instruction(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
+    ) -> None:
+        _row, holder = await self._issued(conn, seeded)
+        assert holder["brief"]["subject"]["full_name"] == "Test Subject"
+        assert holder["brief"]["subject"]["email"] == "subject@test.local"
+        # Nothing on the platform names this brand-new processor yet, and the
+        # brief says so rather than leaving the team to guess.
+        assert holder["brief"]["consents"] == []
+        text = service.brief_text(holder["brief"])
+        assert "Test Subject" in text and "holds no consent" in text
+
+        dco = int(seeded["users"]["dco"]["id"])
+        detail = await service.ticket_detail_for(conn, dco, str(holder["holder_uuid"]))
+        assert [m["kind"] for m in detail["messages"]] == ["brief", "instruction"]
+        assert [m["author_side"] for m in detail["messages"]] == ["system", "office"]
+        # Reading it is what marks it read.
+        assert detail["ticket"]["unread_for_holder"] == 0
+
+    async def test_each_side_hears_the_other(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
+    ) -> None:
+        row, holder = await self._issued(conn, seeded)
+        dco = int(seeded["users"]["dco"]["id"])
+        dpo = int(seeded["users"]["dpo"]["id"])
+        ref = str(holder["holder_uuid"])
+
+        # The team asks a question. The office has it unread; the dashboard queues it.
+        after = await service.post_holder_message(
+            conn, user_id=dco, holder_uuid=ref, body="Do you mean the 2025 batch as well?"
+        )
+        assert after["messages"][-1]["author_side"] == "holder"
+        office = await repo.holder_by_uuid(conn, int(row["request_id"]), ref)
+        assert office["unread_for_office"] == 1
+        waiting = await repo.holders_awaiting_office(conn)
+        assert ref in {str(w["holder_uuid"]) for w in waiting}
+
+        # The office reads and answers. Reading clears its count; answering
+        # gives the team one unread, which their own read then clears.
+        thread = await service.thread_for_office(conn, row, holder_uuid=ref, role="dpo")
+        assert thread["holder"]["unread_for_office"] == 0
+        await service.post_office_message(
+            conn,
+            row,
+            holder_uuid=ref,
+            body="Yes - everything since 2024.",
+            role="dpo",
+            actor_id=dpo,
+        )
+        mine = await repo.ticket_for_user(conn, dco, ref)
+        assert mine["unread_for_holder"] == 1
+        detail = await service.ticket_detail_for(conn, dco, ref)
+        assert detail["ticket"]["unread_for_holder"] == 0
+        assert [m["kind"] for m in detail["messages"]] == [
+            "brief",
+            "instruction",
+            "message",
+            "message",
+        ]
+
+        # The return joins the thread too, and is the last word from the team.
+        done = await service.return_own_ticket(
+            conn,
+            user_id=dco,
+            holder_uuid=ref,
+            summary="Nothing beyond the 2024 batch.",
+            evidence_ref=None,
+            evidence_hash=None,
+        )
+        assert done["ticket_status"] == "returned"
+        thread = await service.thread_for_office(conn, row, holder_uuid=ref, role="dpo")
+        assert thread["messages"][-1]["kind"] == "return"
+        assert thread["messages"][-1]["author_side"] == "holder"
+
+    async def test_the_thread_is_append_only(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
+    ) -> None:
+        _row, holder = await self._issued(conn, seeded)
+        with pytest.raises(Exception, match="append-only"):
+            await conn.execute(
+                "UPDATE rights_ticket_message SET body = 'edited' WHERE holder_id = %s",
+                (holder["holder_id"],),
+            )

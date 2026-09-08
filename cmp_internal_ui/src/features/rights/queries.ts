@@ -7,14 +7,25 @@ import { useQuery } from "@tanstack/react-query";
 
 import {
   getRequest,
+  holderThread,
   listMyTickets,
+  myTicket,
   getRequestTrail,
   listRequests,
   type RequestFilters,
 } from "@/features/rights/api";
 import type { ApiError } from "@/lib/errors";
 import { keys } from "@/lib/query";
-import type { AuditEntry, MyTicket, Page, RightsRequestDetail, RightsRequestRow, Uuid } from "@/types";
+import type {
+  AuditEntry,
+  HolderThread,
+  MyTicket,
+  Page,
+  RightsRequestDetail,
+  RightsRequestRow,
+  TicketDetail,
+  Uuid,
+} from "@/types";
 
 /* ------------------------------------------------------------- the DPO */
 
@@ -47,5 +58,24 @@ export function useMyTickets() {
   return useQuery<MyTicket[], ApiError>({
     queryKey: keys.tickets.mine,
     queryFn: listMyTickets,
+  });
+}
+
+/** Enabled only while the thread is open on screen: reading it marks it read. */
+export function useHolderThread(uuid: Uuid, holderUuid: Uuid | undefined) {
+  return useQuery<HolderThread, ApiError>({
+    queryKey: keys.rights.thread(uuid, holderUuid ?? ""),
+    queryFn: () => holderThread(uuid, holderUuid!),
+    enabled: Boolean(holderUuid),
+    staleTime: 0,
+  });
+}
+
+export function useMyTicket(holderUuid: Uuid | undefined) {
+  return useQuery<TicketDetail, ApiError>({
+    queryKey: keys.tickets.detail(holderUuid ?? ""),
+    queryFn: () => myTicket(holderUuid!),
+    enabled: Boolean(holderUuid),
+    staleTime: 0,
   });
 }

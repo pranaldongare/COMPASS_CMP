@@ -43,7 +43,14 @@ async def _tickets_for_me(conn: Any, user_id: int) -> tuple[int, list[dict[str, 
             "holder_uuid": str(r["holder_uuid"]),
             "reference": r["reference"],
             "subject_name": r.get("subject_name"),
-            "action": f"Return the ticket for {r['label']}",
+            "action": (
+                f"Return the ticket for {r['label']}"
+                + (
+                    f" · {int(r.get('unread_for_holder') or 0)} new from the Privacy Office"
+                    if int(r.get("unread_for_holder") or 0)
+                    else ""
+                )
+            ),
             "due_at": r["due_at"].isoformat() if r.get("due_at") else None,
             "overdue": bool(r.get("due_at") and r["due_at"] < datetime.now(UTC)),
             "ticket": True,
@@ -205,6 +212,18 @@ async def _dpo(conn: Any) -> dict[str, Any]:
     # erasures whose floor has passed - the ones nothing else would surface.
     rights_counts = await rights_repo.counts(conn)
     rights_queue = await rights_repo.queue(conn, role=Role.DPO, user_id=0)
+    # Teams that have written on their tickets and not been read: the office's
+    # side of the conversation, surfaced where the rest of its work is.
+    replies = [
+        {
+            "request_uuid": str(r["request_uuid"]),
+            "reference": r["reference"],
+            "subject_name": r.get("subject_name"),
+            "action": f"{r['label']} wrote on its ticket · {int(r['unread'])} unread",
+            "due_at": r["due_at"].isoformat() if r.get("due_at") else None,
+        }
+        for r in await rights_repo.holders_awaiting_office(conn)
+    ]
     floors = await rights_repo.floor_queue(conn, _today())
     # Full audit rows, resolved, so the dashboard panel and the audit page are
     # the same renderer over the same data. The partial projection this replaced
@@ -221,6 +240,7 @@ async def _dpo(conn: Any) -> dict[str, Any]:
         },
         "queues": [
             {"name": "Rights requests, soonest due first", "items": rights_queue},
+            {"name": "Teams have written on their tickets", "items": replies},
             {"name": "In Draft", "items": draft_queue},
             {"name": "Pending Approval", "items": approval_queue},
             {"name": "New collectors awaiting your decision", "items": amendments},

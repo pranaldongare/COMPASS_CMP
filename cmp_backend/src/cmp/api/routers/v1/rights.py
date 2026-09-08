@@ -155,6 +155,31 @@ class HolderOut(Out):
     responder_user_uuid: UUID | None = None
     responder_user_name: str | None = None
     contact_log: list[dict[str, Any]] = Field(default_factory=list)
+    #: What the platform knew when the ticket was issued: the person, and the
+    #: records naming this holder. Written by the platform, kept as it stood.
+    brief: dict[str, Any] | None = None
+    message_count: int = 0
+    #: Messages from the holder the office has not read yet.
+    unread_for_office: int = 0
+
+
+class MessageOut(Out):
+    message_uuid: UUID
+    author_side: str
+    author_name: str | None
+    kind: str
+    body: str
+    evidence_hash: str | None
+    created_at: datetime
+
+
+class ThreadOut(Out):
+    holder: HolderOut
+    messages: list[MessageOut]
+
+
+class MessageIn(Schema):
+    body: Annotated[str, Field(min_length=1, max_length=20_000)]
 
 
 class ContactIn(Schema):
@@ -184,6 +209,15 @@ class TicketOut(Out):
     returned_at: datetime | None
     return_summary: str | None
     return_evidence_hash: str | None
+    brief: dict[str, Any] | None = None
+    message_count: int = 0
+    #: Messages from the office the team has not read yet.
+    unread_for_holder: int = 0
+
+
+class TicketDetailOut(Out):
+    ticket: TicketOut
+    messages: list[MessageOut]
 
 
 class ItemOut(Out):
@@ -789,6 +823,43 @@ async def confirm_holder(
         )
 
 
+@router.get(
+    "/{request_uuid}/holders/{holder_uuid}/thread",
+    response_model=ThreadOut,
+    summary="The ticket's thread, as the office reads it",
+)
+async def holder_thread(
+    request_uuid: UUID, holder_uuid: UUID, principal: RightsWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        return await service.thread_for_office(
+            conn, row, holder_uuid=str(holder_uuid), role=principal.role
+        )
+
+
+@router.post(
+    "/{request_uuid}/holders/{holder_uuid}/thread",
+    response_model=ThreadOut,
+    summary="Write to the holder on the ticket",
+)
+async def post_to_holder(
+    request_uuid: UUID, holder_uuid: UUID, body: MessageIn, principal: RightsWriter
+) -> dict[str, Any]:
+    """Kept on the thread, and the holder is told the way it is reached: on the
+    portal with a copy by mail, or by mail alone."""
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        return await service.post_office_message(
+            conn,
+            row,
+            holder_uuid=str(holder_uuid),
+            body=body.body,
+            role=principal.role,
+            actor_id=principal.user_id,
+        )
+
+
 @router.post(
     "/{request_uuid}/holders/{holder_uuid}/contact",
     response_model=HolderOut,
@@ -1200,6 +1271,32 @@ async def my_tickets(principal: TicketReader) -> list[dict[str, Any]]:
     addressed to this account, and only what the instruction says."""
     async with connection() as conn:
         return await service.tickets_for(conn, principal.user_id)
+
+
+@ticket_router.get(
+    "/{holder_uuid}",
+    response_model=TicketDetailOut,
+    summary="One ticket, with its brief and thread",
+)
+async def my_ticket(holder_uuid: UUID, principal: TicketReader) -> dict[str, Any]:
+    """Reading it marks the office's messages read."""
+    async with transaction() as conn:
+        return await service.ticket_detail_for(conn, principal.user_id, str(holder_uuid))
+
+
+@ticket_router.post(
+    "/{holder_uuid}/messages",
+    response_model=TicketDetailOut,
+    summary="Write to the Privacy Office on my ticket",
+)
+async def message_office(
+    holder_uuid: UUID, body: MessageIn, principal: TicketWriter
+) -> dict[str, Any]:
+    """Kept on the thread, and every DPO is told."""
+    async with transaction() as conn:
+        return await service.post_holder_message(
+            conn, user_id=principal.user_id, holder_uuid=str(holder_uuid), body=body.body
+        )
 
 
 @ticket_router.post(

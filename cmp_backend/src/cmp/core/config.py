@@ -91,6 +91,10 @@ class Settings(BaseSettings):
     # Where the console is reached from outside: the base of every link the
     # platform puts in an email, such as a nomination's acceptance link.
     public_base_url: str = "http://localhost:3000"
+    #: The staff console's public origin: the base of a link that sends a
+    #: member of staff to a ticket or a request. Distinct from the portal above,
+    #: which is where data principals and nominees go.
+    console_base_url: str = "http://localhost:3000"
 
     # ---------------------------------------------------------------- CORS
     cors_origins: Annotated[tuple[str, ...], NoDecode] = ("http://localhost:3000",)

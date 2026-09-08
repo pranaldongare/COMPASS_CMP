@@ -32,8 +32,9 @@ import {
   Textarea,
 } from "@/components/ui/primitives";
 import { RequestTypeBadge, TicketBadge } from "@/features/rights/components/copy";
-import { useReturnMyTicket } from "@/features/rights/mutations";
-import { useMyTickets } from "@/features/rights/queries";
+import { BriefPanel, ReplyBox, Thread, UnreadBadge } from "@/features/rights/components/thread";
+import { useMessageOffice, useReturnMyTicket } from "@/features/rights/mutations";
+import { useMyTicket, useMyTickets } from "@/features/rights/queries";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { useToast } from "@/providers";
 import type { MyTicket } from "@/types";
@@ -97,6 +98,7 @@ export default function TicketsPage() {
 
 function TicketCard({ ticket: t }: { ticket: MyTicket }) {
   const [returning, setReturning] = React.useState(false);
+  const [opened, setOpened] = React.useState(false);
   const isOpen = t.ticket_status === "issued" || t.ticket_status === "escalated";
   const overdue = isOpen && t.due_at && new Date(t.due_at) < new Date();
 
@@ -108,6 +110,7 @@ function TicketCard({ ticket: t }: { ticket: MyTicket }) {
             <span className="font-mono text-sm">{t.reference}</span>
             <RequestTypeBadge type={t.request_type} />
             <TicketBadge status={t.ticket_status} />
+            <UnreadBadge count={t.unread_for_holder} />
           </CardTitle>
           <p className="mt-1 text-xs text-text-muted">
             For {t.label}
@@ -134,12 +137,26 @@ function TicketCard({ ticket: t }: { ticket: MyTicket }) {
             {t.return_summary}
           </div>
         )}
-        {isOpen && (
-          <Button variant="primary" size="sm" onClick={() => setReturning(true)}>
-            Return this ticket
+        {t.brief && <BriefPanel brief={t.brief} />}
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" size="sm" onClick={() => setOpened(true)}>
+            Open the thread{t.message_count ? ` · ${t.message_count}` : ""}
           </Button>
-        )}
+          {isOpen && (
+            <Button variant="primary" size="sm" onClick={() => setReturning(true)}>
+              Return this ticket
+            </Button>
+          )}
+        </div>
       </CardBody>
+      <Dialog open={opened} onOpenChange={(next) => !next && setOpened(false)}>
+        <DialogContent
+          title={`${t.reference} · ${t.label}`}
+          description="Everything said on this ticket, both ways. The Privacy Office is told when you write."
+        >
+          {opened && <TicketThread ticket={t} />}
+        </DialogContent>
+      </Dialog>
       <Dialog open={returning} onOpenChange={(next) => !next && setReturning(false)}>
         <DialogContent
           title={`Return ${t.reference}`}
@@ -149,6 +166,27 @@ function TicketCard({ ticket: t }: { ticket: MyTicket }) {
         </DialogContent>
       </Dialog>
     </Card>
+  );
+}
+
+function TicketThread({ ticket: t }: { ticket: MyTicket }) {
+  const detail = useMyTicket(t.holder_uuid);
+  const send = useMessageOffice();
+  const isOpen = t.ticket_status === "issued" || t.ticket_status === "escalated";
+  if (detail.isLoading) return <Skeleton className="h-40" />;
+  if (detail.error) return <Alert tone="danger">{detail.error.userMessage()}</Alert>;
+  return (
+    <div className="space-y-4">
+      <Thread messages={detail.data?.messages ?? []} you="holder" />
+      <ReplyBox
+        pending={send.isPending}
+        placeholder="Ask the Privacy Office, or tell them what you have found so far."
+        disabledReason={isOpen ? null : "This ticket is closed; the thread is kept as it stands."}
+        onSend={async (body) => {
+          await send.mutateAsync({ holderUuid: t.holder_uuid, body });
+        }}
+      />
+    </div>
   );
 }
 

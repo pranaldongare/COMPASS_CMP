@@ -24,6 +24,8 @@ import type {
   RightsTransitionOption,
   Uuid,
   MyTicket,
+  HolderThread,
+  TicketDetail,
 } from "@/types";
 
 /* ==========================================================================
@@ -119,6 +121,12 @@ export interface ContactInput {
 }
 export const logContact = (uuid: Uuid, holderUuid: Uuid, body: ContactInput) =>
   apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/contact`), body);
+
+/** The ticket's thread as the office reads it. Reading marks it read. */
+export const holderThread = (uuid: Uuid, holderUuid: Uuid) =>
+  apiGet<HolderThread>(action(uuid, `holders/${holderUuid}/thread`));
+export const postToHolder = (uuid: Uuid, holderUuid: Uuid, body: string) =>
+  apiPost<HolderThread>(action(uuid, `holders/${holderUuid}/thread`), { body });
 export const issueTickets = (uuid: Uuid, body: { instruction?: string | null; due_at?: string | null }) =>
   apiPost<RightsHolder[]>(action(uuid, "tickets"), body);
 export function returnTicket(
@@ -178,4 +186,13 @@ export function returnMyTicket(
   form.set("summary", input.summary);
   if (input.evidence) form.set("evidence", input.evidence);
   return apiPost<MyTicket>(`/tickets/${holderUuid}/return`, form);
+}
+
+/** One ticket with its brief and thread. Reading marks the office's messages read. */
+export function myTicket(holderUuid: Uuid): Promise<TicketDetail> {
+  return apiGet<TicketDetail>(`/tickets/${holderUuid}`);
+}
+
+export function messageOffice(holderUuid: Uuid, body: string): Promise<TicketDetail> {
+  return apiPost<TicketDetail>(`/tickets/${holderUuid}/messages`, { body });
 }
