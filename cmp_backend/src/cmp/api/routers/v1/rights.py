@@ -228,6 +228,20 @@ class NominationOut(Out):
     created_at: datetime
 
 
+class NomineeOfOut(Out):
+    """A nomination that names the caller. The other side of `NominationOut`."""
+
+    nomination_uuid: UUID
+    principal_name: str
+    rights: list[str]
+    status: str
+    #: Which of the caller's own contacts the principal recorded.
+    contact: str
+    accept_expires_at: datetime | None
+    accepted_at: datetime | None
+    created_at: datetime
+
+
 # ------------------------------------------------------------------- inputs
 class LogRequest(Schema):
     """A request that arrived by email, logged by the DPO. Same record as the others."""
@@ -1045,6 +1059,37 @@ async def dispute(
 async def my_nominations(principal: RequireDataSubject) -> list[dict[str, Any]]:
     async with connection() as conn:
         return await repo.nominations_of(conn, principal.user_id)
+
+
+@subject_router.get(
+    "/nominee-of",
+    response_model=list[NomineeOfOut],
+    summary="Who has nominated me",
+)
+async def nominations_naming_me(principal: RequireDataSubject) -> list[dict[str, Any]]:
+    """Nominations where the caller is the nominee.
+
+    A data principal can be somebody else's nominee too, and until this
+    existed her account said nothing about it. Matched on her own recorded
+    contacts, since a nomination names a person by contact and not by account.
+    Acting still goes through the nominee page and a code to that contact -
+    being signed in here is not that proof.
+    """
+    async with connection() as conn:
+        me = await user_repo.by_id(conn, principal.user_id)
+        if me is None:
+            return []
+        rows = await repo.nominations_naming(conn, mobile=me.get("mobile"), email=me.get("email"))
+        out: list[dict[str, Any]] = []
+        for row in rows:
+            mine_mobile = me.get("mobile")
+            matched = (
+                str(row["nominee_mobile"])
+                if mine_mobile and row.get("nominee_mobile") == mine_mobile
+                else str(row.get("nominee_email") or "")
+            )
+            out.append({**row, "contact": matched})
+        return out
 
 
 @subject_router.post(

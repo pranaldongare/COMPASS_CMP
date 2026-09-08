@@ -164,6 +164,7 @@ export const keys = {
     request: (uuid: Uuid) => ["me", "request", uuid] as const,
     requestTrail: (uuid: Uuid) => ["me", "request", uuid, "trail"] as const,
     nominations: ["me", "nominations"] as const,
+    nomineeOf: ["me", "nominee-of"] as const,
   },
 } as const;
 

@@ -756,6 +756,26 @@ async def nominations_of(conn: Conn, principal_user_id: int) -> list[Row]:
     )
 
 
+async def nominations_naming(conn: Conn, *, mobile: str | None, email: str | None) -> list[Row]:
+    """Live nominations that name this person as nominee, by either contact.
+
+    The other direction from `nominations_of`. A nominee is not a row in
+    `auth_user` - she may be a stranger - so the match is on the contacts the
+    principal recorded, compared the way they are stored: the mobile as
+    digits, the email lower-cased. Only pending and active: a declined or
+    revoked nomination is nothing she can act on and nothing she needs told.
+    """
+    return await fetch_all(
+        conn,
+        f"""SELECT {_NOMINATION_SELECT}
+             WHERE n.status IN ('pending', 'active')
+               AND ((%s::text IS NOT NULL AND n.nominee_mobile = %s)
+                    OR (%s::text IS NOT NULL AND lower(n.nominee_email) = lower(%s)))
+             ORDER BY n.created_at DESC""",
+        (mobile, mobile, email, email),
+    )
+
+
 async def nomination_by_uuid(conn: Conn, nomination_uuid: str) -> Row | None:
     return await fetch_one(
         conn, f"SELECT {_NOMINATION_SELECT} WHERE n.nomination_uuid = %s", (nomination_uuid,)

@@ -37,6 +37,7 @@ import { downloadMyResponse } from "@/features/rights/api";
 import { ClockColumn } from "@/features/rights/components/clock-column";
 import { RequestStatusBadge, RequestTypeBadge } from "@/features/rights/components/copy";
 import { NominationCard } from "@/features/rights/components/nomination-card";
+import { NomineeOfCard } from "@/features/rights/components/nominee-of-card";
 import { Path } from "@/features/rights/components/path";
 import { MyRequestForm } from "@/features/rights/components/request-form";
 import { useDispute } from "@/features/rights/mutations";
@@ -95,7 +96,10 @@ export default function MyRequestsPage() {
         ))}
       </div>
 
-      <div className="mt-8">
+      <div className="mt-8 space-y-6">
+        {/* First: something somebody else needs from her is more pressing
+            than something she may one day arrange. Absent when there is none. */}
+        <NomineeOfCard />
         <NominationCard />
       </div>
 

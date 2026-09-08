@@ -668,6 +668,42 @@ class TestGrievance:
 
 # ------------------------------------------------------------------ nomination
 class TestNomination:
+    async def test_a_nomination_naming_a_registered_person_is_listed_for_her(
+        self, conn: Any, seeded: dict[str, Any], redis_conn: Any
+    ) -> None:
+        """The nominee's side. A nominee may be a data principal here herself,
+        and her account then has to say who named her: matched on the contacts
+        the principal recorded, live ones only, by either contact."""
+        principal = seeded["subject"]["id"]
+        nomination = await service.nominate(
+            conn,
+            principal_user_id=principal,
+            nominee_name="Meera Nominee",
+            nominee_mobile="+91 555 000 0091",  # stored as digits
+            nominee_email="Meera.Nominee@Example.org",  # stored as typed, matched case-blind
+            rights=["access"],
+        )
+        ref = str(nomination["nomination_uuid"])
+
+        by_mobile = await repo.nominations_naming(conn, mobile="+915550000091", email=None)
+        assert [str(r["nomination_uuid"]) for r in by_mobile] == [ref]
+        assert by_mobile[0]["status"] == "pending"
+        assert by_mobile[0]["principal_name"] == "Test Subject"  # the seeded principal
+
+        by_email = await repo.nominations_naming(
+            conn, mobile=None, email="meera.nominee@example.org"
+        )
+        assert [str(r["nomination_uuid"]) for r in by_email] == [ref]
+
+        nobody = await repo.nominations_naming(
+            conn, mobile="+915559999999", email="nobody@example.org"
+        )
+        assert nobody == []
+
+        # Revoked is not something she can act on, so it is not listed.
+        await service.revoke_nomination(conn, nomination_uuid=ref, principal_user_id=principal)
+        assert await repo.nominations_naming(conn, mobile="+915550000091", email=None) == []
+
     async def test_pending_until_accepted_then_usable(
         self, conn: Any, seeded: dict[str, Any], redis_conn: Any
     ) -> None:

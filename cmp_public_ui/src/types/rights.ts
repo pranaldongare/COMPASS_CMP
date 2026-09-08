@@ -261,6 +261,25 @@ export interface Nomination {
   created_at: Timestamp;
 }
 
+/**
+ * A nomination that names the signed-in person as nominee.
+ *
+ * The other side of `Nomination`: she is the nominee, somebody else the
+ * principal. Only what she needs to act - the reference, whose rights, and
+ * whether it is in effect yet.
+ */
+export interface NomineeOf {
+  nomination_uuid: Uuid;
+  principal_name: string;
+  rights: RightsRequestType[];
+  status: NominationStatus;
+  /** Which of her own contacts the principal recorded. */
+  contact: string;
+  accept_expires_at: Timestamp | null;
+  accepted_at: Timestamp | null;
+  created_at: Timestamp;
+}
+
 /** A contact recorded on a nomination, masked: enough to recognise, nothing to use. */
 export interface NominationMedium {
   kind: "mobile" | "email";

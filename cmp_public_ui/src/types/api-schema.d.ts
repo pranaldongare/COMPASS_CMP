@@ -1204,6 +1204,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/nominee-of": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Who has nominated me
+         * @description Nominations where the caller is the nominee.
+         *
+         *     A data principal can be somebody else's nominee too, and until this
+         *     existed her account said nothing about it. Matched on her own recorded
+         *     contacts, since a nomination names a person by contact and not by account.
+         *     Acting still goes through the nominee page and a code to that contact -
+         *     being signed in here is not that proof.
+         */
+        get: operations["nominations_naming_me_me_nominee_of_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/nominations/{nomination_uuid}": {
         parameters: {
             query?: never;
@@ -5247,6 +5273,34 @@ export interface components {
                 [key: string]: string;
             }[];
         };
+        /**
+         * NomineeOfOut
+         * @description A nomination that names the caller. The other side of `NominationOut`.
+         */
+        NomineeOfOut: {
+            /**
+             * Nomination Uuid
+             * Format: uuid
+             */
+            nomination_uuid: string;
+            /** Principal Name */
+            principal_name: string;
+            /** Rights */
+            rights: string[];
+            /** Status */
+            status: string;
+            /** Contact */
+            contact: string;
+            /** Accept Expires At */
+            accept_expires_at: string | null;
+            /** Accepted At */
+            accepted_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** NomineeRequestOut */
         NomineeRequestOut: {
             /** Reference */
@@ -8902,6 +8956,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    nominations_naming_me_me_nominee_of_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NomineeOfOut"][];
                 };
             };
         };

@@ -8,12 +8,13 @@ import { useQuery } from "@tanstack/react-query";
 import {
   getMyRequest,
   listMyNominations,
+  listNominationsNamingMe,
   listMyRequestTrail,
   listMyRequests,
 } from "@/features/rights/api";
 import type { ApiError } from "@/lib/errors";
 import { keys } from "@/lib/query";
-import type { AuditEntry, MyRequest, Nomination, Uuid } from "@/types";
+import type { AuditEntry, MyRequest, Nomination, NomineeOf, Uuid } from "@/types";
 
 /* ------------------------------------------------------ the principal */
 
@@ -44,5 +45,12 @@ export function useMyNominations() {
   return useQuery<Nomination[], ApiError>({
     queryKey: keys.me.nominations,
     queryFn: listMyNominations,
+  });
+}
+
+export function useNominationsNamingMe() {
+  return useQuery<NomineeOf[], ApiError>({
+    queryKey: keys.me.nomineeOf,
+    queryFn: listNominationsNamingMe,
   });
 }

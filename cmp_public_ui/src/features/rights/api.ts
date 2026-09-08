@@ -15,6 +15,7 @@ import type {
   MyRequest,
   Nomination,
   NominationView,
+  NomineeOf,
   PublicRequestReceipt,
   PublicVerifyResult,
   RightsRequestType,
@@ -166,4 +167,9 @@ export function nominate(body: NominationInput): Promise<Nomination> {
 
 export function revokeNomination(uuid: Uuid): Promise<Nomination> {
   return apiDelete<Nomination>(`/me/nominations/${uuid}`);
+}
+
+/** Nominations that name *her* - somebody else's, where she is the nominee. */
+export function listNominationsNamingMe(): Promise<NomineeOf[]> {
+  return apiGet<NomineeOf[]>("/me/nominee-of");
 }
