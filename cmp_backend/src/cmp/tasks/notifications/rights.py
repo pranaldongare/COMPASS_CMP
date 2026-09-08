@@ -81,6 +81,14 @@ def send_nomination_invitation(
     return _deliver(to=contact, subject=subject, body=body)
 
 
+@shared_task(name="cmp.notifications.send_nomination_accepted", **RETRY_KW)
+def send_nomination_accepted(
+    contact: str, principal_name: str, reference: str, nominee_url: str
+) -> dict[str, Any]:
+    subject, body = templates.nomination_accepted(principal_name, reference, nominee_url)
+    return _deliver(to=contact, subject=subject, body=body)
+
+
 @shared_task(name="cmp.notifications.send_holder_instruction", **RETRY_KW)
 def send_holder_instruction(
     contact: str, reference: str, holder_label: str, instruction: str, due_on: str

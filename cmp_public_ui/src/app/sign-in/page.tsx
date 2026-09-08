@@ -55,6 +55,12 @@ export default function SignInPage() {
             </Link>
           </p>
           <p className="text-center text-xs text-text-subtle">
+            Nominated by someone? You do not sign in.{" "}
+            <Link href="/rights/nominee" className="underline underline-offset-2 hover:text-text-muted">
+              Act on their behalf here
+            </Link>
+          </p>
+          <p className="text-center text-xs text-text-subtle">
             Staff?{" "}
             <a
               href={config.staffPortalUrl}

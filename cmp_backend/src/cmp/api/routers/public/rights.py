@@ -247,6 +247,10 @@ async def public_verify(
 
 # -------------------------------------------------------------- nominations
 class NominationView(Out):
+    #: The reference the nominee will need to act, shown to him on acceptance.
+    #: Alone it authorises nothing: acting still needs a code sent to a
+    #: contact she recorded.
+    nomination_uuid: UUID
     principal_name: str
     nominee_name: str
     rights: list[str]
@@ -304,7 +308,10 @@ async def nomination_accept(
         "ok": True,
         "message": (
             f"You are now {row['principal_name']}'s nominee. Nothing happens until the event "
-            "she named - death or incapacity - and you will need to evidence it when it does."
+            "she named - death or incapacity - and you will need to evidence it when it does. "
+            f"Your nomination reference is {row['nomination_uuid']}; it has also been sent to "
+            "the contacts recorded for you, with the page where you act. There is no account "
+            "to sign in to."
         ),
     }
 

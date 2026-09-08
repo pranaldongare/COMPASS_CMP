@@ -9,7 +9,7 @@
  */
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight, Copy } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import * as React from "react";
@@ -24,6 +24,7 @@ import {
   CardTitle,
   Field,
   Input,
+  Mono,
   Skeleton,
 } from "@/components/ui/primitives";
 import {
@@ -229,6 +230,37 @@ export default function NominationAcceptPage() {
           </Alert>
         )}
 
+        {phase === "accepted" && view && (
+          // What he will need on a day that may be years away. There is no
+          // account: the reference, plus a code to a contact she recorded, is
+          // how he acts. It has also been sent to those contacts.
+          <Card>
+            <CardHeader>
+              <CardTitle>Keep your nomination reference</CardTitle>
+            </CardHeader>
+            <CardBody className="space-y-4">
+              <p className="text-sm text-text-muted">
+                There is nothing to sign in to. When the time comes, you will act on{" "}
+                {view.principal_name}&apos;s behalf with this reference and the email or
+                mobile that was recorded for you; a code will be sent there. We have also
+                sent this to those contacts.
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Mono className="break-all text-sm" data-testid="nomination-reference">
+                  {view.nomination_uuid}
+                </Mono>
+                <CopyButton value={view.nomination_uuid} />
+              </div>
+              <Button asChild variant="primary">
+                <Link href={`/rights/nominee?nomination=${encodeURIComponent(view.nomination_uuid)}`}>
+                  Act on their behalf
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                </Link>
+              </Button>
+            </CardBody>
+          </Card>
+        )}
+
         <p className="mt-8 text-center text-xs">
           <Link
             href="/rights"
@@ -240,5 +272,25 @@ export default function NominationAcceptPage() {
         </p>
       </main>
     </div>
+  );
+}
+
+/** Copies the reference where the clipboard is available, and says so briefly. */
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = React.useState(false);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // No clipboard here - the reference is still on screen to select.
+    }
+  }
+  return (
+    <Button type="button" variant="subtle" size="sm" onClick={copy}>
+      <Copy className="size-4" aria-hidden="true" />
+      {copied ? "Copied" : "Copy"}
+    </Button>
   );
 }

@@ -269,6 +269,8 @@ export interface NominationMedium {
 
 /** The acceptance link, as the nominee sees it. */
 export interface NominationView {
+  /** The reference the nominee needs to act. Alone it authorises nothing. */
+  nomination_uuid: Uuid;
   principal_name: string;
   nominee_name: string;
   rights: RightsRequestType[];

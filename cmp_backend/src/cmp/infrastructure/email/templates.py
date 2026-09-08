@@ -168,6 +168,28 @@ def nomination_invitation(principal_name: str, accept_url: str, expires_on: str)
     )
 
 
+def nomination_accepted(principal_name: str, reference: str, nominee_url: str) -> tuple[str, str]:
+    """Kept for the day it is needed, which may be years away.
+
+    A nominee has no account and nothing to sign in to. What he needs when the
+    time comes is the nomination's reference and the page where he acts - and
+    a code will then go to the contact recorded for him, not to whatever he
+    types. Without this message the reference existed nowhere he could see.
+    """
+    return (
+        f"You are {principal_name}'s nominee - keep this message",
+        f"You have accepted {principal_name}'s nomination under section 14 of the Digital "
+        "Personal Data Protection Act 2023. Nothing happens until the event they named - "
+        "death or incapacity - and you will need to evidence it when it does.\n\n"
+        f"Your nomination reference: {reference}\n\n"
+        "When the time comes, act on their behalf here:\n\n"
+        f"{nominee_url}\n\n"
+        "There is no account and nothing to sign in to. Enter the reference above and the "
+        "email or mobile that was recorded for you; a code is sent to that contact, and the "
+        "request is made once you have entered it." + _SIGN_OFF,
+    )
+
+
 def holder_instruction(
     reference: str, holder_label: str, instruction: str, due_on: str
 ) -> tuple[str, str]:

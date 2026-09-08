@@ -5229,6 +5229,11 @@ export interface components {
         };
         /** NominationView */
         NominationView: {
+            /**
+             * Nomination Uuid
+             * Format: uuid
+             */
+            nomination_uuid: string;
             /** Principal Name */
             principal_name: string;
             /** Nominee Name */

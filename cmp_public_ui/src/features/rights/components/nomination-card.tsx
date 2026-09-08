@@ -23,6 +23,7 @@ import {
   CardTitle,
   Field,
   Input,
+  Mono,
   Skeleton,
 } from "@/components/ui/primitives";
 import { REQUEST_TYPE_COPY } from "@/features/rights/components/copy";
@@ -133,6 +134,11 @@ function LiveNomination({ nomination: n }: { nomination: Nomination }) {
           <p className="text-sm">
             In place. If the time comes, {n.nominee_name} will identify themselves with the
             contact you recorded, evidence the event, and the request will run as normal.
+          </p>
+          {/* Shown here too: the nominee was sent it on acceptance, and this is
+              the place the nominee page tells them to ask if they lost it. */}
+          <p className="mt-2 text-xs text-text-muted">
+            Their nomination reference: <Mono className="break-all">{n.nomination_uuid}</Mono>
           </p>
         </Alert>
       )}

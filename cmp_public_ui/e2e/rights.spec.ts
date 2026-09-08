@@ -209,6 +209,15 @@ test.describe("nominee", () => {
     await page.getByRole("button", { name: /accept the nomination/i }).click();
     await expect(page.getByText(/^accepted$/i)).toBeVisible({ timeout: 10_000 });
 
+    // What he needs later is on the screen now, and the way onward carries it.
+    // Before this the reference existed nowhere he could see, so the nominee
+    // page's neutral reply looked like a code that never arrived.
+    const reference = (await page.getByTestId("nomination-reference").textContent())?.trim() ?? "";
+    expect(reference).toMatch(/^[0-9a-f-]{36}$/);
+    await page.getByRole("link", { name: /act on their behalf/i }).click();
+    await expect(page).toHaveURL(/\/rights\/nominee\?nomination=/);
+    await expect(page.getByLabel(/nomination reference/i)).toHaveValue(reference);
+
     // Single use: the same link is now not valid, and says only that.
     await page.goto(url.pathname);
     await expect(page.getByText(/this link is not valid/i)).toBeVisible({ timeout: 10_000 });

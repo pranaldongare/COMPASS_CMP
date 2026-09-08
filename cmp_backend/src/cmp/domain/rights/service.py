@@ -1423,6 +1423,11 @@ async def dispute(conn: Conn, row: Row, *, subject_user_id: int, text: str, abou
 
 
 # --------------------------------------------------------------- nominations
+def nominee_url(nomination_uuid: str) -> str:
+    """Where the nominee acts, with the reference already filled in."""
+    return f"{settings.public_base_url.rstrip('/')}/rights/nominee?nomination={nomination_uuid}"
+
+
 def _accept_url(raw_token: str) -> str:
     return f"{settings.public_base_url.rstrip('/')}/rights/nominations/{raw_token}"
 
@@ -1597,6 +1602,21 @@ async def accept_nomination(conn: Conn, raw_token: str, *, code: str) -> Row:
     )
     fresh = await repo.nomination_by_uuid(conn, str(row["nomination_uuid"]))
     assert fresh is not None
+    # The reference and the page where he acts, to every contact recorded for
+    # him. He will need them on a day that may be years off, and until this
+    # was sent the reference existed nowhere he could see it: the nominee page
+    # asked for it, he could not supply it, and the neutral reply then told
+    # him nothing - which read as "the code never arrives".
+    ref = str(fresh["nomination_uuid"])
+    for contact in (fresh.get("nominee_mobile"), fresh.get("nominee_email")):
+        if contact:
+            _dispatch(
+                "send_nomination_accepted",
+                str(contact),
+                str(fresh["principal_name"]),
+                ref,
+                nominee_url(ref),
+            )
     return fresh
 
 

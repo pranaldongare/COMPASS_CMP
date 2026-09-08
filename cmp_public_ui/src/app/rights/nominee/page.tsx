@@ -14,6 +14,7 @@
 
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import * as React from "react";
 
 import { FileInput } from "@/components/forms";
@@ -42,7 +43,21 @@ function messageOf(err: unknown, fallback: string): string {
 }
 
 export default function NomineePage() {
-  const [nominationUuid, setNominationUuid] = React.useState("");
+  // useSearchParams() forces client rendering, so Next needs a suspense
+  // boundary around anything that reads it.
+  return (
+    <React.Suspense fallback={null}>
+      <NomineeForm />
+    </React.Suspense>
+  );
+}
+
+function NomineeForm() {
+  // Prefilled from the acceptance page and from the message sent on
+  // acceptance, both of which carry `?nomination=`. Typing a UUID by hand was
+  // the step people got wrong, and the neutral reply then told them nothing.
+  const params = useSearchParams();
+  const [nominationUuid, setNominationUuid] = React.useState(params.get("nomination") ?? "");
   const [contact, setContact] = React.useState("");
   const [started, setStarted] = React.useState<string | null>(null);
   const [code, setCode] = React.useState("");
@@ -124,7 +139,7 @@ export default function NomineePage() {
                   {error && !started && <Alert tone="danger">{error}</Alert>}
                   <Field
                     label="The nomination reference"
-                    hint="The person who nominated you can see it on their account; it was also in the message you accepted from."
+                    hint="It was shown when you accepted, and sent to your recorded contacts in the message titled “keep this message”. The person who nominated you can also see it on their account. You do not sign in anywhere: this page is where you act."
                     required
                   >
                     {(p) => (
