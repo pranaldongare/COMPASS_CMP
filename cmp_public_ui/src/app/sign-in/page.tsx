@@ -55,7 +55,8 @@ export default function SignInPage() {
             </Link>
           </p>
           <p className="text-center text-xs text-text-subtle">
-            Nominated by someone? You do not sign in.{" "}
+            Nominated by someone? Once you have accepted, sign in here with the contact you
+            accepted from - or{" "}
             <Link href="/rights/nominee" className="underline underline-offset-2 hover:text-text-muted">
               Act on their behalf here
             </Link>

@@ -99,9 +99,15 @@ def send_nomination_invitation(
 
 @shared_task(name="cmp.notifications.send_nomination_accepted", **RETRY_KW)
 def send_nomination_accepted(
-    contact: str, principal_name: str, reference: str, nominee_url: str
+    contact: str,
+    principal_name: str,
+    reference: str,
+    nominee_url: str,
+    sign_in_url: str | None = None,
 ) -> dict[str, Any]:
-    subject, body = templates.nomination_accepted(principal_name, reference, nominee_url)
+    subject, body = templates.nomination_accepted(
+        principal_name, reference, nominee_url, sign_in_url
+    )
     return _deliver(to=contact, subject=subject, body=body)
 
 

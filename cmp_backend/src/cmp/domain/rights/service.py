@@ -32,6 +32,8 @@ from cmp.core.errors import BadRequest, Conflict, Forbidden, NotFound, Validatio
 from cmp.core.logging import get_logger
 from cmp.core.permissions import Role
 from cmp.core.security import new_token, token_fingerprint
+from cmp.db.redis import K_CACHE, get_redis
+from cmp.db.redis import key as rkey
 from cmp.db.repositories import registry as registry_repo
 from cmp.db.repositories import rights as repo
 from cmp.db.repositories import users as user_repo
@@ -2049,6 +2051,13 @@ async def send_nomination_code(conn: Conn, raw_token: str, *, medium: str) -> di
         message="Too many code requests for this nomination. Try again later.",
     )
     issued = await otp.issue(otp.Scope.NOMINATION_ACCEPT, str(row["nomination_uuid"]))
+    # Which contact the code went to, kept as long as the code is: acceptance
+    # turns that proven contact into the account he can then sign in with.
+    await get_redis().set(
+        rkey(K_CACHE, "nomination_medium", str(row["nomination_uuid"])),
+        medium,
+        ex=settings.otp_ttl_s,
+    )
     _dispatch("send_nomination_code", str(contact), issued.code)
     masked = mask_contact(str(contact))
     return {
@@ -2094,12 +2103,14 @@ async def accept_nomination(conn: Conn, raw_token: str, *, code: str) -> Row:
     )
     fresh = await repo.nomination_by_uuid(conn, str(row["nomination_uuid"]))
     assert fresh is not None
-    # The reference and the page where he acts, to every contact recorded for
-    # him. He will need them on a day that may be years off, and until this
-    # was sent the reference existed nowhere he could see it: the nominee page
-    # asked for it, he could not supply it, and the neutral reply then told
-    # him nothing - which read as "the code never arrives".
     ref = str(fresh["nomination_uuid"])
+    proven = await get_redis().getdel(rkey(K_CACHE, "nomination_medium", ref))
+    medium = str(proven) if proven in ("mobile", "email") else "mobile"
+    has_account = await _ensure_nominee_account(conn, fresh, proven_medium=medium)
+    # The reference and the page where he acts, to every contact recorded for
+    # him - and, now that accepting has proven a contact, that he can sign in
+    # with it. He will need all of this on a day that may be years off.
+    sign_in = f"{settings.public_base_url.rstrip('/')}/sign-in" if has_account else None
     for contact in (fresh.get("nominee_mobile"), fresh.get("nominee_email")):
         if contact:
             _dispatch(
@@ -2108,8 +2119,58 @@ async def accept_nomination(conn: Conn, raw_token: str, *, code: str) -> Row:
                 str(fresh["principal_name"]),
                 ref,
                 nominee_url(ref),
+                sign_in,
             )
     return fresh
+
+
+async def _ensure_nominee_account(conn: Conn, nomination: Row, *, proven_medium: str) -> bool:
+    """A nominee who has just accepted can sign in.
+
+    Accepting proved a contact the principal recorded - a code went there and
+    came back - and that is exactly the proof registration needs. So where no
+    account holds either recorded contact, one is made: a data principal's
+    account, active, with the proven contact marked verified, so the sign-in
+    code he asks for next actually arrives. Where an account already holds a
+    recorded contact, it is his already, and nothing is created.
+
+    Returns whether he now has an account to sign in with. A nomination
+    recorded before mobiles were required may name an email alone; a data
+    principal's account needs a mobile, so none is made for those.
+    """
+    mobile = nomination.get("nominee_mobile")
+    email = nomination.get("nominee_email")
+    for contact in (mobile, email):
+        if contact and await user_repo.by_contact(conn, str(contact)):
+            return True
+    if not mobile:
+        return False
+    user = await user_repo.create(
+        conn,
+        full_name=str(nomination["nominee_name"]),
+        email=str(email).lower() if email else None,
+        mobile=str(mobile),
+        role=Role.DATA_SUBJECT.value,
+        person_type="external",
+        status="active",
+    )
+    await user_repo.mark_contact_verified(conn, int(user["id"]), proven_medium)
+    await audit.record(
+        conn,
+        event=Event.USER_CREATED,
+        entity_type="auth_user",
+        entity_id=int(user["id"]),
+        subject_user_id=int(user["id"]),
+        actor_user_id=None,
+        detail={
+            "role": Role.DATA_SUBJECT.value,
+            "via": "nomination_accepted",
+            "nomination": str(nomination["nomination_uuid"]),
+            "verified": proven_medium,
+        },
+    )
+    log.info("rights.nominee_account_created", medium=proven_medium)
+    return True
 
 
 async def decline_nomination(conn: Conn, raw_token: str, *, code: str) -> Row:

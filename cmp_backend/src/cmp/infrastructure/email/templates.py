@@ -205,25 +205,36 @@ def nomination_invitation(principal_name: str, accept_url: str, expires_on: str)
     )
 
 
-def nomination_accepted(principal_name: str, reference: str, nominee_url: str) -> tuple[str, str]:
+def nomination_accepted(
+    principal_name: str, reference: str, nominee_url: str, sign_in_url: str | None = None
+) -> tuple[str, str]:
     """Kept for the day it is needed, which may be years away.
 
-    A nominee has no account and nothing to sign in to. What he needs when the
-    time comes is the nomination's reference and the page where he acts - and
-    a code will then go to the contact recorded for him, not to whatever he
-    types. Without this message the reference existed nowhere he could see.
+    Accepting proved a contact, and that is the proof an account needs: the
+    nominee can sign in with it, see who named them, and act from there. The
+    reference and the nominee page are kept too, for whoever prefers them or
+    loses the account. Without this message the reference existed nowhere he
+    could see.
     """
+    account = (
+        f"You can sign in at {sign_in_url} with the mobile or email you accepted from - a "
+        "code is sent to it each time, there is no password. Your nominations are shown "
+        "under My requests, with the way to act.\n\n"
+        if sign_in_url
+        else ""
+    )
     return (
         f"You are {principal_name}'s nominee - keep this message",
         f"You have accepted {principal_name}'s nomination under section 14 of the Digital "
         "Personal Data Protection Act 2023. Nothing happens until the event they named - "
         "death or incapacity - and you will need to evidence it when it does.\n\n"
+        f"{account}"
         f"Your nomination reference: {reference}\n\n"
-        "When the time comes, act on their behalf here:\n\n"
+        "You can also act without signing in, here:\n\n"
         f"{nominee_url}\n\n"
-        "There is no account and nothing to sign in to. Enter the reference above and the "
-        "email or mobile that was recorded for you; a code is sent to that contact, and the "
-        "request is made once you have entered it." + _SIGN_OFF,
+        "Enter the reference above and the email or mobile that was recorded for you; a "
+        "code is sent to that contact, and the request is made once you have entered it."
+        + _SIGN_OFF,
     )
 
 

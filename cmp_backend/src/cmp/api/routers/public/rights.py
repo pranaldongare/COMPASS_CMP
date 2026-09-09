@@ -310,8 +310,8 @@ async def nomination_accept(
             f"You are now {row['principal_name']}'s nominee. Nothing happens until the event "
             "she named - death or incapacity - and you will need to evidence it when it does. "
             f"Your nomination reference is {row['nomination_uuid']}; it has also been sent to "
-            "the contacts recorded for you, with the page where you act. There is no account "
-            "to sign in to."
+            "the contacts recorded for you, with the page where you act. You can sign in "
+            "with the contact you accepted from: a code is sent to it each time."
         ),
     }
 

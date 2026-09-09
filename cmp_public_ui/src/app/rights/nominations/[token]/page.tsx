@@ -240,10 +240,20 @@ export default function NominationAcceptPage() {
             </CardHeader>
             <CardBody className="space-y-4">
               <p className="text-sm text-text-muted">
-                There is nothing to sign in to. When the time comes, you will act on{" "}
-                {view.principal_name}&apos;s behalf with this reference and the email or
-                mobile that was recorded for you; a code will be sent there. We have also
-                sent this to those contacts.
+                You can now sign in with the mobile or email you accepted from - a code is
+                sent to it each time, there is no password - and you will find{" "}
+                {view.principal_name}&apos;s nomination under My requests, with the way to
+                act. You can also act without signing in, using this reference and the
+                contact that was recorded for you. We have sent all of this to those
+                contacts.
+              </p>
+              <p>
+                <Link
+                  href="/sign-in"
+                  className="text-sm font-medium text-accent-text underline underline-offset-2"
+                >
+                  Sign in
+                </Link>
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 <Mono className="break-all text-sm" data-testid="nomination-reference">

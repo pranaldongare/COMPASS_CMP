@@ -721,6 +721,61 @@ class TestNomination:
         await service.revoke_nomination(conn, nomination_uuid=ref, principal_user_id=principal)
         assert await repo.nominations_naming(conn, mobile="+915550000091", email=None) == []
 
+    async def test_accepting_makes_the_nominee_an_account_he_can_sign_in_with(
+        self, conn: Any, seeded: dict[str, Any], redis_conn: Any
+    ) -> None:
+        """Accepting proved a contact - the same proof registration needs.
+
+        A stranger who accepts gets a data principal's account, active, with
+        the contact the code went to marked verified, so the sign-in code he
+        asks for next actually arrives. A nominee who already has an account
+        under a recorded contact keeps that one; nothing is created."""
+        from cmp.db.redis import K_CACHE, get_redis
+        from cmp.db.redis import key as rkey
+        from cmp.db.repositories import users as user_repo
+
+        principal = seeded["subject"]["id"]
+
+        async def accept(mobile: str, email: str | None, *, proven: str) -> dict[str, Any]:
+            nomination = await service.nominate(
+                conn,
+                principal_user_id=principal,
+                nominee_name="Nominee Who Accepts",
+                nominee_mobile=mobile,
+                nominee_email=email,
+                rights=["access"],
+            )
+            raw = new_token()
+            await conn.execute(
+                "UPDATE nomination SET accept_token_hash = %s WHERE nomination_id = %s",
+                (token_fingerprint(raw), nomination["nomination_id"]),
+            )
+            ref = str(nomination["nomination_uuid"])
+            code = (await otp.issue(otp.Scope.NOMINATION_ACCEPT, ref)).code
+            # What `send_nomination_code` records: where the code went.
+            await get_redis().set(rkey(K_CACHE, "nomination_medium", ref), proven, ex=600)
+            accepted = await service.accept_nomination(conn, raw, code=code)
+            await service.revoke_nomination(conn, nomination_uuid=ref, principal_user_id=principal)
+            return dict(accepted)
+
+        # A stranger: no account under either contact.
+        assert await user_repo.by_contact(conn, "+915550000201") is None
+        await accept("+915550000201", "stranger.nominee@example.org", proven="mobile")
+        made = await user_repo.by_contact(conn, "+915550000201")
+        assert made is not None
+        assert made["role"] == "data_subject" and made["status"] == "active"
+        assert made["full_name"] == "Nominee Who Accepts"
+        assert made["email"] == "stranger.nominee@example.org"
+        assert made["mobile_verified_at"] is not None and made["email_verified_at"] is None
+
+        # Somebody with an account already: the same person, named again on a
+        # later nomination. The account is his; nothing new is made.
+        before = await conn.execute("SELECT count(*) AS n FROM auth_user")
+        n_before = (await before.fetchone())["n"]
+        await accept("+915550000201", None, proven="mobile")
+        after = await conn.execute("SELECT count(*) AS n FROM auth_user")
+        assert (await after.fetchone())["n"] == n_before
+
     async def test_pending_until_accepted_then_usable(
         self, conn: Any, seeded: dict[str, Any], redis_conn: Any
     ) -> None:
