@@ -50,7 +50,9 @@ class UserOut(Out):
     uuid: UUID
     username: str | None
     full_name: str
-    email: str
+    #: None for a data principal who registered with a mobile alone. Staff
+    #: always have one; the register lists both kinds of account.
+    email: str | None
     mobile: str | None
     organization_id: str | None
     role: str

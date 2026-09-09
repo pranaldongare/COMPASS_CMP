@@ -31,7 +31,7 @@ export interface ExportRecord {
 export interface ExportLine {
   subject_uuid: Uuid;
   subject_name: string;
-  subject_email: string;
+  subject_email: string | null;
   consent_uuid: Uuid;
   affirmative_action_at: Timestamp;
 }

@@ -1513,11 +1513,16 @@ export interface paths {
          * Name a respondent for this processor
          * @description A respondent is how a holder's ticket gets answered.
          *
-         *     An in-house processor's respondent must be an account: the team answers on
-         *     the portal, where the ticket is in front of them when they sign in. A third
-         *     party's is a name and an address, and the Privacy Office mails them and
-         *     tracks the exchange by hand. The two are not interchangeable, and the rule
-         *     is held here rather than left to whoever fills the form.
+         *     An account answers on the portal: the ticket is in front of them when they
+         *     sign in, and they return it there. A name and an address are mailed, and
+         *     the Privacy Office tracks the exchange by hand.
+         *
+         *     An in-house processor's respondent must be an account - our own team has
+         *     no reason to be reached by mail. A third party's may be either. Usually it
+         *     is somebody at the third party, reached by mail; sometimes one of our own
+         *     people represents that third party here, and naming their account puts the
+         *     ticket on the portal like any internal one. The rule is held here rather
+         *     than left to whoever fills the form.
          */
         post: operations["add_respondent_processors__processor_uuid__respondents_post"];
         delete?: never;
@@ -4431,7 +4436,7 @@ export interface components {
             /** Subject Name */
             subject_name: string;
             /** Subject Email */
-            subject_email: string;
+            subject_email: string | null;
             /** Subject Mobile */
             subject_mobile: string | null;
             /**
@@ -4566,7 +4571,7 @@ export interface components {
             /** Subject Name */
             subject_name: string;
             /** Subject Email */
-            subject_email: string;
+            subject_email: string | null;
             /** Subject Mobile */
             subject_mobile: string | null;
             /**
@@ -4619,7 +4624,7 @@ export interface components {
             /** Subject Name */
             subject_name: string;
             /** Subject Email */
-            subject_email: string;
+            subject_email: string | null;
             /** Subject Mobile */
             subject_mobile: string | null;
             /**
@@ -5396,7 +5401,7 @@ export interface components {
             /** Full Name */
             full_name: string;
             /** Email */
-            email: string;
+            email: string | null;
             /** Mobile */
             mobile: string | null;
             /** Organization Id */
@@ -5422,7 +5427,9 @@ export interface components {
             /** Full Name */
             full_name: string;
             /** Email */
-            email: string;
+            email: string | null;
+            /** Mobile */
+            mobile?: string | null;
             /** Role */
             role: string;
             /** Person Type */
@@ -7198,7 +7205,7 @@ export interface components {
             /** Full Name */
             full_name: string;
             /** Email */
-            email: string;
+            email: string | null;
             /** Mobile */
             mobile: string | null;
             /** Organization Id */

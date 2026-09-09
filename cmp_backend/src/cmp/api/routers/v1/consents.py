@@ -69,7 +69,7 @@ class ConsentRow(Out):
     consent_uuid: UUID
     subject_uuid: UUID
     subject_name: str
-    subject_email: str
+    subject_email: str | None
     subject_mobile: str | None
     site_uuid: UUID
     site_label: str
@@ -109,7 +109,7 @@ class ConsentArtefactOut(Out):
     consent_uuid: UUID
     subject_uuid: UUID
     subject_name: str
-    subject_email: str
+    subject_email: str | None
     subject_mobile: str | None
     project_uuid: UUID
     project_name: str

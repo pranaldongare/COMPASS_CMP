@@ -72,6 +72,7 @@ export function makeMe(overrides: Partial<Me> = {}): Me {
     uuid: "11111111-1111-4111-8111-111111111111",
     full_name: "Asha Rao",
     email: "asha.rao@organisation.example",
+    mobile: null,
     role,
     person_type: null,
     status: "active",

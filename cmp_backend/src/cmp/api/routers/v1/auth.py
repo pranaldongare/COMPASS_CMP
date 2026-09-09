@@ -93,7 +93,14 @@ class OtpVerifyBody(Schema):
 class MeResponse(Out):
     uuid: UUID
     full_name: str
-    email: str
+    #: None for a data principal who registered with a mobile alone. Since
+    #: 0015 the mobile is what she must have; the email is optional. A model
+    #: that still required it turned her first "who am I" into a 500, and the
+    #: console read that as sign-in failing.
+    email: str | None
+    #: The contact she signs in with. Shown on her profile, where an account
+    #: with no email otherwise showed nothing about how it is reached.
+    mobile: str | None = None
     role: str
     person_type: str | None
     status: str
@@ -212,7 +219,10 @@ async def register(body: RegisterBody) -> dict[str, Any]:
             email=str(body.email) if body.email else None,
         )
     # Identical whether the contact was new or already registered.
-    return {"ok": True, "message": "Check your email for a sign-in code."}
+    return {
+        "ok": True,
+        "message": "We have sent a code to each contact you gave. Enter them to finish.",
+    }
 
 
 @router.post("/otp/request", response_model=Acknowledged, summary="Data-subject sign-in code")

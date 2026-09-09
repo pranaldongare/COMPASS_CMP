@@ -81,7 +81,10 @@ export default function AccountPage() {
           <CardBody>
             <DescriptionList>
               <DescriptionItem term="Name">{me.full_name}</DescriptionItem>
-              <DescriptionItem term="Email">{me.email}</DescriptionItem>
+              <DescriptionItem term="Mobile">{me.mobile ?? "—"}</DescriptionItem>
+              <DescriptionItem term="Email">
+                {me.email ?? <span className="text-text-muted">None given</span>}
+              </DescriptionItem>
               <DescriptionItem term="Role">
                 <StatusBadge kind="role" value={me.role} dot={false} />
               </DescriptionItem>

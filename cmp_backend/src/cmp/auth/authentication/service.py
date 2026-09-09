@@ -414,6 +414,7 @@ async def me_payload(conn: Conn, *, user_id: int, session: sessions.Session) -> 
         "uuid": str(user["uuid"]),
         "full_name": user["full_name"],
         "email": user["email"],
+        "mobile": user.get("mobile"),
         "role": user["role"],
         "person_type": user["person_type"],
         "status": user["status"],

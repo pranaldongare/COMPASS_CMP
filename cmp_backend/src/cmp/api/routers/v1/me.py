@@ -33,7 +33,8 @@ router = APIRouter(prefix="/me", tags=["me"])
 class MeProfile(Out):
     uuid: UUID
     full_name: str
-    email: str
+    #: None for a data principal who registered with a mobile alone.
+    email: str | None
     mobile: str | None
     organization_id: str | None
     person_type: str | None

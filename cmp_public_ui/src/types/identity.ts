@@ -12,7 +12,10 @@ import type { Timestamp, Uuid } from "@/types/primitives";
 export interface Me {
   uuid: Uuid;
   full_name: string;
-  email: string;
+  /** Null for a data principal who registered with a mobile alone. */
+  email: string | null;
+  /** The contact a data principal signs in with. */
+  mobile: string | null;
   role: Role;
   person_type: PersonType | null;
   status: UserStatus;
@@ -51,7 +54,8 @@ export interface User {
   uuid: Uuid;
   username: string | null;
   full_name: string;
-  email: string;
+  /** Null for a data principal who registered with a mobile alone. */
+  email: string | null;
   mobile: string | null;
   organization_id: string | null;
   role: Role;

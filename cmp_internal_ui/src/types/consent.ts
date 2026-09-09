@@ -48,7 +48,7 @@ export interface ConsentRow {
   consent_uuid: Uuid;
   subject_uuid: Uuid;
   subject_name: string;
-  subject_email: string;
+  subject_email: string | null;
   subject_mobile: string | null;
   site_uuid: Uuid;
   site_label: string;
@@ -123,7 +123,7 @@ export interface ConsentArtefact {
   consent_uuid: Uuid;
   subject_uuid: Uuid;
   subject_name: string;
-  subject_email: string;
+  subject_email: string | null;
   subject_mobile: string | null;
   project_uuid: Uuid;
   project_name: string;

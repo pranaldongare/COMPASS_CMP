@@ -247,3 +247,37 @@ async def test_omitting_the_date_on_a_profile_update_leaves_it_alone(
 
     assert after["full_name"] == "Renamed Only"
     assert after["dob"] is not None, "an unmentioned date of birth must survive"
+
+
+async def test_a_mobile_only_principal_survives_the_response_models(
+    conn: Any, seeded: dict[str, Any], redis_conn: Any
+) -> None:
+    """Since 0015 the mobile is what she must have and the email is optional,
+    but the response models still said `email: str`. Her first "who am I"
+    after signing in was a 500, which the console read as sign-in failing;
+    the administrator's register would have broken the same way once she
+    existed. The models are validated here against a row with no email."""
+    from datetime import UTC, datetime, timedelta
+
+    from cmp.api.routers.v1.auth import MeResponse
+    from cmp.api.routers.v1.me import MeProfile
+    from cmp.api.routers.v1.users import UserOut
+
+    await auth_service.register_data_subject(
+        conn, full_name="Mobile Only", mobile="+915550000099", email=None, dob=_years_ago(30)
+    )
+    user = await user_repo.by_contact(conn, "+915550000099")
+    assert user is not None and user["email"] is None
+
+    row = dict(user)
+    assert UserOut.model_validate(row).email is None
+    assert MeProfile.model_validate(row).email is None
+    me = MeResponse.model_validate(
+        {
+            **row,
+            "mfa_verified": True,
+            "session_expires_at": datetime.now(UTC) + timedelta(hours=8),
+            "nav": ["consents", "requests", "notifications", "profile"],
+        }
+    )
+    assert me.email is None and me.role == "data_subject"
