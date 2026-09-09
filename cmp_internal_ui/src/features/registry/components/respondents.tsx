@@ -1,12 +1,12 @@
 /**
  * Who answers a rights-request ticket for a processor.
  *
- * Two shapes, and the processor decides which. An in-house processor's
- * respondent is an account here: the ticket is in their console when they
- * sign in, and they return it there. A third party's is a name and an address:
- * the Privacy Office mails the instruction and tracks the exchange by hand on
- * the request. The form only offers the shape the processor allows, and the
- * server holds the same rule.
+ * Two shapes. An account here answers on the portal: the ticket is in their
+ * console when they sign in, and they return it there. A name and an address
+ * are mailed, and the Privacy Office tracks the exchange by hand on the
+ * request. An in-house processor's respondent must be an account. A third
+ * party's may be either - usually a person at the third party, sometimes one
+ * of our own people who represents them here. The server holds the same rule.
  */
 "use client";
 
@@ -33,7 +33,12 @@ export function RespondentsPanel({ processor }: { processor: Processor }) {
   const respondents = useRespondents(processor.processor_uuid);
   const add = useAddRespondent(processor.processor_uuid);
   const remove = useRemoveRespondent(processor.processor_uuid);
-  const staff = useStaff(canEdit && processor.is_in_house);
+  // A third party's respondent is usually somebody there, reached by mail;
+  // it may be one of our own people who represents them here. In-house is
+  // always an account.
+  const [asAccount, setAsAccount] = React.useState(processor.is_in_house);
+  const useAccount = processor.is_in_house || asAccount;
+  const staff = useStaff(canEdit && useAccount);
   const [name, setName] = React.useState("");
   const [contact, setContact] = React.useState("");
   const [userUuid, setUserUuid] = React.useState("");
@@ -44,9 +49,7 @@ export function RespondentsPanel({ processor }: { processor: Processor }) {
     setError(null);
     try {
       await add.mutateAsync(
-        processor.is_in_house
-          ? { user_uuid: userUuid }
-          : { name: name.trim(), contact: contact.trim() },
+        useAccount ? { user_uuid: userUuid } : { name: name.trim(), contact: contact.trim() },
       );
       setName("");
       setContact("");
@@ -63,7 +66,7 @@ export function RespondentsPanel({ processor }: { processor: Processor }) {
         <p className="text-sm">
           {processor.is_in_house
             ? "In-house: a respondent is a CMP account. A ticket addressed to them is in their console the moment it is issued, and they return it there."
-            : "Third party: a respondent is a name and an address. The instruction is mailed there, and the Privacy Office tracks the exchange by hand on the request."}
+            : "Third party: usually a name and an address there, mailed and tracked by hand on the request. Where one of our own people represents this processor, name their account instead and the ticket goes to their console."}
         </p>
       </Alert>
 
@@ -119,7 +122,22 @@ export function RespondentsPanel({ processor }: { processor: Processor }) {
       {canEdit && (
         <form method="post" onSubmit={submit} noValidate className="space-y-3 border-t border-border pt-4">
           {error && <Alert tone="danger">{error}</Alert>}
-          {processor.is_in_house ? (
+          {!processor.is_in_house && (
+            <fieldset className="space-y-1">
+              <legend className="text-sm font-medium">Who answers for them</legend>
+              <div className="flex flex-wrap gap-4 text-sm">
+                <label className="flex items-center gap-2">
+                  <input type="radio" name="respondent-shape" checked={!asAccount} onChange={() => setAsAccount(false)} />
+                  Somebody at the third party, by mail
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="radio" name="respondent-shape" checked={asAccount} onChange={() => setAsAccount(true)} />
+                  One of our own accounts, on the portal
+                </label>
+              </div>
+            </fieldset>
+          )}
+          {useAccount ? (
             <Field label="Account" hint="An active member of staff. Their name and address follow from the account." required>
               {(p) => (
                 <Select {...p} value={userUuid} onChange={(e) => setUserUuid(e.target.value)}>
@@ -147,7 +165,7 @@ export function RespondentsPanel({ processor }: { processor: Processor }) {
             variant="primary"
             size="sm"
             loading={add.isPending}
-            disabled={processor.is_in_house ? !userUuid : !name.trim() || !contact.trim()}
+            disabled={useAccount ? !userUuid : !name.trim() || !contact.trim()}
           >
             <Plus className="size-4" aria-hidden="true" />
             Add respondent

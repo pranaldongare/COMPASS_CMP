@@ -96,6 +96,37 @@ class TestRespondents:
         assert portal["responder_user_id"] == int(dco["id"])
         assert portal["responder_contact"] == "dco@test.local"
 
+    async def test_a_third_party_may_be_represented_by_one_of_our_own_accounts(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any
+    ) -> None:
+        """A third party's respondent is usually a person at the third party,
+        reached by mail. It may also be one of our own people who represents
+        that third party here - and then the ticket is on the portal, like any
+        internal one. The repository holds no opinion; the route holds the
+        rule, and this pins what the holder inherits."""
+        third_party = await _processor(conn, name="Represented Ltd", in_house=False)
+        await registry_repo.add_respondent(
+            conn,
+            int(third_party["processor_id"]),
+            name="x",
+            contact="x",
+            user_id=int(seeded["users"]["dco"]["id"]),
+        )
+        row = await _request(conn, seeded)
+        holder = await service.add_holder(
+            conn,
+            row,
+            label="",
+            processor_uuid=str(third_party["processor_uuid"]),
+            responder_name=None,
+            responder_contact=None,
+            role="dpo",
+            actor_id=seeded["users"]["dpo"]["id"],
+        )
+        assert holder["is_in_house"] is False
+        assert holder["channel"] == "portal"
+        assert holder["responder_user_id"] == int(seeded["users"]["dco"]["id"])
+
     async def test_typing_over_an_account_makes_it_email_again(
         self, conn: Any, seeded: dict[str, Any], request_context: Any
     ) -> None:

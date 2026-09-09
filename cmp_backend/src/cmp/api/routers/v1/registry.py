@@ -332,8 +332,11 @@ class RespondentOut(Out):
 
 
 class RespondentIn(Schema):
-    #: For a third party: a name and an address. For an in-house processor:
-    #: the account, and the name and address follow from it.
+    #: An account here (`user_uuid`), or a name and an address. An in-house
+    #: processor's respondent must be an account. A third party's may be
+    #: either: usually a person at the third party, reached by mail, but
+    #: sometimes one of our own people who represents them here - and then
+    #: the ticket goes to the portal like any internal one.
     name: ShortText | None = None
     contact: Email | None = None
     user_uuid: UUID | None = None
@@ -416,11 +419,16 @@ async def add_respondent(
 ) -> dict[str, Any]:
     """A respondent is how a holder's ticket gets answered.
 
-    An in-house processor's respondent must be an account: the team answers on
-    the portal, where the ticket is in front of them when they sign in. A third
-    party's is a name and an address, and the Privacy Office mails them and
-    tracks the exchange by hand. The two are not interchangeable, and the rule
-    is held here rather than left to whoever fills the form.
+    An account answers on the portal: the ticket is in front of them when they
+    sign in, and they return it there. A name and an address are mailed, and
+    the Privacy Office tracks the exchange by hand.
+
+    An in-house processor's respondent must be an account - our own team has
+    no reason to be reached by mail. A third party's may be either. Usually it
+    is somebody at the third party, reached by mail; sometimes one of our own
+    people represents that third party here, and naming their account puts the
+    ticket on the portal like any internal one. The rule is held here rather
+    than left to whoever fills the form.
     """
     async with transaction() as conn:
         processor = await repo.processor_by_uuid(conn, str(processor_uuid))
@@ -429,25 +437,20 @@ async def add_respondent(
         user_id: int | None = None
         name = (body.name or "").strip()
         contact = (body.contact or "").strip()
-        if processor["is_in_house"]:
-            if body.user_uuid is None:
-                raise ValidationFailed(
-                    "An in-house processor's respondent must be a CMP account, so they "
-                    "answer on the portal",
-                    field="user_uuid",
-                )
+        if body.user_uuid is not None:
             account = await users_repo.by_uuid(conn, str(body.user_uuid))
             if not account or account["role"] == "data_subject" or account["status"] != "active":
                 raise ValidationFailed("Choose an active member of staff", field="user_uuid")
             user_id = int(account["id"])
             name = str(account["full_name"])
             contact = str(account["email"])
+        elif processor["is_in_house"]:
+            raise ValidationFailed(
+                "An in-house processor's respondent must be a CMP account, so they "
+                "answer on the portal",
+                field="user_uuid",
+            )
         else:
-            if body.user_uuid is not None:
-                raise ValidationFailed(
-                    "A third party's respondent is a name and an address, not an account here",
-                    field="user_uuid",
-                )
             if not name:
                 raise ValidationFailed("Name the respondent", field="name")
             if not contact:
