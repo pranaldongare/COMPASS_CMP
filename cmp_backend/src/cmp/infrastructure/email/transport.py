@@ -76,6 +76,10 @@ class ConsoleEmailTransport:
         )
 
     def send(self, *, to: str, subject: str, body: str) -> dict[str, object]:
+        if settings.is_production or settings.environment == "staging":
+            # Not "return delivered": a transport that writes nothing and says
+            # it did turns a misconfiguration into silent loss.
+            raise RuntimeError("The console email transport does not deliver outside local/test")
         self._write(to=to, subject=subject, body=body)
         log.info(
             "email.delivered",
@@ -86,8 +90,6 @@ class ConsoleEmailTransport:
         return {"channel": "email", "transport": "console", "delivered": True}
 
     def _write(self, *, to: str, subject: str, body: str) -> None:
-        if settings.is_production or settings.environment == "staging":
-            return
         try:
             from datetime import UTC, datetime
 

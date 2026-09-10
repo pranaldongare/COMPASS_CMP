@@ -7,7 +7,51 @@ as a release yet.
 
 ## [Unreleased]
 
+### Security
+- One-time code verification is atomic: the check, the consumption and the
+  attempt count are one Redis script, so two requests carrying the same code
+  cannot both succeed.
+- A failed request on a capability path no longer writes the token to the
+  failure log, and the nginx access log scrubs consent and nomination tokens
+  in every location (the earlier scrubbing variable was set and never used).
+- A consent is recorded only against a serving the server itself witnessed:
+  the moment comes from the server's record of rendering the notice to that
+  person, and the request body's `served_at` is ignored ([ADR 0011](docs/decisions/0011-server-held-notice-serving.md)).
+- Export CSV cells that begin with a formula character are written as text.
+
+### Fixed
+- Two first consents for the same person and notice can no longer both
+  become roots: capture serialises per pair and migration 0023 adds the
+  database's own unique index.
+- Downloading an export returns the bytes generated at the time, kept in
+  storage (`export_log.file_ref`), rather than a re-render that drifted with
+  later edits.
+- Notifications are queued after the transaction commits and dropped on
+  rollback, so a worker cannot act on a row that does not exist
+  ([ADR 0012](docs/decisions/0012-side-effects-after-commit.md)).
+- Consent receipts and withdrawal confirmations go to a verified contact,
+  email first and otherwise the mobile, instead of an email that a
+  mobile-only principal does not have.
+- Recording a second decision on the same notice (a supersession through
+  the consent link) answered 500: the earlier artefact's uuid reached the
+  audit detail as a UUID object. Found while walking the new capture path
+  end to end; now tested.
+- Readiness compares the deployed schema with the migration head this build
+  ships and answers 503 with both named, instead of accepting any row.
+- Production refuses to start unless the email transport is SMTP and the SMS
+  transport is the HTTP gateway; the console transports raise outside local
+  and test instead of reporting delivery.
+
 ### Added
+- An HTTP SMS transport: a JSON POST with a bearer token to an https gateway
+  (`SMS_TRANSPORT=http`, `SMS_HTTP_URL`, `SMS_HTTP_TOKEN`, `SMS_HTTP_SENDER`).
+- The CI workflow at the repository root, where GitHub runs it, covering the
+  backend, both portals, an OpenAPI freshness check and an asserted image
+  smoke test.
+- `docs/reviews/2026-09-10-implementation-review.md`: the disposition of the
+  external review that found the above, and why the suites had not.
+- Redis runs with `noeviction` in the compose file: every key there is state.
+- Node 22 required by both portals' `engines`.
 - A documentation set under `docs/`: system overview, repository layout,
   domain model, API map, the four workflows, roles and access, local
   development, testing, deployment, runbook, ten architecture decision

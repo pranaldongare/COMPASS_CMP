@@ -17,6 +17,8 @@ one stays and points forward.
 | [0008](0008-unknown-choices-are-422.md) | An unknown enumerated value is a 422 with the choices named | accepted |
 | [0009](0009-two-portals-by-audience.md) | Two portals, split by audience, one API | accepted |
 | [0010](0010-rights-clock-and-defaults.md) | The rights clock starts at receipt, and the open questions have defaults | accepted |
+| [0011](0011-server-held-notice-serving.md) | The serving of a notice is the server's record, not the client's claim | accepted |
+| [0012](0012-side-effects-after-commit.md) | Side effects wait for the commit; a durable outbox is deferred | accepted |
 
 ## Writing one
 

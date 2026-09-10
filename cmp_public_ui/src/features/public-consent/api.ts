@@ -8,9 +8,11 @@
  * all resolve to the same failure. Naming the reason would tell somebody
  * guessing tokens which of their guesses was structurally valid.
  *
- * **`served_at` is server-stamped and echoed back untouched.** It is what
- * evidences s.5(1) — that the notice was given *before* consent was asked for —
- * and a client-supplied timestamp would make that unfalsifiable.
+ * **`served_at` is the server's, and is not sent back.** The API keeps its own
+ * record of having rendered the notice to this person through this link, and
+ * refuses a consent for which there is none. That is what evidences s.5(1) —
+ * that the notice was given *before* consent was asked for. A client-supplied
+ * timestamp would make it unfalsifiable, so the consent call carries none.
  *
  * **Accept and decline take the same path.** s.6(1) requires consent to be a
  * free choice, and a decline that is slower, harder or routed differently is
@@ -82,8 +84,6 @@ export function serveNotice(token: string, language: LanguageCode): Promise<Serv
 
 export interface ConsentDecision {
   language_code: LanguageCode;
-  /** Echoed back exactly as served. Never re-stamped client-side. */
-  served_at: string;
   /** Purpose uuid -> granted. Every purpose is present, including the refused. */
   grants: Record<string, boolean>;
   action_type: ActionType;

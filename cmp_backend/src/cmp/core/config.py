@@ -154,7 +154,7 @@ class Settings(BaseSettings):
     # that quietly writes to a file is a far better failure than one that starts
     # emailing and texting real people the first time somebody signs in.
     email_transport: Literal["console", "smtp", "null"] = "console"
-    sms_transport: Literal["console", "null"] = "console"
+    sms_transport: Literal["console", "http", "null"] = "console"
     storage_backend: Literal["local", "object"] = "local"
 
     smtp_host: str = "localhost"
@@ -162,6 +162,14 @@ class Settings(BaseSettings):
     smtp_username: str = ""
     smtp_password: SecretStr = SecretStr("")
     smtp_use_tls: bool = True
+
+    # The HTTP SMS transport: a JSON POST to a gateway of the deployment's
+    # choosing, authenticated with a bearer token. Provider-specific shapes
+    # (Twilio, MSG91, ...) are a thin adapter service in front of this, so the
+    # platform carries no provider SDK and no provider credentials.
+    sms_http_url: str = ""
+    sms_http_token: SecretStr = SecretStr("")
+    sms_http_sender: str = ""
 
     # Object storage. The reference recorded in the database stays relative, so
     # bucket and region live here and never reach a table that gets exported.
@@ -210,6 +218,14 @@ class Settings(BaseSettings):
                 raise ValueError("DEBUG must be false in production")
             if "*" in self.cors_origins:
                 raise ValueError("CORS_ORIGINS must be explicit in production")
+            # A transport that does not deliver is a sign-in nobody can
+            # complete. In production the choice has to be explicit and real.
+            if self.email_transport != "smtp":
+                raise ValueError("EMAIL_TRANSPORT must be smtp in production")
+            if self.sms_transport != "http":
+                raise ValueError("SMS_TRANSPORT must be http in production")
+        if self.sms_transport == "http" and not self.sms_http_url.startswith("https://"):
+            raise ValueError("SMS_HTTP_URL must be an https:// gateway when SMS_TRANSPORT=http")
         return self
 
     @property

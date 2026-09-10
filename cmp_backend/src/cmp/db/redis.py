@@ -44,6 +44,9 @@ K_RATE: Final = "rate"
 K_LOCK: Final = "mutex"
 K_CACHE: Final = "cache"
 K_IDEMPOTENCY: Final = "idem"
+#: The server's own record that a notice was rendered to a person: what
+#: `POST /c/{token}/consent` must find before it will write an artefact.
+K_NOTICE_SERVED: Final = "nsrv"
 
 
 async def open_redis() -> Redis:

@@ -36,7 +36,7 @@ touches the database it is configured for.
 cd cmp_backend
 cp .env.example .env            # POSTGRES_DB=cmp_dev, PUBLIC_BASE_URL, CONSOLE_BASE_URL - see below
 uv sync --all-extras --dev
-uv run alembic upgrade head     # 22 migrations
+uv run alembic upgrade head     # 23 migrations
 uv run python scripts/seed.py   # one coherent world; refuses outside local/test
 uv run python -m cmp --port 8000
 ```
@@ -146,9 +146,8 @@ cd cmp_internal_ui && npm run verify
 cd cmp_public_ui && npm run verify
 ```
 
-`mypy --strict` currently reports three pre-existing errors in the registry
-and projects routers; they are known and listed in
-[testing.md](testing.md). Anything else is new.
+All four are clean on the integration branch as of 2026-09-10, `mypy
+--strict` included. Anything reported is new.
 
 ## Things that bite
 

@@ -66,6 +66,15 @@ service through one helper, so an unknown value answers 422 with the valid
 choices named, never 500. See
 [ADR 0008](../decisions/0008-unknown-choices-are-422.md).
 
+**The server keeps the facts that make a record evidence.** The consent call
+does not carry `served_at`: the server recorded the serving when it rendered
+the notice, and refuses a consent without one. The field is still accepted
+from older clients and ignored. See
+[ADR 0011](../decisions/0011-server-held-notice-serving.md).
+
+**Readiness is specific.** `GET /ready` names the deployed schema revision
+and the one this build expects, and answers 503 when they differ.
+
 ## The error contract
 
 Every error, from a validation failure to a rate limit, has one shape:
@@ -87,7 +96,8 @@ Every error, from a validation failure to a rate limit, has one shape:
 | 401 | `unauthenticated`, `mfa_required` |
 | 403 | `forbidden`, `csrf_failed` |
 | 404 | `not_found` - including rows outside scope |
-| 409 | `conflict`, `transition_not_permitted`, `transition_blocked`, `already_verified`, `site_exists`, `item_applied`, `no_holders` |
+| 409 | `conflict`, `transition_not_permitted`, `transition_blocked`, `already_verified`, `site_exists`, `item_applied`, `no_holders`, `language_unapproved` |
+| 422 (consent) | `notice_not_served` when no serving of the notice to this person exists; `notice_stale` when it is older than six hours |
 | 422 | `validation_failed`, with `field` naming the input |
 | 429 | `rate_limited`, with a `Retry-After` header the browser may read |
 | 503 | `service_unavailable` - a datastore could not be reached |

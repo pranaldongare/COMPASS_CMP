@@ -35,6 +35,7 @@ you need. Documents live in three places, deliberately:
 **Understanding why**
 
 - [Decisions](decisions/README.md): the architecture decision records, one per choice that would otherwise be re-litigated
+- [Reviews](reviews/2026-09-10-implementation-review.md): what an external review found, what was done about each finding, and why the suites had not caught it
 - [Changelog](../CHANGELOG.md): what changed, by area and date
 
 ## The backend's own documents

@@ -51,10 +51,14 @@ comes first.
 ## 4. Serving the notice
 
 `GET /c/{token}/notice?language_code=` renders the rendition she chose and
-stamps `served_at` **on the server**. That timestamp is what her consent must
-carry; a client-supplied one could claim the notice was shown at any
-convenient moment. Changing language serves again and stamps again, because
-she is now reading a different text.
+stamps `served_at` **on the server**. The server also keeps its own record of
+that serving, bound to her account, the link and the rendition, for six
+hours. Her consent is recorded against that record and nothing else: a
+client cannot supply the moment, and a consent for which no serving exists is
+refused with `notice_not_served`
+([ADR 0011](../decisions/0011-server-held-notice-serving.md)). Changing
+language serves again and records again, because she is now reading a
+different text.
 
 ## 5. The decision
 
@@ -88,7 +92,8 @@ notice text beside the decision she is changing.
 
 - **Exports** include only people whose current consent covers the purpose;
   each export writes a disclosure record naming them, which she sees as "who
-  was my data shared with".
+  was my data shared with". The file is kept as generated, so a later
+  download is the bytes the processor was given.
 - **Assets** collected at the site are reconciled to consents through
   `asset_consent`; a person in frame with no consent is kept visible as a
   bystander.
@@ -114,6 +119,8 @@ way to alter one.
 | An artefact carries the hash of the text served | `cmp_consent_coherent()` |
 | The notice was served before the action | `CHECK served_before_action` |
 | An artefact is superseded at most once | partial unique index |
+| One root artefact per person and notice | partial unique index (migration 0023) and a per-pair advisory lock in `capture` |
+| The serving moment is the server's | the serving record in Redis, required by `capture` |
 | Consent evidence is append-only | statement trigger and revoked grant (migrations 0002, 0003) |
 | Status is derived, never stored | `v_current_consent` |
 | A minor cannot grant a purpose not permitted for minors | the consent service, from `cmp_is_minor(dob)` |

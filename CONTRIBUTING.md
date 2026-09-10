@@ -100,12 +100,23 @@ Add a line to [CHANGELOG.md](CHANGELOG.md) under Unreleased.
 
 ## Continuous integration
 
-A GitHub Actions workflow lives at `cmp_backend/.github/workflows/ci.yml`:
-lint, format, `mypy`, migrations up-down-up, the three pytest suites with
-coverage, a dependency audit and a static security scan. Two things to know:
+`.github/workflows/ci.yml` at the repository root runs on pushes to `main`
+and `refactor/frontend-architecture` and on pull requests. It is the same
+gate as the commands above plus: the migration chain up, down and up; a
+check that the committed `openapi.json` matches what the code generates
+(regenerate it when you change a route); both portals' production builds;
+dependency, static and secret scans; and the API image built, scanned and
+smoke-tested. Browser suites are not in CI and stay a local step.
 
-- GitHub only runs workflows from `.github/workflows/` at the repository
-  root, so on this monorepo the file is not currently triggered. Moving it
-  to the root, with `working-directory: cmp_backend`, is the fix, and adding
-  the two portals' `npm run verify` is the obvious next step.
-- Until then, the commands above are the gate, run locally.
+## Rules the review added
+
+Three habits, from the September 2026 review
+([disposition](docs/reviews/2026-09-10-implementation-review.md)):
+
+- **If two requests can carry the same thing, write the race.** A code, a
+  first capture, a token: the test opens a second connection or races
+  coroutines. One caller at a time proves nothing about single use.
+- **If a comment says the server holds a fact, the test checks the server
+  held it**, not that the client echoed it.
+- **Side effects go through `dispatch_optional` inside the transaction** and
+  run after it commits. Never call `apply_async` from a service.

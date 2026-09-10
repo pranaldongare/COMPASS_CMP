@@ -69,8 +69,8 @@ is:
 ## Order of operations for a release
 
 1. Build the three images from one commit.
-2. Run `migrate` (or `alembic upgrade head`). The API tolerates a schema newer
-   than itself, never older.
+2. Run `migrate` (or `alembic upgrade head`) from the same image. Readiness
+   refuses a schema that is not the head this build ships.
 3. Roll `api`.
 4. Roll `worker` and `beat`.
 5. Roll the two portals. Their hand-curated API types were contract-tested
@@ -91,9 +91,38 @@ the migration tests exercise in both directions.
 |---|---|
 | `SECRET_KEY`, 32+ random bytes | signs sessions and cursors; production refuses the development default |
 | `POSTGRES_PASSWORD` | production refuses `cmp`, `postgres` or empty |
-| `EMAIL_TRANSPORT=smtp` and the SMTP settings | the default transport delivers nothing |
-| `SMS_TRANSPORT` and its credentials | one-time codes to mobiles are the primary sign-in for data principals |
-| `STORAGE_BACKEND` | uploaded proofs, notice documents and released files |
+| `EMAIL_TRANSPORT=smtp` and the SMTP settings | production refuses to start on any other value; the console transport raises outside local and test |
+| `SMS_TRANSPORT=http`, `SMS_HTTP_URL` (https), `SMS_HTTP_TOKEN`, `SMS_HTTP_SENDER` | production refuses to start on any other value. The transport POSTs `{"to","body","from"}` with a bearer token; a provider-specific adapter sits in front of it so no provider SDK or credential lives here |
+| `STORAGE_BACKEND=local` on a durable shared volume | the `object` backend is a stub that refuses on first use; `local` needs the `uploads` volume shared by every API and worker replica |
+
+## Readiness and the schema
+
+`GET /ready` compares the database's revision with the migration head shipped
+in the image and answers 503 naming both when they differ, so a replica
+cannot enter rotation against an older schema. `migrate` must therefore run
+from the same image as `api`.
+
+## Redis is state, not cache
+
+Sessions, one-time codes, lockouts, rate counters, the six-hour record that a
+notice was served, and the Celery broker all live in Redis, and all carry a
+TTL. The compose file runs Redis with `maxmemory-policy noeviction`: under
+memory pressure it refuses writes, which the API reports as 503, rather than
+evicting a live session or a code with no error anywhere. Size `maxmemory`
+for the session population and alert on `used_memory` approaching it.
+
+## Production hardening still to do
+
+- **A least-privilege runtime role.** Migration 0003 revokes `UPDATE` and
+  `DELETE` on evidence tables from a `cmp_app` role, but the compose file
+  runs migrations, the API and the workers as the one owner role, and
+  migrations 0005 to 0021 grant nothing to `cmp_app`. Switching the runtime
+  to it needs a migration that grants what those created, then separate
+  credentials in compose and the pool, then a test that the runtime role
+  cannot disable a trigger. Until then the revocation protects against a
+  bug, not against the owner credential.
+- **A durable outbox** for notifications; see
+  [ADR 0012](../decisions/0012-side-effects-after-commit.md).
 
 Secrets belong in the orchestrator's secret store. `.env` is ignored in every
 directory of the tree.

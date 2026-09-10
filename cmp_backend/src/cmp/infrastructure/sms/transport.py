@@ -42,19 +42,60 @@ class ConsoleSmsTransport:
         )
 
     def send(self, *, to: str, body: str) -> dict[str, object]:
-        if not (settings.is_production or settings.environment == "staging"):
-            try:
-                from datetime import UTC, datetime
+        if settings.is_production or settings.environment == "staging":
+            # Before September 2026 this returned `delivered: True` here while
+            # writing nothing, which is the one thing a transport must not do.
+            raise RuntimeError("The console SMS transport does not deliver outside local/test")
+        try:
+            from datetime import UTC, datetime
 
-                self._path.parent.mkdir(parents=True, exist_ok=True)
-                stamp = datetime.now(UTC).isoformat(timespec="seconds")
-                with self._path.open("a", encoding="utf-8") as handle:
-                    handle.write(f"\n{'=' * 78}\n{stamp}  [sms]  to: {to}\n{'-' * 78}\n{body}\n")
-            except OSError as exc:  # pragma: no cover
-                log.warning("sms.outbox_unavailable", error=str(exc))
+            self._path.parent.mkdir(parents=True, exist_ok=True)
+            stamp = datetime.now(UTC).isoformat(timespec="seconds")
+            with self._path.open("a", encoding="utf-8") as handle:
+                handle.write(f"\n{'=' * 78}\n{stamp}  [sms]  to: {to}\n{'-' * 78}\n{body}\n")
+        except OSError as exc:  # pragma: no cover
+            log.warning("sms.outbox_unavailable", error=str(exc))
 
         log.info("sms.delivered", to=obscure(to), transport="console")
         return {"channel": "sms", "transport": "console", "delivered": True}
+
+
+class HttpSmsTransport:
+    """A JSON POST to an SMS gateway, with a bearer token.
+
+    The body is `{"to", "body", "from"}`. Anything provider-specific lives in a
+    small adapter in front of the gateway, so this code holds no provider SDK
+    and the platform's secrets stay one token. The gateway answers 2xx for
+    accepted; anything else is a failure and the task retries.
+    """
+
+    def __init__(self, *, url: str, token: str, sender: str, timeout_s: float) -> None:
+        self._url = url
+        self._token = token
+        self._sender = sender
+        self._timeout_s = timeout_s
+
+    def send(self, *, to: str, body: str) -> dict[str, object]:
+        import httpx
+
+        headers = {"Authorization": f"Bearer {self._token}"} if self._token else {}
+        payload: dict[str, str] = {"to": to, "body": body}
+        if self._sender:
+            payload["from"] = self._sender
+        response = httpx.post(self._url, json=payload, headers=headers, timeout=self._timeout_s)
+        if response.status_code >= 300:
+            log.error("sms.gateway_refused", to=obscure(to), status=response.status_code)
+            raise RuntimeError(f"SMS gateway answered {response.status_code}")
+
+        message_id: object = None
+        try:
+            data = response.json()
+            if isinstance(data, dict):
+                message_id = data.get("id") or data.get("message_id")
+        except ValueError:
+            message_id = None
+        log.info("sms.delivered", to=obscure(to), transport="http", message_id=message_id)
+        return {"channel": "sms", "transport": "http", "delivered": True, "message_id": message_id}
 
 
 class NullSmsTransport:
@@ -76,4 +117,11 @@ def build_sms_transport() -> SmsTransport:
     """
     if settings.sms_transport == "null":
         return NullSmsTransport()
+    if settings.sms_transport == "http":
+        return HttpSmsTransport(
+            url=settings.sms_http_url,
+            token=settings.sms_http_token.get_secret_value(),
+            sender=settings.sms_http_sender,
+            timeout_s=settings.external_http_timeout_s,
+        )
     return ConsoleSmsTransport()

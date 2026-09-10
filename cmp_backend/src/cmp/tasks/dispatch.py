@@ -13,6 +13,10 @@ most, so the choice is made explicitly per call site rather than by accident:
   because the receipt could not be queued would tell the user their consent was
   not recorded, which is false, and would invite them to submit it again.
 
+  "Already succeeded" is taken literally: inside a unit of work the queueing is
+  deferred until the transaction commits (`cmp.core.after_commit`), so a worker
+  cannot act on a row that is not yet visible and a rollback sends nothing.
+
 Both log. A dropped notification that nobody can see is the failure mode this
 module exists to prevent.
 """
@@ -21,6 +25,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from cmp.core import after_commit
 from cmp.core.context import current_context
 from cmp.core.errors import ServiceUnavailable
 from cmp.core.logging import get_logger
@@ -51,10 +56,11 @@ def dispatch_required(task: Any, *args: Any, **kwargs: Any) -> str | None:
     return str(result.id)
 
 
-def dispatch_optional(task: Any, *args: Any, **kwargs: Any) -> str | None:
-    """Queue work that must not fail the request it belongs to."""
+def _queue_optional(
+    task: Any, args: tuple[Any, ...], kwargs: dict[str, Any], headers: dict[str, Any]
+) -> str | None:
     try:
-        result = task.apply_async(args=args, kwargs=kwargs, headers=_headers())
+        result = task.apply_async(args=args, kwargs=kwargs, headers=headers)
     except Exception as exc:
         # Logged at error, not warning: somebody expected a message and will not
         # get one, and that needs to reach an alert rather than a debug session.
@@ -62,3 +68,17 @@ def dispatch_optional(task: Any, *args: Any, **kwargs: Any) -> str | None:
         return None
     log.info("task.queued", task=task.name, task_id=result.id, required=False)
     return str(result.id)
+
+
+def dispatch_optional(task: Any, *args: Any, **kwargs: Any) -> str | None:
+    """Queue work that must not fail the request it belongs to.
+
+    Inside a transaction the queueing waits for the commit and this returns
+    None; the task id is logged when it is actually queued. Outside one it is
+    queued at once.
+    """
+    headers = _headers()
+    if after_commit.defer(lambda: _queue_optional(task, args, kwargs, headers)):
+        log.info("task.deferred", task=task.name)
+        return None
+    return _queue_optional(task, args, kwargs, headers)

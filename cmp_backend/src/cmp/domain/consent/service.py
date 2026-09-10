@@ -29,6 +29,7 @@ from cmp.core.errors import (
 )
 from cmp.core.logging import get_logger
 from cmp.core.security import new_token, seal_token, token_fingerprint
+from cmp.db.redis import K_NOTICE_SERVED, get_redis, key
 from cmp.db.repositories import consent as repo
 from cmp.db.repositories import notices as notice_repo
 from cmp.db.repositories import projects as project_repo
@@ -39,6 +40,26 @@ from cmp.domain.audit.service import Event
 from cmp.validation import is_mobile, normalise_contact, normalise_mobile
 
 log = get_logger("cmp.consent")
+
+
+def receipt_contact(user: dict[str, Any]) -> str | None:
+    """Where a receipt goes: a verified contact, email first, else the mobile.
+
+    A data principal may have registered with a mobile alone, so a receipt
+    addressed to `user["email"]` would go to nobody. An unverified contact is
+    skipped for the opposite reason - it may belong to somebody else.
+    """
+    email = user.get("email")
+    if email and user.get("email_verified_at"):
+        return str(email)
+    mobile = user.get("mobile")
+    if mobile and user.get("mobile_verified_at"):
+        return str(mobile)
+    # Legacy rows predate per-medium verification stamps; fall back to
+    # whichever contact exists rather than sending nothing.
+    if email and not user.get("mobile_verified_at"):
+        return str(email)
+    return str(mobile) if mobile else (str(email) if email else None)
 
 
 # --------------------------------------------------------------------- links
@@ -309,6 +330,13 @@ async def serve_notice(
                 "link": str(link["link_uuid"]),
             },
         )
+        await _record_serving(
+            user_id=user_id,
+            link_id=link["link_id"],
+            notice_language_id=language["notice_language_id"],
+            served_at=served_at,
+            content_hash=language["content_hash"],
+        )
 
     return {
         "notice": {
@@ -333,13 +361,70 @@ async def serve_notice(
     }
 
 
+#: How long a rendering of the notice stays good for. Past this the page has
+#: been open long enough that the text may have changed under her, and she is
+#: asked to reload it. Also the lifetime of the server's serving record.
+NOTICE_SERVING_TTL = timedelta(hours=6)
+
+
+def _serving_key(*, user_id: int, link_id: int, notice_language_id: int) -> str:
+    return key(K_NOTICE_SERVED, user_id, link_id, notice_language_id)
+
+
+async def _record_serving(
+    *, user_id: int, link_id: int, notice_language_id: int, served_at: datetime, content_hash: str
+) -> None:
+    """The server's own note that this person was shown this text, now.
+
+    Written by `serve_notice`, read by `capture`. The moment is the server's,
+    and it is bound to the person, the link and the rendition, so a consent
+    cannot claim a serving that did not happen or happened to somebody else.
+    """
+    r = get_redis()
+    await r.setex(
+        _serving_key(user_id=user_id, link_id=link_id, notice_language_id=notice_language_id),
+        int(NOTICE_SERVING_TTL.total_seconds()),
+        f"{served_at.isoformat()}|{content_hash}",
+    )
+
+
+async def _served_at_for(
+    *, user_id: int, link_id: int, notice_language_id: int, content_hash: str
+) -> datetime:
+    """When this person was last shown this rendition, or a refusal.
+
+    No record means the notice was never rendered to her through the link
+    (s.5(1) has nothing to stand on), or was rendered more than
+    `NOTICE_SERVING_TTL` ago and the record has lapsed. Both answer the same
+    way: reload the notice.
+    """
+    r = get_redis()
+    stored = await r.get(
+        _serving_key(user_id=user_id, link_id=link_id, notice_language_id=notice_language_id)
+    )
+    if not stored:
+        raise ConsentDefective(
+            "Read the notice before recording a decision, or reload it if this page "
+            "has been open a while.",
+            code="notice_not_served",
+        )
+    stamp, _, hashed = str(stored).partition("|")
+    if hashed != content_hash:
+        # Cannot happen while a published rendition is frozen; kept so that a
+        # future un-freezing cannot quietly serve one text and record another.
+        raise ConsentDefective(
+            "The notice changed since it was shown. Reload it and try again.",
+            code="notice_stale",
+        )
+    return datetime.fromisoformat(stamp)
+
+
 async def capture(
     conn: Conn,
     *,
     token: str,
     user_id: int,
     language_code: str,
-    served_at: datetime,
     grants: dict[str, bool],
     action_type: str,
     ip_address: str | None,
@@ -349,6 +434,10 @@ async def capture(
     One transaction. A grant row without its artefact, or an artefact without its
     grants, is not a partial record - it is an unanswerable question about what
     somebody agreed to.
+
+    `served_at` is the server's own record from `serve_notice`, never a value
+    from the request: the notice must have been rendered to this person,
+    through this link, in this language, within `NOTICE_SERVING_TTL`.
     """
     link = await resolve_link(conn, token)
     language = await notice_repo.language_row(
@@ -356,14 +445,23 @@ async def capture(
     )
     if not language:
         raise NotFound("Language rendition")
+    if language["approved_at"] is None:
+        # `serve_notice` refuses this too; checked again here so the capture
+        # path does not depend on the caller having gone through it.
+        raise Conflict(
+            "That language rendition is not legally approved", code="language_unapproved"
+        )
 
+    served_at = await _served_at_for(
+        user_id=user_id,
+        link_id=link["link_id"],
+        notice_language_id=language["notice_language_id"],
+        content_hash=language["content_hash"],
+    )
     now = datetime.now(UTC)
-    if served_at > now:
-        raise ConsentDefective("The notice cannot have been served in the future")
     if served_at > now + timedelta(seconds=1):
         raise ConsentDefective("served_at is after the affirmative action (s.5(1))")
-    if (now - served_at) > timedelta(hours=6):
-        # A stale render means the text may have changed under her.
+    if (now - served_at) > NOTICE_SERVING_TTL:
         raise ConsentDefective(
             "This page has been open too long. Reload the notice and try again.",
             code="notice_stale",
@@ -425,6 +523,13 @@ async def capture(
                     details={"blocked": blocked},
                 )
 
+    # Serialise per (person, notice) before reading what is current. Two first
+    # captures racing would each see nothing current and each write a root;
+    # migration 0023 makes the second a constraint violation, and this lock
+    # makes it a supersession instead, which is what she meant. The lock is
+    # transaction-scoped and released at commit or rollback.
+    await conn.execute("SELECT pg_advisory_xact_lock(%s, %s)", (user_id, link["notice_id"]))
+
     existing = await repo.current_for_user_notice(
         conn, user_id=user_id, notice_id=link["notice_id"]
     )
@@ -463,12 +568,15 @@ async def capture(
             "sha256": language["content_hash"],
             "granted": sorted(u for u, v in grants.items() if v),
             "refused": sorted(u for u, v in grants.items() if not v),
-            "supersedes": existing["consent_uuid"] if existing else None,
+            # str(): a UUID object is not JSON, and this line is only reached on a
+            # second decision on the same notice, which nothing exercised before.
+            "supersedes": str(existing["consent_uuid"]) if existing else None,
         },
     )
 
     user = await user_repo.by_id(conn, user_id)
-    if user and any_granted:
+    contact = receipt_contact(user) if user else None
+    if contact and any_granted:
         # Optional: the artefact is written. A receipt that could not be queued
         # must not tell her the consent failed.
         from cmp.tasks.dispatch import dispatch_optional
@@ -476,7 +584,7 @@ async def capture(
 
         dispatch_optional(
             send_consent_receipt,
-            user["email"],
+            contact,
             str(artefact["consent_uuid"]),
             link["project_name"],
         )
@@ -587,13 +695,14 @@ async def withdraw(
     )
 
     user = await user_repo.by_id(conn, user_id)
-    if user:
+    contact = receipt_contact(user) if user else None
+    if contact:
         from cmp.tasks.dispatch import dispatch_optional
         from cmp.tasks.notifications import send_withdrawal_confirmation
 
         dispatch_optional(
             send_withdrawal_confirmation,
-            user["email"],
+            contact,
             str(artefact["consent_uuid"]),
             stopped,
             continuing,

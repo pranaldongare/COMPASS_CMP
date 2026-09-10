@@ -855,7 +855,7 @@
           "public consent"
         ],
         "summary": "Render the notice - stamps served_at",
-        "description": "The `served_at` in the response is what the consent call must carry back.\n\nIt is generated here, not accepted from the client: a client-supplied\ntimestamp could claim the notice was shown at any convenient moment, and\ns.5(1) would become unfalsifiable.",
+        "description": "Renders the text and records, on the server, that it was served.\n\nThe `served_at` in the response is informational. The consent call does\nnot take it back: the server keeps its own record of the serving, bound to\nthe person, the link and the rendition, and refuses a consent for which\nthere is none. A client-supplied timestamp could claim the notice was\nshown at any convenient moment, and s.5(1) would become unfalsifiable.",
         "operationId": "serve_notice_c__token__notice_get",
         "parameters": [
           {
@@ -13465,9 +13465,18 @@
             "title": "Language Code"
           },
           "served_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Served At"
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Served At",
+            "description": "Ignored. The server records when it served the notice.",
+            "deprecated": true
           },
           "grants": {
             "additionalProperties": {
@@ -13490,7 +13499,6 @@
         "type": "object",
         "required": [
           "language_code",
-          "served_at",
           "grants"
         ],
         "title": "ConsentBody"
@@ -19162,6 +19170,17 @@
               }
             ],
             "title": "Schema Version"
+          },
+          "schema_expected": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Expected"
           }
         },
         "type": "object",

@@ -52,6 +52,13 @@ Six digits, ten minutes, five verify attempts, five requests per contact per
 hour. The attempt cap is what makes six digits strong enough: unbounded, a
 million guesses is minutes of scripted work.
 
+**Verification is one atomic step.** The digest comparison, the deletion on
+success and the attempt count on failure run as a single Redis script, so two
+requests carrying the same correct code cannot both be told yes. Until
+September 2026 the check was a `GET` and the delete a later pipeline, and an
+external review reproduced two concurrent callers both succeeding; the
+integration suite now races eight verifications of one code and expects one.
+
 Stored as a **keyed hash, scoped to their purpose** — never in plaintext, and a
 code issued for staff MFA cannot be replayed against the consent flow. Whoever
 can read Redis should not thereby be able to complete somebody else's sign-in.

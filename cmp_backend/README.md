@@ -23,7 +23,7 @@ Then:
 ```bash
 uv sync --all-extras --dev
 cp .env.example .env               # POSTGRES_DB=cmp_dev; PUBLIC_BASE_URL and CONSOLE_BASE_URL to the two portals
-uv run alembic upgrade head        # 22 migrations: 31 tables, 39 enums, triggers, grants
+uv run alembic upgrade head        # 23 migrations: 31 tables, 39 enums, triggers, grants
 uv run python scripts/seed.py      # one coherent world: a user per role, processors, sources, sites, a project through to approved, a live link
 
 uv run python -m cmp --port 8000
@@ -89,7 +89,8 @@ is a claim about a codebase, and a codebase changes
 | Audit rows are hash-chained, in commit order | `cmp_audit_chain()`, position drawn inside the advisory lock; `GET /audit/verify` walks it |
 | A published notice is frozen | `cmp_notice_freeze()` |
 | The artefact carries the hash of the text served; served precedes action | `cmp_consent_coherent()`, `CHECK served_before_action` |
-| One artefact superseded once | partial unique index |
+| One artefact superseded once, one root per person and notice | two partial unique indexes; capture also locks per pair |
+| A consent is recorded against a serving the server witnessed | the serving record in Redis, required by `capture` |
 | Bystanders may exist, visibly | nullable `consent_id` on `asset_consent` with a CHECK |
 | Data categories are itemised (Rule 3(b)(i)) | `CHECK cardinality(...) >= 1` |
 | Links only for approved projects | `cmp_link_coherent()` |
@@ -185,7 +186,7 @@ src/cmp/
   core/              config, enums, constants, permissions, security, errors, pagination
   tasks/             Celery: authentication, notifications, maintenance, exchange, rights
 
-migrations/          22 raw-SQL Alembic revisions (docs/database/migrations.md)
+migrations/          23 raw-SQL Alembic revisions (docs/database/migrations.md)
 tests/               unit/, integration/ (with enforcement/, database/, auth/), security/
 scripts/             seed, create_admin, reset_dev, healthcheck, db
 docs/                architecture, security, database, operations (this service's own)

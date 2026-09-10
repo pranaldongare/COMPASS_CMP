@@ -18,6 +18,7 @@ import psycopg
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
+from cmp.core import after_commit
 from cmp.core.config import settings
 from cmp.core.errors import ServiceUnavailable
 from cmp.core.logging import get_logger
@@ -124,8 +125,11 @@ async def transaction() -> AsyncIterator[psycopg.AsyncConnection[Any]]:
         async with get_pool().connection() as conn:
             await conn.set_autocommit(False)
             try:
-                async with conn.transaction():
-                    yield conn
+                # Side effects a service defers run once the transaction below
+                # has committed, and are dropped if it rolled back.
+                with after_commit.unit_of_work():
+                    async with conn.transaction():
+                        yield conn
             finally:
                 await conn.set_autocommit(True)
     except psycopg.OperationalError as exc:

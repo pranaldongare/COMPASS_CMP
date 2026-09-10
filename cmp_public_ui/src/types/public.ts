@@ -1,9 +1,11 @@
 /**
  * The public consent flow.
  *
- * `ServedNotice.served_at` is server-stamped and echoed back untouched. It is
- * what evidences s.5(1) — that the notice was given before consent was asked
- * for — and a client-supplied timestamp would make that unfalsifiable.
+ * `ServedNotice.served_at` is server-stamped and informational: the server
+ * keeps its own record of the serving and the consent call does not send it
+ * back. That record is what evidences s.5(1) — that the notice was given
+ * before consent was asked for — and a client-supplied timestamp would make
+ * it unfalsifiable.
  */
 
 import type { LanguageCode } from "@/types/enums";
@@ -35,7 +37,7 @@ export interface ServedNotice {
   rendered_text: string;
   content_hash: string;
   purposes: Purpose[];
-  /** Server-stamped. Must be echoed back with the consent - s.5(1) depends on it. */
+  /** Server-stamped, shown to her; the server keeps its own record for s.5(1). */
   served_at: Timestamp;
 }
 

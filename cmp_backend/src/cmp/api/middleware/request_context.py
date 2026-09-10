@@ -29,8 +29,9 @@ Next = Callable[[Request], Awaitable[Response]]
 
 #: Paths whose parameters must never appear intact in a log line. The consent
 #: token is a capability: anything that can read the access log could otherwise
-#: impersonate the link.
-SENSITIVE_PATH_PREFIXES = ("/c/",)
+#: impersonate the link. A nomination acceptance link is one too: it opens the
+#: page on which a nominee proves a contact, and the log must not hand it out.
+SENSITIVE_PATH_PREFIXES = ("/c/", "/rights/nominations/")
 
 
 def safe_path(path: str) -> str:

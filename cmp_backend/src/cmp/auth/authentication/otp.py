@@ -10,8 +10,11 @@ Properties that matter, and why:
 * **Attempts are counted against the code, not the connection.** Five wrong
   guesses discard the code (API reference §1.6). Counting per connection means
   an attacker with two connections gets ten.
-* **Verification is single-use and atomic.** The delete happens with the check,
-  so two racing requests cannot both succeed with the same code.
+* **Verification is single-use and atomic.** The check, the delete and the
+  attempt count are one server-side script, so two racing requests cannot both
+  succeed with the same code. (Before September 2026 the check was a `GET`
+  and the delete a later pipeline, and a review reproduced two concurrent
+  callers both being told yes.)
 
 Six digits is a million-space, which is only safe *because* of the attempt cap
 and the ten-minute lifetime. Neither control is optional.
@@ -24,7 +27,7 @@ from dataclasses import dataclass
 from cmp.core.config import settings
 from cmp.core.errors import BadRequest, RateLimited
 from cmp.core.logging import get_logger
-from cmp.core.security import hash_otp, new_otp, tokens_equal
+from cmp.core.security import hash_otp, new_otp
 from cmp.db.redis import K_OTP, K_OTP_ATTEMPTS, get_redis, key
 
 log = get_logger("cmp.otp")
@@ -85,39 +88,78 @@ async def issue(scope: str, identity: str, *, ttl_s: int | None = None) -> Issue
     return Issued(code=code, expires_in_s=ttl)
 
 
+#: Compare, consume and count in one step on the server. A `GET` followed by a
+#: `DEL` is two round trips, and two requests carrying the same correct code
+#: could both read the digest before either deleted it - both would succeed,
+#: and "single use" would be a comment rather than a property. Redis runs a
+#: script atomically, so the check and the consequence cannot be interleaved.
+#:
+#: The digest comparison inside the script is a plain string equality rather
+#: than a constant-time one. The value compared is an HMAC over the secret key,
+#: never the code itself, and the attempt budget caps a guess at five tries;
+#: neither a timing side channel over a network round trip nor five samples
+#: gets an attacker anywhere near a 256-bit digest.
+#:
+#: Returns {outcome, attempts}: 1 = matched, 0 = wrong (attempts so far),
+#: 2 = wrong and the budget is spent (code discarded), -1 = no code stored.
+_VERIFY_SCRIPT = """
+local stored = redis.call('GET', KEYS[1])
+if not stored then
+  return {-1, 0}
+end
+if stored == ARGV[1] then
+  if ARGV[2] == '1' then
+    redis.call('DEL', KEYS[1], KEYS[2])
+  end
+  return {1, 0}
+end
+local attempts = redis.call('INCR', KEYS[2])
+redis.call('EXPIRE', KEYS[2], tonumber(ARGV[4]))
+if attempts >= tonumber(ARGV[3]) then
+  redis.call('DEL', KEYS[1], KEYS[2])
+  return {2, attempts}
+end
+return {0, attempts}
+"""
+
+
 async def verify(scope: str, identity: str, code: str, *, consume: bool = True) -> bool:
     """Check a code once. Consumes it on success; discards it after N failures.
 
     `consume=False` checks without spending: a flow that has to see two codes
     pass before it acts uses it for the first, so a wrong second code does not
     burn a first that was right. Failures count against the code either way.
+
+    The check, the consumption and the attempt count happen in one atomic
+    server-side step (see `_VERIFY_SCRIPT`), so of two racing requests with
+    the same correct code exactly one is told yes.
     """
     r = get_redis()
     ck, ak = _ckey(scope, identity), _akey(scope, identity)
 
-    stored = await r.get(ck)
-    if stored is None:
+    script = r.register_script(_VERIFY_SCRIPT)
+    outcome, attempts = await script(
+        keys=[ck, ak],
+        args=[
+            hash_otp(code, scope=scope),
+            "1" if consume else "0",
+            str(settings.otp_max_verify_attempts),
+            str(settings.otp_ttl_s),
+        ],
+    )
+    outcome, attempts = int(outcome), int(attempts)
+
+    if outcome == -1:
         log.info("otp.verify_no_code", scope=scope)
         return False
 
-    if tokens_equal(stored, hash_otp(code, scope=scope)):
-        if consume:
-            pipe = r.pipeline()
-            pipe.delete(ck)  # single use
-            pipe.delete(ak)
-            await pipe.execute()
+    if outcome == 1:
         log.info("otp.verified", scope=scope, consumed=consume)
         return True
 
-    pipe = r.pipeline()
-    pipe.incr(ak)
-    pipe.expire(ak, settings.otp_ttl_s)
-    attempts = int((await pipe.execute())[0])
-
-    if attempts >= settings.otp_max_verify_attempts:
-        # Discard the code entirely rather than merely refusing this attempt.
-        # A code that survives its attempt budget is a code being brute-forced.
-        await r.delete(ck, ak)
+    if outcome == 2:
+        # Discarded entirely rather than merely refused. A code that survives
+        # its attempt budget is a code being brute-forced.
         log.warning("otp.discarded_after_attempts", scope=scope, attempts=attempts)
         raise RateLimited(
             "Too many incorrect attempts. Request a new code.",

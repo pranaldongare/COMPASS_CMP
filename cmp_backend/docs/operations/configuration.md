@@ -12,6 +12,8 @@ documented in `.env.example`.
 | `COOKIE_SECURE` is false | The session travels in cleartext on the first `http://` hop |
 | `DEBUG` is true | Turns a handled failure into a traceback carrying local variables |
 | `CORS_ORIGINS` contains `*` | With `allow_credentials`, that hands the session to any origin |
+| `EMAIL_TRANSPORT` is not `smtp` | The console transport writes nothing outside local/test; a code nobody receives is a sign-in nobody completes |
+| `SMS_TRANSPORT` is not `http` | The same, for the data principal's primary sign-in; and `SMS_HTTP_URL` must be `https://` |
 
 A service that boots with a known secret key is worse than one that does not
 boot: the second failure is loud and costs ten minutes.
@@ -29,7 +31,7 @@ boot: the second failure is loud and costs ten minutes.
 | Rights | `RIGHTS_RESPONSE_PERIOD_DAYS` 90, `GRIEVANCE_RESPONSE_PERIOD_DAYS` 90, acknowledge 2, tickets 5, collate 5 before, download 30, unverified close 7, nomination accept 30 |
 | Uploads | 25 MB; proofs are PDF, PNG, JPEG only |
 | API | 50 default page size, 200 max; public link 60/min |
-| Transports | `email_transport`, `sms_transport`, `storage_backend`; SMS is not optional once data principals sign in by mobile |
+| Transports | `email_transport` (`console`, `smtp`, `null`), `sms_transport` (`console`, `http`, `null`), `storage_backend` (`local`; `object` is a stub that refuses on use). The `http` SMS transport POSTs `{"to","body","from"}` as JSON with a bearer token to `SMS_HTTP_URL`; put a provider-specific adapter in front of it |
 
 ## Transports default to not delivering
 
@@ -38,7 +40,9 @@ that writes to a file is a far better failure than one that emails and texts rea
 people the first time somebody signs in.
 
 Set `EMAIL_TRANSPORT=smtp` explicitly, along with the SMTP settings, to deliver
-for real.
+for real, and `SMS_TRANSPORT=http` with the gateway URL and token. Outside
+local and test the console transports raise rather than pretend; in
+production the settings refuse to load at all.
 
 ## Secrets
 

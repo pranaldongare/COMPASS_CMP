@@ -5,8 +5,8 @@ Four suites, each answering a different question. Counts are as of
 
 | Suite | Where | Runs against | Count |
 |---|---|---|---|
-| Backend unit | `cmp_backend/tests/unit` | nothing; pure functions | 322 |
-| Backend integration | `cmp_backend/tests/integration` | real PostgreSQL and Redis | 190 |
+| Backend unit | `cmp_backend/tests/unit` | nothing; pure functions | 360 |
+| Backend integration | `cmp_backend/tests/integration` | real PostgreSQL and Redis | 203 |
 | Backend security | `cmp_backend/tests/security` | the ASGI app with real datastores | 343 |
 | Portal unit | `src/**/*.test.ts*` in each portal | vitest with MSW | 139 console, 108 portal |
 | Browser | `e2e/` in each portal | the running stack in a real browser | 48 console and 20 portal tests, run across five Playwright projects |
@@ -26,13 +26,21 @@ combination, the permission matrix, the clock arithmetic, the crypto
 primitives, contact normalisation, `choice()`.
 
 **Integration** tests use the database in `.env` and roll back after every
-test; the `seeded` fixture builds the same world as `scripts/seed.py`. Two
-directories deserve attention:
+test; the `seeded` fixture builds the same world as `scripts/seed.py`, and
+every integration test gets a Redis connection whether it asks or not,
+because recording a consent through the service needs one. Three kinds of
+test deserve attention:
 
 - `enforcement/` bypasses the service layer and writes raw SQL to prove
-  each trigger, CHECK and revoked grant refuses what it should.
+  each trigger, CHECK, index and revoked grant refuses what it should.
 - `database/` compares the Postgres enumerations to the Python ones in both
   directions and checks the migration chain.
+- The concurrency tests (`enforcement/test_audit_chain_position.py`,
+  `test_consent_serving.py`, `auth/test_otp_atomic.py`) open a second
+  connection or race coroutines for real. They exist because every
+  confirmed finding of the September 2026 review was invisible to a
+  one-caller-at-a-time suite; see
+  [the review disposition](../reviews/2026-09-10-implementation-review.md).
 
 Rate-limit buckets live in Redis under `rate:*`; tests that need a fresh
 bucket clear their own through the `redis_conn` fixture rather than waiting
@@ -49,8 +57,7 @@ Static checks:
 uv run ruff check . && uv run ruff format --check . && uv run mypy
 ```
 
-`mypy --strict` reports three pre-existing errors, two in the registry
-router and one in the projects router. They are known; anything else is new.
+All three are clean as of 2026-09-10; anything reported is new.
 
 ## Portal unit tests
 
@@ -114,8 +121,19 @@ acceptance, and the data principal's own pages. `expectNoSidewaysScroll` in
 
 - The email and SMS transports are exercised only through the outbox; SMTP
   and the SMS provider are not tested here.
-- Load. The advisory lock on the audit chain serialises writes; its
-  throughput has not been measured.
-- The CI workflow at `cmp_backend/.github/workflows/ci.yml` is not triggered
-  on this monorepo, because GitHub reads workflows from the repository root
-  only. See [CONTRIBUTING.md](../../CONTRIBUTING.md).
+- Load. The advisory locks on the audit chain and per (person, notice)
+  serialise writes; their throughput has not been measured.
+- The HTTP SMS gateway: the transport is unit-tested by shape only, since no
+  gateway exists in a test environment.
+
+## Continuous integration
+
+`.github/workflows/ci.yml` at the repository root runs on every push to
+`main` and the integration branch and on every pull request: backend lint,
+format and `mypy`; migrations up, down and up; a diff of the committed
+`openapi.json` against the one the code generates; the three pytest suites
+with coverage; both portals' typecheck, lint, vitest and production build; a
+dependency audit, a static security scan and a secret scan; and the API
+image built, scanned, and started without a database to assert that it
+exits non-zero rather than serving. Browser tests are not in CI yet; they
+need the whole stack and the outbox, and run locally as above.

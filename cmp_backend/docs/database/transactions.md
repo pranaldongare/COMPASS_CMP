@@ -46,3 +46,14 @@ and both succeed.
 Each integration test gets a connection whose transaction is rolled back
 afterwards, so tests neither see nor leave each other's rows — and the suite can
 run against a database with real data in it without touching it.
+
+## Side effects wait for the commit
+
+A service that needs a task queued calls `dispatch_optional` inside its
+transaction. The call is recorded by `cmp.core.after_commit` and made after
+the unit of work commits; if the transaction rolls back nothing is queued.
+`pool.transaction()` opens the unit of work, so a script or a test that
+opened its own connection sees the queueing happen at once, as before.
+`dispatch_required` still queues immediately: for a sign-in code the queueing
+is the outcome. The reasoning and the deferred outbox are in
+[ADR 0012](../../../docs/decisions/0012-side-effects-after-commit.md).

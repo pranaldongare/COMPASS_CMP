@@ -14,7 +14,7 @@ platform for a gap it can only record, not resolve.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -57,12 +57,16 @@ async def _set_dob(conn: Any, user_id: int, years_ago: int | None) -> None:
 
 
 async def _capture(conn: Any, seeded: dict[str, Any], token: str) -> dict[str, Any]:
+    # The notice must have been served to her, by the server, before a
+    # decision can be recorded against it.
+    await consent_service.serve_notice(
+        conn, token=token, language_code="english", user_id=seeded["subject"]["id"]
+    )
     return await consent_service.capture(
         conn,
         token=token,
         user_id=seeded["subject"]["id"],
         language_code="english",
-        served_at=datetime.now(UTC) - timedelta(minutes=1),
         grants={str(seeded["purpose"]["purpose_uuid"]): True},
         action_type="checkbox_click",
         ip_address="127.0.0.1",

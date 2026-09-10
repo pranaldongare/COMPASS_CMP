@@ -42,7 +42,7 @@ Production also refuses to start on any of five conditions — see
 | Endpoint | Answers |
 |---|---|
 | `/health` | The process is up. For the load balancer |
-| `/ready` | The database and Redis are reachable. For the orchestrator |
+| `/ready` | The database and Redis are reachable and the schema is at the head this build ships (503 naming both revisions otherwise). For the orchestrator |
 
 Keep them distinct. A readiness check wired to a liveness probe restarts a
 perfectly good process every time the database blips.
@@ -57,3 +57,11 @@ an unauthenticated reader.
 `high_priority` carries codes somebody is waiting for with a box open. Give it
 its own workers. A sign-in code queued behind a document export is a failed
 sign-in and a support call.
+
+## Redis policy
+
+The compose file runs Redis with `maxmemory-policy noeviction`. Nothing in
+it is a cache: sessions, one-time codes, lockouts, rate counters, the record
+that a notice was served, and the Celery broker. Eviction of any of them is
+a silent sign-out or a code that never verifies; refusing writes is a 503
+somebody can see. Alert on memory instead.

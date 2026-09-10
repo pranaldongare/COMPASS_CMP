@@ -62,11 +62,30 @@ verify. Treat it as a page.
    the row after the break to confirm the rest is sound, and record the
    finding.
 
+## A data principal cannot record her consent
+
+- **"Read the notice before recording a decision"** (`notice_not_served`):
+  the server has no record of rendering the notice to her through this link
+  in this language within six hours. Reloading the notice page writes one.
+  If it recurs immediately, Redis is not accepting writes; see below.
+- **"This page has been open too long"** (`notice_stale`): the same, after
+  six hours. Reload.
+- **"That language rendition is not legally approved"**: the rendition she
+  chose has no approval stamp; the DPO approves it on the notice.
+
 ## The API is up but everything answers 503
 
 `/ready` says which dependency is missing. The API is fail-fast at startup;
 a 503 stream means a datastore vanished after start. Fix the datastore; the
 pool reconnects.
+
+- **`migrations` not ok, naming two revisions:** the database is behind the
+  code. Run `alembic upgrade head` from the deployed image.
+- **Writes to Redis fail with OOM:** Redis is at `maxmemory` and runs with
+  `noeviction` on purpose, so it refuses rather than evicting live sessions
+  and codes. Raise `maxmemory` or find what is filling it (`redis-cli
+  --bigkeys`); rate counters and codes expire within the hour, sessions
+  within eight.
 
 ## The worker is running but nothing happens
 

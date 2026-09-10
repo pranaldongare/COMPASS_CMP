@@ -35,6 +35,7 @@ models.
 | `0020` | Sending a returned ticket back |
 | `0021` | Response files released with the response, hashed and time-boxed |
 | `0022` | A nomination records the request that invoked it and the trigger event |
+| `0023` | One root consent artefact per (person, notice), by unique partial index; `export_log.file_ref` keeps the CSV as generated. Refuses to apply while duplicate roots exist |
 
 ## What 0004 fixed
 
@@ -48,8 +49,9 @@ trigger worked — but the message was useless to whoever hit it.
 
 ## Guards that refuse
 
-0004 refuses to apply while a purpose with no categories exists, and 0015
-refuses while a data principal or a nominee has no mobile. A migration that
+0004 refuses to apply while a purpose with no categories exists, 0015
+refuses while a data principal or a nominee has no mobile, and 0023 refuses
+while a person holds two root artefacts for one notice. A migration that
 fails loudly beats one that deletes data to satisfy itself; fix the rows, then
 run it again.
 

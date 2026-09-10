@@ -114,7 +114,7 @@ class TestCookieFlags:
 
 
 class TestProductionStartupGuards:
-    """The five things production refuses to boot with.
+    """The things production refuses to boot with.
 
     A service that starts with a known secret key is worse than one that does not
     start: the second failure is loud and costs ten minutes, the first is silent
@@ -137,6 +137,11 @@ class TestProductionStartupGuards:
             "cookie_secure": True,
             "debug": False,
             "cors_origins": ("https://console.example.org",),
+            # Since September 2026 production also refuses a transport that
+            # delivers nothing; a correct deployment names real ones.
+            "email_transport": "smtp",
+            "sms_transport": "http",
+            "sms_http_url": "https://sms-gateway.example.org/send",
         }
 
     def test_a_complete_production_configuration_is_accepted(self) -> None:

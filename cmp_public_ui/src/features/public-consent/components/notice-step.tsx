@@ -8,7 +8,8 @@
  *   pre-ticked box is not one.
  * - **Accept and Decline are equally prominent.** Making refusal harder to find
  *   than agreement is precisely the dark pattern the Act is aimed at.
- * - **`served_at` is echoed back untouched.** It evidences s.5(1) — that the
+ * - **`served_at` is not sent back.** The server recorded the serving itself
+ *   when it rendered the notice, and that record evidences s.5(1) — that the
  *   notice was given before consent was asked for.
  * - **Every purpose is submitted, including the refused ones.** An absent key
  *   would be indistinguishable from a purpose never shown, and "she refused
@@ -77,7 +78,6 @@ export function NoticeStep({
     try {
       const result = await recordConsent(token, {
         language_code: notice.language_code,
-        served_at: notice.served_at, // echoed untouched - evidences s.5(1)
         grants: payload,
         action_type: "checkbox_click",
       });

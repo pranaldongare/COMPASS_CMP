@@ -15,6 +15,10 @@ Four handlers, ordered from most specific to least:
 
 The request id is on every one of them. A failure a user cannot quote is a
 failure an operator cannot find.
+
+Every path logged here goes through `safe_path` first. The access log already
+scrubbed capability tokens; the failure log did not, and a request that failed
+on `/c/{token}` is exactly the one a stranger sends.
 """
 
 from __future__ import annotations
@@ -25,6 +29,7 @@ from fastapi.responses import ORJSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from cmp.api.errors.responses import response
+from cmp.api.middleware.request_context import safe_path
 from cmp.core.errors import CmpError, RateLimited
 from cmp.core.logging import get_logger
 
@@ -40,7 +45,7 @@ async def cmp_error_handler(request: Request, exc: Exception) -> ORJSONResponse:
     logger = log.warning if exc.status_code < 500 else log.error
     logger(
         "request.failed",
-        endpoint=request.url.path,
+        endpoint=safe_path(request.url.path),
         method=request.method,
         status=exc.status_code,
         error_code=exc.code,
@@ -70,7 +75,7 @@ async def validation_handler(request: Request, exc: Exception) -> ORJSONResponse
 
     log.info(
         "request.invalid",
-        endpoint=request.url.path,
+        endpoint=safe_path(request.url.path),
         method=request.method,
         field=field,
         error_count=len(errors),
@@ -124,7 +129,7 @@ async def unhandled_handler(request: Request, exc: Exception) -> ORJSONResponse:
     """The last resort. The client gets a request id; the log gets everything else."""
     log.error(
         "request.unhandled",
-        endpoint=request.url.path,
+        endpoint=safe_path(request.url.path),
         method=request.method,
         exc_type=type(exc).__name__,
         exc_info=True,

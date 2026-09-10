@@ -60,6 +60,16 @@ from the sequence inside the advisory lock, so chain order is commit order.
 unique, and the thing a person quotes. `due_at` is stamped at receipt and
 never recomputed.
 
+**One root per (person, notice), since 0023.** `uq_artefact_supersedes_once`
+stops a chain forking; `uq_artefact_one_root_per_notice` stops two chains
+starting. The service also takes a per-pair advisory lock before it reads
+what is current, so a racing second capture becomes a supersession rather
+than a constraint error.
+
+**`export_log.file_ref`, since 0023,** is the CSV exactly as generated, kept
+in storage; the download serves it back. Exports from before it re-render
+and their `file_hash` says whether the result still matches.
+
 **`asset_consent.disposition`** is where an erasure lands: the person's junction
 row, never the asset, because an asset may hold several people.
 

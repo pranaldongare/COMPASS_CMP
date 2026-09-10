@@ -443,11 +443,13 @@ export interface paths {
         };
         /**
          * Render the notice - stamps served_at
-         * @description The `served_at` in the response is what the consent call must carry back.
+         * @description Renders the text and records, on the server, that it was served.
          *
-         *     It is generated here, not accepted from the client: a client-supplied
-         *     timestamp could claim the notice was shown at any convenient moment, and
-         *     s.5(1) would become unfalsifiable.
+         *     The `served_at` in the response is informational. The consent call does
+         *     not take it back: the server keeps its own record of the serving, bound to
+         *     the person, the link and the rendition, and refuses a consent for which
+         *     there is none. A client-supplied timestamp could claim the notice was
+         *     shown at any convenient moment, and s.5(1) would become unfalsifiable.
          */
         get: operations["serve_notice_c__token__notice_get"];
         put?: never;
@@ -4234,6 +4236,23 @@ export interface components {
             /** Threads Unread */
             threads_unread: number;
         };
+        /**
+         * AttentionRow
+         * @description One thing that needs this person today: a count, how urgent it is,
+         *     and where to act on it. Rows with nothing to count are not sent.
+         */
+        AttentionRow: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Count */
+            count: number;
+            /** Severity */
+            severity: string;
+            /** Href */
+            href: string;
+        };
         /** AuditEntry */
         AuditEntry: {
             /**
@@ -4767,9 +4786,10 @@ export interface components {
             language_code: string;
             /**
              * Served At
-             * Format: date-time
+             * @deprecated
+             * @description Ignored. The server records when it served the notice.
              */
-            served_at: string;
+            served_at?: string | null;
             /**
              * Grants
              * @description Every purpose on the notice must carry an explicit answer
@@ -4996,6 +5016,8 @@ export interface components {
             recent: {
                 [key: string]: unknown;
             }[];
+            /** Attention */
+            attention?: components["schemas"]["AttentionRow"][];
         };
         /** DecideIn */
         DecideIn: {
@@ -5786,6 +5808,8 @@ export interface components {
             session_expires_at: string;
             /** Nav */
             nav: string[];
+            /** Writes */
+            writes?: string[];
         };
         /** MessageOut */
         MessageOut: {
@@ -6753,6 +6777,8 @@ export interface components {
             checks: components["schemas"]["ReadyCheck"][];
             /** Schema Version */
             schema_version?: string | null;
+            /** Schema Expected */
+            schema_expected?: string | null;
         };
         /** ReadyCheck */
         ReadyCheck: {

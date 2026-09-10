@@ -73,7 +73,14 @@ class ContactVerified(Acknowledged):
 
 class ConsentBody(Schema):
     language_code: str
-    served_at: datetime
+    #: Accepted for compatibility with clients that echo the notice response,
+    #: and ignored. The serving moment is the server's own record, written when
+    #: `GET /c/{token}/notice` rendered the text to this person.
+    served_at: datetime | None = Field(
+        default=None,
+        deprecated=True,
+        description="Ignored. The server records when it served the notice.",
+    )
     grants: dict[UUID, bool] = Field(
         description="Every purpose on the notice must carry an explicit answer"
     )
@@ -199,11 +206,13 @@ async def serve_notice(
     response: Response,
     language_code: str = "english",
 ) -> dict[str, Any]:
-    """The `served_at` in the response is what the consent call must carry back.
+    """Renders the text and records, on the server, that it was served.
 
-    It is generated here, not accepted from the client: a client-supplied
-    timestamp could claim the notice was shown at any convenient moment, and
-    s.5(1) would become unfalsifiable.
+    The `served_at` in the response is informational. The consent call does
+    not take it back: the server keeps its own record of the serving, bound to
+    the person, the link and the rendition, and refuses a consent for which
+    there is none. A client-supplied timestamp could claim the notice was
+    shown at any convenient moment, and s.5(1) would become unfalsifiable.
     """
     _no_referrer(response)
     cookie = request.cookies.get(settings.cookie_name)
@@ -241,7 +250,6 @@ async def give_consent(
             token=token,
             user_id=session.user_id,
             language_code=body.language_code,
-            served_at=body.served_at,
             grants={str(k): v for k, v in body.grants.items()},
             action_type=body.action_type,
             ip_address=request.client.host if request.client else None,

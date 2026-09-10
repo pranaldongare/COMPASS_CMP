@@ -1,4 +1,10 @@
-# CI: push -> lint -> format -> types -> unit -> integration -> security -> image.
+# CI for the monorepo: the backend (lint, types, migrations both ways, the three
+# pytest suites, the OpenAPI document, the image) and the two portals
+# (typecheck, lint, unit tests, production build).
+#
+# Lives at the repository root because GitHub reads workflows from
+# `.github/workflows` at the root only. It sat under `cmp_backend/` from
+# August to September 2026 and never ran; a review noticed zero runs.
 #
 # Two things this pipeline does that a default one does not:
 #
@@ -15,7 +21,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, refactor/frontend-architecture]
   pull_request:
   workflow_dispatch:
 
@@ -26,13 +32,18 @@ concurrency:
 
 env:
   PYTHON_VERSION: "3.12"
+  NODE_VERSION: "22"
 
 permissions:
   contents: read
 
+defaults:
+  run:
+    working-directory: cmp_backend
+
 jobs:
   quality:
-    name: Lint, format and types
+    name: Backend lint, format and types
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,7 +51,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          cache-dependency-glob: uv.lock
+          cache-dependency-glob: cmp_backend/uv.lock
 
       - run: uv python install ${{ env.PYTHON_VERSION }}
 
@@ -59,7 +70,7 @@ jobs:
         run: uv run mypy src
 
   test:
-    name: Tests
+    name: Backend tests
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -103,7 +114,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          cache-dependency-glob: uv.lock
+          cache-dependency-glob: cmp_backend/uv.lock
 
       - run: uv python install ${{ env.PYTHON_VERSION }}
       - run: uv sync --frozen --all-extras --dev
@@ -118,11 +129,22 @@ jobs:
           uv run alembic downgrade base
           uv run alembic upgrade head
 
+      # The committed API document must be the one the code produces. A stale
+      # openapi.json means the portals' generated types were checked against
+      # something the server no longer says.
+      - name: OpenAPI document is current
+        run: |
+          uv run python -c "from cmp.main import app; import json; json.dump(app.openapi(), open('openapi.generated.json','w'), indent=2)"
+          diff -q openapi.json openapi.generated.json
+
       - name: Unit tests
         run: uv run pytest tests/unit -q
 
       - name: Integration tests
         run: uv run pytest tests/integration -q
+
+      - name: Security tests
+        run: uv run pytest tests/security -q
 
       - name: Full suite with coverage
         run: uv run pytest --cov --cov-report=term-missing --cov-report=xml -q
@@ -131,8 +153,39 @@ jobs:
         if: always()
         with:
           name: coverage
-          path: coverage.xml
+          path: cmp_backend/coverage.xml
           retention-days: 7
+
+  portals:
+    name: ${{ matrix.portal }} typecheck, lint, tests, build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        portal: [cmp_internal_ui, cmp_public_ui]
+    defaults:
+      run:
+        working-directory: ${{ matrix.portal }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ matrix.portal }}/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # typecheck + lint + vitest, the same gate a developer runs locally.
+      - name: Verify
+        run: npm run verify
+
+      # The production build fails on a type or lint error the dev server
+      # tolerates, so it is part of the gate rather than of the deploy.
+      - name: Build
+        run: npm run build
 
   security:
     name: Dependency and secret scan
@@ -145,6 +198,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+          cache-dependency-glob: cmp_backend/uv.lock
 
       - run: uv python install ${{ env.PYTHON_VERSION }}
       - run: uv sync --frozen --all-extras --dev
@@ -172,7 +226,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   image:
-    name: Build and scan the image
+    name: Build and scan the API image
     runs-on: ubuntu-latest
     needs: [quality, test]
     permissions:
@@ -186,10 +240,10 @@ jobs:
       - name: Build
         uses: docker/build-push-action@v6
         with:
-          # The Dockerfile moved under docker/; the context stays at the repo
-          # root because that is where src/ and the lockfile are.
-          context: .
-          file: docker/Dockerfile
+          # The build context is the backend directory: that is where src/,
+          # migrations/ and the lockfile the Dockerfile copies live.
+          context: cmp_backend
+          file: cmp_backend/docker/Dockerfile
           push: false
           load: true
           tags: cmp-api:${{ github.sha }}
@@ -212,18 +266,27 @@ jobs:
         with:
           sarif_file: trivy.sarif
 
-      # The image must actually start. A build that succeeds and a container
-      # that exits on boot is a green pipeline and a broken deploy.
+      # The image must start, and must fail fast without a database. Both are
+      # asserted: a container that exits on boot is a broken deploy, and one
+      # that keeps serving 503s with no datastore is a broken one that looks
+      # alive. Printing the logs is not a check; the exit code and the log
+      # line are.
       - name: Smoke test the image
+        working-directory: .
         run: |
-          docker run -d --name smoke -p 8000:8000 \
+          set -euo pipefail
+          docker run -d --name smoke \
             -e ENVIRONMENT=local \
             -e POSTGRES_HOST=nowhere \
-            cmp-api:${{ github.sha }} \
-            gunicorn cmp.main:app --worker-class uvicorn.workers.UvicornWorker \
-              --bind 0.0.0.0:8000 --workers 1 --timeout 30 || true
-          sleep 5
-          # Startup is fail-fast without a database, which is the intended
-          # behaviour: confirm it exited rather than serving 503s silently.
+            -e POSTGRES_PASSWORD=smoke \
+            -e SECRET_KEY=smoke-secret-key-at-least-thirty-two-bytes \
+            cmp-api:${{ github.sha }}
+          sleep 15
+          status=$(docker inspect -f '{{.State.Status}}' smoke)
+          exit_code=$(docker inspect -f '{{.State.ExitCode}}' smoke)
           docker logs smoke 2>&1 | tail -20
-          docker rm -f smoke || true
+          docker rm -f smoke
+          if [ "$status" != "exited" ] || [ "$exit_code" = "0" ]; then
+            echo "expected the container to exit non-zero without a database; got status=$status exit=$exit_code"
+            exit 1
+          fi

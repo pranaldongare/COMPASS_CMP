@@ -72,7 +72,7 @@ erDiagram
 | Projects | `project`, `project_processor`, `project_approval`, `project_site`, `project_status_history` | A project names processors (each decided by the DPO), proves its approval, and collects at sites. A site is a source deployed for a project with an optional owner override. Status changes are history rows. |
 | Notices | `notice`, `notice_language`, `notice_purpose` | A notice per project version; a rendition per language, each approved; the purposes it covers, with per-notice Rule 3 overrides. |
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant` | Links store only a fingerprint. An artefact is one decision on one notice, one grant per purpose, superseded by withdrawal. |
-| Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` | A disclosure record per export and per person; an import batch produces a collection of assets; a junction says which consent covers whom in which asset, with a disposition. |
+| Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` | A disclosure record per export and per person, with the generated file kept in storage (`file_ref`); an import batch produces a collection of assets; a junction says which consent covers whom in which asset, with a disposition. |
 | Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_ticket_message`, `rights_response_file`, `nomination` | A request with its clock; one holder per party asked, with a message thread; one scope item per appearance; files released with the response; the nominee arrangement. |
 | Platform | `audit_log` | Append-only, hash-chained. Sessions, one-time codes, rate counters and lockouts live in Redis, not here. |
 
@@ -116,6 +116,7 @@ with raw SQL that bypasses the service layer.
 | A published notice never changes | `cmp_notice_freeze()` |
 | A link belongs to an approved project's site and one notice version | `cmp_link_coherent()` |
 | An artefact is superseded at most once | partial unique index on `supersedes_consent_id` |
+| One root artefact per (person, notice) | partial unique index `uq_artefact_one_root_per_notice` (0023); the service also locks per pair before reading what is current |
 | Every write is audited in the same transaction, in a chain | `audit_log` triggers; `log_id` drawn inside `pg_advisory_xact_lock(hashtext('cmp_audit_chain'))` |
 | A purpose itemises its categories | `CHECK cardinality(data_categories) >= 1` |
 | A data principal has a mobile; a nominee has a mobile; staff have an email | `trg_subject_needs_mobile`, `trg_nominee_needs_mobile`, `CHECK staff_needs_email` |
@@ -141,6 +142,7 @@ acceptance).
 | Thing | Where it is |
 |---|---|
 | Sessions, partial sessions | Redis db 0 |
+| The record that a notice was served to a person (six hours) | Redis db 0, keys `nsrv:*` |
 | One-time codes, MFA codes, their attempt counts | Redis db 0, with TTLs |
 | Rate-limit buckets and lockouts | Redis db 0, keys `rate:*` |
 | Celery broker and results | Redis db 1 and db 2 |

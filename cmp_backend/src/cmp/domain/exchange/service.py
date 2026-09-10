@@ -70,7 +70,12 @@ async def generate(
     project = await project_repo.require(conn, project_uuid, role=role, user_id=actor_id)
 
     payload, rows, lines = await _project_export(conn, project, role=role, user_id=actor_id)
-    digest = file_hash(payload.encode("utf-8"))
+    raw = payload.encode("utf-8")
+    digest = file_hash(raw)
+    # Keep the bytes. The disclosure record is what left the building, and a
+    # download that re-rendered from live rows would hand out a file nobody
+    # was ever given once a name or a label changed.
+    file_ref = _keep_export_file(raw, digest)
     export = await repo.create_export(
         conn,
         project_id=project["project_id"],
@@ -81,6 +86,7 @@ async def generate(
         exported_by=actor_id,
         row_count=rows,
         file_hash=digest,
+        file_ref=file_ref,
     )
     written = await repo.add_export_lines(conn, export["export_id"], lines)
 
@@ -99,6 +105,41 @@ async def generate(
     )
     log.info("export.generated", project=project_uuid, rows=rows, lines=written)
     return {**export, "project_uuid": project_uuid, "line_count": written}
+
+
+EXPORTS_SUBDIR = "exports"
+
+
+def _keep_export_file(raw: bytes, digest: str) -> str | None:
+    """Store the CSV as generated; None if storage would not take it.
+
+    Storage applies the upload size cap. An export past it is still recorded,
+    hashed and downloadable by re-rendering; the missing reference is logged
+    so the gap is a known one rather than a surprise at download time.
+    """
+    from cmp.core.errors import CmpError
+    from cmp.infrastructure.storage.service import storage
+
+    try:
+        return storage().save(raw, subdir=EXPORTS_SUBDIR, suggested_name=f"{digest[:16]}.csv")
+    except CmpError as exc:
+        log.warning("export.file_not_kept", sha256=digest, reason=str(exc))
+        return None
+
+
+#: Characters a spreadsheet reads as the start of a formula. A cell that begins
+#: with one is prefixed with an apostrophe, which every spreadsheet shows as
+#: text and never evaluates. Applied to free-text fields only: a mobile number
+#: begins with `+` by design and is validated to be nothing but digits after
+#: it, so it is left as it is.
+_FORMULA_LEADERS = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _text_cell(value: object) -> str:
+    text = "" if value is None else str(value)
+    if text.startswith(_FORMULA_LEADERS):
+        return "'" + text
+    return text
 
 
 #: The columns, in the order somebody reads them: what this is, who it is about,
@@ -160,19 +201,19 @@ def _consent_status(row: dict[str, Any]) -> str:
 
 def _row_for(project: dict[str, Any], c: dict[str, Any]) -> list[Any]:
     return [
-        project["project_name"],
+        _text_cell(project["project_name"]),
         str(project["project_uuid"]),
-        c["site_label"],
-        c["source_code"] or "",
+        _text_cell(c["site_label"]),
+        _text_cell(c["source_code"]),
         str(c["link_uuid"]),
         _link_url(c),
         c["link_status"],
         c["link_expires_at"].isoformat() if c["link_expires_at"] else "",
         str(c["consent_uuid"]),
-        c["full_name"],
-        c["email"],
+        _text_cell(c["full_name"]),
+        c["email"] or "",
         c["mobile"] or "",
-        c["organization_id"] or "",
+        _text_cell(c["organization_id"]),
         c["person_type"] or "",
         _consent_status(c),
         "|".join(c["granted_purposes"] or []),
@@ -193,7 +234,7 @@ def _write_csv(project: dict[str, Any], consents: list[dict[str, Any]]) -> str:
         # column names reads as a broken export; this one says which project it
         # is and that nobody has consented yet.
         row: list[Any] = [""] * len(EXPORT_COLUMNS)
-        row[0] = project["project_name"]
+        row[0] = _text_cell(project["project_name"])
         row[1] = str(project["project_uuid"])
         writer.writerow(row)
         return buf.getvalue()
@@ -233,14 +274,20 @@ async def render(conn: Conn, export: dict[str, Any]) -> tuple[str, str, str]:
     renamed since the export changes the rendered bytes and the comparison
     catches it, which is the case the hash exists for.
     """
+    if export.get("file_ref"):
+        # The bytes as generated (0023). What the processor was given, exactly.
+        from cmp.infrastructure.storage.service import storage
+
+        return storage().read(export["file_ref"]).decode("utf-8"), "text/csv", "csv"
+
     project = await project_repo.by_uuid(conn, str(export["project_uuid"]), role="dpo", user_id=0)
     if not project:
         raise NotFound("Export source")
 
-    # Older per-site exports predate this and were JSON or a different CSV.
-    # Re-rendering them through today's builder would produce a file that never
-    # existed, so they are served as what they are: a record that the export
-    # happened, with its rows.
+    # Exports from before 0023 kept no file. Older per-site exports predate
+    # even this builder and were JSON or a different CSV. Re-rendering them
+    # through today's builder produces a file that may differ from the one
+    # given out; the recorded hash says whether it does.
     consents = await repo.consents_in_export(conn, export["export_id"])
     return _write_csv(project, consents), "text/csv", "csv"
 

@@ -17,17 +17,59 @@ needs both:
 
 from __future__ import annotations
 
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Response, status
 
+import cmp
 from cmp.core.config import settings
+from cmp.core.logging import get_logger
 from cmp.db import pool
 from cmp.db import redis as redis_db
 from cmp.domain.projects.state_machine import ALL_STATUSES
 from cmp.schemas.common import Out
 
 router = APIRouter(tags=["system"])
+log = get_logger("cmp.system")
+
+
+@lru_cache(maxsize=1)
+def expected_schema_head() -> str | None:
+    """The migration this build expects the database to be at.
+
+    Read from the migration scripts shipped with the code, so "migrations
+    current" means current for *this* release rather than "some row exists".
+    A readiness check that accepted revision 0001 as ready would put a replica
+    into rotation against a schema twenty migrations behind it.
+    """
+    try:
+        from alembic.config import Config
+        from alembic.script import ScriptDirectory
+
+        root = Path(cmp.__file__).resolve().parents[2]
+        ini = root / "alembic.ini"
+        config = Config(str(ini)) if ini.is_file() else Config()
+        config.set_main_option("script_location", str(root / "migrations"))
+        return ScriptDirectory.from_config(config).get_current_head()
+    except Exception as exc:  # pragma: no cover - a packaging problem, reported not hidden
+        log.error("system.schema_head_unknown", error=str(exc))
+        return None
+
+
+def migrations_check(version: str | None, expected: str | None) -> tuple[bool, str | None]:
+    """Pure: is the deployed schema the one this build expects?"""
+    if version is None:
+        return False, "no alembic_version row; run alembic upgrade head"
+    if expected is None:
+        return True, "expected head unknown; migration scripts not found beside the code"
+    if version != expected:
+        return (
+            False,
+            f"schema is at {version}, this build expects {expected}; run alembic upgrade head",
+        )
+    return True, None
 
 
 class Health(Out):
@@ -46,6 +88,7 @@ class Ready(Out):
     status: str
     checks: list[ReadyCheck]
     schema_version: str | None = None
+    schema_expected: str | None = None
 
 
 class ServiceIndex(Out):
@@ -107,15 +150,13 @@ async def ready(response: Response) -> dict[str, Any]:
     db_ok = await pool.healthcheck()
     redis_ok = await redis_db.healthcheck()
     version = await pool.schema_version() if db_ok else None
+    expected = expected_schema_head()
+    migrations_ok, migrations_detail = migrations_check(version, expected)
 
     checks = [
         ReadyCheck(name="postgresql", ok=db_ok, detail=None if db_ok else "unreachable"),
         ReadyCheck(name="redis", ok=redis_ok, detail=None if redis_ok else "unreachable"),
-        ReadyCheck(
-            name="migrations",
-            ok=version is not None,
-            detail=None if version else "no alembic_version row; run alembic upgrade head",
-        ),
+        ReadyCheck(name="migrations", ok=migrations_ok, detail=migrations_detail),
     ]
     all_ok = all(c.ok for c in checks)
     if not all_ok:
@@ -125,6 +166,7 @@ async def ready(response: Response) -> dict[str, Any]:
         "status": "ready" if all_ok else "not_ready",
         "checks": [c.model_dump() for c in checks],
         "schema_version": version,
+        "schema_expected": expected,
     }
 
 

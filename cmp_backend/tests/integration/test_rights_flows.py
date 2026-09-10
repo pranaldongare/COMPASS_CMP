@@ -47,12 +47,14 @@ async def _consent(conn: Any, seeded: dict[str, Any]) -> dict[str, Any]:
             seeded["users"]["dco"]["id"],
         ),
     )
+    await consent_service.serve_notice(
+        conn, token=raw, language_code="english", user_id=seeded["subject"]["id"]
+    )
     return await consent_service.capture(
         conn,
         token=raw,
         user_id=seeded["subject"]["id"],
         language_code="english",
-        served_at=datetime.now(UTC) - timedelta(minutes=1),
         grants={str(seeded["purpose"]["purpose_uuid"]): True},
         action_type="checkbox_click",
         ip_address="127.0.0.1",
@@ -1238,12 +1240,14 @@ async def _second_notice_consent(conn: Any, seeded: dict[str, Any]) -> dict[str,
            VALUES (%s, %s, %s, now() + interval '1 day', %s)""",
         (notice_id, seeded["site"]["site_id"], token_fingerprint(raw)[:64], dpo),
     )
+    await consent_service.serve_notice(
+        conn, token=raw, language_code="english", user_id=seeded["subject"]["id"]
+    )
     return await consent_service.capture(
         conn,
         token=raw,
         user_id=seeded["subject"]["id"],
         language_code="english",
-        served_at=datetime.now(UTC) - timedelta(minutes=1),
         grants={str(seeded["purpose"]["purpose_uuid"]): True},
         action_type="checkbox_click",
         ip_address="127.0.0.1",

@@ -65,11 +65,15 @@ services:
       - "yes"
       - --maxmemory
       - 256mb
-      # Sessions, OTP and rate-limit counters all carry a TTL. allkeys-lru would
-      # evict a live session under memory pressure and silently sign people out;
-      # volatile-lru only touches keys that were already expiring.
+      # Everything in this Redis is state, not cache: sessions, one-time
+      # codes, lockouts, rate counters and the Celery broker. Every one of
+      # them carries a TTL, so volatile-lru would evict *live* sessions and
+      # codes under memory pressure and people would be signed out or unable
+      # to sign in with no error anywhere. noeviction refuses writes instead,
+      # which the API reports as 503 and an operator can see. Alert on
+      # used_memory approaching maxmemory rather than letting it be silent.
       - --maxmemory-policy
-      - volatile-lru
+      - noeviction
     volumes:
       - redisdata:/data
     ports:
