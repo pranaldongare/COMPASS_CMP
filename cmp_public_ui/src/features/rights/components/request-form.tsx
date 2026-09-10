@@ -12,6 +12,11 @@
  * goes to the channel already on file - so the form says that too, because a
  * person who typed a new address and waited for a code that never came would
  * otherwise conclude the form was broken.
+ *
+ * Signed in, she can confine a request to one consent: the access she wants
+ * is the data under that consent, the erasure is of that data and no other.
+ * From her consents page the consent is already chosen; from her requests
+ * page she picks it, or asks about everything.
  */
 "use client";
 
@@ -20,6 +25,7 @@ import * as React from "react";
 import { FormError, useApiForm } from "@/components/forms";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Alert, Button, Field, Input, Select, Textarea } from "@/components/ui/primitives";
+import { useMyConsents } from "@/features/my-consents";
 import { submitPublicRequest } from "@/features/rights/api";
 import { REQUEST_TYPE_COPY } from "@/features/rights/components/copy";
 import { useMakeRequest } from "@/features/rights/mutations";
@@ -31,18 +37,21 @@ import {
   type PublicRequestForm as PublicRequestFormValues,
   type PublicRequestValues,
 } from "@/features/rights/schemas";
+import { formatDate } from "@/lib/format";
 import { useToast } from "@/providers";
-import type { MyRequest, PublicRequestReceipt, RightsRequestType } from "@/types";
+import type { MyConsent, MyRequest, PublicRequestReceipt, RightsRequestType } from "@/types";
 import { RIGHTS_REQUEST_TYPES } from "@/types";
 
 function TypeSelect({
   value,
   onChange,
   inputProps,
+  exclude = [],
 }: {
   value: RightsRequestType;
   onChange: (next: RightsRequestType) => void;
   inputProps: Record<string, unknown>;
+  exclude?: RightsRequestType[];
 }) {
   return (
     <Select
@@ -50,7 +59,7 @@ function TypeSelect({
       value={value}
       onChange={(e) => onChange(e.target.value as RightsRequestType)}
     >
-      {RIGHTS_REQUEST_TYPES.map((t) => (
+      {RIGHTS_REQUEST_TYPES.filter((t) => !exclude.includes(t)).map((t) => (
         <option key={t} value={t}>
           {REQUEST_TYPE_COPY[t].label} ({REQUEST_TYPE_COPY[t].section})
         </option>
@@ -67,13 +76,49 @@ function TypeBlurb({ type }: { type: RightsRequestType }) {
   );
 }
 
+/** One consent, the way the picker and the fixed box name it. */
+export function consentLabel(c: MyConsent): string {
+  return `${c.project_name} · ${c.notice_code} v${c.version} · ${formatDate(c.affirmative_action_at)}${c.is_withdrawal ? " (withdrawn)" : ""}`;
+}
+
+function ConsentPicker({
+  value,
+  onChange,
+  inputProps,
+}: {
+  value: string | null;
+  onChange: (next: string | null) => void;
+  inputProps: Record<string, unknown>;
+}) {
+  const consents = useMyConsents();
+  const list = consents.data ?? [];
+  return (
+    <Select
+      {...inputProps}
+      value={value ?? ""}
+      onChange={(e) => onChange(e.target.value || null)}
+      disabled={consents.isLoading}
+    >
+      <option value="">Everything you hold about me</option>
+      {list.map((c) => (
+        <option key={c.consent_uuid} value={c.consent_uuid}>
+          {consentLabel(c)}
+        </option>
+      ))}
+    </Select>
+  );
+}
+
 /** Signed in: the session is the verification, so the clock starts on submit. */
 export function MyRequestForm({
   onDone,
   initialType = "access",
+  consent = null,
 }: {
   onDone: (created: MyRequest) => void;
   initialType?: RightsRequestType;
+  /** Already chosen - from her consents page - and not changeable here. */
+  consent?: MyConsent | null;
 }) {
   const toast = useToast();
   const make = useMakeRequest();
@@ -81,11 +126,17 @@ export function MyRequestForm({
     request_type: initialType,
     request_text: "",
     about_dpo: false,
+    consent_uuid: consent?.consent_uuid ?? null,
   });
   const type = form.watch("request_type") as RightsRequestType;
+  const confined = (form.watch("consent_uuid") as string | null) ?? null;
 
   const submit = form.submit(async (values) => {
-    const created = await make.mutateAsync(values);
+    const created = await make.mutateAsync({
+      ...values,
+      // A grievance is about handling, not about one consent.
+      consent_uuid: values.request_type === "grievance" ? null : values.consent_uuid,
+    });
     toast.success(
       `Recorded as ${created.reference}`,
       `You will hear from us by ${new Date(created.due_at).toLocaleDateString()}.`,
@@ -103,14 +154,48 @@ export function MyRequestForm({
               inputProps={p}
               value={type}
               onChange={(next) => form.setValue("request_type", next, { shouldValidate: true })}
+              exclude={consent ? ["grievance"] : []}
             />
           )}
         </Field>
         <TypeBlurb type={type} />
 
+        {consent ? (
+          <div className="rounded-md border border-border bg-bg-inset p-3 text-sm">
+            <p className="text-2xs font-semibold uppercase tracking-wide text-text-subtle">
+              About this consent only
+            </p>
+            <p className="mt-1">{consentLabel(consent)}</p>
+            <p className="mt-1 text-xs text-text-muted">
+              Only the data held under this consent is in question. Holders, what is in scope
+              and the response are all confined to it.
+            </p>
+          </div>
+        ) : (
+          type !== "grievance" && (
+            <Field
+              label="About"
+              hint="Everything we hold about you, or one consent - the request then covers only the data under it."
+              error={form.formState.errors.consent_uuid?.message}
+            >
+              {(p) => (
+                <ConsentPicker
+                  inputProps={p}
+                  value={confined}
+                  onChange={(next) => form.setValue("consent_uuid", next, { shouldValidate: true })}
+                />
+              )}
+            </Field>
+          )
+        )}
+
         <Field
           label="Your request"
-          hint="In your own words. Which project, which data, what you want done."
+          hint={
+            confined
+              ? "In your own words. Which data under this consent, and what you want done."
+              : "In your own words. Which project, which data, what you want done."
+          }
           required
           error={form.formState.errors.request_text?.message}
         >

@@ -106,6 +106,9 @@ export interface RightsRequestRow {
   verification_status: RightsVerificationStatus;
   about_dpo: boolean;
   linked_reference: string | null;
+  /** Set when the request is confined to one consent. */
+  consent_uuid: Uuid | null;
+  consent_project: string | null;
   holder_count: number;
   tickets_outstanding: number;
   closed_at: Timestamp | null;
@@ -160,6 +163,15 @@ export interface RightsHolder {
  */
 export interface HolderBrief {
   subject: { uuid: Uuid | null; full_name: string | null; email: string | null; mobile: string | null };
+  /** The consent the request is confined to, when it is; the lists below are then confined too. */
+  scope?: {
+    consent_uuid: Uuid;
+    project: string | null;
+    notice: string;
+    at: Timestamp | null;
+    withdrawn: boolean;
+    purposes: string[];
+  } | null;
   consents: {
     consent_uuid: Uuid;
     at: Timestamp | null;
@@ -238,6 +250,13 @@ export interface MyTicket {
   last_reminded_at: Timestamp | null;
   reminders_sent: number;
   return_evidence_name: string | null;
+  /** The consent the request is confined to, when it is. */
+  consent_uuid: Uuid | null;
+  consent_project: string | null;
+  consent_notice_code: string | null;
+  consent_notice_version: number | null;
+  consent_at: Timestamp | null;
+  consent_purposes: string[] | null;
 }
 
 /**
@@ -300,6 +319,12 @@ export interface RightsRequest extends RightsRequestRow {
   intent_confirmed_at: Timestamp | null;
   linked_request_uuid: Uuid | null;
   linked_request_type: RightsRequestType | null;
+  consent_project_uuid: Uuid | null;
+  consent_notice_code: string | null;
+  consent_notice_version: number | null;
+  consent_at: Timestamp | null;
+  consent_withdrawn: boolean | null;
+  consent_purposes: string[] | null;
   nomination_uuid: Uuid | null;
   nominee_name: string | null;
   nominee_contact: string | null;

@@ -29,6 +29,7 @@ import {
   Skeleton,
 } from "@/components/ui/primitives";
 import { ClockColumn } from "@/features/rights/components/clock-column";
+import { ConsentScope } from "@/features/rights/components/consent-scope";
 import { REQUEST_TYPE_COPY, RequestStatusBadge, RequestTypeBadge } from "@/features/rights/components/copy";
 import { HoldersCard } from "@/features/rights/components/holders-card";
 import { LinkedFrom, LinkedRequestCard } from "@/features/rights/components/linked-request-card";
@@ -99,6 +100,24 @@ export default function RequestDetailPage() {
                 )}
               </DescriptionItem>
               <DescriptionItem term="Contact given">{r.submitted_contact}</DescriptionItem>
+              {r.consent_uuid && (
+                <DescriptionItem term="Confined to">
+                  <ConsentScope
+                    scope={{
+                      consent_uuid: r.consent_uuid,
+                      project: r.consent_project,
+                      notice_code: r.consent_notice_code,
+                      notice_version: r.consent_notice_version,
+                      at: r.consent_at,
+                      withdrawn: r.consent_withdrawn,
+                      purposes: r.consent_purposes,
+                    }}
+                  />
+                  <span className="mt-1 block text-xs text-text-subtle">
+                    She asked about this consent only. Holders, scope, tickets and the response are confined to the data under it.
+                  </span>
+                </DescriptionItem>
+              )}
               <DescriptionItem term="Received">{formatDateTime(r.received_at)}</DescriptionItem>
               <DescriptionItem term="Acknowledged">{r.acknowledged_at ? formatDateTime(r.acknowledged_at) : "Not yet"}</DescriptionItem>
               {r.linked_reference && (

@@ -1106,3 +1106,179 @@ class TestTheRegister:
             await repo.subject_request(conn, str(row["request_uuid"]), seeded["users"]["dpo"]["id"])
             is None
         )
+
+
+# ------------------------------------------------------ confined to one consent
+async def _second_notice_consent(conn: Any, seeded: dict[str, Any]) -> dict[str, Any]:
+    """A consent on a different notice - a different chain - for the same person."""
+    from cmp.core.security import content_hash
+
+    dpo = seeded["users"]["dpo"]["id"]
+    notice = await conn.execute(
+        """INSERT INTO notice (notice_code, project_id, version, withdraw_url,
+                               exercise_rights_url, board_complaint_url, dpo_contact)
+           VALUES ('N-TEST-2', %s, 1, 'https://x/w', 'https://x/r', 'https://dpb.gov.in',
+                   'dpo@test.local')
+           RETURNING notice_id""",
+        (seeded["project"]["project_id"],),
+    )
+    notice_id = (await notice.fetchone())["notice_id"]
+    text = "The second notice under test."
+    await conn.execute(
+        """INSERT INTO notice_language (notice_id, language_code, rendered_text,
+                                        content_hash, created_by, approved_by, approved_at)
+           VALUES (%s, 'english', %s, %s, %s, %s, now())""",
+        (notice_id, text, content_hash(text), dpo, dpo),
+    )
+    await conn.execute(
+        "INSERT INTO notice_purpose (notice_id, purpose_id) VALUES (%s, %s)",
+        (notice_id, seeded["purpose"]["purpose_id"]),
+    )
+    await conn.execute(
+        """UPDATE notice SET status = 'published', recipients_text = 'Test Site',
+                  approved_by = %s, published_at = now() WHERE notice_id = %s""",
+        (dpo, notice_id),
+    )
+    raw = new_token()
+    await conn.execute(
+        """INSERT INTO consent_link (notice_id, site_id, token, expires_at, created_by)
+           VALUES (%s, %s, %s, now() + interval '1 day', %s)""",
+        (notice_id, seeded["site"]["site_id"], token_fingerprint(raw)[:64], dpo),
+    )
+    return await consent_service.capture(
+        conn,
+        token=raw,
+        user_id=seeded["subject"]["id"],
+        language_code="english",
+        served_at=datetime.now(UTC) - timedelta(minutes=1),
+        grants={str(seeded["purpose"]["purpose_uuid"]): True},
+        action_type="checkbox_click",
+        ip_address="127.0.0.1",
+    )
+
+
+class TestConfinedToConsent:
+    """She asks about one consent, and everything downstream stays inside it."""
+
+    async def test_every_step_acts_only_on_the_consent_named(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        from cmp.domain.rights import package
+
+        dpo = seeded["users"]["dpo"]["id"]
+        first = await _consent(conn, seeded)
+        second = await _second_notice_consent(conn, seeded)
+        # Under the first consent: an asset she appears in. Under the second:
+        # an export that carried her record, and another asset.
+        mine = await _asset_with_her(conn, seeded, first["consent_id"], bystanders=0, ref="ONE")
+        await _export_with_her(conn, seeded, second["consent_id"])
+        await _asset_with_her(conn, seeded, second["consent_id"], bystanders=0, ref="TWO")
+
+        row = await _portal_request(conn, seeded, "erasure", consent_id=first["consent_id"])
+        assert str(row["consent_uuid"]) == str(first["consent_uuid"])
+        assert row["consent_project"] == "Test Project"
+        assert row["consent_purposes"] == ["Test purpose"]
+        row = await service.confirm_intent(conn, row, role=DPO, actor_id=dpo)
+        row = await _started(conn, seeded, row)
+
+        # Holders: the processor is named for the asset under this consent,
+        # and the export under the other consent is not evidence here.
+        holders = await service.derive_holders(conn, row, role=DPO, actor_id=dpo)
+        assert [h["label"] for h in holders] == ["Test Processor Ltd"]
+        assert holders[0]["derived_from"] == "asset_consent"
+        assert holders[0]["evidence"]["exports"] == []
+        assert len(holders[0]["evidence"]["assets"]) == 1
+
+        # Scope: her appearance under this consent, not the other.
+        items = await service.derive_scope(
+            conn, await service.reload(conn, row), role=DPO, actor_id=dpo
+        )
+        assert [int(i["asset_consent_id"]) for i in items] == [mine]
+
+        # The brief a ticket opens with says what it is confined to and lists
+        # only the records under it; so does the instruction.
+        row = await service.reload(conn, row)
+        await service.confirm_holder(
+            conn,
+            row,
+            holder_uuid=str(holders[0]["holder_uuid"]),
+            responder_name="Lab manager",
+            responder_contact="lab@example.org",
+            role=DPO,
+            actor_id=dpo,
+        )
+        issued = await service.issue_tickets(
+            conn,
+            await service.reload(conn, row),
+            instruction=None,
+            due_at=None,
+            role=DPO,
+            actor_id=dpo,
+        )
+        brief = issued[0]["brief"]
+        assert brief["scope"]["consent_uuid"] == str(first["consent_uuid"])
+        assert [c["consent_uuid"] for c in brief["consents"]] == [str(first["consent_uuid"])]
+        assert brief["exports"] == []
+        assert [a["ref"] for a in brief["assets"]] == ["ASSET-ONE"]
+        assert "confined to the consent" in issued[0]["instruction"]
+        assert "Confined to:" in service.brief_text(brief)
+
+        # The response attaches that consent's record and nothing else.
+        built = await package.build_response(
+            conn,
+            {**await service.reload(conn, row), "outcome": "complete"},
+            holders=issued,
+            response_text="Done.",
+            generated_at=datetime.now(UTC),
+        )
+        assert built["summary"]["confined_to_consent"] is True
+        assert [str(c["consent_uuid"]) for c in built["consents"]] == [
+            str(first["consent_uuid"])
+        ]
+        assert built["disclosures"] == []
+        assert "CONFINED TO ONE CONSENT" in package.digest_text(built)
+
+    async def test_unconfined_still_reaches_everything(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        dpo = seeded["users"]["dpo"]["id"]
+        first = await _consent(conn, seeded)
+        second = await _second_notice_consent(conn, seeded)
+        await _asset_with_her(conn, seeded, first["consent_id"], bystanders=0, ref="ONE")
+        await _export_with_her(conn, seeded, second["consent_id"])
+        row = await _started(conn, seeded, await _portal_request(conn, seeded, "access"))
+        holders = await service.derive_holders(conn, row, role=DPO, actor_id=dpo)
+        assert len(holders[0]["evidence"]["exports"]) == 1
+        assert len(holders[0]["evidence"]["assets"]) == 1
+
+    async def test_the_chain_counts_as_one_consent(self, conn: Any, seeded: dict[str, Any]) -> None:
+        """An asset collected under the grant still points at the grant after
+        she withdraws. Confined to the withdrawal record, the request reaches
+        the grant too - it is the same consent."""
+        first = await _consent(conn, seeded)
+        await _asset_with_her(conn, seeded, first["consent_id"], bystanders=0, ref="ONE")
+        await consent_service.withdraw(
+            conn,
+            consent_uuid=str(first["consent_uuid"]),
+            user_id=seeded["subject"]["id"],
+            purpose_uuids=None,
+            withdraw_all=True,
+            ip_address=None,
+        )
+        chain = await repo.consent_chain_ids(conn, int(first["consent_id"]))
+        assert int(first["consent_id"]) in chain and len(chain) == 2
+        candidates = await repo.derive_scope_candidates(
+            conn, seeded["subject"]["id"], consent_ids=chain
+        )
+        assert len(candidates) == 1
+
+    async def test_a_consent_that_is_not_hers_is_not_found(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        from cmp.api.routers.v1.rights import _own_consent_id
+
+        first = await _consent(conn, seeded)
+        mine = await _own_consent_id(conn, str(first["consent_uuid"]), seeded["subject"]["id"])
+        assert mine == int(first["consent_id"])
+        with pytest.raises(NotFound):
+            await _own_consent_id(conn, str(first["consent_uuid"]), seeded["users"]["dpo"]["id"])

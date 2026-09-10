@@ -25,6 +25,8 @@ export const myRequestSchema = z.object({
   request_type: requestTypeSchema,
   request_text: requestText,
   about_dpo: z.boolean().default(false),
+  /** One of her consents to confine the request to; null is everything. */
+  consent_uuid: z.string().nullable().default(null),
 });
 export type MyRequestForm = z.input<typeof myRequestSchema>;
 export type MyRequestValues = z.output<typeof myRequestSchema>;

@@ -3,6 +3,7 @@
  */
 
 export * from "@/features/rights/components/clock-column";
+export * from "@/features/rights/components/consent-scope";
 export * from "@/features/rights/components/copy";
 export * from "@/features/rights/components/holders-card";
 export * from "@/features/rights/components/linked-request-card";

@@ -39,10 +39,27 @@ export function BriefPanel({ brief }: { brief: HolderBrief }) {
           {[s.email, s.mobile].filter(Boolean).join(" · ")}
         </span>
       </p>
+      {brief.scope && (
+        <p className="flex flex-wrap items-baseline gap-x-2 rounded-md border border-accent-border bg-accent-subtle px-3 py-2 text-accent-text">
+          <ShieldCheck className="size-4 self-center" aria-hidden="true" />
+          <span className="font-medium">Confined to one consent:</span>
+          <span>
+            {[brief.scope.project, brief.scope.notice].filter(Boolean).join(" · ")}
+            {brief.scope.at && ` · given ${formatDate(brief.scope.at)}`}
+            {" · "}
+            {brief.scope.purposes.length ? brief.scope.purposes.join(", ") : "no purpose granted"}
+            {brief.scope.withdrawn && " · since withdrawn"}
+          </span>
+          <span className="w-full text-xs">
+            Act only on data held under this consent. Anything held under another consent is
+            outside this ticket.
+          </span>
+        </p>
+      )}
       {nothing ? (
         <p className="text-text-muted">
           The platform holds no consent, export or asset record naming this holder as holding
-          anything of theirs. The question is what, if anything, they hold.
+          anything of theirs{brief.scope ? " under this consent" : ""}. The question is what, if anything, they hold.
         </p>
       ) : (
         <>

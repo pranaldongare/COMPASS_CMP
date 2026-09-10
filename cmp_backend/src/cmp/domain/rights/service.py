@@ -42,6 +42,7 @@ from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.rights import clock
 from cmp.domain.rights import state_machine as sm
+from cmp.domain.rights.scope import consent_scope, scope_text
 from cmp.domain.rights.state_machine import RequestFacts
 from cmp.validation import choice, mask_contact, normalise_contact, normalise_mobile
 
@@ -182,8 +183,12 @@ async def create(
     trigger_evidence_ref: str | None = None,
     trigger_evidence_hash: str | None = None,
     about_dpo: bool = False,
+    consent_id: int | None = None,
 ) -> Row:
     """Make the record. Dashboard, notice link, email, nominee: all the same row.
+
+    `consent_id` confines the request to one consent: what she asks about, and
+    everything done in answer, is the data under that consent and no other.
 
     The clock starts here. `due_at` is computed from the published period and
     written to the row, so the deadline of this request is what it was told,
@@ -212,6 +217,7 @@ async def create(
         trigger_evidence_ref=trigger_evidence_ref,
         trigger_evidence_hash=trigger_evidence_hash,
         about_dpo=about_dpo,
+        consent_id=consent_id,
     )
     full = await reload(conn, row)
     await _record(
@@ -225,6 +231,7 @@ async def create(
             "due_at": full["due_at"].isoformat(),
             "verification": full["verification_status"],
             "linked": full.get("linked_reference"),
+            "confined_to_consent": str(full["consent_uuid"]) if full.get("consent_id") else None,
         },
     )
     if verified:
@@ -679,8 +686,16 @@ async def transition(
 
 
 # ------------------------------------------------------------------- holders
+async def _scope_ids(conn: Conn, row: Row) -> list[int] | None:
+    """The consents a confined request reaches, or None for everything."""
+    if not row.get("consent_id"):
+        return None
+    return await repo.consent_chain_ids(conn, int(row["consent_id"]))
+
+
 async def derive_holders(conn: Conn, row: Row, *, role: Role | str, actor_id: int) -> list[Row]:
-    """Who holds her data, from export_line and asset_consent. The DPO confirms."""
+    """Who holds her data, from export_line and asset_consent. The DPO confirms.
+    A request confined to one consent names only the holders of data under it."""
     _may_act(row, role)
     _open(row)
     if row["subject_user_id"] is None:
@@ -688,7 +703,10 @@ async def derive_holders(conn: Conn, row: Row, *, role: Role | str, actor_id: in
             "Holders are derived from the records we hold about a person, and this request "
             "is not linked to one. Verify identity first, or add holders by hand."
         )
-    candidates = await repo.derive_holder_candidates(conn, int(row["subject_user_id"]))
+    scope_ids = await _scope_ids(conn, row)
+    candidates = await repo.derive_holder_candidates(
+        conn, int(row["subject_user_id"]), consent_ids=scope_ids
+    )
     added = 0
     for c in candidates:
         result = await repo.add_holder(
@@ -709,7 +727,11 @@ async def derive_holders(conn: Conn, row: Row, *, role: Role | str, actor_id: in
         row,
         Event.RIGHTS_HOLDERS_DERIVED,
         actor_user_id=actor_id,
-        detail={"candidates": len(candidates), "added": added},
+        detail={
+            "candidates": len(candidates),
+            "added": added,
+            "confined_to_consent": str(row["consent_uuid"]) if scope_ids is not None else None,
+        },
     )
     return await repo.holders_of(conn, int(row["request_id"]))
 
@@ -877,6 +899,13 @@ async def issue_tickets(
     if when > row["due_at"]:
         raise ValidationFailed("A ticket cannot fall due after the response itself", field="due_at")
     text = (instruction or "").strip() or _default_instruction(row)
+    # A confined request says so on every ticket, whatever the DPO wrote: the
+    # holder acts on the data under that consent and nothing else.
+    scope = consent_scope(row)
+    confinement = scope_text(scope)
+    if confinement and confinement not in text:
+        text = f"{text}\n\n{confinement}"
+    scope_ids = await _scope_ids(conn, row)
     now = datetime.now(UTC)
     for h in to_issue:
         # What the platform already knows, written for this holder, before it
@@ -887,6 +916,8 @@ async def issue_tickets(
                 conn,
                 subject_user_id=int(row["subject_user_id"]),
                 processor_id=int(h["processor_id"]) if h.get("processor_id") else None,
+                consent_ids=scope_ids,
+                scope=scope,
             )
         await repo.update_holder(
             conn,
@@ -1217,6 +1248,8 @@ def brief_text(brief: dict[str, Any]) -> str:
     who = [s.get("full_name") or "the person named"]
     contacts = ", ".join(str(c) for c in (s.get("email"), s.get("mobile")) if c)
     lines = [f"About: {who[0]}" + (f" ({contacts})" if contacts else "") + "."]
+    if brief.get("scope"):
+        lines.append(f"Confined to: {scope_text(brief['scope'])}")
     consents, exports, assets = (
         brief.get("consents", []),
         brief.get("exports", []),
@@ -1808,7 +1841,10 @@ async def derive_scope(conn: Conn, row: Row, *, role: Role | str, actor_id: int)
     holder_by_processor = {
         int(h["processor_id"]): int(h["holder_id"]) for h in holders if h["processor_id"]
     }
-    candidates = await repo.derive_scope_candidates(conn, int(row["subject_user_id"]))
+    scope_ids = await _scope_ids(conn, row)
+    candidates = await repo.derive_scope_candidates(
+        conn, int(row["subject_user_id"]), consent_ids=scope_ids
+    )
     added = 0
     for c in candidates:
         created = await repo.add_item(
@@ -1827,7 +1863,11 @@ async def derive_scope(conn: Conn, row: Row, *, role: Role | str, actor_id: int)
         row,
         Event.RIGHTS_SCOPE_DERIVED,
         actor_user_id=actor_id,
-        detail={"candidates": len(candidates), "added": added},
+        detail={
+            "candidates": len(candidates),
+            "added": added,
+            "confined_to_consent": str(row["consent_uuid"]) if scope_ids is not None else None,
+        },
     )
     return await repo.items_of(conn, int(row["request_id"]))
 
@@ -2185,6 +2225,7 @@ async def decide_grievance(
                 verification_method="manual",
                 verification_note=f"Identity carried over from {original['reference']}",
                 linked_request_id=int(row["request_id"]),
+                consent_id=original.get("consent_id"),
             )
             await repo.update(
                 conn, int(rerun_row["request_id"]), classified_at=now, classified_by=actor_id

@@ -134,6 +134,11 @@ function RequestsPageView() {
               {r.about_dpo && (
                 <p className="mt-0.5 text-2xs font-semibold uppercase tracking-wide text-warning-text">about the DPO</p>
               )}
+              {r.consent_uuid && (
+                <p className="mt-0.5 text-2xs font-semibold uppercase tracking-wide text-accent-text" title={r.consent_project ?? undefined}>
+                  one consent{r.consent_project ? ` · ${r.consent_project}` : ""}
+                </p>
+              )}
             </Td>
             <Td>
               <p className="text-sm">{r.subject_name ?? r.submitted_name ?? "Unmatched contact"}</p>

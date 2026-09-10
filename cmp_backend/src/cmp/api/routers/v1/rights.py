@@ -32,6 +32,7 @@ from cmp.core.pagination import PageRequest
 from cmp.core.security import file_hash
 from cmp.db.pool import connection, transaction
 from cmp.db.repositories import audit as audit_repo
+from cmp.db.repositories import consent as consent_repo
 from cmp.db.repositories import entities as entity_repo
 from cmp.db.repositories import rights as repo
 from cmp.db.repositories import users as user_repo
@@ -83,6 +84,9 @@ class RequestRow(Out):
     verification_status: str
     about_dpo: bool
     linked_reference: str | None
+    #: Set when the request is confined to one consent.
+    consent_uuid: UUID | None = None
+    consent_project: str | None = None
     holder_count: int
     tickets_outstanding: int
     closed_at: datetime | None
@@ -102,6 +106,12 @@ class RequestOut(RequestRow):
     intent_confirmed_at: datetime | None
     linked_request_uuid: UUID | None
     linked_request_type: str | None
+    consent_project_uuid: UUID | None = None
+    consent_notice_code: str | None = None
+    consent_notice_version: int | None = None
+    consent_at: datetime | None = None
+    consent_withdrawn: bool | None = None
+    consent_purposes: list[str] | None = None
     nomination_uuid: UUID | None
     nominee_name: str | None
     nominee_contact: str | None
@@ -229,6 +239,13 @@ class TicketOut(Out):
     last_reminded_at: datetime | None = None
     reminders_sent: int = 0
     return_evidence_name: str | None = None
+    #: The consent the request is confined to, when it is.
+    consent_uuid: UUID | None = None
+    consent_project: str | None = None
+    consent_notice_code: str | None = None
+    consent_notice_version: int | None = None
+    consent_at: datetime | None = None
+    consent_purposes: list[str] | None = None
 
 
 class TicketDetailOut(Out):
@@ -339,6 +356,13 @@ class SubjectRequestOut(Out):
     download_expires_at: datetime | None
     linked_reference: str | None
     linked_request_uuid: UUID | None
+    #: The consent she confined the request to, when she did.
+    consent_uuid: UUID | None = None
+    consent_project: str | None = None
+    consent_notice_code: str | None = None
+    consent_notice_version: int | None = None
+    consent_at: datetime | None = None
+    consent_purposes: list[str] | None = None
     closed_at: datetime | None
     clock: ClockOut
 
@@ -464,6 +488,9 @@ class SubjectRequestIn(Schema):
     request_type: str
     request_text: LongText
     about_dpo: bool = False
+    #: Confine the request to one of her consents: the access, correction or
+    #: erasure is of the data under that consent and no other.
+    consent_uuid: UUID | None = None
 
 
 class DisputeIn(Schema):
@@ -1333,10 +1360,20 @@ async def make_request(body: SubjectRequestIn, principal: RequireDataSubject) ->
         raise ValidationFailed(
             "Choose access, correction, erasure or grievance", field="request_type"
         )
+    if body.consent_uuid and body.request_type == "grievance":
+        raise ValidationFailed(
+            "A grievance is about how a request was handled, not about one consent",
+            field="consent_uuid",
+        )
     async with transaction() as conn:
         me = await user_repo.by_id(conn, principal.user_id)
         if not me:
             raise NotFound("User")
+        consent_id = (
+            await _own_consent_id(conn, str(body.consent_uuid), principal.user_id)
+            if body.consent_uuid
+            else None
+        )
         row = await service.create(
             conn,
             request_type=body.request_type,
@@ -1348,8 +1385,18 @@ async def make_request(body: SubjectRequestIn, principal: RequireDataSubject) ->
             actor_id=principal.user_id,
             verification_method="session",
             about_dpo=body.about_dpo,
+            consent_id=consent_id,
         )
     return _subject_view(row)
+
+
+async def _own_consent_id(conn: Any, consent_uuid: str, user_id: int) -> int:
+    """Hers, or 404 - the ownership test is the scope, and it does not say
+    whether somebody else's record exists."""
+    artefact = await consent_repo.artefact_by_uuid(conn, consent_uuid)
+    if not artefact or int(artefact["auth_user_id"]) != user_id:
+        raise NotFound("Consent record")
+    return int(artefact["consent_id"])
 
 
 async def _mine(conn: Any, request_uuid: UUID, user_id: int) -> dict[str, Any]:

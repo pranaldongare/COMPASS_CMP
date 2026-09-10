@@ -245,6 +245,13 @@ export interface MyRequest {
   linked_reference: string | null;
   /** The request this one is about - hers too, so the card can be jumped to. */
   linked_request_uuid: Uuid | null;
+  /** The consent she confined the request to, when she did. */
+  consent_uuid: Uuid | null;
+  consent_project: string | null;
+  consent_notice_code: string | null;
+  consent_notice_version: number | null;
+  consent_at: Timestamp | null;
+  consent_purposes: string[] | null;
   closed_at: Timestamp | null;
   clock: Clock;
 }

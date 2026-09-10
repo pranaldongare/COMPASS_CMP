@@ -23,8 +23,10 @@ from cmp.core.config import settings
 from cmp.db.repositories import audit as audit_repo
 from cmp.db.repositories import consent as consent_repo
 from cmp.db.repositories import exchange as exchange_repo
+from cmp.db.repositories import rights as rights_repo
 from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn
+from cmp.domain.rights.scope import consent_scope, scope_text
 
 #: What the file does not contain, said inside the file, so a reader who has
 #: only the file still knows the shape of what they were given.
@@ -33,6 +35,12 @@ _SCOPE_NOTE = (
     "notice text as served, every disclosure recorded, and the returns from every "
     "party ticketed. Data held by a processor is described by that processor's "
     "return, not reproduced here. Consent records are evidence and are never erased."
+)
+
+#: Added when the request was confined to one consent.
+_CONFINED_NOTE = (
+    " This request was confined to one consent: only that consent, the grants and "
+    "withdrawals in its chain, and the disclosures and holdings under it are described."
 )
 
 
@@ -81,10 +89,16 @@ async def build_response(
     """
     subject_id = int(request["subject_user_id"])
     subject = await user_repo.by_id(conn, subject_id) or {}
+    scope = consent_scope(request)
+    scope_ids: list[int] | None = (
+        await rights_repo.consent_chain_ids(conn, int(request["consent_id"])) if scope else None
+    )
 
     consents: list[dict[str, Any]] = []
     for row in await consent_repo.consents_of_user(conn, subject_id):
         consent_id = int(row["consent_id"])
+        if scope_ids is not None and consent_id not in scope_ids:
+            continue
         served = await consent_repo.served_notice_text(conn, consent_id)
         grants = await consent_repo.grants_of(conn, consent_id)
         assets = await consent_repo.assets_for_consent(conn, consent_id)
@@ -97,7 +111,11 @@ async def build_response(
             }
         )
 
-    disclosures = [_clean(d) for d in await exchange_repo.disclosures_for_user(conn, subject_id)]
+    disclosures = [
+        _clean(d)
+        for d in await exchange_repo.disclosures_for_user(conn, subject_id)
+        if scope_ids is None or int(d["consent_id"]) in scope_ids
+    ]
     trail = [
         _clean(e, drop=("detail_json",))
         for e in await audit_repo.for_subject(conn, subject_id, limit=500)
@@ -110,6 +128,7 @@ async def build_response(
             "received_at": request["received_at"],
             "responded_at": generated_at,
             "response_period_days": settings.rights_response_period_days,
+            "confined_to_consent": scope,
         },
         "data_fiduciary": {"contact": settings.notification_email_from},
         "data_principal": {
@@ -121,8 +140,9 @@ async def build_response(
         },
         "response": response_text,
         "outcome": request.get("outcome"),
-        "scope": _SCOPE_NOTE,
+        "scope": _SCOPE_NOTE + (_CONFINED_NOTE if scope else ""),
         "summary": {
+            "confined_to_consent": scope is not None,
             "consents": len(consents),
             "consents_withdrawn": sum(1 for c in consents if c.get("is_withdrawal")),
             "disclosures": len(disclosures),
@@ -180,7 +200,11 @@ def digest_text(package: dict[str, Any]) -> str:
             if bool(x.get("granted")) is granted
         ]
 
-    lines: list[str] = ["YOUR CONSENTS ON RECORD"]
+    lines: list[str] = []
+    confined = (package.get("request") or {}).get("confined_to_consent")
+    if confined:
+        lines += ["CONFINED TO ONE CONSENT", scope_text(confined), ""]
+    lines.append("YOUR CONSENTS ON RECORD")
     consents = package.get("consents", [])
     if consents:
         for c in consents:

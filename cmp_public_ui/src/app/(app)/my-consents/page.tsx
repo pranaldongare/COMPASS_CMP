@@ -17,12 +17,15 @@
 
 import {
   History,
+  MessageSquarePlus,
   Share2,
   ShieldOff,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyConsent } from "@/components/ui/graphics";
 import {
   Alert,
@@ -44,6 +47,7 @@ import {
   useMyDisclosures,
   useWithdraw,
 } from "@/features/my-consents";
+import { MyRequestForm } from "@/features/rights/components/request-form";
 import type { MyConsent } from "@/types";
 import { formatDateTime, formatDuration, humanise, shortHash } from "@/lib/format";
 import { useToast } from "@/providers";
@@ -106,9 +110,11 @@ function ConsentCard({
   onToggle: () => void;
 }) {
   const toast = useToast();
+  const router = useRouter();
   const grants = useMyConsentGrants(expanded ? consent.consent_uuid : undefined);
   const withdraw = useWithdraw(consent.consent_uuid);
   const [confirming, setConfirming] = React.useState<string[] | "all" | null>(null);
+  const [asking, setAsking] = React.useState(false);
   const [trailOpen, setTrailOpen] = React.useState(false);
   const trail = useMyConsentTrail(trailOpen ? consent.consent_uuid : undefined);
 
@@ -190,7 +196,29 @@ function ConsentCard({
               Withdraw everything
             </Button>
           )}
+          {/* A request about this consent alone: see the data under it, correct
+              it, or have it erased - confined to it at every step. Withdrawal
+              stops future processing; this is for what is already held. */}
+          <Button variant="ghost" size="sm" onClick={() => setAsking(true)}>
+            <MessageSquarePlus className="size-4" />
+            Ask about this consent
+          </Button>
         </div>
+
+        <Dialog open={asking} onOpenChange={(next) => !next && setAsking(false)}>
+          <DialogContent
+            title="A request about this consent"
+            description="Access, correction or erasure of the data held under this consent only. Signed in, so the clock starts now."
+          >
+            <MyRequestForm
+              consent={consent}
+              onDone={() => {
+                setAsking(false);
+                router.push("/my-requests");
+              }}
+            />
+          </DialogContent>
+        </Dialog>
 
         {trailOpen && (
           <div className="rounded-lg border border-border bg-bg-subtle p-4">

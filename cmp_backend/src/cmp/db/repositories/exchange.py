@@ -148,7 +148,7 @@ async def disclosures_for_user(conn: Conn, user_id: int) -> list[Row]:
     return await fetch_all(
         conn,
         """
-        SELECT e.export_uuid, e.export_type, e.exported_at,
+        SELECT el.consent_id, e.export_uuid, e.export_type, e.exported_at,
                p.project_uuid, p.project_name,
                s.site_uuid, s.site_label,
                pr.legal_name AS processor_name

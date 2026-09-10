@@ -16,7 +16,8 @@
  */
 "use client";
 
-import { ArrowDownRight, Download, History, MessageSquareWarning, Plus } from "lucide-react";
+import { ArrowDownRight, Download, History, MessageSquareWarning, Plus, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import * as React from "react";
 
 import { ActivityFeed } from "@/components/data-display/activity-feed";
@@ -215,6 +216,19 @@ function RequestCard({
       </CardHeader>
 
       <CardBody className="space-y-4">
+        {r.consent_uuid && (
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+            <ShieldCheck className="size-4 text-accent-text" aria-hidden="true" />
+            <span className="font-medium">About one consent only:</span>
+            <Link href="/my-consents" className="text-accent-text hover:underline">
+              {[r.consent_project, r.consent_notice_code && `${r.consent_notice_code} v${r.consent_notice_version ?? ""}`].filter(Boolean).join(" · ")}
+              {r.consent_at && ` · given ${formatDate(r.consent_at)}`}
+            </Link>
+            <span className="text-text-muted">
+              {r.consent_purposes && r.consent_purposes.length ? r.consent_purposes.join(", ") : "no purpose granted"}
+            </span>
+          </p>
+        )}
         <p className="whitespace-pre-wrap text-sm text-text-muted">{r.request_text}</p>
 
         {about && <AboutBlock request={r} about={about} onJump={onJump} />}

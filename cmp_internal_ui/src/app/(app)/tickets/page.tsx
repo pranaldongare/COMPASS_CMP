@@ -29,6 +29,7 @@ import {
   EmptyState,
   Skeleton,
 } from "@/components/ui/primitives";
+import { ConsentScope } from "@/features/rights/components/consent-scope";
 import { RequestTypeBadge, TicketBadge, dueCopy } from "@/features/rights/components/copy";
 import { myMessageAttachmentUrl } from "@/features/rights/api";
 import { BriefPanel, ReplyBox, Thread, UnreadBadge } from "@/features/rights/components/thread";
@@ -178,6 +179,22 @@ function TicketCard({ ticket: t, openAtFirst }: { ticket: MyTicket; openAtFirst?
           <Alert tone="info">
             <p className="text-sm">Withdrawn by the Privacy Office. Nothing further is needed from you; the reason is on the thread.</p>
           </Alert>
+        )}
+        {t.consent_uuid && (
+          <div className="text-sm">
+            <ConsentScope
+              link={false}
+              scope={{
+                consent_uuid: t.consent_uuid,
+                project: t.consent_project,
+                notice_code: t.consent_notice_code,
+                notice_version: t.consent_notice_version,
+                at: t.consent_at,
+                purposes: t.consent_purposes,
+              }}
+            />
+            <p className="mt-1 text-xs text-text-muted">Act only on data held under this consent.</p>
+          </div>
         )}
         <div>
           <p className="text-xs font-medium uppercase tracking-wider text-text-subtle">Instruction</p>

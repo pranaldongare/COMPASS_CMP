@@ -6705,6 +6705,10 @@ export interface components {
             about_dpo: boolean;
             /** Linked Reference */
             linked_reference: string | null;
+            /** Consent Uuid */
+            consent_uuid?: string | null;
+            /** Consent Project */
+            consent_project?: string | null;
             /** Holder Count */
             holder_count: number;
             /** Tickets Outstanding */
@@ -6736,6 +6740,18 @@ export interface components {
             linked_request_uuid: string | null;
             /** Linked Request Type */
             linked_request_type: string | null;
+            /** Consent Project Uuid */
+            consent_project_uuid?: string | null;
+            /** Consent Notice Code */
+            consent_notice_code?: string | null;
+            /** Consent Notice Version */
+            consent_notice_version?: number | null;
+            /** Consent At */
+            consent_at?: string | null;
+            /** Consent Withdrawn */
+            consent_withdrawn?: boolean | null;
+            /** Consent Purposes */
+            consent_purposes?: string[] | null;
             /** Nomination Uuid */
             nomination_uuid: string | null;
             /** Nominee Name */
@@ -6843,6 +6859,10 @@ export interface components {
             about_dpo: boolean;
             /** Linked Reference */
             linked_reference: string | null;
+            /** Consent Uuid */
+            consent_uuid?: string | null;
+            /** Consent Project */
+            consent_project?: string | null;
             /** Holder Count */
             holder_count: number;
             /** Tickets Outstanding */
@@ -6874,6 +6894,18 @@ export interface components {
             linked_request_uuid: string | null;
             /** Linked Request Type */
             linked_request_type: string | null;
+            /** Consent Project Uuid */
+            consent_project_uuid?: string | null;
+            /** Consent Notice Code */
+            consent_notice_code?: string | null;
+            /** Consent Notice Version */
+            consent_notice_version?: number | null;
+            /** Consent At */
+            consent_at?: string | null;
+            /** Consent Withdrawn */
+            consent_withdrawn?: boolean | null;
+            /** Consent Purposes */
+            consent_purposes?: string[] | null;
             /** Nomination Uuid */
             nomination_uuid: string | null;
             /** Nominee Name */
@@ -6970,6 +7002,10 @@ export interface components {
             about_dpo: boolean;
             /** Linked Reference */
             linked_reference: string | null;
+            /** Consent Uuid */
+            consent_uuid?: string | null;
+            /** Consent Project */
+            consent_project?: string | null;
             /** Holder Count */
             holder_count: number;
             /** Tickets Outstanding */
@@ -7264,6 +7300,8 @@ export interface components {
              * @default false
              */
             about_dpo: boolean;
+            /** Consent Uuid */
+            consent_uuid?: string | null;
         };
         /**
          * SubjectRequestOut
@@ -7320,6 +7358,18 @@ export interface components {
             linked_reference: string | null;
             /** Linked Request Uuid */
             linked_request_uuid: string | null;
+            /** Consent Uuid */
+            consent_uuid?: string | null;
+            /** Consent Project */
+            consent_project?: string | null;
+            /** Consent Notice Code */
+            consent_notice_code?: string | null;
+            /** Consent Notice Version */
+            consent_notice_version?: number | null;
+            /** Consent At */
+            consent_at?: string | null;
+            /** Consent Purposes */
+            consent_purposes?: string[] | null;
             /** Closed At */
             closed_at: string | null;
             clock: components["schemas"]["ClockOut"];
@@ -7400,6 +7450,18 @@ export interface components {
             reminders_sent: number;
             /** Return Evidence Name */
             return_evidence_name?: string | null;
+            /** Consent Uuid */
+            consent_uuid?: string | null;
+            /** Consent Project */
+            consent_project?: string | null;
+            /** Consent Notice Code */
+            consent_notice_code?: string | null;
+            /** Consent Notice Version */
+            consent_notice_version?: number | null;
+            /** Consent At */
+            consent_at?: string | null;
+            /** Consent Purposes */
+            consent_purposes?: string[] | null;
         };
         /** TransitionIn */
         TransitionIn: {

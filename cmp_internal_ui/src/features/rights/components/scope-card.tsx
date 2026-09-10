@@ -30,6 +30,7 @@ import {
   Select,
   Textarea,
 } from "@/components/ui/primitives";
+import { ConfinedNote } from "@/features/rights/components/consent-scope";
 import { useApplyItem, useDecideItem, useDeriveScope } from "@/features/rights/mutations";
 import { formatDate } from "@/lib/format";
 import { useToast } from "@/providers";
@@ -62,6 +63,7 @@ export function ScopeCard({ request: r }: { request: RightsRequestDetail }) {
             What can go, what must stay, and the legal basis for each. Rule 6 and Rule 8(3) bind
             even against her own request.
           </p>
+          {r.consent_uuid && <ConfinedNote project={r.consent_project} />}
         </div>
         {canWork && (
           <Button

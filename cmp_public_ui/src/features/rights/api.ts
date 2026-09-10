@@ -128,6 +128,7 @@ export interface MyRequestInput {
   request_type: RightsRequestType;
   request_text: string;
   about_dpo?: boolean;
+  consent_uuid?: string | null;
 }
 
 export function makeRequest(body: MyRequestInput): Promise<MyRequest> {

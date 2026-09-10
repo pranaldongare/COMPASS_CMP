@@ -37,6 +37,13 @@ _SELECT = """
   r.response_text, r.response_file_ref, r.response_file_hash, r.responded_at,
   r.download_expires_at, r.closed_at, r.created_at, r.updated_at,
   r.subject_user_id,
+  r.consent_id, c.consent_uuid, c.affirmative_action_at AS consent_at,
+  c.is_withdrawal AS consent_withdrawn, cn.notice_code AS consent_notice_code,
+  cn.version AS consent_notice_version, cp.project_name AS consent_project,
+  cp.project_uuid AS consent_project_uuid,
+  (SELECT array_remove(array_agg(pu.name ORDER BY pu.name), NULL)
+     FROM consent_purpose_grant g JOIN purpose pu ON pu.purpose_id = g.purpose_id
+    WHERE g.consent_id = r.consent_id AND g.granted) AS consent_purposes,
   s.uuid AS subject_uuid, s.full_name AS subject_name, s.email AS subject_email,
   s.mobile AS subject_mobile,
   lr.request_uuid AS linked_request_uuid, lr.reference AS linked_reference,
@@ -70,6 +77,9 @@ _FROM = """
   LEFT JOIN auth_user rv      ON rv.id = r.reviewer_user_id
   LEFT JOIN auth_user vb      ON vb.id = r.verified_by
   LEFT JOIN nomination n      ON n.nomination_id = r.nomination_id
+  LEFT JOIN consent_artefact c ON c.consent_id = r.consent_id
+  LEFT JOIN notice cn         ON cn.notice_id = c.notice_id
+  LEFT JOIN project cp        ON cp.project_id = cn.project_id
 """
 
 
@@ -112,6 +122,7 @@ async def create(
     trigger_evidence_ref: str | None = None,
     trigger_evidence_hash: str | None = None,
     about_dpo: bool = False,
+    consent_id: int | None = None,
 ) -> Row:
     """Insert a request. The reference is minted here and never reused."""
     row = await fetch_one(
@@ -122,7 +133,7 @@ async def create(
            submitted_contact, request_text, due_at, created_by,
            verification_method, verification_status, verified_at, verified_by,
            verification_note, linked_request_id, nomination_id, trigger_event,
-           trigger_evidence_ref, trigger_evidence_hash, about_dpo)
+           trigger_evidence_ref, trigger_evidence_hash, about_dpo, consent_id)
         VALUES
           ('RR-' || to_char(now(), 'YYYY') || '-'
              || lpad(nextval('rights_request_ref_seq')::text, 6, '0'),
@@ -134,7 +145,8 @@ async def create(
            CASE WHEN %(verification_status)s = 'verified' THEN now() END,
            %(verified_by)s, %(verification_note)s, %(linked_request_id)s,
            %(nomination_id)s, %(trigger_event)s::rights_trigger_event,
-           %(trigger_evidence_ref)s, %(trigger_evidence_hash)s, %(about_dpo)s)
+           %(trigger_evidence_ref)s, %(trigger_evidence_hash)s, %(about_dpo)s,
+           %(consent_id)s)
         RETURNING request_id, request_uuid, reference, received_at, due_at
         """,
         {
@@ -156,10 +168,29 @@ async def create(
             "trigger_evidence_ref": trigger_evidence_ref,
             "trigger_evidence_hash": trigger_evidence_hash,
             "about_dpo": about_dpo,
+            "consent_id": consent_id,
         },
     )
     assert row is not None
     return row
+
+
+async def consent_chain_ids(conn: Conn, consent_id: int) -> list[int]:
+    """The consent she named, with every grant and withdrawal in the same
+    chain - the same person, the same notice. An asset collected under the
+    original grant still points at that grant after she withdraws, so a
+    request confined to "this consent" has to reach the whole chain."""
+    rows = await fetch_all(
+        conn,
+        """
+        SELECT ca.consent_id
+        FROM consent_artefact ca
+        JOIN consent_artefact named ON named.consent_id = %s
+        WHERE ca.auth_user_id = named.auth_user_id AND ca.notice_id = named.notice_id
+        """,
+        (consent_id,),
+    )
+    return [int(r["consent_id"]) for r in rows]
 
 
 #: Columns the service may set after creation. Anything else is a programming
@@ -366,7 +397,9 @@ async def holder_by_uuid(conn: Conn, request_id: int, holder_uuid: str) -> Row |
     )
 
 
-async def derive_holder_candidates(conn: Conn, subject_user_id: int) -> list[Row]:
+async def derive_holder_candidates(
+    conn: Conn, subject_user_id: int, *, consent_ids: list[int] | None = None
+) -> list[Row]:
     """Who holds her data, from the records that say so.
 
     Two sources, joined: every export that carried one of her consent records
@@ -374,10 +407,15 @@ async def derive_holder_candidates(conn: Conn, subject_user_id: int) -> list[Row
     asset she appears in was captured by a data source a processor runs. The
     DPO confirms the list and adds what the records miss - the records name
     what the platform knows, and the platform does not know everything.
+
+    `consent_ids` confines the answer to records under those consents: a
+    request made about one consent names only the holders of data under it.
     """
+    by_export = "AND el.consent_id = ANY(%(c)s)" if consent_ids is not None else ""
+    by_asset = "AND ac.consent_id = ANY(%(c)s)" if consent_ids is not None else ""
     return await fetch_all(
         conn,
-        """
+        f"""
         WITH via_exports AS (
           SELECT pr.processor_id, pr.legal_name,
                  array_agg(DISTINCT e.export_uuid::text) AS exports
@@ -385,7 +423,7 @@ async def derive_holder_candidates(conn: Conn, subject_user_id: int) -> list[Row
           JOIN export_log e     ON e.export_id = el.export_id
           JOIN project_site s   ON s.site_id = e.site_id
           JOIN processor pr     ON pr.processor_id = s.processor_id
-          WHERE el.auth_user_id = %(u)s
+          WHERE el.auth_user_id = %(u)s {by_export}
           GROUP BY pr.processor_id, pr.legal_name
         ),
         via_assets AS (
@@ -396,7 +434,7 @@ async def derive_holder_candidates(conn: Conn, subject_user_id: int) -> list[Row
           JOIN data_asset da       ON da.asset_id = ac.asset_id
           JOIN data_source ds      ON ds.source_id = da.source_id
           JOIN processor pr        ON pr.processor_id = ds.processor_id
-          WHERE ca.auth_user_id = %(u)s
+          WHERE ca.auth_user_id = %(u)s {by_asset}
             AND coalesce(ac.disposition, 'active') = 'active'
           GROUP BY pr.processor_id, pr.legal_name
         )
@@ -408,7 +446,7 @@ async def derive_holder_candidates(conn: Conn, subject_user_id: int) -> list[Row
         FULL OUTER JOIN via_assets a ON a.processor_id = x.processor_id
         ORDER BY 2
         """,
-        {"u": subject_user_id},
+        {"u": subject_user_id, "c": consent_ids},
     )
 
 
@@ -609,7 +647,12 @@ async def holders_awaiting_office(conn: Conn, *, limit: int = 25) -> list[Row]:
 
 
 async def holder_brief(
-    conn: Conn, *, subject_user_id: int, processor_id: int | None
+    conn: Conn,
+    *,
+    subject_user_id: int,
+    processor_id: int | None,
+    consent_ids: list[int] | None = None,
+    scope: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """What the platform already knows, for the ticket to open with.
 
@@ -618,6 +661,10 @@ async def holder_brief(
     that carried her record to it, the assets it collected that she appears
     in. The ticket's question is then what the holder has *beyond* these -
     not who she is, which the platform knew all along.
+
+    Confined to `consent_ids` when the request is about one consent, and the
+    brief then carries `scope` - the consent as the holder should read it -
+    so the ticket says what it is confined to before it asks anything.
     """
     subject = await fetch_one(
         conn,
@@ -631,15 +678,20 @@ async def holder_brief(
             "email": subject["email"] if subject else None,
             "mobile": subject["mobile"] if subject else None,
         },
+        "scope": scope,
         "consents": [],
         "exports": [],
         "assets": [],
     }
     if processor_id is None:
         return brief
+    params: dict[str, Any] = {"u": subject_user_id, "p": processor_id, "c": consent_ids}
+    by_consent = "AND ca.consent_id = ANY(%(c)s)" if consent_ids is not None else ""
+    by_export = "AND el.consent_id = ANY(%(c)s)" if consent_ids is not None else ""
+    by_asset = "AND ac.consent_id = ANY(%(c)s)" if consent_ids is not None else ""
     consents = await fetch_all(
         conn,
-        """SELECT ca.consent_uuid, ca.affirmative_action_at, ca.is_withdrawal,
+        f"""SELECT ca.consent_uuid, ca.affirmative_action_at, ca.is_withdrawal,
                   p.project_name, s.site_label,
                   array_remove(array_agg(pu.name ORDER BY pu.name)
                                FILTER (WHERE g.granted), NULL) AS granted,
@@ -651,35 +703,35 @@ async def holder_brief(
            JOIN project p ON p.project_id = s.project_id
            LEFT JOIN consent_purpose_grant g ON g.consent_id = ca.consent_id
            LEFT JOIN purpose pu ON pu.purpose_id = g.purpose_id
-           WHERE ca.auth_user_id = %(u)s AND s.processor_id = %(p)s
+           WHERE ca.auth_user_id = %(u)s AND s.processor_id = %(p)s {by_consent}
            GROUP BY ca.consent_id, ca.consent_uuid, ca.affirmative_action_at, ca.is_withdrawal,
                     p.project_name, s.site_label
            ORDER BY ca.affirmative_action_at""",
-        {"u": subject_user_id, "p": processor_id},
+        params,
     )
     exports = await fetch_all(
         conn,
-        """SELECT e.export_uuid, e.exported_at, e.export_type, p.project_name
+        f"""SELECT e.export_uuid, e.exported_at, e.export_type, p.project_name
            FROM export_line el
            JOIN export_log e ON e.export_id = el.export_id
            JOIN project_site s ON s.site_id = e.site_id
            JOIN project p ON p.project_id = e.project_id
-           WHERE el.auth_user_id = %(u)s AND s.processor_id = %(p)s
+           WHERE el.auth_user_id = %(u)s AND s.processor_id = %(p)s {by_export}
            ORDER BY e.exported_at""",
-        {"u": subject_user_id, "p": processor_id},
+        params,
     )
     assets = await fetch_all(
         conn,
-        """SELECT da.asset_uuid, da.source_asset_ref, da.asset_type, ds.name AS source_name,
+        f"""SELECT da.asset_uuid, da.source_asset_ref, da.asset_type, ds.name AS source_name,
                   c.collected_on, ac.subject_role, ac.disposition
            FROM asset_consent ac
            JOIN consent_artefact ca ON ca.consent_id = ac.consent_id
            JOIN data_asset da ON da.asset_id = ac.asset_id
            JOIN data_source ds ON ds.source_id = da.source_id
            LEFT JOIN collection c ON c.collection_id = da.collection_id
-           WHERE ca.auth_user_id = %(u)s AND ds.processor_id = %(p)s
+           WHERE ca.auth_user_id = %(u)s AND ds.processor_id = %(p)s {by_asset}
            ORDER BY c.collected_on, da.asset_id""",
-        {"u": subject_user_id, "p": processor_id},
+        params,
     )
     brief["consents"] = [
         {
@@ -730,10 +782,19 @@ async def append_contact(conn: Conn, holder_id: int, entry: dict[str, Any]) -> N
 _TICKET_SELECT = f"""
   {_HOLDER_SELECT.split("FROM rights_request_holder h")[0]},
   r.request_uuid, r.reference, r.request_type, r.status AS request_status,
-  r.due_at AS request_due_at, r.received_at, s.full_name AS subject_name
+  r.due_at AS request_due_at, r.received_at, s.full_name AS subject_name,
+  r.consent_id, c.consent_uuid, c.affirmative_action_at AS consent_at,
+  cn.notice_code AS consent_notice_code, cn.version AS consent_notice_version,
+  cp.project_name AS consent_project,
+  (SELECT array_remove(array_agg(pu.name ORDER BY pu.name), NULL)
+     FROM consent_purpose_grant g JOIN purpose pu ON pu.purpose_id = g.purpose_id
+    WHERE g.consent_id = r.consent_id AND g.granted) AS consent_purposes
   FROM rights_request_holder h
   JOIN rights_request r ON r.request_id = h.request_id
   LEFT JOIN auth_user s ON s.id = r.subject_user_id
+  LEFT JOIN consent_artefact c ON c.consent_id = r.consent_id
+  LEFT JOIN notice cn ON cn.notice_id = c.notice_id
+  LEFT JOIN project cp ON cp.project_id = cn.project_id
   LEFT JOIN processor pr ON pr.processor_id = h.processor_id
   LEFT JOIN auth_user cb ON cb.id = h.confirmed_by
   LEFT JOIN processor_respondent rs ON rs.respondent_id = h.respondent_id
@@ -841,16 +902,20 @@ async def item_by_uuid(conn: Conn, request_id: int, item_uuid: str) -> Row | Non
     )
 
 
-async def derive_scope_candidates(conn: Conn, subject_user_id: int) -> list[Row]:
-    """Every appearance of her in a collected asset that is still active.
+async def derive_scope_candidates(
+    conn: Conn, subject_user_id: int, *, consent_ids: list[int] | None = None
+) -> list[Row]:
+    """Every appearance of her in a collected asset that is still active -
+    or, confined, every appearance collected under the consents named.
 
     `other_subjects` counts the other people in the same asset - consented,
     incidental or unidentified - whose rows are still active. Zero is ordinary
     erasure; anything else is the redaction case, decided per item.
     """
+    confined = "AND ac.consent_id = ANY(%(c)s)" if consent_ids is not None else ""
     return await fetch_all(
         conn,
-        """
+        f"""
         SELECT ac.asset_consent_id, da.asset_uuid, da.asset_type, ds.processor_id,
                pr.legal_name AS processor_name,
                (SELECT count(*) FROM asset_consent o
@@ -862,11 +927,11 @@ async def derive_scope_candidates(conn: Conn, subject_user_id: int) -> list[Row]
         JOIN data_asset da       ON da.asset_id = ac.asset_id
         JOIN data_source ds      ON ds.source_id = da.source_id
         LEFT JOIN processor pr   ON pr.processor_id = ds.processor_id
-        WHERE ca.auth_user_id = %s
+        WHERE ca.auth_user_id = %(u)s {confined}
           AND coalesce(ac.disposition, 'active') = 'active'
         ORDER BY da.created_at DESC
         """,
-        (subject_user_id,),
+        {"u": subject_user_id, "c": consent_ids},
     )
 
 

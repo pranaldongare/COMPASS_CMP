@@ -32,6 +32,7 @@ import {
   Textarea,
 } from "@/components/ui/primitives";
 import { useProcessors, useRespondents } from "@/features/registry";
+import { ConfinedNote } from "@/features/rights/components/consent-scope";
 import { TicketBadge, dueCopy } from "@/features/rights/components/copy";
 import { holderMessageAttachmentUrl } from "@/features/rights/api";
 import { BriefPanel, ReplyBox, Thread, UnreadBadge } from "@/features/rights/components/thread";
@@ -92,6 +93,7 @@ export function HoldersCard({ request: r }: { request: RightsRequestDetail }) {
           <p className="mt-1 text-xs text-text-muted">
             export_line and asset_consent are exact - the DPO adds what they miss.
           </p>
+          {r.consent_uuid && <ConfinedNote project={r.consent_project} />}
           {r.holders.length > 0 && <HoldersRollup holders={r.holders} />}
         </div>
         {canWork && (
