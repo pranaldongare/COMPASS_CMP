@@ -1276,3 +1276,91 @@ class TestConfinedToConsent:
         assert mine == int(first["consent_id"])
         with pytest.raises(NotFound):
             await _own_consent_id(conn, str(first["consent_uuid"]), seeded["users"]["dpo"]["id"])
+
+
+# ------------------------------------------------------- files with the response
+class TestFilesReleasedWithTheResponse:
+    async def test_files_are_kept_named_and_downloadable_on_the_window(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        from cmp.core.security import file_hash
+        from cmp.infrastructure.storage.service import storage
+
+        dpo = seeded["users"]["dpo"]["id"]
+        row = await _started(conn, seeded, await _portal_request(conn, seeded, "access"))
+        row = await service.transition(
+            conn,
+            await service.reload(conn, row),
+            to="collating",
+            reason=None,
+            role=DPO,
+            actor_id=dpo,
+        )
+        payload = b"name,recording\nRohit,GAIT-0417\n"
+        stored = {
+            "ref": storage().save(payload, subdir="responses", suggested_name="extract.csv"),
+            "hash": file_hash(payload),
+            "name": "extract.csv",
+            "size": len(payload),
+            "content_type": "text/csv",
+        }
+        row = await service.respond(
+            conn,
+            row,
+            outcome="no_records",
+            response_text="Nothing beyond the platform; the extract is attached.",
+            role=DPO,
+            actor_id=dpo,
+            files=[stored],
+        )
+        files = await repo.response_files_of(conn, int(row["request_id"]))
+        assert [f["file_name"] for f in files] == ["extract.csv"]
+        assert files[0]["file_hash"] == stored["hash"] and int(files[0]["size_bytes"]) == len(
+            payload
+        )
+
+        # Named in the record and in the mail's digest.
+        record, _name, _hash = await service.download(conn, row, actor_id=dpo, as_subject=False)
+        assert b'"files"' in record and b"extract.csv" in record
+        from cmp.domain.rights import package
+
+        assert "FILES RELEASED WITH THIS RESPONSE" in package.digest_text(
+            __import__("json").loads(record)
+        )
+
+        # She downloads it while the window is open; the DPO always can.
+        got, found = await service.download_file(
+            conn,
+            row,
+            file_uuid=str(files[0]["file_uuid"]),
+            actor_id=seeded["subject"]["id"],
+            as_subject=True,
+        )
+        assert got == payload and found["content_type"] == "text/csv"
+        await repo.update(
+            conn, int(row["request_id"]), download_expires_at=datetime.now(UTC) - timedelta(days=1)
+        )
+        with pytest.raises(Conflict):
+            await service.download_file(
+                conn,
+                await service.reload(conn, row),
+                file_uuid=str(files[0]["file_uuid"]),
+                actor_id=seeded["subject"]["id"],
+                as_subject=True,
+            )
+        got, _found = await service.download_file(
+            conn,
+            await service.reload(conn, row),
+            file_uuid=str(files[0]["file_uuid"]),
+            actor_id=dpo,
+            as_subject=False,
+        )
+        assert got == payload
+        with pytest.raises(NotFound):
+            await service.download_file(
+                conn,
+                await service.reload(conn, row),
+                file_uuid="00000000-0000-4000-8000-000000000000",
+                actor_id=dpo,
+                as_subject=False,
+            )

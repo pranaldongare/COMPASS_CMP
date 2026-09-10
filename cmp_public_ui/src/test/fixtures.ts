@@ -326,6 +326,7 @@ export function makeMyRequest(overrides: Partial<MyRequest> = {}): MyRequest {
     consent_purposes: null,
     closed_at: null,
     clock: makeClock(),
+    response_files: [],
     ...overrides,
   };
 }

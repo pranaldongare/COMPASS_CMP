@@ -78,8 +78,13 @@ async def build_response(
     holders: list[dict[str, Any]],
     response_text: str,
     generated_at: datetime,
+    attachments: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Assemble the response for one request. Read-only; the caller stores it.
+
+    `attachments` are the files the office released alongside - named and
+    hashed here so the record says what was given, and downloaded from her
+    account rather than reproduced in it.
 
     Built for every request that is linked to an account, whatever its kind
     and whatever the outcome. "No records held anywhere" is an answer about
@@ -167,6 +172,16 @@ async def build_response(
             h["label"]
             for h in holders
             if h["ticket_status"] in ("issued", "escalated", "unreturned")
+        ],
+        "files": [
+            {
+                "file_uuid": str(a["file_uuid"]),
+                "name": a["file_name"],
+                "sha256": a["file_hash"],
+                "size_bytes": int(a["size_bytes"]),
+                "content_type": a.get("content_type"),
+            }
+            for a in (attachments or [])
         ],
         "activity": trail,
         "your_rights": {
@@ -267,4 +282,8 @@ def digest_text(package: dict[str, Any]) -> str:
             + ", ".join(map(str, gaps))
             + ". This response is partial; the gap is named rather than hidden.",
         ]
+    files = package.get("files", [])
+    if files:
+        lines += ["", "FILES RELEASED WITH THIS RESPONSE (download them from your account)"]
+        lines += [f"- {f['name']} (sha256 {str(f['sha256'])[:12]}…)" for f in files]
     return "\n".join(lines)

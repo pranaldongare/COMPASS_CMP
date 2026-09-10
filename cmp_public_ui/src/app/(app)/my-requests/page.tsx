@@ -16,7 +16,7 @@
  */
 "use client";
 
-import { ArrowDownRight, Download, History, MessageSquareWarning, Plus, ShieldCheck } from "lucide-react";
+import { ArrowDownRight, Download, History, MessageSquareWarning, Paperclip, Plus, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
@@ -38,7 +38,7 @@ import {
   Skeleton,
   Textarea,
 } from "@/components/ui/primitives";
-import { downloadMyResponse } from "@/features/rights/api";
+import { downloadMyResponse, downloadMyResponseFile } from "@/features/rights/api";
 import { ClockColumn } from "@/features/rights/components/clock-column";
 import { OUTCOME_COPY, RequestStatusBadge, RequestTypeBadge } from "@/features/rights/components/copy";
 import { NominationCard } from "@/features/rights/components/nomination-card";
@@ -172,6 +172,24 @@ function RequestCard({
   const [trailOpen, setTrailOpen] = React.useState(false);
   const trail = useMyRequestTrail(trailOpen ? r.request_uuid : undefined);
   const [downloading, setDownloading] = React.useState(false);
+  const [fetching, setFetching] = React.useState<string | null>(null);
+
+  async function downloadFile(fileUuid: string, name: string) {
+    setFetching(fileUuid);
+    try {
+      const file = await downloadMyResponseFile(r.request_uuid, fileUuid);
+      saveBlob(file.blob, file.filename || name);
+    } catch (err) {
+      toast.error(
+        "Could not download",
+        err && typeof err === "object" && "userMessage" in err
+          ? (err as { userMessage: () => string }).userMessage()
+          : undefined,
+      );
+    } finally {
+      setFetching(null);
+    }
+  }
 
   async function download() {
     setDownloading(true);
@@ -254,6 +272,29 @@ function RequestCard({
                 <span className="font-medium">Remedy: </span>
                 {r.remedy_text}
               </p>
+            )}
+            {r.response_files.length > 0 && (
+              <div className="mt-3">
+                <p className="text-2xs font-semibold uppercase tracking-wide text-text-subtle">
+                  Files released with this response
+                </p>
+                <ul className="mt-1 space-y-1">
+                  {r.response_files.map((f) => (
+                    <li key={f.file_uuid} className="flex flex-wrap items-center gap-2 text-sm">
+                      <Paperclip className="size-3.5 text-text-subtle" aria-hidden="true" />
+                      <span>{f.file_name}</span>
+                      {r.download_available ? (
+                        <Button variant="ghost" size="sm" loading={fetching === f.file_uuid} onClick={() => downloadFile(f.file_uuid, f.file_name)}>
+                          <Download className="size-4" />
+                          Download
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-text-subtle">download window closed</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
             <div className="mt-3 flex flex-wrap gap-2">
               {r.download_available && (

@@ -395,12 +395,23 @@ export interface LinkedRequest extends LinkedRef {
   in_scope: boolean;
 }
 
+/** A file the office released with the response, downloaded from the account. */
+export interface ResponseFile {
+  file_uuid: Uuid;
+  file_name: string;
+  file_hash: string;
+  size_bytes: number;
+  content_type: string | null;
+  created_at: Timestamp;
+}
+
 export interface RightsRequestDetail extends RightsRequest {
   holders: RightsHolder[];
   items: RightsScopeItem[];
   transitions: RightsTransitionOption[];
   linked_request: LinkedRequest | null;
   linked_from: LinkedRef[];
+  response_files: ResponseFile[];
 }
 
 /** Her own request. Nothing here is ours. */
@@ -428,6 +439,7 @@ export interface MyRequest {
   linked_request_uuid: Uuid | null;
   closed_at: Timestamp | null;
   clock: Clock;
+  response_files: ResponseFile[];
 }
 
 export interface Nomination {

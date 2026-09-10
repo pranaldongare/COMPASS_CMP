@@ -334,12 +334,24 @@ class LinkedRequestOut(LinkedRefOut):
     in_scope: bool
 
 
+class ResponseFileOut(Out):
+    """A file released with the response, downloaded from the account."""
+
+    file_uuid: UUID
+    file_name: str
+    file_hash: str
+    size_bytes: int
+    content_type: str | None
+    created_at: datetime
+
+
 class RequestDetail(RequestOut):
     holders: list[HolderOut]
     items: list[ItemOut]
     transitions: list[dict[str, Any]]
     linked_request: LinkedRequestOut | None
     linked_from: list[LinkedRefOut]
+    response_files: list[ResponseFileOut] = Field(default_factory=list)
 
 
 class TransitionsOut(Out):
@@ -380,6 +392,7 @@ class SubjectRequestOut(Out):
     consent_purposes: list[str] | None = None
     closed_at: datetime | None
     clock: ClockOut
+    response_files: list[ResponseFileOut] = Field(default_factory=list)
 
 
 class NominationOut(Out):
@@ -487,11 +500,6 @@ class DecideIn(Schema):
     holder_uuid: UUID | None = None
 
 
-class RespondIn(Schema):
-    outcome: str
-    response_text: LongText
-
-
 class GrievanceDecisionIn(Schema):
     upheld: bool
     remedy_text: Annotated[str | None, Field(default=None, max_length=5000)] = None
@@ -548,17 +556,32 @@ async def _detail(conn: Any, row: dict[str, Any], principal: Any) -> dict[str, A
         "transitions": service.transitions(row, role=principal.role),
         "linked_request": await _linked(conn, row, principal),
         "linked_from": await repo.linked_from(conn, request_id),
+        "response_files": await repo.response_files_of(conn, request_id),
     }
 
 
-def _subject_view(row: dict[str, Any]) -> dict[str, Any]:
+def _subject_view(row: dict[str, Any], files: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     expires = row.get("download_expires_at")
     return {
         **_with_clock(row),
         "download_available": bool(
             row.get("response_file_ref") and expires and expires > datetime.now(expires.tzinfo)
         ),
+        "response_files": files or [],
     }
+
+
+async def _subject_views(conn: Any, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Her requests with the files released on each - only closed ones have any."""
+    out = []
+    for r in rows:
+        files = (
+            await repo.response_files_of(conn, int(r["request_id"]))
+            if r.get("status") == "closed"
+            else []
+        )
+        out.append(_subject_view(r, files))
+    return out
 
 
 async def _trail(conn: Any, reference: str, *, for_subject: bool) -> list[dict[str, Any]]:
@@ -1332,19 +1355,68 @@ async def apply_item(
 
 # ----------------------------------------------------------- staff: closure
 @router.post("/{request_uuid}/respond", response_model=RequestOut, summary="Release and close")
-async def respond(request_uuid: UUID, body: RespondIn, principal: RightsWriter) -> dict[str, Any]:
+async def respond(
+    request_uuid: UUID,
+    principal: RightsWriter,
+    outcome: Annotated[str, Form()],
+    response_text: Annotated[str, Form(min_length=1, max_length=20_000)],
+    files: Annotated[list[UploadFile], File()] = [],  # noqa: B006 - FastAPI reads the default
+) -> dict[str, Any]:
+    """Multipart: the outcome and the words, plus any files released with
+    them - an extract a holder returned, a corrected document, a letter."""
+    stored = [await _stored_file(f) for f in files if f.filename]
     async with transaction() as conn:
         row = await _load(conn, request_uuid, principal)
         return _with_clock(
             await service.respond(
                 conn,
                 row,
-                outcome=body.outcome,
-                response_text=body.response_text,
+                outcome=outcome,
+                response_text=response_text,
                 role=principal.role,
                 actor_id=principal.user_id,
+                files=stored,
             )
         )
+
+
+async def _stored_file(upload: UploadFile) -> dict[str, Any]:
+    """A file released with a response, checked and put in storage."""
+    payload = await upload.read()
+    check_upload(payload, upload.content_type, EVIDENCE)
+    name = _safe_name(upload.filename) or "attachment"
+    return {
+        "ref": storage().save(payload, subdir="responses", suggested_name=name),
+        "hash": file_hash(payload),
+        "name": name,
+        "size": len(payload),
+        "content_type": upload.content_type,
+    }
+
+
+@router.get("/{request_uuid}/files/{file_uuid}", summary="A file released with the response")
+async def download_response_file(
+    request_uuid: UUID, file_uuid: UUID, principal: RightsReader
+) -> Response:
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        payload, found = await service.download_file(
+            conn, row, file_uuid=str(file_uuid), actor_id=principal.user_id, as_subject=False
+        )
+    return _released(payload, found)
+
+
+def _released(payload: bytes, found: dict[str, Any]) -> Response:
+    return Response(
+        content=payload,
+        media_type=str(found.get("content_type") or "application/octet-stream"),
+        headers={
+            "Content-Disposition": f'attachment; filename="{found["file_name"]}"',
+            "X-Recorded-SHA256": str(found["file_hash"]),
+            "X-Content-SHA256": file_hash(payload),
+            "Cache-Control": "no-store",
+        },
+    )
 
 
 @router.post("/{request_uuid}/decide", summary="Decide a grievance")
@@ -1399,7 +1471,7 @@ def _file(payload: bytes, filename: str, recorded: str) -> Response:
 async def my_requests(principal: RequireDataSubject) -> list[dict[str, Any]]:
     async with connection() as conn:
         rows = await repo.for_subject(conn, principal.user_id)
-    return [_subject_view(r) for r in rows]
+        return await _subject_views(conn, rows)
 
 
 @subject_router.post(
@@ -1442,7 +1514,7 @@ async def make_request(body: SubjectRequestIn, principal: RequireDataSubject) ->
             about_dpo=body.about_dpo,
             consent_id=consent_id,
         )
-    return _subject_view(row)
+    return _subject_view(row, await repo.response_files_of(conn, int(row["request_id"])))
 
 
 async def _own_consent_id(conn: Any, consent_uuid: str, user_id: int) -> int:
@@ -1464,7 +1536,8 @@ async def _mine(conn: Any, request_uuid: UUID, user_id: int) -> dict[str, Any]:
 @subject_router.get("/requests/{request_uuid}", response_model=SubjectRequestOut)
 async def my_request(request_uuid: UUID, principal: RequireDataSubject) -> dict[str, Any]:
     async with connection() as conn:
-        return _subject_view(await _mine(conn, request_uuid, principal.user_id))
+        row = await _mine(conn, request_uuid, principal.user_id)
+        return (await _subject_views(conn, [row]))[0]
 
 
 @subject_router.get("/requests/{request_uuid}/trail", summary="What was recorded about my request")
@@ -1486,6 +1559,21 @@ async def my_download(request_uuid: UUID, principal: RequireDataSubject) -> Resp
             conn, row, actor_id=principal.user_id, as_subject=True
         )
     return _file(payload, filename, recorded)
+
+
+@subject_router.get(
+    "/requests/{request_uuid}/files/{file_uuid}",
+    summary="A file released with the response, while the window is open",
+)
+async def my_download_file(
+    request_uuid: UUID, file_uuid: UUID, principal: RequireDataSubject
+) -> Response:
+    async with transaction() as conn:
+        row = await _mine(conn, request_uuid, principal.user_id)
+        payload, found = await service.download_file(
+            conn, row, file_uuid=str(file_uuid), actor_id=principal.user_id, as_subject=True
+        )
+    return _released(payload, found)
 
 
 @subject_router.post(

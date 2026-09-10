@@ -302,6 +302,7 @@ export function makeRequestDetail(overrides: Partial<RightsRequestDetail> = {}):
     transitions: [],
     linked_request: null,
     linked_from: [],
+    response_files: [],
     ...overrides,
   };
 }
@@ -331,6 +332,7 @@ export function makeMyRequest(overrides: Partial<MyRequest> = {}): MyRequest {
     linked_request_uuid: null,
     closed_at: null,
     clock: makeClock(),
+    response_files: [],
     ...overrides,
   };
 }

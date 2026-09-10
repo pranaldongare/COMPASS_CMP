@@ -367,6 +367,55 @@ async def list_requests(
     return items, cursor, int((total or {}).get("n", 0))
 
 
+# ------------------------------------------------------------ response files
+_FILE_SELECT = """
+  f.file_id, f.file_uuid, f.request_id, f.file_ref, f.file_hash, f.file_name,
+  f.size_bytes, f.content_type, f.created_at
+  FROM rights_response_file f
+"""
+
+
+async def add_response_file(
+    conn: Conn,
+    request_id: int,
+    *,
+    file_ref: str,
+    file_hash: str,
+    file_name: str,
+    size_bytes: int,
+    content_type: str | None,
+    uploaded_by: int | None,
+) -> Row:
+    """A file released with the response. Kept with the request; never edited."""
+    row = await fetch_one(
+        conn,
+        """INSERT INTO rights_response_file
+             (request_id, file_ref, file_hash, file_name, size_bytes, content_type, uploaded_by)
+           VALUES (%s, %s, %s, %s, %s, %s, %s)
+           RETURNING file_id, file_uuid, request_id, file_ref, file_hash, file_name,
+                     size_bytes, content_type, created_at""",
+        (request_id, file_ref, file_hash, file_name, size_bytes, content_type, uploaded_by),
+    )
+    assert row is not None
+    return row
+
+
+async def response_files_of(conn: Conn, request_id: int) -> list[Row]:
+    return await fetch_all(
+        conn,
+        f"SELECT {_FILE_SELECT} WHERE f.request_id = %s ORDER BY f.file_id",
+        (request_id,),
+    )
+
+
+async def response_file_by_uuid(conn: Conn, request_id: int, file_uuid: str) -> Row | None:
+    return await fetch_one(
+        conn,
+        f"SELECT {_FILE_SELECT} WHERE f.request_id = %s AND f.file_uuid = %s",
+        (request_id, file_uuid),
+    )
+
+
 # ------------------------------------------------------------------- holders
 _HOLDER_SELECT = """
   h.holder_id, h.holder_uuid, h.request_id, h.label, h.derived_from, h.evidence,

@@ -221,6 +221,16 @@ export interface RightsRequestDetail extends RightsRequest {
   transitions: RightsTransitionOption[];
 }
 
+/** A file the Privacy Office released with the response, downloaded from her account. */
+export interface ResponseFile {
+  file_uuid: Uuid;
+  file_name: string;
+  file_hash: string;
+  size_bytes: number;
+  content_type: string | null;
+  created_at: Timestamp;
+}
+
 /** Her own request. Nothing here is ours. */
 export interface MyRequest {
   request_uuid: Uuid;
@@ -254,6 +264,7 @@ export interface MyRequest {
   consent_purposes: string[] | null;
   closed_at: Timestamp | null;
   clock: Clock;
+  response_files: ResponseFile[];
 }
 
 export interface Nomination {

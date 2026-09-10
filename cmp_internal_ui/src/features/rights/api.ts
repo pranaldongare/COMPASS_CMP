@@ -200,8 +200,22 @@ export const decideItem = (uuid: Uuid, itemUuid: Uuid, body: DecideItemInput) =>
 export const applyItem = (uuid: Uuid, itemUuid: Uuid) =>
   apiPost<RightsScopeItem>(action(uuid, `scope/${itemUuid}/apply`), {});
 
-export const respond = (uuid: Uuid, body: { outcome: string; response_text: string }) =>
-  apiPost<RightsRequest>(action(uuid, "respond"), body);
+export interface RespondInput {
+  outcome: string;
+  response_text: string;
+  /** Files released with the response: an extract, a corrected document, a letter. */
+  files?: File[];
+}
+export function respond(uuid: Uuid, body: RespondInput): Promise<RightsRequest> {
+  const form = new FormData();
+  form.set("outcome", body.outcome);
+  form.set("response_text", body.response_text);
+  for (const f of body.files ?? []) form.append("files", f);
+  return apiPost<RightsRequest>(action(uuid, "respond"), form);
+}
+export function downloadResponseFile(uuid: Uuid, fileUuid: Uuid) {
+  return apiDownload(`/requests/${uuid}/files/${fileUuid}`);
+}
 export interface GrievanceDecisionInput {
   upheld: boolean;
   remedy_text?: string | null;

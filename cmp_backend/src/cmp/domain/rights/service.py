@@ -2180,8 +2180,13 @@ async def respond(
     response_text: str,
     role: Role | str,
     actor_id: int,
+    files: list[dict[str, Any]] | None = None,
 ) -> Row:
     """Release and close. Nothing releases automatically; the DPO signs off here.
+
+    `files` are already in storage - reference, hash, name, size, type - and
+    are released with the response: kept on the request, named in the record
+    and the mail, downloaded from her account on the same window.
 
     An access response is a file she downloads, authenticated and for a limited
     time, from her own dashboard - not an attachment. A holder that never
@@ -2214,6 +2219,20 @@ async def respond(
     file_hash: str | None = None
     expires: datetime | None = None
     digest_for_mail = ""
+    attachments: list[Row] = []
+    for f in files or []:
+        attachments.append(
+            await repo.add_response_file(
+                conn,
+                int(row["request_id"]),
+                file_ref=str(f["ref"]),
+                file_hash=str(f["hash"]),
+                file_name=str(f["name"]),
+                size_bytes=int(f["size"]),
+                content_type=f.get("content_type"),
+                uploaded_by=actor_id,
+            )
+        )
     # The record goes back to her whatever the kind of request and whatever
     # the outcome. "No records held anywhere" is an answer about the holders;
     # her consents, the notices she read and the disclosures made are what the
@@ -2231,6 +2250,7 @@ async def respond(
             holders=holders,
             response_text=response_text.strip(),
             generated_at=now,
+            attachments=attachments,
         )
         payload = package.encode(built)
         digest_for_mail = package.digest_text(built)
@@ -2263,6 +2283,7 @@ async def respond(
         detail={
             "outcome": result.value,
             "file_sha256": file_hash,
+            "files_released": [str(a["file_name"]) for a in attachments],
             "holders_unreturned": gap,
             "on_time": now <= row["due_at"],
         },
@@ -2410,6 +2431,35 @@ async def download(
         detail={"as_subject": as_subject},
     )
     return payload, f"{row['reference']}.json", str(row["response_file_hash"] or "")
+
+
+async def download_file(
+    conn: Conn, row: Row, *, file_uuid: str, actor_id: int | None, as_subject: bool
+) -> tuple[bytes, Row]:
+    """A file released with the response, on the same window as the record.
+    Audited on every read - a download is a disclosure."""
+    found = await repo.response_file_by_uuid(conn, int(row["request_id"]), file_uuid)
+    if not found:
+        raise NotFound("Response file")
+    if as_subject:
+        expires = row.get("download_expires_at")
+        if expires is None or expires < datetime.now(UTC):
+            raise Conflict(
+                "The download period for this response has passed. Ask the Privacy Office "
+                "to release it again.",
+                code="download_expired",
+            )
+    from cmp.infrastructure.storage.service import read_upload
+
+    payload = read_upload(str(found["file_ref"]))
+    await _record(
+        conn,
+        row,
+        Event.RIGHTS_RESPONSE_DOWNLOADED,
+        actor_user_id=actor_id,
+        detail={"as_subject": as_subject, "file": found["file_name"]},
+    )
+    return payload, found
 
 
 async def dispute(conn: Conn, row: Row, *, subject_user_id: int, text: str, about_dpo: bool) -> Row:

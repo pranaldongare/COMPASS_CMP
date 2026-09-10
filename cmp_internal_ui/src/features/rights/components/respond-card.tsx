@@ -12,14 +12,14 @@
  */
 "use client";
 
-import { Download, Send } from "lucide-react";
+import { Download, Paperclip, Send, X } from "lucide-react";
 import * as React from "react";
 
 import { Alert, Button, Card, CardBody, CardHeader, CardTitle, Field, Select, Textarea } from "@/components/ui/primitives";
-import { downloadResponse } from "@/features/rights/api";
+import { downloadResponse, downloadResponseFile } from "@/features/rights/api";
 import { OUTCOME_COPY } from "@/features/rights/components/copy";
 import { useDecideGrievance, useRespond } from "@/features/rights/mutations";
-import { formatDate, formatDateTime, saveBlob, shortHash } from "@/lib/format";
+import { formatBytes, formatDate, formatDateTime, saveBlob, shortHash } from "@/lib/format";
 import { useToast } from "@/providers";
 import type { RightsRequestDetail } from "@/types";
 
@@ -42,6 +42,20 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
   const [remedy, setRemedy] = React.useState("");
   const [rerun, setRerun] = React.useState(Boolean(r.linked_reference));
   const [downloading, setDownloading] = React.useState(false);
+  const [files, setFiles] = React.useState<File[]>([]);
+  const [fetching, setFetching] = React.useState<string | null>(null);
+
+  async function downloadFile(fileUuid: string) {
+    setFetching(fileUuid);
+    try {
+      const file = await downloadResponseFile(r.request_uuid, fileUuid);
+      saveBlob(file.blob, file.filename);
+    } catch (err) {
+      toast.error("Could not download", messageOf(err, "The server refused."));
+    } finally {
+      setFetching(null);
+    }
+  }
 
   async function download() {
     setDownloading(true);
@@ -81,6 +95,24 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
                 <Download className="size-4" />
                 Download the file
               </Button>
+            </div>
+          )}
+          {r.response_files.length > 0 && (
+            <div>
+              <p className="text-2xs font-semibold uppercase tracking-wide text-text-subtle">Released with the response</p>
+              <ul className="mt-1 space-y-1">
+                {r.response_files.map((f) => (
+                  <li key={f.file_uuid} className="flex flex-wrap items-center gap-2 text-sm">
+                    <Paperclip className="size-3.5 text-text-subtle" aria-hidden="true" />
+                    <span>{f.file_name}</span>
+                    <span className="text-xs text-text-muted">{formatBytes(f.size_bytes)} · sha256 {shortHash(f.file_hash, 12)}</span>
+                    <Button variant="ghost" size="sm" loading={fetching === f.file_uuid} onClick={() => downloadFile(f.file_uuid)}>
+                      <Download className="size-4" />
+                      Download
+                    </Button>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </CardBody>
@@ -195,14 +227,50 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
         >
           {(p) => <Textarea {...p} rows={5} value={text} onChange={(e) => setText(e.target.value)} />}
         </Field>
+        <Field
+          label="Files released with the response"
+          hint="Optional. An extract a holder returned, a corrected document, a letter. PDF, image, CSV or text, up to 25 MB each. She downloads them from her account on the same window as the record."
+        >
+          {(p) => (
+            <div className="space-y-2">
+              <input
+                {...p}
+                type="file"
+                multiple
+                accept=".pdf,.png,.jpg,.jpeg,.csv,.txt,application/pdf,image/*,text/csv,text/plain"
+                className="block text-sm"
+                onChange={(e) => {
+                  const picked = Array.from(e.target.files ?? []);
+                  setFiles((prev) => [...prev, ...picked.filter((n) => !prev.some((o) => o.name === n.name && o.size === n.size))]);
+                  e.target.value = "";
+                }}
+              />
+              {files.length > 0 && (
+                <ul className="space-y-1">
+                  {files.map((f) => (
+                    <li key={`${f.name}-${f.size}`} className="flex items-center gap-2 text-sm">
+                      <Paperclip className="size-3.5 text-text-subtle" aria-hidden="true" />
+                      <span>{f.name}</span>
+                      <span className="text-xs text-text-muted">{formatBytes(f.size)}</span>
+                      <button type="button" className="text-text-subtle hover:text-danger-text" aria-label={`Remove ${f.name}`} onClick={() => setFiles((prev) => prev.filter((o) => o !== f))}>
+                        <X className="size-3.5" aria-hidden="true" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </Field>
         <Button
           variant="primary"
           disabled={!closure.allowed || text.trim().length < 3}
           loading={respond.isPending}
           onClick={async () => {
             try {
-              await respond.mutateAsync({ outcome, response_text: text });
-              toast.success("Released and closed", "She has been told the response is ready.");
+              await respond.mutateAsync({ outcome, response_text: text, files });
+              setFiles([]);
+              toast.success("Released and closed", files.length ? `She has been told; ${files.length} file${files.length === 1 ? "" : "s"} released with the response.` : "She has been told the response is ready.");
             } catch (err) {
               toast.error("Not released", messageOf(err, "The server refused."));
             }
