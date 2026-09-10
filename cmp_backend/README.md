@@ -1,7 +1,7 @@
 # CMP backend
 
 The API of the consent management platform: FastAPI 0.141 on Python 3.12,
-PostgreSQL 16, Redis 7, Celery 5. 233 endpoints over 31 tables, every query
+PostgreSQL 16, Redis 7, Celery 5. 238 endpoints over 32 tables, every query
 hand-written SQL over psycopg 3, every migration raw DDL. The repository-wide
 documentation is under [../docs/](../docs/README.md); this README is the
 backend's own front door.
@@ -23,7 +23,7 @@ Then:
 ```bash
 uv sync --all-extras --dev
 cp .env.example .env               # POSTGRES_DB=cmp_dev; PUBLIC_BASE_URL and CONSOLE_BASE_URL to the two portals
-uv run alembic upgrade head        # 23 migrations: 31 tables, 39 enums, triggers, grants
+uv run alembic upgrade head        # 24 migrations: 32 tables, 39 enums, triggers, grants
 uv run python scripts/seed.py      # one coherent world: a user per role, processors, sources, sites, a project through to approved, a live link
 
 uv run python -m cmp --port 8000
@@ -171,7 +171,7 @@ src/cmp/
   bootstrap/         assembly: factory, lifespan, middleware, routers, container
   api/
     routers/v1/      audit, auth, consents, dashboard, delegations, exchange, me,
-                     notices, projects, registry, rights, system, users
+                     messages, notices, projects, registry, rights, system, users
     routers/public/  consent (the /c/{token} flow), rights (the public pages)
     dependencies/    sessions, csrf, authentication, authorization, paging, filters
     middleware/      request context, security headers, body limit, access log
@@ -179,14 +179,16 @@ src/cmp/
   auth/              identity, authentication (password, MFA, OTP), authorization
                      (roles, resources, scopes, evaluator, policy), sessions, rate limits
   domain/            one package per aggregate; the only layer that writes:
-                     projects, notices, consent, exchange, registry, users, rights, audit, shared
+                     projects, notices, consent, exchange, registry, users, rights,
+                     messaging, audit, shared
   validation/        constrained types, choice(), contact normalisation
   db/                pool, SQL helpers, one repository per table cluster
-  infrastructure/    email, sms, storage, outbound HTTP; swappable adapters
-  core/              config, enums, constants, permissions, security, errors, pagination
+  infrastructure/    email, sms, storage; messaging (the one path to a transport)
+  core/              config, enums, constants, permissions, security, errors, pagination,
+                     messages (every junction and its default words)
   tasks/             Celery: authentication, notifications, maintenance, exchange, rights
 
-migrations/          23 raw-SQL Alembic revisions (docs/database/migrations.md)
+migrations/          24 raw-SQL Alembic revisions (docs/database/migrations.md)
 tests/               unit/, integration/ (with enforcement/, database/, auth/), security/
 scripts/             seed, create_admin, reset_dev, healthcheck, db
 docs/                architecture, security, database, operations (this service's own)

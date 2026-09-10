@@ -93,6 +93,7 @@ const ROLES = [
       "/audit",
       "/users",
       "/cover",
+      "/messages",
     ],
   },
   {
@@ -100,7 +101,16 @@ const ROLES = [
     name: "Administrator",
     // Accounts, lockouts, cover, the registry, and the grievances escalated
     // away from the DPO - which is what "/requests" is for this role.
-    expected: ["/dashboard", "/users", "/processors", "/sources", "/requests", "/audit", "/cover"],
+    expected: [
+      "/dashboard",
+      "/users",
+      "/processors",
+      "/sources",
+      "/requests",
+      "/audit",
+      "/cover",
+      "/messages",
+    ],
   },
   {
     role: "rco",

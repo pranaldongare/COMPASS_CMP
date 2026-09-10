@@ -243,6 +243,12 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.DPO: Grant(Scope.ALL),
         Role.ADMIN: Grant(Scope.ALL),
     },
+    # The words of every message the platform sends. The two supervising
+    # roles may replace them; everyone else receives them.
+    "message_template": {
+        Role.DPO: Grant(Scope.ALL, write=True),
+        Role.ADMIN: Grant(Scope.ALL, write=True),
+    },
     "me": {
         Role.DATA_SUBJECT: Grant(Scope.OWN, write=True),
     },
@@ -325,6 +331,8 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "requests",
         "audit",
         "users",
+        # The words of every message the platform sends.
+        "messages",
         # Cover is for the roles whose access is defined by assignment. An R&D
         # User's rows are the ones they created, and authorship is not something
         # somebody else can stand in for - so it is absent there, deliberately,
@@ -400,6 +408,8 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     Role.ADMIN: (
         "dashboard",
         "users",
+        # The words of every message the platform sends.
+        "messages",
         "processors",
         "sources",
         "requests",

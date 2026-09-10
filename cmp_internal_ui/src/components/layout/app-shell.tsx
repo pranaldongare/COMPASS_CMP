@@ -23,6 +23,7 @@ import {
   FolderKanban,
   Gauge,
   HandHelping,
+  MessageSquareText,
   Inbox,
   Layers,
   Link2,
@@ -111,6 +112,8 @@ const SECTIONS: NavSection[] = [
       { key: "audit", href: "/audit", label: "Audit trail", icon: ShieldCheck },
       { key: "users", href: "/users", label: "Users", icon: Users },
       { key: "cover", href: "/cover", label: "Cover", icon: HandHelping },
+      // The words of every email and SMS the platform sends.
+      { key: "messages", href: "/messages", label: "Messages", icon: MessageSquareText },
     ],
   },
   {
@@ -236,7 +239,7 @@ function Header({
         {me && (
           <div className="flex items-center gap-2.5 border-l border-border pl-3">
             <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium leading-tight">{me.full_name}</p>
+              <p className="text-sm leading-tight font-medium">{me.full_name}</p>
               <StatusBadge kind="role" value={me.role} dot={false} className="mt-0.5" />
             </div>
             <span
@@ -292,7 +295,7 @@ function Sidebar({
         <div className="flex-1 overflow-y-auto px-3 py-4">
           {sections.map((section) => (
             <div key={section.title} className="mb-5 last:mb-0">
-              <p className="mb-1.5 px-3 text-2xs font-semibold uppercase tracking-wider text-text-subtle">
+              <p className="mb-1.5 px-3 text-2xs font-semibold tracking-wider text-text-subtle uppercase">
                 {section.title}
               </p>
               <ul className="space-y-0.5">
@@ -306,7 +309,7 @@ function Sidebar({
                         href={item.href}
                         aria-current={active ? "page" : undefined}
                         className={cn(
-                          "group relative flex items-center gap-2.5 rounded-lg py-2 pl-3 pr-2 text-sm",
+                          "group relative flex items-center gap-2.5 rounded-lg py-2 pr-2 pl-3 text-sm",
                           "transition-[background-color,color] duration-150",
                           active
                             ? "bg-accent-subtle font-medium text-accent-text"
@@ -328,7 +331,9 @@ function Sidebar({
                         <Icon
                           className={cn(
                             "size-4 shrink-0 transition-colors",
-                            active ? "text-accent" : "text-text-subtle group-hover:text-text-muted",
+                            active
+                              ? "text-accent"
+                              : "text-text-subtle group-hover:text-text-muted",
                           )}
                           aria-hidden="true"
                         />
@@ -381,7 +386,7 @@ export function PageHeader({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           {eyebrow && (
-            <p className="mb-1 text-2xs font-semibold uppercase tracking-wider text-accent-text">
+            <p className="mb-1 text-2xs font-semibold tracking-wider text-accent-text uppercase">
               {eyebrow}
             </p>
           )}
@@ -391,7 +396,10 @@ export function PageHeader({
           )}
         </div>
         {actions && (
-          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2" data-testid="page-actions">
+          <div
+            className="flex max-w-full min-w-0 flex-wrap items-center gap-2"
+            data-testid="page-actions"
+          >
             {actions}
           </div>
         )}
@@ -411,9 +419,16 @@ export function PageHeader({
 function TicketsBadge() {
   const tickets = useMyTickets();
   const count = (tickets.data ?? []).filter(
-    (t) => (t.ticket_status === "issued" || t.ticket_status === "escalated") && t.unread_for_holder > 0,
+    (t) =>
+      (t.ticket_status === "issued" || t.ticket_status === "escalated") &&
+      t.unread_for_holder > 0,
   ).length;
-  return <NavCount count={count} label={`${count} ticket${count === 1 ? "" : "s"} with unread messages`} />;
+  return (
+    <NavCount
+      count={count}
+      label={`${count} ticket${count === 1 ? "" : "s"} with unread messages`}
+    />
+  );
 }
 
 /** The office's side of the same bell: open tickets a team has written on
@@ -421,7 +436,12 @@ function TicketsBadge() {
 function RequestsBadge() {
   const attention = useRequestsAttention();
   const count = attention.data?.threads_unread ?? 0;
-  return <NavCount count={count} label={`${count} ticket thread${count === 1 ? "" : "s"} unread`} />;
+  return (
+    <NavCount
+      count={count}
+      label={`${count} ticket thread${count === 1 ? "" : "s"} unread`}
+    />
+  );
 }
 
 function NavCount({ count, label }: { count: number; label: string }) {

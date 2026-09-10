@@ -1,10 +1,9 @@
 """Email delivery.
 
-`service.py` is what callers use; `transport.py` is the seam a deployment
-replaces; `templates.py` is the words.
+`transport.py` is the seam a deployment replaces. The words live in
+`cmp.core.messages`, and the only caller is `cmp.infrastructure.messaging`.
 """
 
-from cmp.infrastructure.email.service import EmailService, email_service
 from cmp.infrastructure.email.transport import (
     ConsoleEmailTransport,
     EmailTransport,
@@ -15,10 +14,8 @@ from cmp.infrastructure.email.transport import (
 
 __all__ = [
     "ConsoleEmailTransport",
-    "EmailService",
     "EmailTransport",
     "NullEmailTransport",
     "SmtpEmailTransport",
     "build_email_transport",
-    "email_service",
 ]

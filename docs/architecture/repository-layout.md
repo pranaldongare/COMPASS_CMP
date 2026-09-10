@@ -48,7 +48,7 @@ cmp_backend/
     core/                 config, enums, permissions, security, errors, pagination,
                           logging - imports nothing local
     tasks/                Celery: authentication, notifications, maintenance, exchange
-  migrations/versions/    0001 to 0023, every one raw SQL, both directions
+  migrations/versions/    0001 to 0024, every one raw SQL, both directions
   tests/
     unit/                 pure functions; no I/O
     integration/          a real PostgreSQL and Redis; each test rolls back

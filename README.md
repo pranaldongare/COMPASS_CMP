@@ -10,7 +10,7 @@ Three deployable projects in one repository, one API:
 
 | Path | Stack | What it is |
 |---|---|---|
-| [`cmp_backend/`](cmp_backend) | FastAPI 0.141, PostgreSQL 16, Redis 7, Celery 5, Python 3.12 | The API: 233 endpoints, 31 tables, raw SQL over psycopg 3, no ORM, 23 raw-SQL migrations |
+| [`cmp_backend/`](cmp_backend) | FastAPI 0.141, PostgreSQL 16, Redis 7, Celery 5, Python 3.12 | The API: 238 endpoints, 32 tables, raw SQL over psycopg 3, no ORM, 24 raw-SQL migrations |
 | [`cmp_internal_ui/`](cmp_internal_ui) | Next.js 16, React 19, Tailwind 4, TanStack Query | The staff console on port 3000: password and emailed code sign-in, the registers, the DPO's rights queue, a respondent's tickets |
 | [`cmp_public_ui/`](cmp_public_ui) | the same | The data principal's portal on port 3001: the consent link, sign-up, code sign-in, the rights pages, her own consents and requests |
 

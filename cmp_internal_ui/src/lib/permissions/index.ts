@@ -37,6 +37,7 @@ export type NavKey =
   | "audit"
   | "users"
   | "cover"
+  | "messages"
   | "requests"
   | "notifications"
   | "profile";

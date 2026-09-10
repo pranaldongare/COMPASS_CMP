@@ -36,7 +36,7 @@ touches the database it is configured for.
 cd cmp_backend
 cp .env.example .env            # POSTGRES_DB=cmp_dev, PUBLIC_BASE_URL, CONSOLE_BASE_URL - see below
 uv sync --all-extras --dev
-uv run alembic upgrade head     # 23 migrations
+uv run alembic upgrade head     # 24 migrations
 uv run python scripts/seed.py   # one coherent world; refuses outside local/test
 uv run python -m cmp --port 8000
 ```

@@ -1,6 +1,6 @@
 # Domain model
 
-Thirty-one tables, one view, thirty-nine enumerations, twenty-six triggers.
+Thirty-two tables, one view, thirty-nine enumerations, twenty-six triggers.
 The column-level reference is
 [schema.md](../../cmp_backend/docs/database/schema.md), and the migrations
 that built it are listed in
@@ -74,7 +74,7 @@ erDiagram
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant` | Links store only a fingerprint. An artefact is one decision on one notice, one grant per purpose, superseded by withdrawal. |
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` | A disclosure record per export and per person, with the generated file kept in storage (`file_ref`); an import batch produces a collection of assets; a junction says which consent covers whom in which asset, with a disposition. |
 | Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_ticket_message`, `rights_response_file`, `nomination` | A request with its clock; one holder per party asked, with a message thread; one scope item per appearance; files released with the response; the nominee arrangement. |
-| Platform | `audit_log` | Append-only, hash-chained. Sessions, one-time codes, rate counters and lockouts live in Redis, not here. |
+| Platform | `audit_log`, `message_template` | The audit log is append-only and hash-chained. `message_template` holds the office's replacement words per message and channel; absence means the code default. Sessions, one-time codes, rate counters and lockouts live in Redis, not here. |
 
 The view `v_current_consent` resolves each (person, notice) pair to the
 artefact currently in force by following the supersession chain, and derives
@@ -143,6 +143,7 @@ acceptance).
 |---|---|
 | Sessions, partial sessions | Redis db 0 |
 | The record that a notice was served to a person (six hours) | Redis db 0, keys `nsrv:*` |
+| A mirror of the office's message words, for the worker (five minutes) | Redis db 0, key `cache:message_templates` |
 | One-time codes, MFA codes, their attempt counts | Redis db 0, with TTLs |
 | Rate-limit buckets and lockouts | Redis db 0, keys `rate:*` |
 | Celery broker and results | Redis db 1 and db 2 |

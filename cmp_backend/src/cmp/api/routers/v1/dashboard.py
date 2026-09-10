@@ -856,12 +856,12 @@ async def resend(log_uuid: UUID, principal: CurrentUser) -> dict[str, Any]:
             raise NotFound("Notification recipient")
 
     from cmp.tasks.dispatch import dispatch_required
-    from cmp.tasks.notifications.batch import notify_project_event
+    from cmp.tasks.notifications import send_office_note
 
     dispatch_required(
-        notify_project_event,
+        send_office_note,
         [subject["email"]],
-        "A message from the Privacy Office",
-        f"Regarding {entry['event_type']} on {entry['occurred_at']:%d %B %Y}.",
+        str(entry["event_type"]),
+        f"{entry['occurred_at']:%d %B %Y}",
     )
     return {"ok": True, "message": "Queued for delivery."}

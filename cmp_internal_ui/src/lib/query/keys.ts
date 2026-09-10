@@ -99,7 +99,8 @@ export const keys = {
     list: (projectUuid: Uuid, params?: Params) =>
       ["project", projectUuid, "consents", params ?? {}] as const,
     all: (params?: Params) => ["all", "consents", params ?? {}] as const,
-    summary: (projectUuid: Uuid) => ["project", projectUuid, "consents", "summary"] as const,
+    summary: (projectUuid: Uuid) =>
+      ["project", projectUuid, "consents", "summary"] as const,
     detail: (uuid: Uuid) => ["consent", uuid] as const,
     grants: (uuid: Uuid) => ["consent", uuid, "grants"] as const,
     assets: (uuid: Uuid) => ["consent", uuid, "assets"] as const,
@@ -140,6 +141,12 @@ export const keys = {
     all: ["delegations", "all"] as const,
   },
 
+  /** The words of every message the platform sends. One list; every edit
+   *  invalidates it, so the cards agree about what is in force. */
+  messages: {
+    all: ["messages"] as const,
+  },
+
   /**
    * Rights requests. The register is a cross-request list; everything about
    * one request - holders, scope, transitions, trail - hangs off its uuid so
@@ -151,7 +158,8 @@ export const keys = {
     trail: (uuid: Uuid) => ["request", uuid, "trail"] as const,
     linkedTrail: (uuid: Uuid) => ["request", uuid, "linked-trail"] as const,
     attention: ["all", "requests", "attention"] as const,
-    thread: (uuid: Uuid, holderUuid: Uuid) => ["request", uuid, "thread", holderUuid] as const,
+    thread: (uuid: Uuid, holderUuid: Uuid) =>
+      ["request", uuid, "thread", holderUuid] as const,
   },
 
   users: {

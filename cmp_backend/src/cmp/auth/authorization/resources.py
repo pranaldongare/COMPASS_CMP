@@ -51,6 +51,9 @@ RIGHTS_REQUEST: Final = "rights_request"
 #: channel for a holder that is one of our own teams.
 TICKET: Final = "ticket"
 
+#: The words of a message the platform sends, per junction and channel.
+MESSAGE_TEMPLATE: Final = "message_template"
+
 #: Every resource this system knows about. `verify_resources()` asserts the
 #: matrix and this set agree, so a resource named in one and not the other is an
 #: import-time failure rather than a silent deny in production.
@@ -73,6 +76,7 @@ ALL: Final[frozenset[str]] = frozenset(
         ASSET,
         AUDIT,
         RIGHTS_REQUEST,
+        MESSAGE_TEMPLATE,
         TICKET,
     }
 )

@@ -11,7 +11,7 @@ and the rows each may see are a scope compiled into every query.
 | Role | Enum value | Who they are | What they mainly do |
 |---|---|---|---|
 | Data Protection Officer | `dpo` | The Privacy Office | Approves projects, publishes notices, sees every register, runs the rights queue, reads the audit trail |
-| Administrator | `admin` | Provisions the platform | Creates accounts and assigns roles, sees the audit trail, arranges cover for anyone, and is the independent reviewer for a grievance about the DPO |
+| Administrator | `admin` | Provisions the platform | Creates accounts and assigns roles, sees the audit trail, arranges cover for anyone, edits the words of every message the platform sends, and is the independent reviewer for a grievance about the DPO |
 | Data Collection Owner | `dco` | Accountable for a third party's collection | Registers data sources and sites under their processors, mints and replaces consent links, exports and imports, answers tickets addressed to them |
 | DCO Admin | `dco_admin` | Routes third-party collection | Receives an approved project that names a third-party processor, attaches sources, registers sites and names who runs them |
 | Research Collection Owner | `rco` | A DCO for in-house collection | The same as a DCO, restricted to the organisation's own sources and sites |
@@ -40,6 +40,7 @@ denied: no wildcard, no inheritance.
 | collection | all | | scoped | scoped | scoped | own | |
 | asset | all | | scoped | scoped | scoped | own | |
 | audit | all | all | | | | | |
+| message_template | all +w | all +w | | | | | |
 | rights_request | all +w | scoped +w | | | | | |
 | ticket | own +w | own +w | own +w | own +w | own +w | own +w | |
 | me | | | | | | | own +w |
@@ -70,8 +71,8 @@ matrix, so it cannot drift into showing a button that answers 403.
 
 | Role | Sections |
 |---|---|
-| DPO | dashboard, projects, approvals, notices, purposes, sites, collections, processors, sources, links, consents, exports, imports, requests, audit, cover, notifications, profile |
-| Administrator | dashboard, users, processors, sources, requests, audit, cover, notifications, profile |
+| DPO | dashboard, projects, approvals, notices, purposes, sites, collections, processors, sources, links, consents, exports, imports, requests, audit, users, messages, cover, notifications, profile |
+| Administrator | dashboard, users, messages, processors, sources, requests, audit, cover, notifications, profile |
 | DCO, DCO Admin, RCO | dashboard, projects, sites, sources, links, consents, exports, imports, collections, cover, notifications, profile |
 | R&D User | dashboard, projects, notices, processors, approvals, imports, collections, notifications, profile |
 | Data principal | consents, requests, notifications, profile |

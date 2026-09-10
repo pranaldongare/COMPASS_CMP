@@ -22,7 +22,7 @@ you need. Documents live in three places, deliberately:
 
 - [Domain model](architecture/domain-model.md): the tables, the state machines, and the invariants the database holds
 - [Roles and access](domain/roles-and-access.md): the seven roles and what each may reach
-- Behaviour, by obligation: [consent lifecycle](domain/consent-lifecycle.md), [collection and routing](domain/collection-and-routing.md), [rights requests](domain/rights-requests.md)
+- Behaviour, by obligation: [consent lifecycle](domain/consent-lifecycle.md), [collection and routing](domain/collection-and-routing.md), [rights requests](domain/rights-requests.md), [messages the platform sends](domain/messages.md)
 - [API](architecture/api.md): route families, the error contract, pagination, identifiers
 - [Testing](operations/testing.md): what each suite proves and how to run it without fighting the rate limiter
 - [Contributing](../CONTRIBUTING.md): the checks a change must pass and how commits are written

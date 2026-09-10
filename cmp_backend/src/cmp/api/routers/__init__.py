@@ -41,6 +41,8 @@ ROUTERS: tuple[APIRouter, ...] = (
     # A team's own tickets on rights requests - the portal channel.
     v1.tickets_router,
     v1.audit_router,
+    # The words of every message the platform sends, for the office to edit.
+    v1.messages_router,
     v1.dashboard_router,
 )
 

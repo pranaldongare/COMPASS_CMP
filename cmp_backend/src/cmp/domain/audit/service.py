@@ -68,6 +68,8 @@ ENTITY_TYPES: Final[frozenset[str]] = frozenset(
         "rights_request_holder",
         "rights_request_item",
         "nomination",
+        # The office's replacement words for a message junction.
+        "message_template",
     }
 )
 
@@ -230,6 +232,10 @@ class Event:
 
     # platform
     AUDIT_VERIFIED = "audit.verified"
+
+    # messages
+    MESSAGE_TEMPLATE_UPDATED = "message_template.updated"
+    MESSAGE_TEMPLATE_RESET = "message_template.reset"
 
 
 _INSERT = """

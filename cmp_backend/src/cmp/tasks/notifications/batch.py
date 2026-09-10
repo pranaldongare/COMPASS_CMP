@@ -1,7 +1,7 @@
 """Sending one message to many recipients.
 
 Bounded by a soft time limit and reports partial delivery honestly rather than
-raising on the first failure — a batch that stops at recipient three has still
+raising on the first failure - a batch that stops at recipient three has still
 delivered to two, and pretending otherwise would have them notified twice on the
 retry.
 """
@@ -13,15 +13,14 @@ from typing import Any
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 
+from cmp.core.config import settings
 from cmp.core.logging import get_logger
-from cmp.infrastructure.email import build_email_transport
+from cmp.core.messages import Message
 from cmp.infrastructure.email.transport import obscure
-from cmp.infrastructure.sms import build_sms_transport
+from cmp.infrastructure.messaging import deliver
 
 log = get_logger("cmp.tasks.notifications")
 
-# Retry on transport failure with exponential backoff and jitter. Without jitter,
-# a gateway outage produces a synchronised retry storm the moment it recovers.
 RETRY_KW: dict[str, Any] = {
     "autoretry_for": (ConnectionError, TimeoutError, OSError),
     "retry_backoff": 5,
@@ -32,31 +31,11 @@ RETRY_KW: dict[str, Any] = {
 }
 
 
-def _deliver(*, channel: str, to: str, subject: str, body: str) -> dict[str, Any]:
-    """Hand a message to the transport this environment is configured for.
-
-    The transport itself lives in `cmp.infrastructure` — swapping the console
-    outbox for SMTP is a setting, not an edit here. What stays with the task is
-    the retry policy, because Celery owns retries and two policies disagreeing
-    about how many attempts is too many is worse than one.
-
-    Failure propagates. A transport that swallowed an error and returned quietly
-    would turn a retryable outage into silent data loss.
-    """
-    if channel == "sms":
-        return dict(build_sms_transport().send(to=to, body=body))
-    return dict(build_email_transport().send(to=to, subject=subject, body=body))
-
-
-@shared_task(
-    name="cmp.notifications.notify_project_event",
-    bind=True,
-    **RETRY_KW,
-)
-def notify_project_event(
-    self: Any, recipients: list[str], subject: str, body: str
+@shared_task(name="cmp.notifications.send_office_note", bind=True, **RETRY_KW)
+def send_office_note(
+    self: Any, recipients: list[str], event: str, occurred_on: str
 ) -> dict[str, Any]:
-    """Fan-out to staff for a workflow event - a queue item awaiting their action.
+    """A notification resent by the office, to one person or several.
 
     Partial failure is reported rather than retried wholesale: retrying the whole
     batch would re-deliver to everyone who already received it.
@@ -65,7 +44,13 @@ def notify_project_event(
     try:
         for address in recipients:
             try:
-                _deliver(channel="email", to=address, subject=subject, body=body)
+                deliver(
+                    Message.OFFICE_NOTE,
+                    to=address,
+                    event=event,
+                    occurred_on=occurred_on,
+                    console_url=settings.console_base_url.rstrip("/"),
+                )
                 delivered += 1
             except (ConnectionError, TimeoutError, OSError) as exc:
                 failed.append({"to": obscure(address), "error": type(exc).__name__})

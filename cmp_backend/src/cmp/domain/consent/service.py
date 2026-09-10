@@ -254,7 +254,7 @@ async def send_contact_code(conn: Conn, *, token: str, contact: str) -> None:
     from cmp.tasks.authentication import send_consent_code
     from cmp.tasks.dispatch import dispatch_required
 
-    dispatch_required(send_consent_code, contact, issued.code)
+    dispatch_required(send_consent_code, contact, issued.code, link["project_name"])
 
 
 async def verify_contact_code(conn: Conn, *, token: str, contact: str, code: str) -> dict[str, Any]:
@@ -587,6 +587,7 @@ async def capture(
             contact,
             str(artefact["consent_uuid"]),
             link["project_name"],
+            [by_uuid[u]["name"] for u, v in grants.items() if v],
         )
 
     log.info(

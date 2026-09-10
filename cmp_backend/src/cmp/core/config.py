@@ -144,6 +144,8 @@ class Settings(BaseSettings):
     nomination_accept_ttl_days: int = 30
 
     # ---------------------------------------------------------------- external
+    #: How the organisation names itself in messages ({organisation}).
+    organisation_name: str = "COMPASS"
     notification_email_from: str = "privacy@example.org"
     external_http_timeout_s: float = 10.0  # never infinite — checklist §13
     external_http_retries: int = 3

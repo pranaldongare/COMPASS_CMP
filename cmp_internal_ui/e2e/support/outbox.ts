@@ -42,10 +42,15 @@ export function latestCodeFor(recipient: string): string | null {
         current = to[1];
         continue;
       }
-      // Two wordings for two flows: staff get a "verification code", a data
-      // principal a "sign-in code". Matching only one of them made her sign-in
-      // look broken when it was the reader that was too narrow.
-      const code = /code is (\d{6})/.exec(line);
+      // The words are the office's to change (Messages, in the console), so
+      // the reader matches the shapes the default templates use rather than
+      // one sentence: "code is 123456", a code on a line of its own, or a line
+      // or subject that opens with the code ("123456 is your...", "123456
+      // confirms..."). A reference such as RR-2026-000042 never matches.
+      const code =
+        /code is (\d{6})/.exec(line) ??
+        /^\s*(\d{6})\s*$/.exec(line) ??
+        /^(?:subject: )?(\d{6}) (?:is your|confirms|signs)/.exec(line);
       if (code && current?.toLowerCase() === recipient.toLowerCase()) found = code[1];
     }
     if (!found) {
@@ -75,7 +80,10 @@ export function latestCodeFor(recipient: string): string | null {
  * verify step fails with the server's own message rather than a timeout that
  * says nothing.
  */
-export async function freshCode(recipient: string, previous: string | null): Promise<string> {
+export async function freshCode(
+  recipient: string,
+  previous: string | null,
+): Promise<string> {
   await expect
     .poll(() => latestCodeFor(recipient), { timeout: 15_000 })
     .not.toBe(previous)

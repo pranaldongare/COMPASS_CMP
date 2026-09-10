@@ -4,7 +4,7 @@ Two questions, deliberately answered by different things.
 
 ## 1. May this role call this at all?
 
-A static matrix: 18 resources × 7 roles → a grant. The whole table is laid out in
+A static matrix: 19 resources × 7 roles → a grant. The whole table is laid out in
 [docs/domain/roles-and-access.md](../../../docs/domain/roles-and-access.md). Checked before any work is
 done, by `RequireResource` or `RequireRole`.
 
@@ -44,7 +44,7 @@ there".
 |---|---|
 | `core/permissions.py` | `Role`, `Scope`, `Grant`, `MATRIX`, `NAV_BY_ROLE` — data, no behaviour |
 | `auth/authorization/roles.py` | staff/privileged sets, the MFA rule |
-| `auth/authorization/resources.py` | the 18 resource names as constants; the roster and the matrix are asserted equal at import |
+| `auth/authorization/resources.py` | the 19 resource names as constants; the roster and the matrix are asserted equal at import |
 | `auth/authorization/scopes.py` | `ScopeContext`, `narrower_of` |
 | `auth/authorization/evaluator.py` | pure decisions, returning a reason |
 | `auth/authorization/policy.py` | `authorize()` — the front door; logs the denial |

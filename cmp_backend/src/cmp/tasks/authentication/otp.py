@@ -1,12 +1,15 @@
 """Delivering the codes somebody is waiting for.
 
-All four route to `high_priority`, and that queue exists for exactly this.
+All five route to `high_priority`, and that queue exists for exactly this.
 Somebody is looking at a code entry box right now; a code queued behind a
 document export is a failed sign-in and a support call.
 
-These use `dispatch_required`, not `dispatch_optional` — if the broker is
+These use `dispatch_required`, not `dispatch_optional` - if the broker is
 unreachable the request fails with a 503 rather than returning 200 and leaving
 the user waiting for a message that will never arrive.
+
+The words come from `cmp.core.messages`, or from what the office put in their
+place; nothing here writes a sentence.
 """
 
 from __future__ import annotations
@@ -16,11 +19,8 @@ from typing import Any
 from celery import shared_task
 
 from cmp.core.config import settings
-from cmp.core.logging import get_logger
-from cmp.infrastructure.email import build_email_transport
-from cmp.infrastructure.sms import build_sms_transport
-
-log = get_logger("cmp.tasks.notifications")
+from cmp.core.messages import Message
+from cmp.infrastructure.messaging import deliver
 
 # Retry on transport failure with exponential backoff and jitter. Without jitter,
 # a gateway outage produces a synchronised retry storm the moment it recovers.
@@ -34,80 +34,35 @@ RETRY_KW: dict[str, Any] = {
 }
 
 
-def _deliver(*, channel: str, to: str, subject: str, body: str) -> dict[str, Any]:
-    """Hand a message to the transport this environment is configured for.
-
-    The transport itself lives in `cmp.infrastructure` — swapping the console
-    outbox for SMTP is a setting, not an edit here. What stays with the task is
-    the retry policy, because Celery owns retries and two policies disagreeing
-    about how many attempts is too many is worse than one.
-
-    Failure propagates. A transport that swallowed an error and returned quietly
-    would turn a retryable outage into silent data loss.
-    """
-    if channel == "sms":
-        return dict(build_sms_transport().send(to=to, body=body))
-    return dict(build_email_transport().send(to=to, subject=subject, body=body))
-
-
 @shared_task(name="cmp.notifications.send_mfa_code", **RETRY_KW)
 def send_mfa_code(user_uuid: str, email: str, code: str) -> dict[str, Any]:
-    return _deliver(
-        channel="email",
-        to=email,
-        subject="Your verification code",
-        body=(
-            f"Your verification code is {code}. "
-            f"It expires in {settings.mfa_ttl_s // 60} minutes. "
-            "If you did not try to sign in, tell the Privacy Office."
-        ),
-    )
+    return deliver(Message.MFA_CODE, to=email, code=code, minutes=settings.mfa_ttl_s // 60)
 
 
 @shared_task(name="cmp.notifications.send_login_code", **RETRY_KW)
 def send_login_code(user_uuid: str, contact: str, code: str) -> dict[str, Any]:
-    channel = "email" if "@" in contact else "sms"
-    return _deliver(
-        channel=channel,
-        to=contact,
-        subject="Your sign-in code",
-        body=(f"Your sign-in code is {code}. It expires in {settings.otp_ttl_s // 60} minutes."),
-    )
+    return deliver(Message.LOGIN_CODE, to=contact, code=code, minutes=settings.otp_ttl_s // 60)
 
 
 @shared_task(name="cmp.notifications.send_registration_code", **RETRY_KW)
 def send_registration_code(user_uuid: str, contact: str, code: str) -> dict[str, Any]:
     """One per medium given at sign-up: every medium is authenticated."""
-    channel = "email" if "@" in contact else "sms"
-    return _deliver(
-        channel=channel,
-        to=contact,
-        subject="Your verification code",
-        body=(
-            f"Your verification code is {code}. Enter it to finish creating your account. "
-            f"It expires in {settings.otp_ttl_s // 60} minutes."
-        ),
+    return deliver(
+        Message.REGISTRATION_CODE, to=contact, code=code, minutes=settings.otp_ttl_s // 60
     )
 
 
 @shared_task(name="cmp.notifications.send_consent_code", **RETRY_KW)
-def send_consent_code(contact: str, code: str) -> dict[str, Any]:
-    channel = "email" if "@" in contact else "sms"
-    return _deliver(
-        channel=channel,
+def send_consent_code(contact: str, code: str, project_name: str = "") -> dict[str, Any]:
+    return deliver(
+        Message.CONSENT_CODE,
         to=contact,
-        subject="Confirm your contact details",
-        body=(
-            f"Your confirmation code is {code}. It expires in {settings.otp_ttl_s // 60} minutes."
-        ),
+        code=code,
+        minutes=settings.otp_ttl_s // 60,
+        project_name=project_name or "this project",
     )
 
 
 @shared_task(name="cmp.notifications.send_password_reset", **RETRY_KW)
 def send_password_reset(user_uuid: str, email: str, code: str) -> dict[str, Any]:
-    return _deliver(
-        channel="email",
-        to=email,
-        subject="Reset your password",
-        body=f"Your password reset code is {code}. It expires in 15 minutes.",
-    )
+    return deliver(Message.PASSWORD_RESET, to=email, code=code, minutes=15)

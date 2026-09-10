@@ -36,6 +36,7 @@ models.
 | `0021` | Response files released with the response, hashed and time-boxed |
 | `0022` | A nomination records the request that invoked it and the trigger event |
 | `0023` | One root consent artefact per (person, notice), by unique partial index; `export_log.file_ref` keeps the CSV as generated. Refuses to apply while duplicate roots exist |
+| `0024` | `message_template`: the office's replacement words per message junction and channel |
 
 ## What 0004 fixed
 

@@ -11930,6 +11930,251 @@
         }
       }
     },
+    "/messages": {
+      "get": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Every message, with the words in force",
+        "operationId": "list_messages_messages_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/cmp__api__routers__v1__messages__MessageOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Messages Messages Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/{key}": {
+      "get": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "One message",
+        "operationId": "get_message_messages__key__get",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z_]{1,64}$",
+              "title": "Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/cmp__api__routers__v1__messages__MessageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/{key}/{channel}/preview": {
+      "post": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Render words with sample values, saving nothing",
+        "operationId": "preview_message_messages__key___channel__preview_post",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z_]{1,64}$",
+              "title": "Key"
+            }
+          },
+          {
+            "name": "channel",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(email|sms)$",
+              "title": "Channel"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/{key}/{channel}": {
+      "put": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Replace the words",
+        "operationId": "save_message_messages__key___channel__put",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z_]{1,64}$",
+              "title": "Key"
+            }
+          },
+          {
+            "name": "channel",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(email|sms)$",
+              "title": "Channel"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/cmp__api__routers__v1__messages__MessageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Back to the default",
+        "operationId": "reset_message_messages__key___channel__delete",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z_]{1,64}$",
+              "title": "Key"
+            }
+          },
+          {
+            "name": "channel",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(email|sms)$",
+              "title": "Channel"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/cmp__api__routers__v1__messages__MessageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/dashboard": {
       "get": {
         "tags": [
@@ -12710,6 +12955,83 @@
           "document"
         ],
         "title": "Body_validate_notice_document_projects__project_uuid__notices_import_validate_post"
+      },
+      "ChannelOut": {
+        "properties": {
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "default_subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Subject"
+          },
+          "default_body": {
+            "type": "string",
+            "title": "Default Body"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "customised": {
+            "type": "boolean",
+            "title": "Customised"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel",
+          "default_subject",
+          "default_body",
+          "subject",
+          "body",
+          "customised",
+          "updated_at",
+          "updated_by_name"
+        ],
+        "title": "ChannelOut"
       },
       "Checklist": {
         "properties": {
@@ -16281,76 +16603,6 @@
         ],
         "title": "MeResponse"
       },
-      "MessageOut": {
-        "properties": {
-          "message_uuid": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Message Uuid"
-          },
-          "author_side": {
-            "type": "string",
-            "title": "Author Side"
-          },
-          "author_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Author Name"
-          },
-          "kind": {
-            "type": "string",
-            "title": "Kind"
-          },
-          "body": {
-            "type": "string",
-            "title": "Body"
-          },
-          "evidence_hash": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Evidence Hash"
-          },
-          "evidence_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Evidence Name"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "message_uuid",
-          "author_side",
-          "author_name",
-          "kind",
-          "body",
-          "evidence_hash",
-          "created_at"
-        ],
-        "title": "MessageOut"
-      },
       "MfaVerifyRequest": {
         "properties": {
           "code": {
@@ -18057,6 +18309,36 @@
           "changed_by_name"
         ],
         "title": "PersonTypeHistoryOut"
+      },
+      "PreviewOut": {
+        "properties": {
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel",
+          "subject",
+          "body"
+        ],
+        "title": "PreviewOut"
       },
       "ProcessorDecisionIn": {
         "properties": {
@@ -21956,6 +22238,35 @@
         "title": "SubjectRequestOut",
         "description": "What she sees of her own request. No verification notes, no holders -\nthe holders are in the response itself, and the notes are ours."
       },
+      "TemplateIn": {
+        "properties": {
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 6000,
+            "minLength": 1,
+            "title": "Body"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "TemplateIn",
+        "description": "The words. `subject` is required for email and refused for SMS; the\nservice says which, with every other problem, in one answer."
+      },
       "ThreadOut": {
         "properties": {
           "holder": {
@@ -21963,7 +22274,7 @@
           },
           "messages": {
             "items": {
-              "$ref": "#/components/schemas/MessageOut"
+              "$ref": "#/components/schemas/cmp__api__routers__v1__rights__MessageOut"
             },
             "type": "array",
             "title": "Messages"
@@ -21983,7 +22294,7 @@
           },
           "messages": {
             "items": {
-              "$ref": "#/components/schemas/MessageOut"
+              "$ref": "#/components/schemas/cmp__api__routers__v1__rights__MessageOut"
             },
             "type": "array",
             "title": "Messages"
@@ -22608,6 +22919,29 @@
         ],
         "title": "ValidationError"
       },
+      "VariableOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "sample": {
+            "type": "string",
+            "title": "Sample"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "sample"
+        ],
+        "title": "VariableOut"
+      },
       "VerifyResult": {
         "properties": {
           "intact": {
@@ -22835,6 +23169,120 @@
         ],
         "title": "RegisterBody",
         "description": "Self-registration. Note what is *not* here: a role.\n\nThe role is written by the service as `data_subject`. Accepting one from an\nunauthenticated body is how a sign-up form becomes a way to mint a DPO."
+      },
+      "cmp__api__routers__v1__messages__MessageOut": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "group": {
+            "type": "string",
+            "title": "Group"
+          },
+          "variables": {
+            "items": {
+              "$ref": "#/components/schemas/VariableOut"
+            },
+            "type": "array",
+            "title": "Variables"
+          },
+          "channels": {
+            "items": {
+              "$ref": "#/components/schemas/ChannelOut"
+            },
+            "type": "array",
+            "title": "Channels"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "title",
+          "description",
+          "group",
+          "variables",
+          "channels"
+        ],
+        "title": "MessageOut"
+      },
+      "cmp__api__routers__v1__rights__MessageOut": {
+        "properties": {
+          "message_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Message Uuid"
+          },
+          "author_side": {
+            "type": "string",
+            "title": "Author Side"
+          },
+          "author_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Name"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "evidence_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Hash"
+          },
+          "evidence_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_uuid",
+          "author_side",
+          "author_name",
+          "kind",
+          "body",
+          "evidence_hash",
+          "created_at"
+        ],
+        "title": "MessageOut"
       }
     }
   }

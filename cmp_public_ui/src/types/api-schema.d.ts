@@ -4080,6 +4080,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every message, with the words in force */
+        get: operations["list_messages_messages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/messages/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One message */
+        get: operations["get_message_messages__key__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/messages/{key}/{channel}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Render words with sample values, saving nothing */
+        post: operations["preview_message_messages__key___channel__preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/messages/{key}/{channel}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace the words */
+        put: operations["save_message_messages__key___channel__put"];
+        post?: never;
+        /** Back to the default */
+        delete: operations["reset_message_messages__key___channel__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dashboard": {
         parameters: {
             query?: never;
@@ -4426,6 +4495,25 @@ export interface components {
              * @description .docx notice template, max 25 MB
              */
             document: string;
+        };
+        /** ChannelOut */
+        ChannelOut: {
+            /** Channel */
+            channel: string;
+            /** Default Subject */
+            default_subject: string | null;
+            /** Default Body */
+            default_body: string;
+            /** Subject */
+            subject: string | null;
+            /** Body */
+            body: string;
+            /** Customised */
+            customised: boolean;
+            /** Updated At */
+            updated_at: string | null;
+            /** Updated By Name */
+            updated_by_name: string | null;
         };
         /** Checklist */
         Checklist: {
@@ -5811,31 +5899,6 @@ export interface components {
             /** Writes */
             writes?: string[];
         };
-        /** MessageOut */
-        MessageOut: {
-            /**
-             * Message Uuid
-             * Format: uuid
-             */
-            message_uuid: string;
-            /** Author Side */
-            author_side: string;
-            /** Author Name */
-            author_name: string | null;
-            /** Kind */
-            kind: string;
-            /** Body */
-            body: string;
-            /** Evidence Hash */
-            evidence_hash: string | null;
-            /** Evidence Name */
-            evidence_name?: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
         /** MfaVerifyRequest */
         MfaVerifyRequest: {
             /** Code */
@@ -6411,6 +6474,15 @@ export interface components {
             changed_by_uuid: string;
             /** Changed By Name */
             changed_by_name: string;
+        };
+        /** PreviewOut */
+        PreviewOut: {
+            /** Channel */
+            channel: string;
+            /** Subject */
+            subject: string | null;
+            /** Body */
+            body: string;
         };
         /** ProcessorDecisionIn */
         ProcessorDecisionIn: {
@@ -7569,17 +7641,28 @@ export interface components {
             /** Response Files */
             response_files?: components["schemas"]["ResponseFileOut"][];
         };
+        /**
+         * TemplateIn
+         * @description The words. `subject` is required for email and refused for SMS; the
+         *     service says which, with every other problem, in one answer.
+         */
+        TemplateIn: {
+            /** Subject */
+            subject?: string | null;
+            /** Body */
+            body: string;
+        };
         /** ThreadOut */
         ThreadOut: {
             holder: components["schemas"]["HolderOut"];
             /** Messages */
-            messages: components["schemas"]["MessageOut"][];
+            messages: components["schemas"]["cmp__api__routers__v1__rights__MessageOut"][];
         };
         /** TicketDetailOut */
         TicketDetailOut: {
             ticket: components["schemas"]["TicketOut"];
             /** Messages */
-            messages: components["schemas"]["MessageOut"][];
+            messages: components["schemas"]["cmp__api__routers__v1__rights__MessageOut"][];
         };
         /**
          * TicketOut
@@ -7751,6 +7834,15 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /** VariableOut */
+        VariableOut: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Sample */
+            sample: string;
+        };
         /** VerifyResult */
         VerifyResult: {
             /** Intact */
@@ -7825,6 +7917,46 @@ export interface components {
             dob: string;
             /** Email */
             email?: string | null;
+        };
+        /** MessageOut */
+        cmp__api__routers__v1__messages__MessageOut: {
+            /** Key */
+            key: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Group */
+            group: string;
+            /** Variables */
+            variables: components["schemas"]["VariableOut"][];
+            /** Channels */
+            channels: components["schemas"]["ChannelOut"][];
+        };
+        /** MessageOut */
+        cmp__api__routers__v1__rights__MessageOut: {
+            /**
+             * Message Uuid
+             * Format: uuid
+             */
+            message_uuid: string;
+            /** Author Side */
+            author_side: string;
+            /** Author Name */
+            author_name: string | null;
+            /** Kind */
+            kind: string;
+            /** Body */
+            body: string;
+            /** Evidence Hash */
+            evidence_hash: string | null;
+            /** Evidence Name */
+            evidence_name?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
     };
     responses: never;
@@ -15204,6 +15336,161 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditEntry"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_messages_messages_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["cmp__api__routers__v1__messages__MessageOut"][];
+                };
+            };
+        };
+    };
+    get_message_messages__key__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["cmp__api__routers__v1__messages__MessageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_message_messages__key___channel__preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+                channel: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_message_messages__key___channel__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+                channel: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["cmp__api__routers__v1__messages__MessageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_message_messages__key___channel__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+                channel: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["cmp__api__routers__v1__messages__MessageOut"];
                 };
             };
             /** @description Validation Error */

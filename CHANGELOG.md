@@ -43,6 +43,19 @@ as a release yet.
   and test instead of reporting delivery.
 
 ### Added
+- **Configurable messages.** Every email and SMS the platform sends is a
+  named junction with default words per channel; the administrator and the
+  DPO edit subject and body from the console's Messages page, with variable
+  chips, a preview on sample values, and reset to default. Saves and resets
+  are audited. `GET/PUT/DELETE /messages/...` (migration 0024). A message
+  cannot be sent except through a junction, and three tests keep the list
+  complete ([messages.md](docs/domain/messages.md)).
+- Every default message reworded: the code on its own line and in the
+  subject, what it is for, how long it lasts, what to do if it was not you;
+  SMS bodies written separately and short. `ORGANISATION_NAME` names the
+  organisation in them.
+- Consent receipts list the purposes agreed to; consent-link codes name the
+  project.
 - An HTTP SMS transport: a JSON POST with a bearer token to an https gateway
   (`SMS_TRANSPORT=http`, `SMS_HTTP_URL`, `SMS_HTTP_TOKEN`, `SMS_HTTP_SENDER`).
 - The CI workflow at the repository root, where GitHub runs it, covering the
