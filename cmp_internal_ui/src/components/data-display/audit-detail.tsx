@@ -36,6 +36,14 @@ import { formatDateTime, humanise } from "@/lib/format";
  * not know would be a lie in an evidence log.
  */
 const EVENT_SENTENCES: Record<string, string> = {
+  "rights.ticket_issued": "A ticket was issued: an instruction, a date, and what the platform already holds.",
+  "rights.ticket_message": "Somebody wrote on a ticket's thread.",
+  "rights.ticket_returned": "A holder returned its ticket with what they found.",
+  "rights.ticket_sent_back": "The Privacy Office was not satisfied with a return and sent the ticket back with a reason.",
+  "rights.ticket_withdrawn": "A ticket was withdrawn; nothing further is needed from the holder.",
+  "rights.ticket_reassigned": "A ticket was sent to a different respondent.",
+  "rights.ticket_reminded": "A reminder went out on a ticket that is due or overdue.",
+  "rights.ticket_escalated": "A ticket missed its date and was escalated once.",
   "notice.published":
     "The notice text was frozen and hashed. From this point it cannot be edited — a correction is a new version.",
   "notice.created": "A draft notice was started.",

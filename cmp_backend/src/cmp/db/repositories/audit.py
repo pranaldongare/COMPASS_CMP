@@ -247,6 +247,61 @@ async def by_actor(conn: Conn, actor_user_id: int, *, limit: int = 25) -> list[R
     )
 
 
+#: What the office does to a ticket, which its respondent should hear about.
+_TO_HOLDER = (
+    "rights.ticket_issued",
+    "rights.ticket_withdrawn",
+    "rights.ticket_reassigned",
+    "rights.ticket_reminded",
+    "rights.ticket_sent_back",
+    "rights.ticket_escalated",
+)
+
+
+async def ticket_events_for_responder(
+    conn: Conn, responder_user_id: int, *, limit: int = 50
+) -> list[Row]:
+    """What happened on the tickets addressed to this person, most recent
+    first: issued, sent back, withdrawn, reassigned, reminded, and every
+    message the office wrote. Carries the ticket's uuid so the feed can open
+    the ticket itself rather than a request page the reader may not reach."""
+    return await fetch_all(
+        conn,
+        f"""
+        SELECT {_SELECT}, h.holder_uuid::text AS holder_uuid
+        {_FROM}
+        JOIN rights_request_holder h ON h.holder_id = l.entity_id
+        WHERE l.entity_type = 'rights_request_holder'
+          AND h.responder_user_id = %s
+          AND (l.event_type = ANY(%s)
+               OR (l.event_type = 'rights.ticket_message'
+                   AND l.detail_json->>'side' = 'office'))
+        ORDER BY l.occurred_at DESC
+        LIMIT %s
+        """,
+        (responder_user_id, list(_TO_HOLDER), limit),
+    )
+
+
+async def ticket_events_for_office(conn: Conn, *, limit: int = 50) -> list[Row]:
+    """What holders did on their tickets, for the office: every return and
+    every message a holder wrote, most recent first."""
+    return await fetch_all(
+        conn,
+        f"""
+        SELECT {_SELECT}
+        {_FROM}
+        WHERE l.entity_type = 'rights_request_holder'
+          AND (l.event_type = 'rights.ticket_returned'
+               OR (l.event_type = 'rights.ticket_message'
+                   AND l.detail_json->>'side' = 'holder'))
+        ORDER BY l.occurred_at DESC
+        LIMIT %s
+        """,
+        (limit,),
+    )
+
+
 async def for_consent(conn: Conn, consent_ids: Sequence[int], *, limit: int = 100) -> list[Row]:
     """Everything recorded about one consent, oldest first.
 

@@ -108,6 +108,11 @@ export function usePostToHolder(
     },
   });
 }
+export const useSendBackTicket = (uuid: Uuid) =>
+  useRequestAction<RightsHolder, { holderUuid: Uuid } & api.SendBackInput>(
+    uuid,
+    ({ holderUuid, ...body }) => api.sendBackTicket(uuid, holderUuid, body),
+  );
 export const useWithdrawTicket = (uuid: Uuid) =>
   useRequestAction<RightsHolder, { holderUuid: Uuid; reason: string }>(uuid, ({ holderUuid, reason }) =>
     api.withdrawTicket(uuid, holderUuid, reason),

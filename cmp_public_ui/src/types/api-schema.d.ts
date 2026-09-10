@@ -3582,6 +3582,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/requests/{request_uuid}/holders/{holder_uuid}/send-back": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a returned ticket back to its holder
+         * @description Not satisfied with the return: the ticket is open again with the
+         *     reason and a date, the holder is told, and the request waits again.
+         */
+        post: operations["send_back_ticket_requests__request_uuid__holders__holder_uuid__send_back_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/requests/{request_uuid}/holders/{holder_uuid}/withdraw": {
         parameters: {
             query?: never;
@@ -5227,6 +5248,15 @@ export interface components {
             reminders_sent: number;
             /** Return Evidence Name */
             return_evidence_name?: string | null;
+            /** Sent Back At */
+            sent_back_at?: string | null;
+            /** Sent Back Reason */
+            sent_back_reason?: string | null;
+            /**
+             * Sent Back Count
+             * @default 0
+             */
+            sent_back_count: number;
         };
         /** ImportBatchOut */
         ImportBatchOut: {
@@ -7086,6 +7116,13 @@ export interface components {
             /** Reason */
             reason?: string | null;
         };
+        /** SendBackIn */
+        SendBackIn: {
+            /** Reason */
+            reason: string;
+            /** Due At */
+            due_at?: string | null;
+        };
         /** SessionInfo */
         SessionInfo: {
             /**
@@ -7450,6 +7487,15 @@ export interface components {
             reminders_sent: number;
             /** Return Evidence Name */
             return_evidence_name?: string | null;
+            /** Sent Back At */
+            sent_back_at?: string | null;
+            /** Sent Back Reason */
+            sent_back_reason?: string | null;
+            /**
+             * Sent Back Count
+             * @default 0
+             */
+            sent_back_count: number;
             /** Consent Uuid */
             consent_uuid?: string | null;
             /** Consent Project */
@@ -14114,6 +14160,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ThreadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_back_ticket_requests__request_uuid__holders__holder_uuid__send_back_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendBackIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderOut"];
                 };
             };
             /** @description Validation Error */

@@ -144,6 +144,13 @@ function messageForm(input: MessageInput): FormData {
 }
 export const postToHolder = (uuid: Uuid, holderUuid: Uuid, input: MessageInput) =>
   apiPost<HolderThread>(action(uuid, `holders/${holderUuid}/thread`), messageForm(input));
+export interface SendBackInput {
+  reason: string;
+  due_at?: string | null;
+}
+/** Not satisfied with the return: the ticket is open again, with the reason and a date. */
+export const sendBackTicket = (uuid: Uuid, holderUuid: Uuid, body: SendBackInput) =>
+  apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/send-back`), body);
 export const withdrawTicket = (uuid: Uuid, holderUuid: Uuid, reason: string) =>
   apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/withdraw`), { reason });
 export interface ReassignInput {

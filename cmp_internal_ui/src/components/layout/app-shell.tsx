@@ -48,6 +48,7 @@ import { Button } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { config } from "@/lib/config";
 import { cn, initials } from "@/lib/format";
+import { useMyTickets } from "@/features/rights/queries";
 import { useAuth, useTheme } from "@/providers";
 
 interface NavItem {
@@ -324,6 +325,7 @@ function Sidebar({
                           aria-hidden="true"
                         />
                         <span className="truncate">{item.label}</span>
+                        {item.key === "tickets" && <TicketsBadge />}
                       </Link>
                     </li>
                   );
@@ -385,5 +387,26 @@ export function PageHeader({
           drawing a hard box around every page. */}
       <div aria-hidden="true" className="rule-fade mt-5 h-px" />
     </div>
+  );
+}
+
+/**
+ * How many of this person's open tickets carry something they have not read
+ * - a new ticket, a message from the Privacy Office, a ticket sent back.
+ * The one conversation staff are in should be visible from every page.
+ */
+function TicketsBadge() {
+  const tickets = useMyTickets();
+  const count = (tickets.data ?? []).filter(
+    (t) => (t.ticket_status === "issued" || t.ticket_status === "escalated") && t.unread_for_holder > 0,
+  ).length;
+  if (!count) return null;
+  return (
+    <span
+      className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-2xs font-semibold text-white"
+      aria-label={`${count} ticket${count === 1 ? "" : "s"} with unread messages`}
+    >
+      {count}
+    </span>
   );
 }

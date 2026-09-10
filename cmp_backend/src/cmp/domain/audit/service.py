@@ -211,6 +211,7 @@ class Event:
     RIGHTS_TICKET_WITHDRAWN = "rights.ticket_withdrawn"
     RIGHTS_TICKET_REASSIGNED = "rights.ticket_reassigned"
     RIGHTS_TICKET_REMINDED = "rights.ticket_reminded"
+    RIGHTS_TICKET_SENT_BACK = "rights.ticket_sent_back"
     PROCESSOR_RESPONDENT_ADDED = "registry.respondent_added"
     PROCESSOR_RESPONDENT_REMOVED = "registry.respondent_removed"
     RIGHTS_SCOPE_DERIVED = "rights.scope_derived"

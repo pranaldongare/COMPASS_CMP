@@ -1581,6 +1581,113 @@ async def withdraw_ticket(
     return fresh
 
 
+async def send_back_ticket(
+    conn: Conn,
+    row: Row,
+    *,
+    holder_uuid: str,
+    reason: str,
+    due_at: datetime | None,
+    role: Role | str,
+    actor_id: int,
+) -> Row:
+    """The office is not satisfied with what came back: the ticket goes back
+    to the holder, open again, with the reason and a date.
+
+    The return stays on the thread - it is what was said - but it no longer
+    counts as the holder's answer, and a request that had moved on to
+    collating because every ticket was back goes back to awaiting holders.
+    The holder is told the way they are reached, and the ticket reads as
+    unseen until they open it again.
+    """
+    _may_act(row, role)
+    _open(row)
+    holder = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    if not holder:
+        raise NotFound("Holder")
+    if str(holder["ticket_status"]) != Ticket.RETURNED.value:
+        raise Conflict("Only a returned ticket can be sent back", code="ticket_not_returned")
+    why = reason.strip()
+    if not why:
+        raise ValidationFailed("Say what is missing or wrong", field="reason")
+    now = datetime.now(UTC)
+    when = (
+        due_at
+        or holder.get("due_at")
+        or clock.compute(row["received_at"], row["due_at"]).halfway_at
+    )
+    if when > row["due_at"]:
+        raise ValidationFailed("A ticket cannot fall due after the response itself", field="due_at")
+    await repo.update_holder(
+        conn,
+        int(holder["holder_id"]),
+        ticket_status=Ticket.ISSUED.value,
+        due_at=when,
+        returned_at=None,
+        return_summary=None,
+        return_evidence_ref=None,
+        return_evidence_hash=None,
+        return_evidence_name=None,
+        sent_back_at=now,
+        sent_back_reason=why,
+        sent_back_count=int(holder.get("sent_back_count") or 0) + 1,
+        holder_read_at=None,
+    )
+    body = f"Sent back: {why} Please return it again by {when.date().isoformat()}."
+    await repo.add_message(
+        conn,
+        int(holder["holder_id"]),
+        side="office",
+        kind="status",
+        body=body,
+        author_user_id=actor_id,
+    )
+    await repo.append_contact(
+        conn,
+        int(holder["holder_id"]),
+        _contact_entry("sent_back", to=_ticket_address(holder), by=actor_id, note=why),
+    )
+    await _record(
+        conn,
+        row,
+        Event.RIGHTS_TICKET_SENT_BACK,
+        actor_user_id=actor_id,
+        entity_type="rights_request_holder",
+        entity_id=int(holder["holder_id"]),
+        detail={"label": holder["label"], "reason": why, "due_at": when.isoformat()},
+    )
+    await _tell_holder(
+        conn,
+        row,
+        holder,
+        author_id=actor_id,
+        body=(
+            f"This ticket has been sent back to you and is open again. {why}\n\n"
+            f"Please return it again by {when.date().isoformat()}."
+        ),
+    )
+    # A request that moved on because everything was back is waiting again.
+    fresh_row = await reload(conn, row)
+    if Status(fresh_row["status"]) is Status.COLLATING:
+        await repo.update(conn, int(row["request_id"]), status=Status.AWAITING_HOLDERS.value)
+        fresh_row = await reload(conn, row)
+        await _record(
+            conn,
+            fresh_row,
+            Event.RIGHTS_STATUS_CHANGED,
+            actor_user_id=actor_id,
+            detail={
+                "from": Status.COLLATING.value,
+                "to": Status.AWAITING_HOLDERS.value,
+                "reason": f"The ticket for {holder['label']} was sent back",
+                "automatic": True,
+            },
+        )
+    fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    assert fresh is not None
+    return fresh
+
+
 async def reassign_holder(
     conn: Conn,
     row: Row,

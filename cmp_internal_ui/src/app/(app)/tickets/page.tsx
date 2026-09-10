@@ -180,6 +180,12 @@ function TicketCard({ ticket: t, openAtFirst }: { ticket: MyTicket; openAtFirst?
             <p className="text-sm">Withdrawn by the Privacy Office. Nothing further is needed from you; the reason is on the thread.</p>
           </Alert>
         )}
+        {isOpen && t.sent_back_at && (
+          <Alert tone="warning" title={`Sent back to you ${formatDateTime(t.sent_back_at)}`}>
+            <p className="text-sm">{t.sent_back_reason}</p>
+            {t.due_at && <p className="mt-1 text-xs">Return it again by {formatDate(t.due_at)}.</p>}
+          </Alert>
+        )}
         {t.consent_uuid && (
           <div className="text-sm">
             <ConsentScope

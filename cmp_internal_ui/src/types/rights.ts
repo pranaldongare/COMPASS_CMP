@@ -155,6 +155,10 @@ export interface RightsHolder {
   last_reminded_at: Timestamp | null;
   reminders_sent: number;
   return_evidence_name: string | null;
+  /** Set when the office sent a return back; the count survives the next return. */
+  sent_back_at: Timestamp | null;
+  sent_back_reason: string | null;
+  sent_back_count: number;
 }
 
 /**
@@ -250,6 +254,10 @@ export interface MyTicket {
   last_reminded_at: Timestamp | null;
   reminders_sent: number;
   return_evidence_name: string | null;
+  /** Set when the office sent a return back; the count survives the next return. */
+  sent_back_at: Timestamp | null;
+  sent_back_reason: string | null;
+  sent_back_count: number;
   /** The consent the request is confined to, when it is. */
   consent_uuid: Uuid | null;
   consent_project: string | null;

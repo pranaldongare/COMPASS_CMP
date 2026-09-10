@@ -176,6 +176,9 @@ class HolderOut(Out):
     last_reminded_at: datetime | None = None
     reminders_sent: int = 0
     return_evidence_name: str | None = None
+    sent_back_at: datetime | None = None
+    sent_back_reason: str | None = None
+    sent_back_count: int = 0
 
 
 class MessageOut(Out):
@@ -187,6 +190,13 @@ class MessageOut(Out):
     evidence_hash: str | None
     evidence_name: str | None = None
     created_at: datetime
+
+
+class SendBackIn(Schema):
+    #: What is missing or wrong. Sent to the holder and kept on the thread.
+    reason: ReasonText
+    #: A new date; the old one stands when omitted.
+    due_at: datetime | None = None
 
 
 class WithdrawIn(Schema):
@@ -239,6 +249,9 @@ class TicketOut(Out):
     last_reminded_at: datetime | None = None
     reminders_sent: int = 0
     return_evidence_name: str | None = None
+    sent_back_at: datetime | None = None
+    sent_back_reason: str | None = None
+    sent_back_count: int = 0
     #: The consent the request is confined to, when it is.
     consent_uuid: UUID | None = None
     consent_project: str | None = None
@@ -1024,6 +1037,29 @@ async def post_to_holder(
             evidence_ref=evidence_ref,
             evidence_hash=evidence_hash,
             evidence_name=evidence_name,
+        )
+
+
+@router.post(
+    "/{request_uuid}/holders/{holder_uuid}/send-back",
+    response_model=HolderOut,
+    summary="Send a returned ticket back to its holder",
+)
+async def send_back_ticket(
+    request_uuid: UUID, holder_uuid: UUID, body: SendBackIn, principal: RightsWriter
+) -> dict[str, Any]:
+    """Not satisfied with the return: the ticket is open again with the
+    reason and a date, the holder is told, and the request waits again."""
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        return await service.send_back_ticket(
+            conn,
+            row,
+            holder_uuid=str(holder_uuid),
+            reason=body.reason,
+            due_at=body.due_at,
+            role=principal.role,
+            actor_id=principal.user_id,
         )
 
 

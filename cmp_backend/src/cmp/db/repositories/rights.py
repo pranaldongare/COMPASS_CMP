@@ -363,6 +363,7 @@ _HOLDER_SELECT = """
   ru.email AS responder_user_email,
   h.brief, h.office_read_at, h.holder_read_at, h.holder_read_at AS seen_at,
   h.return_evidence_name, h.last_reminded_at, h.reminders_sent,
+  h.sent_back_at, h.sent_back_reason, h.sent_back_count,
   (SELECT count(*) FROM rights_ticket_message m WHERE m.holder_id = h.holder_id)
     AS message_count,
   (SELECT count(*) FROM rights_ticket_message m
@@ -518,6 +519,9 @@ _HOLDER_MUTABLE = frozenset(
         "return_evidence_name",
         "last_reminded_at",
         "reminders_sent",
+        "sent_back_at",
+        "sent_back_reason",
+        "sent_back_count",
     }
 )
 

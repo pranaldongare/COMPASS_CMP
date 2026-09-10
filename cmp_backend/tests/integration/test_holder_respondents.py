@@ -719,3 +719,104 @@ class TestLifecycle:
         )
         assert done["return_evidence_name"] == "confirmation-signed.pdf"
         assert row["reference"]
+
+
+class TestSendBack:
+    """The office is not satisfied with a return: the ticket goes back."""
+
+    async def test_a_returned_ticket_goes_back_open_with_a_reason(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
+    ) -> None:
+        row, mailed, portal = await TestChannels._issued(TestChannels(), conn, seeded)
+        dpo = int(seeded["users"]["dpo"]["id"])
+        dco = int(seeded["users"]["dco"]["id"])
+        await service.return_own_ticket(
+            conn,
+            user_id=dco,
+            holder_uuid=str(portal["holder_uuid"]),
+            summary="Nothing held.",
+            evidence_ref=None,
+            evidence_hash=None,
+        )
+        await service.withdraw_ticket(
+            conn,
+            await service.reload(conn, row),
+            holder_uuid=str(mailed["holder_uuid"]),
+            reason="Holds nothing",
+            role="dpo",
+            actor_id=dpo,
+        )
+        assert (await service.reload(conn, row))["status"] == "collating"
+
+        # Not good enough. Back it goes, and the request waits again.
+        back = await service.send_back_ticket(
+            conn,
+            await service.reload(conn, row),
+            holder_uuid=str(portal["holder_uuid"]),
+            reason="Say which recordings, and where the copies are.",
+            due_at=None,
+            role="dpo",
+            actor_id=dpo,
+        )
+        assert back["ticket_status"] == "issued"
+        assert back["sent_back_count"] == 1 and back["sent_back_reason"].startswith("Say which")
+        assert back["return_summary"] is None and back["returned_at"] is None
+        assert back["contact_log"][-1]["kind"] == "sent_back"
+        assert back["unread_for_holder"] >= 1, "reads as unseen until they open it again"
+        assert (await service.reload(conn, row))["status"] == "awaiting_holders"
+        messages = await repo.messages_of(conn, int(portal["holder_id"]))
+        assert messages[-1]["kind"] == "status" and messages[-1]["body"].startswith("Sent back:")
+        assert any(m["kind"] == "return" for m in messages), "the return stays on the thread"
+
+        # It can be returned again; and only a returned ticket can go back.
+        with pytest.raises(Conflict):
+            await service.send_back_ticket(
+                conn,
+                await service.reload(conn, row),
+                holder_uuid=str(portal["holder_uuid"]),
+                reason="again",
+                due_at=None,
+                role="dpo",
+                actor_id=dpo,
+            )
+        again = await service.return_own_ticket(
+            conn,
+            user_id=dco,
+            holder_uuid=str(portal["holder_uuid"]),
+            summary="Two recordings, copies on the lab NAS only.",
+            evidence_ref=None,
+            evidence_hash=None,
+        )
+        assert again["ticket_status"] == "returned" and again["sent_back_count"] == 1
+        assert (await service.reload(conn, row))["status"] == "collating"
+
+    async def test_the_feed_tells_each_side_what_the_other_did(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
+    ) -> None:
+        row, _mailed, portal = await TestChannels._issued(TestChannels(), conn, seeded)
+        dpo = int(seeded["users"]["dpo"]["id"])
+        dco = int(seeded["users"]["dco"]["id"])
+        await service.post_office_message(
+            conn,
+            await service.reload(conn, row),
+            holder_uuid=str(portal["holder_uuid"]),
+            body="Any copies off-site?",
+            role="dpo",
+            actor_id=dpo,
+        )
+        await service.post_holder_message(
+            conn, user_id=dco, holder_uuid=str(portal["holder_uuid"]), body="None."
+        )
+        mine = await audit_repo.ticket_events_for_responder(conn, dco)
+        kinds = [e["event_type"] for e in mine]
+        assert "rights.ticket_message" in kinds and "rights.ticket_issued" in kinds
+        assert all(str(e["holder_uuid"]) == str(portal["holder_uuid"]) for e in mine)
+        assert all((e["detail"] or {}).get("side") != "holder" for e in mine), (
+            "their own words are not news to them"
+        )
+        office = await audit_repo.ticket_events_for_office(conn)
+        assert any((e["detail"] or {}).get("side") == "holder" for e in office), (
+            "the office hears what the holder wrote"
+        )
+        # Somebody else's tickets are not in this person's feed.
+        assert await audit_repo.ticket_events_for_responder(conn, dpo) == []

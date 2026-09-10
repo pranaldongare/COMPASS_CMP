@@ -12,7 +12,7 @@
  */
 "use client";
 
-import { AlertTriangle, ExternalLink, Mail, MailPlus, Monitor, Plus, Send, Wand2 } from "lucide-react";
+import { AlertTriangle, ExternalLink, Mail, MailPlus, Monitor, Plus, Send, Undo2, Wand2 } from "lucide-react";
 import * as React from "react";
 
 import { FileInput } from "@/components/forms";
@@ -47,6 +47,7 @@ import {
   useReassignHolder,
   useRemindHolder,
   useReturnTicket,
+  useSendBackTicket,
   useWithdrawTicket,
 } from "@/features/rights/mutations";
 import { useHolderThread } from "@/features/rights/queries";
@@ -194,6 +195,7 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
   const [talking, setTalking] = React.useState(false);
   const [reassigning, setReassigning] = React.useState(false);
   const [withdrawing, setWithdrawing] = React.useState(false);
+  const [sendingBack, setSendingBack] = React.useState(false);
   const remind = useRemindHolder(r.request_uuid);
   const ticketOpen = h.ticket_status === "issued" || h.ticket_status === "escalated";
   const due = dueCopy(h.due_at, ticketOpen);
@@ -283,6 +285,7 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
               {h.escalated_at && ` · escalated ${formatDateTime(h.escalated_at)}`}
               {h.reminders_sent > 0 && ` · ${h.reminders_sent} reminder${h.reminders_sent === 1 ? "" : "s"}`}
               {h.returned_at && ` · returned ${formatDateTime(h.returned_at)}`}
+              {h.sent_back_count > 0 && ` · sent back ${h.sent_back_count === 1 ? "once" : `${h.sent_back_count} times`}`}
             </p>
           )}
           {ticketOpen && h.channel === "portal" && (
@@ -337,6 +340,12 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
               <Button variant="secondary" size="sm" onClick={() => setContacting(true)}>
                 <MailPlus className="size-4" />
                 Mail · log a contact
+              </Button>
+            )}
+            {h.ticket_status === "returned" && (
+              <Button variant="secondary" size="sm" onClick={() => setSendingBack(true)}>
+                <Undo2 className="size-4" />
+                Send back
               </Button>
             )}
             {(h.ticket_status === "issued" || h.ticket_status === "escalated") && (
@@ -417,6 +426,14 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
           description="The instruction and the brief are delivered again to the new respondent, the thread says so, and the ticket counts as unseen until they open it."
         >
           <ReassignForm request={r} holder={h} respondents={respondents.data ?? []} onDone={() => setReassigning(false)} />
+        </DialogContent>
+      </Dialog>
+      <Dialog open={sendingBack} onOpenChange={(next) => !next && setSendingBack(false)}>
+        <DialogContent
+          title={`${h.label} · send this ticket back`}
+          description="Not satisfied with what came back. The ticket is open again with your reason and a date, the holder is told, and the request waits for it again. What they returned stays on the thread."
+        >
+          <SendBackForm request={r} holder={h} onDone={() => setSendingBack(false)} />
         </DialogContent>
       </Dialog>
       <Dialog open={withdrawing} onOpenChange={(next) => !next && setWithdrawing(false)}>
@@ -553,6 +570,53 @@ function ReassignForm({ request: r, holder: h, respondents, onDone }: { request:
   );
 }
 
+function SendBackForm({ request: r, holder: h, onDone }: { request: RightsRequestDetail; holder: RightsHolder; onDone: () => void }) {
+  const toast = useToast();
+  const sendBack = useSendBackTicket(r.request_uuid);
+  const [reason, setReason] = React.useState("");
+  const [date, setDate] = React.useState("");
+  const [error, setError] = React.useState<string | null>(null);
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    try {
+      await sendBack.mutateAsync({
+        holderUuid: h.holder_uuid,
+        reason: reason.trim(),
+        due_at: date ? new Date(`${date}T12:00:00`).toISOString() : null,
+      });
+      toast.success("Ticket sent back", `${h.label} has been told and the ticket is open again.`);
+      onDone();
+    } catch (err) {
+      setError(messageOf(err, "Could not send it back."));
+    }
+  }
+  return (
+    <form method="post" onSubmit={submit} noValidate>
+      <div className="space-y-4">
+        {error && <Alert tone="danger">{error}</Alert>}
+        {h.return_summary && (
+          <p className="rounded-md bg-bg-inset p-2 text-xs">
+            <span className="font-medium">They returned: </span>
+            {h.return_summary}
+          </p>
+        )}
+        <Field label="What is missing or wrong" hint="Sent to them, kept on the thread and in the audit trail." required>
+          {(p) => <Textarea {...p} rows={3} maxLength={2000} value={reason} onChange={(e) => setReason(e.target.value)} />}
+        </Field>
+        <Field label="Return it again by" hint={h.due_at ? `Leave blank to keep ${formatDate(h.due_at)}. Cannot be after the response is due.` : "Cannot be after the response is due."}>
+          {(p) => <Input {...p} type="date" value={date} onChange={(e) => setDate(e.target.value)} />}
+        </Field>
+      </div>
+      <DialogFooter>
+        <Button type="submit" variant="primary" loading={sendBack.isPending} disabled={!reason.trim()}>
+          Send it back
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
 function WithdrawForm({ request: r, holder: h, onDone }: { request: RightsRequestDetail; holder: RightsHolder; onDone: () => void }) {
   const toast = useToast();
   const withdraw = useWithdrawTicket(r.request_uuid);
@@ -594,6 +658,7 @@ const CONTACT_LABEL: Record<string, string> = {
   note: "Note",
   escalated: "Escalated",
   returned_on_portal: "Returned on the portal",
+  sent_back: "Sent back",
   reminder: "Reminder sent",
   reassigned: "Reassigned",
   withdrawn: "Withdrawn",

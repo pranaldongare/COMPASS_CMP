@@ -522,6 +522,27 @@ async def notifications(
                    ORDER BY l.occurred_at DESC LIMIT %s""",
                 (limit,),
             )
+            # What happened on the tickets addressed to this person, and -
+            # for the office - what holders did on theirs. Without these the
+            # bell said nothing about the one conversation staff are actually
+            # in: a message from the Privacy Office on a ticket reached the
+            # mail outbox and nowhere in the console.
+            mine = await audit_repo.ticket_events_for_responder(
+                conn, principal.user_id, limit=limit
+            )
+            office = (
+                await audit_repo.ticket_events_for_office(conn, limit=limit)
+                if principal.role is Role.DPO
+                else []
+            )
+            seen: set[str] = set()
+            merged: list[dict[str, Any]] = []
+            for r in sorted([*rows, *mine, *office], key=lambda r: r["occurred_at"], reverse=True):
+                if str(r["log_uuid"]) in seen:
+                    continue
+                seen.add(str(r["log_uuid"]))
+                merged.append(r)
+            rows = merged[:limit]
         # Same resolution the audit trail gets: a notification that says
         # "notice#42 published" tells the reader nothing they can act on.
         #
@@ -530,6 +551,12 @@ async def notifications(
         # console - `auth_user` to the administrator's account register, which
         # is where following her own registration notification took her.
         rows = await entity_repo.attach(conn, rows, for_subject=principal.role is Role.DATA_SUBJECT)
+        # A respondent opens the ticket, not the request page - which their
+        # role may not reach. The DPO keeps the request page.
+        if principal.role is not Role.DPO:
+            for r in rows:
+                if r.get("holder_uuid"):
+                    r["entity_href"] = f"/tickets?ticket={r['holder_uuid']}"
     return {"items": rows, "next_cursor": None, "total": len(rows)}
 
 
