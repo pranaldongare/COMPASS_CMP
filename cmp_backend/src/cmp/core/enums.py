@@ -387,6 +387,9 @@ class RightsTicketStatus(StrEnum):
     #: The request was answered without this holder's return. Named in the
     #: response as the gap.
     UNRETURNED = "unreturned"
+    #: Issued in error, or the holder turned out not to hold anything of hers
+    #: after all. Withdrawn by the office with a reason; not a gap, not a return.
+    WITHDRAWN = "withdrawn"
 
 
 class RightsItemState(StrEnum):

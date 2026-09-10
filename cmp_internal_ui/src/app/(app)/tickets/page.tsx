@@ -29,7 +29,7 @@ import {
   EmptyState,
   Skeleton,
 } from "@/components/ui/primitives";
-import { RequestTypeBadge, TicketBadge } from "@/features/rights/components/copy";
+import { RequestTypeBadge, TicketBadge, dueCopy } from "@/features/rights/components/copy";
 import { myMessageAttachmentUrl } from "@/features/rights/api";
 import { BriefPanel, ReplyBox, Thread, UnreadBadge } from "@/features/rights/components/thread";
 import { useMessageOffice, useReturnMyTicket } from "@/features/rights/mutations";
@@ -51,8 +51,13 @@ function TicketsInner() {
   const tickets = useMyTickets();
   // A link from the dashboard queue or from a mail opens the ticket it names.
   const wanted = useSearchParams().get("ticket");
-  const open = (tickets.data ?? []).filter((t) => t.ticket_status === "issued" || t.ticket_status === "escalated");
+  // Open ones first, the most pressing at the top: overdue, then soonest due.
+  const open = (tickets.data ?? [])
+    .filter((t) => t.ticket_status === "issued" || t.ticket_status === "escalated")
+    .sort((a, b) => (a.due_at ? new Date(a.due_at).getTime() : Infinity) - (b.due_at ? new Date(b.due_at).getTime() : Infinity));
   const done = (tickets.data ?? []).filter((t) => !open.includes(t));
+  const { overdue, soon } = urgency(open);
+  const unread = (tickets.data ?? []).reduce((n, t) => n + t.unread_for_holder, 0);
 
   return (
     <>
@@ -67,6 +72,15 @@ function TicketsInner() {
         <Alert tone="danger" title="Could not load your tickets">
           {tickets.error.userMessage()}
         </Alert>
+      )}
+
+      {tickets.data && tickets.data.length > 0 && (
+        <div className="mb-6 grid gap-3 sm:grid-cols-4" data-testid="ticket-summary">
+          <Stat label="Open" value={open.length} tone="neutral" />
+          <Stat label="Overdue" value={overdue} tone={overdue ? "danger" : "neutral"} />
+          <Stat label="Due within 7 days" value={soon} tone={soon ? "warning" : "neutral"} />
+          <Stat label="Unread from the Privacy Office" value={unread} tone={unread ? "warning" : "neutral"} />
+        </div>
       )}
 
       {tickets.data && tickets.data.length === 0 && (
@@ -106,10 +120,34 @@ function TicketsInner() {
   );
 }
 
+/** How many open tickets are past their date, and how many fall due within a week. */
+function urgency(open: MyTicket[]): { overdue: number; soon: number } {
+  let overdue = 0;
+  let soon = 0;
+  for (const t of open) {
+    const d = dueCopy(t.due_at, true);
+    if (!d) continue;
+    if (d.days < 0) overdue += 1;
+    else if (d.days <= 7) soon += 1;
+  }
+  return { overdue, soon };
+}
+
+function Stat({ label, value, tone }: { label: string; value: number; tone: "neutral" | "warning" | "danger" }) {
+  const colour = tone === "danger" ? "text-danger-text" : tone === "warning" ? "text-warning-text" : "text-text";
+  return (
+    <div className="rounded-lg border border-border bg-surface px-4 py-3">
+      <p className={`text-2xl font-semibold tabular-nums ${colour}`}>{value}</p>
+      <p className="text-xs text-text-muted">{label}</p>
+    </div>
+  );
+}
+
 function TicketCard({ ticket: t, openAtFirst }: { ticket: MyTicket; openAtFirst?: boolean }) {
   const [responding, setResponding] = React.useState(Boolean(openAtFirst));
   const isOpen = t.ticket_status === "issued" || t.ticket_status === "escalated";
   const overdue = isOpen && t.due_at && new Date(t.due_at) < new Date();
+  const due = dueCopy(t.due_at, isOpen);
 
   return (
     <Card data-testid="ticket">
@@ -127,15 +165,20 @@ function TicketCard({ ticket: t, openAtFirst }: { ticket: MyTicket; openAtFirst?
             {t.issued_at && ` · issued ${formatDateTime(t.issued_at)}`}
           </p>
         </div>
-        {t.due_at && (
-          <p className={overdue ? "flex items-center gap-1 text-sm font-medium text-danger-text" : "text-sm text-text-muted"}>
+        {due && (
+          <p className={due.tone === "danger" ? "flex items-center gap-1 text-sm font-medium text-danger-text" : due.tone === "warning" ? "text-sm font-medium text-warning-text" : "text-sm text-text-muted"}>
             {overdue && <AlertTriangle className="size-4" aria-hidden="true" />}
-            {overdue ? "Overdue - was due " : "Due "}
-            {formatDate(t.due_at)}
+            <span className="capitalize">{due.text}</span>
+            {t.due_at && <span className="font-normal text-text-muted"> · {formatDate(t.due_at)}</span>}
           </p>
         )}
       </CardHeader>
       <CardBody className="space-y-3">
+        {t.ticket_status === "withdrawn" && (
+          <Alert tone="info">
+            <p className="text-sm">Withdrawn by the Privacy Office. Nothing further is needed from you; the reason is on the thread.</p>
+          </Alert>
+        )}
         <div>
           <p className="text-xs font-medium uppercase tracking-wider text-text-subtle">Instruction</p>
           <p className="mt-1 whitespace-pre-wrap text-sm">{t.instruction ?? "See the Privacy Office."}</p>

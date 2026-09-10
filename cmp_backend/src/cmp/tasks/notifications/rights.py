@@ -111,6 +111,14 @@ def send_nomination_accepted(
     return _deliver(to=contact, subject=subject, body=body)
 
 
+@shared_task(name="cmp.notifications.send_ticket_reminder", **RETRY_KW)
+def send_ticket_reminder(
+    contact: str, reference: str, holder_label: str, due_on: str, days: int, where: str | None
+) -> dict[str, Any]:
+    subject, text = templates.ticket_reminder(reference, holder_label, due_on, days, where)
+    return _deliver(to=contact, subject=subject, body=text)
+
+
 @shared_task(name="cmp.notifications.send_ticket_message", **RETRY_KW)
 def send_ticket_message(
     contact: str, reference: str, holder_label: str, author: str, body: str, where: str | None

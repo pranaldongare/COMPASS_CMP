@@ -70,7 +70,31 @@ export const TICKET_COPY: Record<RightsTicketStatus, { label: string; tone: Badg
   escalated: { label: "Escalated", tone: "warning" },
   returned: { label: "Returned", tone: "success" },
   unreturned: { label: "Never returned", tone: "danger" },
+  withdrawn: { label: "Withdrawn", tone: "neutral" },
 };
+
+/**
+ * How a ticket's date reads, as a person feels it: "due in 3 days", "due
+ * today", "overdue by 2 days". Colour follows the words - not the other way
+ * round - so the urgency survives a greyscale print.
+ */
+export function dueCopy(
+  dueAt: string | null,
+  open: boolean,
+): { text: string; tone: "neutral" | "warning" | "danger"; days: number } | null {
+  if (!dueAt) return null;
+  const due = new Date(dueAt);
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const dueDay = new Date(due);
+  dueDay.setHours(0, 0, 0, 0);
+  const days = Math.round((dueDay.getTime() - start.getTime()) / 86_400_000);
+  if (!open) return { text: "was due", tone: "neutral", days };
+  if (days < 0) return { text: `overdue by ${-days} day${-days === 1 ? "" : "s"}`, tone: "danger", days };
+  if (days === 0) return { text: "due today", tone: "danger", days };
+  if (days <= 3) return { text: `due in ${days} day${days === 1 ? "" : "s"}`, tone: "warning", days };
+  return { text: `due in ${days} days`, tone: "neutral", days };
+}
 
 type BadgeTone = "neutral" | "info" | "success" | "warning" | "danger";
 

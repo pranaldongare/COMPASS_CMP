@@ -9,6 +9,7 @@ so the DPO is not retyping who answers for whom on every request.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -487,3 +488,187 @@ class TestThread:
                 "UPDATE rights_ticket_message SET body = 'edited' WHERE holder_id = %s",
                 (holder["holder_id"],),
             )
+
+
+class TestLifecycle:
+    """What makes a ticket robust: it can be withdrawn, reassigned and
+    reminded, each on the record, and the platform reminds on a cadence."""
+
+    async def _issued(self, conn: Any, seeded: dict[str, Any]) -> tuple[dict[str, Any], dict]:
+        in_house = await _processor(conn, name="Lifecycle Lab", in_house=True)
+        await registry_repo.add_respondent(
+            conn,
+            int(in_house["processor_id"]),
+            name="x",
+            contact="x",
+            user_id=int(seeded["users"]["dco"]["id"]),
+        )
+        row = await _request(conn, seeded)
+        dpo = seeded["users"]["dpo"]["id"]
+        await service.add_holder(
+            conn,
+            row,
+            label="",
+            processor_uuid=str(in_house["processor_uuid"]),
+            responder_name=None,
+            responder_contact=None,
+            role="dpo",
+            actor_id=dpo,
+        )
+        row = await service.classify(
+            conn, row, request_type="access", note=None, role="dpo", actor_id=dpo
+        )
+        row = await service.transition(
+            conn, row, to="in_progress", reason=None, role="dpo", actor_id=dpo
+        )
+        holders = await service.issue_tickets(
+            conn, row, instruction=None, due_at=None, role="dpo", actor_id=dpo
+        )
+        return dict(await service.reload(conn, row)), dict(holders[0])
+
+    async def test_withdrawn_is_neither_a_return_nor_a_gap(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
+    ) -> None:
+        row, holder = await self._issued(conn, seeded)
+        dpo = int(seeded["users"]["dpo"]["id"])
+        dco = int(seeded["users"]["dco"]["id"])
+        gone = await service.withdraw_ticket(
+            conn,
+            row,
+            holder_uuid=str(holder["holder_uuid"]),
+            reason="Named in error - this lab never held her data.",
+            role="dpo",
+            actor_id=dpo,
+        )
+        assert gone["ticket_status"] == "withdrawn"
+        assert gone["contact_log"][-1]["kind"] == "withdrawn"
+        thread = await service.thread_for_office(
+            conn, row, holder_uuid=str(holder["holder_uuid"]), role="dpo"
+        )
+        assert thread["messages"][-1]["kind"] == "status"
+        # Out of the team's open work, and not something to remind or return.
+        assert all(
+            t["ticket_status"] != "issued"
+            for t in await service.tickets_for(conn, dco)
+            if str(t["holder_uuid"]) == str(holder["holder_uuid"])
+        )
+        with pytest.raises(Conflict):
+            await service.remind_holder(
+                conn, row, holder_uuid=str(holder["holder_uuid"]), role="dpo", actor_id=dpo
+            )
+        with pytest.raises(Conflict):
+            await service.return_own_ticket(
+                conn,
+                user_id=dco,
+                holder_uuid=str(holder["holder_uuid"]),
+                summary="too late",
+                evidence_ref=None,
+                evidence_hash=None,
+            )
+
+    async def test_reassigning_redelivers_and_resets_seen(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
+    ) -> None:
+        row, holder = await self._issued(conn, seeded)
+        dpo = int(seeded["users"]["dpo"]["id"])
+        dco = int(seeded["users"]["dco"]["id"])
+        ref = str(holder["holder_uuid"])
+        # The team opens it: seen.
+        await service.ticket_detail_for(conn, dco, ref)
+        seen = await repo.holder_by_uuid(conn, int(row["request_id"]), ref)
+        assert seen["seen_at"] is not None
+
+        moved = await service.reassign_holder(
+            conn,
+            row,
+            holder_uuid=ref,
+            respondent_uuid=None,
+            responder_name="Somebody Else",
+            responder_contact="else@third.example",
+            role="dpo",
+            actor_id=dpo,
+        )
+        assert moved["channel"] == "email"
+        assert moved["responder_contact"] == "else@third.example"
+        assert moved["seen_at"] is None, "the new person has not seen it"
+        kinds = [c["kind"] for c in moved["contact_log"]]
+        assert kinds[-2:] == ["reassigned", "mail_sent"], kinds
+        assert moved["contact_log"][-1]["to"] == "else@third.example"
+        # Gone from the old person's inbox.
+        assert ref not in {str(t["holder_uuid"]) for t in await service.tickets_for(conn, dco)}
+
+    async def test_a_reminder_is_on_the_record(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
+    ) -> None:
+        row, holder = await self._issued(conn, seeded)
+        dpo = int(seeded["users"]["dpo"]["id"])
+        nudged = await service.remind_holder(
+            conn, row, holder_uuid=str(holder["holder_uuid"]), role="dpo", actor_id=dpo
+        )
+        assert nudged["reminders_sent"] == 1 and nudged["last_reminded_at"] is not None
+        assert nudged["contact_log"][-1]["kind"] == "reminder"
+        thread = await service.thread_for_office(
+            conn, row, holder_uuid=str(holder["holder_uuid"]), role="dpo"
+        )
+        assert thread["messages"][-1]["kind"] == "status"
+        assert "Reminder sent" in thread["messages"][-1]["body"]
+
+    async def test_the_platform_reminds_on_a_cadence_and_once_a_day(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
+    ) -> None:
+        from datetime import time, timedelta
+
+        row, holder = await self._issued(conn, seeded)
+        due = holder["due_at"].date()
+        ref = str(holder["holder_uuid"])
+
+        async def count() -> int:
+            fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), ref)
+            return int(fresh["reminders_sent"])
+
+        # Too early: nothing. Three days before: one. The same day again: none.
+        assert await service.sweep_tickets(conn, today=due - timedelta(days=10)) == 0
+        assert await service.sweep_tickets(conn, today=due - timedelta(days=3)) >= 1
+        assert await count() == 1
+        # Stamped on the simulated day, as the sweep would have stamped it.
+        await repo.update_holder(
+            conn,
+            int(holder["holder_id"]),
+            last_reminded_at=datetime.combine(due - timedelta(days=3), time(12), tzinfo=UTC),
+        )
+        assert await service.sweep_tickets(conn, today=due - timedelta(days=3)) == 0
+        # Reset the day-stamp to test the calendar alone.
+        await repo.update_holder(conn, int(holder["holder_id"]), last_reminded_at=None)
+        assert await service.sweep_tickets(conn, today=due - timedelta(days=1)) == 0
+        assert await service.sweep_tickets(conn, today=due) >= 1
+        await repo.update_holder(conn, int(holder["holder_id"]), last_reminded_at=None)
+        assert await service.sweep_tickets(conn, today=due + timedelta(days=2)) == 0
+        assert await service.sweep_tickets(conn, today=due + timedelta(days=3)) >= 1
+        assert await count() == 3
+
+    async def test_a_file_keeps_its_name(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
+    ) -> None:
+        row, holder = await self._issued(conn, seeded)
+        dco = int(seeded["users"]["dco"]["id"])
+        after = await service.post_holder_message(
+            conn,
+            user_id=dco,
+            holder_uuid=str(holder["holder_uuid"]),
+            body="Extract attached.",
+            evidence_ref="rights/x.csv",
+            evidence_hash="c" * 64,
+            evidence_name="gait-extract-2026.csv",
+        )
+        assert after["messages"][-1]["evidence_name"] == "gait-extract-2026.csv"
+        done = await service.return_own_ticket(
+            conn,
+            user_id=dco,
+            holder_uuid=str(holder["holder_uuid"]),
+            summary="Returned with the signed confirmation.",
+            evidence_ref="rights/y.pdf",
+            evidence_hash="d" * 64,
+            evidence_name="confirmation-signed.pdf",
+        )
+        assert done["return_evidence_name"] == "confirmation-signed.pdf"
+        assert row["reference"]

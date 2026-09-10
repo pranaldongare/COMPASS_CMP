@@ -951,6 +951,7 @@ async def return_ticket(
     evidence_hash: str | None,
     role: Role | str,
     actor_id: int,
+    evidence_name: str | None = None,
 ) -> Row:
     """What came back: a confirmation of what was done and how - not an assurance."""
     _may_act(row, role)
@@ -970,6 +971,7 @@ async def return_ticket(
         return_summary=summary.strip(),
         return_evidence_ref=evidence_ref,
         return_evidence_hash=evidence_hash,
+        return_evidence_name=evidence_name,
     )
     await repo.add_message(
         conn,
@@ -980,6 +982,7 @@ async def return_ticket(
         author_user_id=actor_id,
         evidence_ref=evidence_ref,
         evidence_hash=evidence_hash,
+        evidence_name=evidence_name,
     )
     await _record(
         conn,
@@ -1319,6 +1322,7 @@ async def post_office_message(
     actor_id: int,
     evidence_ref: str | None = None,
     evidence_hash: str | None = None,
+    evidence_name: str | None = None,
 ) -> dict[str, Any]:
     """The office writes on the thread, with a file where one helps. Logged,
     and the holder is told."""
@@ -1341,6 +1345,7 @@ async def post_office_message(
         author_user_id=actor_id,
         evidence_ref=evidence_ref,
         evidence_hash=evidence_hash,
+        evidence_name=evidence_name,
     )
     await repo.mark_thread_read(conn, int(holder["holder_id"]), side="office")
     await _record(
@@ -1381,6 +1386,7 @@ async def post_holder_message(
     body: str,
     evidence_ref: str | None = None,
     evidence_hash: str | None = None,
+    evidence_name: str | None = None,
 ) -> dict[str, Any]:
     """The team writes on its ticket, with a file where one helps - an extract,
     a screenshot of a record, a signed confirmation. Logged, and the Privacy
@@ -1404,6 +1410,7 @@ async def post_holder_message(
         author_user_id=user_id,
         evidence_ref=evidence_ref,
         evidence_hash=evidence_hash,
+        evidence_name=evidence_name,
     )
     await repo.mark_thread_read(conn, int(holder["holder_id"]), side="holder")
     await _record(
@@ -1446,11 +1453,273 @@ async def message_attachment(
         entity_id=int(holder["holder_id"]),
         detail={"label": holder["label"], "message": message_uuid, "as_subject": False},
     )
-    return (
-        payload,
-        f"{row['reference']}-{message_uuid}-attachment",
-        str(message["evidence_hash"] or ""),
+    name = str(message.get("evidence_name") or f"{row['reference']}-{message_uuid}-attachment")
+    return payload, name, str(message["evidence_hash"] or "")
+
+
+# ------------------------------------------------- withdraw, reassign, remind
+_OPEN_TICKET: frozenset[str] = frozenset({Ticket.ISSUED.value, Ticket.ESCALATED.value})
+
+
+def _require_open_ticket(holder: Row) -> None:
+    if str(holder["ticket_status"]) not in _OPEN_TICKET:
+        raise Conflict("This holder has no open ticket", code="ticket_not_open")
+
+
+async def withdraw_ticket(
+    conn: Conn, row: Row, *, holder_uuid: str, reason: str, role: Role | str, actor_id: int
+) -> Row:
+    """A ticket issued in error, or to a party that turns out to hold nothing
+    of hers: withdrawn, with a reason, and the holder told. Not a return and
+    not a gap - the response does not name it as outstanding."""
+    _may_act(row, role)
+    _open(row)
+    holder = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    if not holder:
+        raise NotFound("Holder")
+    _require_open_ticket(holder)
+    why = reason.strip()
+    if not why:
+        raise ValidationFailed("Say why the ticket is withdrawn", field="reason")
+    await repo.update_holder(conn, int(holder["holder_id"]), ticket_status=Ticket.WITHDRAWN.value)
+    await repo.add_message(
+        conn,
+        int(holder["holder_id"]),
+        side="office",
+        kind="status",
+        body=f"Ticket withdrawn: {why}",
+        author_user_id=actor_id,
     )
+    await repo.append_contact(
+        conn,
+        int(holder["holder_id"]),
+        _contact_entry("withdrawn", to=_ticket_address(holder), by=actor_id, note=why),
+    )
+    await _record(
+        conn,
+        row,
+        Event.RIGHTS_TICKET_WITHDRAWN,
+        actor_user_id=actor_id,
+        entity_type="rights_request_holder",
+        entity_id=int(holder["holder_id"]),
+        detail={"label": holder["label"], "reason": why},
+    )
+    await _tell_holder(
+        conn,
+        row,
+        holder,
+        author_id=actor_id,
+        body=f"This ticket is withdrawn and needs nothing further from you. Reason: {why}",
+    )
+    fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    assert fresh is not None
+    return fresh
+
+
+async def reassign_holder(
+    conn: Conn,
+    row: Row,
+    *,
+    holder_uuid: str,
+    respondent_uuid: str | None,
+    responder_name: str | None,
+    responder_contact: str | None,
+    role: Role | str,
+    actor_id: int,
+) -> Row:
+    """An open ticket goes to somebody else: the person left, or the wrong
+    person was named. The instruction and the brief are delivered again to
+    the new respondent, the thread says so, and the new person has not seen
+    it until they have."""
+    _may_act(row, role)
+    _open(row)
+    holder = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    if not holder:
+        raise NotFound("Holder")
+    _require_open_ticket(holder)
+    cols: dict[str, Any]
+    if respondent_uuid:
+        if holder["processor_id"] is None:
+            raise ValidationFailed(
+                "Only a registered processor has respondents to choose from", field="respondent"
+            )
+        chosen = await registry_repo.respondent_by_uuid(
+            conn, int(holder["processor_id"]), respondent_uuid
+        )
+        if chosen is None:
+            raise NotFound("Respondent")
+        cols = _respondent_columns(chosen)
+    else:
+        if not (responder_name or "").strip() or not (responder_contact or "").strip():
+            raise ValidationFailed(
+                "Name the new respondent and where the instruction goes", field="responder_contact"
+            )
+        cols = {
+            "respondent_id": None,
+            "responder_user_id": None,
+            "responder_name": str(responder_name).strip(),
+            "responder_contact": str(responder_contact).strip(),
+            "channel": "email",
+        }
+    cols["holder_read_at"] = None
+    await repo.update_holder(conn, int(holder["holder_id"]), **cols)
+    fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    assert fresh is not None
+    await repo.add_message(
+        conn,
+        int(holder["holder_id"]),
+        side="office",
+        kind="status",
+        body=(
+            f"Reassigned to {fresh['responder_name']} "
+            f"({'on the portal' if fresh['channel'] == 'portal' else 'by mail'}); "
+            "the instruction has been sent to them."
+        ),
+        author_user_id=actor_id,
+    )
+    await repo.append_contact(
+        conn,
+        int(holder["holder_id"]),
+        _contact_entry("reassigned", to=_ticket_address(fresh), by=actor_id, note=None),
+    )
+    await _deliver_ticket(
+        conn,
+        fresh,
+        reference=str(row["reference"]),
+        text=str(fresh.get("instruction") or _default_instruction(row)),
+        due=fresh["due_at"] or datetime.now(UTC),
+        actor_id=actor_id,
+        brief_text=brief_text(fresh["brief"]) if fresh.get("brief") else "",
+    )
+    await _record(
+        conn,
+        row,
+        Event.RIGHTS_TICKET_REASSIGNED,
+        actor_user_id=actor_id,
+        entity_type="rights_request_holder",
+        entity_id=int(holder["holder_id"]),
+        detail={
+            "label": holder["label"],
+            "from": holder.get("responder_contact"),
+            "to": fresh.get("responder_contact"),
+            "channel": fresh.get("channel"),
+        },
+    )
+    final = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    assert final is not None
+    return final
+
+
+async def _send_reminder(
+    conn: Conn, ticket: Row, *, today: date, actor_id: int | None, source: str
+) -> None:
+    """One reminder to the respondent, on the record: mailed the way the
+    holder is reached, logged on the contact log, said on the thread, counted
+    on the holder, and audited."""
+    due = ticket["due_at"]
+    days = (due.date() - today).days
+    to = _ticket_address(ticket)
+    where = (
+        _console_url(f"/tickets?ticket={ticket['holder_uuid']}")
+        if ticket.get("channel") == "portal"
+        else None
+    )
+    if to:
+        _dispatch(
+            "send_ticket_reminder",
+            to,
+            str(ticket["reference"]),
+            str(ticket["label"]),
+            due.date().isoformat(),
+            days,
+            where,
+        )
+    stage = (
+        f"due in {days} day{'s' if days != 1 else ''}"
+        if days > 0
+        else ("due today" if days == 0 else f"overdue by {-days} day{'s' if days != -1 else ''}")
+    )
+    await repo.append_contact(
+        conn,
+        int(ticket["holder_id"]),
+        _contact_entry("reminder", to=to, by=actor_id, note=f"{stage} ({source})"),
+    )
+    await repo.add_message(
+        conn,
+        int(ticket["holder_id"]),
+        side="system",
+        kind="status",
+        body=f"Reminder sent to {ticket.get('responder_name') or ticket['label']}: {stage}.",
+    )
+    await repo.update_holder(
+        conn,
+        int(ticket["holder_id"]),
+        last_reminded_at=datetime.now(UTC),
+        reminders_sent=int(ticket.get("reminders_sent") or 0) + 1,
+    )
+    row = await repo.by_id(conn, int(ticket["request_id"]))
+    assert row is not None
+    await _record(
+        conn,
+        row,
+        Event.RIGHTS_TICKET_REMINDED,
+        actor_user_id=actor_id,
+        entity_type="rights_request_holder",
+        entity_id=int(ticket["holder_id"]),
+        detail={"label": ticket["label"], "days": days, "source": source},
+    )
+
+
+async def remind_holder(
+    conn: Conn, row: Row, *, holder_uuid: str, role: Role | str, actor_id: int
+) -> Row:
+    """The office chases, once, now - whatever the calendar says."""
+    _may_act(row, role)
+    _open(row)
+    holder = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    if not holder:
+        raise NotFound("Holder")
+    _require_open_ticket(holder)
+    if not holder.get("due_at"):
+        raise Conflict("This ticket has no date to remind against", code="ticket_not_open")
+    await _send_reminder(
+        conn,
+        {**holder, "reference": row["reference"], "request_uuid": row["request_uuid"]},
+        today=datetime.now(UTC).date(),
+        actor_id=actor_id,
+        source="office",
+    )
+    fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    assert fresh is not None
+    return fresh
+
+
+#: When the platform reminds of its own accord: three days before the date,
+#: on the date, and every third day after it while the ticket stays open.
+REMIND_BEFORE_DAYS = 3
+REMIND_EVERY_DAYS_OVERDUE = 3
+
+
+def _due_for_reminder(days: int) -> bool:
+    if days == REMIND_BEFORE_DAYS or days == 0:
+        return True
+    return days < 0 and (-days) % REMIND_EVERY_DAYS_OVERDUE == 0
+
+
+async def sweep_tickets(conn: Conn, *, today: date | None = None) -> int:
+    """The daily pass over open tickets: a reminder on the cadence, at most
+    one a day for any ticket, so a redelivered task changes nothing."""
+    day = today or datetime.now(UTC).date()
+    reminded = 0
+    for ticket in await repo.open_tickets_with_dates(conn):
+        last = ticket.get("last_reminded_at")
+        if last is not None and last.date() >= day:
+            continue
+        if not _due_for_reminder((ticket["due_at"].date() - day).days):
+            continue
+        await _send_reminder(conn, ticket, today=day, actor_id=None, source="platform")
+        reminded += 1
+    return reminded
 
 
 # ---------------------------------------------------- the respondent's side
@@ -1467,6 +1736,7 @@ async def return_own_ticket(
     summary: str,
     evidence_ref: str | None,
     evidence_hash: str | None,
+    evidence_name: str | None = None,
 ) -> Row:
     """A team returns its own ticket on the portal.
 
@@ -1491,6 +1761,7 @@ async def return_own_ticket(
         return_summary=summary.strip(),
         return_evidence_ref=evidence_ref,
         return_evidence_hash=evidence_hash,
+        return_evidence_name=evidence_name,
     )
     await repo.append_contact(
         conn,
@@ -1506,6 +1777,7 @@ async def return_own_ticket(
         author_user_id=user_id,
         evidence_ref=evidence_ref,
         evidence_hash=evidence_hash,
+        evidence_name=evidence_name,
     )
     await repo.mark_thread_read(conn, int(holder["holder_id"]), side="holder")
     await _tell_office(conn, row, holder, author_id=user_id, body=f"Returned: {summary.strip()}")
@@ -2420,5 +2692,8 @@ async def sweep(conn: Conn, *, today: date | None = None) -> dict[str, int]:
                 },
             )
         floors += 1
-    log.info("rights.sweep", closed_unverified=closed, floors_passed=floors)
-    return {"closed_unverified": closed, "floors_passed": floors}
+    reminded = await sweep_tickets(conn, today=day)
+    log.info(
+        "rights.sweep", closed_unverified=closed, floors_passed=floors, tickets_reminded=reminded
+    )
+    return {"closed_unverified": closed, "floors_passed": floors, "tickets_reminded": reminded}

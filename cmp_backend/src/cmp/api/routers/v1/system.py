@@ -207,7 +207,14 @@ _ENUMS: dict[str, list[str]] = {
         "not_upheld",
     ],
     "rights_scope_decision": ["erase", "redact", "retain", "quarantine"],
-    "rights_ticket_status": ["pending", "issued", "escalated", "returned", "unreturned"],
+    "rights_ticket_status": [
+        "pending",
+        "issued",
+        "escalated",
+        "returned",
+        "unreturned",
+        "withdrawn",
+    ],
     "rights_trigger_event": ["death", "incapacity"],
     "nomination_status": ["pending", "active", "declined", "revoked"],
 }

@@ -257,6 +257,33 @@ def holder_instruction(
     )
 
 
+def ticket_reminder(
+    reference: str, holder_label: str, due_on: str, days: int, where: str | None
+) -> tuple[str, str]:
+    """A ticket's date is close, here, or past. Sent by the platform on a
+    cadence and by the office on demand; the same words either way."""
+    if days > 0:
+        when = f"is due in {days} day{'s' if days != 1 else ''}, on {due_on}"
+        subject = f"Due in {days} day{'s' if days != 1 else ''} - rights request {reference}"
+    elif days == 0:
+        when = f"is due today, {due_on}"
+        subject = f"Due today - rights request {reference}"
+    else:
+        when = f"was due on {due_on} and is {-days} day{'s' if days != -1 else ''} overdue"
+        subject = f"Overdue by {-days} day{'s' if days != -1 else ''} - rights request {reference}"
+    onward = (
+        f"\n\nReturn it on the portal: {where}"
+        if where
+        else "\n\nReply to this message with your return."
+    )
+    return (
+        subject,
+        f"To {holder_label}:\n\nYour ticket on rights request {reference} {when}. The Privacy "
+        "Office responds to the person concerned on a fixed statutory clock, and a return "
+        "after the date may mean the response has to name your part as outstanding." + onward,
+    )
+
+
 def ticket_message(
     reference: str, holder_label: str, author: str, body: str, where: str | None
 ) -> tuple[str, str]:

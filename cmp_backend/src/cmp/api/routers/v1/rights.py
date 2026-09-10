@@ -161,6 +161,11 @@ class HolderOut(Out):
     message_count: int = 0
     #: Messages from the holder the office has not read yet.
     unread_for_office: int = 0
+    #: When the team last opened the ticket. None: not yet seen.
+    seen_at: datetime | None = None
+    last_reminded_at: datetime | None = None
+    reminders_sent: int = 0
+    return_evidence_name: str | None = None
 
 
 class MessageOut(Out):
@@ -170,7 +175,19 @@ class MessageOut(Out):
     kind: str
     body: str
     evidence_hash: str | None
+    evidence_name: str | None = None
     created_at: datetime
+
+
+class WithdrawIn(Schema):
+    reason: Annotated[str, Field(min_length=1, max_length=2000)]
+
+
+class ReassignIn(Schema):
+    #: One of the processor's registered respondents, or a name and address.
+    respondent_uuid: UUID | None = None
+    responder_name: Annotated[str | None, Field(default=None, max_length=200)] = None
+    responder_contact: Annotated[str | None, Field(default=None, max_length=255)] = None
 
 
 class ThreadOut(Out):
@@ -209,6 +226,9 @@ class TicketOut(Out):
     message_count: int = 0
     #: Messages from the office the team has not read yet.
     unread_for_holder: int = 0
+    last_reminded_at: datetime | None = None
+    reminders_sent: int = 0
+    return_evidence_name: str | None = None
 
 
 class TicketDetailOut(Out):
@@ -834,16 +854,29 @@ async def holder_thread(
         )
 
 
-async def _attachment(evidence: UploadFile | None) -> tuple[str | None, str | None]:
-    """Store a file attached to a message, if there is one."""
+async def _attachment(
+    evidence: UploadFile | None,
+) -> tuple[str | None, str | None, str | None]:
+    """Store a file attached to a message, if there is one: its reference,
+    its hash, and the name it was uploaded with."""
     if evidence is None:
-        return None, None
+        return None, None, None
     payload = await evidence.read()
     check_upload(payload, evidence.content_type, EVIDENCE)
+    name = _safe_name(evidence.filename)
     return (
-        storage().save(payload, subdir="rights", suggested_name=evidence.filename or "attachment"),
+        storage().save(payload, subdir="rights", suggested_name=name or "attachment"),
         file_hash(payload),
+        name,
     )
+
+
+def _safe_name(filename: str | None) -> str | None:
+    """A file name fit for a header: the base name, no quotes, bounded."""
+    if not filename:
+        return None
+    base = filename.replace("\\", "/").rsplit("/", 1)[-1].replace('"', "").strip()
+    return base[:255] or None
 
 
 def _attachment_response(payload: bytes, filename: str, recorded: str) -> Response:
@@ -851,7 +884,7 @@ def _attachment_response(payload: bytes, filename: str, recorded: str) -> Respon
         content=payload,
         media_type="application/octet-stream",
         headers={
-            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Disposition": f'attachment; filename="{_safe_name(filename) or "file"}"',
             "X-Recorded-SHA256": recorded,
             "X-Content-SHA256": file_hash(payload),
         },
@@ -872,7 +905,7 @@ async def post_to_holder(
 ) -> dict[str, Any]:
     """Kept on the thread, and the holder is told the way it is reached: on the
     portal with a copy by mail, or by mail alone."""
-    evidence_ref, evidence_hash = await _attachment(evidence)
+    evidence_ref, evidence_hash, evidence_name = await _attachment(evidence)
     async with transaction() as conn:
         row = await _load(conn, request_uuid, principal)
         return await service.post_office_message(
@@ -884,6 +917,68 @@ async def post_to_holder(
             actor_id=principal.user_id,
             evidence_ref=evidence_ref,
             evidence_hash=evidence_hash,
+            evidence_name=evidence_name,
+        )
+
+
+@router.post(
+    "/{request_uuid}/holders/{holder_uuid}/withdraw",
+    response_model=HolderOut,
+    summary="Withdraw a ticket issued in error",
+)
+async def withdraw_ticket(
+    request_uuid: UUID, holder_uuid: UUID, body: WithdrawIn, principal: RightsWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        return await service.withdraw_ticket(
+            conn,
+            row,
+            holder_uuid=str(holder_uuid),
+            reason=body.reason,
+            role=principal.role,
+            actor_id=principal.user_id,
+        )
+
+
+@router.post(
+    "/{request_uuid}/holders/{holder_uuid}/reassign",
+    response_model=HolderOut,
+    summary="Send an open ticket to a different respondent",
+)
+async def reassign_holder(
+    request_uuid: UUID, holder_uuid: UUID, body: ReassignIn, principal: RightsWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        return await service.reassign_holder(
+            conn,
+            row,
+            holder_uuid=str(holder_uuid),
+            respondent_uuid=str(body.respondent_uuid) if body.respondent_uuid else None,
+            responder_name=body.responder_name,
+            responder_contact=body.responder_contact,
+            role=principal.role,
+            actor_id=principal.user_id,
+        )
+
+
+@router.post(
+    "/{request_uuid}/holders/{holder_uuid}/remind",
+    response_model=HolderOut,
+    summary="Send the respondent a reminder now",
+)
+async def remind_holder(
+    request_uuid: UUID, holder_uuid: UUID, principal: RightsWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        return await service.remind_holder(
+            conn,
+            row,
+            holder_uuid=str(holder_uuid),
+            role=principal.role,
+            actor_id=principal.user_id,
         )
 
 
@@ -961,15 +1056,7 @@ async def return_ticket(
     summary: Annotated[str, Form(min_length=1, max_length=20_000)],
     evidence: Annotated[UploadFile | None, File(description="Optional evidence, max 25 MB")] = None,
 ) -> dict[str, Any]:
-    evidence_ref: str | None = None
-    evidence_hash: str | None = None
-    if evidence is not None:
-        payload = await evidence.read()
-        check_upload(payload, evidence.content_type, EVIDENCE)
-        evidence_hash = file_hash(payload)
-        evidence_ref = storage().save(
-            payload, subdir="rights", suggested_name=evidence.filename or "evidence"
-        )
+    evidence_ref, evidence_hash, evidence_name = await _attachment(evidence)
     async with transaction() as conn:
         row = await _load(conn, request_uuid, principal)
         return await service.return_ticket(
@@ -979,6 +1066,7 @@ async def return_ticket(
             summary=summary,
             evidence_ref=evidence_ref,
             evidence_hash=evidence_hash,
+            evidence_name=evidence_name,
             role=principal.role,
             actor_id=principal.user_id,
         )
@@ -1001,7 +1089,12 @@ async def holder_evidence(
         media_type="application/octet-stream",
         headers={
             "Content-Disposition": (
-                f'attachment; filename="{row["reference"]}-{holder_uuid}-evidence"'
+                'attachment; filename="'
+                + (
+                    _safe_name(holder.get("return_evidence_name"))
+                    or f"{row['reference']}-{holder_uuid}-evidence"
+                )
+                + '"'
             ),
             "X-Recorded-SHA256": str(holder.get("return_evidence_hash") or ""),
             "X-Content-SHA256": file_hash(payload),
@@ -1341,7 +1434,7 @@ async def message_office(
     evidence: Annotated[UploadFile | None, File(description="Optional file, max 25 MB")] = None,
 ) -> dict[str, Any]:
     """Kept on the thread, and every DPO is told."""
-    evidence_ref, evidence_hash = await _attachment(evidence)
+    evidence_ref, evidence_hash, evidence_name = await _attachment(evidence)
     async with transaction() as conn:
         return await service.post_holder_message(
             conn,
@@ -1350,6 +1443,7 @@ async def message_office(
             body=body,
             evidence_ref=evidence_ref,
             evidence_hash=evidence_hash,
+            evidence_name=evidence_name,
         )
 
 
@@ -1381,15 +1475,7 @@ async def return_my_ticket(
     summary: Annotated[str, Form(min_length=1, max_length=20_000)],
     evidence: Annotated[UploadFile | None, File(description="Optional evidence, max 25 MB")] = None,
 ) -> dict[str, Any]:
-    evidence_ref: str | None = None
-    evidence_hash: str | None = None
-    if evidence is not None:
-        payload = await evidence.read()
-        check_upload(payload, evidence.content_type, EVIDENCE)
-        evidence_hash = file_hash(payload)
-        evidence_ref = storage().save(
-            payload, subdir="rights", suggested_name=evidence.filename or "evidence"
-        )
+    evidence_ref, evidence_hash, evidence_name = await _attachment(evidence)
     async with transaction() as conn:
         return await service.return_own_ticket(
             conn,
@@ -1398,4 +1484,5 @@ async def return_my_ticket(
             summary=summary,
             evidence_ref=evidence_ref,
             evidence_hash=evidence_hash,
+            evidence_name=evidence_name,
         )

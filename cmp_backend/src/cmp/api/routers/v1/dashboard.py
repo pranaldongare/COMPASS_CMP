@@ -214,6 +214,25 @@ async def _dpo(conn: Any) -> dict[str, Any]:
     rights_queue = await rights_repo.queue(conn, role=Role.DPO, user_id=0)
     # Teams that have written on their tickets and not been read: the office's
     # side of the conversation, surfaced where the rest of its work is.
+    overdue = [
+        {
+            "request_uuid": str(r["request_uuid"]),
+            "reference": r["reference"],
+            "subject_name": r.get("subject_name"),
+            "action": (
+                f"{r['label']} is past its date"
+                + (" - escalated" if r.get("escalated_at") else " - not yet escalated")
+                + (
+                    f" · {int(r.get('reminders_sent') or 0)} reminder(s) sent"
+                    if int(r.get("reminders_sent") or 0)
+                    else ""
+                )
+            ),
+            "due_at": r["due_at"].isoformat() if r.get("due_at") else None,
+            "overdue": True,
+        }
+        for r in await rights_repo.holders_overdue(conn)
+    ]
     replies = [
         {
             "request_uuid": str(r["request_uuid"]),
@@ -240,6 +259,7 @@ async def _dpo(conn: Any) -> dict[str, Any]:
         },
         "queues": [
             {"name": "Rights requests, soonest due first", "items": rights_queue},
+            {"name": "Tickets past their date", "items": overdue},
             {"name": "Teams have written on their tickets", "items": replies},
             {"name": "In Draft", "items": draft_queue},
             {"name": "Pending Approval", "items": approval_queue},

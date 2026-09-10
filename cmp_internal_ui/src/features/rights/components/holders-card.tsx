@@ -32,7 +32,7 @@ import {
   Textarea,
 } from "@/components/ui/primitives";
 import { useProcessors, useRespondents } from "@/features/registry";
-import { TicketBadge } from "@/features/rights/components/copy";
+import { TicketBadge, dueCopy } from "@/features/rights/components/copy";
 import { holderMessageAttachmentUrl } from "@/features/rights/api";
 import { BriefPanel, ReplyBox, Thread, UnreadBadge } from "@/features/rights/components/thread";
 import {
@@ -43,7 +43,10 @@ import {
   useIssueTickets,
   useLogContact,
   usePostToHolder,
+  useReassignHolder,
+  useRemindHolder,
   useReturnTicket,
+  useWithdrawTicket,
 } from "@/features/rights/mutations";
 import { useHolderThread } from "@/features/rights/queries";
 import { config } from "@/lib/config";
@@ -89,6 +92,7 @@ export function HoldersCard({ request: r }: { request: RightsRequestDetail }) {
           <p className="mt-1 text-xs text-text-muted">
             export_line and asset_consent are exact - the DPO adds what they miss.
           </p>
+          {r.holders.length > 0 && <HoldersRollup holders={r.holders} />}
         </div>
         {canWork && (
           <div className="flex flex-wrap gap-2">
@@ -186,6 +190,11 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
   const [returning, setReturning] = React.useState(false);
   const [contacting, setContacting] = React.useState(false);
   const [talking, setTalking] = React.useState(false);
+  const [reassigning, setReassigning] = React.useState(false);
+  const [withdrawing, setWithdrawing] = React.useState(false);
+  const remind = useRemindHolder(r.request_uuid);
+  const ticketOpen = h.ticket_status === "issued" || h.ticket_status === "escalated";
+  const due = dueCopy(h.due_at, ticketOpen);
   const [responderName, setResponderName] = React.useState(h.responder_name ?? "");
   const [responderContact, setResponderContact] = React.useState(h.responder_contact ?? "");
   // The processor's registered respondents, offered instead of typing. An
@@ -259,11 +268,24 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
             </details>
           )}
           {h.issued_at && (
-            <p className={overdue ? "mt-0.5 flex items-center gap-1 text-xs font-medium text-danger-text" : "mt-0.5 text-xs text-text-subtle"}>
+            <p className={overdue ? "mt-0.5 flex flex-wrap items-center gap-1 text-xs font-medium text-danger-text" : "mt-0.5 text-xs text-text-subtle"}>
               {overdue && <AlertTriangle className="size-3.5" aria-hidden="true" />}
-              Issued {formatDateTime(h.issued_at)} · due {h.due_at ? formatDate(h.due_at) : "-"}
+              Issued {formatDateTime(h.issued_at)}
+              {due && (
+                <span className={due.tone === "danger" ? "font-medium text-danger-text" : due.tone === "warning" ? "font-medium text-warning-text" : ""}>
+                  {" · "}
+                  {due.text}
+                  {h.due_at && ` (${formatDate(h.due_at)})`}
+                </span>
+              )}
               {h.escalated_at && ` · escalated ${formatDateTime(h.escalated_at)}`}
+              {h.reminders_sent > 0 && ` · ${h.reminders_sent} reminder${h.reminders_sent === 1 ? "" : "s"}`}
               {h.returned_at && ` · returned ${formatDateTime(h.returned_at)}`}
+            </p>
+          )}
+          {ticketOpen && h.channel === "portal" && (
+            <p className="mt-0.5 text-xs text-text-subtle">
+              {h.seen_at ? `Seen by the team ${formatDateTime(h.seen_at)}` : "Not yet seen by the team"}
             </p>
           )}
           {h.return_summary && (
@@ -320,6 +342,21 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
                 {h.channel === "portal" ? "Record the return for them" : "Record the return"}
               </Button>
             )}
+            {ticketOpen && h.due_at && (
+              <Button variant="subtle" size="sm" loading={remind.isPending} onClick={() => run(() => remind.mutateAsync(h.holder_uuid), "Reminder sent")}>
+                Remind
+              </Button>
+            )}
+            {ticketOpen && (
+              <Button variant="subtle" size="sm" onClick={() => setReassigning(true)}>
+                Reassign
+              </Button>
+            )}
+            {ticketOpen && (
+              <Button variant="subtle" size="sm" onClick={() => setWithdrawing(true)}>
+                Withdraw
+              </Button>
+            )}
             {h.ticket_status === "issued" && overdue && (
               <Button variant="subtle" size="sm" loading={escalate.isPending} onClick={() => run(() => escalate.mutateAsync(h.holder_uuid), "Escalated once")}>
                 Escalate
@@ -372,6 +409,22 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
           {talking && <HolderThreadPanel request={r} holder={h} canWork={canWork} />}
         </DialogContent>
       </Dialog>
+      <Dialog open={reassigning} onOpenChange={(next) => !next && setReassigning(false)}>
+        <DialogContent
+          title={`${h.label} · send this ticket to somebody else`}
+          description="The instruction and the brief are delivered again to the new respondent, the thread says so, and the ticket counts as unseen until they open it."
+        >
+          <ReassignForm request={r} holder={h} respondents={respondents.data ?? []} onDone={() => setReassigning(false)} />
+        </DialogContent>
+      </Dialog>
+      <Dialog open={withdrawing} onOpenChange={(next) => !next && setWithdrawing(false)}>
+        <DialogContent
+          title={`${h.label} · withdraw this ticket`}
+          description="For a ticket issued in error, or a party that turns out to hold nothing of hers. Not a return and not a gap: the response will not name them as outstanding. They are told."
+        >
+          <WithdrawForm request={r} holder={h} onDone={() => setWithdrawing(false)} />
+        </DialogContent>
+      </Dialog>
       <Dialog open={contacting} onOpenChange={(next) => !next && setContacting(false)}>
         <DialogContent
           title={`${h.label} · by mail`}
@@ -418,6 +471,119 @@ function HolderThreadPanel({ request: r, holder: h, canWork }: { request: Rights
   );
 }
 
+function HoldersRollup({ holders }: { holders: RightsHolder[] }) {
+  const issued = holders.filter((h) => h.issued_at);
+  const returned = holders.filter((h) => h.ticket_status === "returned").length;
+  const open = holders.filter((h) => h.ticket_status === "issued" || h.ticket_status === "escalated");
+  const overdue = open.filter((h) => h.due_at && new Date(h.due_at) < new Date()).length;
+  const unseen = open.filter((h) => h.channel === "portal" && !h.seen_at).length;
+  const withdrawn = holders.filter((h) => h.ticket_status === "withdrawn").length;
+  const unread = holders.reduce((n, h) => n + h.unread_for_office, 0);
+  if (issued.length === 0) return null;
+  const parts = [
+    `${issued.length} ticket${issued.length === 1 ? "" : "s"} issued`,
+    `${returned} returned`,
+    overdue ? `${overdue} overdue` : null,
+    unseen ? `${unseen} not yet seen` : null,
+    unread ? `${unread} unread from teams` : null,
+    withdrawn ? `${withdrawn} withdrawn` : null,
+  ].filter(Boolean);
+  return (
+    <p className={overdue ? "mt-1 text-xs font-medium text-danger-text" : "mt-1 text-xs font-medium text-text"}>
+      {parts.join(" · ")}
+    </p>
+  );
+}
+
+function ReassignForm({ request: r, holder: h, respondents, onDone }: { request: RightsRequestDetail; holder: RightsHolder; respondents: { respondent_uuid: string; name: string; contact: string; user_uuid: string | null }[]; onDone: () => void }) {
+  const toast = useToast();
+  const reassign = useReassignHolder(r.request_uuid);
+  const [respondentUuid, setRespondentUuid] = React.useState("");
+  const [name, setName] = React.useState("");
+  const [contact, setContact] = React.useState("");
+  const [error, setError] = React.useState<string | null>(null);
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    try {
+      await reassign.mutateAsync(
+        respondentUuid
+          ? { holderUuid: h.holder_uuid, respondent_uuid: respondentUuid }
+          : { holderUuid: h.holder_uuid, responder_name: name.trim(), responder_contact: contact.trim() },
+      );
+      toast.success("Ticket reassigned", "The instruction has been sent to them.");
+      onDone();
+    } catch (err) {
+      setError(messageOf(err, "Could not reassign."));
+    }
+  }
+  return (
+    <form method="post" onSubmit={submit} noValidate>
+      <div className="space-y-4">
+        {error && <Alert tone="danger">{error}</Alert>}
+        {respondents.length > 0 && (
+          <Field label="A registered respondent" hint="An account answers on the portal; a name and address are mailed.">
+            {(p) => (
+              <Select {...p} value={respondentUuid} onChange={(e) => setRespondentUuid(e.target.value)}>
+                <option value="">Type one below instead…</option>
+                {respondents.filter((rs) => rs.respondent_uuid !== h.respondent_uuid).map((rs) => (
+                  <option key={rs.respondent_uuid} value={rs.respondent_uuid}>
+                    {rs.name} · {rs.contact} · {rs.user_uuid ? "portal" : "mail"}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+        )}
+        {!respondentUuid && (
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Field label="Name" required>{(p) => <Input {...p} value={name} onChange={(e) => setName(e.target.value)} />}</Field>
+            <Field label="Email address" hint="The instruction is mailed here." required>{(p) => <Input {...p} type="email" value={contact} onChange={(e) => setContact(e.target.value)} />}</Field>
+          </div>
+        )}
+      </div>
+      <DialogFooter>
+        <Button type="submit" variant="primary" loading={reassign.isPending} disabled={!respondentUuid && (!name.trim() || !contact.trim())}>
+          Reassign and re-send
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
+function WithdrawForm({ request: r, holder: h, onDone }: { request: RightsRequestDetail; holder: RightsHolder; onDone: () => void }) {
+  const toast = useToast();
+  const withdraw = useWithdrawTicket(r.request_uuid);
+  const [reason, setReason] = React.useState("");
+  const [error, setError] = React.useState<string | null>(null);
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    try {
+      await withdraw.mutateAsync({ holderUuid: h.holder_uuid, reason: reason.trim() });
+      toast.success("Ticket withdrawn", `${h.label} has been told.`);
+      onDone();
+    } catch (err) {
+      setError(messageOf(err, "Could not withdraw."));
+    }
+  }
+  return (
+    <form method="post" onSubmit={submit} noValidate>
+      <div className="space-y-4">
+        {error && <Alert tone="danger">{error}</Alert>}
+        <Field label="Why" hint="Recorded on the thread and in the audit trail, and sent to them." required>
+          {(p) => <Textarea {...p} rows={3} maxLength={2000} value={reason} onChange={(e) => setReason(e.target.value)} />}
+        </Field>
+      </div>
+      <DialogFooter>
+        <Button type="submit" variant="primary" loading={withdraw.isPending} disabled={!reason.trim()}>
+          Withdraw the ticket
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
 const CONTACT_LABEL: Record<string, string> = {
   mail_sent: "Instruction mailed",
   ticket_on_portal: "Ticket on the portal",
@@ -426,6 +592,9 @@ const CONTACT_LABEL: Record<string, string> = {
   note: "Note",
   escalated: "Escalated",
   returned_on_portal: "Returned on the portal",
+  reminder: "Reminder sent",
+  reassigned: "Reassigned",
+  withdrawn: "Withdrawn",
 };
 
 function ContactForm({ request: r, holder: h, onDone }: { request: RightsRequestDetail; holder: RightsHolder; onDone: () => void }) {

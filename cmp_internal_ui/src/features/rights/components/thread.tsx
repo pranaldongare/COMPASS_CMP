@@ -23,6 +23,7 @@ const KIND_LABEL: Record<TicketMessage["kind"], string> = {
   message: "Message",
   return: "Returned",
   escalation: "Escalation",
+  status: "Update",
 };
 
 /** The brief, as the reader would want to check it: lists, not prose. */
@@ -143,7 +144,7 @@ export function Thread({
               <p className="whitespace-pre-wrap">{m.body}</p>
               {m.evidence_hash && (
                 <p className="mt-1 text-xs text-text-muted">
-                  Evidence attached
+                  {m.evidence_name ? `File: ${m.evidence_name}` : "File attached"}
                   {href && (
                     <>
                       {" · "}

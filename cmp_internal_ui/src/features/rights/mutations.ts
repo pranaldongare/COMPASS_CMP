@@ -108,6 +108,17 @@ export function usePostToHolder(
     },
   });
 }
+export const useWithdrawTicket = (uuid: Uuid) =>
+  useRequestAction<RightsHolder, { holderUuid: Uuid; reason: string }>(uuid, ({ holderUuid, reason }) =>
+    api.withdrawTicket(uuid, holderUuid, reason),
+  );
+export const useReassignHolder = (uuid: Uuid) =>
+  useRequestAction<RightsHolder, { holderUuid: Uuid } & api.ReassignInput>(
+    uuid,
+    ({ holderUuid, ...body }) => api.reassignHolder(uuid, holderUuid, body),
+  );
+export const useRemindHolder = (uuid: Uuid) =>
+  useRequestAction<RightsHolder, Uuid>(uuid, (holderUuid) => api.remindHolder(uuid, holderUuid));
 export const useLogContact = (uuid: Uuid) =>
   useRequestAction<RightsHolder, { holderUuid: Uuid } & api.ContactInput>(
     uuid,

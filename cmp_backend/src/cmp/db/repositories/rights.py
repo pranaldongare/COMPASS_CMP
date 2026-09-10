@@ -315,7 +315,8 @@ _HOLDER_SELECT = """
   h.respondent_id, rs.respondent_uuid, h.responder_user_id, h.channel, h.contact_log,
   ru.uuid AS responder_user_uuid, ru.full_name AS responder_user_name,
   ru.email AS responder_user_email,
-  h.brief, h.office_read_at, h.holder_read_at,
+  h.brief, h.office_read_at, h.holder_read_at, h.holder_read_at AS seen_at,
+  h.return_evidence_name, h.last_reminded_at, h.reminders_sent,
   (SELECT count(*) FROM rights_ticket_message m WHERE m.holder_id = h.holder_id)
     AS message_count,
   (SELECT count(*) FROM rights_ticket_message m
@@ -461,6 +462,9 @@ _HOLDER_MUTABLE = frozenset(
         "brief",
         "office_read_at",
         "holder_read_at",
+        "return_evidence_name",
+        "last_reminded_at",
+        "reminders_sent",
     }
 )
 
@@ -481,7 +485,7 @@ async def mark_thread_read(conn: Conn, holder_id: int, *, side: str) -> None:
 
 _MESSAGE_SELECT = """
   m.message_id, m.message_uuid, m.holder_id, m.author_user_id, m.author_side, m.kind,
-  m.body, m.evidence_ref, m.evidence_hash, m.created_at,
+  m.body, m.evidence_ref, m.evidence_hash, m.evidence_name, m.created_at,
   a.full_name AS author_name
   FROM rights_ticket_message m
   LEFT JOIN auth_user a ON a.id = m.author_user_id
@@ -514,19 +518,53 @@ async def add_message(
     author_user_id: int | None = None,
     evidence_ref: str | None = None,
     evidence_hash: str | None = None,
+    evidence_name: str | None = None,
 ) -> Row:
     """One more message on the thread. Append-only at the trigger level."""
     row = await fetch_one(
         conn,
         """INSERT INTO rights_ticket_message
              (holder_id, author_user_id, author_side, kind, body, evidence_ref, evidence_hash,
-              created_at)
-           VALUES (%s, %s, %s, %s, %s, %s, %s, clock_timestamp())
+              evidence_name, created_at)
+           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, clock_timestamp())
            RETURNING message_id, message_uuid""",
-        (holder_id, author_user_id, side, kind, body, evidence_ref, evidence_hash),
+        (holder_id, author_user_id, side, kind, body, evidence_ref, evidence_hash, evidence_name),
     )
     assert row is not None
     return row
+
+
+async def holders_overdue(conn: Conn, *, limit: int = 25) -> list[Row]:
+    """Open tickets past their date on open requests: what the office must
+    chase or escalate, soonest-due first."""
+    return await fetch_all(
+        conn,
+        """SELECT r.request_uuid, r.reference, s.full_name AS subject_name,
+                  h.holder_uuid, h.label, h.ticket_status, h.due_at, h.escalated_at,
+                  h.last_reminded_at, h.reminders_sent, h.channel
+           FROM rights_request_holder h
+           JOIN rights_request r ON r.request_id = h.request_id
+           LEFT JOIN auth_user s ON s.id = r.subject_user_id
+           WHERE r.status <> 'closed'
+             AND h.ticket_status IN ('issued', 'escalated')
+             AND h.due_at IS NOT NULL AND h.due_at < now()
+           ORDER BY h.due_at, h.holder_id
+           LIMIT %s""",
+        (limit,),
+    )
+
+
+async def open_tickets_with_dates(conn: Conn) -> list[Row]:
+    """Every open ticket that has a date, with its request: the daily pass
+    decides which of them is reminded today."""
+    return await fetch_all(
+        conn,
+        f"""SELECT {_TICKET_SELECT}
+             WHERE r.status <> 'closed'
+               AND h.ticket_status IN ('issued', 'escalated')
+               AND h.due_at IS NOT NULL
+             ORDER BY h.due_at, h.holder_id""",
+    )
 
 
 async def holders_awaiting_office(conn: Conn, *, limit: int = 25) -> list[Row]:

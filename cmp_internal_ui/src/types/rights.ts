@@ -30,7 +30,13 @@ export type RightsRequestOutcome =
 export type RightsRequestChannel = "portal" | "public_form" | "staff_logged" | "nominee";
 export type RightsVerificationStatus = "pending" | "verified" | "failed";
 export type RightsVerificationMethod = "session" | "code" | "manual";
-export type RightsTicketStatus = "pending" | "issued" | "escalated" | "returned" | "unreturned";
+export type RightsTicketStatus =
+  | "pending"
+  | "issued"
+  | "escalated"
+  | "returned"
+  | "unreturned"
+  | "withdrawn";
 export type RightsItemState = "proposed" | "decided" | "instructed" | "applied";
 export type RightsScopeDecision = "erase" | "redact" | "retain" | "quarantine";
 export type RightsTriggerEvent = "death" | "incapacity";
@@ -141,6 +147,11 @@ export interface RightsHolder {
   message_count: number;
   /** Messages from the holder the office has not read. */
   unread_for_office: number;
+  /** When the team last opened the ticket. Null: not yet seen. */
+  seen_at: Timestamp | null;
+  last_reminded_at: Timestamp | null;
+  reminders_sent: number;
+  return_evidence_name: string | null;
 }
 
 /**
@@ -175,9 +186,10 @@ export interface TicketMessage {
   message_uuid: Uuid;
   author_side: "office" | "holder" | "system";
   author_name: string | null;
-  kind: "brief" | "instruction" | "message" | "return" | "escalation";
+  kind: "brief" | "instruction" | "message" | "return" | "escalation" | "status";
   body: string;
   evidence_hash: string | null;
+  evidence_name: string | null;
   created_at: Timestamp;
 }
 
@@ -223,6 +235,9 @@ export interface MyTicket {
   message_count: number;
   /** Messages from the office the team has not read. */
   unread_for_holder: number;
+  last_reminded_at: Timestamp | null;
+  reminders_sent: number;
+  return_evidence_name: string | null;
 }
 
 /**

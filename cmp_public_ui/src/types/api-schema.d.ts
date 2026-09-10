@@ -3559,6 +3559,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/requests/{request_uuid}/holders/{holder_uuid}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Withdraw a ticket issued in error */
+        post: operations["withdraw_ticket_requests__request_uuid__holders__holder_uuid__withdraw_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/holders/{holder_uuid}/reassign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send an open ticket to a different respondent */
+        post: operations["reassign_holder_requests__request_uuid__holders__holder_uuid__reassign_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/holders/{holder_uuid}/remind": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send the respondent a reminder now */
+        post: operations["remind_holder_requests__request_uuid__holders__holder_uuid__remind_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/requests/{request_uuid}/holders/{holder_uuid}/messages/{message_uuid}/evidence": {
         parameters: {
             query?: never;
@@ -5142,6 +5193,17 @@ export interface components {
              * @default 0
              */
             unread_for_office: number;
+            /** Seen At */
+            seen_at?: string | null;
+            /** Last Reminded At */
+            last_reminded_at?: string | null;
+            /**
+             * Reminders Sent
+             * @default 0
+             */
+            reminders_sent: number;
+            /** Return Evidence Name */
+            return_evidence_name?: string | null;
         };
         /** ImportBatchOut */
         ImportBatchOut: {
@@ -5521,6 +5583,8 @@ export interface components {
             body: string;
             /** Evidence Hash */
             evidence_hash: string | null;
+            /** Evidence Name */
+            evidence_name?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -6460,6 +6524,15 @@ export interface components {
             /** Detail */
             detail?: string | null;
         };
+        /** ReassignIn */
+        ReassignIn: {
+            /** Respondent Uuid */
+            respondent_uuid?: string | null;
+            /** Responder Name */
+            responder_name?: string | null;
+            /** Responder Contact */
+            responder_contact?: string | null;
+        };
         /** RefuseIn */
         RefuseIn: {
             /** Reason */
@@ -7200,6 +7273,15 @@ export interface components {
              * @default 0
              */
             unread_for_holder: number;
+            /** Last Reminded At */
+            last_reminded_at?: string | null;
+            /**
+             * Reminders Sent
+             * @default 0
+             */
+            reminders_sent: number;
+            /** Return Evidence Name */
+            return_evidence_name?: string | null;
         };
         /** TransitionIn */
         TransitionIn: {
@@ -7310,6 +7392,11 @@ export interface components {
             environment: string;
             /** Schema Version */
             schema_version?: string | null;
+        };
+        /** WithdrawIn */
+        WithdrawIn: {
+            /** Reason */
+            reason: string;
         };
         /** WithdrawRequest */
         WithdrawRequest: {
@@ -13814,6 +13901,110 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ThreadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    withdraw_ticket_requests__request_uuid__holders__holder_uuid__withdraw_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WithdrawIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reassign_holder_requests__request_uuid__holders__holder_uuid__reassign_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReassignIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remind_holder_requests__request_uuid__holders__holder_uuid__remind_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderOut"];
                 };
             };
             /** @description Validation Error */

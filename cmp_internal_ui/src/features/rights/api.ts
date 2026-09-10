@@ -138,6 +138,17 @@ function messageForm(input: MessageInput): FormData {
 }
 export const postToHolder = (uuid: Uuid, holderUuid: Uuid, input: MessageInput) =>
   apiPost<HolderThread>(action(uuid, `holders/${holderUuid}/thread`), messageForm(input));
+export const withdrawTicket = (uuid: Uuid, holderUuid: Uuid, reason: string) =>
+  apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/withdraw`), { reason });
+export interface ReassignInput {
+  respondent_uuid?: Uuid | null;
+  responder_name?: string | null;
+  responder_contact?: string | null;
+}
+export const reassignHolder = (uuid: Uuid, holderUuid: Uuid, body: ReassignInput) =>
+  apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/reassign`), body);
+export const remindHolder = (uuid: Uuid, holderUuid: Uuid) =>
+  apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/remind`), {});
 /** Where a file attached to a message is downloaded from, on the office's side. */
 export const holderMessageAttachmentUrl = (uuid: Uuid, holderUuid: Uuid, messageUuid: Uuid) =>
   `${config.apiUrl}/requests/${uuid}/holders/${holderUuid}/messages/${messageUuid}/evidence`;

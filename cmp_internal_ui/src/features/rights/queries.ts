@@ -58,6 +58,9 @@ export function useMyTickets() {
   return useQuery<MyTicket[], ApiError>({
     queryKey: keys.tickets.mine,
     queryFn: listMyTickets,
+    // Unread counts and dates change while the page is open.
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   });
 }
 
