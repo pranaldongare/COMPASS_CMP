@@ -291,6 +291,8 @@ export function makeRequestDetail(overrides: Partial<RightsRequestDetail> = {}):
     holders: [],
     items: [],
     transitions: [],
+    linked_request: null,
+    linked_from: [],
     ...overrides,
   };
 }
@@ -317,6 +319,7 @@ export function makeMyRequest(overrides: Partial<MyRequest> = {}): MyRequest {
     download_available: false,
     download_expires_at: null,
     linked_reference: null,
+    linked_request_uuid: null,
     closed_at: null,
     clock: makeClock(),
     ...overrides,

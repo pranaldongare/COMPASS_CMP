@@ -55,6 +55,12 @@ export function getRequestTrail(uuid: Uuid): Promise<AuditEntry[]> {
   return apiGet<AuditEntry[]>(`/requests/${uuid}/trail`);
 }
 
+/** The trail of the request this one is about, reached through this one:
+ * whoever may decide a grievance may read how the original was handled. */
+export function getLinkedTrail(uuid: Uuid): Promise<AuditEntry[]> {
+  return apiGet<AuditEntry[]>(`/requests/${uuid}/linked/trail`);
+}
+
 export interface LogRequestInput {
   request_type: RightsRequestType;
   contact: string;

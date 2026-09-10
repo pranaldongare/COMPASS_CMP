@@ -238,6 +238,21 @@ async def by_id(conn: Conn, request_id: int) -> Row | None:
     return await fetch_one(conn, f"SELECT {_SELECT}{_FROM} WHERE r.request_id = %s", (request_id,))
 
 
+async def linked_from(conn: Conn, request_id: int) -> list[Row]:
+    """The requests that point at this one: the grievance that disputes it, or
+    the re-run a grievance ordered. Unscoped on purpose - a reference and a
+    status say that something followed, and the lookup of that something is
+    scoped where it is opened."""
+    return await fetch_all(
+        conn,
+        """
+        SELECT request_uuid, reference, request_type, status, outcome, received_at, closed_at
+        FROM rights_request WHERE linked_request_id = %s ORDER BY received_at
+        """,
+        (request_id,),
+    )
+
+
 async def by_reference(conn: Conn, reference: str) -> Row | None:
     """Unscoped: the public verification step identifies a request by the
     reference she was given, before there is anybody to scope to."""

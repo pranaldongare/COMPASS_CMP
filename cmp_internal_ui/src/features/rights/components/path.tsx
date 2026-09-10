@@ -181,7 +181,7 @@ export function stepsFor(r: AnyRequest): Step[] {
       break;
 
     case "grievance":
-      push({ title: "Linked to an existing request?", detail: has(r.linked_reference) ? `Linked to ${r.linked_reference} - its trail and response are pulled in` : "If so, the original audit trail and response are pulled in", decision: true, done: classified });
+      push({ title: "Linked to an existing request?", detail: has(r.linked_reference) ? `Linked to ${r.linked_reference} - what was asked, what was returned and its trail are on this page` : "If so, the original request, its response and its trail are shown here", decision: true, done: classified });
       push({
         title: "Is the complaint about the DPO?",
         detail: "The DPO owns grievances, including ones about her own decisions",

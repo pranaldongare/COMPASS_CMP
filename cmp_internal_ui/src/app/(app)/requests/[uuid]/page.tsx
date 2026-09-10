@@ -31,6 +31,7 @@ import {
 import { ClockColumn } from "@/features/rights/components/clock-column";
 import { REQUEST_TYPE_COPY, RequestStatusBadge, RequestTypeBadge } from "@/features/rights/components/copy";
 import { HoldersCard } from "@/features/rights/components/holders-card";
+import { LinkedFrom, LinkedRequestCard } from "@/features/rights/components/linked-request-card";
 import { Path } from "@/features/rights/components/path";
 import { RespondCard } from "@/features/rights/components/respond-card";
 import { ScopeCard } from "@/features/rights/components/scope-card";
@@ -102,15 +103,13 @@ export default function RequestDetailPage() {
               <DescriptionItem term="Acknowledged">{r.acknowledged_at ? formatDateTime(r.acknowledged_at) : "Not yet"}</DescriptionItem>
               {r.linked_reference && (
                 <DescriptionItem term="About">
-                  {r.linked_request_uuid ? (
-                    <Link href={`/requests/${r.linked_request_uuid}`} className="text-accent-text hover:underline">
-                      <Mono>{r.linked_reference}</Mono>
-                    </Link>
-                  ) : (
-                    <Mono>{r.linked_reference}</Mono>
-                  )}
+                  <Mono>{r.linked_reference}</Mono>
+                  <span className="ml-2 text-xs text-text-subtle">
+                    {r.request_type === "grievance" ? "the request under dispute, shown below" : "shown below"}
+                  </span>
                 </DescriptionItem>
               )}
+              <LinkedFrom request={r} />
               {r.channel === "nominee" && (
                 <DescriptionItem term="Nominee">
                   {r.nominee_name} ({r.nominee_contact}) · {r.trigger_event === "death" ? "reports the principal has died" : "reports the principal cannot act"}
@@ -128,6 +127,8 @@ export default function RequestDetailPage() {
             <p className="mt-4 whitespace-pre-wrap rounded-md bg-bg-inset p-3 text-sm">{r.request_text}</p>
           </CardBody>
         </Card>
+
+        <LinkedRequestCard request={r} />
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
           <Card>

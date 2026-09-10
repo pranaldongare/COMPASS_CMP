@@ -665,6 +665,78 @@ class TestGrievance:
         assert rerun["linked_reference"] == result["request"]["reference"]
         assert rerun["verification_status"] == "verified" and rerun["classified_at"] is not None
 
+        # Both directions are on the record. The original knows it was
+        # disputed; the grievance knows what it ordered.
+        disputed_by = await repo.linked_from(conn, int(original["request_id"]))
+        assert [r["reference"] for r in disputed_by] == [grievance["reference"]]
+        assert disputed_by[0]["request_type"] == "grievance"
+        assert disputed_by[0]["status"] == "closed"
+        ordered = await repo.linked_from(conn, int(grievance["request_id"]))
+        assert [r["reference"] for r in ordered] == [rerun["reference"]]
+
+    async def test_the_grievance_carries_the_request_it_is_about(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        """The person deciding a grievance sees the original on the grievance
+        itself - what was asked, what was returned, whether it was late - and
+        is told whether their own scope reaches the full record. A complaint
+        about the DPO goes to a reviewer whose scope does not; the summary
+        and the trail still have to."""
+        from types import SimpleNamespace
+
+        from cmp.api.routers.v1.rights import _detail
+
+        dpo = seeded["users"]["dpo"]["id"]
+        admin = seeded["users"]["admin"]
+        original = await _started(conn, seeded, await _portal_request(conn, seeded, "access"))
+        original = await service.transition(
+            conn,
+            await service.reload(conn, original),
+            to="collating",
+            reason=None,
+            role=DPO,
+            actor_id=dpo,
+        )
+        original = await service.respond(
+            conn,
+            original,
+            outcome="no_records",
+            response_text="Nothing held.",
+            role=DPO,
+            actor_id=dpo,
+        )
+        grievance = await service.dispute(
+            conn,
+            original,
+            subject_user_id=seeded["subject"]["id"],
+            text="Closed without looking.",
+            about_dpo=True,
+        )
+
+        as_dpo = await _detail(conn, grievance, SimpleNamespace(role=DPO, user_id=dpo))
+        linked = as_dpo["linked_request"]
+        assert linked is not None
+        assert linked["reference"] == original["reference"]
+        assert linked["response_text"] == "Nothing held." and linked["outcome"] == "no_records"
+        assert linked["request_text"] == original["request_text"]
+        assert linked["clock"]["overdue"] is False
+        assert linked["in_scope"] is True
+        assert as_dpo["linked_from"] == []
+
+        as_reviewer = await _detail(
+            conn, grievance, SimpleNamespace(role=Role.ADMIN, user_id=admin["id"])
+        )
+        assert as_reviewer["linked_request"] is not None
+        assert as_reviewer["linked_request"]["in_scope"] is False
+
+        # A request with nothing linked carries nothing, and the original
+        # names the grievance that disputes it.
+        as_original = await _detail(
+            conn, await service.reload(conn, original), SimpleNamespace(role=DPO, user_id=dpo)
+        )
+        assert as_original["linked_request"] is None
+        assert [r["reference"] for r in as_original["linked_from"]] == [grievance["reference"]]
+
     async def test_not_upheld_is_reasoned_and_carries_the_board_route(
         self, conn: Any, seeded: dict[str, Any]
     ) -> None:

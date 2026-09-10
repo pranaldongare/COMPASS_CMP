@@ -5,6 +5,7 @@
 export * from "@/features/rights/components/clock-column";
 export * from "@/features/rights/components/copy";
 export * from "@/features/rights/components/holders-card";
+export * from "@/features/rights/components/linked-request-card";
 export * from "@/features/rights/components/log-request-form";
 export * from "@/features/rights/components/path";
 export * from "@/features/rights/components/respond-card";

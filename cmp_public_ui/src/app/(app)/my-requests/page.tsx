@@ -9,10 +9,14 @@
  * Two things are one click away because the Act says they should be: making
  * a request, and disputing a response. A grievance is not an appeal against
  * the outcome alone - late, incomplete, or sent the wrong way all count.
+ *
+ * A grievance and the request it disputes are both hers, so they are both on
+ * this page: the grievance card says what she disputed and jumps to it, and
+ * the original says it was disputed and jumps back. No second page to find.
  */
 "use client";
 
-import { Download, History, MessageSquareWarning, Plus } from "lucide-react";
+import { ArrowDownRight, Download, History, MessageSquareWarning, Plus } from "lucide-react";
 import * as React from "react";
 
 import { ActivityFeed } from "@/components/data-display/activity-feed";
@@ -35,26 +39,45 @@ import {
 } from "@/components/ui/primitives";
 import { downloadMyResponse } from "@/features/rights/api";
 import { ClockColumn } from "@/features/rights/components/clock-column";
-import { RequestStatusBadge, RequestTypeBadge } from "@/features/rights/components/copy";
+import { OUTCOME_COPY, RequestStatusBadge, RequestTypeBadge } from "@/features/rights/components/copy";
 import { NominationCard } from "@/features/rights/components/nomination-card";
 import { NomineeOfCard } from "@/features/rights/components/nominee-of-card";
 import { Path } from "@/features/rights/components/path";
 import { MyRequestForm } from "@/features/rights/components/request-form";
 import { useDispute } from "@/features/rights/mutations";
 import { useMyRequestTrail, useMyRequests } from "@/features/rights/queries";
+import { excerpt, relate } from "@/features/rights/relate";
 import {
   disputeSchema,
   type DisputeForm as DisputeFormValues,
   type DisputeValues,
 } from "@/features/rights/schemas";
-import { formatDate, formatDateTime, saveBlob } from "@/lib/format";
+import { cn, formatDate, formatDateTime, saveBlob } from "@/lib/format";
 import { useToast } from "@/providers";
 import type { MyRequest } from "@/types";
+
+function cardId(uuid: string): string {
+  return `request-${uuid}`;
+}
 
 export default function MyRequestsPage() {
   const requests = useMyRequests();
   const [asking, setAsking] = React.useState(false);
   const [open, setOpen] = React.useState<string | null>(null);
+  const [flash, setFlash] = React.useState<string | null>(null);
+  const { byUuid, followers } = relate(requests.data ?? []);
+
+  React.useEffect(() => {
+    if (!flash) return;
+    const timer = window.setTimeout(() => setFlash(null), 1800);
+    return () => window.clearTimeout(timer);
+  }, [flash]);
+
+  function jump(uuid: string) {
+    setOpen(uuid);
+    setFlash(uuid);
+    document.getElementById(cardId(uuid))?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   return (
     <>
@@ -90,8 +113,12 @@ export default function MyRequestsPage() {
           <RequestCard
             key={r.request_uuid}
             request={r}
+            about={r.linked_request_uuid ? (byUuid.get(r.linked_request_uuid) ?? null) : null}
+            followedBy={followers.get(r.request_uuid) ?? []}
             expanded={open === r.request_uuid}
+            highlighted={flash === r.request_uuid}
             onToggle={() => setOpen(open === r.request_uuid ? null : r.request_uuid)}
+            onJump={jump}
           />
         ))}
       </div>
@@ -122,12 +149,22 @@ export default function MyRequestsPage() {
 
 function RequestCard({
   request: r,
+  about,
+  followedBy,
   expanded,
+  highlighted,
   onToggle,
+  onJump,
 }: {
   request: MyRequest;
+  /** The request this one is about, when it is hers and on this page. */
+  about: MyRequest | null;
+  /** Her requests that point at this one: the grievance disputing it, or a re-run. */
+  followedBy: MyRequest[];
   expanded: boolean;
+  highlighted: boolean;
   onToggle: () => void;
+  onJump: (uuid: string) => void;
 }) {
   const toast = useToast();
   const [disputing, setDisputing] = React.useState(false);
@@ -156,7 +193,10 @@ function RequestCard({
   const closed = r.status === "closed";
 
   return (
-    <Card>
+    <Card
+      id={cardId(r.request_uuid)}
+      className={cn("scroll-mt-24 transition-shadow", highlighted && "ring-2 ring-[var(--accent)]")}
+    >
       <CardHeader className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <CardTitle className="flex flex-wrap items-center gap-2">
@@ -166,7 +206,7 @@ function RequestCard({
           </CardTitle>
           <p className="mt-1 text-xs text-text-muted">
             Received {formatDateTime(r.received_at)} · you will hear by {formatDate(r.due_at)}
-            {r.linked_reference && ` · about ${r.linked_reference}`}
+            {r.linked_reference && !about && ` · about ${r.linked_reference}`}
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={onToggle} aria-expanded={expanded}>
@@ -176,6 +216,9 @@ function RequestCard({
 
       <CardBody className="space-y-4">
         <p className="whitespace-pre-wrap text-sm text-text-muted">{r.request_text}</p>
+
+        {about && <AboutBlock request={r} about={about} onJump={onJump} />}
+        {followedBy.length > 0 && <FollowedBy followedBy={followedBy} onJump={onJump} />}
 
         {r.verification_status === "pending" && (
           <Alert tone="warning">
@@ -272,6 +315,78 @@ function RequestCard({
         </DialogContent>
       </Dialog>
     </Card>
+  );
+}
+
+/** On a grievance: what she disputed, and the answer she was given, so the
+ * grievance reads on its own; one click opens the original. On a re-run: the
+ * grievance that ordered it. */
+function AboutBlock({
+  request: r,
+  about,
+  onJump,
+}: {
+  request: MyRequest;
+  about: MyRequest;
+  onJump: (uuid: string) => void;
+}) {
+  const disputing = r.request_type === "grievance";
+  const answer = excerpt(about.response_text ?? about.refusal_reason);
+  return (
+    <div className="rounded-md border border-border bg-bg-inset p-4">
+      <p className="text-2xs font-semibold uppercase tracking-wide text-text-subtle">
+        {disputing ? "What you disputed" : "Ordered by your grievance"}
+      </p>
+      <p className="mt-1 flex flex-wrap items-center gap-2 text-sm">
+        <Mono>{about.reference}</Mono>
+        <RequestTypeBadge type={about.request_type} />
+        <RequestStatusBadge status={about.status} outcome={about.outcome} />
+        {about.responded_at && (
+          <span className="text-xs text-text-muted">answered {formatDate(about.responded_at)}</span>
+        )}
+      </p>
+      {answer ? (
+        <p className="mt-2 text-sm text-text-muted">
+          <span className="font-medium text-text">
+            {about.outcome ? `${OUTCOME_COPY[about.outcome].label}: ` : "Their answer: "}
+          </span>
+          {answer}
+        </p>
+      ) : (
+        <p className="mt-2 text-sm text-text-muted">No answer had been given.</p>
+      )}
+      <Button variant="ghost" size="sm" className="mt-2" onClick={() => onJump(about.request_uuid)}>
+        <ArrowDownRight className="size-4" />
+        See {about.reference} in full
+      </Button>
+    </div>
+  );
+}
+
+/** On the original: it was disputed, or re-run, and by which request. */
+function FollowedBy({
+  followedBy,
+  onJump,
+}: {
+  followedBy: MyRequest[];
+  onJump: (uuid: string) => void;
+}) {
+  return (
+    <ul className="space-y-1 text-sm">
+      {followedBy.map((f) => (
+        <li key={f.request_uuid} className="flex flex-wrap items-center gap-2">
+          <span className="text-text-muted">
+            {f.request_type === "grievance" ? "You disputed this in" : "Re-run as"}
+          </span>
+          <Mono>{f.reference}</Mono>
+          <RequestStatusBadge status={f.status} outcome={f.outcome} />
+          <Button variant="ghost" size="sm" onClick={() => onJump(f.request_uuid)}>
+            <ArrowDownRight className="size-4" />
+            See it
+          </Button>
+        </li>
+      ))}
+    </ul>
   );
 }
 

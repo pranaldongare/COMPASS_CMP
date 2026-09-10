@@ -3211,6 +3211,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/requests/{request_uuid}/linked/trail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Everything recorded about the request this one is about
+         * @description Reached through the grievance, not the original: whoever may decide a
+         *     grievance may read the trail of what it disputes, even when the original
+         *     sits outside their scope - a reviewer named because the complaint is about
+         *     the DPO has to see how the DPO handled it.
+         */
+        get: operations["get_linked_trail_requests__request_uuid__linked_trail_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/requests/{request_uuid}/transitions": {
         parameters: {
             query?: never;
@@ -5463,6 +5486,96 @@ export interface components {
             already_registered: boolean;
         };
         /**
+         * LinkedRefOut
+         * @description A request that points at this one: the grievance that disputes it, or
+         *     the re-run a grievance ordered.
+         */
+        LinkedRefOut: {
+            /**
+             * Request Uuid
+             * Format: uuid
+             */
+            request_uuid: string;
+            /** Reference */
+            reference: string;
+            /** Request Type */
+            request_type: string;
+            /** Status */
+            status: string;
+            /** Outcome */
+            outcome: string | null;
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /** Closed At */
+            closed_at: string | null;
+        };
+        /**
+         * LinkedRequestOut
+         * @description The request a grievance is about, as much of it as deciding the
+         *     grievance needs: what she asked, when it was due and when it was answered,
+         *     how identity was established, what was returned, and whether every holder
+         *     came back. Carried on the grievance so the person deciding it - the DPO, or
+         *     a reviewer whose scope does not reach the original - sees it without
+         *     leaving the page. `in_scope` says whether the full record can be opened.
+         */
+        LinkedRequestOut: {
+            /**
+             * Request Uuid
+             * Format: uuid
+             */
+            request_uuid: string;
+            /** Reference */
+            reference: string;
+            /** Request Type */
+            request_type: string;
+            /** Status */
+            status: string;
+            /** Outcome */
+            outcome: string | null;
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /** Closed At */
+            closed_at: string | null;
+            /** Channel */
+            channel: string;
+            /** Request Text */
+            request_text: string;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Verification Method */
+            verification_method: string | null;
+            /** Verified At */
+            verified_at: string | null;
+            /** Responded At */
+            responded_at: string | null;
+            /** Response Text */
+            response_text: string | null;
+            /** Refusal Reason */
+            refusal_reason: string | null;
+            /** Remedy Text */
+            remedy_text: string | null;
+            /** Response File Hash */
+            response_file_hash: string | null;
+            /** Holder Count */
+            holder_count: number;
+            /** Tickets Issued */
+            tickets_issued: number;
+            /** Tickets Returned */
+            tickets_returned: number;
+            clock: components["schemas"]["ClockOut"];
+            /** In Scope */
+            in_scope: boolean;
+        };
+        /**
          * LogRequest
          * @description A request that arrived by email, logged by the DPO. Same record as the others.
          */
@@ -6681,6 +6794,9 @@ export interface components {
             transitions: {
                 [key: string]: unknown;
             }[];
+            linked_request: components["schemas"]["LinkedRequestOut"] | null;
+            /** Linked From */
+            linked_from: components["schemas"]["LinkedRefOut"][];
         };
         /** RequestOut */
         RequestOut: {
@@ -7202,6 +7318,8 @@ export interface components {
             download_expires_at: string | null;
             /** Linked Reference */
             linked_reference: string | null;
+            /** Linked Request Uuid */
+            linked_request_uuid: string | null;
             /** Closed At */
             closed_at: string | null;
             clock: components["schemas"]["ClockOut"];
@@ -13197,6 +13315,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RequestDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_linked_trail_requests__request_uuid__linked_trail_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
                 };
             };
             /** @description Validation Error */

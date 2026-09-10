@@ -264,10 +264,50 @@ class ItemOut(Out):
     holder_ticket_status: str | None
 
 
+class LinkedRefOut(Out):
+    """A request that points at this one: the grievance that disputes it, or
+    the re-run a grievance ordered."""
+
+    request_uuid: UUID
+    reference: str
+    request_type: str
+    status: str
+    outcome: str | None
+    received_at: datetime
+    closed_at: datetime | None
+
+
+class LinkedRequestOut(LinkedRefOut):
+    """The request a grievance is about, as much of it as deciding the
+    grievance needs: what she asked, when it was due and when it was answered,
+    how identity was established, what was returned, and whether every holder
+    came back. Carried on the grievance so the person deciding it - the DPO, or
+    a reviewer whose scope does not reach the original - sees it without
+    leaving the page. `in_scope` says whether the full record can be opened."""
+
+    channel: str
+    request_text: str
+    due_at: datetime
+    verification_method: str | None
+    verified_at: datetime | None
+    responded_at: datetime | None
+    response_text: str | None
+    refusal_reason: str | None
+    remedy_text: str | None
+    response_file_hash: str | None
+    holder_count: int
+    tickets_issued: int
+    tickets_returned: int
+    clock: ClockOut
+    in_scope: bool
+
+
 class RequestDetail(RequestOut):
     holders: list[HolderOut]
     items: list[ItemOut]
     transitions: list[dict[str, Any]]
+    linked_request: LinkedRequestOut | None
+    linked_from: list[LinkedRefOut]
 
 
 class TransitionsOut(Out):
@@ -298,6 +338,7 @@ class SubjectRequestOut(Out):
     download_available: bool
     download_expires_at: datetime | None
     linked_reference: str | None
+    linked_request_uuid: UUID | None
     closed_at: datetime | None
     clock: ClockOut
 
@@ -442,12 +483,29 @@ def _with_clock(row: dict[str, Any]) -> dict[str, Any]:
     return {**row, "clock": service.clock_of(row)}
 
 
-async def _detail(conn: Any, row: dict[str, Any], role: Any) -> dict[str, Any]:
+async def _linked(conn: Any, row: dict[str, Any], principal: Any) -> dict[str, Any] | None:
+    """The request this one is about, summarised, with whether the caller's
+    own scope reaches it in full."""
+    if not row.get("linked_request_id"):
+        return None
+    original = await repo.by_id(conn, int(row["linked_request_id"]))
+    if not original:
+        return None
+    reachable = await repo.by_uuid(
+        conn, str(original["request_uuid"]), role=principal.role, user_id=principal.user_id
+    )
+    return {**_with_clock(original), "in_scope": reachable is not None}
+
+
+async def _detail(conn: Any, row: dict[str, Any], principal: Any) -> dict[str, Any]:
+    request_id = int(row["request_id"])
     return {
         **_with_clock(row),
-        "holders": await repo.holders_of(conn, int(row["request_id"])),
-        "items": await repo.items_of(conn, int(row["request_id"])),
-        "transitions": service.transitions(row, role=role),
+        "holders": await repo.holders_of(conn, request_id),
+        "items": await repo.items_of(conn, request_id),
+        "transitions": service.transitions(row, role=principal.role),
+        "linked_request": await _linked(conn, row, principal),
+        "linked_from": await repo.linked_from(conn, request_id),
     }
 
 
@@ -533,7 +591,28 @@ async def get_request(request_uuid: UUID, principal: RightsReader) -> dict[str, 
         row = await service.require(
             conn, str(request_uuid), role=principal.role, user_id=principal.user_id
         )
-        return await _detail(conn, row, principal.role)
+        return await _detail(conn, row, principal)
+
+
+@router.get(
+    "/{request_uuid}/linked/trail",
+    summary="Everything recorded about the request this one is about",
+)
+async def get_linked_trail(request_uuid: UUID, principal: RightsReader) -> list[dict[str, Any]]:
+    """Reached through the grievance, not the original: whoever may decide a
+    grievance may read the trail of what it disputes, even when the original
+    sits outside their scope - a reviewer named because the complaint is about
+    the DPO has to see how the DPO handled it."""
+    async with connection() as conn:
+        row = await service.require(
+            conn, str(request_uuid), role=principal.role, user_id=principal.user_id
+        )
+        if not row.get("linked_request_id"):
+            raise NotFound("Linked request")
+        original = await repo.by_id(conn, int(row["linked_request_id"]))
+        if not original:
+            raise NotFound("Linked request")
+        return await _trail(conn, str(original["reference"]), for_subject=False)
 
 
 @router.get("/{request_uuid}/transitions", response_model=TransitionsOut)

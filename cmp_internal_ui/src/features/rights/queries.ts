@@ -10,6 +10,7 @@ import {
   holderThread,
   listMyTickets,
   myTicket,
+  getLinkedTrail,
   getRequestTrail,
   listRequests,
   type RequestFilters,
@@ -48,6 +49,14 @@ export function useRequestTrail(uuid: Uuid | undefined) {
   return useQuery<AuditEntry[], ApiError>({
     queryKey: keys.rights.trail(uuid ?? ""),
     queryFn: () => getRequestTrail(uuid!),
+    enabled: Boolean(uuid),
+  });
+}
+
+export function useLinkedTrail(uuid: Uuid | undefined) {
+  return useQuery<AuditEntry[], ApiError>({
+    queryKey: keys.rights.linkedTrail(uuid ?? ""),
+    queryFn: () => getLinkedTrail(uuid!),
     enabled: Boolean(uuid),
   });
 }

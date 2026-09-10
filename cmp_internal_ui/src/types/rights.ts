@@ -324,10 +324,48 @@ export interface RightsRequest extends RightsRequestRow {
   items_undecided: number;
 }
 
+/** A request that points at this one: the grievance that disputes it, or the re-run a grievance ordered. */
+export interface LinkedRef {
+  request_uuid: Uuid;
+  reference: string;
+  request_type: RightsRequestType;
+  status: RightsRequestStatus;
+  outcome: RightsRequestOutcome | null;
+  received_at: Timestamp;
+  closed_at: Timestamp | null;
+}
+
+/**
+ * The request a grievance is about, carried on the grievance so whoever
+ * decides it sees what was asked, what was returned and whether it was late
+ * without leaving the page. `in_scope` says whether the full record opens for
+ * this person: a reviewer named because the complaint is about the DPO may
+ * not reach the original, and this summary is then all they have.
+ */
+export interface LinkedRequest extends LinkedRef {
+  channel: RightsRequestChannel;
+  request_text: string;
+  due_at: Timestamp;
+  verification_method: RightsVerificationMethod | null;
+  verified_at: Timestamp | null;
+  responded_at: Timestamp | null;
+  response_text: string | null;
+  refusal_reason: string | null;
+  remedy_text: string | null;
+  response_file_hash: string | null;
+  holder_count: number;
+  tickets_issued: number;
+  tickets_returned: number;
+  clock: Clock;
+  in_scope: boolean;
+}
+
 export interface RightsRequestDetail extends RightsRequest {
   holders: RightsHolder[];
   items: RightsScopeItem[];
   transitions: RightsTransitionOption[];
+  linked_request: LinkedRequest | null;
+  linked_from: LinkedRef[];
 }
 
 /** Her own request. Nothing here is ours. */
@@ -352,6 +390,7 @@ export interface MyRequest {
   download_available: boolean;
   download_expires_at: Timestamp | null;
   linked_reference: string | null;
+  linked_request_uuid: Uuid | null;
   closed_at: Timestamp | null;
   clock: Clock;
 }

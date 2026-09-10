@@ -243,6 +243,8 @@ export interface MyRequest {
   download_available: boolean;
   download_expires_at: Timestamp | null;
   linked_reference: string | null;
+  /** The request this one is about - hers too, so the card can be jumped to. */
+  linked_request_uuid: Uuid | null;
   closed_at: Timestamp | null;
   clock: Clock;
 }
