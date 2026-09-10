@@ -309,6 +309,16 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
           )}
         </div>
 
+        {/* The thread is the record of what passed between the office and
+            this holder. It outlives the work: a closed request keeps it
+            readable, and only the reply box goes quiet. */}
+        {!canWork && h.issued_at && (
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setTalking(true)}>
+              Thread{h.message_count ? ` · ${h.message_count}` : ""}
+            </Button>
+          </div>
+        )}
         {canWork && (
           <div className="flex flex-wrap gap-2">
             {!h.confirmed_at && (
