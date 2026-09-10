@@ -125,6 +125,13 @@ const SECTIONS: NavSection[] = [
   },
 ];
 
+/** The same section reads differently by role: the administrator's share of
+ * the rights register is the grievances escalated away from the DPO. */
+function labelFor(item: NavItem, role: string | undefined): string {
+  if (item.key === "requests" && role === "admin") return "Grievances about the DPO";
+  return item.label;
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { me, signOut } = useAuth();
   const pathname = usePathname();
@@ -258,6 +265,7 @@ function Sidebar({
   onClose: () => void;
   onSignOut: () => void;
 }) {
+  const { me } = useAuth();
   return (
     <>
       {/* Scrim. Clicking it closes the drawer; it is hidden from assistive tech
@@ -324,7 +332,7 @@ function Sidebar({
                           )}
                           aria-hidden="true"
                         />
-                        <span className="truncate">{item.label}</span>
+                        <span className="truncate">{labelFor(item, me?.role)}</span>
                         {item.key === "tickets" && <TicketsBadge />}
                         {item.key === "requests" && <RequestsBadge />}
                       </Link>
@@ -382,7 +390,11 @@ export function PageHeader({
             <p className="mt-1.5 max-w-2xl text-sm text-text-muted">{description}</p>
           )}
         </div>
-        {actions && <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">{actions}</div>}
+        {actions && (
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2" data-testid="page-actions">
+            {actions}
+          </div>
+        )}
       </div>
       {/* A hairline that fades out to the right: it closes the header without
           drawing a hard box around every page. */}

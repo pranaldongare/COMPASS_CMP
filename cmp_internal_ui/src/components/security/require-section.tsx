@@ -57,6 +57,7 @@ const SECTION_OF: ReadonlyArray<readonly [prefix: string, key: string]> = [
   ["/audit", "audit"],
   ["/users", "users"],
   ["/tickets", "tickets"],
+  ["/cover", "cover"],
 ];
 
 export function RequireSection({ children }: { children: React.ReactNode }) {

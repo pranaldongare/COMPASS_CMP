@@ -105,9 +105,10 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.DPO: Grant(Scope.ALL, write=True),
         Role.ADMIN: Grant(Scope.ALL, write=True),
         # Who collects is the R&D User's first decision, taken at creation
-        # before any site exists. Read-only would mean filing a ticket to name
-        # a partner they have already contracted with.
-        Role.RND_USER: Grant(Scope.ALL, write=True),
+        # before any site exists - but naming a registered processor on a
+        # project is not the same as keeping the register. The register is
+        # the DPO's and the administrator's; a researcher reads it.
+        Role.RND_USER: Grant(Scope.ALL),
         Role.DCO: Grant(Scope.ALL),
         # Same powers as a DCO. The DCO Admin's reach is wider and the
         # RCO's is in-house; the *kind* of authority is identical, so a
@@ -119,9 +120,10 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.DPO: Grant(Scope.ALL, write=True),
         Role.ADMIN: Grant(Scope.ALL, write=True),
         # A DCO Admin registers the sources under the processors they route
-        # for. An R&D User does the same for projects their own team collects.
+        # for. Collection the R&D team does itself is the RCO's to register;
+        # a researcher reads the sources on their project and registers none.
         Role.DCO_ADMIN: Grant(Scope.ALL, write=True),
-        Role.RND_USER: Grant(Scope.ALL, write=True),
+        Role.RND_USER: Grant(Scope.ALL),
         # A DCO and an RCO register the sources they will run: a campus lead
         # who needs a second rig should not have to ask somebody else to type it
         # in. Which *processor* they may register it under is the constraint,
@@ -211,7 +213,9 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         # row that differed here would be a rule nobody could explain.
         Role.DCO_ADMIN: Grant(Scope.SCOPED, write=True),
         Role.RCO: Grant(Scope.SCOPED, write=True),
-        Role.RND_USER: Grant(Scope.OWN, write=True),
+        # Imports are the collection roles' work; a researcher sees their
+        # project's and runs none.
+        Role.RND_USER: Grant(Scope.OWN),
     },
     "collection": {
         Role.DPO: Grant(Scope.ALL),
@@ -304,8 +308,13 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     Role.DPO: (
         "dashboard",
         "projects",
+        # Read rights on approvals, sites and collections existed without a
+        # way to reach them except through a project. Oversight reaches all.
+        "approvals",
         "notices",
         "purposes",
+        "sites",
+        "collections",
         "processors",
         "sources",
         "consents",
@@ -401,6 +410,16 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     # Her own requests and her nomination, on her own pages.
     Role.DATA_SUBJECT: ("consents", "requests", "notifications", "profile"),
 }
+
+
+def writes_for(role: Role | str) -> list[str]:
+    """The resources this role may write, for an interface that must decide
+    which controls to offer without a second table of its own."""
+    try:
+        r = Role(role)
+    except ValueError:
+        return []
+    return sorted(name for name, grants in MATRIX.items() if grants.get(r, _DENY).write)
 
 
 def nav_for(role: Role | str) -> list[str]:

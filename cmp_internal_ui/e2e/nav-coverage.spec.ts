@@ -15,8 +15,7 @@ import { statePath } from "./support/session";
 
 test.describe.configure({ mode: "serial" });
 
-/** Roles that sign in with one step. DPO and admin need an MFA code that only
- *  exists in the dev outbox, so they are covered by the backend tests instead. */
+/** Every staff role. The setup project reads the MFA code from the dev outbox. */
 const ROLES = [
   {
     role: "dco",
@@ -33,6 +32,7 @@ const ROLES = [
       "/exports",
       "/imports",
       "/collections",
+      "/cover",
     ],
   },
   {
@@ -67,7 +67,40 @@ const ROLES = [
       "/exports",
       "/imports",
       "/collections",
+      "/cover",
     ],
+  },
+  {
+    role: "dpo",
+    name: "DPO",
+    // Oversight reaches everything it may read: approvals, sites and
+    // collections had read rights and no way in except through a project.
+    expected: [
+      "/dashboard",
+      "/projects",
+      "/approvals",
+      "/notices",
+      "/purposes",
+      "/sites",
+      "/collections",
+      "/processors",
+      "/sources",
+      "/consents",
+      "/links",
+      "/exports",
+      "/imports",
+      "/requests",
+      "/audit",
+      "/users",
+      "/cover",
+    ],
+  },
+  {
+    role: "admin",
+    name: "Administrator",
+    // Accounts, lockouts, cover, the registry, and the grievances escalated
+    // away from the DPO - which is what "/requests" is for this role.
+    expected: ["/dashboard", "/users", "/processors", "/sources", "/requests", "/audit", "/cover"],
   },
   {
     role: "rco",
@@ -85,6 +118,7 @@ const ROLES = [
       "/exports",
       "/imports",
       "/collections",
+      "/cover",
     ],
   },
 ];
@@ -167,10 +201,16 @@ for (const role of ROLES) {
           links.map((a) => (a as HTMLAnchorElement).getAttribute("href")),
         );
 
-      // The register of accounts and the audit trail are for the DPO and the
-      // administrator. Offering them here would be a link that 403s on click.
-      expect(hrefs).not.toContain("/users");
-      expect(hrefs).not.toContain("/audit");
+      // Nothing beyond what this role expects: the sidebar is the server's
+      // list, and the list here is the role's charter. A link outside it is a
+      // section somebody widened without deciding to.
+      const personal = ["/tickets", "/notifications", "/account"];
+      for (const href of hrefs) {
+        expect(
+          [...role.expected, ...personal],
+          `${role.name} is offered ${href}, which is outside its charter`,
+        ).toContain(href);
+      }
     });
   });
 }

@@ -66,7 +66,7 @@ function RequestsPageView() {
   return (
     <>
       <PageHeader
-        title="Rights requests"
+        title={isAdmin ? "Grievances about the DPO" : "Rights requests"}
         description={
           isAdmin
             ? "Grievances about the DPO, escalated to you as the independent reviewer. Accountability cannot review itself."

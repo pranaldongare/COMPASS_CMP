@@ -109,6 +109,8 @@ class MeResponse(Out):
     mfa_verified: bool
     session_expires_at: datetime
     nav: list[str]
+    #: Resources the role may write - the interface offers controls from this.
+    writes: list[str] = Field(default_factory=list)
 
 
 class PasswordChange(Schema):

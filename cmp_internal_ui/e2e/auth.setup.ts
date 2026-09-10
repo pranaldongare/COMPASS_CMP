@@ -33,9 +33,10 @@ const PASSWORD = process.env.E2E_PASSWORD ?? "SeedPassw0rd!2026";
  * that only exists in the dev outbox - since 2026-09-06 the second factor is
  * not the DPO's alone. Skipped where the outbox is not readable.
  *
- * The administrator is seeded too, but no spec drives that console, so no
- * session is minted for it: each sign-in spends a code from a per-account
- * budget that the suite should live within.
+ * Every staff role signs in, the administrator included: the control audit
+ * in `controls.spec.ts` opens every page as every role. Each sign-in spends a
+ * code from a per-account budget the suite should live within, and a session
+ * already on disk is reused while it lasts.
  */
 const STAFF = [
   { role: "dco", login: "dco@cmp.local" },
@@ -43,6 +44,7 @@ const STAFF = [
   { role: "dcoadmin", login: "dcoadmin@cmp.local" },
   { role: "rco", login: "rco@cmp.local" },
   { role: "dpo", login: "dpo@cmp.local" },
+  { role: "admin", login: "admin@cmp.local" },
 ];
 
 /**

@@ -31,6 +31,8 @@ export interface Me {
   /** What this role may navigate to. Rendered from here, not from a local copy
    *  of the permission matrix that would drift from the server's. */
   nav: string[];
+  /** Resources the role may write; controls are offered from this, not from the role. */
+  writes: string[];
 }
 
 export interface LoginResponse {

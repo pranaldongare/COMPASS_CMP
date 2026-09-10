@@ -29,10 +29,12 @@ import { Alert, Button, Td, Tr } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { useImports } from "@/features/exchange";
 import { useEnums } from "@/features/meta";
+import { useAuth } from "@/providers";
 import type { ImportBatch } from "@/types";
 import { formatDateTime } from "@/lib/format";
 
 export default function ImportsPage() {
+  const { me } = useAuth();
   const stack = useCursorStack();
   const [status, setStatus] = React.useState("");
   const [importing, setImporting] = React.useState(false);
@@ -52,10 +54,12 @@ export default function ImportsPage() {
         title="Imports"
         description="Manifests received from labs and tools. Validate first - it is a dry run that writes nothing - because a third-party manifest is the input you trust least."
         actions={
-          <Button variant="primary" onClick={() => setImporting(true)}>
-            <Upload className="size-4" />
-            Import a manifest
-          </Button>
+          me?.writes.includes("import") ? (
+            <Button variant="primary" onClick={() => setImporting(true)}>
+              <Upload className="size-4" />
+              Import a manifest
+            </Button>
+          ) : null
         }
       />
 

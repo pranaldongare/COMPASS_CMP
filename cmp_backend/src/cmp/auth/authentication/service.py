@@ -33,7 +33,7 @@ from cmp.core.errors import (
     ValidationFailed,
 )
 from cmp.core.logging import get_logger
-from cmp.core.permissions import Role, nav_for
+from cmp.core.permissions import Role, nav_for, writes_for
 from cmp.core.security import hash_password, password_needs_rehash, verify_password
 from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn
@@ -425,6 +425,7 @@ async def me_payload(conn: Conn, *, user_id: int, session: sessions.Session) -> 
         "mfa_verified": session.mfa_verified,
         "session_expires_at": datetime.fromtimestamp(session.expires_at, tz=UTC),
         "nav": nav_for(user["role"]),
+        "writes": writes_for(user["role"]),
     }
 
 

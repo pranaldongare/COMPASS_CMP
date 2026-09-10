@@ -85,6 +85,7 @@ export function makeMe(overrides: Partial<Me> = {}): Me {
     // An hour out, so a test that does not care about expiry never trips the
     // session warning. Tests that do care set this deliberately.
     session_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    writes: [],
     nav: NAV[role],
     ...overrides,
   };

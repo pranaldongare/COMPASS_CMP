@@ -94,8 +94,25 @@ def test_every_collection_role_can_register_a_data_source() -> None:
     in-house - and that lives in `registry._refuse_foreign_processor`, because
     the matrix answers "may this role write here at all" and the answer is yes.
     """
-    for role in (Role.DCO_ADMIN, Role.DCO, Role.RCO, Role.RND_USER):
+    for role in (Role.DCO_ADMIN, Role.DCO, Role.RCO):
         assert MATRIX["data_source"][role].write, f"{role.value} cannot register a source"
+
+
+def test_a_researcher_reads_the_registry_and_writes_none_of_it() -> None:
+    """A researcher names a processor on their project and reads the sources
+    on it; the registry itself is the DPO's and the administrator's. Imports
+    are the collection roles' work."""
+    for resource in ("processor", "data_source", "import"):
+        grant = MATRIX[resource][Role.RND_USER]
+        assert grant.readable and not grant.write, f"rnd_user writes {resource}"
+
+
+def test_the_dpo_can_reach_what_the_dpo_may_read() -> None:
+    from cmp.core.permissions import NAV_BY_ROLE, writes_for
+
+    for section in ("approvals", "sites", "collections"):
+        assert section in NAV_BY_ROLE[Role.DPO], f"DPO has no way to {section}"
+    assert "processor" in writes_for(Role.DPO) and "processor" not in writes_for(Role.RND_USER)
 
 
 def test_a_data_principal_cannot_touch_the_registry() -> None:
