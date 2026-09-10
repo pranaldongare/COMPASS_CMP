@@ -19,7 +19,9 @@ cp .env.example .env.local     # leave NEXT_PUBLIC_API_URL unset: /api is proxie
 npm run dev                    # http://localhost:3001
 ```
 
-The API must be running (see the backend README). The backend's
+The API must be running (see the backend README, or
+[docs/operations/local-development.md](../docs/operations/local-development.md)
+for the whole stack). Node 22. The backend's
 `PUBLIC_BASE_URL` should point here, because the links it puts in emails - a
 nominee's acceptance link, for one - land on this portal.
 
@@ -44,7 +46,9 @@ src/app/
   rights/nominee/       a nominee acting under s.14
   rights/nominations/   the nominee's accept / decline link
   (app)/my-consents/    her consents, the frozen notice text, withdrawal
-  (app)/my-requests/    her rights requests, nominations, disputes
+  (app)/my-requests/    her rights requests, the files released with a
+                        response, nominations (hers and those naming her),
+                        disputes
   (app)/account/        her profile and sessions
   (app)/notifications/  her own events
 src/features/
@@ -74,7 +78,9 @@ npm run e2e                                 # end-to-end
 E2E_CONSENT_TOKEN=<token> npm run e2e       # includes the consent journey
 ```
 
-The end-to-end suite signs in once as the seeded data principal
-(`subject@cmp.local`) with a code read from `cmp_backend/var/outbox.log`, and
-drives sign-up, the consent link, the public rights pages and her own pages.
+The end-to-end suite (specs: consent-flow, rights, signup, subject) signs in
+once as the seeded data principal (mobile `+919000000001`) with a code read
+from `cmp_backend/var/outbox.log`, and drives sign-up with two codes, the
+consent link, the public rights pages, nomination acceptance and her own
+pages. Run it with `--workers=1` and never alongside pytest.
 The DPO's half of a rights request is exercised by the staff console's suite.

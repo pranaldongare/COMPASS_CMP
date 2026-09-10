@@ -1,3 +1,9 @@
+> **Historical document.** Written in August 2026 against the single-frontend
+> build at migration 0012 and 164 routes. The generator it mentions was not
+> kept. The platform now has 233 routes, 22 migrations, a rights module and two
+> portals; see [docs/README.md](../README.md) for the current documentation and
+> [history/README.md](README.md) for what changed.
+
 # COMPASS — Low-Level Design
 
 Consent Management Platform for the Digital Personal Data Protection Act, 2023.

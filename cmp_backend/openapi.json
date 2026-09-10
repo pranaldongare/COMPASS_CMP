@@ -1411,6 +1411,32 @@
         }
       }
     },
+    "/users/staff": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Active staff, for naming a processor's respondent",
+        "description": "Naming who answers a rights-request ticket for an in-house processor\nmeans picking an account. Four fields, active staff only, and only for the\ntwo roles that manage the registry - not a way around the register.",
+        "operationId": "staff_directory_users_staff_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CollectionOwner"
+                  },
+                  "type": "array",
+                  "title": "Response Staff Directory Users Staff Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users/collection-owners": {
       "get": {
         "tags": [
@@ -2727,6 +2753,57 @@
         }
       }
     },
+    "/me/requests/{request_uuid}/files/{file_uuid}": {
+      "get": {
+        "tags": [
+          "me"
+        ],
+        "summary": "A file released with the response, while the window is open",
+        "operationId": "my_download_file_me_requests__request_uuid__files__file_uuid__get",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "file_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "File Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/me/requests/{request_uuid}/dispute": {
       "post": {
         "tags": [
@@ -2837,6 +2914,32 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/nominee-of": {
+      "get": {
+        "tags": [
+          "me"
+        ],
+        "summary": "Who has nominated me",
+        "description": "Nominations where the caller is the nominee.\n\nA data principal can be somebody else's nominee too, and until this\nexisted her account said nothing about it. Matched on her own recorded\ncontacts, since a nomination names a person by contact and not by account.\nActing still goes through the nominee page and a code to that contact -\nbeing signed in here is not that proof.",
+        "operationId": "nominations_naming_me_me_nominee_of_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NomineeOfOut"
+                  },
+                  "type": "array",
+                  "title": "Response Nominations Naming Me Me Nominee Of Get"
                 }
               }
             }
@@ -3636,6 +3739,158 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProcessorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/processors/{processor_uuid}/respondents": {
+      "get": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "Who answers a rights-request ticket for this processor",
+        "operationId": "list_respondents_processors__processor_uuid__respondents_get",
+        "parameters": [
+          {
+            "name": "processor_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Processor Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RespondentOut"
+                  },
+                  "title": "Response List Respondents Processors  Processor Uuid  Respondents Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "Name a respondent for this processor",
+        "description": "A respondent is how a holder's ticket gets answered.\n\nAn account answers on the portal: the ticket is in front of them when they\nsign in, and they return it there. A name and an address are mailed, and\nthe Privacy Office tracks the exchange by hand.\n\nAn in-house processor's respondent must be an account - our own team has\nno reason to be reached by mail. A third party's may be either. Usually it\nis somebody at the third party, reached by mail; sometimes one of our own\npeople represents that third party here, and naming their account puts the\nticket on the portal like any internal one. The rule is held here rather\nthan left to whoever fills the form.",
+        "operationId": "add_respondent_processors__processor_uuid__respondents_post",
+        "parameters": [
+          {
+            "name": "processor_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Processor Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RespondentIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespondentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/processors/{processor_uuid}/respondents/{respondent_uuid}": {
+      "delete": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "Remove a respondent",
+        "operationId": "remove_respondent_processors__processor_uuid__respondents__respondent_uuid__delete",
+        "parameters": [
+          {
+            "name": "processor_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Processor Uuid"
+            }
+          },
+          {
+            "name": "respondent_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Respondent Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acknowledged"
                 }
               }
             }
@@ -8830,6 +9085,28 @@
         }
       }
     },
+    "/requests/attention": {
+      "get": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "What the office has not read",
+        "description": "The number on the office's bell: every open ticket whose team has\nwritten - a message, a return - and nobody in the office has opened yet.\nThe respondent's side has the same count on \"Tickets for you\"; without\nthis one the conversation rang on one end only.",
+        "operationId": "requests_attention_requests_attention_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttentionOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/requests": {
       "get": {
         "tags": [
@@ -8896,6 +9173,16 @@
                 }
               ],
               "title": "Q"
+            }
+          },
+          {
+            "name": "unread",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Unread"
             }
           },
           {
@@ -9041,6 +9328,55 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RequestDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/linked/trail": {
+      "get": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "Everything recorded about the request this one is about",
+        "description": "Reached through the grievance, not the original: whoever may decide a\ngrievance may read the trail of what it disputes, even when the original\nsits outside their scope - a reviewer named because the complaint is about\nthe DPO has to see how the DPO handled it.",
+        "operationId": "get_linked_trail_requests__request_uuid__linked_trail_get",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Get Linked Trail Requests  Request Uuid  Linked Trail Get"
                 }
               }
             }
@@ -10003,6 +10339,489 @@
         }
       }
     },
+    "/requests/{request_uuid}/holders/{holder_uuid}/thread": {
+      "get": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "The ticket's thread, as the office reads it",
+        "operationId": "holder_thread_requests__request_uuid__holders__holder_uuid__thread_get",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "Write to the holder on the ticket, with a file if it helps",
+        "description": "Kept on the thread, and the holder is told the way it is reached: on the\nportal with a copy by mail, or by mail alone.",
+        "operationId": "post_to_holder_requests__request_uuid__holders__holder_uuid__thread_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_post_to_holder_requests__request_uuid__holders__holder_uuid__thread_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/holders/{holder_uuid}/send-back": {
+      "post": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "Send a returned ticket back to its holder",
+        "description": "Not satisfied with the return: the ticket is open again with the\nreason and a date, the holder is told, and the request waits again.",
+        "operationId": "send_back_ticket_requests__request_uuid__holders__holder_uuid__send_back_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendBackIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/holders/{holder_uuid}/withdraw": {
+      "post": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "Withdraw a ticket issued in error",
+        "operationId": "withdraw_ticket_requests__request_uuid__holders__holder_uuid__withdraw_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/holders/{holder_uuid}/reassign": {
+      "post": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "Send an open ticket to a different respondent",
+        "operationId": "reassign_holder_requests__request_uuid__holders__holder_uuid__reassign_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReassignIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/holders/{holder_uuid}/remind": {
+      "post": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "Send the respondent a reminder now",
+        "operationId": "remind_holder_requests__request_uuid__holders__holder_uuid__remind_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/holders/{holder_uuid}/messages/{message_uuid}/evidence": {
+      "get": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "Download a file attached to a message on the ticket",
+        "operationId": "holder_message_attachment_requests__request_uuid__holders__holder_uuid__messages__message_uuid__evidence_get",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          },
+          {
+            "name": "message_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/holders/{holder_uuid}/contact": {
+      "post": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "Record a mail sent, a chase, or a reply - and optionally send the mail",
+        "description": "The trail for a holder reached by email, kept on the request rather than\nin one person's inbox.",
+        "operationId": "log_contact_requests__request_uuid__holders__holder_uuid__contact_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/requests/{request_uuid}/tickets": {
       "post": {
         "tags": [
@@ -10396,6 +11215,7 @@
           "rights"
         ],
         "summary": "Release and close",
+        "description": "Multipart: the outcome and the words, plus any files released with\nthem - an extract a holder returned, a corrected document, a letter.",
         "operationId": "respond_requests__request_uuid__respond_post",
         "parameters": [
           {
@@ -10412,9 +11232,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/RespondIn"
+                "$ref": "#/components/schemas/Body_respond_requests__request_uuid__respond_post"
               }
             }
           }
@@ -10427,6 +11247,57 @@
                 "schema": {
                   "$ref": "#/components/schemas/RequestOut"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/files/{file_uuid}": {
+      "get": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "A file released with the response",
+        "operationId": "download_response_file_requests__request_uuid__files__file_uuid__get",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "file_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "File Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -10523,6 +11394,234 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tickets": {
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Tickets addressed to me",
+        "description": "The portal channel's inbox: the holders of a rights request that are one\nof our own teams answer here, not by email. Scope OWN - only what is\naddressed to this account, and only what the instruction says.",
+        "operationId": "my_tickets_tickets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TicketOut"
+                  },
+                  "type": "array",
+                  "title": "Response My Tickets Tickets Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tickets/{holder_uuid}": {
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "One ticket, with its brief and thread",
+        "description": "Reading it marks the office's messages read.",
+        "operationId": "my_ticket_tickets__holder_uuid__get",
+        "parameters": [
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tickets/{holder_uuid}/messages": {
+      "post": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Write to the Privacy Office on my ticket, with a file if it helps",
+        "description": "Kept on the thread, and every DPO is told.",
+        "operationId": "message_office_tickets__holder_uuid__messages_post",
+        "parameters": [
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_message_office_tickets__holder_uuid__messages_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tickets/{holder_uuid}/messages/{message_uuid}/evidence": {
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Download a file attached to a message on my ticket",
+        "operationId": "my_message_attachment_tickets__holder_uuid__messages__message_uuid__evidence_get",
+        "parameters": [
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          },
+          {
+            "name": "message_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tickets/{holder_uuid}/return": {
+      "post": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Return a ticket addressed to me",
+        "operationId": "return_my_ticket_tickets__holder_uuid__return_post",
+        "parameters": [
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_return_my_ticket_tickets__holder_uuid__return_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketOut"
+                }
               }
             }
           },
@@ -11105,6 +12204,53 @@
         ],
         "title": "AttachPurpose"
       },
+      "AttentionOut": {
+        "properties": {
+          "threads_unread": {
+            "type": "integer",
+            "title": "Threads Unread"
+          }
+        },
+        "type": "object",
+        "required": [
+          "threads_unread"
+        ],
+        "title": "AttentionOut"
+      },
+      "AttentionRow": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "href": {
+            "type": "string",
+            "title": "Href"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "count",
+          "severity",
+          "href"
+        ],
+        "title": "AttentionRow",
+        "description": "One thing that needs this person today: a count, how urgent it is,\nand where to act on it. Rows with nothing to count are not sent."
+      },
       "AuditEntry": {
         "properties": {
           "log_uuid": {
@@ -11326,6 +12472,34 @@
         ],
         "title": "Body_import_notice_document_projects__project_uuid__notices_import_post"
       },
+      "Body_message_office_tickets__holder_uuid__messages_post": {
+        "properties": {
+          "body": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Body"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence",
+            "description": "Optional file, max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "Body_message_office_tickets__holder_uuid__messages_post"
+      },
       "Body_nominee_request_rights_nominee_requests_post": {
         "properties": {
           "nomination_uuid": {
@@ -11376,6 +12550,91 @@
           "trigger_event"
         ],
         "title": "Body_nominee_request_rights_nominee_requests_post"
+      },
+      "Body_post_to_holder_requests__request_uuid__holders__holder_uuid__thread_post": {
+        "properties": {
+          "body": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Body"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence",
+            "description": "Optional file, max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "Body_post_to_holder_requests__request_uuid__holders__holder_uuid__thread_post"
+      },
+      "Body_respond_requests__request_uuid__respond_post": {
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "title": "Outcome"
+          },
+          "response_text": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Response Text"
+          },
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "outcome",
+          "response_text"
+        ],
+        "title": "Body_respond_requests__request_uuid__respond_post"
+      },
+      "Body_return_my_ticket_tickets__holder_uuid__return_post": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Summary"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence",
+            "description": "Optional evidence, max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary"
+        ],
+        "title": "Body_return_my_ticket_tickets__holder_uuid__return_post"
       },
       "Body_return_ticket_requests__request_uuid__holders__holder_uuid__return_post": {
         "properties": {
@@ -11920,6 +13179,18 @@
       },
       "ConfirmHolderIn": {
         "properties": {
+          "respondent_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Respondent Uuid"
+          },
           "responder_name": {
             "anyOf": [
               {
@@ -11968,7 +13239,14 @@
             "title": "Subject Name"
           },
           "subject_email": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Subject Email"
           },
           "subject_mobile": {
@@ -12234,7 +13512,14 @@
             "title": "Subject Name"
           },
           "subject_email": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Subject Email"
           },
           "subject_mobile": {
@@ -12335,7 +13620,14 @@
             "title": "Subject Name"
           },
           "subject_email": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Subject Email"
           },
           "subject_mobile": {
@@ -12473,6 +13765,36 @@
         ],
         "title": "ConsentSummary"
       },
+      "ContactIn": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "default": "note"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "send": {
+            "type": "boolean",
+            "title": "Send",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ContactIn",
+        "description": "One line on a holder's contact log, optionally sending the mail too."
+      },
       "ContactVerified": {
         "properties": {
           "ok": {
@@ -12541,6 +13863,7 @@
           },
           "email": {
             "type": "string",
+            "maxLength": 255,
             "format": "email",
             "title": "Email"
           },
@@ -12643,6 +13966,13 @@
             },
             "type": "array",
             "title": "Recent"
+          },
+          "attention": {
+            "items": {
+              "$ref": "#/components/schemas/AttentionRow"
+            },
+            "type": "array",
+            "title": "Attention"
           }
         },
         "type": "object",
@@ -13494,6 +14824,144 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "channel": {
+            "type": "string",
+            "title": "Channel",
+            "default": "email"
+          },
+          "respondent_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Respondent Uuid"
+          },
+          "responder_user_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responder User Uuid"
+          },
+          "responder_user_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responder User Name"
+          },
+          "contact_log": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Contact Log"
+          },
+          "brief": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brief"
+          },
+          "message_count": {
+            "type": "integer",
+            "title": "Message Count",
+            "default": 0
+          },
+          "unread_for_office": {
+            "type": "integer",
+            "title": "Unread For Office",
+            "default": 0
+          },
+          "seen_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seen At"
+          },
+          "last_reminded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Reminded At"
+          },
+          "reminders_sent": {
+            "type": "integer",
+            "title": "Reminders Sent",
+            "default": 0
+          },
+          "return_evidence_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Evidence Name"
+          },
+          "sent_back_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent Back At"
+          },
+          "sent_back_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent Back Reason"
+          },
+          "sent_back_count": {
+            "type": "integer",
+            "title": "Sent Back Count",
+            "default": 0
           }
         },
         "type": "object",
@@ -14214,6 +15682,254 @@
         ],
         "title": "LinkView"
       },
+      "LinkedRefOut": {
+        "properties": {
+          "request_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Uuid"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "request_type": {
+            "type": "string",
+            "title": "Request Type"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Received At"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "request_uuid",
+          "reference",
+          "request_type",
+          "status",
+          "outcome",
+          "received_at",
+          "closed_at"
+        ],
+        "title": "LinkedRefOut",
+        "description": "A request that points at this one: the grievance that disputes it, or\nthe re-run a grievance ordered."
+      },
+      "LinkedRequestOut": {
+        "properties": {
+          "request_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Uuid"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "request_type": {
+            "type": "string",
+            "title": "Request Type"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Received At"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "request_text": {
+            "type": "string",
+            "title": "Request Text"
+          },
+          "due_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Due At"
+          },
+          "verification_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verification Method"
+          },
+          "verified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified At"
+          },
+          "responded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responded At"
+          },
+          "response_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Text"
+          },
+          "refusal_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refusal Reason"
+          },
+          "remedy_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remedy Text"
+          },
+          "response_file_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response File Hash"
+          },
+          "holder_count": {
+            "type": "integer",
+            "title": "Holder Count"
+          },
+          "tickets_issued": {
+            "type": "integer",
+            "title": "Tickets Issued"
+          },
+          "tickets_returned": {
+            "type": "integer",
+            "title": "Tickets Returned"
+          },
+          "clock": {
+            "$ref": "#/components/schemas/ClockOut"
+          },
+          "in_scope": {
+            "type": "boolean",
+            "title": "In Scope"
+          }
+        },
+        "type": "object",
+        "required": [
+          "request_uuid",
+          "reference",
+          "request_type",
+          "status",
+          "outcome",
+          "received_at",
+          "closed_at",
+          "channel",
+          "request_text",
+          "due_at",
+          "verification_method",
+          "verified_at",
+          "responded_at",
+          "response_text",
+          "refusal_reason",
+          "remedy_text",
+          "response_file_hash",
+          "holder_count",
+          "tickets_issued",
+          "tickets_returned",
+          "clock",
+          "in_scope"
+        ],
+        "title": "LinkedRequestOut",
+        "description": "The request a grievance is about, as much of it as deciding the\ngrievance needs: what she asked, when it was due and when it was answered,\nhow identity was established, what was returned, and whether every holder\ncame back. Carried on the grievance so the person deciding it - the DPO, or\na reviewer whose scope does not reach the original - sees it without\nleaving the page. `in_scope` says whether the full record can be opened."
+      },
       "LogRequest": {
         "properties": {
           "request_type": {
@@ -14355,7 +16071,14 @@
             "title": "Full Name"
           },
           "email": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Email"
           },
           "mobile": {
@@ -14449,8 +16172,26 @@
             "title": "Full Name"
           },
           "email": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Email"
+          },
+          "mobile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mobile"
           },
           "role": {
             "type": "string",
@@ -14509,6 +16250,13 @@
             },
             "type": "array",
             "title": "Nav"
+          },
+          "writes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Writes"
           }
         },
         "type": "object",
@@ -14524,6 +16272,76 @@
           "nav"
         ],
         "title": "MeResponse"
+      },
+      "MessageOut": {
+        "properties": {
+          "message_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Message Uuid"
+          },
+          "author_side": {
+            "type": "string",
+            "title": "Author Side"
+          },
+          "author_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Name"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "evidence_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Hash"
+          },
+          "evidence_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_uuid",
+          "author_side",
+          "author_name",
+          "kind",
+          "body",
+          "evidence_hash",
+          "created_at"
+        ],
+        "title": "MessageOut"
       },
       "MfaVerifyRequest": {
         "properties": {
@@ -14714,6 +16532,64 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "invoked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoked At"
+          },
+          "invoked_event": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoked Event"
+          },
+          "invoked_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoked Reference"
+          },
+          "invoked_request_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoked Request Uuid"
+          },
+          "invoked_evidenced_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoked Evidenced At"
           }
         },
         "type": "object",
@@ -14734,6 +16610,11 @@
       },
       "NominationView": {
         "properties": {
+          "nomination_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Nomination Uuid"
+          },
           "principal_name": {
             "type": "string",
             "title": "Principal Name"
@@ -14765,6 +16646,7 @@
         },
         "type": "object",
         "required": [
+          "nomination_uuid",
           "principal_name",
           "nominee_name",
           "rights",
@@ -14772,6 +16654,122 @@
           "mediums"
         ],
         "title": "NominationView"
+      },
+      "NomineeOfOut": {
+        "properties": {
+          "nomination_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Nomination Uuid"
+          },
+          "principal_name": {
+            "type": "string",
+            "title": "Principal Name"
+          },
+          "rights": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Rights"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "contact": {
+            "type": "string",
+            "title": "Contact"
+          },
+          "accept_expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accept Expires At"
+          },
+          "accepted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "invoked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoked At"
+          },
+          "invoked_event": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoked Event"
+          },
+          "invoked_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoked Reference"
+          },
+          "invoked_evidenced_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoked Evidenced At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nomination_uuid",
+          "principal_name",
+          "rights",
+          "status",
+          "contact",
+          "accept_expires_at",
+          "accepted_at",
+          "created_at"
+        ],
+        "title": "NomineeOfOut",
+        "description": "A nomination that names the caller. The other side of `NominationOut`."
       },
       "NomineeRequestOut": {
         "properties": {
@@ -17202,6 +19200,49 @@
         ],
         "title": "ReadyCheck"
       },
+      "ReassignIn": {
+        "properties": {
+          "respondent_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Respondent Uuid"
+          },
+          "responder_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responder Name"
+          },
+          "responder_contact": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responder Contact"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ReassignIn"
+      },
       "RefuseIn": {
         "properties": {
           "reason": {
@@ -17387,6 +19428,34 @@
             ],
             "title": "Linked Reference"
           },
+          "consent_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Uuid"
+          },
+          "consent_project": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Project"
+          },
+          "threads_unread": {
+            "type": "integer",
+            "title": "Threads Unread",
+            "default": 0
+          },
           "holder_count": {
             "type": "integer",
             "title": "Holder Count"
@@ -17538,6 +19607,77 @@
               }
             ],
             "title": "Linked Request Type"
+          },
+          "consent_project_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Project Uuid"
+          },
+          "consent_notice_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Notice Code"
+          },
+          "consent_notice_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Notice Version"
+          },
+          "consent_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent At"
+          },
+          "consent_withdrawn": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Withdrawn"
+          },
+          "consent_purposes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Purposes"
           },
           "nomination_uuid": {
             "anyOf": [
@@ -17761,6 +19901,30 @@
             },
             "type": "array",
             "title": "Transitions"
+          },
+          "linked_request": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LinkedRequestOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "linked_from": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedRefOut"
+            },
+            "type": "array",
+            "title": "Linked From"
+          },
+          "response_files": {
+            "items": {
+              "$ref": "#/components/schemas/ResponseFileOut"
+            },
+            "type": "array",
+            "title": "Response Files"
           }
         },
         "type": "object",
@@ -17822,7 +19986,9 @@
           "items_undecided",
           "holders",
           "items",
-          "transitions"
+          "transitions",
+          "linked_request",
+          "linked_from"
         ],
         "title": "RequestDetail"
       },
@@ -17949,6 +20115,34 @@
               }
             ],
             "title": "Linked Reference"
+          },
+          "consent_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Uuid"
+          },
+          "consent_project": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Project"
+          },
+          "threads_unread": {
+            "type": "integer",
+            "title": "Threads Unread",
+            "default": 0
           },
           "holder_count": {
             "type": "integer",
@@ -18101,6 +20295,77 @@
               }
             ],
             "title": "Linked Request Type"
+          },
+          "consent_project_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Project Uuid"
+          },
+          "consent_notice_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Notice Code"
+          },
+          "consent_notice_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Notice Version"
+          },
+          "consent_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent At"
+          },
+          "consent_withdrawn": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Withdrawn"
+          },
+          "consent_purposes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Purposes"
           },
           "nomination_uuid": {
             "anyOf": [
@@ -18488,6 +20753,34 @@
             ],
             "title": "Linked Reference"
           },
+          "consent_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Uuid"
+          },
+          "consent_project": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Project"
+          },
+          "threads_unread": {
+            "type": "integer",
+            "title": "Threads Unread",
+            "default": 0
+          },
           "holder_count": {
             "type": "integer",
             "title": "Holder Count"
@@ -18583,26 +20876,150 @@
         ],
         "title": "ResetRequest"
       },
-      "RespondIn": {
+      "RespondentIn": {
         "properties": {
-          "outcome": {
-            "type": "string",
-            "title": "Outcome"
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
           },
-          "response_text": {
-            "type": "string",
-            "maxLength": 20000,
-            "minLength": 1,
-            "title": "Response Text"
+          "contact": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact"
+          },
+          "user_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Uuid"
           }
         },
         "additionalProperties": false,
         "type": "object",
+        "title": "RespondentIn"
+      },
+      "RespondentOut": {
+        "properties": {
+          "respondent_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Respondent Uuid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "contact": {
+            "type": "string",
+            "title": "Contact"
+          },
+          "user_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Uuid"
+          },
+          "user_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Role"
+          },
+          "created_at": {
+            "title": "Created At"
+          }
+        },
+        "type": "object",
         "required": [
-          "outcome",
-          "response_text"
+          "respondent_uuid",
+          "name",
+          "contact",
+          "created_at"
         ],
-        "title": "RespondIn"
+        "title": "RespondentOut",
+        "description": "Who answers a rights-request ticket for a processor."
+      },
+      "ResponseFileOut": {
+        "properties": {
+          "file_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "File Uuid"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "file_hash": {
+            "type": "string",
+            "title": "File Hash"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "content_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Type"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file_uuid",
+          "file_name",
+          "file_hash",
+          "size_bytes",
+          "content_type",
+          "created_at"
+        ],
+        "title": "ResponseFileOut",
+        "description": "A file released with the response, downloaded from the account."
       },
       "ReviewerIn": {
         "properties": {
@@ -18644,6 +21061,33 @@
           "role"
         ],
         "title": "RoleChange"
+      },
+      "SendBackIn": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Reason"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "SendBackIn"
       },
       "SessionInfo": {
         "properties": {
@@ -19190,6 +21634,18 @@
             "type": "boolean",
             "title": "About Dpo",
             "default": false
+          },
+          "consent_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Uuid"
           }
         },
         "additionalProperties": false,
@@ -19347,6 +21803,89 @@
             ],
             "title": "Linked Reference"
           },
+          "linked_request_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Request Uuid"
+          },
+          "consent_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Uuid"
+          },
+          "consent_project": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Project"
+          },
+          "consent_notice_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Notice Code"
+          },
+          "consent_notice_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Notice Version"
+          },
+          "consent_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent At"
+          },
+          "consent_purposes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Purposes"
+          },
           "closed_at": {
             "anyOf": [
               {
@@ -19361,6 +21900,13 @@
           },
           "clock": {
             "$ref": "#/components/schemas/ClockOut"
+          },
+          "response_files": {
+            "items": {
+              "$ref": "#/components/schemas/ResponseFileOut"
+            },
+            "type": "array",
+            "title": "Response Files"
           }
         },
         "type": "object",
@@ -19384,11 +21930,347 @@
           "download_available",
           "download_expires_at",
           "linked_reference",
+          "linked_request_uuid",
           "closed_at",
           "clock"
         ],
         "title": "SubjectRequestOut",
         "description": "What she sees of her own request. No verification notes, no holders -\nthe holders are in the response itself, and the notes are ours."
+      },
+      "ThreadOut": {
+        "properties": {
+          "holder": {
+            "$ref": "#/components/schemas/HolderOut"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/MessageOut"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "holder",
+          "messages"
+        ],
+        "title": "ThreadOut"
+      },
+      "TicketDetailOut": {
+        "properties": {
+          "ticket": {
+            "$ref": "#/components/schemas/TicketOut"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/MessageOut"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticket",
+          "messages"
+        ],
+        "title": "TicketDetailOut"
+      },
+      "TicketOut": {
+        "properties": {
+          "holder_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Holder Uuid"
+          },
+          "request_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Uuid"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "request_type": {
+            "type": "string",
+            "title": "Request Type"
+          },
+          "request_status": {
+            "type": "string",
+            "title": "Request Status"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "subject_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Name"
+          },
+          "instruction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instruction"
+          },
+          "ticket_status": {
+            "type": "string",
+            "title": "Ticket Status"
+          },
+          "issued_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issued At"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "escalated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escalated At"
+          },
+          "returned_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Returned At"
+          },
+          "return_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Summary"
+          },
+          "return_evidence_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Evidence Hash"
+          },
+          "brief": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brief"
+          },
+          "message_count": {
+            "type": "integer",
+            "title": "Message Count",
+            "default": 0
+          },
+          "unread_for_holder": {
+            "type": "integer",
+            "title": "Unread For Holder",
+            "default": 0
+          },
+          "last_reminded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Reminded At"
+          },
+          "reminders_sent": {
+            "type": "integer",
+            "title": "Reminders Sent",
+            "default": 0
+          },
+          "return_evidence_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Evidence Name"
+          },
+          "sent_back_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent Back At"
+          },
+          "sent_back_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent Back Reason"
+          },
+          "sent_back_count": {
+            "type": "integer",
+            "title": "Sent Back Count",
+            "default": 0
+          },
+          "consent_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Uuid"
+          },
+          "consent_project": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Project"
+          },
+          "consent_notice_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Notice Code"
+          },
+          "consent_notice_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Notice Version"
+          },
+          "consent_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent At"
+          },
+          "consent_purposes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Purposes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "holder_uuid",
+          "request_uuid",
+          "reference",
+          "request_type",
+          "request_status",
+          "label",
+          "subject_name",
+          "instruction",
+          "ticket_status",
+          "issued_at",
+          "due_at",
+          "escalated_at",
+          "returned_at",
+          "return_summary",
+          "return_evidence_hash"
+        ],
+        "title": "TicketOut",
+        "description": "A ticket as its respondent sees it: what is asked, of whom, by when."
       },
       "TransitionIn": {
         "properties": {
@@ -19579,7 +22461,14 @@
             "title": "Full Name"
           },
           "email": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Email"
           },
           "mobile": {
@@ -19781,6 +22670,22 @@
           "environment"
         ],
         "title": "Version"
+      },
+      "WithdrawIn": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "WithdrawIn"
       },
       "WithdrawRequest": {
         "properties": {

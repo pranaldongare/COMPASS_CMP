@@ -20,6 +20,8 @@ reaches a log line.
 | `notification.batch_partial` | A transport is failing for some recipients |
 | `upload.path_escape` | Traversal attempt, or a corrupted reference |
 | Queue depth on `high_priority` | Somebody is waiting for a sign-in code |
+| `cmp.maintenance.sweep_rights_requests` failing | Unverified requests are not being closed and ticket due dates are not being marked; a clock is running unwatched |
+| Rights requests past a checkpoint on the dashboard | The office is late; the response period is published and binding |
 
 The audit chain alert is the one that matters most and fires least. Treat it as a
 page, not a ticket.
@@ -45,4 +47,5 @@ resolves its `entity_type`/`entity_id` into a label and a link, so "Notice
 published" says *which* notice.
 
 For "what happened to this person's data", filter by `subject`. That is the DSAR
-query, and it is backed by `idx_audit_subject`.
+query, and it is backed by `idx_audit_subject`. For one rights request,
+`GET /requests/{uuid}/trail` reads the same rows by reference.

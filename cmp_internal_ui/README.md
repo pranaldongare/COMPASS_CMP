@@ -20,8 +20,10 @@ cp .env.example .env.local     # leave NEXT_PUBLIC_API_URL unset: /api is proxie
 npm run dev
 ```
 
-The API must be running (see the backend README). `npm run verify` runs the type
-check, the linter and the unit tests together.
+The API must be running (see the backend README, or
+[docs/operations/local-development.md](../docs/operations/local-development.md)
+for the whole stack). Node 22. `npm run verify` runs the type check, the linter
+and the unit tests together.
 
 > If every button appears to do nothing in development, check the browser console
 > for `403` on `/_next/static/chunks/*`. Next 15.2+ refuses dev assets from an
@@ -48,6 +50,11 @@ src/
                           cookie-presence redirect (Next 16's middleware.ts)
   app/                    routes
     (app)/                authenticated — RequireAuth, AppShell, RequireSection
+                          dashboard, projects, approvals, notices, purposes,
+                          processors, sources, sites, links, consents, exports,
+                          imports, collections, requests (the rights queue),
+                          tickets (a respondent's own), users, audit, cover,
+                          notifications, profile
     sign-in/              staff password + MFA step-up, reset
   features/<name>/        one folder per business area:
     api.ts                thin endpoint functions - no React
@@ -130,8 +137,15 @@ rather than red — it is a right being exercised, not an error.
 
 ```bash
 npm test                                    # unit
-npm run e2e                                 # end-to-end
+npx playwright test --workers=1             # end-to-end, serially
 ```
+
+The browser suite has five Playwright projects: `setup` signs in every role
+once and saves the sessions, then `chromium`, `mobile`, `localhost-cookies` and
+`visual` run the specs (auth, controls, detail pages, forms, links, navigation
+coverage, notice upload, routing, visual). Run it serially and never alongside
+pytest; the why is in
+[docs/operations/testing.md](../docs/operations/testing.md).
 
 Unit tests cover the pieces where a mistake is invisible in review: error
 classification, and the formatting of values a data subject reads (a retention

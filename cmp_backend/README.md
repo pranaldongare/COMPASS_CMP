@@ -1,302 +1,206 @@
-# CMP — Consent Management Platform (backend)
+# CMP backend
 
-Consent management under the **Digital Personal Data Protection Act 2023** and the
-DPDP Rules 2025. FastAPI, PostgreSQL 16+, Redis, Celery.
-
-The authoritative documents are `DATA-MODEL.md` (22 tables) and the API reference
-(114 endpoints). Where this codebase and those documents disagree, they win and
-this is the bug — with one deliberate exception, recorded in
-[migration 0004](migrations/versions/0004_constraint_fixes.py) and explained under
-[Deviations](#deviations-from-the-specification).
-
----
+The API of the consent management platform: FastAPI 0.141 on Python 3.12,
+PostgreSQL 16, Redis 7, Celery 5. 233 endpoints over 31 tables, every query
+hand-written SQL over psycopg 3, every migration raw DDL. The repository-wide
+documentation is under [../docs/](../docs/README.md); this README is the
+backend's own front door.
 
 ## Running it
 
-Two datastores are required. Either install them natively or run the two
-containers; the application itself runs the same way in both cases.
-
-### Native (Windows shown; adjust for your platform)
+Two datastores, natively or as containers:
 
 ```bash
-winget install --id PostgreSQL.PostgreSQL.17 --silent \
-  --override "--mode unattended --superpassword <pw> --serverport 5432"
-winget install --id Memurai.MemuraiDeveloper --silent   # Redis 7.2-compatible
-
-psql -U postgres -c "CREATE ROLE cmp LOGIN PASSWORD 'cmp' CREATEDB"
-psql -U postgres -c "CREATE DATABASE cmp OWNER cmp"
+docker compose -f docker/docker-compose.yml -p cmp up -d db redis
 ```
 
-### Containers
+The compose project is `cmp`. The development database is `cmp_dev`; if the
+`cmp_pgdata` volume carries an older database named `cmp` from another
+project, leave it be.
+
+Then:
 
 ```bash
-docker compose up -d db redis
-```
-
-### Then
-
-```bash
-uv sync                        # install, from the lock file
-cp .env.example .env           # edit if your datastores are not on localhost
-uv run alembic upgrade head    # 22 tables, 25 enums, triggers, grants
-uv run python scripts/seed.py  # one coherent world: users, project, notice, link
+uv sync --all-extras --dev
+cp .env.example .env               # POSTGRES_DB=cmp_dev; PUBLIC_BASE_URL and CONSOLE_BASE_URL to the two portals
+uv run alembic upgrade head        # 22 migrations: 31 tables, 39 enums, triggers, grants
+uv run python scripts/seed.py      # one coherent world: a user per role, processors, sources, sites, a project through to approved, a live link
 
 uv run python -m cmp --port 8000
-uv run celery -A cmp.tasks.app:celery_app worker --pool=solo --loglevel=info
-uv run celery -A cmp.tasks.app:celery_app beat  --loglevel=info
+uv run celery -A cmp.tasks.app worker -Q high_priority,email,documents,reports,notifications,default -l info --pool=solo
+uv run celery -A cmp.tasks.app beat -l info
 ```
 
-`http://127.0.0.1:8000/docs` for the interactive reference (development only —
-it is disabled in production).
+`http://127.0.0.1:8000/docs` is the interactive reference outside production.
 
-> **Why `python -m cmp` and not `uvicorn cmp.main:app`?**
-> psycopg's async mode cannot run on Windows' `ProactorEventLoop`, and uvicorn
-> 0.36+ builds its loop through a `loop_factory`, which bypasses the event-loop
-> *policy*. The module entrypoint supplies the loop itself. On Linux the two are
-> equivalent; production uses gunicorn (see the `Dockerfile`).
+> **Why `python -m cmp` and not `uvicorn cmp.main:app`?** psycopg's async
+> mode cannot run on Windows' `ProactorEventLoop`, and uvicorn builds its loop
+> through a `loop_factory` that bypasses the policy. The module entrypoint
+> supplies the loop. On Linux the two are equivalent; production uses
+> gunicorn (see `docker/Dockerfile`).
 
 ### Development codes
 
-OTP and MFA codes are hashed before storage and are never logged — which makes
-signing in locally impossible without somewhere to read them. In `local` and
-`test` only, delivered messages are appended to `var/outbox.log`. The guard is on
-`settings.environment`, checked before anything is formatted, so a production
-process never writes one.
-
----
+One-time codes and MFA codes are hashed before storage and never logged. In
+`local` and `test` only, every delivered message is appended to
+`var/outbox.log`; that is where a code is read from during development and by
+the browser suites. The guard is on `settings.environment`, checked before
+anything is formatted, so a production process never writes one.
 
 ## Architecture
 
 ```
-HTTP  →  middleware  →  router  →  permission guard  →  service  →  repository  →  PostgreSQL
-         request id      parse       role + scope       business      raw SQL       triggers
-         audit ctx       validate    in the WHERE       rules         psycopg       constraints
-         headers         no SQL      clause             audit.record()              grants
+HTTP  ->  middleware  ->  router  ->  permission guard  ->  service  ->  repository  ->  PostgreSQL
+          request id      parse       role + scope          rules        raw SQL        triggers
+          audit ctx       validate    in the WHERE          all writes   psycopg        constraints
+          headers         no SQL      clause                audit.record()              grants
 ```
 
 | Layer | Directory | May do | May not do |
 |---|---|---|---|
-| API | `src/cmp/api/` | Parse, validate shape, resolve role | Business logic, SQL |
-| Domain | `src/cmp/domain/` | Business rules, transitions, **all writes** | Touch HTTP |
-| Repository | `src/cmp/db/` | SQL | Business logic |
-| Database | `migrations/` | Constraints, triggers, grants | — |
+| API | `src/cmp/api/` | parse, validate shape, resolve role | business logic, SQL |
+| Domain | `src/cmp/domain/` | business rules, transitions, **all writes** | touch HTTP |
+| Repository | `src/cmp/db/` | SQL | business logic |
+| Database | `migrations/` | constraints, triggers, grants | |
 
-**There is no ORM, deliberately.** `DATA-MODEL.md` is authoritative; an ORM model
-would be a second copy of it that drifts, and every review would then diff against
-the wrong source of truth. Repositories write the SQL that actually runs, and
-Alembic migrations carry raw DDL.
+**There is no ORM, deliberately** ([ADR 0001](../docs/decisions/0001-no-orm-raw-sql.md)).
+The migrations are the schema; a model layer would be a second copy that
+drifts.
 
-**Only services write.** A router that writes bypasses `audit.record()`, and that
-is how audit trails end up patchy. The audit row and the change it describes share
-one transaction, so a change that rolled back leaves no audit row claiming it
-happened, and a change that committed cannot be missing one.
+**Only services write.** A router that writes bypasses `audit.record()`. The
+audit row and the change it describes share one transaction, so a change
+that rolled back leaves no audit row, and one that committed cannot be
+missing one.
 
-### Build order
-
-Forced by foreign keys, not preference:
-
-```
-accounts → audit → registry → projects → notices → consent → exchange → circular FKs
-```
-
-Audit is second on purpose. Retrofitting audit coverage across a finished codebase
-means hand-checking every write path, and missing some.
-
----
+The layers in detail: [docs/architecture/layers.md](docs/architecture/layers.md)
+and [dependency-rules.md](docs/architecture/dependency-rules.md). A request's
+path: [request-lifecycle.md](docs/architecture/request-lifecycle.md).
 
 ## What the database enforces
 
-The application already refuses these. The database refuses them too, because
-"the application always calls the service layer" is a claim about a codebase, and
-a codebase changes. A trigger is a claim about the data.
+The application refuses these first, to give a better error. The database
+refuses them too, because "the application always calls the service layer"
+is a claim about a codebase, and a codebase changes
+([ADR 0002](../docs/decisions/0002-evidence-enforced-in-the-database.md)).
 
-| Guarantee | Mechanism | Test |
-|---|---|---|
-| Audit is append-only | trigger + revoked grant | `TestAppendOnly` |
-| Audit rows are hash-chained | `cmp_audit_chain()`; `GET /audit/verify` walks it | `TestAuditChain` |
-| A published notice is frozen | `cmp_notice_freeze()` | `TestPublishedNoticeIsFrozen` |
-| The artefact carries the hash of the text served (INV-4) | `cmp_consent_coherent()` | `TestConsentCoherence` |
-| Notice served before consent (s.5(1)) | `CHECK served_before_action` | `TestConsentCoherence` |
-| One artefact superseded once | partial unique index | `TestConsentCoherence` |
-| Bystanders may exist (INV-12) | nullable `consent_id` + CHECK | `TestAssetConsent` |
-| Data categories are itemised (Rule 3(b)(i)) | `CHECK cardinality(...) >= 1` | `TestPurposeConstraints` |
-| Links only for approved projects | `cmp_link_coherent()` | `TestLinkIntegrity` |
+| Guarantee | Mechanism |
+|---|---|
+| Consent evidence, disclosures, history and the audit log are append-only | trigger and revoked grant |
+| Audit rows are hash-chained, in commit order | `cmp_audit_chain()`, position drawn inside the advisory lock; `GET /audit/verify` walks it |
+| A published notice is frozen | `cmp_notice_freeze()` |
+| The artefact carries the hash of the text served; served precedes action | `cmp_consent_coherent()`, `CHECK served_before_action` |
+| One artefact superseded once | partial unique index |
+| Bystanders may exist, visibly | nullable `consent_id` on `asset_consent` with a CHECK |
+| Data categories are itemised (Rule 3(b)(i)) | `CHECK cardinality(...) >= 1` |
+| Links only for approved projects | `cmp_link_coherent()` |
+| A data principal and a nominee have a mobile; staff have an email | `BEFORE INSERT` triggers and a CHECK |
+| A minor cannot consent to a purpose not permitted for minors | `cmp_is_minor(dob)`, checked in the consent service |
 
-Consent evidence, disclosure records and history tables are all append-only.
-Withdrawal is a **new artefact that supersedes the old one**, never an edit —
-the supersession chain *is* the record.
-
----
+`tests/integration/enforcement/` breaks each of these with raw SQL, on
+purpose.
 
 ## Conventions
 
-**Identifiers.** Every path parameter and every response field is a `uuid`. The
-integer primary key never appears in a URL, a body, an export or a log; it is
-stripped in `build_page` and filtered by the response models. `/c/{token}` is the
-single exception — a capability, not a reference.
-
-**Pagination.** Cursor, never offset, on every list endpoint. Offset pagination
-skips or repeats rows when the underlying set changes between pages, which it will
-during a collection campaign. Cursors are HMAC-signed: they are interpolated into
-the next query's comparison, so an unsigned one is an injection vector.
-
-**Filters.** Unknown query parameters are `400`, never ignored. A typo in a filter
-that silently returns everything is how the wrong people see the wrong rows.
-
-**403 vs 404.** Scope lives in the `WHERE` clause. A row outside your scope is
-absent, which surfaces as `404`; `403` would confirm it exists. `403` is reserved
-for a resource you can see but may not act on — and every one is audited.
-
-**Errors.** One shape everywhere:
-
-```json
-{"error": {"code": "notice_incomplete", "message": "…", "field": "…", "request_id": "…"}}
-```
-
----
+- **Identifiers on the wire are uuids.** The integer key never appears in a
+  URL, a body, an export or a log. `/c/{token}` is the one capability-shaped
+  exception.
+- **Pagination is by signed cursor**, never offset.
+- **Unknown query parameters are 400**, never ignored.
+- **Out of scope is 404.** Scope is compiled into the `WHERE`; 403 is for a
+  row you can see but may not act on, and is audited
+  ([ADR 0004](../docs/decisions/0004-scope-in-the-where-clause.md)).
+- **Unknown enumerated values are 422** with the choices named, through
+  `cmp.validation.choice()` ([ADR 0008](../docs/decisions/0008-unknown-choices-are-422.md)).
+- **One error shape:** `{"error": {"code", "message", "field", "request_id"}}`.
 
 ## Testing
 
 ```bash
-uv run pytest                      # everything
-uv run pytest -m "not integration" # no datastores needed
-uv run pytest --cov                # with coverage
+uv run pytest                        # everything; integration and security need PostgreSQL and Redis
+uv run pytest tests/unit             # pure functions, no I/O
+uv run pytest tests/integration      # real datastores; rolls back per test
+uv run pytest tests/security         # BOLA, BFLA, mass assignment, CSRF, rate limits, the matrix
+uv run ruff check . && uv run ruff format --check . && uv run mypy
 ```
 
-Unit tests are pure functions — the transition table, the permission matrix, the
-crypto primitives. Integration tests run against a real PostgreSQL and bypass the
-service layer on purpose: if a guarantee only holds when you go through Python, it
-is not a guarantee.
-
-The transition test asserts all **125** (from, to, role) combinations, not just
-the 7 that are legal. That is what catches a future edit adding a shortcut from
-`in_draft` straight to `approved`.
-
----
-
-## Deviations from the specification
-
-**One, and it is a defect in `DATA-MODEL.md`.** That document declares:
-
-```sql
-CONSTRAINT categories_not_empty CHECK (array_length(data_categories, 1) >= 1)
-```
-
-`array_length('{}', 1)` returns `NULL`, not `0`. `NULL >= 1` evaluates to `NULL`,
-and a CHECK constraint accepts `NULL` — it rejects only an explicit `false`. So
-the constraint that exists to enforce Rule 3(b)(i) admitted a purpose with no data
-categories at all. Reproduced against PostgreSQL 16 and 17:
-
-```sql
-INSERT INTO purpose (..., data_categories, ...) VALUES (..., ARRAY[]::text[], ...);
--- INSERT 0 1
-```
-
-[Migration 0004](migrations/versions/0004_constraint_fixes.py) replaces it with
-`cardinality(...) >= 1`, and refuses to apply if rows that the broken constraint
-admitted are already present. The same migration fixes a `format()` bug that made
-the append-only trigger raise a PostgreSQL internals error instead of its intended
-message — the statement was still refused, but an operator reading the log could
-not tell why.
-
-**Sessions are in Redis, not a 23rd table.** `DATA-MODEL.md` specifies 22 tables
-and a session is not a record of something that happened; it is ephemeral state
-with a TTL that must disappear on its own. `GET /auth/sessions` and
-`DELETE /users/{uuid}/sessions` are served from Redis with a per-user index.
-
----
+The project state machine is asserted over every (from, to, role)
+combination, not only the legal ones; the rights state machine likewise. Do
+not run pytest while a Playwright suite is running against the same database:
+both write audit rows, and the chain's lock turns them into timeouts. More in
+[../docs/operations/testing.md](../docs/operations/testing.md).
 
 ## Operations
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /health` | Liveness. Touches nothing. A database outage must not make every replica fail its probe and get restarted. |
-| `GET /ready` | Readiness. Database, Redis, migrations current. `503` when not. |
-| `GET /metrics` | Prometheus. Never templated by consent token. |
-| `GET /audit/verify` | Walks the hash chain and reports the first row that does not verify. |
+| `GET /health` | liveness; touches nothing |
+| `GET /ready` | readiness: database, Redis, migrations current; 503 when not |
+| `GET /metrics` | Prometheus; never templated by consent token |
+| `GET /audit/verify` | walks the hash chain and names the first row that does not verify |
 
-Scheduled work (Celery Beat, exactly one instance — two produce duplicate work):
+Scheduled work (Celery beat, exactly one instance):
 
 | Task | Schedule | Idempotent because |
 |---|---|---|
 | `expire_consent_links` | every 15 min | matches only rows still active |
 | `apply_retention_lapse` | 02:00 | matches only `disposition = 'active'` |
+| `sweep_rights_requests` | 02:30 | closes only unverified requests past the window; marks only tickets past due |
 | `verify_audit_chain` | 03:00 | read-only |
-| `flag_unmapped_assets` | every 6 h | reconciliation only; flags, never deletes |
+| `flag_unmapped_assets` | every 6 h at :30 | reconciliation only; flags, never deletes |
 
-Celery runs with `acks_late` and `reject_on_worker_lost`: a worker killed
-mid-task redelivers rather than losing the work. That means **at-least-once**
-delivery, which is why every task is idempotent and why imports upsert on
+Celery runs with `acks_late` and `reject_on_worker_lost`, so delivery is
+at-least-once and every task is idempotent; imports upsert on
 `(source, source_reference)`.
 
----
+Operator scripts:
+
+```bash
+uv run python scripts/seed.py          # development data; refuses outside local/test
+uv run python scripts/create_admin.py  # the bootstrap administrator; refuses if one exists
+uv run python scripts/reset_dev.py     # drop and rebuild the configured database; local/test only, asks first
+uv run python scripts/healthcheck.py   # post-deploy checks; read-only, safe in production
+uv run python scripts/db.py [table|SQL] # read the database; every statement rolled back
+```
 
 ## Layout
 
-Nine packages under `src/cmp/`, layered so each may only call the layer below it.
-See [docs/architecture/layers.md](docs/architecture/layers.md) for what each may
-and may not do, and [dependency-rules.md](docs/architecture/dependency-rules.md)
-for the import graph.
-
 ```
 src/cmp/
-  main.py            ASGI entrypoint — a stable target for uvicorn/gunicorn
+  main.py            ASGI entrypoint
   bootstrap/         assembly: factory, lifespan, middleware, routers, container
   api/
-    routers/v1/      11 authenticated routers
-    routers/public/  the consent flow, and the notice/rights viewers
+    routers/v1/      audit, auth, consents, dashboard, delegations, exchange, me,
+                     notices, projects, registry, rights, system, users
+    routers/public/  consent (the /c/{token} flow), rights (the public pages)
     dependencies/    sessions, csrf, authentication, authorization, paging, filters
     middleware/      request context, security headers, body limit, access log
-    errors/          one error contract: responses, handlers, status mapping
-  auth/
-    identity/        Principal — who is calling
-    authentication/  password, MFA, OTP, password reset
-    authorization/   roles, resources, scopes, evaluator, policy
-    sessions/        server-side sessions in Redis
-    rate_limit/      limits, lockout, distributed locks
-  domain/            one package per aggregate; the only layer that writes
-    projects/        service + state_machine
-    notices/  consent/  exchange/  audit/  registry/  users/  shared/
-  validation/        the constrained types every request model is built from
-  db/
-    pool.py sql.py redis.py
-    repositories/    one per table cluster, plus the audit entity resolver
-  infrastructure/    email, sms, storage, outbound HTTP — swappable adapters
-  core/              config, enums, constants, permissions, security, errors,
-                     pagination, logging, context, result — imports nothing local
-  tasks/             Celery: authentication, notifications, maintenance, exchange
+    errors/          one error contract
+  auth/              identity, authentication (password, MFA, OTP), authorization
+                     (roles, resources, scopes, evaluator, policy), sessions, rate limits
+  domain/            one package per aggregate; the only layer that writes:
+                     projects, notices, consent, exchange, registry, users, rights, audit, shared
+  validation/        constrained types, choice(), contact normalisation
+  db/                pool, SQL helpers, one repository per table cluster
+  infrastructure/    email, sms, storage, outbound HTTP; swappable adapters
+  core/              config, enums, constants, permissions, security, errors, pagination
+  tasks/             Celery: authentication, notifications, maintenance, exchange, rights
 
-migrations/          raw-SQL Alembic revisions (0001-0004)
-tests/
-  unit/              pure functions; no I/O
-  integration/       real PostgreSQL and Redis
-  security/          BOLA, BFLA, mass assignment, CSRF, rate limits, auth
-  api/               reserved for the httpx.ASGITransport suite
-scripts/             seed, create_admin, reset_dev, healthcheck
-docs/                architecture, security, database, operations
-docker/              Dockerfile, compose, nginx (TLS, rate limits, token scrubbing)
+migrations/          22 raw-SQL Alembic revisions (docs/database/migrations.md)
+tests/               unit/, integration/ (with enforcement/, database/, auth/), security/
+scripts/             seed, create_admin, reset_dev, healthcheck, db
+docs/                architecture, security, database, operations (this service's own)
+docker/              Dockerfile, docker-compose.yml, nginx
+openapi.json         the generated API document; regenerate after a route change
 ```
 
 ### Where to start reading
 
-| Question | File |
+| Question | Where |
 |---|---|
 | How is the app assembled? | `bootstrap/application.py` |
 | What happens to a request? | [docs/architecture/request-lifecycle.md](docs/architecture/request-lifecycle.md) |
-| Who may do what? | `core/permissions.py`, then `auth/authorization/policy.py` |
+| Who may do what? | `core/permissions.py`, then [../docs/domain/roles-and-access.md](../docs/domain/roles-and-access.md) |
 | How does a project move state? | `domain/projects/state_machine.py` |
+| How does a rights request work? | [docs/architecture/rights.md](docs/architecture/rights.md) |
 | What makes the audit trail evidence? | [docs/security/audit.md](docs/security/audit.md) |
 | Why no ORM? | [docs/architecture/overview.md](docs/architecture/overview.md) |
-
-## Operator scripts
-
-```bash
-uv run python scripts/seed.py            # development data; refuses in production
-uv run python scripts/create_admin.py    # the bootstrap account; refuses if one exists
-uv run python scripts/reset_dev.py       # drop and rebuild; local/test only
-uv run python scripts/healthcheck.py     # post-deploy checks; read-only, safe in prod
-```
-
-`healthcheck.py` answers what `/health` and `/ready` cannot: are the enforcement
-triggers present, does the audit chain verify, does every collection reconcile,
-and is production quietly writing mail to a file.

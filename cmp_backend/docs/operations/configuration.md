@@ -1,6 +1,6 @@
 # Configuration
 
-One validated `Settings` object, 52 fields, in `core/config.py`. Every field is
+One validated `Settings` object, 73 fields, in `core/config.py`. Every field is
 documented in `.env.example`.
 
 ## Production refuses to start on
@@ -24,10 +24,12 @@ boot: the second failure is loud and costs ten minutes.
 | Redis / Celery | Three logical databases, so a broker flush does not drop sessions |
 | Session | 8h absolute, 30min idle; HttpOnly, Secure, SameSite=Lax |
 | Lockout | 5 attempts / 30 min window / 30 min lockout |
-| OTP & MFA | 6 digits, 10 minutes, 5 verify attempts; MFA on `dpo` and `admin` |
+| OTP & MFA | 6 digits, 10 minutes, 5 verify attempts; MFA codes live 5 minutes; `MFA_REQUIRED_ROLES` defaults to every staff role ([ADR 0006](../../../docs/decisions/0006-mfa-for-every-staff-role.md)) |
+| URLs | `PUBLIC_BASE_URL` (the data-principal portal: consent and acceptance links) and `CONSOLE_BASE_URL` (the staff console: ticket and request links) |
+| Rights | `RIGHTS_RESPONSE_PERIOD_DAYS` 90, `GRIEVANCE_RESPONSE_PERIOD_DAYS` 90, acknowledge 2, tickets 5, collate 5 before, download 30, unverified close 7, nomination accept 30 |
 | Uploads | 25 MB; proofs are PDF, PNG, JPEG only |
 | API | 50 default page size, 200 max; public link 60/min |
-| Transports | `email_transport`, `sms_transport`, `storage_backend` |
+| Transports | `email_transport`, `sms_transport`, `storage_backend`; SMS is not optional once data principals sign in by mobile |
 
 ## Transports default to not delivering
 

@@ -1,3 +1,8 @@
+> **Historical document.** A proposal from August 2026 that was not applied as
+> written; the layered layout under `src/cmp/` is what was built. Kept for the
+> fifteen rules it measures against. Current layout:
+> [docs/architecture/repository-layout.md](../architecture/repository-layout.md).
+
 # Backend structure — a module-oriented proposal
 
 Measured against the fifteen architecture rules, with the current layout as the

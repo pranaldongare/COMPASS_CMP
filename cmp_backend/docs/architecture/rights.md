@@ -76,7 +76,14 @@ the nightly sweep after `RIGHTS_UNVERIFIED_CLOSE_DAYS`.
 Holders are derived from the records - `export_line` says who received a file
 with her in it, `asset_consent` says whose data source captured her - and
 confirmed by the DPO, who adds what the records miss. One ticket per confirmed
-holder, with an instruction, a named responder and a due date that defaults to
+holder, addressed to one of the processor's **respondents** (0016): an account
+on the platform for an in-house team, who sees the ticket on the dashboard and
+the console's tickets page, or a name and an address for a third party, who
+is written to. A ticket is a **thread** (0017) that opens with the brief and on
+which either side writes, with files; unread messages are counted at both ends
+and the office's count is `GET /requests/attention`. A ticket can be
+withdrawn, reassigned or reminded (0018), and a returned one sent back with a
+reason (0020). Each has a due date that defaults to
 halfway. A holder that misses its date is escalated once; the transition to
 collation then opens, and the response goes out **partial and on time**, with
 the gap named. The server refuses to call a response with an unreturned
@@ -110,15 +117,16 @@ re-run the original request as a new one, linked to the decision.
 
 ## Nomination
 
-She names a nominee while well: name, mobile, an optional email, and which of her rights he may exercise. Pending until he accepts, revocable by her at any time; one live nomination per person. The acceptance link goes to every contact she recorded, and the link alone accepts nothing: the nominee chooses one of those contacts, shown masked, receives a code there, and enters it to accept or to decline - so a link-holder cannot answer on his behalf either way. When the time comes he identifies himself with whichever recorded contact he types, and the code goes to that one. The nominee is written to, not her.
+She names a nominee while well: name, mobile, an optional email, and which of her rights he may exercise. When he invokes it he names the trigger event, death or incapacity, and the nomination records the request that invoked it (0022); death closes her account, incapacity does not. Pending until he accepts, revocable by her at any time; one live nomination per person. The acceptance link goes to every contact she recorded, and the link alone accepts nothing: the nominee chooses one of those contacts, shown masked, receives a code there, and enters it to accept or to decline - so a link-holder cannot answer on his behalf either way. When the time comes he identifies himself with whichever recorded contact he types, and the code goes to that one. The nominee is written to, not her.
 
 ## Surface
 
 | Audience | Routes |
 |---|---|
 | Public | `POST /rights/requests`, `POST /rights/requests/verify`, `GET /rights/nominations/{token}`, `POST /rights/nominations/{token}[/code|/accept|/decline]`, `POST /rights/nominee/start`, `POST /rights/nominee/requests` |
-| Data principal | `GET/POST /me/requests`, `GET /me/requests/{uuid}[/trail|/download]`, `POST /me/requests/{uuid}/dispute`, `GET/POST/DELETE /me/nominations` |
-| DPO (administrator: escalated grievances only) | `GET/POST /requests`, `GET /requests/{uuid}[/transitions|/trail|/download]`, and one action route per step on the path |
+| Data principal | `GET/POST /me/requests`, `GET /me/requests/{uuid}[/trail|/download|/files/{uuid}]`, `POST /me/requests/{uuid}/dispute`, `POST /me/consents/{uuid}/erasure-request` (0019), `GET/POST/DELETE /me/nominations` |
+| Respondent (any staff role) | `GET /tickets`, `GET /tickets/{uuid}`, `POST /tickets/{uuid}/messages`, `POST /tickets/{uuid}/respond`, files on messages |
+| DPO (administrator: escalated grievances only) | `GET/POST /requests`, `GET /requests/attention`, `GET /requests/{uuid}[/transitions|/trail|/download]`, one action route per step on the path, the ticket routes (issue, message, send back, withdraw, reassign, remind, escalate), and `POST /requests/{uuid}/files` for what is released with the response (0021) |
 
 Every write is audited with the request reference in its detail, so
 `GET /requests/{uuid}/trail` reads one request's story across the four tables
@@ -140,3 +148,14 @@ Taken as defaults, and changeable without unwinding a record:
 | Evidence accepted from a third-party lab | A file and a summary, kept with the ticket and hashed |
 | Quarantine's time limit | None; it persists until the DPO decides |
 | Backups | Out of scope; not restored or scrubbed by any of this |
+
+## Since the first cut
+
+The module shipped with migration 0013 and grew through 0016 to 0022 without
+changing the meaning of a stored record: respondents per processor, the
+ticket thread, ticket robustness, a request confined to one consent, send-back,
+response files, and the invoked nomination. The workflow as people experience
+it, with the console and portal pages, is in
+[docs/domain/rights-requests.md](../../../docs/domain/rights-requests.md); the
+defaults above are recorded as
+[ADR 0010](../../../docs/decisions/0010-rights-clock-and-defaults.md).

@@ -4,7 +4,8 @@ Two questions, deliberately answered by different things.
 
 ## 1. May this role call this at all?
 
-A static matrix: 17 resources × 7 roles → a grant. Checked before any work is
+A static matrix: 18 resources × 7 roles → a grant. The whole table is laid out in
+[docs/domain/roles-and-access.md](../../../docs/domain/roles-and-access.md). Checked before any work is
 done, by `RequireResource` or `RequireRole`.
 
 Two conventions:
@@ -21,8 +22,8 @@ A `Scope`, which a repository turns into a WHERE predicate.
 | Scope | Means |
 |---|---|
 | `ALL` | every row |
-| `SCOPED` | rows assigned to them — for a DCO, projects they are the DCO of |
-| `OWN` | rows they created, or that are about them |
+| `SCOPED` | rows assigned to them — for a collection owner, the projects and sites they own, plus a colleague's for a period of cover; for the administrator on `rights_request`, escalated grievances only |
+| `OWN` | rows they created, or that are about them — for `ticket`, every staff role, since a respondent answers only the tickets addressed to them |
 | `NONE` | no rows |
 
 **Never a filter applied after the fetch.** A row already in the response has
@@ -43,7 +44,7 @@ there".
 |---|---|
 | `core/permissions.py` | `Role`, `Scope`, `Grant`, `MATRIX`, `NAV_BY_ROLE` — data, no behaviour |
 | `auth/authorization/roles.py` | staff/privileged sets, the MFA rule |
-| `auth/authorization/resources.py` | the 16 resource names as constants |
+| `auth/authorization/resources.py` | the 18 resource names as constants; the roster and the matrix are asserted equal at import |
 | `auth/authorization/scopes.py` | `ScopeContext`, `narrower_of` |
 | `auth/authorization/evaluator.py` | pure decisions, returning a reason |
 | `auth/authorization/policy.py` | `authorize()` — the front door; logs the denial |

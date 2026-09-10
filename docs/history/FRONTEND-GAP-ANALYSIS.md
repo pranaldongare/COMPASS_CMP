@@ -1,3 +1,9 @@
+> **Historical document.** Measured in August 2026 against the single Next.js
+> application, before it was split into the staff console and the
+> data-principal portal and before the rights module. Most gaps listed were
+> closed; the measuring method in §6 still applies. Current state:
+> [docs/architecture/system-overview.md](../architecture/system-overview.md).
+
 # Frontend — what it does, and what is missing
 
 A gap analysis of the Next.js application against the 164 endpoints the API
@@ -60,7 +66,7 @@ state from it.
 
 **Confirmed · latent · fires when the registry passes 50 active sources**
 
-[`site-owner.tsx:125`](../cmp_internal_ui/src/features/projects/components/site-owner.tsx#L125)
+[`site-owner.tsx:125`](../../cmp_internal_ui/src/features/projects/components/site-owner.tsx#L125)
 requests sources with **no `limit`**, so the server applies
 `default_page_size = 50`. The component then filters that page client-side down
 to the project's processors.
@@ -70,7 +76,7 @@ the project's processor can be absent from the first page — and the dropdown
 simply will not offer it. Nothing errors. The DCO Admin concludes the source is
 not registered.
 
-[`site-form.tsx:49`](../cmp_internal_ui/src/features/projects/components/site-form.tsx#L49)
+[`site-form.tsx:49`](../../cmp_internal_ui/src/features/projects/components/site-form.tsx#L49)
 has the same shape with `limit: 100`, which delays the same failure rather than
 preventing it.
 

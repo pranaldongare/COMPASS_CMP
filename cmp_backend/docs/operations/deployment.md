@@ -1,15 +1,19 @@
 # Deployment
 
+The whole topology, including the two portals and the compose file, is in
+[docs/operations/deployment.md](../../../docs/operations/deployment.md). This
+page is the backend's part of it.
+
 ## Requirements
 
-PostgreSQL 16+, Redis 7+, Python 3.12.
+PostgreSQL 16+, Redis 7+, Python 3.12. The portals need Node 22.
 
 ## Processes
 
 | Process | Command | Notes |
 |---|---|---|
 | API | `gunicorn cmp.main:app -k uvicorn.workers.UvicornWorker` | Stateless; scale horizontally |
-| Worker | `celery -A cmp.tasks.app worker -Q high_priority,notifications,documents,default` | Scale per queue |
+| Worker | `celery -A cmp.tasks.app worker -Q high_priority,email,documents,reports,notifications,default` | Scale per queue; a shorter `-Q` leaves the rest to pile up |
 | Beat | `celery -A cmp.tasks.app beat` | **Exactly one.** Two produce duplicate scheduled work |
 
 ## Order of operations
@@ -17,6 +21,8 @@ PostgreSQL 16+, Redis 7+, Python 3.12.
 1. `alembic upgrade head`
 2. Roll the API
 3. Roll the workers
+4. Roll the two portals; their curated API types were contract-tested against this commit
+5. `scripts/healthcheck.py`
 
 Migrations first, because the API checks the schema version at startup and warns
 if it is missing. The API tolerates a schema newer than itself; it does not
