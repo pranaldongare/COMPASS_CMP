@@ -496,6 +496,14 @@ async def messages_of(conn: Conn, holder_id: int) -> list[Row]:
     )
 
 
+async def message_by_uuid(conn: Conn, holder_id: int, message_uuid: str) -> Row | None:
+    return await fetch_one(
+        conn,
+        f"SELECT {_MESSAGE_SELECT} WHERE m.holder_id = %s AND m.message_uuid = %s",
+        (holder_id, message_uuid),
+    )
+
+
 async def add_message(
     conn: Conn,
     holder_id: int,

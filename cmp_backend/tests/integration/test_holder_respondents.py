@@ -430,6 +430,54 @@ class TestThread:
         assert thread["messages"][-1]["kind"] == "return"
         assert thread["messages"][-1]["author_side"] == "holder"
 
+    async def test_a_file_travels_with_a_message_on_either_side(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
+    ) -> None:
+        """A message can carry a file - an extract, a screenshot of a record, a
+        signed confirmation - and the file is found again by the message it
+        came with, on whichever side asks for it."""
+        row, holder = await self._issued(conn, seeded)
+        dco = int(seeded["users"]["dco"]["id"])
+        dpo = int(seeded["users"]["dpo"]["id"])
+        ref = str(holder["holder_uuid"])
+
+        after = await service.post_holder_message(
+            conn,
+            user_id=dco,
+            holder_uuid=ref,
+            body="Extract of what we hold, attached.",
+            evidence_ref="rights/extract.csv",
+            evidence_hash="a" * 64,
+        )
+        sent = after["messages"][-1]
+        assert sent["author_side"] == "holder" and sent["evidence_hash"] == "a" * 64
+        found = await repo.message_by_uuid(
+            conn, int(holder["holder_id"]), str(sent["message_uuid"])
+        )
+        assert found is not None and found["evidence_ref"] == "rights/extract.csv"
+
+        back = await service.post_office_message(
+            conn,
+            row,
+            holder_uuid=ref,
+            body="The template to use is attached.",
+            role="dpo",
+            actor_id=dpo,
+            evidence_ref="rights/template.pdf",
+            evidence_hash="b" * 64,
+        )
+        assert back["messages"][-1]["author_side"] == "office"
+        assert back["messages"][-1]["evidence_hash"] == "b" * 64
+        # A message with no file has none to find.
+        plain = await service.post_holder_message(conn, user_id=dco, holder_uuid=ref, body="Noted.")
+        with pytest.raises(NotFound):
+            await service.message_attachment(
+                conn,
+                holder=holder,
+                message_uuid=str(plain["messages"][-1]["message_uuid"]),
+                actor_id=dco,
+            )
+
     async def test_the_thread_is_append_only(
         self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
     ) -> None:

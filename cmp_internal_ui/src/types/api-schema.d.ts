@@ -3548,11 +3548,28 @@ export interface paths {
         get: operations["holder_thread_requests__request_uuid__holders__holder_uuid__thread_get"];
         put?: never;
         /**
-         * Write to the holder on the ticket
+         * Write to the holder on the ticket, with a file if it helps
          * @description Kept on the thread, and the holder is told the way it is reached: on the
          *     portal with a copy by mail, or by mail alone.
          */
         post: operations["post_to_holder_requests__request_uuid__holders__holder_uuid__thread_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/holders/{holder_uuid}/messages/{message_uuid}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a file attached to a message on the ticket */
+        get: operations["holder_message_attachment_requests__request_uuid__holders__holder_uuid__messages__message_uuid__evidence_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3802,10 +3819,27 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Write to the Privacy Office on my ticket
+         * Write to the Privacy Office on my ticket, with a file if it helps
          * @description Kept on the thread, and every DPO is told.
          */
         post: operations["message_office_tickets__holder_uuid__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tickets/{holder_uuid}/messages/{message_uuid}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a file attached to a message on my ticket */
+        get: operations["my_message_attachment_tickets__holder_uuid__messages__message_uuid__evidence_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4120,6 +4154,16 @@ export interface components {
              */
             document: string;
         };
+        /** Body_message_office_tickets__holder_uuid__messages_post */
+        Body_message_office_tickets__holder_uuid__messages_post: {
+            /** Body */
+            body: string;
+            /**
+             * Evidence
+             * @description Optional file, max 25 MB
+             */
+            evidence?: string | null;
+        };
         /** Body_nominee_request_rights_nominee_requests_post */
         Body_nominee_request_rights_nominee_requests_post: {
             /**
@@ -4138,6 +4182,16 @@ export interface components {
             /**
              * Evidence
              * @description Evidence of death or incapacity
+             */
+            evidence?: string | null;
+        };
+        /** Body_post_to_holder_requests__request_uuid__holders__holder_uuid__thread_post */
+        Body_post_to_holder_requests__request_uuid__holders__holder_uuid__thread_post: {
+            /** Body */
+            body: string;
+            /**
+             * Evidence
+             * @description Optional file, max 25 MB
              */
             evidence?: string | null;
         };
@@ -5449,11 +5503,6 @@ export interface components {
             session_expires_at: string;
             /** Nav */
             nav: string[];
-        };
-        /** MessageIn */
-        MessageIn: {
-            /** Body */
-            body: string;
         };
         /** MessageOut */
         MessageOut: {
@@ -13754,7 +13803,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MessageIn"];
+                "multipart/form-data": components["schemas"]["Body_post_to_holder_requests__request_uuid__holders__holder_uuid__thread_post"];
             };
         };
         responses: {
@@ -13765,6 +13814,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ThreadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    holder_message_attachment_requests__request_uuid__holders__holder_uuid__messages__message_uuid__evidence_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+                message_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -14213,7 +14295,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MessageIn"];
+                "multipart/form-data": components["schemas"]["Body_message_office_tickets__holder_uuid__messages_post"];
             };
         };
         responses: {
@@ -14224,6 +14306,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_message_attachment_tickets__holder_uuid__messages__message_uuid__evidence_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                holder_uuid: string;
+                message_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

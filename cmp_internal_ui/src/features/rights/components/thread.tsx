@@ -12,6 +12,7 @@
 import { Building2, FileText, MessageSquare, Send, ShieldCheck, UserRound } from "lucide-react";
 import * as React from "react";
 
+import { FileInput } from "@/components/forms";
 import { Alert, Badge, Button, Textarea } from "@/components/ui/primitives";
 import { formatDate, formatDateTime } from "@/lib/format";
 import type { HolderBrief, TicketMessage } from "@/types";
@@ -162,26 +163,39 @@ export function Thread({
   );
 }
 
-/** A reply box. The caller sends. */
+/**
+ * The composer. One box for everything a side says on a ticket: a message,
+ * a message with a file, or - for the team - the final return. The caller
+ * decides what a submission means; the box only collects it.
+ */
 export function ReplyBox({
   onSend,
   pending,
   placeholder,
   disabledReason,
+  allowFile = true,
+  finalOption,
 }: {
-  onSend: (body: string) => Promise<void>;
+  onSend: (body: string, file: File | null, final: boolean) => Promise<void>;
   pending: boolean;
   placeholder: string;
   disabledReason?: string | null;
+  allowFile?: boolean;
+  /** Offered where a submission may close the ticket: label and explanation. */
+  finalOption?: { label: string; hint: string } | null;
 }) {
   const [body, setBody] = React.useState("");
+  const [file, setFile] = React.useState<File | null>(null);
+  const [final, setFinal] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     try {
-      await onSend(body.trim());
+      await onSend(body.trim(), file, final);
       setBody("");
+      setFile(null);
+      setFinal(false);
     } catch (err) {
       setError(
         err && typeof err === "object" && "userMessage" in err
@@ -194,20 +208,51 @@ export function ReplyBox({
     return <p className="text-xs text-text-muted">{disabledReason}</p>;
   }
   return (
-    <form method="post" onSubmit={submit} noValidate className="space-y-2">
+    <form method="post" onSubmit={submit} noValidate className="space-y-3">
       {error && <Alert tone="danger">{error}</Alert>}
       <Textarea
-        rows={3}
+        rows={4}
         maxLength={20_000}
         value={body}
         onChange={(e) => setBody(e.target.value)}
         placeholder={placeholder}
         aria-label="Message"
       />
+      {allowFile && (
+        <FileInput
+          label="Attach a file"
+          hint="Optional. PDF, image, CSV or text, up to 25 MB. Kept with the message."
+          accept="application/pdf,image/png,image/jpeg,text/csv,text/plain"
+          maxBytes={25 * 1024 * 1024}
+          file={file}
+          onChange={setFile}
+        />
+      )}
+      {finalOption && (
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="mt-0.5 size-4"
+            checked={final}
+            onChange={(e) => setFinal(e.target.checked)}
+          />
+          <span>
+            {finalOption.label}
+            <span className="block text-xs text-text-subtle">{finalOption.hint}</span>
+          </span>
+        </label>
+      )}
       <div className="flex justify-end">
-        <Button type="submit" variant="primary" size="sm" loading={pending} disabled={!body.trim()}>
+        <Button
+          type="submit"
+          variant="primary"
+          size="sm"
+          loading={pending}
+          disabled={!body.trim()}
+          data-testid="composer-send"
+        >
           <Send className="size-4" aria-hidden="true" />
-          Send
+          {final ? "Return the ticket" : "Send"}
         </Button>
       </div>
     </form>

@@ -61,13 +61,22 @@ export function useMyTickets() {
   });
 }
 
-/** Enabled only while the thread is open on screen: reading it marks it read. */
+/**
+ * A thread is a conversation, and the other side may be writing while it is
+ * open: it refreshes itself while on screen, so a reply appears without a
+ * reload. Reading it marks it read.
+ */
+const THREAD_REFRESH_MS = 20_000;
+
+/** Enabled only while the thread is open on screen. */
 export function useHolderThread(uuid: Uuid, holderUuid: Uuid | undefined) {
   return useQuery<HolderThread, ApiError>({
     queryKey: keys.rights.thread(uuid, holderUuid ?? ""),
     queryFn: () => holderThread(uuid, holderUuid!),
     enabled: Boolean(holderUuid),
     staleTime: 0,
+    refetchInterval: THREAD_REFRESH_MS,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -77,5 +86,7 @@ export function useMyTicket(holderUuid: Uuid | undefined) {
     queryFn: () => myTicket(holderUuid!),
     enabled: Boolean(holderUuid),
     staleTime: 0,
+    refetchInterval: THREAD_REFRESH_MS,
+    refetchOnWindowFocus: true,
   });
 }

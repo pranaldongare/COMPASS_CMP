@@ -178,10 +178,6 @@ class ThreadOut(Out):
     messages: list[MessageOut]
 
 
-class MessageIn(Schema):
-    body: Annotated[str, Field(min_length=1, max_length=20_000)]
-
-
 class ContactIn(Schema):
     """One line on a holder's contact log, optionally sending the mail too."""
 
@@ -838,26 +834,75 @@ async def holder_thread(
         )
 
 
+async def _attachment(evidence: UploadFile | None) -> tuple[str | None, str | None]:
+    """Store a file attached to a message, if there is one."""
+    if evidence is None:
+        return None, None
+    payload = await evidence.read()
+    check_upload(payload, evidence.content_type, EVIDENCE)
+    return (
+        storage().save(payload, subdir="rights", suggested_name=evidence.filename or "attachment"),
+        file_hash(payload),
+    )
+
+
+def _attachment_response(payload: bytes, filename: str, recorded: str) -> Response:
+    return Response(
+        content=payload,
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "X-Recorded-SHA256": recorded,
+            "X-Content-SHA256": file_hash(payload),
+        },
+    )
+
+
 @router.post(
     "/{request_uuid}/holders/{holder_uuid}/thread",
     response_model=ThreadOut,
-    summary="Write to the holder on the ticket",
+    summary="Write to the holder on the ticket, with a file if it helps",
 )
 async def post_to_holder(
-    request_uuid: UUID, holder_uuid: UUID, body: MessageIn, principal: RightsWriter
+    request_uuid: UUID,
+    holder_uuid: UUID,
+    principal: RightsWriter,
+    body: Annotated[str, Form(min_length=1, max_length=20_000)],
+    evidence: Annotated[UploadFile | None, File(description="Optional file, max 25 MB")] = None,
 ) -> dict[str, Any]:
     """Kept on the thread, and the holder is told the way it is reached: on the
     portal with a copy by mail, or by mail alone."""
+    evidence_ref, evidence_hash = await _attachment(evidence)
     async with transaction() as conn:
         row = await _load(conn, request_uuid, principal)
         return await service.post_office_message(
             conn,
             row,
             holder_uuid=str(holder_uuid),
-            body=body.body,
+            body=body,
             role=principal.role,
             actor_id=principal.user_id,
+            evidence_ref=evidence_ref,
+            evidence_hash=evidence_hash,
         )
+
+
+@router.get(
+    "/{request_uuid}/holders/{holder_uuid}/messages/{message_uuid}/evidence",
+    summary="Download a file attached to a message on the ticket",
+)
+async def holder_message_attachment(
+    request_uuid: UUID, holder_uuid: UUID, message_uuid: UUID, principal: RightsReader
+) -> Response:
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        holder = await repo.holder_by_uuid(conn, int(row["request_id"]), str(holder_uuid))
+        if not holder:
+            raise NotFound("Holder")
+        payload, filename, recorded = await service.message_attachment(
+            conn, holder=holder, message_uuid=str(message_uuid), actor_id=principal.user_id
+        )
+    return _attachment_response(payload, filename, recorded)
 
 
 @router.post(
@@ -1287,16 +1332,42 @@ async def my_ticket(holder_uuid: UUID, principal: TicketReader) -> dict[str, Any
 @ticket_router.post(
     "/{holder_uuid}/messages",
     response_model=TicketDetailOut,
-    summary="Write to the Privacy Office on my ticket",
+    summary="Write to the Privacy Office on my ticket, with a file if it helps",
 )
 async def message_office(
-    holder_uuid: UUID, body: MessageIn, principal: TicketWriter
+    holder_uuid: UUID,
+    principal: TicketWriter,
+    body: Annotated[str, Form(min_length=1, max_length=20_000)],
+    evidence: Annotated[UploadFile | None, File(description="Optional file, max 25 MB")] = None,
 ) -> dict[str, Any]:
     """Kept on the thread, and every DPO is told."""
+    evidence_ref, evidence_hash = await _attachment(evidence)
     async with transaction() as conn:
         return await service.post_holder_message(
-            conn, user_id=principal.user_id, holder_uuid=str(holder_uuid), body=body.body
+            conn,
+            user_id=principal.user_id,
+            holder_uuid=str(holder_uuid),
+            body=body,
+            evidence_ref=evidence_ref,
+            evidence_hash=evidence_hash,
         )
+
+
+@ticket_router.get(
+    "/{holder_uuid}/messages/{message_uuid}/evidence",
+    summary="Download a file attached to a message on my ticket",
+)
+async def my_message_attachment(
+    holder_uuid: UUID, message_uuid: UUID, principal: TicketReader
+) -> Response:
+    async with transaction() as conn:
+        holder = await repo.ticket_for_user(conn, principal.user_id, str(holder_uuid))
+        if not holder:
+            raise NotFound("Ticket")
+        payload, filename, recorded = await service.message_attachment(
+            conn, holder=holder, message_uuid=str(message_uuid), actor_id=principal.user_id
+        )
+    return _attachment_response(payload, filename, recorded)
 
 
 @ticket_router.post(

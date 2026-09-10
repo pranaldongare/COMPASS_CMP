@@ -1263,7 +1263,11 @@ async def _tell_holder(conn: Conn, row: Row, holder: Row, *, author_id: int, bod
     to = _ticket_address(holder)
     if not to:
         return
-    where = _console_url("/tickets") if holder.get("channel") == "portal" else None
+    where = (
+        _console_url(f"/tickets?ticket={holder['holder_uuid']}")
+        if holder.get("channel") == "portal"
+        else None
+    )
     _dispatch(
         "send_ticket_message", to, str(row["reference"]), str(holder["label"]), name, body, where
     )
@@ -1306,9 +1310,18 @@ async def thread_for_office(
 
 
 async def post_office_message(
-    conn: Conn, row: Row, *, holder_uuid: str, body: str, role: Role | str, actor_id: int
+    conn: Conn,
+    row: Row,
+    *,
+    holder_uuid: str,
+    body: str,
+    role: Role | str,
+    actor_id: int,
+    evidence_ref: str | None = None,
+    evidence_hash: str | None = None,
 ) -> dict[str, Any]:
-    """The office writes on the thread. Logged, and the holder is told."""
+    """The office writes on the thread, with a file where one helps. Logged,
+    and the holder is told."""
     _may_act(row, role)
     _open(row)
     holder = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
@@ -1326,6 +1339,8 @@ async def post_office_message(
         kind="message",
         body=text,
         author_user_id=actor_id,
+        evidence_ref=evidence_ref,
+        evidence_hash=evidence_hash,
     )
     await repo.mark_thread_read(conn, int(holder["holder_id"]), side="office")
     await _record(
@@ -1337,7 +1352,14 @@ async def post_office_message(
         entity_id=int(holder["holder_id"]),
         detail={"label": holder["label"], "side": "office"},
     )
-    await _tell_holder(conn, row, holder, author_id=actor_id, body=text)
+    await _tell_holder(
+        conn,
+        row,
+        holder,
+        author_id=actor_id,
+        body=text
+        + ("\n\n(A file is attached to this message on the portal.)" if evidence_hash else ""),
+    )
     return await thread_for_office(conn, row, holder_uuid=holder_uuid, role=role)
 
 
@@ -1352,9 +1374,17 @@ async def ticket_detail_for(conn: Conn, user_id: int, holder_uuid: str) -> dict[
 
 
 async def post_holder_message(
-    conn: Conn, *, user_id: int, holder_uuid: str, body: str
+    conn: Conn,
+    *,
+    user_id: int,
+    holder_uuid: str,
+    body: str,
+    evidence_ref: str | None = None,
+    evidence_hash: str | None = None,
 ) -> dict[str, Any]:
-    """The team writes on its ticket. Logged, and the Privacy Office is told."""
+    """The team writes on its ticket, with a file where one helps - an extract,
+    a screenshot of a record, a signed confirmation. Logged, and the Privacy
+    Office is told."""
     holder = await repo.ticket_for_user(conn, user_id, holder_uuid)
     if not holder:
         raise NotFound("Ticket")
@@ -1372,6 +1402,8 @@ async def post_holder_message(
         kind="message",
         body=text,
         author_user_id=user_id,
+        evidence_ref=evidence_ref,
+        evidence_hash=evidence_hash,
     )
     await repo.mark_thread_read(conn, int(holder["holder_id"]), side="holder")
     await _record(
@@ -1383,8 +1415,42 @@ async def post_holder_message(
         entity_id=int(holder["holder_id"]),
         detail={"label": holder["label"], "side": "holder"},
     )
-    await _tell_office(conn, row, holder, author_id=user_id, body=text)
+    await _tell_office(
+        conn,
+        row,
+        holder,
+        author_id=user_id,
+        body=text + ("\n\n(A file is attached to this message.)" if evidence_hash else ""),
+    )
     return await ticket_detail_for(conn, user_id, holder_uuid)
+
+
+async def message_attachment(
+    conn: Conn, *, holder: Row, message_uuid: str, actor_id: int | None
+) -> tuple[bytes, str, str]:
+    """A file attached to a message on the thread. Audited on every read."""
+    from cmp.infrastructure.storage.service import storage
+
+    message = await repo.message_by_uuid(conn, int(holder["holder_id"]), message_uuid)
+    if not message or not message.get("evidence_ref"):
+        raise NotFound("Attachment")
+    payload = storage().read(str(message["evidence_ref"]))
+    row = await repo.by_id(conn, int(holder["request_id"]))
+    assert row is not None
+    await _record(
+        conn,
+        row,
+        Event.RIGHTS_RESPONSE_DOWNLOADED,
+        actor_user_id=actor_id,
+        entity_type="rights_request_holder",
+        entity_id=int(holder["holder_id"]),
+        detail={"label": holder["label"], "message": message_uuid, "as_subject": False},
+    )
+    return (
+        payload,
+        f"{row['reference']}-{message_uuid}-attachment",
+        str(message["evidence_hash"] or ""),
+    )
 
 
 # ---------------------------------------------------- the respondent's side

@@ -9,6 +9,7 @@
  */
 
 import { apiDownload, apiGet, apiPost, apiPut, queryString } from "@/lib/api";
+import { config } from "@/lib/config";
 import type { ListFilters } from "@/lib/query";
 import type {
   AuditEntry,
@@ -125,8 +126,21 @@ export const logContact = (uuid: Uuid, holderUuid: Uuid, body: ContactInput) =>
 /** The ticket's thread as the office reads it. Reading marks it read. */
 export const holderThread = (uuid: Uuid, holderUuid: Uuid) =>
   apiGet<HolderThread>(action(uuid, `holders/${holderUuid}/thread`));
-export const postToHolder = (uuid: Uuid, holderUuid: Uuid, body: string) =>
-  apiPost<HolderThread>(action(uuid, `holders/${holderUuid}/thread`), { body });
+export interface MessageInput {
+  body: string;
+  evidence: File | null;
+}
+function messageForm(input: MessageInput): FormData {
+  const form = new FormData();
+  form.set("body", input.body);
+  if (input.evidence) form.set("evidence", input.evidence);
+  return form;
+}
+export const postToHolder = (uuid: Uuid, holderUuid: Uuid, input: MessageInput) =>
+  apiPost<HolderThread>(action(uuid, `holders/${holderUuid}/thread`), messageForm(input));
+/** Where a file attached to a message is downloaded from, on the office's side. */
+export const holderMessageAttachmentUrl = (uuid: Uuid, holderUuid: Uuid, messageUuid: Uuid) =>
+  `${config.apiUrl}/requests/${uuid}/holders/${holderUuid}/messages/${messageUuid}/evidence`;
 export const issueTickets = (uuid: Uuid, body: { instruction?: string | null; due_at?: string | null }) =>
   apiPost<RightsHolder[]>(action(uuid, "tickets"), body);
 export function returnTicket(
@@ -193,6 +207,10 @@ export function myTicket(holderUuid: Uuid): Promise<TicketDetail> {
   return apiGet<TicketDetail>(`/tickets/${holderUuid}`);
 }
 
-export function messageOffice(holderUuid: Uuid, body: string): Promise<TicketDetail> {
-  return apiPost<TicketDetail>(`/tickets/${holderUuid}/messages`, { body });
+export function messageOffice(holderUuid: Uuid, input: MessageInput): Promise<TicketDetail> {
+  return apiPost<TicketDetail>(`/tickets/${holderUuid}/messages`, messageForm(input));
 }
+
+/** Where a file attached to a message is downloaded from, on the team's side. */
+export const myMessageAttachmentUrl = (holderUuid: Uuid, messageUuid: Uuid) =>
+  `${config.apiUrl}/tickets/${holderUuid}/messages/${messageUuid}/evidence`;

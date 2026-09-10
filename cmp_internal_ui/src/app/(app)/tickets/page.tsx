@@ -12,12 +12,12 @@
  */
 "use client";
 
-import { AlertTriangle, CheckCircle2, Inbox } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Inbox, MessageSquareReply } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import * as React from "react";
 
-import { FileInput } from "@/components/forms";
 import { PageHeader } from "@/components/layout/app-shell";
-import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyQueue } from "@/components/ui/graphics";
 import {
   Alert,
@@ -27,11 +27,10 @@ import {
   CardHeader,
   CardTitle,
   EmptyState,
-  Field,
   Skeleton,
-  Textarea,
 } from "@/components/ui/primitives";
 import { RequestTypeBadge, TicketBadge } from "@/features/rights/components/copy";
+import { myMessageAttachmentUrl } from "@/features/rights/api";
 import { BriefPanel, ReplyBox, Thread, UnreadBadge } from "@/features/rights/components/thread";
 import { useMessageOffice, useReturnMyTicket } from "@/features/rights/mutations";
 import { useMyTicket, useMyTickets } from "@/features/rights/queries";
@@ -40,7 +39,18 @@ import { useToast } from "@/providers";
 import type { MyTicket } from "@/types";
 
 export default function TicketsPage() {
+  return (
+    // useSearchParams forces client rendering, so Next wants a boundary here.
+    <React.Suspense fallback={<Skeleton className="h-40" />}>
+      <TicketsInner />
+    </React.Suspense>
+  );
+}
+
+function TicketsInner() {
   const tickets = useMyTickets();
+  // A link from the dashboard queue or from a mail opens the ticket it names.
+  const wanted = useSearchParams().get("ticket");
   const open = (tickets.data ?? []).filter((t) => t.ticket_status === "issued" || t.ticket_status === "escalated");
   const done = (tickets.data ?? []).filter((t) => !open.includes(t));
 
@@ -76,7 +86,7 @@ export default function TicketsPage() {
             Open · {open.length}
           </h2>
           {open.map((t) => (
-            <TicketCard key={t.holder_uuid} ticket={t} />
+            <TicketCard key={t.holder_uuid} ticket={t} openAtFirst={t.holder_uuid === wanted} />
           ))}
         </section>
       )}
@@ -88,7 +98,7 @@ export default function TicketsPage() {
             Returned · {done.length}
           </h2>
           {done.map((t) => (
-            <TicketCard key={t.holder_uuid} ticket={t} />
+            <TicketCard key={t.holder_uuid} ticket={t} openAtFirst={t.holder_uuid === wanted} />
           ))}
         </section>
       )}
@@ -96,9 +106,8 @@ export default function TicketsPage() {
   );
 }
 
-function TicketCard({ ticket: t }: { ticket: MyTicket }) {
-  const [returning, setReturning] = React.useState(false);
-  const [opened, setOpened] = React.useState(false);
+function TicketCard({ ticket: t, openAtFirst }: { ticket: MyTicket; openAtFirst?: boolean }) {
+  const [responding, setResponding] = React.useState(Boolean(openAtFirst));
   const isOpen = t.ticket_status === "issued" || t.ticket_status === "escalated";
   const overdue = isOpen && t.due_at && new Date(t.due_at) < new Date();
 
@@ -137,103 +146,86 @@ function TicketCard({ ticket: t }: { ticket: MyTicket }) {
             {t.return_summary}
           </div>
         )}
-        {t.brief && <BriefPanel brief={t.brief} />}
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" size="sm" onClick={() => setOpened(true)}>
-            Open the thread{t.message_count ? ` · ${t.message_count}` : ""}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant={isOpen ? "primary" : "secondary"} size="sm" onClick={() => setResponding(true)}>
+            <MessageSquareReply className="size-4" aria-hidden="true" />
+            {isOpen ? "Respond" : "Open"}
+            {t.message_count ? ` · ${t.message_count}` : ""}
           </Button>
           {isOpen && (
-            <Button variant="primary" size="sm" onClick={() => setReturning(true)}>
-              Return this ticket
-            </Button>
+            <span className="text-xs text-text-muted">
+              Ask, send what you have found, or return the ticket - all from one place.
+            </span>
           )}
         </div>
       </CardBody>
-      <Dialog open={opened} onOpenChange={(next) => !next && setOpened(false)}>
+      <Dialog open={responding} onOpenChange={(next) => !next && setResponding(false)}>
         <DialogContent
           title={`${t.reference} · ${t.label}`}
-          description="Everything said on this ticket, both ways. The Privacy Office is told when you write."
+          description={
+            isOpen
+              ? "What the platform already knows, everything said so far, and your response. Tick the box to make a response the final return."
+              : "This ticket is returned. Everything said is kept; you can still add a note."
+          }
         >
-          {opened && <TicketThread ticket={t} />}
-        </DialogContent>
-      </Dialog>
-      <Dialog open={returning} onOpenChange={(next) => !next && setReturning(false)}>
-        <DialogContent
-          title={`Return ${t.reference}`}
-          description="What was done and how - a confirmation, not an assurance. Evidence is optional and kept with the ticket."
-        >
-          <ReturnForm ticket={t} onDone={() => setReturning(false)} />
+          {responding && <Respond ticket={t} onReturned={() => setResponding(false)} />}
         </DialogContent>
       </Dialog>
     </Card>
   );
 }
 
-function TicketThread({ ticket: t }: { ticket: MyTicket }) {
+function Respond({ ticket: t, onReturned }: { ticket: MyTicket; onReturned: () => void }) {
+  const toast = useToast();
   const detail = useMyTicket(t.holder_uuid);
   const send = useMessageOffice();
+  const ret = useReturnMyTicket();
   const isOpen = t.ticket_status === "issued" || t.ticket_status === "escalated";
   if (detail.isLoading) return <Skeleton className="h-40" />;
   if (detail.error) return <Alert tone="danger">{detail.error.userMessage()}</Alert>;
+  const brief = detail.data?.ticket.brief ?? t.brief;
   return (
     <div className="space-y-4">
-      <Thread messages={detail.data?.messages ?? []} you="holder" />
+      {brief && (
+        <details open={!detail.data?.messages.some((m) => m.kind === "brief")}>
+          <summary className="cursor-pointer text-xs font-medium uppercase tracking-wider text-text-subtle">
+            What the platform already knows
+          </summary>
+          <div className="mt-2">
+            <BriefPanel brief={brief} />
+          </div>
+        </details>
+      )}
+      <Thread
+        messages={detail.data?.messages ?? []}
+        you="holder"
+        evidenceHref={(m) => (m.evidence_hash ? myMessageAttachmentUrl(t.holder_uuid, m.message_uuid) : null)}
+      />
       <ReplyBox
-        pending={send.isPending}
-        placeholder="Ask the Privacy Office, or tell them what you have found so far."
-        disabledReason={isOpen ? null : "This ticket is closed; the thread is kept as it stands."}
-        onSend={async (body) => {
-          await send.mutateAsync({ holderUuid: t.holder_uuid, body });
+        pending={send.isPending || ret.isPending}
+        placeholder={
+          isOpen
+            ? "Ask the Privacy Office a question, or say what you hold and where."
+            : "Add a note to the returned ticket."
+        }
+        finalOption={
+          isOpen
+            ? {
+                label: "This is my return - close the ticket with it",
+                hint: "What you hold, what was done and how. The Privacy Office collates it into the response. Leave unticked to keep the conversation going.",
+              }
+            : null
+        }
+        onSend={async (body, file, final) => {
+          if (final) {
+            await ret.mutateAsync({ holderUuid: t.holder_uuid, summary: body, evidence: file });
+            toast.success("Ticket returned", "The Privacy Office can see it.");
+            onReturned();
+          } else {
+            await send.mutateAsync({ holderUuid: t.holder_uuid, body, evidence: file });
+          }
         }}
       />
     </div>
-  );
-}
-
-function ReturnForm({ ticket: t, onDone }: { ticket: MyTicket; onDone: () => void }) {
-  const toast = useToast();
-  const ret = useReturnMyTicket();
-  const [summary, setSummary] = React.useState("");
-  const [file, setFile] = React.useState<File | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    try {
-      await ret.mutateAsync({ holderUuid: t.holder_uuid, summary: summary.trim(), evidence: file });
-      toast.success("Ticket returned", "The Privacy Office can see it.");
-      onDone();
-    } catch (err) {
-      setError(
-        err && typeof err === "object" && "userMessage" in err
-          ? (err as { userMessage: () => string }).userMessage()
-          : "Could not return the ticket.",
-      );
-    }
-  }
-
-  return (
-    <form method="post" onSubmit={submit} noValidate>
-      <div className="space-y-4">
-        {error && <Alert tone="danger">{error}</Alert>}
-        <Field label="What was done" required>
-          {(p) => <Textarea {...p} rows={5} maxLength={20_000} value={summary} onChange={(e) => setSummary(e.target.value)} />}
-        </Field>
-        <FileInput
-          label="Evidence"
-          hint="PDF, image, CSV or text, up to 25 MB."
-          accept="application/pdf,image/png,image/jpeg,text/csv,text/plain"
-          maxBytes={25 * 1024 * 1024}
-          file={file}
-          onChange={setFile}
-        />
-      </div>
-      <DialogFooter>
-        <Button type="submit" variant="primary" loading={ret.isPending} disabled={!summary.trim()}>
-          Return the ticket
-        </Button>
-      </DialogFooter>
-    </form>
   );
 }

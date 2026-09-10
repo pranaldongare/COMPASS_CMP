@@ -98,10 +98,10 @@ export const useConfirmHolder = (uuid: Uuid) =>
   );
 export function usePostToHolder(
   uuid: Uuid,
-): Result<HolderThread, { holderUuid: Uuid; body: string }> {
+): Result<HolderThread, { holderUuid: Uuid } & api.MessageInput> {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ holderUuid, body }) => api.postToHolder(uuid, holderUuid, body),
+    mutationFn: ({ holderUuid, ...input }) => api.postToHolder(uuid, holderUuid, input),
     onSuccess: (_data, { holderUuid }) => {
       void qc.invalidateQueries({ queryKey: keys.rights.thread(uuid, holderUuid) });
       void qc.invalidateQueries({ queryKey: keys.rights.detail(uuid) });
@@ -158,10 +158,10 @@ export function useReturnMyTicket(): Result<MyTicket, { holderUuid: Uuid; summar
   });
 }
 
-export function useMessageOffice(): Result<TicketDetail, { holderUuid: Uuid; body: string }> {
+export function useMessageOffice(): Result<TicketDetail, { holderUuid: Uuid } & api.MessageInput> {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ holderUuid, body }) => api.messageOffice(holderUuid, body),
+    mutationFn: ({ holderUuid, ...input }) => api.messageOffice(holderUuid, input),
     onSuccess: (_data, { holderUuid }) => {
       void qc.invalidateQueries({ queryKey: keys.tickets.detail(holderUuid) });
       void qc.invalidateQueries({ queryKey: keys.tickets.mine });

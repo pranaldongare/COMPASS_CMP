@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/primitives";
 import { useProcessors, useRespondents } from "@/features/registry";
 import { TicketBadge } from "@/features/rights/components/copy";
+import { holderMessageAttachmentUrl } from "@/features/rights/api";
 import { BriefPanel, ReplyBox, Thread, UnreadBadge } from "@/features/rights/components/thread";
 import {
   useAddHolder,
@@ -402,17 +403,15 @@ function HolderThreadPanel({ request: r, holder: h, canWork }: { request: Rights
         messages={thread.data?.messages ?? []}
         you="office"
         evidenceHref={(m) =>
-          m.kind === "return" && m.evidence_hash
-            ? `${config.apiUrl}/requests/${r.request_uuid}/holders/${h.holder_uuid}/evidence`
-            : null
+          m.evidence_hash ? holderMessageAttachmentUrl(r.request_uuid, h.holder_uuid, m.message_uuid) : null
         }
       />
       <ReplyBox
         pending={post.isPending}
         placeholder="Write to the team, or ask for more."
         disabledReason={canWork ? null : "The request is closed; the thread is kept as it stands."}
-        onSend={async (body) => {
-          await post.mutateAsync({ holderUuid: h.holder_uuid, body });
+        onSend={async (body, file) => {
+          await post.mutateAsync({ holderUuid: h.holder_uuid, body, evidence: file });
         }}
       />
     </div>
