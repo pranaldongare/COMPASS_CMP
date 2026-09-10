@@ -1070,6 +1070,36 @@ class TestPublicForm:
         row = await repo.by_reference(conn, result["reference"])
         assert row is not None and row["outcome"] == "not_verified"
 
+    async def test_a_stranger_is_told_the_request_is_closed_in_neutral_words(
+        self, conn: Any, seeded: dict[str, Any], redis_conn: Any, monkeypatch: Any
+    ) -> None:
+        """A form from a contact we hold nothing for never gets a code - there
+        is no stored channel to send one to. When the DPO closes it as not
+        verified, the typed contact is still told, in words that say only
+        that identity was not verified: a person who asked learns the
+        request is closed and can try again; a probe learns nothing."""
+        sent: list[tuple[Any, ...]] = []
+        monkeypatch.setattr(service, "_dispatch", lambda *a: sent.append(a))
+        await _unthrottle(redis_conn, "stranger@example.org")
+        result = await service.submit_public(
+            conn,
+            request_type="access",
+            contact="stranger@example.org",
+            name=None,
+            request_text="What do you hold?",
+            ip_address="127.0.0.3",
+        )
+        assert not [a for a in sent if a[0] == "send_rights_verification_code"]
+        row = await repo.by_reference(conn, result["reference"])
+        assert row is not None
+        await service.fail_verification(
+            conn, row, note="No match", role=DPO, actor_id=seeded["users"]["dpo"]["id"]
+        )
+        closed = [a for a in sent if a[0] == "send_rights_closed"]
+        assert closed and closed[0][1] == "stranger@example.org"
+        assert closed[0][3] == "not_verified"
+        assert "could not verify" in closed[0][4] and "match" not in closed[0][4].lower()
+
 
 # ----------------------------------------------------------------- the register
 class TestTheRegister:

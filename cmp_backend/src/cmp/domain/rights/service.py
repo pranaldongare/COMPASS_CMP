@@ -405,7 +405,12 @@ async def fail_verification(
     """No match, or verification not satisfied. Closed and audited.
 
     Nothing is confirmed either way to the requester: the message they get is
-    neutral, and they may try again with a new request.
+    neutral, and they may try again with a new request. It goes to the contact
+    the request carries - for a form filled in by somebody we hold no account
+    for, that is the address they typed. The wording says only that identity
+    was not verified, never whether the contact matched anyone, so a probe
+    learns nothing from it; and a person who genuinely asked and mistyped a
+    code learns that the request is closed and can try again.
     """
     if actor_id is not None:
         _may_act(row, role)
@@ -426,7 +431,7 @@ async def fail_verification(
         conn, row, Event.RIGHTS_CLOSED, actor_user_id=actor_id, detail={"outcome": "not_verified"}
     )
     contact = contact_for(row)
-    if contact and row["channel"] != Channel.PUBLIC_FORM:
+    if contact:
         _dispatch(
             "send_rights_closed",
             contact,
