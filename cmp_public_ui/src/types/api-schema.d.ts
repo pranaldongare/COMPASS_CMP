@@ -5868,6 +5868,16 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Invoked At */
+            invoked_at?: string | null;
+            /** Invoked Event */
+            invoked_event?: string | null;
+            /** Invoked Reference */
+            invoked_reference?: string | null;
+            /** Invoked Request Uuid */
+            invoked_request_uuid?: string | null;
+            /** Invoked Evidenced At */
+            invoked_evidenced_at?: string | null;
         };
         /** NominationView */
         NominationView: {
@@ -5916,6 +5926,14 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Invoked At */
+            invoked_at?: string | null;
+            /** Invoked Event */
+            invoked_event?: string | null;
+            /** Invoked Reference */
+            invoked_reference?: string | null;
+            /** Invoked Evidenced At */
+            invoked_evidenced_at?: string | null;
         };
         /** NomineeRequestOut */
         NomineeRequestOut: {

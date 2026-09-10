@@ -121,6 +121,23 @@ function LiveNomination({ nomination: n }: { nomination: Nomination }) {
         {n.rights.map((r) => REQUEST_TYPE_COPY[r].label.toLowerCase()).join(", ")}.
       </p>
 
+      {n.invoked_at && (
+        <Alert tone={n.invoked_event === "death" ? "danger" : "warning"} title={`${n.nominee_name} acted for you on ${formatDate(n.invoked_at)}`}>
+          <p className="text-sm">
+            {n.invoked_event === "death"
+              ? "They reported that you have died. Once the Privacy Office finds that evidenced, this account is closed."
+              : "They reported that you cannot act for yourself. You keep this account and can follow the request they made."}
+            {n.invoked_reference && (
+              <>
+                {" "}
+                Their request is <Mono>{n.invoked_reference}</Mono>, under your requests above.
+              </>
+            )}
+            {n.invoked_evidenced_at && ` The Privacy Office found the event evidenced on ${formatDate(n.invoked_evidenced_at)}.`}
+          </p>
+        </Alert>
+      )}
+
       {n.status === "pending" ? (
         <Alert tone="warning">
           <p className="text-sm">

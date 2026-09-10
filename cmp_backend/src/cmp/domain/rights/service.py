@@ -587,6 +587,8 @@ async def record_event_evidence(
         await _record(
             conn, row, Event.RIGHTS_EVENT_EVIDENCED, actor_user_id=actor_id, detail={"note": note}
         )
+        if row["trigger_event"] == "death":
+            await _close_account_on_death(conn, row, actor_id=actor_id)
         return row
     return await refuse(
         conn,
@@ -598,6 +600,37 @@ async def record_event_evidence(
         ),
         role=role,
         actor_id=actor_id,
+    )
+
+
+async def _close_account_on_death(conn: Conn, row: Row, *, actor_id: int) -> None:
+    """Death evidenced: the principal's account is deactivated and every
+    session ended. Incapacity is different - the principal keeps the account
+    and can follow what the nominee does. A claim alone does not do this;
+    the DPO's finding that the event is evidenced does, which is why it sits
+    here and not at the moment the nominee files."""
+    principal_id = row.get("subject_user_id")
+    if principal_id is None:
+        return
+    user = await user_repo.by_id(conn, int(principal_id))
+    if not user or user["status"] == "deactivated":
+        return
+    await user_repo.set_status(conn, int(principal_id), "deactivated")
+    from cmp.auth.sessions import service as sessions
+
+    revoked = await sessions.revoke_all(int(principal_id))
+    await audit.record(
+        conn,
+        event=Event.USER_DEACTIVATED,
+        entity_type="auth_user",
+        entity_id=int(principal_id),
+        subject_user_id=int(principal_id),
+        actor_user_id=actor_id,
+        detail={
+            "reason": "death evidenced on a nominee's request",
+            "reference": row["reference"],
+            "sessions_revoked": revoked,
+        },
     )
 
 
@@ -2874,6 +2907,9 @@ async def nominee_submit(
         trigger_event=trigger_event,
         trigger_evidence_ref=evidence_ref,
         trigger_evidence_hash=evidence_hash,
+    )
+    await repo.mark_invoked(
+        conn, int(row["nomination_id"]), event=trigger_event, request_id=int(created["request_id"])
     )
     await audit.record(
         conn,

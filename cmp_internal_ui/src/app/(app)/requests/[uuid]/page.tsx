@@ -132,6 +132,14 @@ export default function RequestDetailPage() {
               {r.channel === "nominee" && (
                 <DescriptionItem term="Nominee">
                   {r.nominee_name} ({r.nominee_contact}) · {r.trigger_event === "death" ? "reports the principal has died" : "reports the principal cannot act"}
+                  {r.trigger_evidenced_at && (
+                    <span className="block text-xs text-text-subtle">
+                      Evidenced {formatDateTime(r.trigger_evidenced_at)}
+                      {r.trigger_event === "death"
+                        ? " · the principal's account is closed and cannot sign in"
+                        : " · the principal keeps their account and can follow this request"}
+                    </span>
+                  )}
                   {r.trigger_evidence_hash && (
                     <a className="ml-2 inline-flex items-center gap-1 text-accent-text underline underline-offset-2" href={`${config.apiUrl}/requests/${r.request_uuid}/event/evidence`}>
                       <Download className="size-3.5" aria-hidden="true" /> evidence

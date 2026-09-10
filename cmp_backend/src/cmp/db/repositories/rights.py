@@ -1194,10 +1194,24 @@ _NOMINATION_SELECT = """
   n.rights::text[] AS rights,
   n.status, n.accept_expires_at, n.accepted_at, n.declined_at, n.revoked_at, n.created_at,
   n.principal_user_id, p.uuid AS principal_uuid, p.full_name AS principal_name,
-  p.email AS principal_email
+  p.email AS principal_email, p.status AS principal_status,
+  n.invoked_at, n.invoked_event, ir.request_uuid AS invoked_request_uuid,
+  ir.reference AS invoked_reference, ir.trigger_evidenced_at AS invoked_evidenced_at
   FROM nomination n
   JOIN auth_user p ON p.id = n.principal_user_id
+  LEFT JOIN rights_request ir ON ir.request_id = n.invoked_request_id
 """
+
+
+async def mark_invoked(conn: Conn, nomination_id: int, *, event: str, request_id: int) -> None:
+    """The nominee has acted: the event they reported and the request it made."""
+    await conn.execute(
+        """UPDATE nomination
+           SET invoked_at = now(), invoked_event = %s::rights_trigger_event,
+               invoked_request_id = %s
+           WHERE nomination_id = %s""",
+        (event, request_id, nomination_id),
+    )
 
 
 async def create_nomination(

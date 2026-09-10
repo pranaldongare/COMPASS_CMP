@@ -1191,6 +1191,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/requests/{request_uuid}/files/{file_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A file released with the response, while the window is open */
+        get: operations["my_download_file_me_requests__request_uuid__files__file_uuid__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/requests/{request_uuid}/dispute": {
         parameters: {
             query?: never;
@@ -3843,8 +3860,29 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Release and close */
+        /**
+         * Release and close
+         * @description Multipart: the outcome and the words, plus any files released with
+         *     them - an extract a holder returned, a corrected document, a letter.
+         */
         post: operations["respond_requests__request_uuid__respond_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/files/{file_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A file released with the response */
+        get: operations["download_response_file_requests__request_uuid__files__file_uuid__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4317,6 +4355,18 @@ export interface components {
              * @description Optional file, max 25 MB
              */
             evidence?: string | null;
+        };
+        /** Body_respond_requests__request_uuid__respond_post */
+        Body_respond_requests__request_uuid__respond_post: {
+            /** Outcome */
+            outcome: string;
+            /** Response Text */
+            response_text: string;
+            /**
+             * Files
+             * @default []
+             */
+            files: string[];
         };
         /** Body_return_my_ticket_tickets__holder_uuid__return_post */
         Body_return_my_ticket_tickets__holder_uuid__return_post: {
@@ -5818,6 +5868,16 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Invoked At */
+            invoked_at?: string | null;
+            /** Invoked Event */
+            invoked_event?: string | null;
+            /** Invoked Reference */
+            invoked_reference?: string | null;
+            /** Invoked Request Uuid */
+            invoked_request_uuid?: string | null;
+            /** Invoked Evidenced At */
+            invoked_evidenced_at?: string | null;
         };
         /** NominationView */
         NominationView: {
@@ -5866,6 +5926,14 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Invoked At */
+            invoked_at?: string | null;
+            /** Invoked Event */
+            invoked_event?: string | null;
+            /** Invoked Reference */
+            invoked_reference?: string | null;
+            /** Invoked Evidenced At */
+            invoked_evidenced_at?: string | null;
         };
         /** NomineeRequestOut */
         NomineeRequestOut: {
@@ -6876,6 +6944,8 @@ export interface components {
             linked_request: components["schemas"]["LinkedRequestOut"] | null;
             /** Linked From */
             linked_from: components["schemas"]["LinkedRefOut"][];
+            /** Response Files */
+            response_files?: components["schemas"]["ResponseFileOut"][];
         };
         /** RequestOut */
         RequestOut: {
@@ -7107,13 +7177,6 @@ export interface components {
              */
             email: string;
         };
-        /** RespondIn */
-        RespondIn: {
-            /** Outcome */
-            outcome: string;
-            /** Response Text */
-            response_text: string;
-        };
         /** RespondentIn */
         RespondentIn: {
             /** Name */
@@ -7143,6 +7206,30 @@ export interface components {
             user_role?: string | null;
             /** Created At */
             created_at: unknown;
+        };
+        /**
+         * ResponseFileOut
+         * @description A file released with the response, downloaded from the account.
+         */
+        ResponseFileOut: {
+            /**
+             * File Uuid
+             * Format: uuid
+             */
+            file_uuid: string;
+            /** File Name */
+            file_name: string;
+            /** File Hash */
+            file_hash: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Content Type */
+            content_type: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** ReviewerIn */
         ReviewerIn: {
@@ -7453,6 +7540,8 @@ export interface components {
             /** Closed At */
             closed_at: string | null;
             clock: components["schemas"]["ClockOut"];
+            /** Response Files */
+            response_files?: components["schemas"]["ResponseFileOut"][];
         };
         /** ThreadOut */
         ThreadOut: {
@@ -9652,6 +9741,38 @@ export interface operations {
             header?: never;
             path: {
                 request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_download_file_me_requests__request_uuid__files__file_uuid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                file_uuid: string;
             };
             cookie?: never;
         };
@@ -14691,7 +14812,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RespondIn"];
+                "multipart/form-data": components["schemas"]["Body_respond_requests__request_uuid__respond_post"];
             };
         };
         responses: {
@@ -14702,6 +14823,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_response_file_requests__request_uuid__files__file_uuid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                file_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

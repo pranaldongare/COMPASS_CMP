@@ -77,6 +77,24 @@ function NomineeOfRow({ n }: { n: NomineeOf }) {
         </Badge>
       </div>
 
+      {n.invoked_at && (
+        <Alert tone="info" title={`You acted on ${formatDate(n.invoked_at)}`}>
+          <p className="text-sm">
+            You reported {n.invoked_event === "death" ? "that they have died" : "that they cannot act for themselves"}
+            {n.invoked_reference && (
+              <>
+                {" "}
+                and made request <Mono>{n.invoked_reference}</Mono>
+              </>
+            )}
+            .{" "}
+            {n.invoked_evidenced_at
+              ? `The Privacy Office found the event evidenced on ${formatDate(n.invoked_evidenced_at)}.`
+              : "The Privacy Office decides first whether the event is evidenced."}
+          </p>
+        </Alert>
+      )}
+
       {n.status === "pending" ? (
         <Alert tone="warning">
           <p className="text-sm">

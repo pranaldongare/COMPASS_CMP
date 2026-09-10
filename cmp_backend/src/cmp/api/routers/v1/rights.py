@@ -407,6 +407,12 @@ class NominationOut(Out):
     declined_at: datetime | None
     revoked_at: datetime | None
     created_at: datetime
+    #: Set once the nominee has acted: the event they reported and the request.
+    invoked_at: datetime | None = None
+    invoked_event: str | None = None
+    invoked_reference: str | None = None
+    invoked_request_uuid: UUID | None = None
+    invoked_evidenced_at: datetime | None = None
 
 
 class NomineeOfOut(Out):
@@ -421,6 +427,10 @@ class NomineeOfOut(Out):
     accept_expires_at: datetime | None
     accepted_at: datetime | None
     created_at: datetime
+    invoked_at: datetime | None = None
+    invoked_event: str | None = None
+    invoked_reference: str | None = None
+    invoked_evidenced_at: datetime | None = None
 
 
 # ------------------------------------------------------------------- inputs

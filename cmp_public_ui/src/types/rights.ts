@@ -279,6 +279,12 @@ export interface Nomination {
   declined_at: Timestamp | null;
   revoked_at: Timestamp | null;
   created_at: Timestamp;
+  /** Set once the nominee has acted: what they reported, and the request it made. */
+  invoked_at: Timestamp | null;
+  invoked_event: RightsTriggerEvent | null;
+  invoked_reference: string | null;
+  invoked_request_uuid: Uuid | null;
+  invoked_evidenced_at: Timestamp | null;
 }
 
 /**
@@ -298,6 +304,10 @@ export interface NomineeOf {
   accept_expires_at: Timestamp | null;
   accepted_at: Timestamp | null;
   created_at: Timestamp;
+  invoked_at: Timestamp | null;
+  invoked_event: RightsTriggerEvent | null;
+  invoked_reference: string | null;
+  invoked_evidenced_at: Timestamp | null;
 }
 
 /** A contact recorded on a nomination, masked: enough to recognise, nothing to use. */

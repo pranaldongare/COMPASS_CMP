@@ -26,6 +26,7 @@ from cmp.db.redis import K_RATE
 from cmp.db.redis import key as rkey
 from cmp.db.repositories import audit as audit_repo
 from cmp.db.repositories import rights as repo
+from cmp.db.repositories import users as user_repo
 from cmp.domain.consent import service as consent_service
 from cmp.domain.rights import service
 
@@ -952,13 +953,79 @@ class TestNomination:
             await service.transition(
                 conn, row, to="in_progress", reason=None, role=DPO, actor_id=dpo
             )
+        # The nomination says what it was used for, before the DPO has decided
+        # anything: the principal, still able to sign in, sees it on her page.
+        used = await repo.nomination_by_uuid(conn, str(nomination["nomination_uuid"]))
+        assert used is not None and used["invoked_event"] == "death"
+        assert used["invoked_reference"] == row["reference"]
+        assert used["invoked_evidenced_at"] is None
+        assert (await user_repo.by_id(conn, principal))["status"] == "active"
+
         row = await service.record_event_evidence(
             conn, row, evidenced=True, note="Death certificate seen", role=DPO, actor_id=dpo
         )
+        # Death, evidenced: her account is closed. A claim alone did not do it.
+        assert (await user_repo.by_id(conn, principal))["status"] == "deactivated"
+        used = await repo.nomination_by_uuid(conn, str(nomination["nomination_uuid"]))
+        assert used is not None and used["invoked_evidenced_at"] is not None
+        closed = [
+            e
+            for e in await audit_repo.for_subject(conn, principal)
+            if e["event_type"] == "user.deactivated"
+        ]
+        assert closed and closed[0]["detail"]["reference"] == row["reference"]
         row = await service.transition(
             conn, row, to="in_progress", reason=None, role=DPO, actor_id=dpo
         )
         assert row["status"] == "in_progress"
+
+    async def test_incapacity_leaves_the_principal_her_account(
+        self, conn: Any, seeded: dict[str, Any], redis_conn: Any
+    ) -> None:
+        """She cannot act, so somebody acts for her - but she is still here,
+        and may recover. Her account stays open and she can follow what the
+        nominee does. Only death closes it."""
+        principal = seeded["subject"]["id"]
+        dpo = seeded["users"]["dpo"]["id"]
+        nomination = await service.nominate(
+            conn,
+            principal_user_id=principal,
+            nominee_name="Ravi Verma",
+            nominee_mobile="+915550000078",
+            nominee_email=None,
+            rights=["access"],
+        )
+        raw = new_token()
+        await conn.execute(
+            "UPDATE nomination SET accept_token_hash = %s WHERE nomination_id = %s",
+            (token_fingerprint(raw), nomination["nomination_id"]),
+        )
+        code = (
+            await otp.issue(otp.Scope.NOMINATION_ACCEPT, str(nomination["nomination_uuid"]))
+        ).code
+        await service.accept_nomination(conn, raw, code=code)
+        issued = await otp.issue(otp.Scope.NOMINEE_VERIFY, str(nomination["nomination_uuid"]))
+        row = await service.nominee_submit(
+            conn,
+            nomination_uuid=str(nomination["nomination_uuid"]),
+            code=issued.code,
+            request_type="access",
+            request_text="Her records, please",
+            trigger_event="incapacity",
+            evidence_ref=None,
+            evidence_hash="ev2",
+        )
+        row = await service.classify(
+            conn, row, request_type="access", note=None, role=DPO, actor_id=dpo
+        )
+        await service.record_event_evidence(
+            conn, row, evidenced=True, note="Medical certificate seen", role=DPO, actor_id=dpo
+        )
+        assert (await user_repo.by_id(conn, principal))["status"] == "active"
+        used = await repo.nomination_by_uuid(conn, str(nomination["nomination_uuid"]))
+        assert used is not None and used["invoked_event"] == "incapacity"
+        mine = await repo.nominations_of(conn, principal)
+        assert mine[0]["invoked_reference"] == row["reference"]
 
     async def test_an_unevidenced_event_is_refused_to_the_nominee(
         self, conn: Any, seeded: dict[str, Any], redis_conn: Any
