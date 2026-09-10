@@ -15,6 +15,7 @@ export {
 } from "@/features/dashboard/components/config";
 export { COUNT_ICONS } from "@/features/dashboard/components/icons";
 export { consentComposition, roleBlurb } from "@/features/dashboard/components/helpers";
-export { QueueCard } from "@/features/dashboard/components/queue-card";
+export { ClearQueues, QueueCard } from "@/features/dashboard/components/queue-card";
 export { RecentCard } from "@/features/dashboard/components/recent-card";
 export { DashboardSkeleton } from "@/features/dashboard/components/skeleton";
+export * from "@/features/dashboard/components/attention-list";

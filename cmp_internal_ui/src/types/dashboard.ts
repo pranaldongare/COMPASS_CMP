@@ -6,10 +6,22 @@
 import type { AuditEntry } from "@/types/audit";
 import type { Role } from "@/types/enums";
 
+/** One thing that needs this person today: a count, how urgent, where to act. */
+export interface AttentionRow {
+  key: string;
+  label: string;
+  count: number;
+  severity: "critical" | "warning" | "info";
+  /** A route, or an anchor (`#q-…`) to a queue further down the same page. */
+  href: string;
+}
+
 export interface DashboardData {
   role: Role;
   counts: Record<string, number>;
-  queues: Array<{ name: string; items: Array<Record<string, unknown>> }>;
+  queues: Array<{ name: string; slug?: string; href?: string | null; items: Array<Record<string, unknown>> }>;
+  /** Only rows with something to count; empty means nothing needs them today. */
+  attention: AttentionRow[];
   /**
    * Recent activity, as audit entries — for every role.
    *

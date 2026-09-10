@@ -15,19 +15,42 @@ import { Card, CardHeader, CardTitle, EmptyState } from "@/components/ui/primiti
 import { StatusBadge } from "@/components/ui/status";
 import { formatDateTime } from "@/lib/format";
 
+const SHOWN = 5;
+
+/** A clear queue is one line, not a card with an illustration: the page's
+ * height should say how much work there is. */
+export function ClearQueues({ names }: { names: string[] }) {
+  if (names.length === 0) return null;
+  return <p className="px-1 text-xs text-text-subtle">Clear: {names.join(" · ")}</p>;
+}
+
 export function QueueCard({
   name,
   items,
+  slug,
+  href: listHref,
 }: {
   name: string;
   items: Array<Record<string, unknown>>;
+  slug?: string;
+  /** Where "all N" goes when the queue is longer than what is shown. */
+  href?: string | null;
 }) {
+  const shown = items.slice(0, SHOWN);
+  const rest = items.length - shown.length;
   return (
-    <Card>
-      <CardHeader className="flex items-center justify-between">
+    <Card id={slug ? `q-${slug}` : undefined} className="scroll-mt-20">
+      <CardHeader className="flex items-center justify-between gap-3">
         <CardTitle>{name}</CardTitle>
-        <span className="rounded-full bg-bg-inset px-2.5 py-0.5 text-xs font-medium tabular text-text-muted">
-          {items.length}
+        <span className="flex items-center gap-3">
+          {rest > 0 && listHref && (
+            <Link href={listHref} className="text-xs text-accent-text underline-offset-4 hover:underline">
+              All {items.length}
+            </Link>
+          )}
+          <span className="rounded-full bg-bg-inset px-2.5 py-0.5 text-xs font-medium tabular text-text-muted">
+            {items.length}
+          </span>
         </span>
       </CardHeader>
 
@@ -39,7 +62,7 @@ export function QueueCard({
         />
       ) : (
         <ul className="divide-y divide-border">
-          {items.map((item, index) => {
+          {shown.map((item, index) => {
             const uuid =
               (item.request_uuid as string) ??
               (item.project_uuid as string) ??
@@ -117,6 +140,19 @@ export function QueueCard({
               <li key={uuid ?? index}>{href ? <Link href={href}>{Row}</Link> : Row}</li>
             );
           })}
+          {rest > 0 && (
+            <li className="px-5 py-2.5 text-xs text-text-muted">
+              {rest} more
+              {listHref && (
+                <>
+                  {" · "}
+                  <Link href={listHref} className="text-accent-text underline-offset-4 hover:underline">
+                    see all {items.length}
+                  </Link>
+                </>
+              )}
+            </li>
+          )}
         </ul>
       )}
     </Card>

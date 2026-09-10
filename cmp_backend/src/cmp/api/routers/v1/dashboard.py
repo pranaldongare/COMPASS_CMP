@@ -11,6 +11,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Query
+from pydantic import Field
 
 from cmp.api.dependencies import CurrentUser
 from cmp.core.errors import Forbidden, NotFound
@@ -27,11 +28,262 @@ from cmp.schemas.common import Acknowledged, Out
 router = APIRouter(tags=["dashboard"])
 
 
+class AttentionRow(Out):
+    """One thing that needs this person today: a count, how urgent it is,
+    and where to act on it. Rows with nothing to count are not sent."""
+
+    key: str
+    label: str
+    count: int
+    severity: str  # critical | warning | info
+    href: str
+
+
 class Dashboard(Out):
     role: str
     counts: dict[str, int]
     queues: list[dict[str, Any]]
     recent: list[dict[str, Any]]
+    attention: list[AttentionRow] = Field(default_factory=list)
+
+
+def _slug(name: str) -> str:
+    return "".join(c if c.isalnum() else "-" for c in name.lower()).strip("-")
+
+
+#: Where a queue's "all N" goes, by queue name. Queues not named here link
+#: to nothing beyond their own rows.
+_QUEUE_HREF = {
+    "Rights requests, soonest due first": "/requests",
+    "Tickets past their date": "/requests?status=awaiting_holders",
+    "Teams have written on their tickets": "/requests?unread=1",
+    "In Draft": "/projects?status=in_draft",
+    "Pending Approval": "/projects?status=pending_approval",
+    "Tickets addressed to you": "/tickets",
+    "Needs your action": "/projects",
+    "Grievances about the DPO - yours to review": "/requests",
+    "Sites awaiting a data source": "/sites",
+    "Processors with no collection set up": "/projects",
+    "Import exceptions": "/collections",
+}
+
+#: What needs each role today, in priority order. Each row names where its
+#: count comes from - a counts key or a queue - and where acting on it goes.
+#: An anchor href points at the queue further down the same page.
+_ATTENTION: dict[str, list[dict[str, Any]]] = {
+    "dpo": [
+        {
+            "queue": "Tickets past their date",
+            "label": "Tickets past their date",
+            "severity": "critical",
+        },
+        {
+            "count": "requests_overdue",
+            "label": "Rights requests overdue",
+            "severity": "critical",
+            "href": "/requests?overdue=1",
+        },
+        {
+            "count": "requests_due_7d",
+            "label": "Rights requests due within 7 days",
+            "severity": "warning",
+            "href": "/requests",
+        },
+        {
+            "count": "requests_unverified",
+            "label": "Requests awaiting verification",
+            "severity": "warning",
+            "href": "/requests?status=received",
+        },
+        {
+            "queue": "Teams have written on their tickets",
+            "label": "Teams have written on their tickets",
+            "severity": "warning",
+            "href": "/requests?unread=1",
+        },
+        {
+            "count": "grievances_about_dpo",
+            "label": "Grievances about the DPO",
+            "severity": "warning",
+            "href": "/requests?type=grievance",
+        },
+        {
+            "queue": "Retention floors passed - erasure due",
+            "label": "Retention floors passed, erasure due",
+            "severity": "warning",
+        },
+        {
+            "count": "tickets_for_me",
+            "label": "Tickets addressed to you",
+            "severity": "warning",
+            "href": "/tickets",
+        },
+        {
+            "count": "unapproved_languages",
+            "label": "Translations awaiting approval",
+            "severity": "info",
+            "href": "/notices",
+        },
+        {
+            "count": "draft_notices",
+            "label": "Notices in draft",
+            "severity": "info",
+            "href": "/notices?status=draft",
+        },
+        {
+            "count": "pending_approval",
+            "label": "Projects pending approval",
+            "severity": "info",
+            "href": "/projects?status=pending_approval",
+        },
+        {
+            "queue": "New collectors awaiting your decision",
+            "label": "New collectors awaiting your decision",
+            "severity": "info",
+        },
+        {
+            "count": "access_denials_7d",
+            "label": "Access denials in the last 7 days",
+            "severity": "info",
+            "href": "/audit",
+        },
+    ],
+    "admin": [
+        {
+            "count": "users_pending",
+            "label": "Accounts awaiting activation",
+            "severity": "warning",
+            "href": "/users?status=pending",
+        },
+        {
+            "queue": "Lockouts (24h)",
+            "label": "Lockouts in the last 24 hours",
+            "severity": "warning",
+        },
+        {
+            "count": "grievances_about_dpo",
+            "label": "Grievances about the DPO to review",
+            "severity": "warning",
+            "href": "/requests",
+        },
+        {
+            "queue": "Suspended sources and processors",
+            "label": "Suspended sources and processors",
+            "severity": "info",
+        },
+        {
+            "count": "tickets_for_me",
+            "label": "Tickets addressed to you",
+            "severity": "warning",
+            "href": "/tickets",
+        },
+    ],
+    "dco": [
+        {
+            "overdue_tickets": True,
+            "label": "Tickets past their date",
+            "severity": "critical",
+            "href": "/tickets",
+        },
+        {
+            "count": "tickets_for_me",
+            "label": "Tickets addressed to you",
+            "severity": "warning",
+            "href": "/tickets",
+        },
+        {
+            "queue": "Import exceptions",
+            "label": "Imports that did not reconcile",
+            "severity": "warning",
+        },
+        {
+            "count": "flagged_assets",
+            "label": "Assets with unmapped subjects",
+            "severity": "warning",
+            "href": "/collections",
+        },
+    ],
+    "dco_admin": [
+        {
+            "overdue_tickets": True,
+            "label": "Tickets past their date",
+            "severity": "critical",
+            "href": "/tickets",
+        },
+        {
+            "count": "sites_awaiting_source",
+            "label": "Sites awaiting a data source",
+            "severity": "warning",
+        },
+        {
+            "count": "sources_without_owner",
+            "label": "Sources with nobody accountable",
+            "severity": "warning",
+            "href": "/sources",
+        },
+        {
+            "queue": "Processors with no collection set up",
+            "label": "Processors with no collection set up",
+            "severity": "info",
+        },
+        {
+            "count": "tickets_for_me",
+            "label": "Tickets addressed to you",
+            "severity": "warning",
+            "href": "/tickets",
+        },
+    ],
+    "rnd_user": [
+        {
+            "queue": "Needs your action",
+            "label": "Projects needing something from you",
+            "severity": "warning",
+        },
+        {
+            "count": "tickets_for_me",
+            "label": "Tickets addressed to you",
+            "severity": "warning",
+            "href": "/tickets",
+        },
+    ],
+}
+_ATTENTION["rco"] = _ATTENTION["dco"]
+
+
+def _attention(
+    role: str, counts: dict[str, int], queues: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """The rows for this role with something to count, in priority order."""
+    by_name = {q["name"]: q for q in queues}
+    rows: list[dict[str, Any]] = []
+    for spec in _ATTENTION.get(role, []):
+        if "count" in spec:
+            n = int(counts.get(spec["count"], 0) or 0)
+            key = spec["count"]
+        elif "queue" in spec:
+            n = len(by_name.get(spec["queue"], {}).get("items", []))
+            key = _slug(spec["queue"])
+        else:
+            tickets = by_name.get("Tickets addressed to you", {}).get("items", [])
+            n = sum(1 for t in tickets if t.get("overdue"))
+            key = "tickets_overdue"
+        if n <= 0:
+            continue
+        href = spec.get("href") or (
+            f"#q-{_slug(spec['queue'])}" if "queue" in spec else "/dashboard"
+        )
+        if "count" in spec and spec["count"] == "sites_awaiting_source":
+            href = "#q-" + _slug("Sites awaiting a data source")
+        rows.append(
+            {
+                "key": key,
+                "label": spec["label"],
+                "count": n,
+                "severity": spec["severity"],
+                "href": href,
+            }
+        )
+    return rows
 
 
 async def _tickets_for_me(conn: Any, user_id: int) -> tuple[int, list[dict[str, Any]]]:
@@ -90,6 +342,10 @@ async def dashboard(principal: CurrentUser) -> dict[str, Any]:
         data["counts"]["tickets_for_me"] = count
         if items:
             data["queues"].append({"name": "Tickets addressed to you", "items": items})
+        for q in data["queues"]:
+            q["slug"] = _slug(q["name"])
+            q["href"] = _QUEUE_HREF.get(q["name"])
+        data["attention"] = _attention(data["role"], data["counts"], data["queues"])
         return data
 
 
@@ -248,7 +504,17 @@ async def _dpo(conn: Any) -> dict[str, Any]:
     # the same renderer over the same data. The partial projection this replaced
     # could not carry an entity reference, which is the half that says *what*
     # was published rather than only that something was.
-    recent = await entity_repo.attach(conn, await audit_repo.recent(conn, limit=15))
+    # Sign-ins are the administrator's business; on the DPO's page they bury
+    # the events that mean something. Fetch wider, keep the first eight that
+    # are not authentication.
+    recent = await entity_repo.attach(
+        conn,
+        [
+            e
+            for e in await audit_repo.recent(conn, limit=60)
+            if not str(e["event_type"]).startswith("auth.")
+        ][:8],
+    )
     return {
         "role": "dpo",
         "counts": {

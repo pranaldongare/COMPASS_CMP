@@ -20,20 +20,19 @@
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
-import { BarList, StackedBar, StatTile } from "@/components/ui/charts";
+import { BarList, StackedBar } from "@/components/ui/charts";
 
 import { Alert, Card, CardBody, CardHeader, CardTitle } from "@/components/ui/primitives";
 
 import { useDashboard } from "@/features/dashboard";
 import {
-  COUNT_ICONS,
+  AttentionList,
   COUNT_LABELS,
-  COUNT_LINKS,
+  ClearQueues,
   DashboardSkeleton,
   LIFECYCLE,
   QueueCard,
   RecentCard,
-  WARNING_COUNTS,
   consentComposition,
   roleBlurb,
 } from "@/features/dashboard/components";
@@ -52,13 +51,14 @@ export default function DashboardPage() {
     href: `/projects?status=${k}`,
   }));
   const composition = consentComposition(counts);
-
-  // A figure a chart already explains is not repeated as a tile.
-  const charted = new Set<string>([
-    ...lifecycle.map((s) => s.key),
-    ...(composition?.consumed ?? []),
-  ]);
-  const tiles = Object.entries(counts).filter(([key]) => !charted.has(key));
+  const queues = data?.queues ?? [];
+  const busy = queues.filter((q) => q.items.length > 0);
+  const clear = queues.filter((q) => q.items.length === 0).map((q) => q.name);
+  // Sign-ins are the administrator's business; for everyone else they bury
+  // the events that mean something. Eight is a glance, the trail is the rest.
+  const recent = (data?.recent ?? [])
+    .filter((e) => me?.role === "admin" || !e.event_type.startsWith("auth."))
+    .slice(0, 8);
 
   return (
     <>
@@ -78,29 +78,19 @@ export default function DashboardPage() {
 
       {data && (
         <div className="space-y-6">
-          {tiles.length > 0 && (
-            <div className="stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {tiles.map(([key, value]) => {
-                const alarming = WARNING_COUNTS.has(key) && value > 0;
-                const Icon = COUNT_ICONS[key];
-                const href = COUNT_LINKS[key] ?? (key === "consents" ? "/consents" : undefined);
-                return (
-                  <StatTile
-                    key={key}
-                    label={COUNT_LABELS[key] ?? humanise(key)}
-                    value={value}
-                    tone={alarming ? "attention" : "neutral"}
-                    hint={alarming ? "Needs attention" : undefined}
-                    icon={Icon ? <Icon /> : undefined}
-                    href={href}
-                  />
-                );
-              })}
-            </div>
-          )}
+          {/* First, what needs a decision or an action today, sized by
+              urgency. Then the queues that hold that work. The position -
+              projects by stage, the consent picture - is context, and comes
+              last: it changes slowly and nobody acts on it directly. */}
+          <AttentionList rows={data.attention ?? []} />
+
+          {busy.map((queue) => (
+            <QueueCard key={queue.name} name={queue.name} items={queue.items} slug={queue.slug} href={queue.href} />
+          ))}
+          <ClearQueues names={clear} />
 
           {(lifecycle.length > 0 || composition) && (
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4 lg:grid-cols-2" aria-label="The position">
               {lifecycle.length > 0 && (
                 <Card>
                   <CardHeader>
@@ -132,15 +122,11 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {data.queues.map((queue) => (
-            <QueueCard key={queue.name} name={queue.name} items={queue.items} />
-          ))}
-
           {/* Rendered even when empty: the panel's empty state says activity
               will appear here, which is more use to somebody on their first day
               than an absent section they never learn exists. */}
           <RecentCard
-            items={data.recent}
+            items={recent}
             // Only the roles with an audit page get the link. A DCO following
             // one would land on a 403.
             seeAllHref={me?.nav.includes("audit") ? "/audit" : undefined}

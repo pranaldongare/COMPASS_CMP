@@ -47,6 +47,7 @@ import {
   useMyDisclosures,
   useWithdraw,
 } from "@/features/my-consents";
+import { HomeStrip } from "@/features/rights/components/home-strip";
 import { MyRequestForm } from "@/features/rights/components/request-form";
 import type { MyConsent } from "@/types";
 import { formatDateTime, formatDuration, humanise, shortHash } from "@/lib/format";
@@ -63,6 +64,8 @@ export default function MyConsentsPage() {
         title="Your consents"
         description="Everything you have agreed to, the exact wording you were shown, and who it has been shared with. You can withdraw at any time."
       />
+
+      <HomeStrip />
 
       {consents.isLoading && <Skeleton className="h-48" />}
 

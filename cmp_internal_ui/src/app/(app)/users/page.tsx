@@ -19,6 +19,7 @@ import { PageHeader } from "@/components/layout/app-shell";
 import {
   FilterBar,
   FilterSelect,
+  useFilterParam,
   ResourceList,
   SearchBox,
   useCursorStack,
@@ -26,7 +27,7 @@ import {
 import { RoleChangeForm, UserForm } from "@/features/users/components/forms";
 import { ConfirmDialog, Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyRecords } from "@/components/ui/graphics";
-import { Alert, Button, Td, Tr } from "@/components/ui/primitives";
+import { Alert, Button, Td, Tr, Skeleton } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { useEnums } from "@/features/meta";
 import { useDeactivateUser, useReactivateUser, useUsers } from "@/features/users";
@@ -35,12 +36,14 @@ import type { User } from "@/types";
 import { formatDate, humanise } from "@/lib/format";
 import { useAuth, useToast } from "@/providers";
 
-export default function UsersPage() {
+function UsersPageView() {
   const { me } = useAuth();
   const toast = useToast();
   const stack = useCursorStack();
-  const [role, setRole] = React.useState("");
-  const [status, setStatus] = React.useState("");
+  // In the address, so a link from the dashboard ("accounts awaiting
+  // activation") opens the register already filtered.
+  const [role, setRole] = useFilterParam("role");
+  const [status, setStatus] = useFilterParam("status");
   const [q, setQ] = React.useState("");
 
   const deactivate = useDeactivateUser();
@@ -272,5 +275,17 @@ export default function UsersPage() {
         }}
       />
     </>
+  );
+}
+
+/**
+ * `useFilterParam` reads the query string, which forces client rendering, so
+ * Next wants a boundary around the view.
+ */
+export default function UsersPage() {
+  return (
+    <React.Suspense fallback={<Skeleton className="h-96" />}>
+      <UsersPageView />
+    </React.Suspense>
   );
 }
