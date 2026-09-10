@@ -25,6 +25,13 @@ from cmp.db.sql import Conn, Row, fetch_all, fetch_one, keyset_clause
 LIST_SORTS = ("received_at", "due_at")
 
 # ------------------------------------------------------------------ requests
+#: Tickets on a request a team has written on and the office has not read.
+_UNREAD_THREADS = """(SELECT count(*) FROM rights_request_holder h
+    WHERE h.request_id = r.request_id
+      AND EXISTS (SELECT 1 FROM rights_ticket_message m
+                   WHERE m.holder_id = h.holder_id AND m.author_side = 'holder'
+                     AND m.created_at > coalesce(h.office_read_at, 'epoch'::timestamptz)))"""
+
 _SELECT = """
   r.request_id, r.request_uuid, r.reference, r.request_type, r.original_type,
   r.status, r.outcome, r.channel, r.submitted_name, r.submitted_contact,
@@ -67,7 +74,13 @@ _SELECT = """
     WHERE h.request_id = r.request_id AND h.ticket_status = 'returned') AS tickets_returned,
   (SELECT count(*) FROM rights_request_item i WHERE i.request_id = r.request_id) AS item_count,
   (SELECT count(*) FROM rights_request_item i
-    WHERE i.request_id = r.request_id AND i.decision IS NULL) AS items_undecided
+    WHERE i.request_id = r.request_id AND i.decision IS NULL) AS items_undecided,
+  (SELECT count(*) FROM rights_request_holder h
+    WHERE h.request_id = r.request_id
+      AND EXISTS (SELECT 1 FROM rights_ticket_message m
+                   WHERE m.holder_id = h.holder_id AND m.author_side = 'holder'
+                     AND m.created_at > coalesce(h.office_read_at, 'epoch'::timestamptz)))
+    AS threads_unread
 """
 
 _FROM = """
@@ -317,6 +330,7 @@ async def list_requests(
     status: str | None = None,
     overdue: bool = False,
     q: str | None = None,
+    unread: bool = False,
 ) -> tuple[list[Row], str | None, int]:
     pred, sparams = scope_predicate(role, user_id)
     where = [pred]
@@ -330,6 +344,9 @@ async def list_requests(
         params.append(status)
     if overdue:
         where.append("r.status <> 'closed' AND r.due_at < now()")
+    if unread:
+        # A team has written on a ticket and the office has not read it.
+        where.append(f"r.status <> 'closed' AND {_UNREAD_THREADS} > 0")
     if q:
         where.append(
             "(r.reference ILIKE %s OR s.full_name ILIKE %s OR s.email ILIKE %s "

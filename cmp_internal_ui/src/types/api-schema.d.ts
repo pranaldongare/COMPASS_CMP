@@ -6767,6 +6767,11 @@ export interface components {
             consent_uuid?: string | null;
             /** Consent Project */
             consent_project?: string | null;
+            /**
+             * Threads Unread
+             * @default 0
+             */
+            threads_unread: number;
             /** Holder Count */
             holder_count: number;
             /** Tickets Outstanding */
@@ -6921,6 +6926,11 @@ export interface components {
             consent_uuid?: string | null;
             /** Consent Project */
             consent_project?: string | null;
+            /**
+             * Threads Unread
+             * @default 0
+             */
+            threads_unread: number;
             /** Holder Count */
             holder_count: number;
             /** Tickets Outstanding */
@@ -7064,6 +7074,11 @@ export interface components {
             consent_uuid?: string | null;
             /** Consent Project */
             consent_project?: string | null;
+            /**
+             * Threads Unread
+             * @default 0
+             */
+            threads_unread: number;
             /** Holder Count */
             holder_count: number;
             /** Tickets Outstanding */
@@ -13390,6 +13405,7 @@ export interface operations {
                 status?: string | null;
                 overdue?: boolean;
                 q?: string | null;
+                unread?: boolean;
                 limit?: number | null;
                 cursor?: string | null;
                 sort?: string | null;

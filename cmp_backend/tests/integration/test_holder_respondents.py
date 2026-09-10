@@ -832,3 +832,33 @@ class TestSendBack:
         )
         unread = await repo.holders_awaiting_office(conn)
         assert all(str(h["holder_uuid"]) != str(portal["holder_uuid"]) for h in unread)
+
+    async def test_the_register_names_the_request_the_message_is_on(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
+    ) -> None:
+        """A bell on the navigation says something is unread; the register
+        row says which request, and the filter shows only those."""
+        from cmp.core.pagination import PageRequest
+
+        page = PageRequest(limit=50, cursor=None, sort_field="received_at", descending=True)
+        row, _mailed, portal = await TestChannels._issued(TestChannels(), conn, seeded)
+        dpo = int(seeded["users"]["dpo"]["id"])
+        dco = int(seeded["users"]["dco"]["id"])
+        await service.post_holder_message(
+            conn, user_id=dco, holder_uuid=str(portal["holder_uuid"]), body="A question."
+        )
+        items, _cursor, total = await repo.list_requests(
+            conn, page, role="dpo", user_id=dpo, unread=True
+        )
+        mine = [r for r in items if r["request_id"] == row["request_id"]]
+        assert mine and int(mine[0]["threads_unread"]) == 1 and total >= 1
+        await service.thread_for_office(
+            conn,
+            await service.reload(conn, row),
+            holder_uuid=str(portal["holder_uuid"]),
+            role="dpo",
+        )
+        items, _cursor, _total = await repo.list_requests(
+            conn, page, role="dpo", user_id=dpo, unread=True
+        )
+        assert all(r["request_id"] != row["request_id"] for r in items)

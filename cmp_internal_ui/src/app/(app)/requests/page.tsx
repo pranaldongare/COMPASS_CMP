@@ -27,6 +27,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyRecords } from "@/components/ui/graphics";
 import { Button, Mono, Td, Tr } from "@/components/ui/primitives";
 import { REQUEST_TYPE_COPY, RequestStatusBadge, RequestTypeBadge } from "@/features/rights/components/copy";
+import { UnreadBadge } from "@/features/rights/components/thread";
 import { LogRequestForm } from "@/features/rights/components/log-request-form";
 import { useRequests } from "@/features/rights/queries";
 import { cn, formatDate, formatDateTime } from "@/lib/format";
@@ -48,12 +49,14 @@ function RequestsPageView() {
   const [status, setStatus] = useFilterParam("status");
   const [type, setType] = useFilterParam("type");
   const [overdue, setOverdue] = useFilterParam("overdue");
+  const [unread, setUnread] = useFilterParam("unread");
   const [logging, setLogging] = React.useState(false);
 
   const query = useRequests({
     status: status || undefined,
     type: type || undefined,
     overdue: overdue ? true : undefined,
+    unread: unread ? true : undefined,
     cursor: stack.cursor,
     limit: 25,
   });
@@ -110,6 +113,16 @@ function RequestsPageView() {
           options={[{ value: "1", label: "Overdue only" }]}
           allLabel="Any"
         />
+        <FilterSelect
+          label="Tickets"
+          value={unread}
+          onChange={(v) => {
+            setUnread(v);
+            stack.reset();
+          }}
+          options={[{ value: "1", label: "Unread from a team" }]}
+          allLabel="Any"
+        />
       </FilterBar>
 
       <ResourceList<RightsRequestRow>
@@ -120,7 +133,7 @@ function RequestsPageView() {
         keyOf={(r) => r.request_uuid}
         empty={{
           illustration: <EmptyRecords />,
-          title: status || type || overdue ? "No requests match" : "No requests yet",
+          title: status || type || overdue || unread ? "No requests match" : "No requests yet",
           description: isAdmin
             ? "A grievance escalated away from the DPO appears here."
             : "A request made from the dashboard, the notice link or an email you log appears here with its clock.",
@@ -128,9 +141,12 @@ function RequestsPageView() {
         row={(r) => (
           <Tr className={cn(r.clock.overdue && "bg-danger-subtle/40")}>
             <Td>
-              <Link href={`/requests/${r.request_uuid}`} className="font-medium text-accent-text hover:underline">
-                <Mono>{r.reference}</Mono>
-              </Link>
+              <span className="inline-flex flex-wrap items-center gap-2">
+                <Link href={`/requests/${r.request_uuid}`} className="font-medium text-accent-text hover:underline">
+                  <Mono>{r.reference}</Mono>
+                </Link>
+                <UnreadBadge count={r.threads_unread} />
+              </span>
               {r.about_dpo && (
                 <p className="mt-0.5 text-2xs font-semibold uppercase tracking-wide text-warning-text">about the DPO</p>
               )}

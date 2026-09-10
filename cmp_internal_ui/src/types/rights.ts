@@ -109,6 +109,8 @@ export interface RightsRequestRow {
   /** Set when the request is confined to one consent. */
   consent_uuid: Uuid | null;
   consent_project: string | null;
+  /** Tickets on which a team has written and the office has not read it. */
+  threads_unread: number;
   holder_count: number;
   tickets_outstanding: number;
   closed_at: Timestamp | null;

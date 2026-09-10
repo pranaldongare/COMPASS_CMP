@@ -244,6 +244,7 @@ export function makeRequestRow(overrides: Partial<RightsRequestRow> = {}): Right
     linked_reference: null,
     consent_uuid: null,
     consent_project: null,
+    threads_unread: 0,
     holder_count: 0,
     tickets_outstanding: 0,
     closed_at: null,

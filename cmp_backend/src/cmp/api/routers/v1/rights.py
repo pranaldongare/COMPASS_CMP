@@ -87,6 +87,8 @@ class RequestRow(Out):
     #: Set when the request is confined to one consent.
     consent_uuid: UUID | None = None
     consent_project: str | None = None
+    #: Tickets on which a team has written and the office has not read it.
+    threads_unread: int = 0
     holder_count: int
     tickets_outstanding: int
     closed_at: datetime | None
@@ -589,9 +591,10 @@ async def list_requests(
     status_: Annotated[str | None, Query(alias="status")] = None,
     overdue: Annotated[bool, Query()] = False,
     q: Annotated[str | None, Query(max_length=120)] = None,
+    unread: Annotated[bool, Query()] = False,
 ) -> dict[str, Any]:
     """The register. Soonest due is the sort that matters; newest first is the default."""
-    reject_unknown_filters(request, ("type", "status", "overdue", "q"))
+    reject_unknown_filters(request, ("type", "status", "overdue", "q", "unread"))
     async with connection() as conn:
         items, cursor, total = await repo.list_requests(
             conn,
@@ -602,6 +605,7 @@ async def list_requests(
             status=status_,
             overdue=overdue,
             q=q,
+            unread=unread,
         )
     return {"items": [_with_clock(r) for r in items], "next_cursor": cursor, "total": total}
 

@@ -35,6 +35,8 @@ import type {
 
 export interface RequestFilters extends ListFilters {
   overdue?: boolean;
+  /** Only requests a team has written on and the office has not read. */
+  unread?: boolean;
 }
 
 export function listRequests(filters: RequestFilters = {}): Promise<Page<RightsRequestRow>> {
