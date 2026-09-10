@@ -51,6 +51,11 @@ export function getRequestTransitions(
   return apiGet(`/requests/${uuid}/transitions`);
 }
 
+/** The number on the office's bell: open tickets a team has written on and nobody has read. */
+export function requestsAttention(): Promise<{ threads_unread: number }> {
+  return apiGet<{ threads_unread: number }>("/requests/attention");
+}
+
 export function getRequestTrail(uuid: Uuid): Promise<AuditEntry[]> {
   return apiGet<AuditEntry[]>(`/requests/${uuid}/trail`);
 }

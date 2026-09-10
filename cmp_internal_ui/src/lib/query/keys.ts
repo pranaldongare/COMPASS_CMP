@@ -150,6 +150,7 @@ export const keys = {
     detail: (uuid: Uuid) => ["request", uuid] as const,
     trail: (uuid: Uuid) => ["request", uuid, "trail"] as const,
     linkedTrail: (uuid: Uuid) => ["request", uuid, "linked-trail"] as const,
+    attention: ["all", "requests", "attention"] as const,
     thread: (uuid: Uuid, holderUuid: Uuid) => ["request", uuid, "thread", holderUuid] as const,
   },
 

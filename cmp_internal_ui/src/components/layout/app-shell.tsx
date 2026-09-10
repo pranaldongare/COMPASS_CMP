@@ -48,7 +48,7 @@ import { Button } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { config } from "@/lib/config";
 import { cn, initials } from "@/lib/format";
-import { useMyTickets } from "@/features/rights/queries";
+import { useMyTickets, useRequestsAttention } from "@/features/rights/queries";
 import { useAuth, useTheme } from "@/providers";
 
 interface NavItem {
@@ -326,6 +326,7 @@ function Sidebar({
                         />
                         <span className="truncate">{item.label}</span>
                         {item.key === "tickets" && <TicketsBadge />}
+                        {item.key === "requests" && <RequestsBadge />}
                       </Link>
                     </li>
                   );
@@ -400,11 +401,23 @@ function TicketsBadge() {
   const count = (tickets.data ?? []).filter(
     (t) => (t.ticket_status === "issued" || t.ticket_status === "escalated") && t.unread_for_holder > 0,
   ).length;
+  return <NavCount count={count} label={`${count} ticket${count === 1 ? "" : "s"} with unread messages`} />;
+}
+
+/** The office's side of the same bell: open tickets a team has written on
+ * that nobody in the office has read. Cleared by opening the thread. */
+function RequestsBadge() {
+  const attention = useRequestsAttention();
+  const count = attention.data?.threads_unread ?? 0;
+  return <NavCount count={count} label={`${count} ticket thread${count === 1 ? "" : "s"} unread`} />;
+}
+
+function NavCount({ count, label }: { count: number; label: string }) {
   if (!count) return null;
   return (
     <span
       className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-2xs font-semibold text-white"
-      aria-label={`${count} ticket${count === 1 ? "" : "s"} with unread messages`}
+      aria-label={label}
     >
       {count}
     </span>

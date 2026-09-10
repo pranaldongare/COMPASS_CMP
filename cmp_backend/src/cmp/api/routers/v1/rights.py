@@ -565,6 +565,21 @@ async def _trail(conn: Any, reference: str, *, for_subject: bool) -> list[dict[s
 
 
 # ------------------------------------------------------------- staff: list
+class AttentionOut(Out):
+    #: Open tickets on which a team has written and the office has not read it.
+    threads_unread: int
+
+
+@router.get("/attention", response_model=AttentionOut, summary="What the office has not read")
+async def requests_attention(principal: RightsReader) -> dict[str, Any]:
+    """The number on the office's bell: every open ticket whose team has
+    written - a message, a return - and nobody in the office has opened yet.
+    The respondent's side has the same count on "Tickets for you"; without
+    this one the conversation rang on one end only."""
+    async with connection() as conn:
+        return {"threads_unread": await repo.count_awaiting_office(conn)}
+
+
 @router.get("", response_model=Page[RequestRow], summary="Every request in scope")
 async def list_requests(
     request: Request,

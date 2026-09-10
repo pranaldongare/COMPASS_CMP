@@ -12,6 +12,7 @@ import {
   myTicket,
   getLinkedTrail,
   getRequestTrail,
+  requestsAttention,
   listRequests,
   type RequestFilters,
 } from "@/features/rights/api";
@@ -58,6 +59,15 @@ export function useLinkedTrail(uuid: Uuid | undefined) {
     queryKey: keys.rights.linkedTrail(uuid ?? ""),
     queryFn: () => getLinkedTrail(uuid!),
     enabled: Boolean(uuid),
+  });
+}
+
+export function useRequestsAttention() {
+  return useQuery<{ threads_unread: number }, ApiError>({
+    queryKey: keys.rights.attention,
+    queryFn: requestsAttention,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   });
 }
 

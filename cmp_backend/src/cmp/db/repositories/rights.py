@@ -647,6 +647,22 @@ async def holders_awaiting_office(conn: Conn, *, limit: int = 25) -> list[Row]:
     )
 
 
+async def count_awaiting_office(conn: Conn) -> int:
+    """How many open tickets carry something from the team the office has
+    not read - the number on the office's bell."""
+    row = await fetch_one(
+        conn,
+        """SELECT count(*) AS n
+           FROM rights_request_holder h
+           JOIN rights_request r ON r.request_id = h.request_id
+           WHERE r.status <> 'closed'
+             AND EXISTS (SELECT 1 FROM rights_ticket_message m
+                          WHERE m.holder_id = h.holder_id AND m.author_side = 'holder'
+                            AND m.created_at > coalesce(h.office_read_at, 'epoch'::timestamptz))""",
+    )
+    return int(row["n"]) if row else 0
+
+
 # ------------------------------------------------------------- the brief
 
 

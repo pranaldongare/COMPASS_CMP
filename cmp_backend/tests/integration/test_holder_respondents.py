@@ -820,3 +820,15 @@ class TestSendBack:
         )
         # Somebody else's tickets are not in this person's feed.
         assert await audit_repo.ticket_events_for_responder(conn, dpo) == []
+
+        # The office's bell counts the thread until somebody in the office
+        # opens it; the respondent's own message is what rang it.
+        assert await repo.count_awaiting_office(conn) >= 1
+        await service.thread_for_office(
+            conn,
+            await service.reload(conn, row),
+            holder_uuid=str(portal["holder_uuid"]),
+            role="dpo",
+        )
+        unread = await repo.holders_awaiting_office(conn)
+        assert all(str(h["holder_uuid"]) != str(portal["holder_uuid"]) for h in unread)

@@ -3166,6 +3166,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/requests/attention": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What the office has not read
+         * @description The number on the office's bell: every open ticket whose team has
+         *     written - a message, a return - and nobody in the office has opened yet.
+         *     The respondent's side has the same count on "Tickets for you"; without
+         *     this one the conversation rang on one end only.
+         */
+        get: operations["requests_attention_requests_attention_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/requests": {
         parameters: {
             query?: never;
@@ -4167,6 +4190,11 @@ export interface components {
              * @default false
              */
             is_mandatory: boolean;
+        };
+        /** AttentionOut */
+        AttentionOut: {
+            /** Threads Unread */
+            threads_unread: number;
         };
         /** AuditEntry */
         AuditEntry: {
@@ -13331,6 +13359,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    requests_attention_requests_attention_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttentionOut"];
                 };
             };
         };
