@@ -15,6 +15,7 @@ from typing import Any
 import pytest
 
 from cmp.core.errors import Conflict, NotFound
+from cmp.db.repositories import audit as audit_repo
 from cmp.db.repositories import registry as registry_repo
 from cmp.db.repositories import rights as repo
 from cmp.db.sql import fetch_one
@@ -274,6 +275,45 @@ class TestChannels:
                 evidence_ref=None,
                 evidence_hash=None,
             )
+        # The mailed holder is still out, so the request still waits.
+        row = await service.reload(conn, _row)
+        assert row["status"] == "awaiting_holders"
+
+    async def test_the_last_ticket_back_moves_the_request_to_collating(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
+    ) -> None:
+        """Whoever returns it, and however - on the portal, recorded by the
+        DPO, or withdrawn - once nothing is outstanding the request stops
+        saying "awaiting holders" without the DPO having to move it."""
+        row, mailed, portal = await self._issued(conn, seeded)
+        dpo = int(seeded["users"]["dpo"]["id"])
+        dco = int(seeded["users"]["dco"]["id"])
+        await service.return_own_ticket(
+            conn,
+            user_id=dco,
+            holder_uuid=str(portal["holder_uuid"]),
+            summary="Nothing held beyond the consent record itself.",
+            evidence_ref=None,
+            evidence_hash=None,
+        )
+        assert (await service.reload(conn, row))["status"] == "awaiting_holders"
+        await service.withdraw_ticket(
+            conn,
+            await service.reload(conn, row),
+            holder_uuid=str(mailed["holder_uuid"]),
+            reason="They hold nothing of hers after all",
+            role="dpo",
+            actor_id=dpo,
+        )
+        row = await service.reload(conn, row)
+        assert row["status"] == "collating"
+        moved = [
+            e
+            for e in await audit_repo.for_reference(conn, row["reference"])
+            if e["event_type"] == "rights.status_changed"
+            and (e.get("detail") or e.get("detail_json") or {}).get("to") == "collating"
+        ]
+        assert moved, "the move is on the record, marked automatic"
 
     async def test_the_dpo_tracks_a_mailed_holder_by_hand(
         self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
@@ -626,9 +666,12 @@ class TestLifecycle:
             fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), ref)
             return int(fresh["reminders_sent"])
 
+        # The sweep reads every open ticket in the database, so its total is
+        # not this test's to assert on; what this holder was sent is.
         # Too early: nothing. Three days before: one. The same day again: none.
-        assert await service.sweep_tickets(conn, today=due - timedelta(days=10)) == 0
-        assert await service.sweep_tickets(conn, today=due - timedelta(days=3)) >= 1
+        await service.sweep_tickets(conn, today=due - timedelta(days=10))
+        assert await count() == 0
+        await service.sweep_tickets(conn, today=due - timedelta(days=3))
         assert await count() == 1
         # Stamped on the simulated day, as the sweep would have stamped it.
         await repo.update_holder(
@@ -636,14 +679,18 @@ class TestLifecycle:
             int(holder["holder_id"]),
             last_reminded_at=datetime.combine(due - timedelta(days=3), time(12), tzinfo=UTC),
         )
-        assert await service.sweep_tickets(conn, today=due - timedelta(days=3)) == 0
+        await service.sweep_tickets(conn, today=due - timedelta(days=3))
+        assert await count() == 1
         # Reset the day-stamp to test the calendar alone.
         await repo.update_holder(conn, int(holder["holder_id"]), last_reminded_at=None)
-        assert await service.sweep_tickets(conn, today=due - timedelta(days=1)) == 0
-        assert await service.sweep_tickets(conn, today=due) >= 1
+        await service.sweep_tickets(conn, today=due - timedelta(days=1))
+        assert await count() == 1
+        await service.sweep_tickets(conn, today=due)
+        assert await count() == 2
         await repo.update_holder(conn, int(holder["holder_id"]), last_reminded_at=None)
-        assert await service.sweep_tickets(conn, today=due + timedelta(days=2)) == 0
-        assert await service.sweep_tickets(conn, today=due + timedelta(days=3)) >= 1
+        await service.sweep_tickets(conn, today=due + timedelta(days=2))
+        assert await count() == 2
+        await service.sweep_tickets(conn, today=due + timedelta(days=3))
         assert await count() == 3
 
     async def test_a_file_keeps_its_name(

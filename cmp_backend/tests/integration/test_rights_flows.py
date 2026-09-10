@@ -256,14 +256,10 @@ class TestAccessRequest:
             role=DPO,
             actor_id=dpo,
         )
-        row = await service.transition(
-            conn,
-            await service.reload(conn, row),
-            to="collating",
-            reason=None,
-            role=DPO,
-            actor_id=dpo,
-        )
+        # The last ticket back moves the request on by itself, the way issuing
+        # moved it to awaiting holders. Nobody has to notice.
+        row = await service.reload(conn, row)
+        assert row["status"] == "collating"
         row = await service.respond(
             conn,
             row,
@@ -1232,9 +1228,7 @@ class TestConfinedToConsent:
             generated_at=datetime.now(UTC),
         )
         assert built["summary"]["confined_to_consent"] is True
-        assert [str(c["consent_uuid"]) for c in built["consents"]] == [
-            str(first["consent_uuid"])
-        ]
+        assert [str(c["consent_uuid"]) for c in built["consents"]] == [str(first["consent_uuid"])]
         assert built["disclosures"] == []
         assert "CONFINED TO ONE CONSENT" in package.digest_text(built)
 

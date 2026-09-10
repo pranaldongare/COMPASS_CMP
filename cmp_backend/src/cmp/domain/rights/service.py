@@ -972,6 +972,36 @@ async def issue_tickets(
     return await repo.holders_of(conn, int(row["request_id"]))
 
 
+async def _settle(conn: Conn, row: Row, *, actor_id: int | None) -> None:
+    """The last open ticket is back: the request moves on by itself.
+
+    Issuing tickets moved the request to awaiting holders without anybody
+    asking; the return of the last one moves it to collating the same way.
+    Left where it was, the register kept saying "awaiting holders" about a
+    request with nothing outstanding, and the DPO had to notice and move it
+    by hand. Withdrawn tickets count as settled - they are not a gap.
+    """
+    fresh = await reload(conn, row)
+    if Status(fresh["status"]) is not Status.AWAITING_HOLDERS:
+        return
+    if int(fresh["tickets_outstanding"] or 0) > 0:
+        return
+    await repo.update(conn, int(fresh["request_id"]), status=Status.COLLATING.value)
+    fresh = await reload(conn, fresh)
+    await _record(
+        conn,
+        fresh,
+        Event.RIGHTS_STATUS_CHANGED,
+        actor_user_id=actor_id,
+        detail={
+            "from": Status.AWAITING_HOLDERS.value,
+            "to": Status.COLLATING.value,
+            "reason": "Every ticket has been returned or withdrawn",
+            "automatic": True,
+        },
+    )
+
+
 async def return_ticket(
     conn: Conn,
     row: Row,
@@ -1024,6 +1054,7 @@ async def return_ticket(
         entity_id=int(holder["holder_id"]),
         detail={"label": holder["label"], "evidence_sha256": evidence_hash},
     )
+    await _settle(conn, row, actor_id=actor_id)
     fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
     assert fresh is not None
     return fresh
@@ -1544,6 +1575,7 @@ async def withdraw_ticket(
         author_id=actor_id,
         body=f"This ticket is withdrawn and needs nothing further from you. Reason: {why}",
     )
+    await _settle(conn, row, actor_id=actor_id)
     fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
     assert fresh is not None
     return fresh
@@ -1823,6 +1855,7 @@ async def return_own_ticket(
         entity_id=int(holder["holder_id"]),
         detail={"label": holder["label"], "evidence_sha256": evidence_hash, "channel": "portal"},
     )
+    await _settle(conn, row, actor_id=user_id)
     fresh = await repo.ticket_for_user(conn, user_id, holder_uuid)
     assert fresh is not None
     return fresh
