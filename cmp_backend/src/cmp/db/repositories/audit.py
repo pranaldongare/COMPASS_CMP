@@ -34,6 +34,41 @@ _NOT_ACTIVITY = (
     "auth.mfa_verified",
 )
 
+#: What a data principal is told about. Her feed and her request trails are
+#: the events that concern *her*: what she did, what was done with her data,
+#: and how her request moved. The office's working on a request - deriving
+#: holders, issuing and chasing tickets, classifying, deciding the scope - is
+#: internal, and she has no page to see it on; naming it in her feed would
+#: describe machinery she cannot open. The response, and the outcome, are hers.
+SUBJECT_VISIBLE: frozenset[str] = frozenset(
+    {
+        "subject.registered",
+        "user.person_type_changed",
+        "user.deactivated",
+        "user.reactivated",
+        "consent.given",
+        "consent.declined",
+        "consent.withdrawn",
+        "notice.served",
+        "export.generated",
+        "nomination.created",
+        "nomination.accepted",
+        "nomination.declined",
+        "nomination.revoked",
+        "nomination.invoked",
+        "rights.request_received",
+        "rights.acknowledged",
+        "rights.verification_code_sent",
+        "rights.verified",
+        "rights.verification_failed",
+        "rights.status_changed",
+        "rights.responded",
+        "rights.response_downloaded",
+        "rights.grievance_decided",
+        "rights.closed",
+    }
+)
+
 _SELECT = """
   l.log_uuid, l.event_type, l.entity_type, l.entity_id, l.occurred_at,
   l.detail_json - '_hash' - '_prev' AS detail,
@@ -104,21 +139,26 @@ async def by_uuid(conn: Conn, log_uuid: str) -> Row | None:
 async def for_subject(conn: Conn, subject_user_id: int, *, limit: int = 50) -> list[Row]:
     """ "What has happened to my data" - the DSAR query.
 
-    Backed by idx_audit_subject. Events that are noise to the subject (her own
-    page views, her own sign-ins) are excluded; what remains is what was done
-    *with* her data.
+    Backed by idx_audit_subject. Only the events she is told about
+    (`SUBJECT_VISIBLE`): what she did, what was done with her data, and how
+    her request moved. The office's working is not hers to see.
     """
     return await fetch_all(
         conn,
         f"""
         SELECT {_SELECT}{_FROM}
         WHERE l.subject_user_id = %s
-          AND l.event_type <> ALL(%s)
+          AND l.event_type = ANY(%s)
         ORDER BY l.occurred_at DESC
         LIMIT %s
         """,
-        (subject_user_id, list(_NOT_ACTIVITY), limit),
+        (subject_user_id, sorted(SUBJECT_VISIBLE), limit),
     )
+
+
+def visible_to_subject(rows: list[Row]) -> list[Row]:
+    """The rows of a trail a data principal is shown: the same rule as her feed."""
+    return [r for r in rows if str(r["event_type"]) in SUBJECT_VISIBLE]
 
 
 async def for_reference(conn: Conn, reference: str, *, limit: int = 200) -> list[Row]:

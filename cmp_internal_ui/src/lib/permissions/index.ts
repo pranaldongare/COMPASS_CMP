@@ -36,7 +36,7 @@ export type NavKey =
   | "approvals"
   | "audit"
   | "users"
-  | "cover"
+  | "delegate"
   | "messages"
   | "requests"
   | "notifications"

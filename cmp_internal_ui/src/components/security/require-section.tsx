@@ -36,7 +36,7 @@ import { useAuth } from "@/providers";
  * Route prefixes that belong to a nav section.
  *
  * Only the sections that gate something. A path with no entry here is not
- * guarded — `/profile`, `/cover` and the detail routes under a section already
+ * guarded — `/profile`, `/delegate` and the detail routes under a section already
  * covered by its prefix — because a guard that had to be told about every new
  * page would be one somebody forgets to tell.
  */
@@ -57,7 +57,7 @@ const SECTION_OF: ReadonlyArray<readonly [prefix: string, key: string]> = [
   ["/audit", "audit"],
   ["/users", "users"],
   ["/tickets", "tickets"],
-  ["/cover", "cover"],
+  ["/delegate", "delegate"],
   ["/messages", "messages"],
 ];
 

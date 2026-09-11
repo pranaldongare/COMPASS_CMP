@@ -111,7 +111,7 @@ const SECTIONS: NavSection[] = [
       { key: "requests", href: "/requests", label: "Rights requests", icon: Scale },
       { key: "audit", href: "/audit", label: "Audit trail", icon: ShieldCheck },
       { key: "users", href: "/users", label: "Users", icon: Users },
-      { key: "cover", href: "/cover", label: "Cover", icon: HandHelping },
+      { key: "delegate", href: "/delegate", label: "Delegate", icon: HandHelping },
       // The words of every email and SMS the platform sends.
       { key: "messages", href: "/messages", label: "Messages", icon: MessageSquareText },
     ],

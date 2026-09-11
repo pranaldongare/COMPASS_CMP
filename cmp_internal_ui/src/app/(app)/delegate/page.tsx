@@ -1,5 +1,5 @@
 /**
- * Cover arrangements: who is standing in for whom.
+ * Delegations: who is standing in for whom.
  *
  * The problem this exists for is mundane and its usual workaround is not: a DPO
  * goes on leave, a DCO is off for a fortnight and their campuses keep
@@ -9,14 +9,14 @@
  *
  * Three sections, in the order somebody arriving here needs them:
  *
- * 1. **Cover for my work** — the thing they came to arrange.
+ * 1. **My delegations** — the thing they came to arrange.
  * 2. **Work I am covering** — whose rows they are answerable for right now,
  *    which is the question somebody asks *before* acting on a project that is
  *    not theirs.
  * 3. **Everyone** — oversight, DPO and administrator only.
  *
  * One property is repeated in the copy because it is the one people get wrong:
- * cover **grants** and never transfers. Ownership stays put, and the access
+ * delegation **grants** and never transfers. Ownership stays put, and the access
  * lapses on its own when the arrangement ends. Nobody has to remember to undo
  * it, which is exactly why it is safe to use.
  */
@@ -59,9 +59,9 @@ export default function CoverPage() {
   const oversight = me?.role === "dpo" || me?.role === "admin";
   const everyone = useAllDelegations(oversight);
 
-  // Cover applies to roles whose access is defined by *assignment* — every
+  // Delegation applies to roles whose access is defined by *assignment* — every
   // collection owner, not only the DCO. An R&D User's rows are the ones they
-  // created, and nobody can cover authorship.
+  // created, and nobody can be delegated authorship.
   const canArrange =
     me?.role === "dpo" ||
     me?.role === "dco" ||
@@ -71,13 +71,13 @@ export default function CoverPage() {
   return (
     <>
       <PageHeader
-        title="Cover"
-        description="Arrange for somebody to cover your work while you are away. Cover grants access for a period and transfers nothing — it ends on its own."
+        title="Delegate"
+        description="Delegate your work to somebody while you are away. A delegation grants access for a period and transfers nothing — it ends on its own."
         actions={
           canArrange ? (
             <Button variant="primary" onClick={() => setArranging(true)}>
               <Plus className="size-4" />
-              Arrange cover
+              Delegate my work
             </Button>
           ) : null
         }
@@ -85,7 +85,7 @@ export default function CoverPage() {
 
       {!canArrange && (
         <Alert tone="info" className="mb-4">
-          Cover applies to roles whose access is defined by assignment — a DPO or
+          Delegation applies to roles whose access is defined by assignment — a DPO or
           a Data Collection Owner. Your projects are the ones you created, and
           authorship is not something somebody else can stand in for.
         </Alert>
@@ -93,20 +93,20 @@ export default function CoverPage() {
 
       <div className="space-y-6">
         <Section
-          title="Cover for my work"
+          title="My delegations"
           icon={<HandHelping className="size-4" aria-hidden="true" />}
           query={mine}
-          empty="Nobody is covering for you"
-          emptyHint="Arrange cover before you go, and it will end on the date you set."
+          empty="You have not delegated your work to anybody"
+          emptyHint="Delegate before you go, and it will end on the date you set."
           perspective="delegate"
         />
 
         <Section
-          title="Work I am covering"
+          title="Work delegated to me"
           icon={<UserRoundCheck className="size-4" aria-hidden="true" />}
           query={held}
-          empty="You are not covering for anybody"
-          emptyHint="When somebody arranges cover with you, their projects appear in your lists until it ends."
+          empty="Nobody has delegated their work to you"
+          emptyHint="When somebody delegates to you, their projects appear in your lists until it ends."
           perspective="delegator"
         />
 
@@ -115,7 +115,7 @@ export default function CoverPage() {
             title="Everyone, right now"
             icon={<ShieldCheck className="size-4" aria-hidden="true" />}
             query={everyone}
-            empty="No cover is in place"
+            empty="No delegation is in place"
             emptyHint="Live arrangements across the organisation appear here."
             perspective="both"
           />
@@ -124,7 +124,7 @@ export default function CoverPage() {
 
       <Dialog open={arranging} onOpenChange={(open) => !open && setArranging(false)}>
         <DialogContent
-          title="Arrange cover"
+          title="Delegate my work"
           description="They will reach your projects for as long as the arrangement lasts, and nothing changes hands."
         >
           <GrantCoverForm onDone={() => setArranging(false)} />
@@ -147,7 +147,7 @@ function Section({
   query: { data?: Delegation[]; isLoading: boolean };
   empty: string;
   emptyHint: string;
-  /** Which name to lead with. In "cover for my work" the reader is the
+  /** Which name to lead with. In "my delegations" the reader is the
    *  delegator, so the useful name is the delegate's, and the reverse. */
   perspective: "delegate" | "delegator" | "both";
 }) {
@@ -201,7 +201,7 @@ function DelegationRow({
   async function end() {
     try {
       const result = await revoke.mutateAsync(d.delegation_uuid);
-      toast.success("Cover ended", result.message ?? undefined);
+      toast.success("Delegation ended", result.message ?? undefined);
     } catch {
       toast.error("Could not end this arrangement", "Nothing has been changed.");
     }

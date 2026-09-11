@@ -1,5 +1,5 @@
 /**
- * Arranging cover.
+ * Delegating work.
  *
  * Two fields matter and one of them is a warning. The colleague has to be in the
  * same role — the API refuses anything else, because cover across roles would be
@@ -62,13 +62,13 @@ export function GrantCoverForm({ onDone }: { onDone: () => void }) {
       // The server says whether this actually grants anything. For a DPO it does
       // not - they already read every record - and repeating its answer means
       // the toast cannot claim an effect the arrangement does not have.
-      toast[result.grants_access ? "success" : "info"]("Cover arranged", result.message);
+      toast[result.grants_access ? "success" : "info"]("Work delegated", result.message);
       onDone();
     } catch (err) {
       setError(
         err && typeof err === "object" && "userMessage" in err
           ? (err as { userMessage: () => string }).userMessage()
-          : "Could not arrange cover.",
+          : "Could not delegate.",
       );
     }
   }
@@ -82,15 +82,15 @@ export function GrantCoverForm({ onDone }: { onDone: () => void }) {
           <Alert tone="info">
             <span className="flex items-start gap-2">
               <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-              There is nobody else in your role to cover for you. Cover has to be
-              arranged with somebody who holds the same responsibilities — an
-              administrator can provision a colleague.
+              There is nobody else in your role to delegate to. Work is delegated to
+              somebody who holds the same responsibilities — an administrator can
+              provision a colleague.
             </span>
           </Alert>
         )}
 
         <Field
-          label="Who is covering"
+          label="Who takes over"
           hint="Somebody in your own role. They reach your projects; nothing changes hands."
           required
         >
@@ -113,7 +113,7 @@ export function GrantCoverForm({ onDone }: { onDone: () => void }) {
 
         <Field
           label="Until"
-          hint="Leave empty for open-ended cover. A date is better: it ends by itself, and nobody has to remember to end it."
+          hint="Leave empty for an open-ended delegation. A date is better: it ends by itself, and nobody has to remember to end it."
         >
           {(p) => (
             <Input
@@ -145,7 +145,7 @@ export function GrantCoverForm({ onDone }: { onDone: () => void }) {
           Cancel
         </Button>
         <Button type="submit" variant="primary" loading={grant.isPending} disabled={!delegate}>
-          Arrange cover
+          Delegate
         </Button>
       </DialogFooter>
     </form>

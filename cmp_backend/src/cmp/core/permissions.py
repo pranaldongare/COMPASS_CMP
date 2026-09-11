@@ -333,11 +333,11 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "users",
         # The words of every message the platform sends.
         "messages",
-        # Cover is for the roles whose access is defined by assignment. An R&D
+        # Delegation is for the roles whose access is defined by assignment. An R&D
         # User's rows are the ones they created, and authorship is not something
         # somebody else can stand in for - so it is absent there, deliberately,
         # rather than forgotten.
-        "cover",
+        "delegate",
         *PERSONAL,
     ),
     Role.DCO: (
@@ -353,7 +353,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "exports",
         "imports",
         "collections",
-        "cover",
+        "delegate",
         *PERSONAL,
     ),
     # A DCO Admin does a DCO's job across every third-party project, and one
@@ -369,7 +369,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "exports",
         "imports",
         "collections",
-        "cover",
+        "delegate",
         *PERSONAL,
     ),
     # An RCO is a DCO for collection the R&D team does itself - same nav, and
@@ -385,7 +385,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "exports",
         "imports",
         "collections",
-        "cover",
+        "delegate",
         *PERSONAL,
     ),
     # `notices` and `processors` because the R&D User now writes the notice and
@@ -401,7 +401,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "collections",
         *PERSONAL,
     ),
-    # An administrator does not arrange their own cover - they have no assigned
+    # An administrator does not delegate their own work - they have no assigned
     # rows - but they can see and arrange it for anybody who is unreachable.
     # `requests` for the administrator is the escalated grievances only - the
     # ones about the DPO, which the DPO must not review.
@@ -414,7 +414,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "sources",
         "requests",
         "audit",
-        "cover",
+        "delegate",
         *PERSONAL,
     ),
     # Her own requests and her nomination, on her own pages.

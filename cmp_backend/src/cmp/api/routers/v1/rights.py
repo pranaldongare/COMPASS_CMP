@@ -596,6 +596,8 @@ async def _subject_views(conn: Any, rows: list[dict[str, Any]]) -> list[dict[str
 
 async def _trail(conn: Any, reference: str, *, for_subject: bool) -> list[dict[str, Any]]:
     rows = await audit_repo.for_reference(conn, reference, limit=200)
+    if for_subject:
+        rows = audit_repo.visible_to_subject(rows)
     return await entity_repo.attach(conn, rows, for_subject=for_subject)
 
 

@@ -42,13 +42,13 @@ const NOW = "2026-02-02T11:05:00+05:30";
  */
 const NAV: Record<Role, string[]> = {
   admin: [
-    "dashboard", "users", "processors", "sources", "requests", "audit", "cover",
+    "dashboard", "users", "processors", "sources", "requests", "audit", "delegate",
     "tickets", "notifications", "profile",
   ],
   dpo: [
     "dashboard", "projects", "notices", "purposes", "processors", "sources",
     "consents", "links", "exports", "imports", "requests", "audit", "users",
-    "cover", "tickets", "notifications", "profile",
+    "delegate", "tickets", "notifications", "profile",
   ],
   rnd_user: ["dashboard", "projects", "notices", "consents", "tickets", "notifications", "profile"],
   dco: [

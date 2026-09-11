@@ -110,3 +110,46 @@ def test_her_navigation_offers_only_her_own_sections() -> None:
     section added to her nav has to be a decision rather than a slip.
     """
     assert set(nav_for(Role.DATA_SUBJECT)) == {"consents", "requests", "notifications", "profile"}
+
+
+def test_her_feed_names_only_what_concerns_her() -> None:
+    """The office's working on a request - holders, tickets, classification,
+    scope - is internal, and she has no page it could open. Her feed and her
+    trail carry what she did, what was done with her data, and how the
+    request moved; the response and the outcome are hers."""
+    from cmp.db.repositories.audit import SUBJECT_VISIBLE, visible_to_subject
+    from cmp.domain.audit.service import Event
+
+    internal = {
+        Event.RIGHTS_HOLDERS_DERIVED,
+        Event.RIGHTS_HOLDER_CONFIRMED,
+        Event.RIGHTS_TICKET_ISSUED,
+        Event.RIGHTS_TICKET_MESSAGE,
+        Event.RIGHTS_TICKET_RETURNED,
+        Event.RIGHTS_TICKET_SENT_BACK,
+        Event.RIGHTS_CLASSIFIED,
+        Event.RIGHTS_SCOPE_DERIVED,
+        Event.RIGHTS_HOLDER_CONTACTED,
+    }
+    hers = {
+        Event.RIGHTS_REQUEST_RECEIVED,
+        Event.RIGHTS_ACKNOWLEDGED,
+        Event.RIGHTS_RESPONDED,
+        Event.RIGHTS_CLOSED,
+        Event.CONSENT_GIVEN,
+        Event.CONSENT_WITHDRAWN,
+        Event.NOMINATION_ACCEPTED,
+    }
+
+    def name(e: object) -> str:
+        return str(getattr(e, "value", e))
+
+    for e in internal:
+        assert name(e) not in SUBJECT_VISIBLE, f"{name(e)} is internal"
+    for e in hers:
+        assert name(e) in SUBJECT_VISIBLE, f"{name(e)} concerns her"
+    every = {name(v) for v in vars(Event).values() if isinstance(v, str) and "." in v}
+    for n in SUBJECT_VISIBLE:
+        assert n in every, f"{n} is not an event"
+    rows = [{"event_type": name(e)} for e in [*internal, *hers]]
+    assert {r["event_type"] for r in visible_to_subject(rows)} == {name(e) for e in hers}
