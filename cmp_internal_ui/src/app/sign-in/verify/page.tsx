@@ -4,25 +4,73 @@
  * Reached only with a partial session: the password was accepted and this is the
  * one route that session authorises. Every other endpoint answers 401 with
  * `mfa_required` until this completes.
+ *
+ * The sign-in page hands over `?next=`, the page the person was trying to
+ * reach, because this step is where it used to be lost: every staff role steps
+ * up with a code, so without it a link in an email always ended on the
+ * dashboard.
  */
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 
 import { AuthLayout } from "@/components/layout/auth-layout";
 import { Alert, Button, Field, Input } from "@/components/ui/primitives";
 import { resendMfa, verifyMfa } from "@/features/auth";
 import { ApiError } from "@/lib/errors";
-import { useHydrated } from "@/lib/security";
+import { safeRedirectPath, useHydrated } from "@/lib/security";
 import { useAuth } from "@/providers";
 
 const CODE_LENGTH = 6;
 
 export default function VerifyPage() {
+  return (
+    <AuthLayout
+      title="Verify it is you"
+      subtitle={`Your role requires a second factor. We have sent a ${CODE_LENGTH}-digit code to your registered email.`}
+      assurances={[
+        "A second factor is required for privileged roles",
+        "Codes expire after ten minutes",
+        "Requesting a new code invalidates the previous one",
+      ]}
+      footer={
+        <p className="text-center text-xs text-text-subtle">
+          If you did not try to sign in, tell the Privacy Office.
+        </p>
+      }
+    >
+      {/* useSearchParams() forces client-side rendering, so Next requires a
+          suspense boundary around anything that reads it. Without this the
+          whole page bails out of prerendering. */}
+      <React.Suspense fallback={<FormSkeleton />}>
+        <VerifyForm />
+      </React.Suspense>
+    </AuthLayout>
+  );
+}
+
+function FormSkeleton() {
+  return (
+    <div className="space-y-4" aria-hidden="true">
+      <div className="shimmer h-20 rounded-lg" />
+      <div className="shimmer h-10 rounded-lg" />
+    </div>
+  );
+}
+
+function VerifyForm() {
   const router = useRouter();
+  const params = useSearchParams();
   const { refresh } = useAuth();
   const hydrated = useHydrated();
+
+  // Carried over from the sign-in page, and attacker-controlled all the same:
+  // the URL may have been crafted. Only a same-origin path is honoured, and an
+  // absent one means the dashboard.
+  const next = safeRedirectPath(params.get("next"), "");
+  const destination = next || "/dashboard";
+  const signInHref = next ? `/sign-in?next=${encodeURIComponent(next)}` : "/sign-in";
 
   const [code, setCode] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
@@ -38,7 +86,7 @@ export default function VerifyPage() {
     try {
       await verifyMfa({ code });
       await refresh();
-      router.replace("/dashboard");
+      router.replace(destination);
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.userMessage());
@@ -49,8 +97,9 @@ export default function VerifyPage() {
           setCode("");
         }
         if (err.isAuthError && !err.needsMfa) {
-          // The partial session expired - back to the start.
-          router.replace("/sign-in");
+          // The partial session expired - back to the start, still bound for
+          // the same page.
+          router.replace(signInHref);
         }
       } else {
         setError("Could not reach the server.");
@@ -75,20 +124,7 @@ export default function VerifyPage() {
   }
 
   return (
-    <AuthLayout
-      title="Verify it is you"
-      subtitle={`Your role requires a second factor. We have sent a ${CODE_LENGTH}-digit code to your registered email.`}
-      assurances={[
-        "A second factor is required for privileged roles",
-        "Codes expire after ten minutes",
-        "Requesting a new code invalidates the previous one",
-      ]}
-      footer={
-        <p className="text-center text-xs text-text-subtle">
-          If you did not try to sign in, tell the Privacy Office.
-        </p>
-      }
-    >
+    <>
       <form method="post" onSubmit={verify} className="space-y-4" noValidate>
         {error && <Alert tone="danger">{error}</Alert>}
         {notice && <Alert tone="info">{notice}</Alert>}
@@ -98,12 +134,14 @@ export default function VerifyPage() {
             <Input
               {...props}
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH))}
+              onChange={(e) =>
+                setCode(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH))
+              }
               inputMode="numeric"
               autoComplete="one-time-code"
               placeholder="000000"
               autoFocus
-              className="h-14 text-center font-mono text-2xl tracking-[0.5em] indent-[0.5em]"
+              className="h-14 text-center indent-[0.5em] font-mono text-2xl tracking-[0.5em]"
             />
           )}
         </Field>
@@ -132,12 +170,12 @@ export default function VerifyPage() {
           {resending ? "Sending…" : "Send a new code"}
         </button>
         <a
-          href="/sign-in"
+          href={signInHref}
           className="text-text-subtle underline underline-offset-2 hover:text-text-muted"
         >
           Start over
         </a>
       </div>
-    </AuthLayout>
+    </>
   );
 }

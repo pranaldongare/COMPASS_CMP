@@ -92,17 +92,23 @@ function StaffForm() {
     try {
       const result = await signInWithPassword(values);
 
+      // `next` is attacker-controlled - it is whatever was in the link that
+      // sent them here. Anything not a same-origin path is dropped, and an
+      // absent one means the dashboard.
+      const next = safeRedirectPath(params.get("next"), "");
+
       if (result.mfa_required) {
         // The partial session is already set as a cookie. The verify screen is
-        // the only thing it unlocks.
-        router.push("/sign-in/verify");
+        // the only thing it unlocks - and it must carry the destination, or
+        // every staff sign-in ends on the dashboard whatever link began it.
+        router.push(
+          next ? `/sign-in/verify?next=${encodeURIComponent(next)}` : "/sign-in/verify",
+        );
         return;
       }
 
       await refresh();
-      // `next` is attacker-controlled - it is whatever was in the link that
-      // sent them here. Anything not a same-origin path becomes the dashboard.
-      router.replace(safeRedirectPath(params.get("next"), "/dashboard"));
+      router.replace(next || "/dashboard");
     } catch (error) {
       if (error instanceof ApiError) {
         // Field errors go on the field; everything else goes in the banner.
@@ -140,15 +146,14 @@ function StaffForm() {
     // With POST the unhydrated case is a POST to a page route, which fails
     // visibly and puts nothing in the URL. Observed, not theorised: this
     // happened on a first page load in development.
-    <form
-      method="post"
-      onSubmit={onSubmit}
-      className="space-y-4"
-      noValidate
-    >
+    <form method="post" onSubmit={onSubmit} className="space-y-4" noValidate>
       {formError && <Alert tone="danger">{formError}</Alert>}
 
-      <Field label="Email or username" error={form.formState.errors.login?.message} required>
+      <Field
+        label="Email or username"
+        error={form.formState.errors.login?.message}
+        required
+      >
         {(props) => (
           <Input
             {...props}

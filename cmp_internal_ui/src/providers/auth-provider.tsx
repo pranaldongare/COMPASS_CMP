@@ -151,7 +151,9 @@ export function RequireAuth({
   React.useEffect(() => {
     if (!isResolved) return;
     if (needsMfa) {
-      router.replace("/sign-in/verify");
+      // The password was accepted and the code is outstanding. Carry the page
+      // they opened, exactly as the signed-out branch below does.
+      router.replace(`/sign-in/verify?next=${encodeURIComponent(pathname)}`);
       return;
     }
     if (!me) {
@@ -169,8 +171,8 @@ export function RequireAuth({
       <div className="mx-auto max-w-lg px-6 py-16 text-center">
         <h1 className="text-lg font-semibold">This console is for staff</h1>
         <p className="mt-2 text-sm text-text-muted">
-          You are signed in as {me.full_name}. Your consents, your requests and
-          your rights are on the consent portal.
+          You are signed in as {me.full_name}. Your consents, your requests and your rights
+          are on the consent portal.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <a
@@ -196,8 +198,8 @@ export function RequireAuth({
       <div className="mx-auto max-w-lg px-6 py-16 text-center">
         <h1 className="text-lg font-semibold">Not available to your role</h1>
         <p className="mt-2 text-sm text-text-muted">
-          You are signed in as {me.full_name}. This area is restricted, and the
-          attempt has been recorded in the audit trail.
+          You are signed in as {me.full_name}. This area is restricted, and the attempt has
+          been recorded in the audit trail.
         </p>
       </div>
     );

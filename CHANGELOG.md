@@ -20,6 +20,9 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Fixed
+- Staff who sign in from a link land on the page it named: the console now
+  carries the destination through the second-factor step, which dropped it
+  and opened the dashboard after every code.
 - Two first consents for the same person and notice can no longer both
   become roots: capture serialises per pair and migration 0023 adds the
   database's own unique index.

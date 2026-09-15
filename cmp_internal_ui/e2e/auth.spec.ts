@@ -79,7 +79,10 @@ test.describe("security headers", () => {
     expect(a).not.toBe(b);
   });
 
-  test("every inline script in the served HTML carries the nonce", async ({ page, request }) => {
+  test("every inline script in the served HTML carries the nonce", async ({
+    page,
+    request,
+  }) => {
     // Asserted against the *served markup*, not the live DOM, and the reason is
     // a browser behaviour that is easy to mistake for a bug: after parsing,
     // browsers blank the `nonce` content attribute and keep the value only on
@@ -161,7 +164,9 @@ test.describe("route protection", () => {
     }
   });
 
-  test("a forged `next` cannot send somebody off-origin after sign-in", async ({ page }) => {
+  test("a forged `next` cannot send somebody off-origin after sign-in", async ({
+    page,
+  }) => {
     // The open redirect: a link that starts on this origin, shows this
     // organisation's sign-in page, and lands the user elsewhere with their
     // trust already established.
@@ -199,7 +204,10 @@ test.describe("session cookie", () => {
     expect(session!.sameSite).toBe("Lax");
   });
 
-  test("the CSRF cookie is readable, and the session one is not", async ({ page, context }) => {
+  test("the CSRF cookie is readable, and the session one is not", async ({
+    page,
+    context,
+  }) => {
     // The double-submit pattern needs exactly this asymmetry: the client reads
     // the CSRF token to echo it in a header, and cannot read the session.
     await signIn(page);
@@ -221,7 +229,10 @@ test.describe("session cookie", () => {
     // Sign out is a button in the sidebar, not an item behind an account menu.
     // Worth stating because the reverse is the more common pattern and this test
     // originally assumed it.
-    await page.getByRole("button", { name: /^sign out$/i }).first().click();
+    await page
+      .getByRole("button", { name: /^sign out$/i })
+      .first()
+      .click();
     await expect(page).toHaveURL(/\/sign-in/, { timeout: 10_000 });
 
     // Not just cleared client-side: going back to a protected route has to
@@ -237,10 +248,25 @@ test.describe("session cookie", () => {
     await page.goto("/purposes");
     await expect(page).toHaveURL(/\/sign-in\?next=/);
 
+    const before = latestCodeFor(LOGIN!);
     await page.getByLabel(/email or username/i).fill(LOGIN!);
     await page.getByLabel(/^password/i).fill(PASSWORD!);
     await page.getByRole("button", { name: /^sign in$/i }).click();
 
-    await expect(page).toHaveURL(/\/purposes/, { timeout: 15_000 });
+    // The second factor is where the destination used to be lost: the code
+    // step must carry it, and honour it once the code is accepted.
+    // Matched on the path: the sign-in URL itself carries "%2Fpurposes", so a
+    // substring match would fire before the app has moved anywhere.
+    await page.waitForURL(
+      (url) => url.pathname === "/sign-in/verify" || url.pathname === "/purposes",
+      { timeout: 20_000 },
+    );
+    if (new URL(page.url()).pathname === "/sign-in/verify") {
+      await expect(page).toHaveURL(/\/sign-in\/verify\?next=/);
+      await page.getByLabel(/digit code/i).fill(await freshCode(LOGIN!, before));
+      await page.getByRole("button", { name: /verify and continue/i }).click();
+    }
+
+    await expect(page).toHaveURL(/\/purposes(?:[?#]|$)/, { timeout: 15_000 });
   });
 });
