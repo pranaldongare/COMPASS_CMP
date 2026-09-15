@@ -50,7 +50,9 @@ export function latestCodeFor(recipient: string): string | null {
       const code =
         /code is (\d{6})/.exec(line) ??
         /^\s*(\d{6})\s*$/.exec(line) ??
-        /^(?:subject: )?(\d{6}) (?:is your|confirms|signs)/.exec(line);
+        // ...allowing the organisation's name in front of the code, which is
+        // how every SMS opens ("COMPASS: 123456 confirms...").
+        /^(?:subject: )?(?:[^:\n]{1,60}: )?(\d{6}) (?:is your|confirms|signs)/.exec(line);
       if (code && current?.toLowerCase() === recipient.toLowerCase()) found = code[1];
     }
     if (!found) {
