@@ -69,6 +69,9 @@ uv run python -m cmp --port 8000
 uv run celery -A cmp.tasks.app worker -Q high_priority,email,documents,reports,notifications,default -l info --pool=solo
 uv run celery -A cmp.tasks.app beat -l info
 
+# what the workers are doing, optional
+uv run celery -A cmp.tasks.app:celery_app flower --address=127.0.0.1 --port=5555 --basic-auth=you:a-password
+
 # the two portals
 cd ../cmp_internal_ui && cp .env.example .env.local && npm install && npm run dev    # http://localhost:3000
 cd ../cmp_public_ui   && cp .env.example .env.local && npm install && npm run dev    # http://localhost:3001

@@ -51,6 +51,11 @@ dependencies = [
 dev = [
     "anyio>=4.11",
     "faker>=38.0",
+    # The task monitor. A development and operations tool, never imported by
+    # the application, so it sits here rather than in `dependencies` and stays
+    # out of the runtime image - where it would be a web server nobody asked
+    # for. Deployments run it from its own container; see docker-compose.yml.
+    "flower>=2.0.1,<3",
     "mypy>=1.19",
     "pip-audit>=2.9",
     "pre-commit>=4.4",

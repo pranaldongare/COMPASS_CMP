@@ -6,6 +6,7 @@ name: cmp
 #   docker compose up -d db redis        # infrastructure only, for `uv run` dev
 #   docker compose up -d                 # the whole stack behind nginx
 #   docker compose run --rm api alembic upgrade head
+#   docker compose --profile monitoring up -d flower   # the task monitor
 
 x-api-env: &api-env
   ENVIRONMENT: ${ENVIRONMENT:-local}
@@ -174,6 +175,65 @@ services:
     deploy:
       replicas: 1
     restart: unless-stopped
+
+  # Celery's own task events, rendered: which tasks ran, on which queue, how
+  # long they took, which failed and what they raised.
+  #
+  # Opt-in behind a profile, like nginx, because it is an operator's tool rather
+  # than part of the platform:
+  #
+  #     FLOWER_BASIC_AUTH=you:a-real-password \
+  #       docker compose --profile monitoring up -d flower
+  #
+  # It reads the broker. It does not need the application image, the database or
+  # any of the platform's secrets, and giving it none of them is deliberate.
+  #
+  # What it *can* do is revoke and terminate running tasks, which is why the
+  # password has no default and the port is bound to the loopback. Flower has no
+  # notion of roles: everyone who reaches it can do everything it can do, so
+  # putting it on a routable address means putting your own proxy and your own
+  # authentication in front of it first.
+  #
+  # Task arguments do not appear here. `cmp.tasks.dispatch` withholds them from
+  # the events, because the arguments are one-time codes and personal contacts
+  # and this page has none of the controls the rest of the platform has.
+  flower:
+    image: mher/flower:2.0.1
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      # Empty by default, and the command below refuses to start on an empty
+      # one. Compose's own `:?` would have been the obvious way to require it,
+      # and it is wrong here: interpolation runs over the whole file, so a
+      # missing password would break `docker compose up -d db redis` for
+      # everybody, including the people not running this service.
+      FLOWER_BASIC_AUTH: ${FLOWER_BASIC_AUTH:-}
+      FLOWER_PURGE_OFFLINE_WORKERS: "300"
+    # The refusal lives here so it fires when somebody starts *this* service,
+    # and nowhere else.
+    command:
+      - sh
+      - -c
+      - |
+        if [ -z "$$FLOWER_BASIC_AUTH" ]; then
+          echo "Refusing to start: set FLOWER_BASIC_AUTH=user:password." >&2
+          echo "Flower can revoke and terminate tasks, and has no roles - whoever" >&2
+          echo "reaches it can do everything it can do." >&2
+          exit 1
+        fi
+        exec celery flower
+    ports:
+      - "127.0.0.1:${FLOWER_PORT:-5555}:5555"
+    depends_on:
+      redis: *healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5555/healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    profiles: ["monitoring"]
 
   nginx:
     image: nginx:1.27-alpine

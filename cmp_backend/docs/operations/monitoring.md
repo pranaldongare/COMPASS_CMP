@@ -36,10 +36,63 @@ handlers are excluded, which is what keeps a consent token out of a metric label
 — an unbounded label set is both a memory leak and a credential in a scrape
 endpoint.
 
+## The task monitor
+
+Celery publishes an event for every task sent, received, started and finished.
+**Flower** renders them: which tasks ran, on which queue, how long they took,
+which failed and what they raised, and which workers are alive with what they
+are working on now.
+
+Locally, against the worker already running:
+
+```bash
+cd cmp_backend
+uv run celery -A cmp.tasks.app:celery_app flower \
+  --address=127.0.0.1 --port=5555 --basic-auth=you:a-real-password
+```
+
+As a container, alongside the rest of the stack:
+
+```bash
+FLOWER_BASIC_AUTH=you:a-real-password \
+  docker compose -f docker/docker-compose.yml --profile monitoring up -d flower
+```
+
+It is behind a profile, so it does not start with `docker compose up -d`. The
+password has no default and the service refuses to start without one, because
+Flower can revoke and terminate running tasks and has no notion of roles:
+everybody who reaches it can do everything it can do. The port is bound to the
+loopback for the same reason. Putting it on a routable address means putting
+your own proxy and your own authentication in front of it first.
+
+`FLOWER_BASIC_AUTH` is read by Docker Compose, not by the application, so it
+belongs in the shell or in `docker/.env` — **not** in `cmp_backend/.env`, which
+refuses to load an unknown key ([configuration.md](configuration.md)).
+
+### Task arguments do not appear in it
+
+`cmp.tasks.dispatch` replaces the repr Celery puts in those events with the
+number of arguments and nothing else, so Flower shows `(3 argument(s)
+withheld)`. The arguments are one-time codes, mobile numbers and email
+addresses — `send_login_code(uuid, contact, code)` is a live credential and a
+personal contact — and the event stream has none of the controls the rest of
+the platform has.
+
+The worker still receives the real arguments; it has to, in order to run the
+task. What is withheld is what is *said about* the message to everything
+listening. `tests/unit/tasks/test_dispatch_redaction.py` holds both halves,
+because a redaction that reached the message body would be a sign-in code
+nobody could send.
+
+To trace one task, take its `request_id` from Flower's headers and search the
+API log for it: the structured log has the rest, behind the controls that log
+already has.
+
 ## What is deliberately not logged
 
-Passwords, one-time codes, session tokens, consent link tokens, and the contents
-of a data asset. The access log scrubs `/c/{token}` to `/c/[token]`, because a
+Passwords, one-time codes, session tokens, consent link tokens, the contents
+of a data asset, and the arguments of a Celery task — which carry the first two
+of those (see the task monitor, above). The access log scrubs `/c/{token}` to `/c/[token]`, because a
 link in a log file is a credential in a file that gets shipped to an aggregator
 and read by people who were never meant to hold it.
 

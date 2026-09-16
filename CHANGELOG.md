@@ -8,6 +8,11 @@ as a release yet.
 ## [Unreleased]
 
 ### Security
+- Task arguments are withheld from Celery's task events. Celery puts a repr of
+  every argument into `task-sent` and `task-received`, and anything reading
+  those events renders it - the arguments here are one-time codes and personal
+  contacts. The events now carry the number of arguments and nothing else,
+  while the worker still receives the real ones.
 - One-time code verification is atomic: the check, the consumption and the
   attempt count are one Redis script, so two requests carrying the same code
   cannot both succeed.
@@ -58,6 +63,12 @@ as a release yet.
   and test instead of reporting delivery.
 
 ### Added
+- **Flower, for watching the task queues.** Which tasks ran, on which queue, how
+  long they took, which failed and what they raised. Behind a compose profile
+  (`--profile monitoring`) and in the dev dependency group, so it is never in
+  the runtime image; bound to the loopback and refusing to start without
+  `FLOWER_BASIC_AUTH`, because it can revoke and terminate tasks and has no
+  roles ([monitoring.md](cmp_backend/docs/operations/monitoring.md)).
 - **A provisioned staff account now invites its owner.** Creating one sends
   `staff_invitation` to the address on the account: their role in words, a
   link to the reset page with the address filled in, and a code that lasts

@@ -43,10 +43,37 @@ def _headers() -> dict[str, Any]:
     return {"request_id": current_context().request_id}
 
 
+def _withheld(args: tuple[Any, ...], kwargs: dict[str, Any]) -> dict[str, str]:
+    """What a monitoring tool is allowed to see of a task's arguments: nothing.
+
+    Celery puts a repr of every argument into the `task-sent` and `task-received`
+    events, and anything reading those events renders it - Flower shows args and
+    kwargs on the task page, verbatim. The arguments here are one-time codes,
+    mobile numbers and email addresses: `send_login_code(uuid, contact, code)` is
+    a live credential and a personal contact, published to a stream with no
+    access control in front of it and kept for as long as the events are.
+
+    So the events carry the shape and not the values. Nothing is lost that was
+    worth having: the task name says what ran, the `request_id` header ties it to
+    the request that queued it, and the API's own structured log holds the rest
+    behind the controls that log already has.
+
+    Note this does not redact the *message* - the worker still receives the real
+    arguments, because it has to run the task. It redacts what is broadcast about
+    the message.
+    """
+    return {
+        "argsrepr": f"({len(args)} argument(s) withheld)",
+        "kwargsrepr": f"({len(kwargs)} keyword argument(s) withheld)",
+    }
+
+
 def dispatch_required(task: Any, *args: Any, **kwargs: Any) -> str | None:
     """Queue work the caller cannot succeed without."""
     try:
-        result = task.apply_async(args=args, kwargs=kwargs, headers=_headers())
+        result = task.apply_async(
+            args=args, kwargs=kwargs, headers=_headers(), **_withheld(args, kwargs)
+        )
     except Exception as exc:
         log.error("task.dispatch_failed", task=task.name, required=True, error=str(exc))
         raise ServiceUnavailable(
@@ -60,7 +87,9 @@ def _queue_optional(
     task: Any, args: tuple[Any, ...], kwargs: dict[str, Any], headers: dict[str, Any]
 ) -> str | None:
     try:
-        result = task.apply_async(args=args, kwargs=kwargs, headers=headers)
+        result = task.apply_async(
+            args=args, kwargs=kwargs, headers=headers, **_withheld(args, kwargs)
+        )
     except Exception as exc:
         # Logged at error, not warning: somebody expected a message and will not
         # get one, and that needs to reach an alert rather than a debug session.
