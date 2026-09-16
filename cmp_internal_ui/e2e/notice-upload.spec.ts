@@ -13,8 +13,26 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
+import path from "node:path";
+
 import { expectNoSidewaysScroll } from "./support/layout";
 import { statePath } from "./support/session";
+
+/**
+ * A document that is known to parse, kept with the backend's own tests.
+ *
+ * Shared rather than copied: two fixtures drift, and the day they disagree the
+ * browser suite passes on a document the parser would reject.
+ */
+const FILLED_TEMPLATE = path.join(
+  __dirname,
+  "..",
+  "..",
+  "cmp_backend",
+  "tests",
+  "fixtures",
+  "notice_filled.docx",
+);
 
 test.describe.configure({ mode: "serial" });
 
@@ -31,10 +49,14 @@ test.describe.configure({ mode: "serial" });
 async function ensureDraftProject(page: Page) {
   await page.goto("/projects?status=in_draft");
   const links = page.locator('a[href^="/projects/"]');
-  await links.first().waitFor({ state: "attached", timeout: 5_000 }).catch(() => {});
+  await links
+    .first()
+    .waitFor({ state: "attached", timeout: 5_000 })
+    .catch(() => {});
   if ((await links.count()) > 0) return;
 
-  const csrf = (await page.context().cookies()).find((c) => c.name === "cmp_csrf")?.value ?? "";
+  const csrf =
+    (await page.context().cookies()).find((c) => c.name === "cmp_csrf")?.value ?? "";
   const processors = await page.request.get("/api/processors");
   expect(processors.ok(), "the R&D user can list processors").toBeTruthy();
   const { items } = (await processors.json()) as { items: { processor_uuid: string }[] };
@@ -53,7 +75,9 @@ async function ensureDraftProject(page: Page) {
 test.describe("R&D User", () => {
   test.use({ storageState: statePath("rnd") });
 
-  test("can reach the notice upload from a draft project's notices card", async ({ page }) => {
+  test("can reach the notice upload from a draft project's notices card", async ({
+    page,
+  }) => {
     await ensureDraftProject(page);
 
     // Selected by where the link goes, not by its text. Matching on a name like
@@ -89,7 +113,52 @@ test.describe("R&D User", () => {
 
     // The check cannot run before a file is chosen, and the import cannot run
     // before the check — the ordering is the point of the two-step flow.
-    await expect(dialog.getByRole("button", { name: /check the document/i })).toBeDisabled();
+    await expect(
+      dialog.getByRole("button", { name: /check the document/i }),
+    ).toBeDisabled();
     await expect(dialog.getByRole("button", { name: /create the notice/i })).toBeDisabled();
+  });
+
+  /**
+   * A real .docx, chosen in a real file picker, reaching the parser.
+   *
+   * Everything above this stops at the dialog opening, and everything in the
+   * backend suite stops at the service — so the multipart hop between them was
+   * the one part of the journey nothing covered. That hop is where an upload
+   * quietly breaks: a client that sets its own Content-Type loses the boundary,
+   * and the file arrives as something the parser reads as "not a .docx".
+   *
+   * Only the check step runs. It is a dry run that writes nothing, so this can
+   * run as often as it likes without leaving notices behind.
+   */
+  test("a filled-in .docx passes the check", async ({ page }) => {
+    await ensureDraftProject(page);
+    await page.locator('a[href^="/projects/"]').first().click();
+    await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}/, { timeout: 15_000 });
+
+    await page
+      .getByRole("button", { name: /upload a notice document/i })
+      .last()
+      .click();
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+
+    await dialog.locator('input[type="file"]').setInputFiles(FILLED_TEMPLATE);
+
+    const check = dialog.getByRole("button", { name: /check the document/i });
+    await expect(check).toBeEnabled();
+    await check.click();
+
+    // The import button unlocks only once the server has answered with a report,
+    // so it enabling is the whole round trip: file chosen, posted, parsed,
+    // understood. Asserted instead of the report's text, which is the parser's
+    // output rather than the upload's.
+    await expect(
+      dialog.getByRole("button", { name: /create the notice|replace the draft/i }),
+    ).toBeEnabled({
+      timeout: 20_000,
+    });
+    await expect(dialog.getByText(/not a \.docx|could not be read/i)).toHaveCount(0);
   });
 });
