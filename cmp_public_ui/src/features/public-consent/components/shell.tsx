@@ -26,7 +26,7 @@ export function Shell({
           is plain, high-contrast reading material: this is a legal notice, and
           it should not look like a marketing page. */}
       <header className="brand-gradient relative overflow-hidden">
-        <SignalField className="absolute -right-16 -top-24 h-64 w-64 text-white/40" />
+        <SignalField className="absolute -top-24 -right-16 h-64 w-64 text-white/40" />
         <div className="relative mx-auto flex max-w-2xl items-center gap-3 px-4 py-5">
           <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/15 ring-1 ring-white/25">
             <BrandMark className="size-6 text-white" />

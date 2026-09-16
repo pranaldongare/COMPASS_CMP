@@ -2,8 +2,13 @@
  * The public consent flow.
  *
  * This is the only screen a data principal is *required* to use, and the one
- * that has to be right. Four steps: validate the link, register, confirm the
- * contact, read the notice and choose.
+ * that has to be right. Four steps: validate the link, identify herself by one
+ * contact, confirm it with a code, read the notice and choose.
+ *
+ * The link authenticates; it does not enrol. Somebody without an account is
+ * sent to sign up and returns here, so that every artefact this screen writes
+ * belongs to a data principal who can find it, read it and withdraw it later -
+ * rather than to a set of details typed once at a collection site.
  *
  * This file holds the state machine and nothing else — which step is current,
  * what the link resolved to, which notice was served. Each step owns its own
@@ -31,7 +36,7 @@ import { getLink, serveNotice } from "@/features/public-consent/api";
 import {
   DoneStep,
   NoticeStep,
-  RegisterStep,
+  IdentifyStep,
   Shell,
   Steps,
   VerifyStep,
@@ -45,10 +50,12 @@ export default function ConsentPage() {
 
   const [step, setStep] = React.useState<Step>("loading");
   const [link, setLink] = React.useState<LinkView | null>(null);
-  const [contacts, setContacts] = React.useState<string[]>([]);
+  const [contact, setContact] = React.useState("");
   const [language, setLanguage] = React.useState<LanguageCode>("english");
   const [notice, setNotice] = React.useState<ServedNotice | null>(null);
-  const [receipt, setReceipt] = React.useState<{ uuid: string; declined: boolean } | null>(null);
+  const [receipt, setReceipt] = React.useState<{ uuid: string; declined: boolean } | null>(
+    null,
+  );
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -58,7 +65,7 @@ export default function ConsentPage() {
         if (cancelled) return;
         setLink(data);
         setLanguage(data.available_languages[0] ?? "english");
-        setStep("register");
+        setStep("identify");
       })
       .catch(() => {
         if (!cancelled) setStep("invalid");
@@ -107,8 +114,8 @@ export default function ConsentPage() {
             <AlertCircle className="mx-auto size-8 text-text-subtle" aria-hidden="true" />
             <h1 className="mt-4 text-lg font-semibold">This link is not valid</h1>
             <p className="mx-auto mt-2 max-w-sm text-sm text-text-muted">
-              It may have expired, been withdrawn, or been mistyped. Please ask the person who
-              gave it to you for a current one.
+              It may have expired, been withdrawn, or been mistyped. Please ask the person
+              who gave it to you for a current one.
             </p>
             <p className="mt-6 text-xs text-text-subtle">
               <a href="/rights" className="underline underline-offset-2">
@@ -131,11 +138,11 @@ export default function ConsentPage() {
 
       <Steps current={step} />
 
-      {step === "register" && (
-        <RegisterStep
+      {step === "identify" && (
+        <IdentifyStep
           token={token}
           onDone={(given) => {
-            setContacts(given);
+            setContact(given);
             setError(null);
             setStep("verify");
           }}
@@ -146,14 +153,16 @@ export default function ConsentPage() {
       {step === "verify" && (
         <VerifyStep
           token={token}
-          contacts={contacts}
+          contact={contact}
           onDone={async () => {
             setError(null);
             try {
               await serve(language);
               setStep("notice");
             } catch (err) {
-              setError(err instanceof ApiError ? err.userMessage() : "Could not load the notice.");
+              setError(
+                err instanceof ApiError ? err.userMessage() : "Could not load the notice.",
+              );
             }
           }}
           onError={setError}

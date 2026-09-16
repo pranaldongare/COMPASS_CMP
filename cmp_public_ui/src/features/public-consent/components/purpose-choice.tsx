@@ -55,12 +55,16 @@ export function PurposeChoice({
         </div>
       </dl>
 
-      <div className="mt-3 flex gap-2" role="radiogroup" aria-label={`Your choice for ${purpose.name}`}>
+      <div
+        className="mt-3 flex gap-2"
+        role="radiogroup"
+        aria-label={`Your choice for ${purpose.name}`}
+      >
         <label
           className={[
             "flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm",
             value === true
-              ? "border-success-border bg-success-subtle text-success-text font-medium"
+              ? "border-success-border bg-success-subtle font-medium text-success-text"
               : "border-border hover:bg-surface-hover",
           ].join(" ")}
         >
@@ -78,7 +82,7 @@ export function PurposeChoice({
           className={[
             "flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm",
             value === false
-              ? "border-border-strong bg-bg-inset text-text font-medium"
+              ? "border-border-strong bg-bg-inset font-medium text-text"
               : "border-border hover:bg-surface-hover",
             purpose.is_mandatory ? "cursor-not-allowed opacity-50" : "",
           ].join(" ")}

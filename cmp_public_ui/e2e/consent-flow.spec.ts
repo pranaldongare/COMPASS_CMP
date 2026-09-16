@@ -71,20 +71,60 @@ test.describe("consent journey", () => {
   // which produces failures that look like application bugs and are not.
   test.describe.configure({ mode: "serial" });
 
-  test("walks registration through to the notice", async ({ page }) => {
+  test("asks for one contact, mobile by default, and never for a name", async ({
+    page,
+  }) => {
     await page.goto(`/c/${TOKEN}`);
 
     // Step 1: the link resolves and names the project and site.
     await expect(page.getByText(/your details/i).first()).toBeVisible();
 
-    const { email, mobile } = freshContact();
-    await page.getByLabel(/full name/i).fill("E2E Test Subject");
-    await page.getByLabel(/^mobile/i).fill(mobile);
-    await page.getByLabel(/^email/i).fill(email);
-    await page.getByRole("button", { name: /continue/i }).click();
+    // The mobile is the default because a collection site is a place people
+    // stand with a phone - and because a data principal may hold a mobile and
+    // no email at all, which the register allows.
+    await expect(page.getByRole("radio", { name: /^mobile$/i })).toBeChecked();
+    await expect(page.getByLabel(/mobile number/i)).toBeVisible();
 
-    // Step 2: a confirmation code is requested. We cannot read the mailbox from
-    // here, so the assertion is that the flow advanced and is asking for one.
+    // A name is not asked for. The artefact is bound to an account that already
+    // carries one, and asking again would be collecting personal data with no
+    // purpose - the thing this system exists to prevent.
+    await expect(page.getByLabel(/full name/i)).toHaveCount(0);
+
+    // Email is the alternative, not a second field to fill in as well.
+    await page.getByRole("radio", { name: /^email$/i }).check();
+    await expect(page.getByLabel(/email address/i)).toBeVisible();
+    await expect(page.getByLabel(/mobile number/i)).toHaveCount(0);
+  });
+
+  test("offers a way to create an account that comes back here", async ({ page }) => {
+    // Somebody without an account has to be able to get one without losing the
+    // link: at a collection site, finding it again means asking a member of
+    // staff to re-open it.
+    await page.goto(`/c/${TOKEN}`);
+
+    const create = page.getByRole("link", { name: /create one/i });
+    await expect(create).toBeVisible();
+    await expect(create).toHaveAttribute(
+      "href",
+      new RegExp(
+        `/sign-up\\?next=${encodeURIComponent(`/c/${TOKEN}`).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`,
+      ),
+    );
+  });
+
+  test("advances to the code step without saying whether the contact is known", async ({
+    page,
+  }) => {
+    await page.goto(`/c/${TOKEN}`);
+
+    // A number nobody has registered. The server sends nothing and answers the
+    // same as it would for a real one, so the screen must advance identically -
+    // a flow that stopped here would answer "is this number on the register?"
+    // to anybody who typed one in.
+    const { mobile } = freshContact();
+    await page.getByLabel(/mobile number/i).fill(mobile);
+    await page.getByRole("button", { name: /send the code/i }).click();
+
     await expect(page.getByText(/confirm your mobile/i)).toBeVisible();
     await expect(page.getByLabel(/six-digit code/i)).toBeVisible();
   });
@@ -92,14 +132,12 @@ test.describe("consent journey", () => {
   test("a wrong code is refused without advancing", async ({ page }) => {
     await page.goto(`/c/${TOKEN}`);
 
-    const { email, mobile } = freshContact();
-    await page.getByLabel(/full name/i).fill("E2E Test Subject");
-    await page.getByLabel(/^mobile/i).fill(mobile);
-    await page.getByLabel(/^email/i).fill(email);
-    await page.getByRole("button", { name: /continue/i }).click();
+    const { mobile } = freshContact();
+    await page.getByLabel(/mobile number/i).fill(mobile);
+    await page.getByRole("button", { name: /send the code/i }).click();
 
     await page.getByLabel(/six-digit code/i).fill("000000");
-    await page.getByRole("button", { name: /confirm and continue/i }).click();
+    await page.getByRole("button", { name: /confirm and read the notice/i }).click();
 
     // Scoped to main: Next appends its own role="alert" route announcer to the
     // body, so an unscoped getByRole("alert") matches two elements and fails
@@ -123,7 +161,12 @@ test.describe("sign-in", () => {
     // Two lockups exist - the brand panel's and the compact one - and which is
     // visible depends on the viewport. Filtering on visibility asserts "the user
     // can see the product name here" rather than which breakpoint drew it.
-    await expect(page.getByText(/consent portal/i).filter({ visible: true }).first()).toBeVisible();
+    await expect(
+      page
+        .getByText(/consent portal/i)
+        .filter({ visible: true })
+        .first(),
+    ).toBeVisible();
 
     // A data subject has no password - `password_hash` is nullable for exactly
     // that reason - so this portal must never ask for one. Staff have their

@@ -10,7 +10,7 @@
 
 import { Pipeline } from "@/components/ui/charts";
 
-export type Step = "loading" | "invalid" | "register" | "verify" | "notice" | "done";
+export type Step = "loading" | "invalid" | "identify" | "verify" | "notice" | "done";
 
 /**
  * Only the four steps a person walks. `loading` and `invalid` are states the
@@ -18,7 +18,7 @@ export type Step = "loading" | "invalid" | "register" | "verify" | "notice" | "d
  * would be a lie about the journey.
  */
 export const STEP_LABELS: Array<{ key: Step; label: string }> = [
-  { key: "register", label: "Your details" },
+  { key: "identify", label: "Your details" },
   { key: "verify", label: "Confirm" },
   { key: "notice", label: "The notice" },
   { key: "done", label: "Done" },

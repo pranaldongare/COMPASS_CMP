@@ -23,22 +23,19 @@ import { ApiError } from "@/lib/errors";
 
 export function VerifyStep({
   token,
-  contacts,
+  contact,
   onDone,
   onError,
 }: {
   token: string;
-  /** Every contact given at registration, mobile first. Each answers in turn. */
-  contacts: string[];
+  /** The one contact she chose, and the only one this flow asks about. */
+  contact: string;
   onDone: () => void;
   onError: (message: string | null) => void;
 }) {
-  const [index, setIndex] = React.useState(0);
   const [code, setCode] = React.useState("");
   const [busy, setBusy] = React.useState(false);
-  const contact = contacts[index] ?? contacts[0] ?? "";
   const isEmail = contact.includes("@");
-  const last = index >= contacts.length - 1;
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -48,10 +45,17 @@ export function VerifyStep({
       const result = await verifyOtp(token, { contact, code });
       if (result.complete) {
         await onDone();
-      } else {
-        setCode("");
-        setIndex((i) => i + 1);
+        return;
       }
+      // An account whose other medium has never answered a code. It cannot be
+      // finished from here - this flow knows one contact - and the honest
+      // answer is where it can be, rather than a second code box appearing on
+      // a consent form.
+      setCode("");
+      onError(
+        "Your account still has a contact to confirm. Sign in to the portal to finish " +
+          "that, then open this link again.",
+      );
     } catch (err) {
       onError(err instanceof ApiError ? err.userMessage() : "Verification failed.");
     } finally {
@@ -64,8 +68,8 @@ export function VerifyStep({
       <CardHeader>
         <CardTitle>{isEmail ? "Confirm your email" : "Confirm your mobile"}</CardTitle>
         <p className="mt-1 text-sm text-text-muted">
-          We have sent a six-digit code to <strong>{contact}</strong>. It expires in
-          ten minutes.
+          We have sent a six-digit code to <strong>{contact}</strong>. It expires in ten
+          minutes.
         </p>
       </CardHeader>
       <CardBody>
@@ -91,7 +95,7 @@ export function VerifyStep({
             loading={busy}
             disabled={code.length !== 6}
           >
-            {last ? "Confirm and read the notice" : "Confirm and continue"}
+            Confirm and read the notice
           </Button>
         </form>
       </CardBody>

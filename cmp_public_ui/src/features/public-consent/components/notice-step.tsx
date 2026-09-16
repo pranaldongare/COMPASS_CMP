@@ -73,7 +73,9 @@ export function NoticeStep({
     const payload =
       decision === "decline"
         ? Object.fromEntries(purposes.map((p) => [p.purpose_uuid, false]))
-        : Object.fromEntries(purposes.map((p) => [p.purpose_uuid, grants[p.purpose_uuid] ?? false]));
+        : Object.fromEntries(
+            purposes.map((p) => [p.purpose_uuid, grants[p.purpose_uuid] ?? false]),
+          );
 
     try {
       const result = await recordConsent(token, {
@@ -122,7 +124,7 @@ export function NoticeStep({
           </CardTitle>
         </CardHeader>
         <CardBody>
-          <div className="whitespace-pre-wrap text-sm leading-relaxed text-text">
+          <div className="text-sm leading-relaxed whitespace-pre-wrap text-text">
             {notice.rendered_text}
           </div>
 
@@ -169,8 +171,8 @@ export function NoticeStep({
         <CardHeader>
           <CardTitle>What are you agreeing to?</CardTitle>
           <p className="mt-1 text-sm text-text-muted">
-            Choose for each purpose separately. You can say yes to some and no to
-            others, and you can change your mind at any time.
+            Choose for each purpose separately. You can say yes to some and no to others,
+            and you can change your mind at any time.
           </p>
         </CardHeader>
         <CardBody className="space-y-3">

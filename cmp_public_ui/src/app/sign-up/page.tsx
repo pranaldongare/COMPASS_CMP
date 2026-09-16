@@ -15,7 +15,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ShieldCheck, UserPlus } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -24,6 +24,7 @@ import { AuthLayout } from "@/components/layout/auth-layout";
 import { Alert, Button, Field, Input } from "@/components/ui/primitives";
 import { register as registerAccount, registerVerify } from "@/features/auth";
 import { ApiError } from "@/lib/errors";
+import { safeRedirectPath } from "@/lib/security";
 import { useAuth } from "@/providers";
 import { email, mobile } from "@/schemas/contacts";
 
@@ -45,11 +46,16 @@ const schema = z.object({
 type Values = z.infer<typeof schema>;
 
 export default function SignUpPage() {
-  const [given, setGiven] = React.useState<{ mobile: string; email: string | null } | null>(null);
+  const [given, setGiven] = React.useState<{ mobile: string; email: string | null } | null>(
+    null,
+  );
   const [error, setError] = React.useState<string | null>(null);
   // A contact that already belongs to an account. The message goes on that
   // field so it can be changed, and sign-in is offered with it filled in.
-  const [taken, setTaken] = React.useState<{ field: "mobile" | "email"; value: string } | null>(null);
+  const [taken, setTaken] = React.useState<{
+    field: "mobile" | "email";
+    value: string;
+  } | null>(null);
 
   const form = useForm<Values>({
     resolver: zodResolver(schema),
@@ -71,7 +77,10 @@ export default function SignUpPage() {
       if (caught instanceof ApiError && caught.code === "contact_taken") {
         const field = caught.field === "email" ? "email" : "mobile";
         form.setError(field, { message: caught.userMessage() });
-        setTaken({ field, value: field === "email" ? (values.email ?? "") : values.mobile });
+        setTaken({
+          field,
+          value: field === "email" ? (values.email ?? "") : values.mobile,
+        });
         form.setFocus(field);
         return;
       }
@@ -105,8 +114,8 @@ export default function SignUpPage() {
         {taken && (
           <Alert tone="warning" title={`That ${taken.field} is already registered`}>
             <p>
-              If it is yours, sign in with it - there is no password, we send a code. Otherwise
-              change it below.
+              If it is yours, sign in with it - there is no password, we send a code.
+              Otherwise change it below.
             </p>
             <p className="mt-2">
               <Link
@@ -130,7 +139,13 @@ export default function SignUpPage() {
           required
         >
           {(p) => (
-            <Input {...p} {...form.register("mobile")} type="tel" autoComplete="tel" placeholder="+91 ..." />
+            <Input
+              {...p}
+              {...form.register("mobile")}
+              type="tel"
+              autoComplete="tel"
+              placeholder="+91 ..."
+            />
           )}
         </Field>
 
@@ -185,6 +200,17 @@ export default function SignUpPage() {
  * says so without saying which case this is.
  */
 function VerifyStep({ mobile, email }: { mobile: string; email: string | null }) {
+  const params = useSearchParams();
+  /**
+   * Where she was going before she was asked to sign up.
+   *
+   * A consent link sends people here when they have no account, and landing
+   * them on their consents afterwards would leave them to find that link again
+   * - which at a collection site means asking somebody to re-open it. It is
+   * attacker-controlled, being whatever was in the URL, so only a same-origin
+   * path survives `safeRedirectPath`; anything else becomes her consents.
+   */
+  const next = safeRedirectPath(params.get("next"), "/my-consents");
   const router = useRouter();
   const { refresh } = useAuth();
   const [mobileCode, setMobileCode] = React.useState("");
@@ -205,7 +231,7 @@ function VerifyStep({ mobile, email }: { mobile: string; email: string | null })
         email_code: email ? emailCode : null,
       });
       await refresh();
-      router.replace("/my-consents");
+      router.replace(next);
     } catch (err) {
       setError(err instanceof ApiError ? err.userMessage() : "Verification failed.");
     } finally {
@@ -270,7 +296,13 @@ function VerifyStep({ mobile, email }: { mobile: string; email: string | null })
           </Field>
         )}
 
-        <Button type="submit" variant="primary" className="w-full" loading={busy} disabled={!ready}>
+        <Button
+          type="submit"
+          variant="primary"
+          className="w-full"
+          loading={busy}
+          disabled={!ready}
+        >
           <ShieldCheck className="size-4" />
           Confirm and sign in
         </Button>

@@ -42,24 +42,21 @@ export function getLink(token: string): Promise<LinkView> {
   return apiGet<LinkView>(`/c/${token}`);
 }
 
-export interface RegistrationInput {
-  full_name: string;
-  /** Required: the code that confirms her goes here. */
-  mobile: string;
-  email?: string;
-  person_type: string;
-}
-
-/** One contact confirmed; `complete` once every contact given has been. */
+/** One contact confirmed; `complete` once every contact on the account has been. */
 export interface ContactVerified extends Acknowledged {
   complete: boolean;
   remaining: ("mobile" | "email")[];
 }
 
-export function register(token: string, body: RegistrationInput): Promise<Acknowledged> {
-  return apiPost<Acknowledged>(`/c/${token}/register`, body);
-}
-
+/**
+ * Ask for a code on one contact.
+ *
+ * Answers the same whether or not the contact is on the register, and the
+ * server sends nothing when it is not. Callers must therefore treat success as
+ * "the request was accepted", never as "this person exists" - which is also why
+ * the screen offers to create an account to everybody rather than only to the
+ * people who turn out to need one.
+ */
 export function requestOtp(token: string, contact: string): Promise<Acknowledged> {
   return apiPost<Acknowledged>(`/c/${token}/otp`, { contact });
 }

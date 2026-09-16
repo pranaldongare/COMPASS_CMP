@@ -250,6 +250,20 @@ async def send_contact_code(conn: Conn, *, token: str, contact: str) -> None:
         message="Too many code requests for this link.",
     )
 
+    # A code goes only to somebody who already has an account. The link
+    # authenticates the person in front of it; it does not enrol them, and
+    # sending a code to a number nobody has claimed is a text message to a
+    # stranger that no later step could have accepted anyway - `verify` has
+    # always refused a contact with no account behind it.
+    #
+    # The caller's reply does not change, and must not: "if those details are
+    # registered, a code has been sent" is the same sentence either way, so a
+    # visitor cannot use this to find out whose number is on the register.
+    user = await user_repo.by_contact(conn, contact)
+    if not user or user["role"] != "data_subject":
+        log.info("consent.code_requested_for_unknown_contact")
+        return
+
     issued = await otp.issue(otp.Scope.CONSENT_LINK, f"{link['link_uuid']}:{contact}")
     from cmp.tasks.authentication import send_consent_code
     from cmp.tasks.dispatch import dispatch_required
@@ -271,12 +285,20 @@ async def verify_contact_code(conn: Conn, *, token: str, contact: str, code: str
     if not user:
         raise NotFound("Registration")
 
-    # The medium answered. Every medium given at registration has to, and the
-    # account - and the session - waits for the last of them.
     user = await user_repo.mark_contact_verified(
         conn, user["id"], "mobile" if is_mobile(contact) else "email"
     )
-    remaining = user_repo.unverified_mediums(user)
+
+    # An account that is already active belongs to a data principal the register
+    # knows, and one contact she has just proved authenticates her - which is
+    # exactly the rule the portal's own sign-in applies. Holding out for a medium
+    # she gave once and never answered would leave her standing at a counter
+    # unable to consent, with nothing on the screen that could fix it.
+    #
+    # A `pending` account is the other case, and the rule still holds there: it
+    # is mid-enrolment, every medium it was created with has to answer, and the
+    # account - and the session - waits for the last of them.
+    remaining = user_repo.unverified_mediums(user) if user["status"] == "pending" else []
     complete = not remaining
     if complete and user["status"] == "pending":
         user = await user_repo.set_status(conn, user["id"], "active")

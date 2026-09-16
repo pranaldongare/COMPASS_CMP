@@ -33,10 +33,26 @@ for a collection site by its owner, on the data-principal portal, at
 version it was minted for; an invalid, expired, exhausted or revoked link
 says only that it is not valid, and never why.
 
-## 3. Registration
+## 3. Who is signing
 
-Her details, if she is new: name, **mobile** (required), email (optional),
-and for self-registration on the portal her date of birth. A code goes to
+**The link authenticates; it does not enrol.** She gives one contact, her
+mobile by default or her email instead, and confirms it with a six-digit code.
+The artefact is then bound to an account that already exists, which is what
+lets her find it, read it and withdraw it afterwards. A set of details typed
+once at a collection site could not do any of that.
+
+Somebody with no account is offered one: the screen links to sign-up carrying
+the link's own address, so she returns to the same consent link once the
+account is hers, rather than having to find it again at a counter.
+
+A code is sent only to a contact the register knows, and to a data principal's
+account rather than a staff one. The reply does not say which happened - it is
+the same sentence either way, so the form cannot be used to ask whether a
+number is registered. That is also why the offer to create an account is shown
+to everyone rather than only to the people who need it.
+
+Self-registration on the portal is where the details are given: name,
+**mobile** (required), email (optional) and her date of birth. A code goes to
 each contact she gave, and each must answer before the account is hers. A
 contact already registered is recognised rather than duplicated; a staff
 account arriving through a consent link is refused.

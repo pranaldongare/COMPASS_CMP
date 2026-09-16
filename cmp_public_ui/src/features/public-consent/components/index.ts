@@ -9,7 +9,7 @@
 
 export { Shell } from "@/features/public-consent/components/shell";
 export { Steps, STEP_LABELS, type Step } from "@/features/public-consent/components/steps";
-export { RegisterStep } from "@/features/public-consent/components/register-step";
+export { IdentifyStep } from "@/features/public-consent/components/identify-step";
 export { VerifyStep } from "@/features/public-consent/components/verify-step";
 export { NoticeStep } from "@/features/public-consent/components/notice-step";
 export { DoneStep } from "@/features/public-consent/components/done-step";
