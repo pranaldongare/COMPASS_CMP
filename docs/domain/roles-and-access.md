@@ -80,6 +80,21 @@ matrix, so it cannot drift into showing a button that answers 403.
 Tickets reach a respondent through their dashboard and the console's tickets
 page; the section is not in the navigation because most staff never hold one.
 
+## How a staff account begins
+
+There is no self-registration. An administrator provisions the account, which
+is created `pending` and holds a random password nobody knows — an initial
+password sent by email would be a live credential sitting in a mailbox.
+
+Creating it sends an invitation to the address on the account: the role in
+words, a link to the console's reset page with the address already filled in,
+and a six-digit code that lasts `STAFF_INVITE_TTL_H` hours. Setting a password
+with that code is what activates the account, and until then sign-in refuses
+it. If the invitation expires, "Forgotten your password?" sends a working
+replacement, because the invitation carries the reset flow's own code rather
+than a second kind; an administrator can also send it again from the register,
+but only while the account is still pending.
+
 ## Second factors
 
 Every staff role signs in with a password and then a six-digit code sent to

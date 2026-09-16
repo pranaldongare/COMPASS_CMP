@@ -28,10 +28,7 @@ import { useEnums } from "@/features/meta";
 import { useSources } from "@/features/registry";
 import type { User } from "@/types";
 import { useToast } from "@/providers";
-import {
-  roleSchema,
-  userSchema,
-} from "@/features/users/schemas";
+import { roleSchema, userSchema } from "@/features/users/schemas";
 
 /* ============================================================ create / edit */
 
@@ -95,12 +92,13 @@ export function UserForm({ user, onDone }: { user?: User; onDone: () => void }) 
       toast.success("Account updated");
     } else {
       await create.mutateAsync(payload);
+      const sources = payload.source_uuids.length
+        ? ` ${payload.source_uuids.length} data source(s) are attached.`
+        : "";
       toast.success(
         "Account created",
-        payload.source_uuids.length
-          ? `It starts pending, with ${payload.source_uuids.length} data source(s) attached. ` +
-            "The user activates it through the password reset flow."
-          : "It starts pending. The user activates it through the password reset flow.",
+        `An email is on its way to ${payload.email} with a code to set a password.` +
+          `${sources} The account stays pending until they do.`,
       );
     }
     onDone();
@@ -112,21 +110,31 @@ export function UserForm({ user, onDone }: { user?: User; onDone: () => void }) 
 
       {!user && (
         <Alert tone="info" className="mb-4">
-          No password is set here. The account starts with an unusable one and is
-          activated by the user through &ldquo;forgotten your password&rdquo; — so no live
-          credential is ever sent by email.
+          No password is set here. The account starts with an unusable one, and an email
+          invites its owner to choose their own — so no live credential is ever sent. The
+          account stays pending until they do, and you can send the invitation again from
+          the register.
         </Alert>
       )}
 
       <div className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Full name" error={form.formState.errors.full_name?.message} required>
+          <Field
+            label="Full name"
+            error={form.formState.errors.full_name?.message}
+            required
+          >
             {(p) => <Input {...p} {...form.register("full_name")} />}
           </Field>
 
           <Field label="Email" error={form.formState.errors.email?.message} required>
             {(p) => (
-              <Input {...p} type="email" {...form.register("email")} disabled={Boolean(user)} />
+              <Input
+                {...p}
+                type="email"
+                {...form.register("email")}
+                disabled={Boolean(user)}
+              />
             )}
           </Field>
         </div>
@@ -171,11 +179,15 @@ export function UserForm({ user, onDone }: { user?: User; onDone: () => void }) 
 
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Username" hint="Optional sign-in alias.">
-            {(p) => <Input {...p} {...form.register("username")} disabled={Boolean(user)} />}
+            {(p) => (
+              <Input {...p} {...form.register("username")} disabled={Boolean(user)} />
+            )}
           </Field>
 
           <Field label="Mobile">
-            {(p) => <Input {...p} type="tel" {...form.register("mobile")} placeholder="+91 ..." />}
+            {(p) => (
+              <Input {...p} type="tel" {...form.register("mobile")} placeholder="+91 ..." />
+            )}
           </Field>
 
           <Field label="Organisation id">
@@ -189,15 +201,15 @@ export function UserForm({ user, onDone }: { user?: User; onDone: () => void }) 
         {!user && ownsSources && (
           <fieldset>
             <legend className="text-sm font-medium">Data sources</legend>
-            <p className="mb-2 mt-0.5 text-xs text-text-muted">
-              What this person will be accountable for. Projects collecting from any of these
-              will appear in their list. Optional — sources can be attached later.
+            <p className="mt-0.5 mb-2 text-xs text-text-muted">
+              What this person will be accountable for. Projects collecting from any of
+              these will appear in their list. Optional — sources can be attached later.
             </p>
 
             {!eligible.length ? (
               <Alert tone="info">
-                No unassigned{" "}
-                {role === "rco" ? "in-house" : "third-party"} data sources are registered yet.
+                No unassigned {role === "rco" ? "in-house" : "third-party"} data sources are
+                registered yet.
               </Alert>
             ) : (
               <div className="grid max-h-52 gap-1.5 overflow-y-auto sm:grid-cols-2">
@@ -272,8 +284,8 @@ export function RoleChangeForm({ user, onDone }: { user: User; onDone: () => voi
       <FormError message={form.formError} />
 
       <Alert tone="warning" className="mb-4">
-        Changing a role terminates every session {user.full_name} currently holds.
-        A session carrying the old role&apos;s permissions must not survive the change.
+        Changing a role terminates every session {user.full_name} currently holds. A session
+        carrying the old role&apos;s permissions must not survive the change.
       </Alert>
 
       <div className="space-y-4">
@@ -291,10 +303,7 @@ export function RoleChangeForm({ user, onDone }: { user: User; onDone: () => voi
           )}
         </Field>
 
-        <Field
-          label="Reason"
-          hint="Recorded in the audit trail alongside the change."
-        >
+        <Field label="Reason" hint="Recorded in the audit trail alongside the change.">
           {(p) => (
             <Textarea
               {...p}

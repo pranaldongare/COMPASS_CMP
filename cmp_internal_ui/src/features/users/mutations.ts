@@ -11,6 +11,7 @@ import {
   deactivateUser,
   forceLogout,
   reactivateUser,
+  resendInvitation,
   resetMfa,
   updateUser,
   type UserInput,
@@ -59,6 +60,16 @@ export function useChangeRole(
     mutationFn: (body: { role: string; reason?: string }) => changeUserRole(uuid, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.users.list() }),
   });
+}
+
+/**
+ * Send the invitation again.
+ *
+ * Deliberately does not invalidate the register: nothing about the account row
+ * changed, and a refetch would suggest to the administrator that it did.
+ */
+export function useResendInvitation(): Result<Acknowledged, Uuid> {
+  return useMutation({ mutationFn: resendInvitation });
 }
 
 export function useResetMfa(): Result<Acknowledged, Uuid> {

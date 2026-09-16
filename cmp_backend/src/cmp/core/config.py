@@ -74,6 +74,12 @@ class Settings(BaseSettings):
     otp_requests_per_contact_per_hour: int = 5
     otp_requests_per_token_per_hour: int = 20
 
+    # How long the code in a staff invitation lasts. Hours, not minutes: nobody
+    # is waiting at a code box for this one. The account is provisioned while
+    # the administrator has the details to hand, and its owner reads the mail
+    # when they next look - which may be after a weekend.
+    staff_invite_ttl_h: int = 48
+
     # MFA — every staff role steps up with a code sent to the account's email.
     # It started as the two roles whose compromise is unbounded, the DPO and the
     # administrator; on 2026-09-06 it became every internal role, because the

@@ -746,6 +746,35 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/{user_uuid}/invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send the invitation again
+         * @description Write to somebody again about the account waiting for them.
+         *
+         *     Needed because the invitation is dispatched optionally - the account is
+         *     created whether or not the message could be queued - and a message nobody
+         *     received is invisible to everybody except the person waiting for it.
+         *
+         *     Only for an account that has not been activated. Sending one to an active
+         *     account would be an administrator resetting a colleague's password from a
+         *     distance; that is a different act, and its owner already has "Forgotten
+         *     your password?".
+         */
+        post: operations["resend_invitation_users__user_uuid__invite_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/{user_uuid}": {
         parameters: {
             query?: never;
@@ -9111,6 +9140,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resend_invitation_users__user_uuid__invite_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
                 };
             };
             /** @description Validation Error */

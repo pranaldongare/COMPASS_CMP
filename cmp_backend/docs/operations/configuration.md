@@ -27,6 +27,7 @@ boot: the second failure is loud and costs ten minutes.
 | Session | 8h absolute, 30min idle; HttpOnly, Secure, SameSite=Lax |
 | Lockout | 5 attempts / 30 min window / 30 min lockout |
 | OTP & MFA | 6 digits, 10 minutes, 5 verify attempts; MFA codes live 5 minutes; `MFA_REQUIRED_ROLES` defaults to every staff role ([ADR 0006](../../../docs/decisions/0006-mfa-for-every-staff-role.md)) |
+| Provisioning | `STAFF_INVITE_TTL_H` 48 — how long the code in a staff invitation lasts, in hours. It is the reset flow's own code, so an expired invitation needs no separate path: "Forgotten your password?" sends a working replacement |
 | URLs | `PUBLIC_BASE_URL` (the data-principal portal: consent and acceptance links) and `CONSOLE_BASE_URL` (the staff console: ticket and request links) |
 | Messages | `ORGANISATION_NAME`, the `{organisation}` every message may name; the words themselves are edited in the console ([messages.md](../../../docs/domain/messages.md)) |
 | Rights | `RIGHTS_RESPONSE_PERIOD_DAYS` 90, `GRIEVANCE_RESPONSE_PERIOD_DAYS` 90, acknowledge 2, tickets 5, collate 5 before, download 30, unverified close 7, nomination accept 30 |

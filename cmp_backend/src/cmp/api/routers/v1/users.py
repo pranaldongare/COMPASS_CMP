@@ -21,7 +21,9 @@ from cmp.api.dependencies import (
     RequireStaff,
     reject_unknown_filters,
 )
+from cmp.auth.authentication import service as auth_service
 from cmp.auth.sessions import service as sessions
+from cmp.core.enums import UserStatus
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
 from cmp.core.pagination import PageRequest
 from cmp.core.permissions import Role
@@ -246,7 +248,42 @@ async def create_user(body: CreateUser, principal: RequireAdmin) -> dict[str, An
             subject_user_id=user["id"],
             detail={"role": body.role, "email": str(body.email), "sources": assigned},
         )
+
+        # An account nobody has been told about is an account nobody can use, so
+        # the last step of creating one is writing to its owner. Inside the
+        # transaction on purpose: the message is queued only once the row is
+        # committed, and a rollback sends nothing.
+        await auth_service.invite_staff(conn, user=user)
     return {**user, "sources": assigned}
+
+
+@router.post(
+    "/{user_uuid}/invite",
+    response_model=Acknowledged,
+    summary="Send the invitation again",
+)
+async def resend_invitation(user_uuid: UUID, principal: RequireAdmin) -> dict[str, Any]:
+    """Write to somebody again about the account waiting for them.
+
+    Needed because the invitation is dispatched optionally - the account is
+    created whether or not the message could be queued - and a message nobody
+    received is invisible to everybody except the person waiting for it.
+
+    Only for an account that has not been activated. Sending one to an active
+    account would be an administrator resetting a colleague's password from a
+    distance; that is a different act, and its owner already has "Forgotten
+    your password?".
+    """
+    async with transaction() as conn:
+        user = await repo.require_by_uuid(conn, str(user_uuid))
+        if user["status"] != UserStatus.PENDING.value:
+            raise ValidationFailed(
+                "That account is already activated. Its owner can set a new password "
+                'with "Forgotten your password?" on the sign-in page.',
+                field="status",
+            )
+        await auth_service.invite_staff(conn, user=user)
+    return {"ok": True, "message": f"A new invitation is on its way to {user['email']}."}
 
 
 @router.get("/{user_uuid}", response_model=UserOut)

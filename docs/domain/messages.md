@@ -16,6 +16,7 @@ the defaults are what is sent until they do. The catalogue lives in
 | Sign-in | `registration_code` | email, SMS | a data principal signs up on the portal, one per contact given |
 | Sign-in | `consent_code` | email, SMS | a contact is given through a consent link |
 | Sign-in | `password_reset` | email | a member of staff asks to reset their password |
+| Sign-in | `staff_invitation` | email | an administrator provisions a staff account |
 | Consent | `consent_receipt` | email, SMS | consent is recorded through a link |
 | Consent | `withdrawal_confirmation` | email, SMS | some or all purposes are withdrawn |
 | Rights | `rights_acknowledgement` | email, SMS | a rights request is received |

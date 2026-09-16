@@ -18,12 +18,14 @@ alternative turns the login form into an account-enumeration oracle.
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import quote
 
 from cmp.auth.authentication import otp
 from cmp.auth.authorization.roles import requires_mfa
 from cmp.auth.rate_limit import service as ratelimit
 from cmp.auth.sessions import service as sessions
 from cmp.core.config import settings
+from cmp.core.enums import UserStatus
 from cmp.core.errors import (
     BadRequest,
     Conflict,
@@ -33,7 +35,7 @@ from cmp.core.errors import (
     ValidationFailed,
 )
 from cmp.core.logging import get_logger
-from cmp.core.permissions import Role, nav_for, writes_for
+from cmp.core.permissions import ROLE_TITLES, Role, nav_for, writes_for
 from cmp.core.security import hash_password, password_needs_rehash, verify_password
 from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn
@@ -354,7 +356,16 @@ async def request_password_reset(conn: Conn, *, email: str) -> None:
         message="Too many reset requests.",
     )
     user = await user_repo.by_email(conn, email)
-    if not user or user["role"] == Role.DATA_SUBJECT.value or user["status"] != "active":
+    if not user or user["role"] == Role.DATA_SUBJECT.value:
+        log.info("auth.reset_requested_unknown")
+        return
+    # `pending` is included deliberately. A provisioned account holds an unusable
+    # random password and is activated by setting a real one through this flow -
+    # so refusing it here left every new member of staff with an account they
+    # could not reach, and the invitation pointing at a page that would not
+    # answer. Suspended and deactivated accounts stay refused: for them the
+    # silence is the point.
+    if user["status"] not in (UserStatus.ACTIVE.value, UserStatus.PENDING.value):
         log.info("auth.reset_requested_unknown")
         return
 
@@ -380,6 +391,22 @@ async def confirm_password_reset(conn: Conn, *, email: str, code: str, new_passw
 
     await otp.require(otp.Scope.CONTACT_VERIFY, f"reset:{user['uuid']}", code)
     await user_repo.set_password(conn, user["id"], hash_password(new_password))
+
+    # Setting the first password is what activates a provisioned account, and it
+    # has to happen here: `authenticate` refuses anything but an active account,
+    # so without this the new password is correct and the sign-in still fails.
+    if user["status"] == UserStatus.PENDING.value:
+        await user_repo.set_status(conn, user["id"], UserStatus.ACTIVE.value)
+        await audit.record(
+            conn,
+            event=Event.USER_ACTIVATED,
+            entity_type="auth_user",
+            entity_id=user["id"],
+            subject_user_id=user["id"],
+            actor_user_id=user["id"],
+            detail={"via": "password_reset"},
+        )
+
     await audit.record(
         conn,
         event=Event.PASSWORD_RESET_COMPLETED,
@@ -389,6 +416,64 @@ async def confirm_password_reset(conn: Conn, *, email: str, code: str, new_passw
         actor_user_id=user["id"],
     )
     await sessions.revoke_all(user["id"])
+
+
+# ------------------------------------------------------------- provisioning
+def _reset_url(email: str) -> str:
+    """The console's reset page with the address already filled in.
+
+    Built here rather than in the template because the address has to be
+    percent-encoded, and a `+` in an email address that reaches a query string
+    raw comes back as a space.
+    """
+    return f"{settings.console_base_url.rstrip('/')}/sign-in/reset?email={quote(email, safe='')}"
+
+
+async def invite_staff(conn: Conn, *, user: dict[str, Any]) -> None:
+    """Tell a newly provisioned member of staff that they have an account.
+
+    The code is the one the reset flow issues - the same scope, the same
+    identity, the same page - so an expired invitation needs no special path:
+    "Forgotten your password?" sends a working replacement. It lasts hours
+    rather than minutes because nobody is waiting at a code box for it.
+
+    Dispatched optionally: the account is already written, and failing the
+    request that created it would tell the administrator something false.
+    """
+    if user["role"] == Role.DATA_SUBJECT.value:
+        raise ValidationFailed(
+            "A data principal signs in with a code and has no password to set", field="role"
+        )
+    if not user.get("email"):
+        raise ValidationFailed("That account has no email address to write to", field="email")
+
+    issued = await otp.issue(
+        otp.Scope.CONTACT_VERIFY,
+        f"reset:{user['uuid']}",
+        ttl_s=settings.staff_invite_ttl_h * 3600,
+    )
+
+    from cmp.tasks.dispatch import dispatch_optional
+    from cmp.tasks.notifications import send_staff_invitation
+
+    dispatch_optional(
+        send_staff_invitation,
+        str(user["uuid"]),
+        user["email"],
+        user["full_name"],
+        ROLE_TITLES.get(user["role"], user["role"]),
+        issued.code,
+        _reset_url(user["email"]),
+        settings.staff_invite_ttl_h,
+    )
+    await audit.record(
+        conn,
+        event=Event.USER_INVITED,
+        entity_type="auth_user",
+        entity_id=user["id"],
+        subject_user_id=user["id"],
+        detail={"role": user["role"], "email": user["email"]},
+    )
 
 
 # --------------------------------------------------------------------- /me

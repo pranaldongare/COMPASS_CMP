@@ -25,6 +25,7 @@ from cmp.tasks.notifications.rights import (
     send_ticket_message,
     send_ticket_reminder,
 )
+from cmp.tasks.notifications.staff import send_staff_invitation
 from cmp.tasks.notifications.withdrawal import send_withdrawal_confirmation
 
 # A module not imported here is a task the worker never registers: the API
@@ -42,6 +43,7 @@ __all__ = [
     "send_rights_response",
     "send_rights_response_ready",
     "send_rights_verification_code",
+    "send_staff_invitation",
     "send_ticket_message",
     "send_ticket_reminder",
     "send_withdrawal_confirmation",

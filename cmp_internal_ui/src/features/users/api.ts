@@ -52,6 +52,21 @@ export function reactivateUser(uuid: Uuid): Promise<Acknowledged> {
   return apiPost<Acknowledged>(`/users/${uuid}/reactivate`);
 }
 
+/**
+ * Write to somebody again about the account waiting for them.
+ *
+ * The invitation is sent when the account is created, but it is dispatched as a
+ * side effect of a write that has already succeeded - so a broker that was down
+ * for a moment loses the message and nothing else. Only the person waiting for
+ * it would ever know, which is why an administrator can send it again.
+ *
+ * Refused once the account is active: its owner has a password by then, and
+ * "Forgotten your password?" is theirs to use.
+ */
+export function resendInvitation(uuid: Uuid): Promise<Acknowledged> {
+  return apiPost<Acknowledged>(`/users/${uuid}/invite`);
+}
+
 /** Clears the enrolled factor so the user can enrol a new device. */
 export function resetMfa(uuid: Uuid): Promise<Acknowledged> {
   return apiPost<Acknowledged>(`/users/${uuid}/mfa/reset`);

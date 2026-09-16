@@ -23,6 +23,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import Final
 
 
 class Role(StrEnum):
@@ -47,6 +48,21 @@ class Role(StrEnum):
     RND_USER = "rnd_user"
     ADMIN = "admin"
     DATA_SUBJECT = "data_subject"
+
+
+#: What each role is called in a sentence written to a person.
+#:
+#: Here rather than in the API's dropdown labels because a message sent to a new
+#: member of staff has to name their role, and "Dco admin" is not a job title.
+ROLE_TITLES: Final[dict[str, str]] = {
+    Role.DPO.value: "Data Protection Officer",
+    Role.DCO.value: "Data Collection Owner",
+    Role.DCO_ADMIN.value: "DCO Admin",
+    Role.RCO.value: "Research Collection Owner",
+    Role.RND_USER.value: "R&D User",
+    Role.ADMIN.value: "Administrator",
+    Role.DATA_SUBJECT.value: "Data Subject",
+}
 
 
 class Scope(StrEnum):

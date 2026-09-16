@@ -91,6 +91,8 @@ class Event:
     USER_PERSON_TYPE_CHANGED = "user.person_type_changed"
     USER_MFA_RESET = "user.mfa_reset"
     USER_SESSIONS_REVOKED = "user.sessions_revoked"
+    USER_INVITED = "user.invited"
+    USER_ACTIVATED = "user.activated"
 
     # authentication
     LOGIN_SUCCEEDED = "auth.login_succeeded"

@@ -12,7 +12,15 @@
  */
 "use client";
 
-import { KeyRound, Pencil, Plus, ShieldEllipsis, UserCheck, UserX } from "lucide-react";
+import {
+  KeyRound,
+  Pencil,
+  Plus,
+  Send,
+  ShieldEllipsis,
+  UserCheck,
+  UserX,
+} from "lucide-react";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
@@ -31,7 +39,7 @@ import { Alert, Button, Td, Tr, Skeleton } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { useEnums } from "@/features/meta";
 import { useDeactivateUser, useReactivateUser, useUsers } from "@/features/users";
-import { useForceLogout, useResetMfa } from "@/features/users";
+import { useForceLogout, useResendInvitation, useResetMfa } from "@/features/users";
 import type { User } from "@/types";
 import { formatDate, humanise } from "@/lib/format";
 import { useAuth, useToast } from "@/providers";
@@ -50,6 +58,7 @@ function UsersPageView() {
   const reactivate = useReactivateUser();
   const resetMfa = useResetMfa();
   const forceLogout = useForceLogout();
+  const resendInvitation = useResendInvitation();
 
   const [creating, setCreating] = React.useState(false);
   const [editing, setEditing] = React.useState<User | null>(null);
@@ -87,6 +96,19 @@ function UsersPageView() {
     }
   }
 
+  async function invite(user: User) {
+    try {
+      const result = await resendInvitation.mutateAsync(user.uuid);
+      toast.success("Invitation sent", result.message ?? undefined);
+    } catch (err) {
+      const message =
+        err && typeof err === "object" && "userMessage" in err
+          ? (err as { userMessage: () => string }).userMessage()
+          : "The invitation could not be sent.";
+      toast.error("Could not send the invitation", message);
+    }
+  }
+
   return (
     <>
       <PageHeader
@@ -104,8 +126,8 @@ function UsersPageView() {
 
       {!isAdmin && (
         <Alert tone="info" className="mb-4">
-          You can read the register. Provisioning, role changes and deactivation
-          are restricted to administrators.
+          You can read the register. Provisioning, role changes and deactivation are
+          restricted to administrators.
         </Alert>
       )}
 
@@ -148,7 +170,8 @@ function UsersPageView() {
         empty={{
           illustration: <EmptyRecords />,
           title: role || status || q ? "No accounts match" : "No accounts",
-          description: "Staff are provisioned by an administrator; data subjects self-register through a consent link.",
+          description:
+            "Staff are provisioned by an administrator; data subjects self-register through a consent link.",
         }}
         row={(u) => (
           <Tr>
@@ -165,7 +188,9 @@ function UsersPageView() {
             <Td>
               <StatusBadge kind="user" value={u.status} />
             </Td>
-            <Td className="whitespace-nowrap text-text-muted">{formatDate(u.created_at)}</Td>
+            <Td className="whitespace-nowrap text-text-muted">
+              {formatDate(u.created_at)}
+            </Td>
             <Td>
               {isAdmin && (
                 <div className="flex flex-wrap gap-1">
@@ -187,6 +212,20 @@ function UsersPageView() {
                         Reset MFA
                       </Button>
                     </>
+                  )}
+
+                  {/* Only while it is pending. Once somebody has a password
+                      the way back in is theirs, not an administrator's. */}
+                  {u.status === "pending" && u.role !== "data_subject" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      loading={resendInvitation.isPending}
+                      onClick={() => invite(u)}
+                    >
+                      <Send className="size-4" />
+                      Resend invitation
+                    </Button>
                   )}
 
                   {u.uuid !== me?.uuid && u.status !== "deactivated" && (
@@ -221,7 +260,7 @@ function UsersPageView() {
       <Dialog open={creating} onOpenChange={setCreating}>
         <DialogContent
           title="Provision an account"
-          description="No password is set here - the user activates it themselves."
+          description="No password is set here - an email invites them to set their own."
           size="lg"
         >
           <UserForm onDone={() => setCreating(false)} />
@@ -234,8 +273,14 @@ function UsersPageView() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={Boolean(changingRole)} onOpenChange={(o) => !o && setChangingRole(null)}>
-        <DialogContent title="Change role" description="Audited, and it ends every session.">
+      <Dialog
+        open={Boolean(changingRole)}
+        onOpenChange={(o) => !o && setChangingRole(null)}
+      >
+        <DialogContent
+          title="Change role"
+          description="Audited, and it ends every session."
+        >
           {changingRole && (
             <RoleChangeForm user={changingRole} onDone={() => setChangingRole(null)} />
           )}
@@ -251,10 +296,9 @@ function UsersPageView() {
         tone="primary"
         consequence={
           <p>
-            Their outstanding verification code is discarded and every session
-            ends. They will be asked for a fresh code the next time they sign in.
-            Use this when somebody has lost access to their email, not as routine
-            maintenance.
+            Their outstanding verification code is discarded and every session ends. They
+            will be asked for a fresh code the next time they sign in. Use this when
+            somebody has lost access to their email, not as routine maintenance.
           </p>
         }
         onConfirm={async () => {

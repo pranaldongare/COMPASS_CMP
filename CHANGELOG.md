@@ -20,6 +20,13 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Fixed
+- A provisioned account can be activated at all. Two faults made the flow the
+  console pointed people at impossible: a password reset was refused for any
+  account that was not already active, and a provisioned one is `pending`; and
+  setting the password left the status alone, so sign-in refused a password
+  that was correct. Setting the first password now activates the account, and
+  a pending account may ask for the code that does it. Suspended and
+  deactivated accounts are still refused in silence.
 - Staff who sign in from a link land on the page it named: the console now
   carries the destination through the second-factor step, which dropped it
   and opened the dashboard after every code.
@@ -46,6 +53,13 @@ as a release yet.
   and test instead of reporting delivery.
 
 ### Added
+- **A provisioned staff account now invites its owner.** Creating one sends
+  `staff_invitation` to the address on the account: their role in words, a
+  link to the reset page with the address filled in, and a code that lasts
+  `STAFF_INVITE_TTL_H` hours (48 by default). It is the reset flow's own code,
+  so an expired invitation is replaced by "Forgotten your password?" rather
+  than by a second mechanism. `POST /users/{uuid}/invite` sends it again while
+  the account is pending; the console offers it on the register.
 - **Configurable messages.** Every email and SMS the platform sends is a
   named junction with default words per channel; the administrator and the
   DPO edit subject and body from the console's Messages page, with variable

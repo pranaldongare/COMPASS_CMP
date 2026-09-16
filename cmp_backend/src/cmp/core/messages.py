@@ -50,6 +50,7 @@ class Message(StrEnum):
     REGISTRATION_CODE = "registration_code"
     CONSENT_CODE = "consent_code"
     PASSWORD_RESET = "password_reset"  # noqa: S105 - a message key, not a secret
+    STAFF_INVITATION = "staff_invitation"
     # consent
     CONSENT_RECEIPT = "consent_receipt"
     WITHDRAWAL_CONFIRMATION = "withdrawal_confirmation"
@@ -230,6 +231,41 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "working until a new one is set.\n\n"
             "If it was not you, nothing has changed and nothing will; you can ignore this "
             "message, and you may want to tell the Privacy Office."
+        ),
+        sms_body=None,
+    ),
+    Junction(
+        key=Message.STAFF_INVITATION,
+        title="Staff account invitation",
+        description=(
+            "Sent to a member of staff when an administrator provisions their account. "
+            "It is how they learn the account exists and how they set a password."
+        ),
+        group="Sign-in",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("full_name", "The new member of staff's name.", "Asha Rao"),
+            Variable("role_title", "The role they have been given.", "Data Collection Owner"),
+            CODE,
+            Variable("hours", "How many hours the code is valid for.", "48"),
+            Variable(
+                "reset_url",
+                "The console page where they set their password, with their address filled in.",
+                "https://console.example.org/sign-in/reset?email=asha%40example.org",
+            ),
+            ORGANISATION,
+        ),
+        email_subject="Set your password for the {organisation} console",
+        email_body=(
+            "{full_name}, an account has been created for you on the {organisation} "
+            "console as {role_title}.\n\n"
+            "Set your password here:\n{reset_url}\n\n"
+            "and enter this code on that page:\n\n    {code}\n\n"
+            "The code works once and expires in {hours} hours. If it has expired, choose "
+            '"Forgotten your password?" on the sign-in page and a new one will be sent to '
+            "this address.\n\n"
+            "Afterwards you sign in with your password and a six-digit code sent here each "
+            "time." + _SIGN_OFF_EMAIL
         ),
         sms_body=None,
     ),

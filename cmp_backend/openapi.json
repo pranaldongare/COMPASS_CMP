@@ -1653,6 +1653,50 @@
         }
       }
     },
+    "/users/{user_uuid}/invite": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Send the invitation again",
+        "description": "Write to somebody again about the account waiting for them.\n\nNeeded because the invitation is dispatched optionally - the account is\ncreated whether or not the message could be queued - and a message nobody\nreceived is invisible to everybody except the person waiting for it.\n\nOnly for an account that has not been activated. Sending one to an active\naccount would be an administrator resetting a colleague's password from a\ndistance; that is a different act, and its owner already has \"Forgotten\nyour password?\".",
+        "operationId": "resend_invitation_users__user_uuid__invite_post",
+        "parameters": [
+          {
+            "name": "user_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acknowledged"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users/{user_uuid}": {
       "get": {
         "tags": [

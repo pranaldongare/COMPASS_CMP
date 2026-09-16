@@ -22,7 +22,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, MailCheck } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { useForm } from "react-hook-form";
 
@@ -40,16 +40,67 @@ import { ApiError } from "@/lib/errors";
 import { useHydrated } from "@/lib/security";
 
 export default function ResetPage() {
-  const [sentTo, setSentTo] = React.useState<string | null>(null);
+  return (
+    // useSearchParams() forces client-side rendering, so Next requires a
+    // suspense boundary around anything that reads it. Without this the whole
+    // page bails out of prerendering.
+    <React.Suspense fallback={<ResetSkeleton />}>
+      <ResetFlow />
+    </React.Suspense>
+  );
+}
+
+function ResetSkeleton() {
+  return (
+    <AuthLayout title="Reset your password">
+      <div className="space-y-4" aria-hidden="true">
+        <div className="shimmer h-16 rounded-lg" />
+        <div className="shimmer h-10 rounded-lg" />
+      </div>
+    </AuthLayout>
+  );
+}
+
+/**
+ * The address a link may already have told us.
+ *
+ * It is whatever was in the URL somebody clicked, and this page reads it back
+ * to them, so it is checked before it is shown: an unchecked value lets a
+ * crafted link put an attacker's sentence on this organisation's sign-in page.
+ * Anything that is not an address is ignored rather than rejected — the person
+ * is then simply asked for theirs, which is the page working normally.
+ */
+function invitedEmail(value: string | null): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) ? trimmed : null;
+}
+
+function ResetFlow() {
+  const params = useSearchParams();
+  // A new member of staff arrives here from the invitation, holding the message
+  // that carries the code. Asking them to type their address and wait would
+  // send a second code and quietly invalidate the one they are looking at.
+  const invited = invitedEmail(params.get("email"));
+  const [sentTo, setSentTo] = React.useState<string | null>(invited);
+  const [fromInvitation, setFromInvitation] = React.useState(Boolean(invited));
+
+  const title = !sentTo
+    ? "Reset your password"
+    : fromInvitation
+      ? "Set your password"
+      : "Check your email";
+
+  const subtitle = !sentTo
+    ? "We will send a code to your registered email address."
+    : fromInvitation
+      ? `Enter the code sent to ${sentTo} and choose a password. If it has expired, start over and we will send another.`
+      : `If ${sentTo} is registered, a six-digit code is on its way. It is valid for a few minutes.`;
 
   return (
     <AuthLayout
-      title={sentTo ? "Check your email" : "Reset your password"}
-      subtitle={
-        sentTo
-          ? `If ${sentTo} is registered, a six-digit code is on its way. It is valid for a few minutes.`
-          : "We will send a code to your registered email address."
-      }
+      title={title}
+      subtitle={subtitle}
       footer={
         <Link
           href="/sign-in"
@@ -61,9 +112,20 @@ export default function ResetPage() {
       }
     >
       {sentTo ? (
-        <ConfirmStep email={sentTo} onStartOver={() => setSentTo(null)} />
+        <ConfirmStep
+          email={sentTo}
+          onStartOver={() => {
+            setSentTo(null);
+            setFromInvitation(false);
+          }}
+        />
       ) : (
-        <RequestStep onSent={setSentTo} />
+        <RequestStep
+          onSent={(email) => {
+            setSentTo(email);
+            setFromInvitation(false);
+          }}
+        />
       )}
     </AuthLayout>
   );

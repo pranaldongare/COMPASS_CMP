@@ -270,3 +270,44 @@ test.describe("session cookie", () => {
     await expect(page).toHaveURL(/\/purposes(?:[?#]|$)/, { timeout: 15_000 });
   });
 });
+
+/**
+ * The link a staff invitation carries.
+ *
+ * An administrator provisions an account and the platform emails its owner a
+ * code and this URL. The address is in the query string so that somebody
+ * holding the message is not asked to type it and wait for a second code —
+ * which would silently invalidate the one they are reading.
+ *
+ * No account is needed here: what is under test is the page's contract with
+ * the message, not a sign-in. Signing in with the code is covered in the
+ * backend's `test_staff_provisioning.py`, where the code can be read without a
+ * mailbox.
+ */
+test.describe("the invitation link", () => {
+  test("opens the code step with the address already filled in", async ({ page }) => {
+    await page.goto("/sign-in/reset?email=invited%40organisation.example");
+
+    await expect(page.getByRole("heading", { name: /set your password/i })).toBeVisible();
+    await expect(page.getByText(/invited@organisation\.example/)).toBeVisible();
+    // The code box, not the "what is your address" box: the second step. The
+    // name is not anchored at the end because `Field` appends the required
+    // marker to the label, so the accessible name is "Coderequired".
+    await expect(page.getByLabel(/^code/i)).toBeVisible();
+  });
+
+  test("a crafted address is ignored rather than read back to the visitor", async ({
+    page,
+  }) => {
+    // The parameter is whatever was in the link somebody clicked, and the page
+    // shows it back to them. Anything that is not an address must not become a
+    // sentence on this organisation's sign-in page.
+    await page.goto(
+      "/sign-in/reset?email=Your%20account%20is%20suspended%2C%20call%200800",
+    );
+
+    await expect(page.getByRole("heading", { name: /reset your password/i })).toBeVisible();
+    await expect(page.getByText(/call 0800/i)).toHaveCount(0);
+    await expect(page.getByLabel(/email address/i)).toBeVisible();
+  });
+});
