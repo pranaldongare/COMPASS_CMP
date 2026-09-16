@@ -12,6 +12,7 @@ parsing. Each step is cheaper than the one it protects.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Final
 
 from cmp.core.errors import BadRequest, ValidationFailed
 
@@ -82,6 +83,39 @@ def check_upload(payload: bytes, content_type: str | None, rules: UploadRules) -
             f"{rules.field.capitalize()} must be one of: {', '.join(rules.allowed_mime)}",
             field=rules.field,
         )
+
+
+#: What a file begins with, and what to call it when it arrives where it should
+#: not have. Only the formats people actually reach for instead of a .docx are
+#: listed. The commonest by a distance is a .doc: Word calls that a Word document
+#: too, so somebody uploading one has not been careless, and telling them "that
+#: is not a .docx" reads as the platform being wrong rather than the file.
+_SIGNATURES: Final[tuple[tuple[bytes, str], ...]] = (
+    (b"%PDF", "a PDF"),
+    (b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1", "a .doc, the format Word used before 2007"),
+    (b"{\\rtf", "an RTF document"),
+    (b"\x89PNG\r\n\x1a\n", "a PNG image"),
+    (b"\xff\xd8\xff", "a JPEG image"),
+    (b"II*\x00", "a TIFF image"),
+    (b"MM\x00*", "a TIFF image"),
+    (b"%!PS", "a PostScript file"),
+    (b"\x1f\x8b", "a gzip archive"),
+    (b"<?xml", "an XML file"),
+)
+
+
+def describe_format(payload: bytes) -> str | None:
+    """What this file appears to be, in words, or None when it is not a guess
+    worth making.
+
+    Exists to make a refusal legible, and nothing is decided by it: whoever
+    calls this has already decided to refuse. A wrong guess therefore costs a
+    slightly misleading sentence, never a file accepted or rejected wrongly.
+    """
+    for signature, name in _SIGNATURES:
+        if payload.startswith(signature):
+            return name
+    return None
 
 
 def safe_suffix(filename: str | None, rules: UploadRules) -> str:

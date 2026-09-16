@@ -43,6 +43,7 @@ from cmp.domain.audit.service import Event
 from cmp.domain.notices import importer
 from cmp.domain.notices import service as service
 from cmp.schemas.common import Acknowledged, CodeText, HttpUrl, LongText, Out, Page, Schema
+from cmp.validation import describe_format
 
 router = APIRouter(tags=["notices"])
 
@@ -608,12 +609,30 @@ async def _read_document(document: UploadFile) -> bytes:
     # A .docx is a zip; the magic bytes are the check that survives a browser
     # guessing the content type wrong, which they do for Office files.
     if not payload.startswith(b"PK"):
-        raise ValidationFailed(
-            "That is not a .docx file. Upload the Word notice template - a PDF or a "
-            "scan of one cannot be read.",
-            field="document",
-        )
+        raise ValidationFailed(_not_a_docx(payload), field="document")
     return payload
+
+
+def _not_a_docx(payload: bytes) -> str:
+    """Why this file cannot be read, in terms its uploader can act on.
+
+    The refusal used to say only what the file was not, which leaves somebody
+    holding a document Word produced and no idea what to change. Naming what
+    they actually uploaded is the whole difference, and for the one case that is
+    not careless - a .doc - the answer is a menu item rather than a new file.
+    """
+    what = describe_format(payload)
+    if what and what.startswith("a .doc,"):
+        return (
+            "That is a .doc, the format Word used before 2007, and this reads .docx. "
+            "Open it in Word, choose Save As, and pick 'Word Document (.docx)'."
+        )
+    named = f"That is {what}, not a .docx file. " if what else "That is not a .docx file. "
+    return (
+        named + "The notice's wording is read out of the document itself, so the Word "
+        "file is what has to be uploaded - a PDF or a scan of one cannot be. Fill in the "
+        "notice template and upload that."
+    )
 
 
 @router.post(

@@ -33,7 +33,14 @@ from cmp.validation.contacts import (
     normalise_contact,
     normalise_mobile,
 )
-from cmp.validation.files import MANIFEST, PROOF, UploadRules, check_upload, safe_suffix
+from cmp.validation.files import (
+    MANIFEST,
+    PROOF,
+    UploadRules,
+    check_upload,
+    describe_format,
+    safe_suffix,
+)
 from cmp.validation.identifiers import InternalId, LinkToken, OrganizationId, Uuid
 from cmp.validation.pagination import Cursor, PageLimit, SearchTerm, SortSpec
 from cmp.validation.security import OtpCode, Password, ResetToken, Sha256Hex
@@ -68,6 +75,7 @@ __all__ = [
     "Uuid",
     "check_upload",
     "choice",
+    "describe_format",
     "is_mobile",
     "mask_contact",
     "normalise_contact",

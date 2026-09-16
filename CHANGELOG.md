@@ -20,6 +20,11 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Fixed
+- Refusing a notice upload now names what was uploaded instead. "That is not a
+  .docx file" left somebody holding a document Word had produced with nothing
+  to change; the refusal now says it is a PDF, an image or a `.doc`, and for a
+  `.doc` it names the Save As that fixes it. What is accepted has not changed:
+  the wording is read out of the document, so a PDF or a scan still cannot be.
 - A provisioned account can be activated at all. Two faults made the flow the
   console pointed people at impossible: a password reset was refused for any
   account that was not already active, and a provisioned one is `pending`; and
