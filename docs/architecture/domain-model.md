@@ -1,6 +1,6 @@
 # Domain model
 
-Thirty-two tables, one view, thirty-nine enumerations, twenty-six triggers.
+Thirty-two tables, one view, thirty-nine enumerations, twenty-seven triggers.
 The column-level reference is
 [schema.md](../../cmp_backend/docs/database/schema.md), and the migrations
 that built it are listed in

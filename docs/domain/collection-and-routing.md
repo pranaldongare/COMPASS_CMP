@@ -115,12 +115,12 @@ what a rights request decided about it - erased, redacted, retained,
 quarantined. Erasure changes the junction row, never the asset, because an
 asset holding three people is not deleted when one of them asks.
 
-## Cover
+## Delegation
 
-Any member of staff can arrange cover for a period. The delegate sees and
-acts on the delegator's rows, under their own name and audited as
-themselves, until the period ends or either party ends it early. It hands
-over a workload, not a role.
+Any member of staff can delegate for a period (Delegate, in the console).
+The delegate sees and acts on the delegator's rows, under their own name and
+audited as themselves, until the period ends or either party ends it early.
+It hands over a workload, not a role.
 
 ## Where this is enforced
 

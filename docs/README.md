@@ -39,6 +39,17 @@ you need. Documents live in three places, deliberately:
 - [DPDP Act gap assessment](reviews/2026-09-17-dpdp-act-gap-assessment.md): statutory requirement map, implemented capabilities, prioritised gaps and remediation sequence
 - [Changelog](../CHANGELOG.md): what changed, by area and date
 
+## Generated references
+
+Two trees are produced from the code rather than written, and regenerated
+when it changes:
+
+- [api_docs/README.md](../api_docs/README.md): every operation by module, with
+  validation, payload and response, and one page per role listing what it may
+  reach (`api_docs/generate.py`)
+- [database_schema/README.md](../database_schema/README.md): the schema drawn,
+  every table with its columns and constraints, every enumeration
+
 ## The backend's own documents
 
 | Document | Answers |

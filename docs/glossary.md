@@ -47,8 +47,8 @@ an in-house processor a respondent is an account on the platform and the
 ticket reaches them in the console; for a third party it is a name and an
 address, reached by email.
 
-**Cover (delegation).** One member of staff standing in for another for a
-period, without handing over the job. The rows the delegator is assigned to
+**Delegation (Delegate, in the console).** One member of staff standing in
+for another for a period, without handing over the job. The rows the delegator is assigned to
 become visible to the delegate for that period.
 
 ## Registry

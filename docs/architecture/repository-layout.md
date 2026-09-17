@@ -10,6 +10,8 @@ COMPASS_CMP/
   CONTRIBUTING.md           the checks a change must pass; how commits are written
   CHANGELOG.md              what changed, by area and date
   docs/                     cross-cutting documentation (this tree)
+  api_docs/                 generated: every endpoint by module, and each role's reach
+  database_schema/          generated: the schema drawn, every table and enum listed
   cmp_backend/              the API, the worker, the migrations
   cmp_internal_ui/          the staff console, port 3000
   cmp_public_ui/            the data-principal portal, port 3001
@@ -24,7 +26,7 @@ cmp_backend/
     bootstrap/            assembly: factory, lifespan, middleware, routers, container
     api/
       routers/v1/         audit, auth, consents, dashboard, delegations, exchange,
-                          me, notices, projects, registry, rights, system, users
+                          me, messages, notices, projects, registry, rights, system, users
       routers/public/     consent (the /c/{token} flow), rights (public pages,
                           nominations, the nominee's entry point, the notice viewer)
       dependencies/       sessions, csrf, authentication, authorization, paging, filters
@@ -37,7 +39,7 @@ cmp_backend/
       sessions/           server-side sessions in Redis
       rate_limit/         limits, lockout, distributed locks
     domain/               one package per aggregate; the only layer that writes
-      audit/ consent/ delegations/ exchange/ notices/ projects/ registry/
+      audit/ consent/ delegations/ exchange/ messaging/ notices/ projects/ registry/
       rights/ shared/ users/
     validation/           the constrained types every request model is built from,
                           contact normalisation, the choice-or-422 helper
@@ -48,7 +50,7 @@ cmp_backend/
     core/                 config, enums, permissions, security, errors, pagination,
                           logging - imports nothing local
     tasks/                Celery: authentication, notifications, maintenance, exchange
-  migrations/versions/    0001 to 0024, every one raw SQL, both directions
+  migrations/versions/    0001 to 0026, every one raw SQL, both directions
   tests/
     unit/                 pure functions; no I/O
     integration/          a real PostgreSQL and Redis; each test rolls back

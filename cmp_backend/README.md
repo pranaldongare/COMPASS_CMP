@@ -23,7 +23,7 @@ Then:
 ```bash
 uv sync --all-extras --dev
 cp .env.example .env               # POSTGRES_DB=cmp_dev; PUBLIC_BASE_URL and CONSOLE_BASE_URL to the two portals
-uv run alembic upgrade head        # 25 migrations: 32 tables, 39 enums, triggers, grants
+uv run alembic upgrade head        # 26 migrations: 32 tables, 39 enums, triggers, grants
 uv run python scripts/seed.py      # one coherent world: a user per role, processors, sources, sites, a project through to approved, a live link
 
 uv run python -m cmp --port 8000
@@ -188,7 +188,7 @@ src/cmp/
                      messages (every junction and its default words)
   tasks/             Celery: authentication, notifications, maintenance, exchange, rights
 
-migrations/          24 raw-SQL Alembic revisions (docs/database/migrations.md)
+migrations/          26 raw-SQL Alembic revisions (docs/database/migrations.md)
 tests/               unit/, integration/ (with enforcement/, database/, auth/), security/
 scripts/             seed, create_admin, reset_dev, healthcheck, db
 docs/                architecture, security, database, operations (this service's own)

@@ -44,6 +44,7 @@ flowchart LR
 | console | `cmp_internal_ui/Dockerfile`, `node:22-alpine` | horizontally | serves `/api` as a reverse proxy to the API |
 | portal | `cmp_public_ui/Dockerfile`, `node:22-alpine` | horizontally | the same, on 3001 |
 | `nginx` | `nginx:1.27-alpine`, compose profile `proxy` | | optional edge; TLS, per-address limits, scrubs `/c/{token}` from logs |
+| `flower` | compose profile `monitoring` | | optional task monitor; loopback only, basic auth required; task arguments are withheld from the events it renders |
 
 The compose file at `cmp_backend/docker/docker-compose.yml` defines the
 backend half with health-checked dependencies: `migrate` waits for `db`,

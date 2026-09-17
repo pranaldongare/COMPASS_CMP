@@ -1,13 +1,13 @@
 # Testing
 
 Four suites, each answering a different question. Counts are as of
-2026-09-10 and change with every feature; the commands do not.
+2026-09-17 and change with every feature; the commands do not.
 
 | Suite | Where | Runs against | Count |
 |---|---|---|---|
-| Backend unit | `cmp_backend/tests/unit` | nothing; pure functions | 433 |
-| Backend integration | `cmp_backend/tests/integration` | real PostgreSQL and Redis | 214 |
-| Backend security | `cmp_backend/tests/security` | the ASGI app with real datastores | 350 |
+| Backend unit | `cmp_backend/tests/unit` | nothing; pure functions | 464 |
+| Backend integration | `cmp_backend/tests/integration` | real PostgreSQL and Redis | 262 |
+| Backend security | `cmp_backend/tests/security` | the ASGI app with real datastores | 356 |
 | Portal unit | `src/**/*.test.ts*` in each portal | vitest with MSW | 139 console, 108 portal |
 | Browser | `e2e/` in each portal | the running stack in a real browser | 48 console and 20 portal tests, run across five Playwright projects |
 
@@ -57,7 +57,7 @@ Static checks:
 uv run ruff check . && uv run ruff format --check . && uv run mypy
 ```
 
-All three are clean as of 2026-09-10; anything reported is new.
+All three are clean as of 2026-09-17; anything reported is new.
 
 ## Portal unit tests
 
@@ -85,14 +85,15 @@ Codes are read from `cmp_backend/var/outbox.log` by `e2e/support/outbox.ts`.
 
 The console suite has five projects. `setup` signs in every role once, with
 its emailed code, and saves the sessions; `chromium` and `mobile` run the
-specs (auth, controls, detail pages, forms, links, messages, navigation
-coverage, notice upload, routing); `localhost-cookies` re-runs the auth spec
+specs (account contacts, auth, controls, detail pages, forms, links, messages,
+navigation coverage, notice upload, routing); `localhost-cookies` re-runs the auth spec
 on the other origin; `visual` takes the screenshots. The suites read one-time
 codes from the outbox by shape (a code on its own line, "code is 123456", or
 a line opening with the code), so rewording a message on the Messages page
 that drops all three shapes will make them fail; keep one. The portal suite covers the
 consent flow, sign-up with two codes, the rights pages including nomination
-acceptance, and the data principal's own pages. `expectNoSidewaysScroll` in
+acceptance, the data principal's own pages, and a member of staff signing in as a data
+principal. `expectNoSidewaysScroll` in
 `e2e/support/layout.ts` is asserted on every page the mobile project visits.
 
 ### Rules for running them

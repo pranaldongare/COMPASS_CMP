@@ -71,14 +71,15 @@ matrix, so it cannot drift into showing a button that answers 403.
 
 | Role | Sections |
 |---|---|
-| DPO | dashboard, projects, approvals, notices, purposes, sites, collections, processors, sources, links, consents, exports, imports, requests, audit, users, messages, cover, notifications, profile |
-| Administrator | dashboard, users, messages, processors, sources, requests, audit, cover, notifications, profile |
-| DCO, DCO Admin, RCO | dashboard, projects, sites, sources, links, consents, exports, imports, collections, cover, notifications, profile |
-| R&D User | dashboard, projects, notices, processors, approvals, imports, collections, notifications, profile |
+| DPO | dashboard, projects, approvals, notices, purposes, sites, collections, processors, sources, consents, links, exports, imports, requests, audit, users, messages, delegate, tickets, notifications, profile |
+| Administrator | dashboard, users, messages, processors, sources, requests, audit, delegate, tickets, notifications, profile |
+| DCO, DCO Admin, RCO | dashboard, projects, sites, sources, links, consents, exports, imports, collections, delegate, tickets, notifications, profile |
+| R&D User | dashboard, projects, notices, processors, approvals, imports, collections, tickets, notifications, profile |
 | Data principal | consents, requests, notifications, profile |
 
-Tickets reach a respondent through their dashboard and the console's tickets
-page; the section is not in the navigation because most staff never hold one.
+Tickets are in every staff role's navigation, because any staff account can
+be named a respondent; the page is empty until one is addressed to them.
+Since September 2026 the cover section is labelled **Delegate**.
 
 ## Staff are data principals too
 
@@ -148,9 +149,9 @@ that. Data principals have no password: their sign-in *is* a code, to the
 mobile or the email they chose. See
 [ADR 0006](../decisions/0006-mfa-for-every-staff-role.md).
 
-## Cover
+## Delegation
 
-A member of staff arranges cover for a period: a delegate who then sees and
+The console calls it **Delegate**. A member of staff arranges cover for a period: a delegate who then sees and
 acts on the delegator's rows for that period only, in their own name, with
 every action audited as theirs. Cover ends at the end of the period or when
 either party ends it. The administrator can arrange it for anyone; nobody can

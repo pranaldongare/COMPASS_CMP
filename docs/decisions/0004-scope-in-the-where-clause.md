@@ -31,7 +31,7 @@ server's computed sections and holds no copy.
   fails the process, not a user.
 - Site scope is stricter than project scope on purpose: a collection owner
   who reaches a project through one site cannot act on a colleague's site.
-- Cover (delegation) widens a delegate's scope for a period by adding the
+- Delegation widens a delegate's scope for a period by adding the
   delegator's rows to the predicate, never by changing their role.
 - The security suite walks uuids across roles and expects 404.
 

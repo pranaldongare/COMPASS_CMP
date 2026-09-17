@@ -53,7 +53,7 @@ flowchart LR
 | Beat | `cmp_backend/` | `celery beat`, exactly one instance | Redis |
 | Staff console | `cmp_internal_ui/` | Next.js on port 3000 | the API, through its own `/api` proxy |
 | Data-principal portal | `cmp_public_ui/` | Next.js on port 3001 | the API, through its own `/api` proxy |
-| PostgreSQL | container `cmp-db-1` | 31 tables, 39 enums, 26 triggers, one view | |
+| PostgreSQL | container `cmp-db-1` | 32 tables, 39 enums, 27 triggers, one view | |
 | Redis | container `cmp-redis-1` | three logical databases: sessions and limits, broker, results | |
 
 ## Two audiences, two portals

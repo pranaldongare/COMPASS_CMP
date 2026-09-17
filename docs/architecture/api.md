@@ -20,7 +20,7 @@ the reference is the territory.
 | `/links/*`, `/consents/*` | staff | consent links, the consent register, artefacts, grants, history |
 | `/exports/*`, `/imports/*`, `/collections/*`, `/assets/*` | staff | the disclosure register, import batches, collections and their exceptions, assets and their subjects |
 | `/requests/*`, `/tickets/*` | DPO, administrator; respondents for tickets | the rights register and every action on a request; a respondent's own tickets |
-| `/delegations/*` | staff | cover: arranging it, ending it, what I hold |
+| `/delegations/*` | staff | delegation (Delegate in the console): arranging it, ending it, what I hold |
 | `/messages/*` | administrator, DPO | the words of every message the platform sends: list, replace per channel, preview, reset |
 | `/users/*` | administrator, DPO | accounts, roles, sessions |
 | `/audit/*` | DPO, administrator | search the trail, open one entry, verify the chain |

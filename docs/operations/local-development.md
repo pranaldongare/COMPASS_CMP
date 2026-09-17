@@ -146,7 +146,7 @@ cd cmp_internal_ui && npm run verify
 cd cmp_public_ui && npm run verify
 ```
 
-All four are clean on the integration branch as of 2026-09-10, `mypy
+All four are clean on the integration branch as of 2026-09-17, `mypy
 --strict` included. Anything reported is new.
 
 ## Things that bite
