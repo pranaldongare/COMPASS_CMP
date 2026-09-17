@@ -308,6 +308,15 @@ export interface NomineeOf {
   invoked_event: RightsTriggerEvent | null;
   invoked_reference: string | null;
   invoked_evidenced_at: Timestamp | null;
+  /** How far the request she raised has got. A reference with no state beside
+   *  it is how somebody comes to believe nothing has happened. */
+  invoked_request_uuid: Uuid | null;
+  invoked_request_type: RightsRequestType | null;
+  invoked_status: RightsRequestStatus | null;
+  invoked_outcome: RightsRequestOutcome | null;
+  invoked_due_at: Timestamp | null;
+  invoked_responded_at: Timestamp | null;
+  invoked_closed_at: Timestamp | null;
 }
 
 /** A contact recorded on a nomination, masked: enough to recognise, nothing to use. */

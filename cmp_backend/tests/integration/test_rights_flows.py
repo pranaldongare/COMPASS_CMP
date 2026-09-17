@@ -773,24 +773,36 @@ class TestNomination:
         )
         ref = str(nomination["nomination_uuid"])
 
-        by_mobile = await repo.nominations_naming(conn, mobile="+915550000091", email=None)
+        # Never accepted, so no account is recorded on it and the contacts are
+        # all there is to match on. `user_id` is the caller asking, which here
+        # belongs to nobody the nomination names.
+        stranger = seeded["users"]["dpo"]["id"]
+        by_mobile = await repo.nominations_naming(
+            conn, user_id=stranger, mobile="+915550000091", email=None
+        )
         assert [str(r["nomination_uuid"]) for r in by_mobile] == [ref]
         assert by_mobile[0]["status"] == "pending"
         assert by_mobile[0]["principal_name"] == "Test Subject"  # the seeded principal
 
         by_email = await repo.nominations_naming(
-            conn, mobile=None, email="meera.nominee@example.org"
+            conn, user_id=stranger, mobile=None, email="meera.nominee@example.org"
         )
         assert [str(r["nomination_uuid"]) for r in by_email] == [ref]
 
         nobody = await repo.nominations_naming(
-            conn, mobile="+915559999999", email="nobody@example.org"
+            conn, user_id=stranger, mobile="+915559999999", email="nobody@example.org"
         )
         assert nobody == []
 
-        # Revoked is not something she can act on, so it is not listed.
+        # Revoked, and never acted on, so there is nothing she can do with it
+        # and nothing she is owed about it: not listed.
         await service.revoke_nomination(conn, nomination_uuid=ref, principal_user_id=principal)
-        assert await repo.nominations_naming(conn, mobile="+915550000091", email=None) == []
+        assert (
+            await repo.nominations_naming(
+                conn, user_id=stranger, mobile="+915550000091", email=None
+            )
+            == []
+        )
 
     async def test_accepting_makes_the_nominee_an_account_he_can_sign_in_with(
         self, conn: Any, seeded: dict[str, Any], redis_conn: Any

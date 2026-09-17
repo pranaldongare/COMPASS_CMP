@@ -1548,10 +1548,14 @@ Request body required: **yes**.
 Nominations where the caller is the nominee.
 
 A data principal can be somebody else's nominee too, and until this
-existed her account said nothing about it. Matched on her own recorded
-contacts, since a nomination names a person by contact and not by account.
-Acting still goes through the nominee page and a code to that contact -
-being signed in here is not that proof.
+existed her account said nothing about it. Matched on the account recorded
+when she accepted, falling back to the contacts the principal wrote down
+for nominations accepted before that was kept.
+
+Each row carries how far the request she raised has got. Raising a *new*
+one still goes through the nominee page and a code to a recorded contact:
+being signed in here is enough to read what became of her own request, and
+not enough to make another in somebody else's name.
 
 ### Validation
 
@@ -1585,7 +1589,14 @@ No request body.
     "invoked_at": "2026-09-17T12:00:00Z",
     "invoked_event": "string",
     "invoked_reference": "string",
-    "invoked_evidenced_at": "2026-09-17T12:00:00Z"
+    "invoked_evidenced_at": "2026-09-17T12:00:00Z",
+    "invoked_request_uuid": "00000000-0000-4000-8000-000000000000",
+    "invoked_request_type": "string",
+    "invoked_status": "string",
+    "invoked_outcome": "string",
+    "invoked_due_at": "2026-09-17T12:00:00Z",
+    "invoked_responded_at": "2026-09-17T12:00:00Z",
+    "invoked_closed_at": "2026-09-17T12:00:00Z"
   }
 ]
 ```

@@ -28,6 +28,7 @@ from cmp.core.enums import RightsRequestStatus as Status
 from cmp.core.enums import RightsRequestType as Kind
 from cmp.core.enums import RightsScopeDecision as Decision
 from cmp.core.enums import RightsTicketStatus as Ticket
+from cmp.core.enums import RightsTriggerEvent as TriggerEvent
 from cmp.core.errors import BadRequest, Conflict, Forbidden, NotFound, ValidationFailed
 from cmp.core.logging import get_logger
 from cmp.core.permissions import Role
@@ -249,8 +250,7 @@ async def acknowledge(conn: Conn, row: Row, *, actor_id: int | None) -> Row:
         await repo.update(conn, int(row["request_id"]), acknowledged_at=datetime.now(UTC))
         row = await reload(conn, row)
     await _record(conn, row, Event.RIGHTS_ACKNOWLEDGED, actor_user_id=actor_id)
-    contact = contact_for(row)
-    if contact:
+    for contact in _acknowledge_to(row):
         _dispatch(
             "send_rights_acknowledgement",
             contact,
@@ -260,6 +260,27 @@ async def acknowledge(conn: Conn, row: Row, *, actor_id: int | None) -> Row:
             clock.response_period_days(str(row["request_type"])),
         )
     return row
+
+
+def _acknowledge_to(row: Row) -> list[str]:
+    """Who is told a request has been received.
+
+    The requester, by `contact_for` - for a nominee's request that is the
+    nominee, because the principal may be exactly as incapacitated as claimed.
+
+    And, where the claim is incapacity rather than death, the principal as
+    well. Her account stays open, the request appears in her own list, and
+    somebody exercising her rights in her name is a thing she should hear
+    about from us rather than discover. Incapacity is also the claim she might
+    be in a position to dispute. On a death claim there is nobody to write to,
+    and writing anyway would be its own cruelty.
+    """
+    out = [c for c in (contact_for(row),) if c]
+    if row["channel"] == Channel.NOMINEE and row.get("trigger_event") == TriggerEvent.INCAPACITY:
+        her = row.get("subject_email") or row.get("subject_mobile")
+        if her and str(her) not in out:
+            out.append(str(her))
+    return out
 
 
 # -------------------------------------------------------------- public form
@@ -2741,14 +2762,24 @@ async def _ensure_nominee_account(conn: Conn, nomination: Row, *, proven_medium:
     code he asks for next actually arrives. Where an account already holds a
     recorded contact, it is his already, and nothing is created.
 
+    Either way the account is written onto the nomination, which is what lets
+    him follow the request he raises years later without the platform having
+    to guess from contact strings which account is his.
+
     Returns whether he now has an account to sign in with. A nomination
     recorded before mobiles were required may name an email alone; a data
-    principal's account needs a mobile, so none is made for those.
+    principal's account needs a mobile, so none is made for those - and those
+    nominees are reached by message alone, which is why every message about
+    the request goes to them.
     """
     mobile = nomination.get("nominee_mobile")
     email = nomination.get("nominee_email")
     for contact in (mobile, email):
-        if contact and await user_repo.by_contact(conn, str(contact)):
+        existing = await user_repo.by_contact(conn, str(contact)) if contact else None
+        if existing:
+            await repo.link_nominee_account(
+                conn, int(nomination["nomination_id"]), int(existing["id"])
+            )
             return True
     if not mobile:
         return False
@@ -2762,6 +2793,7 @@ async def _ensure_nominee_account(conn: Conn, nomination: Row, *, proven_medium:
         status="active",
     )
     await user_repo.mark_contact_verified(conn, int(user["id"]), proven_medium)
+    await repo.link_nominee_account(conn, int(nomination["nomination_id"]), int(user["id"]))
     await audit.record(
         conn,
         event=Event.USER_CREATED,

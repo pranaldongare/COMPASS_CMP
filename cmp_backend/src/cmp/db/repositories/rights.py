@@ -1193,10 +1193,17 @@ _NOMINATION_SELECT = """
   -- Cast: an enum array comes back unparsed unless its type is registered.
   n.rights::text[] AS rights,
   n.status, n.accept_expires_at, n.accepted_at, n.declined_at, n.revoked_at, n.created_at,
+  n.nominee_user_id,
   n.principal_user_id, p.uuid AS principal_uuid, p.full_name AS principal_name,
   p.email AS principal_email, p.status AS principal_status,
   n.invoked_at, n.invoked_event, ir.request_uuid AS invoked_request_uuid,
-  ir.reference AS invoked_reference, ir.trigger_evidenced_at AS invoked_evidenced_at
+  ir.reference AS invoked_reference, ir.trigger_evidenced_at AS invoked_evidenced_at,
+  -- Where the request the nominee raised has got to. Carried here because this
+  -- row is the only thing the nominee is shown about it, and a reference with
+  -- no state beside it is how somebody comes to believe nothing has happened.
+  ir.status AS invoked_status, ir.outcome AS invoked_outcome,
+  ir.request_type AS invoked_request_type, ir.due_at AS invoked_due_at,
+  ir.responded_at AS invoked_responded_at, ir.closed_at AS invoked_closed_at
   FROM nomination n
   JOIN auth_user p ON p.id = n.principal_user_id
   LEFT JOIN rights_request ir ON ir.request_id = n.invoked_request_id
@@ -1248,6 +1255,20 @@ async def create_nomination(
     return row
 
 
+async def link_nominee_account(conn: Conn, nomination_id: int, user_id: int) -> None:
+    """Record which account the nominee accepted with.
+
+    Written once, at acceptance. Never from a later contact comparison: the
+    contacts on the row are what the principal recorded, and following the
+    nominee's own edits would let somebody else's account drift into a
+    nomination that was never about them.
+    """
+    await conn.execute(
+        "UPDATE nomination SET nominee_user_id = %s WHERE nomination_id = %s",
+        (user_id, nomination_id),
+    )
+
+
 async def nominations_of(conn: Conn, principal_user_id: int) -> list[Row]:
     return await fetch_all(
         conn,
@@ -1256,23 +1277,68 @@ async def nominations_of(conn: Conn, principal_user_id: int) -> list[Row]:
     )
 
 
-async def nominations_naming(conn: Conn, *, mobile: str | None, email: str | None) -> list[Row]:
-    """Live nominations that name this person as nominee, by either contact.
+#: A nomination belongs to the caller as nominee. The recorded account first,
+#: which is what acceptance writes; the contacts as a fallback, for rows
+#: accepted before that column existed and for one never accepted at all,
+#: where there is no account to have recorded.
+_NOMINEE_IS_CALLER = """(
+       (%s::int IS NOT NULL AND n.nominee_user_id = %s)
+    OR (n.nominee_user_id IS NULL
+        AND ((%s::text IS NOT NULL AND n.nominee_mobile = %s)
+             OR (%s::text IS NOT NULL AND lower(n.nominee_email) = lower(%s))))
+)"""
 
-    The other direction from `nominations_of`. A nominee is not a row in
-    `auth_user` - she may be a stranger - so the match is on the contacts the
-    principal recorded, compared the way they are stored: the mobile as
-    digits, the email lower-cased. Only pending and active: a declined or
-    revoked nomination is nothing she can act on and nothing she needs told.
+
+def _nominee_params(user_id: int, mobile: str | None, email: str | None) -> list[Any]:
+    return [user_id, user_id, mobile, mobile, email, email]
+
+
+async def nominations_naming(
+    conn: Conn, *, user_id: int, mobile: str | None, email: str | None
+) -> list[Row]:
+    """Nominations that name this person as nominee.
+
+    The other direction from `nominations_of`. Matched on the account recorded
+    at acceptance, falling back to the contacts the principal wrote down,
+    compared the way they are stored: the mobile as digits, the email
+    lower-cased.
+
+    Pending and active, plus any nomination that has been invoked whatever its
+    status now. A revoked nomination is nothing she can act on - but if she has
+    already raised a request under it, that request is hers to follow to the
+    end. Revocation stops what comes next; it does not unask the question she
+    lawfully asked, or withdraw the answer she is owed.
     """
     return await fetch_all(
         conn,
         f"""SELECT {_NOMINATION_SELECT}
-             WHERE n.status IN ('pending', 'active')
-               AND ((%s::text IS NOT NULL AND n.nominee_mobile = %s)
-                    OR (%s::text IS NOT NULL AND lower(n.nominee_email) = lower(%s)))
+             WHERE (n.status IN ('pending', 'active') OR n.invoked_request_id IS NOT NULL)
+               AND {_NOMINEE_IS_CALLER}
              ORDER BY n.created_at DESC""",
-        (mobile, mobile, email, email),
+        _nominee_params(user_id, mobile, email),
+    )
+
+
+async def request_as_nominee(
+    conn: Conn, request_uuid: str, *, user_id: int, mobile: str | None, email: str | None
+) -> Row | None:
+    """A request this person raised as somebody's nominee, or None.
+
+    The counterpart of `subject_request`, and deliberately a second function
+    rather than a loosening of that one: "mine" has to keep meaning the rows
+    whose subject I am, or every later reader of that predicate is misled.
+
+    No status condition on the nomination, for the reason above. The join
+    itself is the authority: this request exists because this nomination was
+    invoked, and only the nominee named on it can arrive here.
+    """
+    return await fetch_one(
+        conn,
+        f"""SELECT {_SELECT}{_FROM}
+             WHERE r.request_uuid = %s
+               AND r.nomination_id IS NOT NULL
+               AND {_NOMINEE_IS_CALLER}""",
+        [request_uuid, *_nominee_params(user_id, mobile, email)],
     )
 
 

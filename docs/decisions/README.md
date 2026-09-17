@@ -20,6 +20,7 @@ one stays and points forward.
 | [0011](0011-server-held-notice-serving.md) | The serving of a notice is the server's record, not the client's claim | accepted |
 | [0012](0012-side-effects-after-commit.md) | Side effects wait for the commit; a durable outbox is deferred | accepted |
 | [0013](0013-every-account-is-a-data-principal.md) | Every account is a data principal; staff is a role the session acts with, and a code sign-in is worth exactly that | accepted |
+| [0014](0014-a-nominee-follows-the-request-they-raised.md) | A nominee follows the request they raised, and reading is not acting | accepted |
 
 ## Writing one
 

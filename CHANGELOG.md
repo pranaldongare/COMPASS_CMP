@@ -31,6 +31,12 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Fixed
+- A nominee saw nothing of the request they raised. Found on a running stack:
+  a request filed on a death trigger had been answered and closed a week
+  earlier, and the nominee's account showed an empty list - while the
+  acknowledgement they had been sent told them the response would be waiting
+  there. Every route that returns a request filtered on the subject, and the
+  subject of their request is the principal.
 - A mobile an administrator put on somebody's account was never sent a code, so
   it stayed unconfirmed with nothing having told its owner it was there — and a
   member of staff who noticed on the console had no way to confirm it, because
@@ -79,6 +85,18 @@ as a release yet.
   and test instead of reporting delivery.
 
 ### Added
+- **A nominee can follow the request they raised, to the end.** Section 14
+  makes them the person exercising the right, and the request now reads to
+  them as it does to the principal: the state, the clock, the path, the
+  response and the files released with it, from the nomination card on their
+  own account page. Reading is not acting - making another request in her
+  name, or disputing a response, still needs the nominee page and a code to a
+  contact she recorded. A nomination revoked after it was invoked keeps its
+  request in view, marked as no longer in effect. On an incapacity claim the
+  principal is acknowledged too. Acceptance now records which account
+  accepted (migration 0026), so the nominee is matched by account rather than
+  by comparing contact strings
+  ([ADR 0014](docs/decisions/0014-a-nominee-follows-the-request-they-raised.md)).
 - **A mobile an administrator sets is sent a code.** Creating an account with
   a number, or changing one on the register, now writes to that number:
   `contact_added_for_you` says an administrator added it and carries a code to

@@ -3037,7 +3037,7 @@
           "me"
         ],
         "summary": "Who has nominated me",
-        "description": "Nominations where the caller is the nominee.\n\nA data principal can be somebody else's nominee too, and until this\nexisted her account said nothing about it. Matched on her own recorded\ncontacts, since a nomination names a person by contact and not by account.\nActing still goes through the nominee page and a code to that contact -\nbeing signed in here is not that proof.",
+        "description": "Nominations where the caller is the nominee.\n\nA data principal can be somebody else's nominee too, and until this\nexisted her account said nothing about it. Matched on the account recorded\nwhen she accepted, falling back to the contacts the principal wrote down\nfor nominations accepted before that was kept.\n\nEach row carries how far the request she raised has got. Raising a *new*\none still goes through the nominee page and a code to a recorded contact:\nbeing signed in here is enough to read what became of her own request, and\nnot enough to make another in somebody else's name.",
         "operationId": "nominations_naming_me_me_nominee_of_get",
         "responses": {
           "200": {
@@ -17248,6 +17248,87 @@
               }
             ],
             "title": "Invoked Evidenced At"
+          },
+          "invoked_request_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoked Request Uuid"
+          },
+          "invoked_request_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoked Request Type"
+          },
+          "invoked_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoked Status"
+          },
+          "invoked_outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoked Outcome"
+          },
+          "invoked_due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoked Due At"
+          },
+          "invoked_responded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoked Responded At"
+          },
+          "invoked_closed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoked Closed At"
           }
         },
         "type": "object",

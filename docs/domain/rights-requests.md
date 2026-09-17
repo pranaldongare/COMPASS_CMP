@@ -144,6 +144,21 @@ When the nominee invokes the nomination they name the **trigger event**,
 Death closes the principal's account; incapacity does not. The nomination
 records which request invoked it.
 
+**The nominee follows that request to the end.** Signed in, it reads to them
+as it does to her: the state, the clock, the path, the response and the files
+released with it. They are the person exercising the right, and every message
+about the request already goes to them rather than to her, who may be exactly
+as incapacitated as claimed. On an incapacity claim she is acknowledged as
+well, because her account stays open and the request appears in her own list.
+
+Reading is not acting. Being signed in is enough to see what became of the
+request they raised; making another in her name still needs the nominee page
+and a code to a contact she recorded, and so does disputing a response, which
+makes a new request. A nomination revoked after it was invoked keeps its
+request in the nominee's view, marked as no longer in effect: revocation stops
+what comes next and does not unask the question they lawfully asked
+([ADR 0014](../decisions/0014-a-nominee-follows-the-request-they-raised.md)).
+
 ## Grievances
 
 A grievance is linked to the request it disputes, where there is one. A
@@ -171,6 +186,7 @@ escalations.
 | Due date fixed at receipt | column on `rights_request`, stamped in the service |
 | One live nomination per person | partial unique index on `nomination` |
 | A nominee needs a mobile | `trg_nominee_needs_mobile` |
+| A nominee reaches the request they raised, and no other | `request_as_nominee`, joined through `nomination.nominee_user_id` |
 | A ticket is answered by the respondent it names | scope on `ticket` is `OWN` for every staff role |
 | A response file is hashed and time-boxed | `rights_response_file` |
 | Every action audited | the audit chain, same transaction |

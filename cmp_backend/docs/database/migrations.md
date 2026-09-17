@@ -38,6 +38,7 @@ models.
 | `0023` | One root consent artefact per (person, notice), by unique partial index; `export_log.file_ref` keeps the CSV as generated. Refuses to apply while duplicate roots exist |
 | `0024` | `message_template`: the office's replacement words per message junction and channel |
 | 0025 | `secondary_email` and `secondary_email_verified_at` on `auth_user`; a case-insensitive unique index; a CHECK that it differs from `email`; `cmp_contact_belongs_to_one_person()` so an address is nobody else's primary or secondary, raising as a unique violation |
+| 0026 | `nomination.nominee_user_id`: the account the nominee accepted with, so the person is matched by account rather than by comparing contact strings. Backfilled for accepted nominations whose recorded contact reaches exactly one account |
 
 ## What 0004 fixed
 

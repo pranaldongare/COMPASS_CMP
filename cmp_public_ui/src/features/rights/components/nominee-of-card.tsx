@@ -6,8 +6,16 @@
  * accepted, and then nothing in her console showed who she could act for, or
  * how. Everything she needs is here - the reference, whose rights, whether it
  * is in effect - and the way onward is the same nominee page everyone uses,
- * with the reference filled in. Acting still needs a code to the contact the
- * principal recorded; being signed in is not that proof.
+ * with the reference filled in. Making a request still needs a code to the
+ * contact the principal recorded; being signed in is not that proof.
+ *
+ * Once she has acted, this is also where she follows what became of it. It
+ * used to show the reference and stop, which reads as nothing having happened
+ * - and in one case the request had been answered and closed a week earlier.
+ * Section 14 makes her the person exercising the right, so the request reads
+ * to her exactly as it does to the principal, in the same card. Disputing is
+ * the exception: that makes a new request in their name, and making one keeps
+ * its own door.
  *
  * Renders nothing when there is nothing: most people are nobody's nominee.
  */
@@ -17,9 +25,20 @@ import { ArrowRight, Copy, UserRoundCheck } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
-import { Alert, Badge, Button, Card, CardBody, CardHeader, CardTitle, Mono } from "@/components/ui/primitives";
-import { REQUEST_TYPE_COPY } from "@/features/rights/components/copy";
-import { useNominationsNamingMe } from "@/features/rights/queries";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Mono,
+  Skeleton,
+} from "@/components/ui/primitives";
+import { REQUEST_TYPE_COPY, RequestStatusBadge } from "@/features/rights/components/copy";
+import { RequestCard } from "@/features/rights/components/request-card";
+import { useMyRequest, useNominationsNamingMe } from "@/features/rights/queries";
 import { formatDate } from "@/lib/format";
 import type { NomineeOf } from "@/types";
 
@@ -36,9 +55,9 @@ export function NomineeOfCard() {
           Somebody has named you to act for them
         </CardTitle>
         <p className="mt-1 text-xs text-text-muted">
-          Section 14. If they die or cannot act, you may exercise the rights they granted you.
-          Nothing runs until then, and the Privacy Office decides first whether the event is
-          evidenced.
+          Section 14. If they die or cannot act, you may exercise the rights they granted
+          you. Nothing runs until then, and the Privacy Office decides first whether the
+          event is evidenced.
         </p>
       </CardHeader>
       <CardBody className="space-y-5">
@@ -80,7 +99,10 @@ function NomineeOfRow({ n }: { n: NomineeOf }) {
       {n.invoked_at && (
         <Alert tone="info" title={`You acted on ${formatDate(n.invoked_at)}`}>
           <p className="text-sm">
-            You reported {n.invoked_event === "death" ? "that they have died" : "that they cannot act for themselves"}
+            You reported{" "}
+            {n.invoked_event === "death"
+              ? "that they have died"
+              : "that they cannot act for themselves"}
             {n.invoked_reference && (
               <>
                 {" "}
@@ -92,15 +114,37 @@ function NomineeOfRow({ n }: { n: NomineeOf }) {
               ? `The Privacy Office found the event evidenced on ${formatDate(n.invoked_evidenced_at)}.`
               : "The Privacy Office decides first whether the event is evidenced."}
           </p>
+
+          {n.invoked_status && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <RequestStatusBadge status={n.invoked_status} outcome={n.invoked_outcome} />
+              <span className="text-xs text-text-muted">
+                {n.invoked_responded_at
+                  ? `Answered on ${formatDate(n.invoked_responded_at)}`
+                  : n.invoked_due_at
+                    ? `You will hear by ${formatDate(n.invoked_due_at)}`
+                    : null}
+              </span>
+            </div>
+          )}
         </Alert>
       )}
 
-      {n.status === "pending" ? (
+      {n.invoked_request_uuid && <RaisedRequest uuid={n.invoked_request_uuid} />}
+
+      {n.status === "revoked" || n.status === "declined" ? (
+        <Alert tone="warning">
+          <p className="text-sm">
+            This nomination is no longer in effect, so you cannot make another request under
+            it. The one you already made stays here until it is answered.
+          </p>
+        </Alert>
+      ) : n.status === "pending" ? (
         <Alert tone="warning">
           <p className="text-sm">
             Not yet in effect. Accept or decline from the link we sent to {n.contact}
-            {n.accept_expires_at && ` - it expires on ${formatDate(n.accept_expires_at)}`}. The
-            link alone is not enough; a code goes to that contact.
+            {n.accept_expires_at && ` - it expires on ${formatDate(n.accept_expires_at)}`}.
+            The link alone is not enough; a code goes to that contact.
           </p>
         </Alert>
       ) : (
@@ -110,7 +154,7 @@ function NomineeOfRow({ n }: { n: NomineeOf }) {
             when you accepted:
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            <Mono className="break-all text-sm" data-testid="nominee-of-reference">
+            <Mono className="text-sm break-all" data-testid="nominee-of-reference">
               {n.nomination_uuid}
             </Mono>
             <Button type="button" variant="subtle" size="sm" onClick={copy}>
@@ -119,13 +163,63 @@ function NomineeOfRow({ n }: { n: NomineeOf }) {
             </Button>
           </div>
           <Button asChild variant="primary" size="sm">
-            <Link href={`/rights/nominee?nomination=${encodeURIComponent(n.nomination_uuid)}`}>
+            <Link
+              href={`/rights/nominee?nomination=${encodeURIComponent(n.nomination_uuid)}`}
+            >
               Act on {n.principal_name}&apos;s behalf
               <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
           </Button>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * The request she raised, shown the way the principal is shown their own.
+ *
+ * Fetched rather than carried on the nomination row, because the whole of it -
+ * the response, the files, the trail - is more than a summary line should
+ * haul, and it is only wanted once she opens it. `about` and `followedBy` are
+ * empty: those link a request to her *other* requests on her own page, and
+ * this one is not hers.
+ */
+function RaisedRequest({ uuid }: { uuid: string }) {
+  const [open, setOpen] = React.useState(false);
+  const request = useMyRequest(open ? uuid : undefined);
+
+  if (!open) {
+    return (
+      <Button type="button" variant="secondary" size="sm" onClick={() => setOpen(true)}>
+        Show the request
+      </Button>
+    );
+  }
+  if (request.isLoading) return <Skeleton className="h-32" />;
+  if (!request.data) {
+    return (
+      <Alert tone="danger">
+        <p className="text-sm">That request could not be loaded.</p>
+      </Alert>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <RequestCard
+        request={request.data}
+        about={null}
+        followedBy={[]}
+        expanded
+        highlighted={false}
+        canDispute={false}
+        onToggle={() => setOpen(false)}
+        onJump={() => {}}
+      />
+      <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
+        Hide the request
+      </Button>
     </div>
   );
 }

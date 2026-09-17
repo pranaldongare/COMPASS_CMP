@@ -789,7 +789,11 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Update User */
+        /**
+         * Update User
+         * @description Name, mobile, organisation id. A mobile that changes is unconfirmed
+         *     again and is sent a code, as it would be had the person typed it.
+         */
         patch: operations["update_user_users__user_uuid__patch"];
         trace?: never;
     };
@@ -1336,10 +1340,14 @@ export interface paths {
          * @description Nominations where the caller is the nominee.
          *
          *     A data principal can be somebody else's nominee too, and until this
-         *     existed her account said nothing about it. Matched on her own recorded
-         *     contacts, since a nomination names a person by contact and not by account.
-         *     Acting still goes through the nominee page and a code to that contact -
-         *     being signed in here is not that proof.
+         *     existed her account said nothing about it. Matched on the account recorded
+         *     when she accepted, falling back to the contacts the principal wrote down
+         *     for nominations accepted before that was kept.
+         *
+         *     Each row carries how far the request she raised has got. Raising a *new*
+         *     one still goes through the nominee page and a code to a recorded contact:
+         *     being signed in here is enough to read what became of her own request, and
+         *     not enough to make another in somebody else's name.
          */
         get: operations["nominations_naming_me_me_nominee_of_get"];
         put?: never;
@@ -6123,6 +6131,20 @@ export interface components {
             invoked_reference?: string | null;
             /** Invoked Evidenced At */
             invoked_evidenced_at?: string | null;
+            /** Invoked Request Uuid */
+            invoked_request_uuid?: string | null;
+            /** Invoked Request Type */
+            invoked_request_type?: string | null;
+            /** Invoked Status */
+            invoked_status?: string | null;
+            /** Invoked Outcome */
+            invoked_outcome?: string | null;
+            /** Invoked Due At */
+            invoked_due_at?: string | null;
+            /** Invoked Responded At */
+            invoked_responded_at?: string | null;
+            /** Invoked Closed At */
+            invoked_closed_at?: string | null;
         };
         /** NomineeRequestOut */
         NomineeRequestOut: {

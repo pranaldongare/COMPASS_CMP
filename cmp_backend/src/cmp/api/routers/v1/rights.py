@@ -431,6 +431,15 @@ class NomineeOfOut(Out):
     invoked_event: str | None = None
     invoked_reference: str | None = None
     invoked_evidenced_at: datetime | None = None
+    #: Where the request he raised has got to. The reference alone told him
+    #: only that he had asked, which reads as nothing having happened.
+    invoked_request_uuid: UUID | None = None
+    invoked_request_type: str | None = None
+    invoked_status: str | None = None
+    invoked_outcome: str | None = None
+    invoked_due_at: datetime | None = None
+    invoked_responded_at: datetime | None = None
+    invoked_closed_at: datetime | None = None
 
 
 # ------------------------------------------------------------------- inputs
@@ -1545,10 +1554,40 @@ async def _mine(conn: Any, request_uuid: UUID, user_id: int) -> dict[str, Any]:
     return row
 
 
+async def _mine_or_raised(conn: Any, request_uuid: UUID, user_id: int) -> dict[str, Any]:
+    """My own request, or one I raised as somebody's nominee.
+
+    Section 14 makes the nominee the person who exercises the right, and a
+    right to ask without a right to be told the answer is not a right. So the
+    request he raised reads to him exactly as it does to her: the state, the
+    clock, the response and the files released with it. He was sent all of it
+    by message already; what was missing was anywhere to look.
+
+    Not `dispute`, which makes a new request in her name - that is acting, and
+    acting keeps its own door: the nominee page and a code to the contact she
+    recorded.
+    """
+    row = await repo.subject_request(conn, str(request_uuid), user_id)
+    if row:
+        return row
+    me = await user_repo.by_id(conn, user_id)
+    if me:
+        row = await repo.request_as_nominee(
+            conn,
+            str(request_uuid),
+            user_id=user_id,
+            mobile=me.get("mobile"),
+            email=me.get("email"),
+        )
+    if not row:
+        raise NotFound("Rights request")
+    return row
+
+
 @subject_router.get("/requests/{request_uuid}", response_model=SubjectRequestOut)
 async def my_request(request_uuid: UUID, principal: RequireDataSubject) -> dict[str, Any]:
     async with connection() as conn:
-        row = await _mine(conn, request_uuid, principal.user_id)
+        row = await _mine_or_raised(conn, request_uuid, principal.user_id)
         return (await _subject_views(conn, [row]))[0]
 
 
@@ -1557,7 +1596,7 @@ async def my_request_trail(
     request_uuid: UUID, principal: RequireDataSubject
 ) -> list[dict[str, Any]]:
     async with connection() as conn:
-        row = await _mine(conn, request_uuid, principal.user_id)
+        row = await _mine_or_raised(conn, request_uuid, principal.user_id)
         return await _trail(conn, str(row["reference"]), for_subject=True)
 
 
@@ -1566,7 +1605,7 @@ async def my_request_trail(
 )
 async def my_download(request_uuid: UUID, principal: RequireDataSubject) -> Response:
     async with transaction() as conn:
-        row = await _mine(conn, request_uuid, principal.user_id)
+        row = await _mine_or_raised(conn, request_uuid, principal.user_id)
         payload, filename, recorded = await service.download(
             conn, row, actor_id=principal.user_id, as_subject=True
         )
@@ -1581,7 +1620,7 @@ async def my_download_file(
     request_uuid: UUID, file_uuid: UUID, principal: RequireDataSubject
 ) -> Response:
     async with transaction() as conn:
-        row = await _mine(conn, request_uuid, principal.user_id)
+        row = await _mine_or_raised(conn, request_uuid, principal.user_id)
         payload, found = await service.download_file(
             conn, row, file_uuid=str(file_uuid), actor_id=principal.user_id, as_subject=True
         )
@@ -1626,16 +1665,22 @@ async def nominations_naming_me(principal: RequireDataSubject) -> list[dict[str,
     """Nominations where the caller is the nominee.
 
     A data principal can be somebody else's nominee too, and until this
-    existed her account said nothing about it. Matched on her own recorded
-    contacts, since a nomination names a person by contact and not by account.
-    Acting still goes through the nominee page and a code to that contact -
-    being signed in here is not that proof.
+    existed her account said nothing about it. Matched on the account recorded
+    when she accepted, falling back to the contacts the principal wrote down
+    for nominations accepted before that was kept.
+
+    Each row carries how far the request she raised has got. Raising a *new*
+    one still goes through the nominee page and a code to a recorded contact:
+    being signed in here is enough to read what became of her own request, and
+    not enough to make another in somebody else's name.
     """
     async with connection() as conn:
         me = await user_repo.by_id(conn, principal.user_id)
         if me is None:
             return []
-        rows = await repo.nominations_naming(conn, mobile=me.get("mobile"), email=me.get("email"))
+        rows = await repo.nominations_naming(
+            conn, user_id=principal.user_id, mobile=me.get("mobile"), email=me.get("email")
+        )
         out: list[dict[str, Any]] = []
         for row in rows:
             mine_mobile = me.get("mobile")
