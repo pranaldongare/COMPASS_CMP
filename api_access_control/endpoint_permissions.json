@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 241,
-  "registered_business_and_system_operations": 244,
+  "documented_operations": 245,
+  "registered_business_and_system_operations": 248,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -177,7 +177,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Ends the caller\u2019s current session only."
+        "Ends the caller’s current session only."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/auth.py#L295",
@@ -219,7 +219,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Returns the caller\u2019s effective session role and navigation; account_role may differ after OTP portal sign-in."
+        "Returns the caller’s effective session role and navigation; account_role may differ after OTP portal sign-in."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/auth.py#L312",
@@ -633,7 +633,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "The target session must belong to the caller; another account\u2019s session is not selectable."
+        "The target session must belong to the caller; another account’s session is not selectable."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/auth.py#L364",
@@ -674,7 +674,7 @@
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
-        "R&D currently passes the consent reader guard for individual rows, grants and assets as well as summaries. The static matrix comment saying \u201csummary counts only\u201d is not an endpoint restriction here."
+        "R&D currently passes the consent reader guard for individual rows, grants and assets as well as summaries. The static matrix comment saying “summary counts only” is not an endpoint restriction here."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/consents.py#L201",
@@ -714,7 +714,7 @@
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
-        "R&D currently passes the consent reader guard for individual rows, grants and assets as well as summaries. The static matrix comment saying \u201csummary counts only\u201d is not an endpoint restriction here."
+        "R&D currently passes the consent reader guard for individual rows, grants and assets as well as summaries. The static matrix comment saying “summary counts only” is not an endpoint restriction here."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/consents.py#L393",
@@ -754,7 +754,7 @@
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
-        "R&D currently passes the consent reader guard for individual rows, grants and assets as well as summaries. The static matrix comment saying \u201csummary counts only\u201d is not an endpoint restriction here."
+        "R&D currently passes the consent reader guard for individual rows, grants and assets as well as summaries. The static matrix comment saying “summary counts only” is not an endpoint restriction here."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/consents.py#L419",
@@ -794,7 +794,7 @@
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
-        "R&D currently passes the consent reader guard for individual rows, grants and assets as well as summaries. The static matrix comment saying \u201csummary counts only\u201d is not an endpoint restriction here."
+        "R&D currently passes the consent reader guard for individual rows, grants and assets as well as summaries. The static matrix comment saying “summary counts only” is not an endpoint restriction here."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/consents.py#L404",
@@ -1026,7 +1026,7 @@
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
-        "R&D currently passes the consent reader guard for individual rows, grants and assets as well as summaries. The static matrix comment saying \u201csummary counts only\u201d is not an endpoint restriction here."
+        "R&D currently passes the consent reader guard for individual rows, grants and assets as well as summaries. The static matrix comment saying “summary counts only” is not an endpoint restriction here."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/consents.py#L356",
@@ -1066,7 +1066,7 @@
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
-        "R&D currently passes the consent reader guard for individual rows, grants and assets as well as summaries. The static matrix comment saying \u201csummary counts only\u201d is not an endpoint restriction here.",
+        "R&D currently passes the consent reader guard for individual rows, grants and assets as well as summaries. The static matrix comment saying “summary counts only” is not an endpoint restriction here.",
         "After a project-scope check this endpoint returns project-wide counts; it is not a list of individually scoped consent rows."
       ],
       "evidence": [
@@ -2179,7 +2179,7 @@
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.",
-        "Source consent rows for a new export are selected using the caller\u2019s site scope."
+        "Source consent rows for a new export are selected using the caller’s site scope."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/exchange.py#L174",
@@ -2221,7 +2221,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Shared account/profile route: staff sessions are accepted. POST /me/person-type is narrower: DPO, Admin and data_subject only."
       ],
       "evidence": [
@@ -2262,7 +2262,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Shared account/profile route: staff sessions are accepted. POST /me/person-type is narrower: DPO, Admin and data_subject only.",
         "Adding/changing a contact does not make it usable for sign-in until the matching code is verified."
       ],
@@ -2298,7 +2298,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -2333,7 +2333,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -2368,7 +2368,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -2403,7 +2403,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -2438,7 +2438,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -2473,7 +2473,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -2508,7 +2508,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -2549,7 +2549,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Shared account/profile route: staff sessions are accepted. POST /me/person-type is narrower: DPO, Admin and data_subject only.",
         "Adding/changing a contact does not make it usable for sign-in until the matching code is verified."
       ],
@@ -2591,7 +2591,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Shared account/profile route: staff sessions are accepted. POST /me/person-type is narrower: DPO, Admin and data_subject only.",
         "Adding/changing a contact does not make it usable for sign-in until the matching code is verified."
       ],
@@ -2627,7 +2627,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -2662,7 +2662,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -2697,7 +2697,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -2732,7 +2732,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -2767,9 +2767,9 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject.",
-        "Matches nominations naming the caller\u2019s verified contacts; this lists nominee relationships, not only nominations the caller created."
+        "Matches nominations naming the caller’s verified contacts; this lists nominee relationships, not only nominations the caller created."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/rights.py#L1625"
@@ -2803,7 +2803,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -2846,7 +2846,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Shared account/profile route: staff sessions are accepted. POST /me/person-type is narrower: DPO, Admin and data_subject only."
       ],
       "evidence": [
@@ -2881,7 +2881,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -2916,7 +2916,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -2951,7 +2951,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -2986,7 +2986,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -3021,7 +3021,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -3056,7 +3056,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -3091,7 +3091,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject."
       ],
       "evidence": [
@@ -3132,7 +3132,7 @@
         "data_subject": "OWN"
       },
       "conditions": [
-        "Only the signed-in person\u2019s record or their related records; an account UUID supplied by the client does not select a different principal.",
+        "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
         "Shared account/profile route: staff sessions are accepted. POST /me/person-type is narrower: DPO, Admin and data_subject only."
       ],
       "evidence": [
@@ -4668,7 +4668,7 @@
       "module": "projects",
       "method": "PUT",
       "path": "/projects/{project_uuid}/processors",
-      "summary": "Draft only \u2014 replaces the set",
+      "summary": "Draft only — replaces the set",
       "function": "set_project_processors",
       "operation_id": "set_project_processors_projects__project_uuid__processors_put",
       "in_openapi": true,
@@ -5747,7 +5747,7 @@
         "data_subject": "PUBLIC"
       },
       "conditions": [
-        "Anyone may submit without an account. Contact verification and subsequent office checks govern processing; submission is not access to another person\u2019s records."
+        "Anyone may submit without an account. Contact verification and subsequent office checks govern processing; submission is not access to another person’s records."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/public/rights.py#L212",
@@ -6513,7 +6513,7 @@
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
-        "Current handler resolves a source by UUID without caller ownership filtering. All data_source writers can act on any source. Owner assignment validates the target owner\u2019s role, not the actor\u2019s source ownership."
+        "Current handler resolves a source by UUID without caller ownership filtering. All data_source writers can act on any source. Owner assignment validates the target owner’s role, not the actor’s source ownership."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/registry.py#L758"
@@ -6595,7 +6595,7 @@
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
-        "Current handler resolves a source by UUID without caller ownership filtering. All data_source writers can act on any source. Owner assignment validates the target owner\u2019s role, not the actor\u2019s source ownership."
+        "Current handler resolves a source by UUID without caller ownership filtering. All data_source writers can act on any source. Owner assignment validates the target owner’s role, not the actor’s source ownership."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/registry.py#L816",
@@ -6635,7 +6635,7 @@
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
-        "Current handler resolves a source by UUID without caller ownership filtering. All data_source writers can act on any source. Owner assignment validates the target owner\u2019s role, not the actor\u2019s source ownership."
+        "Current handler resolves a source by UUID without caller ownership filtering. All data_source writers can act on any source. Owner assignment validates the target owner’s role, not the actor’s source ownership."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/registry.py#L885",
@@ -9153,6 +9153,151 @@
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/users.py#L432"
       ]
+    },
+    {
+      "module": "audit",
+      "method": "GET",
+      "path": "/audit/summary",
+      "summary": "The shape of the rows a filter selects",
+      "function": "summary",
+      "operation_id": "summary_audit_summary_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireDPOorAdmin",
+      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
+      "route_roles": [
+        "admin",
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "DPO/Admin only. Counts by event, area, actor role and day over exactly the rows the same filters would list; the filters are validated as on GET /audit (an unknown entity uuid matches nothing)."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c7d3f6ba15a5cfdc6f9df6632c9c7e336c9936fa/cmp_backend/src/cmp/api/routers/v1/audit.py#L258"
+      ]
+    },
+    {
+      "module": "audit",
+      "method": "GET",
+      "path": "/audit/vocabulary",
+      "summary": "What the trail can be filtered by",
+      "function": "vocabulary",
+      "operation_id": "vocabulary_audit_vocabulary_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireDPOorAdmin",
+      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
+      "route_roles": [
+        "admin",
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "DPO/Admin only. Static: every entity type and event type the trail may carry, with labels, and the pickers the console offers. No row data."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c7d3f6ba15a5cfdc6f9df6632c9c7e336c9936fa/cmp_backend/src/cmp/api/routers/v1/audit.py#L302"
+      ]
+    },
+    {
+      "module": "audit",
+      "method": "GET",
+      "path": "/audit/lookup",
+      "summary": "Find a record to filter on",
+      "function": "lookup",
+      "operation_id": "lookup_audit_lookup_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireDPOorAdmin",
+      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
+      "route_roles": [
+        "admin",
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "DPO/Admin only. Name search over data principals, staff, consent records, processors, data sources, projects, notices, sites and rights requests, unscoped (the two supervising roles read every row). `kind` must be a known lookup kind, else 422; at most ten answers."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c7d3f6ba15a5cfdc6f9df6632c9c7e336c9936fa/cmp_backend/src/cmp/api/routers/v1/audit.py#L310"
+      ]
+    },
+    {
+      "module": "audit",
+      "method": "GET",
+      "path": "/audit/export.csv",
+      "summary": "Download the rows a filter selects, as CSV",
+      "function": "export_csv",
+      "operation_id": "export_csv_audit_export_csv_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireDPOorAdmin",
+      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
+      "route_roles": [
+        "admin",
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "DPO/Admin only. Newest first, at most 10,000 rows, free-text cells neutralised against spreadsheet formulas. The download is itself recorded in the trail as `audit.exported`, with the filters used and the caller as actor."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c7d3f6ba15a5cfdc6f9df6632c9c7e336c9936fa/cmp_backend/src/cmp/api/routers/v1/audit.py#L343"
+      ]
     }
-  ]
+  ],
+  "amended": {
+    "on": "2026-09-17",
+    "commit": "c7d3f6ba15a5cfdc6f9df6632c9c7e336c9936fa",
+    "note": "Four audit endpoints added (summary, vocabulary, lookup, export.csv); the rest of the snapshot is as reviewed at 1757d50."
+  }
 }

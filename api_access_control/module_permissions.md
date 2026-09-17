@@ -6,7 +6,7 @@ Each cell is **GET / non-GET endpoint counts** for which that role is eligible. 
 
 | Module | Endpoints | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Audit](modules/audit.md) | 3 | 3 / 0 | 3 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| [Audit](modules/audit.md) | 7 | 7 / 0 | 7 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
 | [Auth](modules/auth.md) | 14 | 2 / 12 | 2 / 12 | 2 / 12 | 2 / 12 | 2 / 12 | 2 / 12 | 2 / 12 |
 | [Consent](modules/consent.md) | 12 | 10 / 2 | 0 / 0 | 10 / 2 | 10 / 2 | 10 / 2 | 6 / 0 | 0 / 0 |
 | [Dashboard](modules/dashboard.md) | 3 | 2 / 1 | 2 / 0 | 2 / 1 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 |

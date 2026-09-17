@@ -21,7 +21,9 @@ the vocabulary is in [docs/glossary.md](docs/glossary.md). The endpoint-by-endpo
 request, validation and response reference, followed by access details for all
 seven roles, starts at [api_docs/README.md](api_docs/README.md). The database
 is drawn and listed, table by table, in
-[database_schema/README.md](database_schema/README.md).
+[database_schema/README.md](database_schema/README.md). Which role may call
+each endpoint, on which rows and under what conditions, is
+[api_access_control/README.md](api_access_control/README.md).
 
 ## What the system does
 

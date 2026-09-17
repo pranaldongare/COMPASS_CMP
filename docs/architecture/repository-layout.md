@@ -12,6 +12,7 @@ COMPASS_CMP/
   docs/                     cross-cutting documentation (this tree)
   api_docs/                 generated: every endpoint by module, and each role's reach
   database_schema/          generated: the schema drawn, every table and enum listed
+  api_access_control/       hand-reviewed: which role may call each endpoint, and on what
   cmp_backend/              the API, the worker, the migrations
   cmp_internal_ui/          the staff console, port 3000
   cmp_public_ui/            the data-principal portal, port 3001

@@ -14,6 +14,10 @@ Roles refer to the **effective session role**. A staff account signed in through
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | GET | `/audit` | NO | ALL | ALL | NO | NO | NO | NO | NO |
 | GET | `/audit/verify` | NO | ALL | ALL | NO | NO | NO | NO | NO |
+| GET | `/audit/summary` | NO | ALL | ALL | NO | NO | NO | NO | NO |
+| GET | `/audit/vocabulary` | NO | ALL | ALL | NO | NO | NO | NO | NO |
+| GET | `/audit/lookup` | NO | ALL | ALL | NO | NO | NO | NO | NO |
+| GET | `/audit/export.csv` | NO | ALL | ALL | NO | NO | NO | NO | NO |
 | GET | `/audit/{log_uuid}` | NO | ALL | ALL | NO | NO | NO | NO | NO |
 
 ## Auth
