@@ -36,6 +36,7 @@ you need. Documents live in three places, deliberately:
 
 - [Decisions](decisions/README.md): the architecture decision records, one per choice that would otherwise be re-litigated
 - [Reviews](reviews/2026-09-10-implementation-review.md): what an external review found, what was done about each finding, and why the suites had not caught it
+- [DPDP Act gap assessment](reviews/2026-09-17-dpdp-act-gap-assessment.md): statutory requirement map, implemented capabilities, prioritised gaps and remediation sequence
 - [Changelog](../CHANGELOG.md): what changed, by area and date
 
 ## The backend's own documents

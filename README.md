@@ -17,7 +17,9 @@ Three deployable projects in one repository, one API:
 Documentation starts at [docs/README.md](docs/README.md). The short version
 of the architecture is
 [docs/architecture/system-overview.md](docs/architecture/system-overview.md);
-the vocabulary is in [docs/glossary.md](docs/glossary.md).
+the vocabulary is in [docs/glossary.md](docs/glossary.md). The endpoint-by-endpoint
+request, validation and response reference, followed by access details for all
+seven roles, starts at [api_docs/README.md](api_docs/README.md).
 
 ## What the system does
 
