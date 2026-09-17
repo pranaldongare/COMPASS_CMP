@@ -1,0 +1,61 @@
+# COMPASS complete database schema
+
+Snapshot from commit `0b9ee4185034c44ee9b0d53484cb2c3fc317656e`, migrations **0001 → 0026**, reviewed 2026-09-17.
+
+## Open the diagrams
+
+- **[Complete schema SVG](complete_schema.svg)** — every table/view column, type, primary key, unique-constraint membership, nullability and all 93 foreign-key constraints.
+- [Relationship overview SVG](schema_overview.svg) — all tables and relationships with compact cards.
+- [Enum reference SVG](enums.svg) — all 39 PostgreSQL enum types and values.
+- [Column and constraint reference](table_reference.md) — exact defaults, comments, foreign keys, CHECKs, indexes and triggers.
+- [Enum values as text](enum_reference.md).
+
+The complete SVG is a large, zoomable vector drawing. Open it in a browser or vector editor and zoom in. Hover a relationship for its foreign-key name, source/target columns and constraint definition. For a smaller drawing, use the module SVGs below.
+
+## Module SVGs
+
+| Module | Application tables / views | Diagram |
+| --- | --- | --- |
+| Identity | `auth_user`, `person_type_history`, `delegation` | [Open SVG](modules/identity.svg) |
+| Registry | `purpose`, `processor`, `processor_respondent`, `data_source` | [Open SVG](modules/registry.svg) |
+| Projects | `project`, `project_processor`, `project_approval`, `project_site`, `project_status_history` | [Open SVG](modules/projects.svg) |
+| Notices | `notice`, `notice_language`, `notice_purpose` | [Open SVG](modules/notices.svg) |
+| Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant`, `v_current_consent` | [Open SVG](modules/consent.svg) |
+| Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` | [Open SVG](modules/exchange.svg) |
+| Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_ticket_message`, `rights_response_file`, `nomination` | [Open SVG](modules/rights.svg) |
+| Platform | `audit_log`, `message_template` | [Open SVG](modules/platform.svg) |
+
+Module diagrams include full local tables and their outgoing foreign keys. Referenced tables outside the module appear as key-only context; incoming relationships from other modules are shown in the complete diagram.
+
+## Verified inventory
+
+| Object | Count |
+| --- | --- |
+| Application Tables | 32 |
+| Metadata Tables | 1 |
+| Views | 1 |
+| Table Columns | 414 |
+| Foreign Keys | 93 |
+| Enums | 39 |
+| Triggers | 27 |
+| Checks | 35 |
+
+The Alembic `alembic_version` table is included separately as migration metadata. Its one column and the view’s 14 derived columns are additional to the 414 application-table columns. The three older documentation counts for tables/triggers/CHECKs were not used as the source: the inventory above comes from PostgreSQL catalogs after replaying the full migration chain.
+
+## Reading relationships and keys
+
+- Arrow direction is **referencing child column → referenced parent key**. A solid line means all FK columns are NOT NULL; a dashed line means at least one is nullable. A dotted green line is a view dependency, not an FK.
+- `PK` = primary key; `FK` = foreign key; `UQ` = member of a declared unique constraint, which can be composite; `?` = nullable column. Not every UQ-marked column is unique on its own. Unique expression/partial indexes are listed in the column reference and SQL.
+- Repeated arrows between tables represent distinct foreign-key constraints, for example created-by versus approved-by. The full SVG includes all 93 constraints, including circular and self-referencing ones.
+- Types are displayed compactly (`int4`, `int8`, `varchar`, `timestamptz`, `bool`); the exact PostgreSQL types are in the column reference. View nullability is derived and is not asserted by the diagram.
+- Arrow styles express foreign-key nullability, not universal one-to-many cardinality. Composite uniqueness, partial indexes and trigger rules must also be considered; these are retained in the supporting SQL/reference.
+
+## Sources and reproduction
+
+- [Catalog inventory JSON](schema_inventory.json) includes tables, columns, constraints, indexes, enum values, views, dependencies, triggers, sequences and application functions.
+- [Schema-only SQL](schema.sql) is PostgreSQL’s schema dump after replaying the migrations, including functions and triggers. It contains no application data or passwords. Owner and privilege statements are omitted; use the original migration grant rules for deployment permissions.
+- The [Graphviz sources](source/complete_schema.dot) are editable. Render with `dot -Tsvg source/complete_schema.dot -o complete_schema.svg`; render other `.dot` files similarly. SVGs were rendered with Graphviz via `@viz-js/viz`.
+
+The schema was reconstructed in an isolated, disposable PostgreSQL 16 container from all 26 repository `upgrade()` functions. No existing application database was migrated or queried for user data. This is the repository’s migration-head schema, not a claim that every deployment has applied that revision. Empty-data replay validates DDL shape; it does not exercise migrations’ data-dependent backfill/guard branches on production data.
+
+Redis stores sessions, OTP/MFA codes, rate counters, caches and Celery queues/results; those are not relational PostgreSQL tables. Uploaded documents/media are stored outside PostgreSQL, with references/hashes held in the tables. Generic audit entity IDs, array membership and JSON references are not invented as foreign-key constraints in this diagram.

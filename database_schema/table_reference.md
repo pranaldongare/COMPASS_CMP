@@ -1,0 +1,1642 @@
+# Column and relationship reference
+
+[Guide](README.md) · [Complete SVG](complete_schema.svg) · [Enums](enum_reference.md)
+
+Extracted from PostgreSQL after applying all 26 repository migrations to an empty isolated instance. View columns do not carry reliable NOT NULL metadata; their nullability is shown as derived. `UQ` marks membership in a unique constraint, including composite constraints; unique indexes and CHECK expressions are listed separately.
+
+## auth_user
+
+Module: **Identity**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| id | integer | PK | No | nextval('auth_user_id_seq'::regclass) | — |
+| uuid | uuid | UQ | No | gen_random_uuid() | — |
+| username | character varying(120) | UQ | Yes | — | — |
+| full_name | character varying(200) | — | No | — | — |
+| email | character varying(255) | UQ | Yes | — | — |
+| mobile | character varying(20) | UQ | Yes | — | — |
+| organization_id | character varying(60) | UQ | Yes | — | — |
+| role | user_role | — | No | 'data_subject'::user_role | — |
+| person_type | person_type | — | Yes | — | — |
+| status | user_status | — | No | 'pending'::user_status | — |
+| registered_via_link_id | integer | FK | Yes | — | — |
+| password_hash | character varying(255) | — | Yes | — | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+| updated_at | timestamp with time zone | — | No | now() | — |
+| dob | date | — | Yes | — | Date of birth. Drives the section 9 test for whether this is a child's account. NULL on accounts created before 0012 and on any account registered through a consent link, which does not ask - absent, not assumed adult. |
+| mobile_verified_at | timestamp with time zone | — | Yes | — | — |
+| email_verified_at | timestamp with time zone | — | Yes | — | — |
+| secondary_email | character varying(255) | — | Yes | — | A second address the person added themselves; signs them in only once a code sent to it has come back |
+| secondary_email_verified_at | timestamp with time zone | — | Yes | — | When a code sent to secondary_email came back; NULL means it never has |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK005 | registered_via_link_id | consent_link(link_id) | FOREIGN KEY (registered_via_link_id) REFERENCES consent_link(link_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| auth_user_email_key | UNIQUE (email) |
+| auth_user_mobile_key | UNIQUE (mobile) |
+| auth_user_organization_id_key | UNIQUE (organization_id) |
+| auth_user_pkey | PRIMARY KEY (id) |
+| auth_user_secondary_email_differs | CHECK (((secondary_email IS NULL) OR (email IS NULL) OR (lower((secondary_email)::text) <> lower((email)::text)))) |
+| auth_user_staff_email_required | CHECK (((role = 'data_subject'::user_role) OR (email IS NOT NULL))) |
+| auth_user_username_key | UNIQUE (username) |
+| auth_user_uuid_key | UNIQUE (uuid) |
+| dob_is_plausible | CHECK (((dob IS NULL) OR ((dob > '1900-01-01'::date) AND (dob < CURRENT_DATE)))) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| auth_user_email_key | CREATE UNIQUE INDEX auth_user_email_key ON public.auth_user USING btree (email) |
+| auth_user_mobile_key | CREATE UNIQUE INDEX auth_user_mobile_key ON public.auth_user USING btree (mobile) |
+| auth_user_organization_id_key | CREATE UNIQUE INDEX auth_user_organization_id_key ON public.auth_user USING btree (organization_id) |
+| auth_user_pkey | CREATE UNIQUE INDEX auth_user_pkey ON public.auth_user USING btree (id) |
+| auth_user_secondary_email_lower_key | CREATE UNIQUE INDEX auth_user_secondary_email_lower_key ON public.auth_user USING btree (lower((secondary_email)::text)) |
+| auth_user_username_key | CREATE UNIQUE INDEX auth_user_username_key ON public.auth_user USING btree (username) |
+| auth_user_uuid_key | CREATE UNIQUE INDEX auth_user_uuid_key ON public.auth_user USING btree (uuid) |
+| idx_user_email_lower | CREATE INDEX idx_user_email_lower ON public.auth_user USING btree (lower((email)::text)) |
+| idx_user_role_status | CREATE INDEX idx_user_role_status ON public.auth_user USING btree (role, status) |
+| idx_user_via_link | CREATE INDEX idx_user_via_link ON public.auth_user USING btree (registered_via_link_id) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_auth_user_touch | CREATE TRIGGER trg_auth_user_touch BEFORE UPDATE ON public.auth_user FOR EACH ROW EXECUTE FUNCTION cmp_touch_updated_at() |
+| trg_contact_belongs_to_one_person | CREATE TRIGGER trg_contact_belongs_to_one_person BEFORE INSERT OR UPDATE OF email, secondary_email ON public.auth_user FOR EACH ROW EXECUTE FUNCTION cmp_contact_belongs_to_one_person() |
+| trg_subject_needs_mobile | CREATE TRIGGER trg_subject_needs_mobile BEFORE INSERT ON public.auth_user FOR EACH ROW EXECUTE FUNCTION cmp_subject_needs_mobile() |
+
+## person_type_history
+
+Module: **Identity**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| history_id | integer | PK | No | nextval('person_type_history_history_id_seq'::regclass) | — |
+| history_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| auth_user_id | integer | FK | No | — | — |
+| from_type | person_type | — | Yes | — | — |
+| to_type | person_type | — | No | — | — |
+| reason | text | — | Yes | — | — |
+| changed_by | integer | FK | No | — | — |
+| changed_at | timestamp with time zone | — | No | now() | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK051 | auth_user_id | auth_user(id) | FOREIGN KEY (auth_user_id) REFERENCES auth_user(id) |
+| FK052 | changed_by | auth_user(id) | FOREIGN KEY (changed_by) REFERENCES auth_user(id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| person_type_history_history_uuid_key | UNIQUE (history_uuid) |
+| person_type_history_pkey | PRIMARY KEY (history_id) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| idx_ptype_hist_user | CREATE INDEX idx_ptype_hist_user ON public.person_type_history USING btree (auth_user_id, changed_at DESC) |
+| person_type_history_history_uuid_key | CREATE UNIQUE INDEX person_type_history_history_uuid_key ON public.person_type_history USING btree (history_uuid) |
+| person_type_history_pkey | CREATE UNIQUE INDEX person_type_history_pkey ON public.person_type_history USING btree (history_id) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_person_type_history_append_only | CREATE TRIGGER trg_person_type_history_append_only BEFORE DELETE OR UPDATE ON public.person_type_history FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only() |
+
+## delegation
+
+Module: **Identity**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| delegation_id | integer | PK | No | nextval('delegation_delegation_id_seq'::regclass) | — |
+| delegation_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| delegator_user_id | integer | FK | No | — | — |
+| delegate_user_id | integer | FK | No | — | — |
+| reason | text | — | Yes | — | — |
+| starts_at | timestamp with time zone | — | No | now() | — |
+| ends_at | timestamp with time zone | — | Yes | — | — |
+| revoked_at | timestamp with time zone | — | Yes | — | — |
+| revoked_by | integer | FK | Yes | — | — |
+| created_by | integer | FK | No | — | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK026 | created_by | auth_user(id) | FOREIGN KEY (created_by) REFERENCES auth_user(id) |
+| FK027 | delegate_user_id | auth_user(id) | FOREIGN KEY (delegate_user_id) REFERENCES auth_user(id) |
+| FK028 | delegator_user_id | auth_user(id) | FOREIGN KEY (delegator_user_id) REFERENCES auth_user(id) |
+| FK029 | revoked_by | auth_user(id) | FOREIGN KEY (revoked_by) REFERENCES auth_user(id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| delegation_delegation_uuid_key | UNIQUE (delegation_uuid) |
+| delegation_pkey | PRIMARY KEY (delegation_id) |
+| ends_after_start | CHECK (((ends_at IS NULL) OR (ends_at > starts_at))) |
+| not_self | CHECK ((delegator_user_id <> delegate_user_id)) |
+| revocation_is_attributed | CHECK ((((revoked_at IS NULL) AND (revoked_by IS NULL)) OR ((revoked_at IS NOT NULL) AND (revoked_by IS NOT NULL)))) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| delegation_delegation_uuid_key | CREATE UNIQUE INDEX delegation_delegation_uuid_key ON public.delegation USING btree (delegation_uuid) |
+| delegation_pkey | CREATE UNIQUE INDEX delegation_pkey ON public.delegation USING btree (delegation_id) |
+| idx_delegation_active | CREATE INDEX idx_delegation_active ON public.delegation USING btree (delegate_user_id, delegator_user_id) WHERE (revoked_at IS NULL) |
+| idx_delegation_by_delegator | CREATE INDEX idx_delegation_by_delegator ON public.delegation USING btree (delegator_user_id) |
+| uq_delegation_live | CREATE UNIQUE INDEX uq_delegation_live ON public.delegation USING btree (delegator_user_id, delegate_user_id) WHERE ((revoked_at IS NULL) AND (ends_at IS NULL)) |
+
+## purpose
+
+Module: **Registry**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| purpose_id | integer | PK | No | nextval('purpose_purpose_id_seq'::regclass) | — |
+| purpose_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| purpose_code | character varying(80) | UQ | No | — | — |
+| version | integer | — | No | 1 | — |
+| status | purpose_status | — | No | 'draft'::purpose_status | — |
+| name | character varying(200) | — | No | — | — |
+| description | text | — | No | — | — |
+| uses | text | — | No | — | — |
+| lawful_basis | lawful_basis | — | No | — | — |
+| s7_clause | s7_clause | — | Yes | — | — |
+| data_categories | text[] | — | No | — | — |
+| retention_period | interval | — | No | — | — |
+| retention_basis | retention_basis | — | No | — | — |
+| erasure_trigger | erasure_trigger | — | No | — | — |
+| consent_validity_period | interval | — | Yes | — | — |
+| cross_border_permitted | boolean | — | No | false | — |
+| permitted_for_minors | boolean | — | No | false | — |
+| lapse_behaviour | lapse_behaviour | — | No | 'quarantine'::lapse_behaviour | — |
+| created_by | integer | FK | No | — | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+| updated_at | timestamp with time zone | — | No | now() | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK071 | created_by | auth_user(id) | FOREIGN KEY (created_by) REFERENCES auth_user(id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| categories_not_empty | CHECK ((cardinality(data_categories) >= 1)) |
+| purpose_pkey | PRIMARY KEY (purpose_id) |
+| purpose_purpose_code_key | UNIQUE (purpose_code) |
+| purpose_purpose_uuid_key | UNIQUE (purpose_uuid) |
+| s7_clause_required | CHECK ((((lawful_basis = 'legitimate_use_s7'::lawful_basis) AND (s7_clause IS NOT NULL)) OR ((lawful_basis = 'consent_s6'::lawful_basis) AND (s7_clause IS NULL)))) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| purpose_pkey | CREATE UNIQUE INDEX purpose_pkey ON public.purpose USING btree (purpose_id) |
+| purpose_purpose_code_key | CREATE UNIQUE INDEX purpose_purpose_code_key ON public.purpose USING btree (purpose_code) |
+| purpose_purpose_uuid_key | CREATE UNIQUE INDEX purpose_purpose_uuid_key ON public.purpose USING btree (purpose_uuid) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_purpose_touch | CREATE TRIGGER trg_purpose_touch BEFORE UPDATE ON public.purpose FOR EACH ROW EXECUTE FUNCTION cmp_touch_updated_at() |
+
+## processor
+
+Module: **Registry**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| processor_id | integer | PK | No | nextval('processor_processor_id_seq'::regclass) | — |
+| processor_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| legal_name | character varying(255) | — | No | — | — |
+| type | processor_type | — | No | — | — |
+| contract_ref | character varying(120) | — | No | — | — |
+| security_confirmed_at | date | — | No | — | — |
+| status | record_status | — | No | 'active'::record_status | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+| is_in_house | boolean | — | No | false | Whether this is the organisation collecting for itself. It drives routing: a project collected by a third party goes to a DCO Admin to be assigned, one collected in-house goes back to the R&D owner to assign an RCO. Separate from processor_type, which says what kind of thing a processor is (lab, tool) and not whose it is - a lab can be either. |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| processor_pkey | PRIMARY KEY (processor_id) |
+| processor_processor_uuid_key | UNIQUE (processor_uuid) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| processor_pkey | CREATE UNIQUE INDEX processor_pkey ON public.processor USING btree (processor_id) |
+| processor_processor_uuid_key | CREATE UNIQUE INDEX processor_processor_uuid_key ON public.processor USING btree (processor_uuid) |
+
+## processor_respondent
+
+Module: **Registry**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| respondent_id | integer | PK | No | nextval('processor_respondent_respondent_id_seq'::regclass) | — |
+| respondent_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| processor_id | integer | FK | No | — | — |
+| name | character varying(200) | — | No | — | — |
+| contact | character varying(255) | — | No | — | — |
+| user_id | integer | FK | Yes | — | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+| removed_at | timestamp with time zone | — | Yes | — | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK053 | processor_id | processor(processor_id) | FOREIGN KEY (processor_id) REFERENCES processor(processor_id) |
+| FK054 | user_id | auth_user(id) | FOREIGN KEY (user_id) REFERENCES auth_user(id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| processor_respondent_pkey | PRIMARY KEY (respondent_id) |
+| processor_respondent_respondent_uuid_key | UNIQUE (respondent_uuid) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| idx_processor_respondent_live | CREATE INDEX idx_processor_respondent_live ON public.processor_respondent USING btree (processor_id) WHERE (removed_at IS NULL) |
+| processor_respondent_pkey | CREATE UNIQUE INDEX processor_respondent_pkey ON public.processor_respondent USING btree (respondent_id) |
+| processor_respondent_respondent_uuid_key | CREATE UNIQUE INDEX processor_respondent_respondent_uuid_key ON public.processor_respondent USING btree (respondent_uuid) |
+| uq_processor_respondent_user | CREATE UNIQUE INDEX uq_processor_respondent_user ON public.processor_respondent USING btree (processor_id, user_id) WHERE ((user_id IS NOT NULL) AND (removed_at IS NULL)) |
+
+## data_source
+
+Module: **Registry**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| source_id | integer | PK | No | nextval('data_source_source_id_seq'::regclass) | — |
+| source_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| source_code | character varying(60) | UQ | No | — | — |
+| name | character varying(200) | — | No | — | — |
+| source_role | source_role | — | No | — | — |
+| exchange_mode | exchange_mode | — | No | — | — |
+| id_scheme | character varying(120) | — | Yes | — | — |
+| processor_id | integer | FK | Yes | — | — |
+| site_id | integer | FK | Yes | — | — |
+| is_authoritative_for | text[] | — | No | '{}'::text[] | — |
+| status | record_status | — | No | 'active'::record_status | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+| owner_user_id | integer | FK | Yes | — | The DCO or RCO accountable for this source. One answer, here, because the same rig serving three projects had its owner recorded three times when this lived on project_site - and nothing stopped those three disagreeing. |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK023 | owner_user_id | auth_user(id) | FOREIGN KEY (owner_user_id) REFERENCES auth_user(id) |
+| FK024 | processor_id | processor(processor_id) | FOREIGN KEY (processor_id) REFERENCES processor(processor_id) |
+| FK025 | site_id | project_site(site_id) | FOREIGN KEY (site_id) REFERENCES project_site(site_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| data_source_pkey | PRIMARY KEY (source_id) |
+| data_source_source_code_key | UNIQUE (source_code) |
+| data_source_source_uuid_key | UNIQUE (source_uuid) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| data_source_pkey | CREATE UNIQUE INDEX data_source_pkey ON public.data_source USING btree (source_id) |
+| data_source_source_code_key | CREATE UNIQUE INDEX data_source_source_code_key ON public.data_source USING btree (source_code) |
+| data_source_source_uuid_key | CREATE UNIQUE INDEX data_source_source_uuid_key ON public.data_source USING btree (source_uuid) |
+| idx_source_owner | CREATE INDEX idx_source_owner ON public.data_source USING btree (owner_user_id) WHERE (owner_user_id IS NOT NULL) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_source_owner | CREATE TRIGGER trg_source_owner AFTER UPDATE OF owner_user_id ON public.data_source FOR EACH ROW EXECUTE FUNCTION cmp_source_owner_changed() |
+
+## project
+
+Module: **Projects**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| project_id | integer | PK | No | nextval('project_project_id_seq'::regclass) | — |
+| project_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| project_name | character varying(200) | — | No | — | — |
+| internal_project_name | character varying(200) | — | Yes | — | — |
+| description | text | — | Yes | — | — |
+| requesting_team | character varying(120) | — | Yes | — | — |
+| project_status | project_status | — | No | 'in_draft'::project_status | — |
+| current_notice_id | integer | FK | Yes | — | — |
+| created_by | integer | FK | No | — | — |
+| dco_user_id | integer | FK | Yes | — | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+| updated_at | timestamp with time zone | — | No | now() | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK055 | current_notice_id | notice(notice_id) | FOREIGN KEY (current_notice_id) REFERENCES notice(notice_id) |
+| FK056 | created_by | auth_user(id) | FOREIGN KEY (created_by) REFERENCES auth_user(id) |
+| FK057 | dco_user_id | auth_user(id) | FOREIGN KEY (dco_user_id) REFERENCES auth_user(id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| project_pkey | PRIMARY KEY (project_id) |
+| project_project_uuid_key | UNIQUE (project_uuid) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| idx_project_created_by | CREATE INDEX idx_project_created_by ON public.project USING btree (created_by, created_at DESC) |
+| idx_project_dco | CREATE INDEX idx_project_dco ON public.project USING btree (dco_user_id, created_at DESC) |
+| idx_project_status | CREATE INDEX idx_project_status ON public.project USING btree (project_status, created_at DESC) |
+| project_pkey | CREATE UNIQUE INDEX project_pkey ON public.project USING btree (project_id) |
+| project_project_uuid_key | CREATE UNIQUE INDEX project_project_uuid_key ON public.project USING btree (project_uuid) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_project_touch | CREATE TRIGGER trg_project_touch BEFORE UPDATE ON public.project FOR EACH ROW EXECUTE FUNCTION cmp_touch_updated_at() |
+
+## project_processor
+
+Module: **Projects**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| project_processor_id | integer | PK | No | nextval('project_processor_project_processor_id_seq'::regclass) | — |
+| project_id | integer | FK/UQ | No | — | — |
+| processor_id | integer | FK/UQ | No | — | — |
+| added_by | integer | FK | No | — | — |
+| added_at | timestamp with time zone | — | No | now() | — |
+| status | processor_request_status | — | No | 'approved'::processor_request_status | Added while the project was in draft, or approved as an amendment: 'approved'. Requested against an already-approved project and not yet decided: 'pending'. Refused: 'rejected', with the reason kept. |
+| decided_by | integer | FK | Yes | — | — |
+| decided_at | timestamp with time zone | — | Yes | — | — |
+| decision_reason | text | — | Yes | — | Why the DPO refused. Required on a rejection - "no" without a reason is a decision the R&D User cannot act on, so they ask again and get it again. |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK060 | added_by | auth_user(id) | FOREIGN KEY (added_by) REFERENCES auth_user(id) |
+| FK061 | decided_by | auth_user(id) | FOREIGN KEY (decided_by) REFERENCES auth_user(id) |
+| FK062 | processor_id | processor(processor_id) | FOREIGN KEY (processor_id) REFERENCES processor(processor_id) |
+| FK063 | project_id | project(project_id) | FOREIGN KEY (project_id) REFERENCES project(project_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| processor_decision_is_attributed | CHECK (((status = 'pending'::processor_request_status) OR (decided_at IS NULL) OR (decided_by IS NOT NULL))) |
+| processor_rejection_has_a_reason | CHECK (((status <> 'rejected'::processor_request_status) OR ((decided_by IS NOT NULL) AND (decided_at IS NOT NULL) AND (COALESCE(length(TRIM(BOTH FROM decision_reason)), 0) > 0)))) |
+| project_processor_pkey | PRIMARY KEY (project_processor_id) |
+| project_processor_project_id_processor_id_key | UNIQUE (project_id, processor_id) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| idx_project_processor_pending | CREATE INDEX idx_project_processor_pending ON public.project_processor USING btree (project_id) WHERE (status = 'pending'::processor_request_status) |
+| idx_project_processor_processor | CREATE INDEX idx_project_processor_processor ON public.project_processor USING btree (processor_id) |
+| idx_project_processor_project | CREATE INDEX idx_project_processor_project ON public.project_processor USING btree (project_id) |
+| project_processor_pkey | CREATE UNIQUE INDEX project_processor_pkey ON public.project_processor USING btree (project_processor_id) |
+| project_processor_project_id_processor_id_key | CREATE UNIQUE INDEX project_processor_project_id_processor_id_key ON public.project_processor USING btree (project_id, processor_id) |
+
+## project_approval
+
+Module: **Projects**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| approval_id | integer | PK | No | nextval('project_approval_approval_id_seq'::regclass) | — |
+| approval_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| project_id | integer | FK | No | — | — |
+| approval_type | approval_type | — | No | — | — |
+| reference_no | character varying(120) | — | No | — | — |
+| approved_on | date | — | No | — | — |
+| proof_file_ref | text | — | No | — | — |
+| proof_file_hash | text | — | No | — | — |
+| uploaded_by | integer | FK | No | — | — |
+| uploaded_at | timestamp with time zone | — | No | now() | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK058 | project_id | project(project_id) | FOREIGN KEY (project_id) REFERENCES project(project_id) |
+| FK059 | uploaded_by | auth_user(id) | FOREIGN KEY (uploaded_by) REFERENCES auth_user(id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| project_approval_approval_uuid_key | UNIQUE (approval_uuid) |
+| project_approval_pkey | PRIMARY KEY (approval_id) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| idx_approval_project | CREATE INDEX idx_approval_project ON public.project_approval USING btree (project_id, uploaded_at DESC) |
+| project_approval_approval_uuid_key | CREATE UNIQUE INDEX project_approval_approval_uuid_key ON public.project_approval USING btree (approval_uuid) |
+| project_approval_pkey | CREATE UNIQUE INDEX project_approval_pkey ON public.project_approval USING btree (approval_id) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_approval_append_only | CREATE TRIGGER trg_approval_append_only BEFORE DELETE OR UPDATE ON public.project_approval FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only() |
+
+## project_site
+
+Module: **Projects**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| site_id | integer | PK | No | nextval('project_site_site_id_seq'::regclass) | — |
+| site_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| project_id | integer | FK | No | — | — |
+| processor_id | integer | FK | Yes | — | — |
+| site_label | character varying(160) | — | No | — | — |
+| location | character varying(200) | — | Yes | — | — |
+| status | record_status | — | No | 'active'::record_status | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+| source_id | integer | FK | Yes | — | The data source deployed at this site. Ownership is read through it: a site has no owner of its own. |
+| dco_override_user_id | integer | FK | Yes | — | Who runs this site on this project, when that is not whoever owns its data source. NULL - the usual case - means the source decides. Setting it changes nothing about the source or about other projects deploying the same source. |
+| dco_override_by | integer | FK | Yes | — | Who made the exception. An override with no author is an exception nobody can be asked about, which is the state the audit trail exists to prevent. |
+| dco_override_at | timestamp with time zone | — | Yes | — | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK064 | dco_override_by | auth_user(id) | FOREIGN KEY (dco_override_by) REFERENCES auth_user(id) |
+| FK065 | dco_override_user_id | auth_user(id) | FOREIGN KEY (dco_override_user_id) REFERENCES auth_user(id) |
+| FK066 | processor_id | processor(processor_id) | FOREIGN KEY (processor_id) REFERENCES processor(processor_id) |
+| FK067 | project_id | project(project_id) | FOREIGN KEY (project_id) REFERENCES project(project_id) |
+| FK068 | source_id | data_source(source_id) | FOREIGN KEY (source_id) REFERENCES data_source(source_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| project_site_pkey | PRIMARY KEY (site_id) |
+| project_site_site_uuid_key | UNIQUE (site_uuid) |
+| site_override_is_attributed | CHECK (((dco_override_user_id IS NULL) OR ((dco_override_by IS NOT NULL) AND (dco_override_at IS NOT NULL)))) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| idx_site_dco_override | CREATE INDEX idx_site_dco_override ON public.project_site USING btree (dco_override_user_id) WHERE (dco_override_user_id IS NOT NULL) |
+| idx_site_project | CREATE INDEX idx_site_project ON public.project_site USING btree (project_id) WHERE (status = 'active'::record_status) |
+| idx_site_source | CREATE INDEX idx_site_source ON public.project_site USING btree (source_id) WHERE (source_id IS NOT NULL) |
+| project_site_pkey | CREATE UNIQUE INDEX project_site_pkey ON public.project_site USING btree (site_id) |
+| project_site_site_uuid_key | CREATE UNIQUE INDEX project_site_site_uuid_key ON public.project_site USING btree (site_uuid) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_site_owner | CREATE TRIGGER trg_site_owner AFTER INSERT OR DELETE OR UPDATE OF source_id, dco_override_user_id, status, project_id ON public.project_site FOR EACH ROW EXECUTE FUNCTION cmp_site_owner_changed() |
+
+## project_status_history
+
+Module: **Projects**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| history_id | integer | PK | No | nextval('project_status_history_history_id_seq'::regclass) | — |
+| history_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| project_id | integer | FK | No | — | — |
+| from_status | project_status | — | Yes | — | — |
+| to_status | project_status | — | No | — | — |
+| reason | text | — | Yes | — | — |
+| actor_user_id | integer | FK | No | — | — |
+| occurred_at | timestamp with time zone | — | No | now() | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK069 | actor_user_id | auth_user(id) | FOREIGN KEY (actor_user_id) REFERENCES auth_user(id) |
+| FK070 | project_id | project(project_id) | FOREIGN KEY (project_id) REFERENCES project(project_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| project_status_history_history_uuid_key | UNIQUE (history_uuid) |
+| project_status_history_pkey | PRIMARY KEY (history_id) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| idx_status_hist_project | CREATE INDEX idx_status_hist_project ON public.project_status_history USING btree (project_id, occurred_at DESC) |
+| project_status_history_history_uuid_key | CREATE UNIQUE INDEX project_status_history_history_uuid_key ON public.project_status_history USING btree (history_uuid) |
+| project_status_history_pkey | CREATE UNIQUE INDEX project_status_history_pkey ON public.project_status_history USING btree (history_id) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_project_history_append_only | CREATE TRIGGER trg_project_history_append_only BEFORE DELETE OR UPDATE ON public.project_status_history FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only() |
+
+## notice
+
+Module: **Notices**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| notice_id | integer | PK | No | nextval('notice_notice_id_seq'::regclass) | — |
+| notice_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| notice_code | character varying(80) | UQ | No | — | — |
+| project_id | integer | FK | No | — | — |
+| version | integer | UQ | No | 1 | — |
+| withdraw_url | text | — | No | — | — |
+| exercise_rights_url | text | — | No | — | — |
+| board_complaint_url | text | — | No | — | — |
+| dpo_contact | character varying(255) | — | No | — | — |
+| recipients_text | text | — | Yes | — | — |
+| status | notice_status | — | No | 'draft'::notice_status | — |
+| change_class | change_class | — | Yes | — | — |
+| approved_by | integer | FK | Yes | — | — |
+| published_at | timestamp with time zone | — | Yes | — | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+| updated_at | timestamp with time zone | — | No | now() | — |
+| note | text | — | Yes | — | A note from the author to whoever collects against this notice. Shown to the DCO and never to the data principal - it is an instruction to the collector, not part of the notice they are given. |
+| applicable_to | notice_audience | — | Yes | — | Who this notice addresses. Null on notices that predate the column; the publish checklist requires it, so nothing reaches a data principal without it being answered. |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK043 | approved_by | auth_user(id) | FOREIGN KEY (approved_by) REFERENCES auth_user(id) |
+| FK044 | project_id | project(project_id) | FOREIGN KEY (project_id) REFERENCES project(project_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| notice_notice_code_version_key | UNIQUE (notice_code, version) |
+| notice_notice_uuid_key | UNIQUE (notice_uuid) |
+| notice_pkey | PRIMARY KEY (notice_id) |
+| publishable | CHECK (((status <> 'published'::notice_status) OR ((recipients_text IS NOT NULL) AND (published_at IS NOT NULL)))) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| idx_notice_project | CREATE INDEX idx_notice_project ON public.notice USING btree (project_id, version DESC) |
+| notice_notice_code_version_key | CREATE UNIQUE INDEX notice_notice_code_version_key ON public.notice USING btree (notice_code, version) |
+| notice_notice_uuid_key | CREATE UNIQUE INDEX notice_notice_uuid_key ON public.notice USING btree (notice_uuid) |
+| notice_pkey | CREATE UNIQUE INDEX notice_pkey ON public.notice USING btree (notice_id) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_notice_freeze | CREATE TRIGGER trg_notice_freeze BEFORE UPDATE ON public.notice FOR EACH ROW EXECUTE FUNCTION cmp_notice_freeze() |
+| trg_notice_touch | CREATE TRIGGER trg_notice_touch BEFORE UPDATE ON public.notice FOR EACH ROW EXECUTE FUNCTION cmp_touch_updated_at() |
+
+## notice_language
+
+Module: **Notices**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| notice_language_id | integer | PK | No | nextval('notice_language_notice_language_id_seq'::regclass) | — |
+| notice_language_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| notice_id | integer | FK/UQ | No | — | — |
+| language_code | language_code | UQ | No | — | — |
+| rendered_text | text | — | No | — | — |
+| content_hash | text | — | No | — | — |
+| created_by | integer | FK | No | — | — |
+| approved_by | integer | FK | Yes | — | — |
+| approved_at | timestamp with time zone | — | Yes | — | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+| updated_at | timestamp with time zone | — | No | now() | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK045 | approved_by | auth_user(id) | FOREIGN KEY (approved_by) REFERENCES auth_user(id) |
+| FK046 | created_by | auth_user(id) | FOREIGN KEY (created_by) REFERENCES auth_user(id) |
+| FK047 | notice_id | notice(notice_id) | FOREIGN KEY (notice_id) REFERENCES notice(notice_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| notice_language_notice_id_language_code_key | UNIQUE (notice_id, language_code) |
+| notice_language_notice_language_uuid_key | UNIQUE (notice_language_uuid) |
+| notice_language_pkey | PRIMARY KEY (notice_language_id) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| idx_notice_lang_notice | CREATE INDEX idx_notice_lang_notice ON public.notice_language USING btree (notice_id) |
+| notice_language_notice_id_language_code_key | CREATE UNIQUE INDEX notice_language_notice_id_language_code_key ON public.notice_language USING btree (notice_id, language_code) |
+| notice_language_notice_language_uuid_key | CREATE UNIQUE INDEX notice_language_notice_language_uuid_key ON public.notice_language USING btree (notice_language_uuid) |
+| notice_language_pkey | CREATE UNIQUE INDEX notice_language_pkey ON public.notice_language USING btree (notice_language_id) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_notice_language_freeze | CREATE TRIGGER trg_notice_language_freeze BEFORE UPDATE ON public.notice_language FOR EACH ROW EXECUTE FUNCTION cmp_notice_language_freeze() |
+| trg_notice_language_touch | CREATE TRIGGER trg_notice_language_touch BEFORE UPDATE ON public.notice_language FOR EACH ROW EXECUTE FUNCTION cmp_touch_updated_at() |
+
+## notice_purpose
+
+Module: **Notices**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| notice_purpose_id | integer | PK | No | nextval('notice_purpose_notice_purpose_id_seq'::regclass) | — |
+| notice_id | integer | FK/UQ | No | — | — |
+| purpose_id | integer | FK/UQ | No | — | — |
+| display_order | integer | — | No | 0 | — |
+| is_mandatory | boolean | — | No | false | — |
+| data_categories_override | text[] | — | Yes | — | Rule 3(b)(i) for this notice only. NULL means the purpose's own list, which is the default and the common case. A value must be a subset of it - a notice may narrow what is collected, never widen it. |
+| uses_override | text | — | Yes | — | Rule 3(b)(ii) for this notice only. NULL means the purpose's own text. |
+| overridden_by | integer | FK | Yes | — | — |
+| overridden_at | timestamp with time zone | — | Yes | — | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK048 | notice_id | notice(notice_id) | FOREIGN KEY (notice_id) REFERENCES notice(notice_id) |
+| FK049 | overridden_by | auth_user(id) | FOREIGN KEY (overridden_by) REFERENCES auth_user(id) |
+| FK050 | purpose_id | purpose(purpose_id) | FOREIGN KEY (purpose_id) REFERENCES purpose(purpose_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| notice_purpose_notice_id_purpose_id_key | UNIQUE (notice_id, purpose_id) |
+| notice_purpose_pkey | PRIMARY KEY (notice_purpose_id) |
+| override_categories_not_empty | CHECK (((data_categories_override IS NULL) OR (cardinality(data_categories_override) >= 1))) |
+| override_is_attributed | CHECK ((((data_categories_override IS NULL) AND (uses_override IS NULL)) OR ((overridden_by IS NOT NULL) AND (overridden_at IS NOT NULL)))) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| idx_notice_purpose_notice | CREATE INDEX idx_notice_purpose_notice ON public.notice_purpose USING btree (notice_id, display_order) |
+| notice_purpose_notice_id_purpose_id_key | CREATE UNIQUE INDEX notice_purpose_notice_id_purpose_id_key ON public.notice_purpose USING btree (notice_id, purpose_id) |
+| notice_purpose_pkey | CREATE UNIQUE INDEX notice_purpose_pkey ON public.notice_purpose USING btree (notice_purpose_id) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_notice_purpose_freeze | CREATE TRIGGER trg_notice_purpose_freeze BEFORE INSERT OR DELETE OR UPDATE ON public.notice_purpose FOR EACH ROW EXECUTE FUNCTION cmp_notice_purpose_freeze() |
+
+## consent_link
+
+Module: **Consent**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| link_id | integer | PK | No | nextval('consent_link_link_id_seq'::regclass) | — |
+| link_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| notice_id | integer | FK | No | — | — |
+| site_id | integer | FK | No | — | — |
+| token | character varying(64) | UQ | No | — | Keyed digest of the token, and still the only thing lookups match on. A request presents a token, it is fingerprinted, and this column is compared - token_sealed is never used to authenticate, only to re-display. |
+| expires_at | timestamp with time zone | — | No | — | — |
+| max_uses | integer | — | Yes | — | — |
+| use_count | integer | — | No | 0 | — |
+| status | link_status | — | No | 'active'::link_status | — |
+| created_by | integer | FK | No | — | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+| revoked_by | integer | FK | Yes | — | — |
+| revoked_at | timestamp with time zone | — | Yes | — | — |
+| token_sealed | bytea | — | Yes | — | The link token, encrypted under a key derived from the application secret. Lets the URL be shown again to whoever needs to share it. NULL on links minted before 0011, whose tokens were never kept - those stay unrecoverable and the interface says so rather than showing a blank link. |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK015 | created_by | auth_user(id) | FOREIGN KEY (created_by) REFERENCES auth_user(id) |
+| FK016 | notice_id | notice(notice_id) | FOREIGN KEY (notice_id) REFERENCES notice(notice_id) |
+| FK017 | revoked_by | auth_user(id) | FOREIGN KEY (revoked_by) REFERENCES auth_user(id) |
+| FK018 | site_id | project_site(site_id) | FOREIGN KEY (site_id) REFERENCES project_site(site_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| consent_link_link_uuid_key | UNIQUE (link_uuid) |
+| consent_link_pkey | PRIMARY KEY (link_id) |
+| consent_link_token_key | UNIQUE (token) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| consent_link_link_uuid_key | CREATE UNIQUE INDEX consent_link_link_uuid_key ON public.consent_link USING btree (link_uuid) |
+| consent_link_pkey | CREATE UNIQUE INDEX consent_link_pkey ON public.consent_link USING btree (link_id) |
+| consent_link_token_key | CREATE UNIQUE INDEX consent_link_token_key ON public.consent_link USING btree (token) |
+| idx_link_notice | CREATE INDEX idx_link_notice ON public.consent_link USING btree (notice_id) |
+| idx_link_site | CREATE INDEX idx_link_site ON public.consent_link USING btree (site_id) WHERE (status = 'active'::link_status) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_link_coherent | CREATE TRIGGER trg_link_coherent BEFORE INSERT ON public.consent_link FOR EACH ROW EXECUTE FUNCTION cmp_link_coherent() |
+| trg_link_use_count_guard | CREATE TRIGGER trg_link_use_count_guard BEFORE UPDATE ON public.consent_link FOR EACH ROW EXECUTE FUNCTION cmp_link_use_count_guard() |
+
+## consent_artefact
+
+Module: **Consent**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| consent_id | integer | PK | No | nextval('consent_artefact_consent_id_seq'::regclass) | — |
+| consent_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| auth_user_id | integer | FK | No | — | — |
+| notice_id | integer | FK | No | — | — |
+| notice_language_id | integer | FK | No | — | — |
+| notice_content_hash | text | — | No | — | — |
+| link_id | integer | FK | No | — | — |
+| served_at | timestamp with time zone | — | No | — | — |
+| affirmative_action_at | timestamp with time zone | — | No | — | — |
+| action_type | action_type | — | No | — | — |
+| ip_address | inet | — | Yes | — | — |
+| is_withdrawal | boolean | — | No | false | — |
+| supersedes_consent_id | integer | FK | Yes | — | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK010 | auth_user_id | auth_user(id) | FOREIGN KEY (auth_user_id) REFERENCES auth_user(id) |
+| FK011 | link_id | consent_link(link_id) | FOREIGN KEY (link_id) REFERENCES consent_link(link_id) |
+| FK012 | notice_id | notice(notice_id) | FOREIGN KEY (notice_id) REFERENCES notice(notice_id) |
+| FK013 | notice_language_id | notice_language(notice_language_id) | FOREIGN KEY (notice_language_id) REFERENCES notice_language(notice_language_id) |
+| FK014 | supersedes_consent_id | consent_artefact(consent_id) | FOREIGN KEY (supersedes_consent_id) REFERENCES consent_artefact(consent_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| consent_artefact_consent_uuid_key | UNIQUE (consent_uuid) |
+| consent_artefact_pkey | PRIMARY KEY (consent_id) |
+| served_before_action | CHECK ((served_at <= affirmative_action_at)) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| consent_artefact_consent_uuid_key | CREATE UNIQUE INDEX consent_artefact_consent_uuid_key ON public.consent_artefact USING btree (consent_uuid) |
+| consent_artefact_pkey | CREATE UNIQUE INDEX consent_artefact_pkey ON public.consent_artefact USING btree (consent_id) |
+| idx_artefact_supersedes | CREATE INDEX idx_artefact_supersedes ON public.consent_artefact USING btree (supersedes_consent_id) |
+| idx_artefact_user_notice | CREATE INDEX idx_artefact_user_notice ON public.consent_artefact USING btree (auth_user_id, notice_id, affirmative_action_at DESC) |
+| uq_artefact_one_root_per_notice | CREATE UNIQUE INDEX uq_artefact_one_root_per_notice ON public.consent_artefact USING btree (auth_user_id, notice_id) WHERE (supersedes_consent_id IS NULL) |
+| uq_artefact_supersedes_once | CREATE UNIQUE INDEX uq_artefact_supersedes_once ON public.consent_artefact USING btree (supersedes_consent_id) WHERE (supersedes_consent_id IS NOT NULL) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_consent_append_only | CREATE TRIGGER trg_consent_append_only BEFORE DELETE OR UPDATE ON public.consent_artefact FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only() |
+| trg_consent_coherent | CREATE TRIGGER trg_consent_coherent BEFORE INSERT ON public.consent_artefact FOR EACH ROW EXECUTE FUNCTION cmp_consent_coherent() |
+
+## consent_purpose_grant
+
+Module: **Consent**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| grant_id | integer | PK | No | nextval('consent_purpose_grant_grant_id_seq'::regclass) | — |
+| consent_id | integer | FK/UQ | No | — | — |
+| purpose_id | integer | FK/UQ | No | — | — |
+| granted | boolean | — | No | — | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK019 | consent_id | consent_artefact(consent_id) | FOREIGN KEY (consent_id) REFERENCES consent_artefact(consent_id) |
+| FK020 | purpose_id | purpose(purpose_id) | FOREIGN KEY (purpose_id) REFERENCES purpose(purpose_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| consent_purpose_grant_consent_id_purpose_id_key | UNIQUE (consent_id, purpose_id) |
+| consent_purpose_grant_pkey | PRIMARY KEY (grant_id) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| consent_purpose_grant_consent_id_purpose_id_key | CREATE UNIQUE INDEX consent_purpose_grant_consent_id_purpose_id_key ON public.consent_purpose_grant USING btree (consent_id, purpose_id) |
+| consent_purpose_grant_pkey | CREATE UNIQUE INDEX consent_purpose_grant_pkey ON public.consent_purpose_grant USING btree (grant_id) |
+| idx_grant_consent | CREATE INDEX idx_grant_consent ON public.consent_purpose_grant USING btree (consent_id) |
+| idx_grant_purpose | CREATE INDEX idx_grant_purpose ON public.consent_purpose_grant USING btree (purpose_id) WHERE granted |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_grant_append_only | CREATE TRIGGER trg_grant_append_only BEFORE DELETE OR UPDATE ON public.consent_purpose_grant FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only() |
+| trg_grant_in_notice | CREATE TRIGGER trg_grant_in_notice BEFORE INSERT ON public.consent_purpose_grant FOR EACH ROW EXECUTE FUNCTION cmp_grant_in_notice() |
+
+## v_current_consent
+
+Module: **Consent**. Derived view.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| consent_id | integer | — | derived | — | — |
+| consent_uuid | uuid | — | derived | — | — |
+| auth_user_id | integer | — | derived | — | — |
+| notice_id | integer | — | derived | — | — |
+| notice_language_id | integer | — | derived | — | — |
+| notice_content_hash | text | — | derived | — | — |
+| link_id | integer | — | derived | — | — |
+| served_at | timestamp with time zone | — | derived | — | — |
+| affirmative_action_at | timestamp with time zone | — | derived | — | — |
+| action_type | action_type | — | derived | — | — |
+| ip_address | inet | — | derived | — | — |
+| is_withdrawal | boolean | — | derived | — | — |
+| supersedes_consent_id | integer | — | derived | — | — |
+| created_at | timestamp with time zone | — | derived | — | — |
+
+```sql
+ SELECT consent_id,
+    consent_uuid,
+    auth_user_id,
+    notice_id,
+    notice_language_id,
+    notice_content_hash,
+    link_id,
+    served_at,
+    affirmative_action_at,
+    action_type,
+    ip_address,
+    is_withdrawal,
+    supersedes_consent_id,
+    created_at
+   FROM consent_artefact ca
+  WHERE (NOT (EXISTS ( SELECT 1
+           FROM consent_artefact s
+          WHERE (s.supersedes_consent_id = ca.consent_id))));
+```
+
+## export_log
+
+Module: **Exchange**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| export_id | integer | PK | No | nextval('export_log_export_id_seq'::regclass) | — |
+| export_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| project_id | integer | FK | No | — | — |
+| site_id | integer | FK | Yes | — | The site this export covered, on the per-site exports that predate 0010. NULL on a project export, which covers every site the exporter could see - the rows themselves name their site. |
+| export_type | export_type | — | No | — | — |
+| exported_by | integer | FK | No | — | — |
+| exported_at | timestamp with time zone | — | No | now() | — |
+| row_count | integer | — | No | — | — |
+| file_hash | text | — | No | — | — |
+| file_ref | text | — | Yes | — | Storage reference of the CSV exactly as generated; NULL for exports that predate 0023 |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK033 | exported_by | auth_user(id) | FOREIGN KEY (exported_by) REFERENCES auth_user(id) |
+| FK034 | project_id | project(project_id) | FOREIGN KEY (project_id) REFERENCES project(project_id) |
+| FK035 | site_id | project_site(site_id) | FOREIGN KEY (site_id) REFERENCES project_site(site_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| export_log_export_uuid_key | UNIQUE (export_uuid) |
+| export_log_pkey | PRIMARY KEY (export_id) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| export_log_export_uuid_key | CREATE UNIQUE INDEX export_log_export_uuid_key ON public.export_log USING btree (export_uuid) |
+| export_log_pkey | CREATE UNIQUE INDEX export_log_pkey ON public.export_log USING btree (export_id) |
+| idx_export_project | CREATE INDEX idx_export_project ON public.export_log USING btree (project_id, exported_at DESC) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_export_log_append_only | CREATE TRIGGER trg_export_log_append_only BEFORE DELETE OR UPDATE ON public.export_log FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only() |
+
+## export_line
+
+Module: **Exchange**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| line_id | integer | PK | No | nextval('export_line_line_id_seq'::regclass) | — |
+| export_id | integer | FK | No | — | — |
+| auth_user_id | integer | FK | No | — | — |
+| consent_id | integer | FK | No | — | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK030 | auth_user_id | auth_user(id) | FOREIGN KEY (auth_user_id) REFERENCES auth_user(id) |
+| FK031 | consent_id | consent_artefact(consent_id) | FOREIGN KEY (consent_id) REFERENCES consent_artefact(consent_id) |
+| FK032 | export_id | export_log(export_id) | FOREIGN KEY (export_id) REFERENCES export_log(export_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| export_line_pkey | PRIMARY KEY (line_id) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| export_line_pkey | CREATE UNIQUE INDEX export_line_pkey ON public.export_line USING btree (line_id) |
+| idx_export_line_export | CREATE INDEX idx_export_line_export ON public.export_line USING btree (export_id) |
+| idx_export_line_user | CREATE INDEX idx_export_line_user ON public.export_line USING btree (auth_user_id) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_export_line_append_only | CREATE TRIGGER trg_export_line_append_only BEFORE DELETE OR UPDATE ON public.export_line FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only() |
+
+## import_batch
+
+Module: **Exchange**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| batch_id | integer | PK | No | nextval('import_batch_batch_id_seq'::regclass) | — |
+| batch_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| source_id | integer | FK | No | — | — |
+| project_id | integer | FK | Yes | — | — |
+| file_name | character varying(255) | — | No | — | — |
+| file_hash | text | — | No | — | — |
+| declared_rows | integer | — | No | — | — |
+| accepted_rows | integer | — | No | 0 | — |
+| rejected_rows | integer | — | No | 0 | — |
+| status | batch_status | — | No | 'received'::batch_status | — |
+| error_report | text | — | Yes | — | — |
+| imported_by | integer | FK | No | — | — |
+| received_at | timestamp with time zone | — | No | now() | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK036 | imported_by | auth_user(id) | FOREIGN KEY (imported_by) REFERENCES auth_user(id) |
+| FK037 | project_id | project(project_id) | FOREIGN KEY (project_id) REFERENCES project(project_id) |
+| FK038 | source_id | data_source(source_id) | FOREIGN KEY (source_id) REFERENCES data_source(source_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| import_batch_batch_uuid_key | UNIQUE (batch_uuid) |
+| import_batch_pkey | PRIMARY KEY (batch_id) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| idx_batch_project | CREATE INDEX idx_batch_project ON public.import_batch USING btree (project_id, received_at DESC) |
+| idx_batch_source | CREATE INDEX idx_batch_source ON public.import_batch USING btree (source_id, received_at DESC) |
+| import_batch_batch_uuid_key | CREATE UNIQUE INDEX import_batch_batch_uuid_key ON public.import_batch USING btree (batch_uuid) |
+| import_batch_pkey | CREATE UNIQUE INDEX import_batch_pkey ON public.import_batch USING btree (batch_id) |
+
+## collection
+
+Module: **Exchange**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| collection_id | integer | PK | No | nextval('collection_collection_id_seq'::regclass) | — |
+| collection_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| source_id | integer | FK/UQ | No | — | — |
+| source_collection_ref | character varying(120) | UQ | No | — | — |
+| project_id | integer | FK | No | — | — |
+| site_id | integer | FK | Yes | — | — |
+| batch_id | integer | FK | No | — | — |
+| agent_ref | character varying(120) | — | Yes | — | — |
+| collected_on | date | — | No | — | — |
+| declared_asset_count | integer | — | No | 0 | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK006 | batch_id | import_batch(batch_id) | FOREIGN KEY (batch_id) REFERENCES import_batch(batch_id) |
+| FK007 | project_id | project(project_id) | FOREIGN KEY (project_id) REFERENCES project(project_id) |
+| FK008 | site_id | project_site(site_id) | FOREIGN KEY (site_id) REFERENCES project_site(site_id) |
+| FK009 | source_id | data_source(source_id) | FOREIGN KEY (source_id) REFERENCES data_source(source_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| collection_collection_uuid_key | UNIQUE (collection_uuid) |
+| collection_pkey | PRIMARY KEY (collection_id) |
+| collection_source_id_source_collection_ref_key | UNIQUE (source_id, source_collection_ref) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| collection_collection_uuid_key | CREATE UNIQUE INDEX collection_collection_uuid_key ON public.collection USING btree (collection_uuid) |
+| collection_pkey | CREATE UNIQUE INDEX collection_pkey ON public.collection USING btree (collection_id) |
+| collection_source_id_source_collection_ref_key | CREATE UNIQUE INDEX collection_source_id_source_collection_ref_key ON public.collection USING btree (source_id, source_collection_ref) |
+| idx_collection_batch | CREATE INDEX idx_collection_batch ON public.collection USING btree (batch_id) |
+| idx_collection_project | CREATE INDEX idx_collection_project ON public.collection USING btree (project_id, collected_on DESC) |
+
+## data_asset
+
+Module: **Exchange**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| asset_id | integer | PK | No | nextval('data_asset_asset_id_seq'::regclass) | — |
+| asset_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| source_id | integer | FK/UQ | No | — | — |
+| source_asset_ref | character varying(160) | UQ | No | — | — |
+| collection_id | integer | FK | No | — | — |
+| asset_type | asset_type | — | No | — | — |
+| storage_ref | text | — | Yes | — | — |
+| has_unmapped_subjects | boolean | — | No | false | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK021 | collection_id | collection(collection_id) | FOREIGN KEY (collection_id) REFERENCES collection(collection_id) |
+| FK022 | source_id | data_source(source_id) | FOREIGN KEY (source_id) REFERENCES data_source(source_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| data_asset_asset_uuid_key | UNIQUE (asset_uuid) |
+| data_asset_pkey | PRIMARY KEY (asset_id) |
+| data_asset_source_id_source_asset_ref_key | UNIQUE (source_id, source_asset_ref) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| data_asset_asset_uuid_key | CREATE UNIQUE INDEX data_asset_asset_uuid_key ON public.data_asset USING btree (asset_uuid) |
+| data_asset_pkey | CREATE UNIQUE INDEX data_asset_pkey ON public.data_asset USING btree (asset_id) |
+| data_asset_source_id_source_asset_ref_key | CREATE UNIQUE INDEX data_asset_source_id_source_asset_ref_key ON public.data_asset USING btree (source_id, source_asset_ref) |
+| idx_asset_collection | CREATE INDEX idx_asset_collection ON public.data_asset USING btree (collection_id) |
+| idx_asset_unmapped | CREATE INDEX idx_asset_unmapped ON public.data_asset USING btree (collection_id) WHERE has_unmapped_subjects |
+
+## asset_consent
+
+Module: **Exchange**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| asset_consent_id | integer | PK | No | nextval('asset_consent_asset_consent_id_seq'::regclass) | — |
+| asset_id | integer | FK | No | — | — |
+| consent_id | integer | FK | Yes | — | — |
+| subject_role | subject_role | — | No | — | — |
+| disposition | disposition | — | Yes | — | — |
+| disposition_at | timestamp with time zone | — | Yes | — | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK001 | asset_id | data_asset(asset_id) | FOREIGN KEY (asset_id) REFERENCES data_asset(asset_id) |
+| FK002 | consent_id | consent_artefact(consent_id) | FOREIGN KEY (consent_id) REFERENCES consent_artefact(consent_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| asset_consent_pkey | PRIMARY KEY (asset_consent_id) |
+| consent_matches_role | CHECK ((((subject_role = 'consented'::subject_role) AND (consent_id IS NOT NULL)) OR ((subject_role <> 'consented'::subject_role) AND (consent_id IS NULL)))) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| asset_consent_pkey | CREATE UNIQUE INDEX asset_consent_pkey ON public.asset_consent USING btree (asset_consent_id) |
+| idx_asset_consent_asset | CREATE INDEX idx_asset_consent_asset ON public.asset_consent USING btree (asset_id) |
+| idx_asset_consent_consent | CREATE INDEX idx_asset_consent_consent ON public.asset_consent USING btree (consent_id) |
+
+## rights_request
+
+Module: **Rights**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| request_id | integer | PK | No | nextval('rights_request_request_id_seq'::regclass) | — |
+| request_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| reference | character varying(24) | UQ | No | — | — |
+| request_type | rights_request_type | — | No | — | — |
+| original_type | rights_request_type | — | Yes | — | — |
+| status | rights_request_status | — | No | 'received'::rights_request_status | — |
+| outcome | rights_request_outcome | — | Yes | — | — |
+| channel | rights_request_channel | — | No | — | — |
+| subject_user_id | integer | FK | Yes | — | — |
+| submitted_name | character varying(200) | — | Yes | — | — |
+| submitted_contact | character varying(255) | — | No | — | — |
+| request_text | text | — | No | — | — |
+| received_at | timestamp with time zone | — | No | now() | — |
+| due_at | timestamp with time zone | — | No | — | Copied from the published response period at receipt. A period changed later does not move a request already running. |
+| acknowledged_at | timestamp with time zone | — | Yes | — | — |
+| verification_method | rights_verification_method | — | Yes | — | — |
+| verification_status | rights_verification_status | — | No | 'pending'::rights_verification_status | — |
+| verified_at | timestamp with time zone | — | Yes | — | — |
+| verified_by | integer | FK | Yes | — | — |
+| verification_note | text | — | Yes | — | — |
+| classified_at | timestamp with time zone | — | Yes | — | — |
+| classified_by | integer | FK | Yes | — | — |
+| refusal_reason | text | — | Yes | — | — |
+| intent_confirmed_at | timestamp with time zone | — | Yes | — | — |
+| linked_request_id | integer | FK | Yes | — | — |
+| nomination_id | integer | FK | Yes | — | — |
+| trigger_event | rights_trigger_event | — | Yes | — | — |
+| trigger_evidence_ref | text | — | Yes | — | — |
+| trigger_evidence_hash | text | — | Yes | — | — |
+| trigger_evidenced_at | timestamp with time zone | — | Yes | — | — |
+| about_dpo | boolean | — | No | false | — |
+| reviewer_user_id | integer | FK | Yes | — | — |
+| escalated_at | timestamp with time zone | — | Yes | — | — |
+| grievance_upheld | boolean | — | Yes | — | — |
+| remedy_text | text | — | Yes | — | — |
+| response_text | text | — | Yes | — | — |
+| response_file_ref | text | — | Yes | — | — |
+| response_file_hash | text | — | Yes | — | — |
+| responded_at | timestamp with time zone | — | Yes | — | — |
+| responded_by | integer | FK | Yes | — | — |
+| download_expires_at | timestamp with time zone | — | Yes | — | — |
+| closed_at | timestamp with time zone | — | Yes | — | — |
+| created_by | integer | FK | Yes | — | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+| updated_at | timestamp with time zone | — | No | now() | — |
+| consent_id | integer | FK | Yes | — | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK072 | classified_by | auth_user(id) | FOREIGN KEY (classified_by) REFERENCES auth_user(id) |
+| FK073 | consent_id | consent_artefact(consent_id) | FOREIGN KEY (consent_id) REFERENCES consent_artefact(consent_id) |
+| FK074 | created_by | auth_user(id) | FOREIGN KEY (created_by) REFERENCES auth_user(id) |
+| FK075 | linked_request_id | rights_request(request_id) | FOREIGN KEY (linked_request_id) REFERENCES rights_request(request_id) |
+| FK076 | nomination_id | nomination(nomination_id) | FOREIGN KEY (nomination_id) REFERENCES nomination(nomination_id) |
+| FK077 | responded_by | auth_user(id) | FOREIGN KEY (responded_by) REFERENCES auth_user(id) |
+| FK078 | reviewer_user_id | auth_user(id) | FOREIGN KEY (reviewer_user_id) REFERENCES auth_user(id) |
+| FK079 | subject_user_id | auth_user(id) | FOREIGN KEY (subject_user_id) REFERENCES auth_user(id) |
+| FK080 | verified_by | auth_user(id) | FOREIGN KEY (verified_by) REFERENCES auth_user(id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| rights_closed_has_outcome | CHECK (((status <> 'closed'::rights_request_status) OR (outcome IS NOT NULL))) |
+| rights_due_after_receipt | CHECK ((due_at > received_at)) |
+| rights_nominee_has_nomination | CHECK (((channel <> 'nominee'::rights_request_channel) OR (nomination_id IS NOT NULL))) |
+| rights_refusal_has_reason | CHECK (((outcome <> 'refused'::rights_request_outcome) OR (refusal_reason IS NOT NULL))) |
+| rights_request_pkey | PRIMARY KEY (request_id) |
+| rights_request_reference_key | UNIQUE (reference) |
+| rights_request_request_uuid_key | UNIQUE (request_uuid) |
+| rights_verified_is_attributed | CHECK (((verification_status <> 'verified'::rights_verification_status) OR ((verified_at IS NOT NULL) AND (verification_method IS NOT NULL)))) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| idx_rights_request_linked | CREATE INDEX idx_rights_request_linked ON public.rights_request USING btree (linked_request_id) |
+| idx_rights_request_status_due | CREATE INDEX idx_rights_request_status_due ON public.rights_request USING btree (status, due_at) |
+| idx_rights_request_subject | CREATE INDEX idx_rights_request_subject ON public.rights_request USING btree (subject_user_id) |
+| rights_request_consent_idx | CREATE INDEX rights_request_consent_idx ON public.rights_request USING btree (consent_id) WHERE (consent_id IS NOT NULL) |
+| rights_request_pkey | CREATE UNIQUE INDEX rights_request_pkey ON public.rights_request USING btree (request_id) |
+| rights_request_reference_key | CREATE UNIQUE INDEX rights_request_reference_key ON public.rights_request USING btree (reference) |
+| rights_request_request_uuid_key | CREATE UNIQUE INDEX rights_request_request_uuid_key ON public.rights_request USING btree (request_uuid) |
+
+## rights_request_holder
+
+Module: **Rights**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| holder_id | integer | PK | No | nextval('rights_request_holder_holder_id_seq'::regclass) | — |
+| holder_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| request_id | integer | FK | No | — | — |
+| processor_id | integer | FK | Yes | — | — |
+| label | character varying(200) | — | No | — | — |
+| derived_from | rights_holder_source | — | No | — | — |
+| evidence | jsonb | — | No | '{}'::jsonb | — |
+| confirmed_at | timestamp with time zone | — | Yes | — | — |
+| confirmed_by | integer | FK | Yes | — | — |
+| ticket_status | rights_ticket_status | — | No | 'pending'::rights_ticket_status | — |
+| instruction | text | — | Yes | — | — |
+| responder_name | character varying(200) | — | Yes | — | — |
+| responder_contact | character varying(255) | — | Yes | — | — |
+| issued_at | timestamp with time zone | — | Yes | — | — |
+| due_at | timestamp with time zone | — | Yes | — | — |
+| escalated_at | timestamp with time zone | — | Yes | — | — |
+| returned_at | timestamp with time zone | — | Yes | — | — |
+| return_summary | text | — | Yes | — | — |
+| return_evidence_ref | text | — | Yes | — | — |
+| return_evidence_hash | text | — | Yes | — | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+| respondent_id | integer | FK | Yes | — | — |
+| responder_user_id | integer | FK | Yes | — | — |
+| channel | character varying(10) | — | No | 'email'::character varying | — |
+| contact_log | jsonb | — | No | '[]'::jsonb | — |
+| brief | jsonb | — | Yes | — | — |
+| office_read_at | timestamp with time zone | — | Yes | — | — |
+| holder_read_at | timestamp with time zone | — | Yes | — | — |
+| return_evidence_name | character varying(255) | — | Yes | — | — |
+| last_reminded_at | timestamp with time zone | — | Yes | — | — |
+| reminders_sent | integer | — | No | 0 | — |
+| sent_back_at | timestamp with time zone | — | Yes | — | — |
+| sent_back_reason | text | — | Yes | — | — |
+| sent_back_count | integer | — | No | 0 | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK081 | confirmed_by | auth_user(id) | FOREIGN KEY (confirmed_by) REFERENCES auth_user(id) |
+| FK082 | processor_id | processor(processor_id) | FOREIGN KEY (processor_id) REFERENCES processor(processor_id) |
+| FK083 | request_id | rights_request(request_id) | FOREIGN KEY (request_id) REFERENCES rights_request(request_id) |
+| FK084 | respondent_id | processor_respondent(respondent_id) | FOREIGN KEY (respondent_id) REFERENCES processor_respondent(respondent_id) |
+| FK085 | responder_user_id | auth_user(id) | FOREIGN KEY (responder_user_id) REFERENCES auth_user(id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| holder_channel | CHECK (((channel)::text = ANY ((ARRAY['portal'::character varying, 'email'::character varying])::text[]))) |
+| holder_issued_has_date | CHECK (((ticket_status = 'pending'::rights_ticket_status) OR (issued_at IS NOT NULL))) |
+| holder_portal_has_account | CHECK ((((channel)::text <> 'portal'::text) OR (responder_user_id IS NOT NULL))) |
+| holder_returned_has_date | CHECK (((ticket_status <> 'returned'::rights_ticket_status) OR (returned_at IS NOT NULL))) |
+| rights_request_holder_holder_uuid_key | UNIQUE (holder_uuid) |
+| rights_request_holder_pkey | PRIMARY KEY (holder_id) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| idx_rights_holder_request | CREATE INDEX idx_rights_holder_request ON public.rights_request_holder USING btree (request_id) |
+| idx_rights_holder_responder | CREATE INDEX idx_rights_holder_responder ON public.rights_request_holder USING btree (responder_user_id) WHERE (responder_user_id IS NOT NULL) |
+| rights_request_holder_holder_uuid_key | CREATE UNIQUE INDEX rights_request_holder_holder_uuid_key ON public.rights_request_holder USING btree (holder_uuid) |
+| rights_request_holder_pkey | CREATE UNIQUE INDEX rights_request_holder_pkey ON public.rights_request_holder USING btree (holder_id) |
+| uq_rights_holder_processor | CREATE UNIQUE INDEX uq_rights_holder_processor ON public.rights_request_holder USING btree (request_id, processor_id) WHERE (processor_id IS NOT NULL) |
+
+## rights_request_item
+
+Module: **Rights**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| item_id | integer | PK | No | nextval('rights_request_item_item_id_seq'::regclass) | — |
+| item_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| request_id | integer | FK/UQ | No | — | — |
+| asset_consent_id | integer | FK/UQ | No | — | — |
+| holder_id | integer | FK | Yes | — | — |
+| other_subjects | integer | — | No | 0 | — |
+| state | rights_item_state | — | No | 'proposed'::rights_item_state | — |
+| decision | rights_scope_decision | — | Yes | — | — |
+| basis | text | — | Yes | — | — |
+| retain_until | date | — | Yes | — | — |
+| floor_passed_at | timestamp with time zone | — | Yes | — | — |
+| decided_at | timestamp with time zone | — | Yes | — | — |
+| decided_by | integer | FK | Yes | — | — |
+| applied_at | timestamp with time zone | — | Yes | — | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK086 | asset_consent_id | asset_consent(asset_consent_id) | FOREIGN KEY (asset_consent_id) REFERENCES asset_consent(asset_consent_id) |
+| FK087 | decided_by | auth_user(id) | FOREIGN KEY (decided_by) REFERENCES auth_user(id) |
+| FK088 | holder_id | rights_request_holder(holder_id) | FOREIGN KEY (holder_id) REFERENCES rights_request_holder(holder_id) |
+| FK089 | request_id | rights_request(request_id) | FOREIGN KEY (request_id) REFERENCES rights_request(request_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| item_decided_is_attributed | CHECK (((decision IS NULL) OR (decided_at IS NOT NULL))) |
+| item_decision_has_basis | CHECK (((decision IS NULL) OR (basis IS NOT NULL))) |
+| item_retain_has_until | CHECK (((decision IS DISTINCT FROM 'retain'::rights_scope_decision) OR (retain_until IS NOT NULL))) |
+| rights_request_item_item_uuid_key | UNIQUE (item_uuid) |
+| rights_request_item_pkey | PRIMARY KEY (item_id) |
+| rights_request_item_request_id_asset_consent_id_key | UNIQUE (request_id, asset_consent_id) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| idx_rights_item_floor | CREATE INDEX idx_rights_item_floor ON public.rights_request_item USING btree (retain_until) WHERE ((decision = 'retain'::rights_scope_decision) AND (floor_passed_at IS NULL)) |
+| idx_rights_item_request | CREATE INDEX idx_rights_item_request ON public.rights_request_item USING btree (request_id) |
+| rights_request_item_item_uuid_key | CREATE UNIQUE INDEX rights_request_item_item_uuid_key ON public.rights_request_item USING btree (item_uuid) |
+| rights_request_item_pkey | CREATE UNIQUE INDEX rights_request_item_pkey ON public.rights_request_item USING btree (item_id) |
+| rights_request_item_request_id_asset_consent_id_key | CREATE UNIQUE INDEX rights_request_item_request_id_asset_consent_id_key ON public.rights_request_item USING btree (request_id, asset_consent_id) |
+
+## rights_ticket_message
+
+Module: **Rights**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| message_id | integer | PK | No | nextval('rights_ticket_message_message_id_seq'::regclass) | — |
+| message_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| holder_id | integer | FK | No | — | — |
+| author_user_id | integer | FK | Yes | — | — |
+| author_side | character varying(10) | — | No | — | — |
+| kind | character varying(20) | — | No | 'message'::character varying | — |
+| body | text | — | No | — | — |
+| evidence_ref | text | — | Yes | — | — |
+| evidence_hash | text | — | Yes | — | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+| evidence_name | character varying(255) | — | Yes | — | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK092 | author_user_id | auth_user(id) | FOREIGN KEY (author_user_id) REFERENCES auth_user(id) |
+| FK093 | holder_id | rights_request_holder(holder_id) | FOREIGN KEY (holder_id) REFERENCES rights_request_holder(holder_id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| rights_ticket_message_message_uuid_key | UNIQUE (message_uuid) |
+| rights_ticket_message_pkey | PRIMARY KEY (message_id) |
+| ticket_message_kind | CHECK (((kind)::text = ANY ((ARRAY['brief'::character varying, 'instruction'::character varying, 'message'::character varying, 'return'::character varying, 'escalation'::character varying, 'status'::character varying])::text[]))) |
+| ticket_message_side | CHECK (((author_side)::text = ANY ((ARRAY['office'::character varying, 'holder'::character varying, 'system'::character varying])::text[]))) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| idx_ticket_message_holder | CREATE INDEX idx_ticket_message_holder ON public.rights_ticket_message USING btree (holder_id, message_id) |
+| rights_ticket_message_message_uuid_key | CREATE UNIQUE INDEX rights_ticket_message_message_uuid_key ON public.rights_ticket_message USING btree (message_uuid) |
+| rights_ticket_message_pkey | CREATE UNIQUE INDEX rights_ticket_message_pkey ON public.rights_ticket_message USING btree (message_id) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_ticket_message_append_only | CREATE TRIGGER trg_ticket_message_append_only BEFORE DELETE OR UPDATE ON public.rights_ticket_message FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only() |
+
+## rights_response_file
+
+Module: **Rights**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| file_id | integer | PK | No | nextval('rights_response_file_file_id_seq'::regclass) | — |
+| file_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| request_id | integer | FK | No | — | — |
+| file_ref | text | — | No | — | — |
+| file_hash | text | — | No | — | — |
+| file_name | character varying(255) | — | No | — | — |
+| size_bytes | integer | — | No | — | — |
+| content_type | character varying(120) | — | Yes | — | — |
+| uploaded_by | integer | FK | Yes | — | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK090 | request_id | rights_request(request_id) | FOREIGN KEY (request_id) REFERENCES rights_request(request_id) |
+| FK091 | uploaded_by | auth_user(id) | FOREIGN KEY (uploaded_by) REFERENCES auth_user(id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| rights_response_file_file_uuid_key | UNIQUE (file_uuid) |
+| rights_response_file_pkey | PRIMARY KEY (file_id) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| rights_response_file_file_uuid_key | CREATE UNIQUE INDEX rights_response_file_file_uuid_key ON public.rights_response_file USING btree (file_uuid) |
+| rights_response_file_pkey | CREATE UNIQUE INDEX rights_response_file_pkey ON public.rights_response_file USING btree (file_id) |
+| rights_response_file_request_idx | CREATE INDEX rights_response_file_request_idx ON public.rights_response_file USING btree (request_id) |
+
+## nomination
+
+Module: **Rights**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| nomination_id | integer | PK | No | nextval('nomination_nomination_id_seq'::regclass) | — |
+| nomination_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| principal_user_id | integer | FK | No | — | — |
+| nominee_name | character varying(200) | — | No | — | — |
+| rights | rights_request_type[] | — | No | — | — |
+| status | nomination_status | — | No | 'pending'::nomination_status | — |
+| accept_token_hash | text | — | Yes | — | — |
+| accept_expires_at | timestamp with time zone | — | Yes | — | — |
+| accepted_at | timestamp with time zone | — | Yes | — | — |
+| declined_at | timestamp with time zone | — | Yes | — | — |
+| revoked_at | timestamp with time zone | — | Yes | — | — |
+| created_at | timestamp with time zone | — | No | now() | — |
+| nominee_mobile | character varying(20) | — | Yes | — | — |
+| nominee_email | character varying(255) | — | Yes | — | — |
+| invoked_at | timestamp with time zone | — | Yes | — | — |
+| invoked_event | rights_trigger_event | — | Yes | — | — |
+| invoked_request_id | integer | FK | Yes | — | — |
+| nominee_user_id | integer | FK | Yes | — | The account the nominee accepted with, set at acceptance; NULL for a nomination never accepted, or accepted before this column existed and matching no account |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK040 | invoked_request_id | rights_request(request_id) | FOREIGN KEY (invoked_request_id) REFERENCES rights_request(request_id) |
+| FK041 | nominee_user_id | auth_user(id) | FOREIGN KEY (nominee_user_id) REFERENCES auth_user(id) |
+| FK042 | principal_user_id | auth_user(id) | FOREIGN KEY (principal_user_id) REFERENCES auth_user(id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| nomination_nomination_uuid_key | UNIQUE (nomination_uuid) |
+| nomination_pkey | PRIMARY KEY (nomination_id) |
+| nomination_rights_not_empty | CHECK ((cardinality(rights) >= 1)) |
+| nomination_some_contact | CHECK (((nominee_mobile IS NOT NULL) OR (nominee_email IS NOT NULL))) |
+| nomination_status_dates | CHECK ((((status = 'active'::nomination_status) AND (accepted_at IS NOT NULL)) OR ((status = 'declined'::nomination_status) AND (declined_at IS NOT NULL)) OR ((status = 'revoked'::nomination_status) AND (revoked_at IS NOT NULL)) OR (status = 'pending'::nomination_status))) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| idx_nomination_principal | CREATE INDEX idx_nomination_principal ON public.nomination USING btree (principal_user_id) |
+| nomination_nomination_uuid_key | CREATE UNIQUE INDEX nomination_nomination_uuid_key ON public.nomination USING btree (nomination_uuid) |
+| nomination_nominee_user_id_idx | CREATE INDEX nomination_nominee_user_id_idx ON public.nomination USING btree (nominee_user_id) WHERE (nominee_user_id IS NOT NULL) |
+| nomination_pkey | CREATE UNIQUE INDEX nomination_pkey ON public.nomination USING btree (nomination_id) |
+| uq_nomination_live | CREATE UNIQUE INDEX uq_nomination_live ON public.nomination USING btree (principal_user_id) WHERE (status = ANY (ARRAY['pending'::nomination_status, 'active'::nomination_status])) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_nominee_needs_mobile | CREATE TRIGGER trg_nominee_needs_mobile BEFORE INSERT ON public.nomination FOR EACH ROW EXECUTE FUNCTION cmp_nominee_needs_mobile() |
+
+## audit_log
+
+Module: **Platform**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| log_id | bigint | PK | No | — | — |
+| log_uuid | uuid | UQ | No | gen_random_uuid() | — |
+| event_type | character varying(80) | — | No | — | — |
+| actor_user_id | integer | FK | Yes | — | — |
+| subject_user_id | integer | FK | Yes | — | — |
+| entity_type | character varying(60) | — | No | — | — |
+| entity_id | integer | — | No | — | — |
+| occurred_at | timestamp with time zone | — | No | now() | — |
+| detail_json | jsonb | — | Yes | — | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK003 | actor_user_id | auth_user(id) | FOREIGN KEY (actor_user_id) REFERENCES auth_user(id) |
+| FK004 | subject_user_id | auth_user(id) | FOREIGN KEY (subject_user_id) REFERENCES auth_user(id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| audit_log_log_uuid_key | UNIQUE (log_uuid) |
+| audit_log_pkey | PRIMARY KEY (log_id) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| audit_log_log_uuid_key | CREATE UNIQUE INDEX audit_log_log_uuid_key ON public.audit_log USING btree (log_uuid) |
+| audit_log_pkey | CREATE UNIQUE INDEX audit_log_pkey ON public.audit_log USING btree (log_id) |
+| idx_audit_actor | CREATE INDEX idx_audit_actor ON public.audit_log USING btree (actor_user_id, occurred_at DESC) |
+| idx_audit_entity | CREATE INDEX idx_audit_entity ON public.audit_log USING btree (entity_type, entity_id) |
+| idx_audit_event | CREATE INDEX idx_audit_event ON public.audit_log USING btree (event_type, occurred_at DESC) |
+| idx_audit_subject | CREATE INDEX idx_audit_subject ON public.audit_log USING btree (subject_user_id, occurred_at DESC) |
+
+### Triggers
+
+| Name | Definition |
+| --- | --- |
+| trg_audit_append_only | CREATE TRIGGER trg_audit_append_only BEFORE DELETE OR UPDATE ON public.audit_log FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only() |
+| trg_audit_chain | CREATE TRIGGER trg_audit_chain BEFORE INSERT ON public.audit_log FOR EACH ROW EXECUTE FUNCTION cmp_audit_chain() |
+
+## message_template
+
+Module: **Platform**. Application table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| template_id | integer | PK | No | nextval('message_template_template_id_seq'::regclass) | — |
+| key | character varying(64) | UQ | No | — | — |
+| channel | character varying(8) | UQ | No | — | — |
+| subject | text | — | Yes | — | — |
+| body | text | — | No | — | — |
+| updated_by | integer | FK | Yes | — | — |
+| updated_at | timestamp with time zone | — | No | now() | — |
+
+### Foreign keys
+
+| ID | Column(s) | Referenced key | Definition |
+| --- | --- | --- | --- |
+| FK039 | updated_by | auth_user(id) | FOREIGN KEY (updated_by) REFERENCES auth_user(id) |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| message_template_body_present | CHECK ((length(btrim(body)) > 0)) |
+| message_template_channel | CHECK (((channel)::text = ANY ((ARRAY['email'::character varying, 'sms'::character varying])::text[]))) |
+| message_template_one_per_channel | UNIQUE (key, channel) |
+| message_template_pkey | PRIMARY KEY (template_id) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| message_template_one_per_channel | CREATE UNIQUE INDEX message_template_one_per_channel ON public.message_template USING btree (key, channel) |
+| message_template_pkey | CREATE UNIQUE INDEX message_template_pkey ON public.message_template USING btree (template_id) |
+
+## alembic_version
+
+Module: **Metadata**. Migration metadata, not a business table.
+
+| Column | PostgreSQL type | Keys | Nullable | Default | Comment |
+| --- | --- | --- | --- | --- | --- |
+| version_num | character varying(32) | PK | No | — | — |
+
+### Key and CHECK constraints
+
+| Name | Definition |
+| --- | --- |
+| alembic_version_pkey | PRIMARY KEY (version_num) |
+
+### Indexes
+
+| Name | Definition |
+| --- | --- |
+| alembic_version_pkey | CREATE UNIQUE INDEX alembic_version_pkey ON public.alembic_version USING btree (version_num) |

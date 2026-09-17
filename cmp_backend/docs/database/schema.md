@@ -1,13 +1,17 @@
 # Schema
 
-31 tables, 39 enums, 1 view, 26 triggers, 32 named CHECK constraints, as of
-migration 0022.
+32 tables, 39 enums, 1 view, 27 triggers, 35 named CHECK constraints and 93
+foreign keys, as of migration 0026. Those counts are read from the PostgreSQL
+catalogs after replaying every migration, not maintained by hand.
 
 The migrations are the source of truth: 0001 transcribed the original
 `DATA-MODEL.md` specification (which is not in this repository) and 0002 to
-0022 built the rest. This document explains the parts whose shape is not
+0026 built the rest. This document explains the parts whose shape is not
 obvious; the relationships are drawn in
-[docs/architecture/domain-model.md](../../../docs/architecture/domain-model.md).
+[docs/architecture/domain-model.md](../../../docs/architecture/domain-model.md),
+and every column, constraint, index and trigger is listed and diagrammed in
+[database_schema/](../../../database_schema/README.md) — a snapshot, so check
+its stated commit before trusting it against a later change.
 
 ## Table groups
 
