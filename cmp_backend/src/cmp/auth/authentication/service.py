@@ -633,6 +633,59 @@ async def request_contact_code(conn: Conn, *, user: dict[str, Any], contact: str
     )
 
 
+async def request_contact_code_on_behalf(conn: Conn, *, user: dict[str, Any], contact: str) -> bool:
+    """A code to a contact an administrator has just put on somebody's account.
+
+    The same scope and identity as the code the person would ask for
+    themselves, so the code box on their account page accepts it and "Send a
+    code" replaces it. It differs where the situation does: it lasts
+    `STAFF_INVITE_TTL_H` hours, because nobody is waiting at a code box; it is
+    dispatched optionally, because the contact is already written and failing
+    the administrator's request would report something false; and a quota
+    already spent withholds the message rather than refusing the edit. Returns
+    whether a code went out.
+    """
+    medium = user_repo.medium_of(user, contact)
+    if not medium or user.get(f"{medium}_verified_at"):
+        return False
+    wanted = normalise_contact(contact)
+
+    verdict = await ratelimit.check(
+        "contact_confirm",
+        wanted,
+        limit=settings.otp_requests_per_contact_per_hour,
+        window_s=3600,
+    )
+    if not verdict.allowed:
+        log.warning("contact_code.withheld", medium=medium, reason="rate_limited")
+        return False
+
+    issued = await otp.issue(
+        otp.Scope.CONTACT_VERIFY,
+        f"{user['uuid']}:{wanted}",
+        ttl_s=settings.staff_invite_ttl_h * 3600,
+    )
+    from cmp.tasks.dispatch import dispatch_optional
+    from cmp.tasks.notifications import send_contact_added_for_you
+
+    dispatch_optional(
+        send_contact_added_for_you,
+        str(user["uuid"]),
+        wanted,
+        issued.code,
+        settings.staff_invite_ttl_h,
+    )
+    await audit.record(
+        conn,
+        event=Event.OTP_REQUESTED,
+        entity_type="auth_user",
+        entity_id=user["id"],
+        subject_user_id=user["id"],
+        detail={"flow": "contact_confirm", "medium": medium, "on_behalf": True},
+    )
+    return True
+
+
 async def confirm_contact(
     conn: Conn, *, user: dict[str, Any], contact: str, code: str
 ) -> dict[str, Any]:

@@ -18,6 +18,7 @@ the defaults are what is sent until they do. The catalogue lives in
 | Sign-in | `password_reset` | email | a member of staff asks to reset their password |
 | Sign-in | `staff_invitation` | email | an administrator provisions a staff account |
 | Sign-in | `contact_confirmation` | email, SMS | a person adds a mobile or a second email to their own account |
+| Sign-in | `contact_added_for_you` | email, SMS | an administrator puts a mobile on somebody's account; the code lasts hours, not minutes |
 | Consent | `consent_receipt` | email, SMS | consent is recorded through a link |
 | Consent | `withdrawal_confirmation` | email, SMS | some or all purposes are withdrawn |
 | Rights | `rights_acknowledgement` | email, SMS | a rights request is received |

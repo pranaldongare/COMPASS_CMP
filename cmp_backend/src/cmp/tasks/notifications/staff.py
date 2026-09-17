@@ -1,14 +1,16 @@
-"""Messages to a member of staff about their own account.
+"""Messages to a person about what an administrator did to their account.
 
-Distinct from `tasks.authentication` even though this one carries a code.
-Those five exist because somebody is looking at a code box right now, which is
-why they are urgent and required. An invitation is read when its recipient next
-opens their mail, so it goes on the `notifications` queue and must never fail
-the request that provisioned the account: the account is written and committed,
-and telling an administrator it was not created would be false.
+Distinct from `tasks.authentication` even though both of these carry a code.
+Those exist because somebody is looking at a code box right now, which is why
+they are urgent and required. An invitation, or word that a mobile was put on
+your account, is read when its recipient next looks at their phone or mail, so
+both go on the `notifications` queue and must never fail the request that
+wrote the row: the row is committed, and telling an administrator it was not
+would be false.
 
-The cost of that choice is that a dropped invitation is invisible to the person
-waiting for it, so `POST /users/{uuid}/invite` exists to send it again.
+The cost of that choice is that a dropped message is invisible to the person it
+was for, so `POST /users/{uuid}/invite` sends the invitation again and the
+account page's "Send a code" replaces the other.
 """
 
 from __future__ import annotations
@@ -50,3 +52,16 @@ def send_staff_invitation(
         reset_url=reset_url,
         hours=hours,
     )
+
+
+@shared_task(name="cmp.notifications.send_contact_added_for_you", **RETRY_KW)
+def send_contact_added_for_you(
+    user_uuid: str, contact: str, code: str, hours: int
+) -> dict[str, Any]:
+    """A contact an administrator has just put on somebody's account.
+
+    The person did not ask for this message and is not waiting at a code box,
+    so the code lasts hours, like an invitation, and the message says what
+    happened before it says what to do.
+    """
+    return deliver(Message.CONTACT_ADDED_FOR_YOU, to=contact, code=code, hours=hours)

@@ -53,7 +53,10 @@ class TestCatalogue:
         assert len({v.name for v in j.variables}) == len(j.variables)
 
     def test_every_code_message_shows_the_code_and_its_life(self) -> None:
-        for key in (
+        """Minutes for a code somebody is waiting for; hours for one they will
+        find later - an invitation, or word that a contact was put on their
+        account by an administrator."""
+        minutes = (
             Message.MFA_CODE,
             Message.LOGIN_CODE,
             Message.REGISTRATION_CODE,
@@ -62,11 +65,13 @@ class TestCatalogue:
             Message.CONTACT_CONFIRMATION,
             Message.RIGHTS_VERIFICATION_CODE,
             Message.NOMINATION_CODE,
-        ):
+        )
+        hours = (Message.STAFF_INVITATION, Message.CONTACT_ADDED_FOR_YOU)
+        for key, life in [(k, "{minutes}") for k in minutes] + [(k, "{hours}") for k in hours]:
             j = junction(key)
             for ch in j.channels:
                 _, body = j.default(ch)
-                assert "{code}" in body and "{minutes}" in body, key
+                assert "{code}" in body and life in body, key
 
 
 class TestRendering:

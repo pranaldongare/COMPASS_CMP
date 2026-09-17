@@ -1744,6 +1744,7 @@
           "users"
         ],
         "summary": "Update User",
+        "description": "Name, mobile, organisation id. A mobile that changes is unconfirmed\nagain and is sent a code, as it would be had the person typed it.",
         "operationId": "update_user_users__user_uuid__patch",
         "parameters": [
           {

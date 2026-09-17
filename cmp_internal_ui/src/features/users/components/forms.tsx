@@ -81,6 +81,16 @@ export function UserForm({ user, onDone }: { user?: User; onDone: () => void }) 
       source_uuids: values.source_uuids ?? [],
     };
 
+    // A number typed on somebody else's behalf is a claim about their phone, so
+    // the server sends a code to it and the number signs nobody in until that
+    // code comes back. Said here because an administrator who is not told will
+    // read the unconfirmed badge on the register as a fault.
+    const digits = (value: string | null) => (value ?? "").replace(/\D/g, "");
+    const mobileChanged = digits(payload.mobile) !== digits(user?.mobile ?? "");
+    const mobileNote = payload.mobile
+      ? ` A code has gone to ${payload.mobile}; the number is unconfirmed until they enter it on their account page.`
+      : "";
+
     if (user) {
       // The API accepts only name and contact here; role is a separate,
       // audited action and email is the account's identity.
@@ -89,7 +99,7 @@ export function UserForm({ user, onDone }: { user?: User; onDone: () => void }) 
         mobile: payload.mobile,
         organization_id: payload.organization_id,
       });
-      toast.success("Account updated");
+      toast.success("Account updated", mobileChanged ? mobileNote.trim() : undefined);
     } else {
       await create.mutateAsync(payload);
       const sources = payload.source_uuids.length
@@ -98,7 +108,7 @@ export function UserForm({ user, onDone }: { user?: User; onDone: () => void }) 
       toast.success(
         "Account created",
         `An email is on its way to ${payload.email} with a code to set a password.` +
-          `${sources} The account stays pending until they do.`,
+          `${sources} The account stays pending until they do.${mobileNote}`,
       );
     }
     onDone();

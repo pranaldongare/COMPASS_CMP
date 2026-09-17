@@ -73,7 +73,16 @@ email.
 - A member of staff who wants to keep reaching their consents after leaving
   must add and confirm a personal contact before the corporate mailbox goes.
   An administrator can set a mobile on their behalf; nobody else can add an
-  email for them.
+  email for them. A number set that way is sent its own code
+  (`contact_added_for_you`), lasting hours rather than minutes because nobody
+  is waiting at a code box — otherwise the number sits unconfirmed on the
+  account with nothing having told its owner it is there.
+- The account routes under `/me` that are about the *person* rather than about
+  being a data principal — the profile, the contacts, the person type — admit
+  every full session rather than a data principal's alone. A member of staff on
+  the console is the same person as on the portal, and a card that shows a
+  contact as unconfirmed with no way to confirm it is a dead end. The routes
+  that are about being a data principal keep their gate.
 
 ## Revisit when
 

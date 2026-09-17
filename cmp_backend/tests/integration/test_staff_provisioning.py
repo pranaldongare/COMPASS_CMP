@@ -24,12 +24,15 @@ from typing import Any
 
 import pytest
 
+from cmp.auth.authentication import otp
 from cmp.auth.authentication import service as auth_service
+from cmp.auth.rate_limit import service as ratelimit
+from cmp.core.config import settings
 from cmp.core.enums import UserStatus
 from cmp.core.errors import Unauthenticated, ValidationFailed
 from cmp.core.permissions import Role
 from cmp.core.security import hash_password, new_token
-from cmp.db.redis import K_LOCKOUT, K_LOGIN_FAILS, K_RATE
+from cmp.db.redis import K_LOCKOUT, K_LOGIN_FAILS, K_OTP, K_RATE
 from cmp.db.redis import key as rkey
 from cmp.db.repositories import users as user_repo
 from cmp.db.sql import fetch_all
@@ -43,6 +46,14 @@ NEW_PASSWORD = "a-well-chosen-passphrase-2026"
 
 INVITATION = "cmp.notifications.send_staff_invitation"
 RESET = "cmp.notifications.send_password_reset"
+ON_BEHALF = "cmp.notifications.send_contact_added_for_you"
+
+#: As an administrator would type it; the row holds it in E.164. Inside the
+#: 98765 0xxxx block, which nothing seeds and no manual test reaches for - a
+#: number a person or a probe has already been given collides on the unique
+#: index, and the failure looks like the feature rather than the fixture.
+MOBILE = "+91 98765 00042"
+MOBILE_E164 = "+919876500042"
 
 
 @pytest.fixture
@@ -259,3 +270,100 @@ class TestAskingForTheCodeAgain:
         await auth_service.request_password_reset(conn, email=email)
 
         assert not [name for name, _ in queued if name == RESET]
+
+
+async def unthrottle_mobile(redis_conn: Any) -> None:
+    """The per-contact quota on confirmation codes lives in Redis and outlives
+    the test transaction."""
+    await redis_conn.delete(rkey(K_RATE, "contact_confirm", MOBILE_E164))
+
+
+class TestAMobileGivenByTheAdministrator:
+    """`POST /users` with a mobile, or `PATCH /users/{uuid}` changing one.
+
+    The number is somebody else's phone, typed by an administrator: a claim,
+    like any contact a person types for themselves, and no way in until a code
+    sent to it comes back. What differs is that nobody is at a code box, so the
+    code lasts as long as an invitation and the message is a courtesy that
+    never fails the edit. The endpoints call the one service function tested
+    here, after writing the row.
+    """
+
+    async def test_the_number_is_sent_a_code_that_lasts_hours_and_confirms_it(
+        self, conn: Any, request_context: Any, redis_conn: Any, queued: Any
+    ) -> None:
+        await unthrottle_mobile(redis_conn)
+        user = await provision(conn, email="with.mobile@test.local", mobile=MOBILE)
+        row = await user_repo.by_id(conn, user["id"])
+        assert row is not None and row["mobile_verified_at"] is None
+
+        sent = await auth_service.request_contact_code_on_behalf(conn, user=row, contact=MOBILE)
+
+        assert sent is True
+        user_uuid, contact, code, hours = only(queued, ON_BEHALF)
+        assert (user_uuid, contact, hours) == (
+            str(user["uuid"]),
+            MOBILE_E164,
+            settings.staff_invite_ttl_h,
+        )
+        # Hours rather than minutes: the person is not waiting for it.
+        ttl = await redis_conn.ttl(
+            rkey(K_OTP, otp.Scope.CONTACT_VERIFY, f"{user['uuid']}:{MOBILE_E164}")
+        )
+        assert ttl > 3600, f"a code sent on somebody's behalf lasted {ttl}s"
+        # And it is the code the account page's box accepts.
+        confirmed = await auth_service.confirm_contact(conn, user=row, contact=MOBILE, code=code)
+        assert confirmed["mobile_verified_at"] is not None
+        assert Event.OTP_REQUESTED in await events_for(conn, user["id"])
+
+    async def test_a_number_already_confirmed_is_left_alone(
+        self, conn: Any, request_context: Any, redis_conn: Any, queued: Any
+    ) -> None:
+        user = await provision(conn, email="confirmed.mobile@test.local", mobile=MOBILE)
+        await user_repo.mark_contact_verified(conn, user["id"], "mobile")
+        row = await user_repo.by_id(conn, user["id"])
+        assert row is not None
+
+        assert (
+            await auth_service.request_contact_code_on_behalf(conn, user=row, contact=MOBILE)
+            is False
+        )
+        assert queued == []
+
+    async def test_a_contact_not_on_the_account_gets_nothing(
+        self, conn: Any, request_context: Any, redis_conn: Any, queued: Any
+    ) -> None:
+        """The endpoints only ever pass the row's own mobile, and this is what
+        holds if one day something else does."""
+        user = await provision(conn, email="no.such.mobile@test.local", mobile=MOBILE)
+        assert (
+            await auth_service.request_contact_code_on_behalf(
+                conn, user=user, contact="+919000000009"
+            )
+            is False
+        )
+        assert queued == []
+
+    async def test_a_spent_quota_withholds_the_code_without_failing_the_edit(
+        self, conn: Any, request_context: Any, redis_conn: Any, queued: Any
+    ) -> None:
+        """Five codes an hour per contact, as for the person's own requests. The
+        sixth is not sent - and the administrator's edit stands, because the
+        alternative is a number that cannot be corrected for an hour."""
+        await unthrottle_mobile(redis_conn)
+        user = await provision(conn, email="throttled.mobile@test.local", mobile=MOBILE)
+        for _ in range(settings.otp_requests_per_contact_per_hour):
+            await ratelimit.check(
+                "contact_confirm",
+                MOBILE_E164,
+                limit=settings.otp_requests_per_contact_per_hour,
+                window_s=3600,
+            )
+        try:
+            assert (
+                await auth_service.request_contact_code_on_behalf(conn, user=user, contact=MOBILE)
+                is False
+            )
+            assert queued == []
+        finally:
+            await unthrottle_mobile(redis_conn)

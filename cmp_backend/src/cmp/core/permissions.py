@@ -265,6 +265,10 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.DPO: Grant(Scope.ALL, write=True),
         Role.ADMIN: Grant(Scope.ALL, write=True),
     },
+    # The data principal's own record. The profile and contact routes under
+    # `/me` are the exception to this row: they admit every full session, since
+    # a member of staff is the same person on the console as on the portal and
+    # their contacts are theirs to confirm from either (see `routers/v1/me.py`).
     "me": {
         Role.DATA_SUBJECT: Grant(Scope.OWN, write=True),
     },

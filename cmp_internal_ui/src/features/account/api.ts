@@ -6,7 +6,7 @@
  * merely intended.
  */
 
-import { apiGet, apiPatch, apiPost } from "@/lib/api";
+import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
 import type { Acknowledged, SessionInfo } from "@/types";
 
 /** Every session this account holds, so somebody can spot one they don't recognise. */
@@ -14,8 +14,39 @@ export function listMySessions(): Promise<SessionInfo[]> {
   return apiGet<SessionInfo[]>("/auth/sessions");
 }
 
-export function updateMe(body: { full_name?: string; mobile?: string }): Promise<unknown> {
+export interface UpdateMeInput {
+  full_name?: string;
+  /** A new or changed number is sent a code in the same request and cannot
+   *  sign the person in until it comes back. */
+  mobile?: string;
+  /** Set or replace the second address; the code goes out with the request. */
+  secondary_email?: string;
+}
+
+export function updateMe(body: UpdateMeInput): Promise<unknown> {
   return apiPatch("/me", body);
+}
+
+/**
+ * A code to one of one's own contacts, for confirming it.
+ *
+ * The server refuses a contact that is not on the caller's account, so this
+ * cannot be turned into a way of sending codes to a stranger.
+ */
+export function requestContactCode(contact: string): Promise<Acknowledged> {
+  return apiPost<Acknowledged>("/me/contacts/code", { contact });
+}
+
+/** The code came back: the contact is theirs, and may now sign them in. */
+export function verifyContact(body: {
+  contact: string;
+  code: string;
+}): Promise<Acknowledged> {
+  return apiPost<Acknowledged>("/me/contact/verify", body);
+}
+
+export function removeSecondaryEmail(): Promise<Acknowledged> {
+  return apiDelete<Acknowledged>("/me/secondary-email");
 }
 
 /**

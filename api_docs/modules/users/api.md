@@ -396,6 +396,9 @@ No request body.
 - **Operation ID:** `update_user_users__user_uuid__patch`
 - **Access:** Role-controlled `users` operation. See [`../../roles/README.md`](../../roles/README.md).
 
+Name, mobile, organisation id. A mobile that changes is unconfirmed
+again and is sent a code, as it would be had the person typed it.
+
 ### Validation
 
 | Parameter | Location | Required | Type | Constraints | Description |

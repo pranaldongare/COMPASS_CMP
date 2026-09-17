@@ -35,7 +35,7 @@ from cmp.db.sql import unique_violation
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.schemas.common import Acknowledged, Mobile, Out, Page, Schema, ShortText
-from cmp.validation import Email
+from cmp.validation import Email, normalise_mobile
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -254,6 +254,14 @@ async def create_user(body: CreateUser, principal: RequireAdmin) -> dict[str, An
         # transaction on purpose: the message is queued only once the row is
         # committed, and a rollback sends nothing.
         await auth_service.invite_staff(conn, user=user)
+        # A number typed here is a claim about somebody else's phone. It is
+        # sent a code the way any new contact is, so the person learns the
+        # number is on their account and can confirm it; until then it signs
+        # nobody in.
+        if user.get("mobile"):
+            await auth_service.request_contact_code_on_behalf(
+                conn, user=user, contact=str(user["mobile"])
+            )
     return {**user, "sources": assigned}
 
 
@@ -294,15 +302,24 @@ async def get_user(user_uuid: UUID, principal: RequireDPOorAdmin) -> dict[str, A
 
 @router.patch("/{user_uuid}", response_model=UserOut)
 async def update_user(user_uuid: UUID, body: UpdateUser, principal: RequireAdmin) -> dict[str, Any]:
+    """Name, mobile, organisation id. A mobile that changes is unconfirmed
+    again and is sent a code, as it would be had the person typed it."""
     async with transaction() as conn:
         user = await repo.require_by_uuid(conn, str(user_uuid))
-        updated = await repo.update_profile(
-            conn,
-            user["id"],
-            full_name=body.full_name,
-            mobile=body.mobile,
-            organization_id=body.organization_id,
-        )
+        try:
+            updated = await repo.update_profile(
+                conn,
+                user["id"],
+                full_name=body.full_name,
+                mobile=body.mobile,
+                organization_id=body.organization_id,
+            )
+        except Exception as exc:
+            if unique_violation(exc):
+                raise Conflict(
+                    "That mobile belongs to another account", code="contact_taken"
+                ) from exc
+            raise
         await audit.record(
             conn,
             event=Event.USER_UPDATED,
@@ -311,6 +328,22 @@ async def update_user(user_uuid: UUID, body: UpdateUser, principal: RequireAdmin
             subject_user_id=user["id"],
             detail={"fields": sorted(k for k, v in body.model_dump().items() if v is not None)},
         )
+
+        mobile_changed = body.mobile is not None and normalise_mobile(body.mobile) != (
+            user.get("mobile") or None
+        )
+        if mobile_changed:
+            await audit.record(
+                conn,
+                event=Event.USER_CONTACT_CHANGED,
+                entity_type="auth_user",
+                entity_id=user["id"],
+                subject_user_id=user["id"],
+                detail={"medium": "mobile", "action": "set", "by": "administrator"},
+            )
+            await auth_service.request_contact_code_on_behalf(
+                conn, user=updated, contact=str(updated["mobile"])
+            )
     return updated
 
 

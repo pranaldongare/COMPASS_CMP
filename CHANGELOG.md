@@ -31,6 +31,16 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Fixed
+- A mobile an administrator put on somebody's account was never sent a code, so
+  it stayed unconfirmed with nothing having told its owner it was there — and a
+  member of staff who noticed on the console had no way to confirm it, because
+  the contact routes refused every session but a data principal's.
+- A duplicate mobile on `PATCH /users/{uuid}` answered 500. It is reported as
+  the conflict it is, like the same clash on a person's own edit.
+- The console's account page no longer scrolls sideways on a phone. A session's
+  user-agent is one unbroken string and the column holding it defaulted to
+  `min-width: auto`, so the page grew wider than the screen and controls were
+  hit-tested away from where they were drawn.
 - Refusing a notice upload now names what was uploaded instead. "That is not a
   .docx file" left somebody holding a document Word had produced with nothing
   to change; the refusal now says it is a PDF, an image or a `.doc`, and for a
@@ -69,6 +79,20 @@ as a release yet.
   and test instead of reporting delivery.
 
 ### Added
+- **A mobile an administrator sets is sent a code.** Creating an account with
+  a number, or changing one on the register, now writes to that number:
+  `contact_added_for_you` says an administrator added it and carries a code to
+  confirm it with, valid for `STAFF_INVITE_TTL_H` hours because nobody is
+  waiting at a code box for it. Until the code comes back the number signs
+  nobody in, as for any contact. A quota already spent withholds the message
+  rather than refusing the edit, and the console says what was sent.
+- **The console has the contacts card too.** A member of staff can see which
+  of their contacts are confirmed, add or change a mobile, and add a personal
+  email, from the console's own account page rather than only from the
+  portal's. The routes under `/me` that are about the person rather than about
+  being a data principal — the profile, the contacts, the person type — now
+  admit any signed-in session; the rest of `/me` stays the data principal's
+  ([ADR 0013](docs/decisions/0013-every-account-is-a-data-principal.md)).
 - **A member of staff is also a data principal.** Their corporate address
   signs them in on the data-principal portal and through a consent link, with
   a code like anybody's, into a session that acts as a data principal and

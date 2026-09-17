@@ -101,12 +101,27 @@ account stays active so they still reach the consents they gave and the rights
 they hold. A data principal's account, having nothing to be kept as, is
 switched off as before.
 
-**A person may add a second email and a mobile** from the account page. Each
-is confirmed by a code sent to it, and until the code comes back it cannot
-sign anyone in — a typed contact is a claim, and a claim is not a way in. An
-address belongs to one account whichever column holds it. A member of staff
-who wants to keep reaching their own consents after leaving adds a personal
-address while the corporate one still works.
+**A person may add a second email and a mobile** from the account page —
+either portal's, since the account is the same one. Each is confirmed by a
+code sent to it, and until the code comes back it cannot sign anyone in — a
+typed contact is a claim, and a claim is not a way in. An address belongs to
+one account whichever column holds it. A member of staff who wants to keep
+reaching their own consents after leaving adds a personal address while the
+corporate one still works.
+
+**An administrator may set somebody's mobile** on the register, and the number
+is sent a code the same way: the person learns it is on their account and
+confirms it from their account page, and until they do it signs nobody in. The
+code lasts `STAFF_INVITE_TTL_H` hours rather than ten minutes, because nobody
+is waiting at a code box for it, and it is withheld rather than the edit
+refused if that number's hourly quota is already spent.
+
+The routes this rests on — `GET`/`PATCH /me`, `POST /me/contacts/code`,
+`POST /me/contact/verify`, `DELETE /me/secondary-email`, `POST /me/person-type`
+— admit any signed-in session rather than a data principal's alone: the person
+is the same on both portals, and their contacts are theirs to confirm from
+either. The rest of `/me` — consents, requests, disclosures, notifications — is
+the data principal's surface and stays gated.
 
 ## How a staff account begins
 

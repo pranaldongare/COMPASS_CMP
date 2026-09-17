@@ -52,6 +52,7 @@ class Message(StrEnum):
     PASSWORD_RESET = "password_reset"  # noqa: S105 - a message key, not a secret
     STAFF_INVITATION = "staff_invitation"
     CONTACT_CONFIRMATION = "contact_confirmation"
+    CONTACT_ADDED_FOR_YOU = "contact_added_for_you"
     # consent
     CONSENT_RECEIPT = "consent_receipt"
     WITHDRAWAL_CONFIRMATION = "withdrawal_confirmation"
@@ -114,6 +115,7 @@ PORTAL_URL = Variable(
 )
 CODE = Variable("code", "The six-digit one-time code.", "482913")
 MINUTES = Variable("minutes", "How many minutes the code is valid for.", "10")
+HOURS = Variable("hours", "How many hours the code is valid for.", "48")
 REFERENCE = Variable("reference", "The rights request reference.", "RR-2026-000042")
 
 _SIGN_OFF_EMAIL = (
@@ -248,7 +250,7 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             Variable("full_name", "The new member of staff's name.", "Asha Rao"),
             Variable("role_title", "The role they have been given.", "Data Collection Owner"),
             CODE,
-            Variable("hours", "How many hours the code is valid for.", "48"),
+            HOURS,
             Variable(
                 "reset_url",
                 "The console page where they set their password, with their address filled in.",
@@ -290,6 +292,31 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
         sms_body=(
             "{organisation}: {code} confirms this mobile number. Enter it on your account "
             "page. Expires in {minutes} minutes."
+        ),
+    ),
+    Junction(
+        key=Message.CONTACT_ADDED_FOR_YOU,
+        title="Contact added by an administrator",
+        description=(
+            "Sent to a mobile or email an administrator has put on somebody's account. "
+            "Until the code comes back the contact cannot sign them in. It lasts hours "
+            "rather than minutes, because nobody is waiting at a code box for it."
+        ),
+        group="Sign-in",
+        channels=BOTH,
+        variables=(CODE, HOURS, ORGANISATION),
+        email_subject="{code} confirms this email address",
+        email_body=(
+            "An administrator added this address to your {organisation} account. Sign in, "
+            "open your account page and enter this code there to confirm it:\n\n    {code}\n\n"
+            "It works once and expires in {hours} hours. Until the address is confirmed it "
+            "cannot be used to sign in. If you were not expecting this, tell your privacy "
+            "office." + _SIGN_OFF_EMAIL
+        ),
+        sms_body=(
+            "{organisation}: this number was added to your account. {code} confirms it is "
+            "yours - sign in, open your account page and enter it there. Valid for {hours} "
+            "hours."
         ),
     ),
     # ---------------------------------------------------------------- consent

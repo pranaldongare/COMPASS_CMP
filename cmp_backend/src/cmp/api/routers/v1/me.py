@@ -105,8 +105,13 @@ class WithdrawRequest(Schema):
     all: bool = False
 
 
+# The person's own row and contacts admit every full session, whichever hat it
+# wears. A member of staff on the console is the same data principal as on the
+# portal (ADR 0013), and a mobile or a personal address is theirs to add and
+# confirm from either. Everything below that is about *being* a data principal
+# - consents, requests, disclosures, notifications - stays `RequireDataSubject`.
 @router.get("", response_model=MeProfile)
-async def get_me(principal: RequireDataSubject) -> dict[str, Any]:
+async def get_me(principal: CurrentUser) -> dict[str, Any]:
     async with connection() as conn:
         user = await user_repo.by_id(conn, principal.user_id)
         if not user:
@@ -115,7 +120,7 @@ async def get_me(principal: RequireDataSubject) -> dict[str, Any]:
 
 
 @router.patch("", response_model=MeProfile)
-async def update_me(body: UpdateMe, principal: RequireDataSubject) -> dict[str, Any]:
+async def update_me(body: UpdateMe, principal: CurrentUser) -> dict[str, Any]:
     """Her own details. A contact that changes is sent a code in the same
     request, and cannot sign her in until it comes back."""
     async with transaction() as conn:
@@ -173,7 +178,7 @@ async def update_me(body: UpdateMe, principal: RequireDataSubject) -> dict[str, 
     response_model=Acknowledged,
     summary="A code to confirm one of my contacts",
 )
-async def contact_code(body: ContactCodeRequest, principal: RequireDataSubject) -> dict[str, Any]:
+async def contact_code(body: ContactCodeRequest, principal: CurrentUser) -> dict[str, Any]:
     async with transaction() as conn:
         user = await user_repo.by_id(conn, principal.user_id)
         if not user:
@@ -183,7 +188,7 @@ async def contact_code(body: ContactCodeRequest, principal: RequireDataSubject) 
 
 
 @router.post("/contact/verify", response_model=Acknowledged, summary="Confirm one of my contacts")
-async def verify_contact(body: ContactVerify, principal: RequireDataSubject) -> dict[str, Any]:
+async def verify_contact(body: ContactVerify, principal: CurrentUser) -> dict[str, Any]:
     """The code came back, so the contact is hers and may now sign her in."""
     async with transaction() as conn:
         user = await user_repo.by_id(conn, principal.user_id)
@@ -194,7 +199,7 @@ async def verify_contact(body: ContactVerify, principal: RequireDataSubject) -> 
 
 
 @router.delete("/secondary-email", response_model=Acknowledged, summary="Remove my second address")
-async def remove_secondary_email(principal: RequireDataSubject) -> dict[str, Any]:
+async def remove_secondary_email(principal: CurrentUser) -> dict[str, Any]:
     async with transaction() as conn:
         user = await user_repo.by_id(conn, principal.user_id)
         if not user:
