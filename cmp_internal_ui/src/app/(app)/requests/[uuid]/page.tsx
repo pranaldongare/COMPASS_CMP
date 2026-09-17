@@ -16,6 +16,7 @@ import { useParams } from "next/navigation";
 import * as React from "react";
 
 import { ActivityFeed } from "@/components/data-display/activity-feed";
+import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { PageHeader } from "@/components/layout/app-shell";
 import {
   Alert,
@@ -30,13 +31,24 @@ import {
 } from "@/components/ui/primitives";
 import { ClockColumn } from "@/features/rights/components/clock-column";
 import { ConsentScope } from "@/features/rights/components/consent-scope";
-import { REQUEST_TYPE_COPY, RequestStatusBadge, RequestTypeBadge } from "@/features/rights/components/copy";
+import {
+  REQUEST_TYPE_COPY,
+  RequestStatusBadge,
+  RequestTypeBadge,
+} from "@/features/rights/components/copy";
 import { HoldersCard } from "@/features/rights/components/holders-card";
-import { LinkedFrom, LinkedRequestCard } from "@/features/rights/components/linked-request-card";
+import {
+  LinkedFrom,
+  LinkedRequestCard,
+} from "@/features/rights/components/linked-request-card";
 import { Path } from "@/features/rights/components/path";
 import { RespondCard } from "@/features/rights/components/respond-card";
 import { ScopeCard } from "@/features/rights/components/scope-card";
-import { ClassificationCard, RequestTransitions, VerificationCard } from "@/features/rights/components/staff-actions";
+import {
+  ClassificationCard,
+  RequestTransitions,
+  VerificationCard,
+} from "@/features/rights/components/staff-actions";
 import { useRequest, useRequestTrail } from "@/features/rights/queries";
 import { config } from "@/lib/config";
 import { formatDateTime, humanise } from "@/lib/format";
@@ -78,6 +90,11 @@ export default function RequestDetailPage() {
           <div className="flex flex-wrap items-center gap-2">
             <RequestTypeBadge type={r.request_type} />
             <RequestStatusBadge status={r.status} outcome={r.outcome} />
+            <AuditTrailLink
+              entityType="rights_request"
+              uuid={r.request_uuid}
+              label={r.reference}
+            />
           </div>
         }
       />
@@ -89,13 +106,20 @@ export default function RequestDetailPage() {
               <DescriptionItem term="Who">
                 {r.subject_uuid ? (
                   <>
-                    <Link href={`/users`} className="text-accent-text hover:underline">{r.subject_name}</Link>
-                    <span className="block text-xs text-text-subtle">{r.subject_email}{r.subject_mobile && ` · ${r.subject_mobile}`}</span>
+                    <Link href={`/users`} className="text-accent-text hover:underline">
+                      {r.subject_name}
+                    </Link>
+                    <span className="block text-xs text-text-subtle">
+                      {r.subject_email}
+                      {r.subject_mobile && ` · ${r.subject_mobile}`}
+                    </span>
                   </>
                 ) : (
                   <>
                     <span>{r.submitted_name ?? "No name given"}</span>
-                    <span className="block text-xs text-warning-text">No account matches this contact</span>
+                    <span className="block text-xs text-warning-text">
+                      No account matches this contact
+                    </span>
                   </>
                 )}
               </DescriptionItem>
@@ -114,24 +138,34 @@ export default function RequestDetailPage() {
                     }}
                   />
                   <span className="mt-1 block text-xs text-text-subtle">
-                    She asked about this consent only. Holders, scope, tickets and the response are confined to the data under it.
+                    She asked about this consent only. Holders, scope, tickets and the
+                    response are confined to the data under it.
                   </span>
                 </DescriptionItem>
               )}
-              <DescriptionItem term="Received">{formatDateTime(r.received_at)}</DescriptionItem>
-              <DescriptionItem term="Acknowledged">{r.acknowledged_at ? formatDateTime(r.acknowledged_at) : "Not yet"}</DescriptionItem>
+              <DescriptionItem term="Received">
+                {formatDateTime(r.received_at)}
+              </DescriptionItem>
+              <DescriptionItem term="Acknowledged">
+                {r.acknowledged_at ? formatDateTime(r.acknowledged_at) : "Not yet"}
+              </DescriptionItem>
               {r.linked_reference && (
                 <DescriptionItem term="About">
                   <Mono>{r.linked_reference}</Mono>
                   <span className="ml-2 text-xs text-text-subtle">
-                    {r.request_type === "grievance" ? "the request under dispute, shown below" : "shown below"}
+                    {r.request_type === "grievance"
+                      ? "the request under dispute, shown below"
+                      : "shown below"}
                   </span>
                 </DescriptionItem>
               )}
               <LinkedFrom request={r} />
               {r.channel === "nominee" && (
                 <DescriptionItem term="Nominee">
-                  {r.nominee_name} ({r.nominee_contact}) · {r.trigger_event === "death" ? "reports the principal has died" : "reports the principal cannot act"}
+                  {r.nominee_name} ({r.nominee_contact}) ·{" "}
+                  {r.trigger_event === "death"
+                    ? "reports the principal has died"
+                    : "reports the principal cannot act"}
                   {r.trigger_evidenced_at && (
                     <span className="block text-xs text-text-subtle">
                       Evidenced {formatDateTime(r.trigger_evidenced_at)}
@@ -141,17 +175,24 @@ export default function RequestDetailPage() {
                     </span>
                   )}
                   {r.trigger_evidence_hash && (
-                    <a className="ml-2 inline-flex items-center gap-1 text-accent-text underline underline-offset-2" href={`${config.apiUrl}/requests/${r.request_uuid}/event/evidence`}>
+                    <a
+                      className="ml-2 inline-flex items-center gap-1 text-accent-text underline underline-offset-2"
+                      href={`${config.apiUrl}/requests/${r.request_uuid}/event/evidence`}
+                    >
                       <Download className="size-3.5" aria-hidden="true" /> evidence
                     </a>
                   )}
                 </DescriptionItem>
               )}
               {r.about_dpo && (
-                <DescriptionItem term="Reviewer">{r.reviewer_name ?? "Not yet assigned - an administrator names one"}</DescriptionItem>
+                <DescriptionItem term="Reviewer">
+                  {r.reviewer_name ?? "Not yet assigned - an administrator names one"}
+                </DescriptionItem>
               )}
             </DescriptionList>
-            <p className="mt-4 whitespace-pre-wrap rounded-md bg-bg-inset p-3 text-sm">{r.request_text}</p>
+            <p className="mt-4 rounded-md bg-bg-inset p-3 text-sm whitespace-pre-wrap">
+              {r.request_text}
+            </p>
           </CardBody>
         </Card>
 
@@ -195,13 +236,23 @@ export default function RequestDetailPage() {
               <History className="size-4" aria-hidden="true" />
               What was recorded
             </CardTitle>
-            <button type="button" className="text-sm text-accent-text underline underline-offset-2" onClick={() => setTrailOpen((v) => !v)} aria-expanded={trailOpen}>
+            <button
+              type="button"
+              className="text-sm text-accent-text underline underline-offset-2"
+              onClick={() => setTrailOpen((v) => !v)}
+              aria-expanded={trailOpen}
+            >
               {trailOpen ? "Hide" : "Show"}
             </button>
           </CardHeader>
           {trailOpen && (
             <CardBody>
-              <ActivityFeed entries={trail.data} isLoading={trail.isLoading} order="oldest" emptyTitle="Nothing recorded yet" />
+              <ActivityFeed
+                entries={trail.data}
+                isLoading={trail.isLoading}
+                order="oldest"
+                emptyTitle="Nothing recorded yet"
+              />
             </CardBody>
           )}
         </Card>

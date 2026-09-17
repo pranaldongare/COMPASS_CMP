@@ -4125,6 +4125,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/audit/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The shape of the rows a filter selects
+         * @description Counts by event, by group, by the actor's role and by day, over exactly
+         *     the rows the same filters would list.
+         */
+        get: operations["summary_audit_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/audit/vocabulary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What the trail can be filtered by
+         * @description Every entity type and event type the trail may carry, with labels, and
+         *     the pickers the console offers. Served rather than hard-coded on the
+         *     client, so a new event appears in the filters the day it lands.
+         */
+        get: operations["vocabulary_audit_vocabulary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/audit/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find a record to filter on
+         * @description A few letters of a name, and up to ten records of that kind. Each answer
+         *     says which filter it feeds: a person is a subject or an actor, everything
+         *     else is the entity an event was recorded against.
+         */
+        get: operations["lookup_audit_lookup_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/audit/export.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download the rows a filter selects, as CSV
+         * @description Newest first, at most `EXPORT_LIMIT` rows, free-text cells neutralised
+         *     against spreadsheet formulas. The download is itself recorded in the
+         *     trail, with the filters used: reading the evidence is an act on it.
+         */
+        get: operations["export_csv_audit_export_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/audit/verify": {
         parameters: {
             query?: never;
@@ -4449,6 +4536,25 @@ export interface components {
             entity_noun?: string | null;
             /** Entity Href */
             entity_href?: string | null;
+        };
+        /** AuditSummary */
+        AuditSummary: {
+            /** Total */
+            total: number;
+            /** First At */
+            first_at: string | null;
+            /** Last At */
+            last_at: string | null;
+            /** By Event */
+            by_event: components["schemas"]["Count"][];
+            /** By Group */
+            by_group: components["schemas"]["Count"][];
+            /** By Actor Role */
+            by_actor_role: components["schemas"]["Count"][];
+            /** By Day */
+            by_day: components["schemas"]["DayCount"][];
+            /** Days */
+            days: number;
         };
         /** Body_add_approval_projects__project_uuid__approvals_post */
         Body_add_approval_projects__project_uuid__approvals_post: {
@@ -5158,6 +5264,13 @@ export interface components {
             /** Code */
             code: string;
         };
+        /** Count */
+        Count: {
+            /** Key */
+            key: string;
+            /** Count */
+            count: number;
+        };
         /** CreateUser */
         CreateUser: {
             /** Full Name */
@@ -5198,6 +5311,13 @@ export interface components {
             }[];
             /** Attention */
             attention?: components["schemas"]["AttentionRow"][];
+        };
+        /** DayCount */
+        DayCount: {
+            /** Day */
+            day: string;
+            /** Count */
+            count: number;
         };
         /** DecideIn */
         DecideIn: {
@@ -5924,6 +6044,21 @@ export interface components {
             user_uuid?: string | null;
             /** Message */
             message: string;
+        };
+        /** LookupHit */
+        LookupHit: {
+            /** Kind */
+            kind: string;
+            /** Entity Type */
+            entity_type: string;
+            /** Filter */
+            filter: string;
+            /** Uuid */
+            uuid: string;
+            /** Label */
+            label: string;
+            /** Hint */
+            hint: string | null;
         };
         /** ManualVerifyIn */
         ManualVerifyIn: {
@@ -7994,6 +8129,53 @@ export interface components {
             environment: string;
             /** Schema Version */
             schema_version?: string | null;
+        };
+        /** Vocabulary */
+        Vocabulary: {
+            /** Entity Types */
+            entity_types: components["schemas"]["VocabularyEntityType"][];
+            /** Event Groups */
+            event_groups: components["schemas"]["VocabularyGroup"][];
+            /** Event Types */
+            event_types: components["schemas"]["VocabularyEventType"][];
+            /** Lookups */
+            lookups: components["schemas"]["VocabularyLookup"][];
+        };
+        /** VocabularyEntityType */
+        VocabularyEntityType: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+            /** Filterable By Uuid */
+            filterable_by_uuid: boolean;
+        };
+        /** VocabularyEventType */
+        VocabularyEventType: {
+            /** Value */
+            value: string;
+            /** Group */
+            group: string;
+            /** Group Label */
+            group_label: string;
+            /** Label */
+            label: string;
+        };
+        /** VocabularyGroup */
+        VocabularyGroup: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+        };
+        /** VocabularyLookup */
+        VocabularyLookup: {
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            /** Filter */
+            filter: string;
         };
         /** WithdrawIn */
         WithdrawIn: {
@@ -15461,12 +15643,17 @@ export interface operations {
         parameters: {
             query?: {
                 actor?: string | null;
+                actor_role?: string | null;
                 subject?: string | null;
                 entity_type?: string | null;
                 entity_id?: number | null;
+                /** @description The entity's public uuid; needs entity_type */
+                entity?: string | null;
                 event_type?: string | null;
+                event_group?: string | null;
                 from?: string | null;
                 to?: string | null;
+                q?: string | null;
                 limit?: number | null;
                 cursor?: string | null;
                 sort?: string | null;
@@ -15484,6 +15671,143 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page_AuditEntry_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    summary_audit_summary_get: {
+        parameters: {
+            query?: {
+                actor?: string | null;
+                actor_role?: string | null;
+                subject?: string | null;
+                entity_type?: string | null;
+                entity_id?: number | null;
+                /** @description The entity's public uuid; needs entity_type */
+                entity?: string | null;
+                event_type?: string | null;
+                event_group?: string | null;
+                from?: string | null;
+                to?: string | null;
+                q?: string | null;
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    vocabulary_audit_vocabulary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Vocabulary"];
+                };
+            };
+        };
+    };
+    lookup_audit_lookup_get: {
+        parameters: {
+            query: {
+                kind: string;
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LookupHit"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_csv_audit_export_csv_get: {
+        parameters: {
+            query?: {
+                actor?: string | null;
+                actor_role?: string | null;
+                subject?: string | null;
+                entity_type?: string | null;
+                entity_id?: number | null;
+                /** @description The entity's public uuid; needs entity_type */
+                entity?: string | null;
+                event_type?: string | null;
+                event_group?: string | null;
+                from?: string | null;
+                to?: string | null;
+                q?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

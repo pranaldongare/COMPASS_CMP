@@ -124,6 +124,9 @@ export const keys = {
 
   audit: {
     list: (params?: Params) => ["audit", params ?? {}] as const,
+    summary: (params?: Params) => ["audit", "summary", params ?? {}] as const,
+    vocabulary: ["audit", "vocabulary"] as const,
+    lookup: (kind: string, q: string) => ["audit", "lookup", kind, q] as const,
     verify: ["audit", "verify"] as const,
   },
 

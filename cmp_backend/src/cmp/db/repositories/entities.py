@@ -308,3 +308,8 @@ async def attach(
             )
         )
     return rows
+
+
+def nouns() -> dict[str, str]:
+    """The reader's word for each entity type the resolver knows."""
+    return {entity_type: spec.noun for entity_type, spec in _SPECS.items()}

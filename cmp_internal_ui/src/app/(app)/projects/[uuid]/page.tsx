@@ -29,6 +29,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import * as React from "react";
 
+import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { PageHeader } from "@/components/layout/app-shell";
 import { TransitionControls } from "@/features/projects/components/transition-controls";
 import {
@@ -191,9 +192,18 @@ export default function ProjectDetailPage() {
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge kind="project" value={p.project_status} />
+            <AuditTrailLink
+              entityType="project"
+              uuid={p.project_uuid}
+              label={p.project_name}
+            />
             {/* Editing is permitted only while the project is in draft. */}
             {isOwner && p.project_status === "in_draft" && (
-              <Button variant="secondary" size="sm" onClick={() => setSheet({ kind: "edit" })}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setSheet({ kind: "edit" })}
+              >
                 Edit
               </Button>
             )}
@@ -211,7 +221,11 @@ export default function ProjectDetailPage() {
                   <Upload className="size-4" />
                   Upload a notice document
                 </Button>
-                <Button variant="secondary" size="sm" onClick={() => setSheet({ kind: "notice" })}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setSheet({ kind: "notice" })}
+                >
                   <ScrollText className="size-4" />
                   New notice
                 </Button>
@@ -233,19 +247,31 @@ export default function ProjectDetailPage() {
                 control that 409s teaches people to distrust the ones that
                 work. */}
             {isOwner && canUploadApproval && (
-              <Button variant="secondary" size="sm" onClick={() => setSheet({ kind: "approval" })}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setSheet({ kind: "approval" })}
+              >
                 <FileCheck className="size-4" />
                 Upload approval
               </Button>
             )}
             {canAddSite && (
-              <Button variant="secondary" size="sm" onClick={() => setSheet({ kind: "site" })}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setSheet({ kind: "site" })}
+              >
                 <MapPin className="size-4" />
                 Add site
               </Button>
             )}
             {canExport && p.project_status === "approved" && (
-              <Button variant="secondary" size="sm" onClick={() => setSheet({ kind: "export" })}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setSheet({ kind: "export" })}
+              >
                 <Upload className="size-4" />
                 Generate export
               </Button>
@@ -521,7 +547,11 @@ export default function ProjectDetailPage() {
                     <div className="flex flex-wrap items-center gap-2 text-sm">
                       {entry.from_status ? (
                         <>
-                          <StatusBadge kind="project" value={entry.from_status} dot={false} />
+                          <StatusBadge
+                            kind="project"
+                            value={entry.from_status}
+                            dot={false}
+                          />
                           <span aria-hidden="true" className="text-text-subtle">
                             →
                           </span>
@@ -586,20 +616,20 @@ export default function ProjectDetailPage() {
                   {Object.entries(summary.data.counts).map(([key, value]) => (
                     <div key={key}>
                       <p className="text-xs text-text-subtle">{humanise(key)}</p>
-                      <p className="text-lg font-semibold tabular">{value}</p>
+                      <p className="tabular text-lg font-semibold">{value}</p>
                     </div>
                   ))}
                 </div>
 
                 <div className="border-t border-border pt-3">
-                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-text-subtle">
+                  <p className="mb-2 text-xs font-medium tracking-wide text-text-subtle uppercase">
                     Consent
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     {Object.entries(summary.data.consents).map(([key, value]) => (
                       <div key={key}>
                         <p className="text-xs text-text-subtle">{humanise(key)}</p>
-                        <p className="text-lg font-semibold tabular">{value}</p>
+                        <p className="tabular text-lg font-semibold">{value}</p>
                       </div>
                     ))}
                   </div>
@@ -636,9 +666,9 @@ export default function ProjectDetailPage() {
               <p className="flex items-start gap-2">
                 <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                 <span>
-                  Adding a site now is a material change: it adds a recipient to a
-                  published notice, so it requires a new notice version before
-                  collection starts there.
+                  Adding a site now is a material change: it adds a recipient to a published
+                  notice, so it requires a new notice version before collection starts
+                  there.
                 </span>
               </p>
             </Alert>
@@ -709,7 +739,9 @@ export default function ProjectDetailPage() {
           }
           description="The token is shown once and cannot be retrieved again."
         >
-          {sheet?.kind === "agent" && <AgentForm siteUuid={sheet.siteUuid} onDone={close} />}
+          {sheet?.kind === "agent" && (
+            <AgentForm siteUuid={sheet.siteUuid} onDone={close} />
+          )}
         </DialogContent>
       </Dialog>
       <AssignSiteOwnerDialog
@@ -802,7 +834,7 @@ function ApprovalsCard({
       <CardHeader className="flex items-center justify-between">
         <CardTitle>Approvals</CardTitle>
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-bg-inset px-2.5 py-0.5 text-xs font-medium tabular text-text-muted">
+          <span className="tabular rounded-full bg-bg-inset px-2.5 py-0.5 text-xs font-medium text-text-muted">
             {items.length}
           </span>
           {canUpload && (

@@ -170,7 +170,8 @@ factor. It authorises the MFA verification route and nothing else.
 
 **Audit trail.** The append-only, SHA-256 hash-chained log of every write, in
 the same transaction as the write. `GET /audit/verify` names the first row
-that does not verify.
+that does not verify. Read on the console by person, record, area, event and
+period; see [audit-trail.md](domain/audit-trail.md).
 
 **Scope.** Which rows a role may see, compiled into the SQL `WHERE` clause:
 `ALL`, `SCOPED` (assigned to them), `OWN` (theirs or about them), `NONE`. A row

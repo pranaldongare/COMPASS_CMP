@@ -85,6 +85,18 @@ as a release yet.
   and test instead of reporting delivery.
 
 ### Added
+- **The audit trail can be asked questions.** Filters by data principal,
+  member of staff, consent record, processor, data source, project, notice,
+  site or rights request (found by name, resolved server-side), by area,
+  event, record type, actor role and period, and a free-text search over the
+  recorded details; a summary strip (counts by area, event, role and day)
+  over the same rows; a CSV export that is itself recorded in the trail; the
+  question in the address bar so it can be shared; and an **Audit trail**
+  button on consent, project, notice and request pages that arrives
+  pre-filtered. The filter vocabulary is served by the API, so a new event or
+  table appears in the filters the day it lands; the console's own list of
+  tables, eight behind the truth, is gone
+  ([audit-trail.md](docs/domain/audit-trail.md)).
 - **A nominee can follow the request they raised, to the end.** Section 14
   makes them the person exercising the right, and the request now reads to
   them as it does to the principal: the state, the clock, the path, the

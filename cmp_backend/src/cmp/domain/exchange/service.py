@@ -31,6 +31,7 @@ from collections.abc import Iterable
 from datetime import UTC, date, datetime
 from typing import Any
 
+from cmp.core.csv_safety import text_cell
 from cmp.core.errors import Conflict, ImportRejected, NotFound, ValidationFailed
 from cmp.core.logging import get_logger
 from cmp.core.security import file_hash, unseal_token
@@ -127,19 +128,9 @@ def _keep_export_file(raw: bytes, digest: str) -> str | None:
         return None
 
 
-#: Characters a spreadsheet reads as the start of a formula. A cell that begins
-#: with one is prefixed with an apostrophe, which every spreadsheet shows as
-#: text and never evaluates. Applied to free-text fields only: a mobile number
-#: begins with `+` by design and is validated to be nothing but digits after
-#: it, so it is left as it is.
-_FORMULA_LEADERS = ("=", "+", "-", "@", "\t", "\r")
-
-
-def _text_cell(value: object) -> str:
-    text = "" if value is None else str(value)
-    if text.startswith(_FORMULA_LEADERS):
-        return "'" + text
-    return text
+#: Free-text cells are neutralised against spreadsheet formulas; the rule and
+#: its reasoning live in `cmp.core.csv_safety`, shared with the audit export.
+_text_cell = text_cell
 
 
 #: The columns, in the order somebody reads them: what this is, who it is about,

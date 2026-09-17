@@ -45,6 +45,14 @@ API error carries a `request_id`; ask for it first, then search the log.
   closes requests past `RIGHTS_UNVERIFIED_CLOSE_DAYS`. Check beat is running
   and there is exactly one of it.
 
+## Somebody asks what happened to a record
+
+Open the record on the console and press **Audit trail**, or on the Audit
+trail page use **About** to find the person or record by name. The summary
+strip shows the shape (which areas, which events, which days) before the
+rows; **Export CSV** takes the same rows away, and the export is recorded.
+Details in [audit-trail.md](../domain/audit-trail.md).
+
 ## The audit chain reports a break
 
 `GET /audit/verify` or the 03:00 task names the first row that does not

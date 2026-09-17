@@ -28,6 +28,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import * as React from "react";
 
+import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { PageHeader } from "@/components/layout/app-shell";
 import {
   LanguageForm,
@@ -83,9 +84,10 @@ export default function NoticeDetailPage() {
   const [confirming, setConfirming] = React.useState(false);
   const [editingNotice, setEditingNotice] = React.useState(false);
   const [editingPurposes, setEditingPurposes] = React.useState(false);
-  const [languageSheet, setLanguageSheet] = React.useState<
-    { code?: LanguageCode; approved?: boolean } | null
-  >(null);
+  const [languageSheet, setLanguageSheet] = React.useState<{
+    code?: LanguageCode;
+    approved?: boolean;
+  } | null>(null);
 
   if (notice.isLoading) return <Skeleton className="h-96" />;
   if (notice.error) {
@@ -143,6 +145,11 @@ export default function NoticeDetailPage() {
         actions={
           <div className="flex items-center gap-2">
             <StatusBadge kind="notice" value={n.status} />
+            <AuditTrailLink
+              entityType="notice"
+              uuid={n.notice_uuid}
+              label={`${n.notice_code} v${n.version}`}
+            />
             {canAuthor && isDraft && (
               <Button variant="secondary" size="sm" onClick={() => setEditingNotice(true)}>
                 <Pencil className="size-4" />
@@ -158,7 +165,9 @@ export default function NoticeDetailPage() {
           {canAuthor && isDraft && checklist.data && (
             <Card
               className={
-                checklist.data.publishable ? "border-success-border" : "border-warning-border"
+                checklist.data.publishable
+                  ? "border-success-border"
+                  : "border-warning-border"
               }
             >
               <CardHeader>
@@ -225,11 +234,11 @@ export default function NoticeDetailPage() {
                       Publishing is not reversible
                     </p>
                     <p className="mt-2 text-sm text-warning-text">
-                      Every language rendition is hashed and frozen. The recipient
-                      list is generated from the project&apos;s active sites. From
-                      then on, everyone who consents is consenting to exactly this
-                      text — a correction means a new version, and the people who
-                      already consented will have consented to the old one.
+                      Every language rendition is hashed and frozen. The recipient list is
+                      generated from the project&apos;s active sites. From then on, everyone
+                      who consents is consenting to exactly this text — a correction means a
+                      new version, and the people who already consented will have consented
+                      to the old one.
                     </p>
                     <div className="mt-3 flex gap-2">
                       <Button
@@ -240,7 +249,11 @@ export default function NoticeDetailPage() {
                       >
                         Publish and freeze
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setConfirming(false)}
+                      >
                         Cancel
                       </Button>
                     </div>
@@ -271,7 +284,11 @@ export default function NoticeDetailPage() {
                 </p>
               </div>
               {canAuthor && isDraft && (
-                <Button variant="secondary" size="sm" onClick={() => setEditingPurposes(true)}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setEditingPurposes(true)}
+                >
                   <Plus className="size-4" />
                   Manage
                 </Button>
@@ -333,7 +350,9 @@ export default function NoticeDetailPage() {
                       </div>
                       <div>
                         <dt className="inline font-medium">Retention: </dt>
-                        <dd className="inline">{formatDuration(purpose.retention_period)}</dd>
+                        <dd className="inline">
+                          {formatDuration(purpose.retention_period)}
+                        </dd>
                       </div>
                       <div>
                         <dt className="inline font-medium">Categories: </dt>
@@ -343,10 +362,7 @@ export default function NoticeDetailPage() {
                               reviewer comparing this against the purpose
                               register would find two lists and no explanation. */}
                           {purpose.is_overridden && (
-                            <span className="text-accent-text">
-                              {" "}
-                              (this notice only)
-                            </span>
+                            <span className="text-accent-text"> (this notice only)</span>
                           )}
                         </dd>
                       </div>
@@ -508,8 +524,7 @@ export default function NoticeDetailPage() {
                     {n.board_complaint_url}
                   </a>
                   <p className="mt-0.5 text-xs text-text-subtle">
-                    The Data Protection Board portal — not the internal grievance
-                    form.
+                    The Data Protection Board portal — not the internal grievance form.
                   </p>
                 </DescriptionItem>
                 <DescriptionItem term="DPO contact">{n.dpo_contact}</DescriptionItem>
@@ -521,8 +536,8 @@ export default function NoticeDetailPage() {
                     // publication refuses without it, and "—" would read as a
                     // field nobody needed to fill in.
                     <span className="text-warning-text">
-                      Not set — publication is blocked until this says who the
-                      notice addresses
+                      Not set — publication is blocked until this says who the notice
+                      addresses
                     </span>
                   )}
                 </DescriptionItem>
@@ -553,7 +568,7 @@ export default function NoticeDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardBody>
-                <p className="whitespace-pre-wrap text-sm leading-relaxed">{n.note}</p>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{n.note}</p>
                 <p className="mt-2 text-xs text-text-subtle">
                   Not part of the notice. The data principal never sees this.
                 </p>
@@ -566,9 +581,8 @@ export default function NoticeDetailPage() {
               <p className="flex items-start gap-2">
                 <Lock className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                 <span>
-                  This notice is {n.status}. Its text and hashes are immutable —
-                  the database refuses an edit. To change anything, publish a new
-                  version.
+                  This notice is {n.status}. Its text and hashes are immutable — the
+                  database refuses an edit. To change anything, publish a new version.
                 </span>
               </p>
             </Alert>
@@ -592,7 +606,10 @@ export default function NoticeDetailPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={Boolean(languageSheet)} onOpenChange={(o) => !o && setLanguageSheet(null)}>
+      <Dialog
+        open={Boolean(languageSheet)}
+        onOpenChange={(o) => !o && setLanguageSheet(null)}
+      >
         <DialogContent
           title={languageSheet?.code ? `Edit ${languageSheet.code}` : "Add a rendition"}
           description="This exact text is hashed at publication and becomes the record of what was agreed to."
@@ -627,7 +644,7 @@ function Stat({ label, value, warn }: { label: string; value: number; warn?: boo
       <dt className="text-xs text-text-subtle">{label}</dt>
       <dd
         className={[
-          "text-lg font-semibold tabular",
+          "tabular text-lg font-semibold",
           warn ? "text-warning-text" : "text-text",
         ].join(" ")}
       >

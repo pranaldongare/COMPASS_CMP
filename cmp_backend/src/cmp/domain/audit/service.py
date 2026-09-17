@@ -236,6 +236,9 @@ class Event:
 
     # platform
     AUDIT_VERIFIED = "audit.verified"
+    #: A download of the trail itself is an action on the trail: who took
+    #: what, when, under which filters.
+    AUDIT_EXPORTED = "audit.exported"
 
     # messages
     MESSAGE_TEMPLATE_UPDATED = "message_template.updated"

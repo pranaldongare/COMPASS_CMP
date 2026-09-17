@@ -44,3 +44,34 @@ export interface AuditVerification {
   first_break: { log_id: number; occurred_at: Timestamp; reason: string } | null;
   message: string;
 }
+
+/** Counts over exactly the rows the same filters would list. */
+export interface AuditSummary {
+  total: number;
+  first_at: Timestamp | null;
+  last_at: Timestamp | null;
+  by_event: { key: string; count: number }[];
+  by_group: { key: string; count: number }[];
+  by_actor_role: { key: string; count: number }[];
+  /** `day` is an ISO date. */
+  by_day: { day: string; count: number }[];
+  days: number;
+}
+
+/** One answer from the "about" picker, and which filter it feeds. */
+export interface AuditLookupHit {
+  kind: string;
+  entity_type: string;
+  filter: "subject" | "actor" | "entity";
+  uuid: Uuid;
+  label: string;
+  hint: string | null;
+}
+
+/** What the trail can be filtered by. Served, never typed on the client. */
+export interface AuditVocabulary {
+  entity_types: { value: string; label: string; filterable_by_uuid: boolean }[];
+  event_groups: { value: string; label: string }[];
+  event_types: { value: string; group: string; group_label: string; label: string }[];
+  lookups: { kind: string; label: string; filter: "subject" | "actor" | "entity" }[];
+}

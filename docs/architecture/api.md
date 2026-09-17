@@ -1,6 +1,6 @@
 # The API
 
-One FastAPI service, 241 endpoints over 211 paths, all under the API's root
+One FastAPI service, 245 endpoints over 215 paths, all under the API's root
 with no version prefix. The interactive reference is at `/docs` in local
 development, and `cmp_backend/openapi.json` is the same document, regenerated
 from the application whenever a route or schema changes. This page is the map;
@@ -23,7 +23,7 @@ the reference is the territory.
 | `/delegations/*` | staff | delegation (Delegate in the console): arranging it, ending it, what I hold |
 | `/messages/*` | administrator, DPO | the words of every message the platform sends: list, replace per channel, preview, reset |
 | `/users/*` | administrator, DPO | accounts, roles, sessions |
-| `/audit/*` | DPO, administrator | search the trail, open one entry, verify the chain |
+| `/audit/*` | DPO, administrator | search the trail by actor, role, subject, record (by uuid), event, area, period and free text; the summary over the same filters; the vocabulary; the name lookup behind the pickers; a CSV export (recorded in the trail); one entry; verify the chain |
 | `/dashboard`, `/notifications/*`, `/meta/*` | signed in | the role-aware landing aggregate, notification resend, enumerations and version |
 | `/health`, `/ready`, `/metrics` | operators | liveness, readiness, Prometheus |
 

@@ -50,6 +50,25 @@ on a page, never one per row. A row that no longer exists resolves to nothing
 rather than an error — the trail outlives what it describes, and an evidence log
 that fails to load because of one dangling reference is not a log.
 
+## Asking it questions
+
+`GET /audit` takes, and composes: `actor` and `actor_role`; `subject`; a
+record as `entity_type` plus its public `entity` uuid (resolved to the id the
+trail stores by `db/repositories/audit_lookup.py`; an unknown uuid matches
+nothing, never everything); `event_type` or `event_group` (the part before
+the dot); `from` and `to`; and `q`, a contains-match over the event type,
+the recorded detail and the names and addresses of actor and subject. `q` is
+not indexed - the other filters are - so a large trail is narrowed by date
+first.
+
+`GET /audit/summary` counts the same rows by event, group, actor role and
+day; `GET /audit/export.csv` downloads them (newest first, at most 10,000,
+free-text cells neutralised against formulas) and records `audit.exported`
+with the filters used; `GET /audit/lookup?kind=&q=` finds a person or a
+record by name for the console's pickers; `GET /audit/vocabulary` serves
+every entity type and event type with labels, so the console holds no list of
+its own. All of it is the two supervising roles' to read, unscoped.
+
 ## Denials are events too
 
 `auth.access_denied` records a refused request with the reason. An access-control

@@ -23,6 +23,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import * as React from "react";
 
+import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { PageHeader } from "@/components/layout/app-shell";
 import { StackedBar, type Segment } from "@/components/ui/charts";
 import { EmptyRecords } from "@/components/ui/graphics";
@@ -46,7 +47,13 @@ import {
 import { StatusBadge } from "@/components/ui/status";
 import { useConsent, useConsentAssets, useConsentGrants } from "@/features/consent";
 import type { PurposeGrant } from "@/types";
-import { formatDate, formatDateTime, formatDuration, humanise, shortHash } from "@/lib/format";
+import {
+  formatDate,
+  formatDateTime,
+  formatDuration,
+  humanise,
+  shortHash,
+} from "@/lib/format";
 
 export default function ConsentDetailPage() {
   const { uuid } = useParams<{ uuid: string }>();
@@ -58,10 +65,7 @@ export default function ConsentDetailPage() {
   if (consent.error) {
     return (
       <>
-        <PageHeader
-          title="Consent record"
-          breadcrumb={<BackLink />}
-        />
+        <PageHeader title="Consent record" breadcrumb={<BackLink />} />
         <Alert tone="danger" title="Could not load this record">
           {consent.error.isForbidden
             ? "Your role does not permit this record. The attempt has been recorded in the audit trail."
@@ -109,14 +113,22 @@ export default function ConsentDetailPage() {
         title={record.subject_name}
         description={`${record.project_name} · ${record.site_label}`}
         breadcrumb={<BackLink />}
-        actions={<StatusBadge kind="consent" value={status} />}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge kind="consent" value={status} />
+            <AuditTrailLink
+              entityType="consent_artefact"
+              uuid={record.consent_uuid}
+              label={`${record.subject_name} — ${record.project_name}`}
+            />
+          </div>
+        }
       />
 
       {record.is_withdrawal && (
         <Alert tone="warning" title="This record is a withdrawal" className="mb-4">
-          It supersedes an earlier consent rather than replacing it. The earlier
-          record still exists and is still evidence of what was agreed at the
-          time.
+          It supersedes an earlier consent rather than replacing it. The earlier record
+          still exists and is still evidence of what was agreed at the time.
         </Alert>
       )}
 
@@ -126,8 +138,8 @@ export default function ConsentDetailPage() {
             <CardHeader>
               <CardTitle>Purposes</CardTitle>
               <p className="mt-1 text-sm text-text-muted">
-                Consent is given purpose by purpose. Each line is a separate
-                decision she made.
+                Consent is given purpose by purpose. Each line is a separate decision she
+                made.
               </p>
             </CardHeader>
             <CardBody>
@@ -161,8 +173,8 @@ export default function ConsentDetailPage() {
             <CardHeader>
               <CardTitle>Assets containing this person</CardTitle>
               <p className="mt-1 text-sm text-text-muted">
-                The reverse lookup an erasure request depends on: which collected
-                assets she appears in.
+                The reverse lookup an erasure request depends on: which collected assets she
+                appears in.
               </p>
             </CardHeader>
             {assets.isLoading ? (
@@ -210,7 +222,9 @@ export default function ConsentDetailPage() {
                         <p>{asset.source_name}</p>
                         <p className="text-xs text-text-subtle">{asset.source_code}</p>
                       </Td>
-                      <Td className="whitespace-nowrap">{formatDate(asset.collected_on)}</Td>
+                      <Td className="whitespace-nowrap">
+                        {formatDate(asset.collected_on)}
+                      </Td>
                       <Td>{asset.subject_role ? humanise(asset.subject_role) : "—"}</Td>
                       <Td>
                         {asset.disposition ? (
@@ -268,9 +282,9 @@ export default function ConsentDetailPage() {
               <p className="flex items-start gap-2 rounded-lg bg-bg-subtle p-3 text-xs leading-relaxed text-text-muted">
                 <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                 <span>
-                  The gap between <strong>served</strong> and <strong>acted</strong> is
-                  what evidences s.5(1) — that the notice was given before consent
-                  was asked for. Both timestamps come from the server.
+                  The gap between <strong>served</strong> and <strong>acted</strong> is what
+                  evidences s.5(1) — that the notice was given before consent was asked for.
+                  Both timestamps come from the server.
                 </span>
               </p>
             </CardBody>
@@ -349,10 +363,7 @@ function GrantRow({ grant }: { grant: PurposeGrant }) {
 
 function BackLink() {
   return (
-    <Link
-      href="/consents"
-      className="inline-flex items-center gap-1.5 hover:text-text"
-    >
+    <Link href="/consents" className="inline-flex items-center gap-1.5 hover:text-text">
       <ArrowLeft className="size-3.5" aria-hidden="true" />
       All consents
     </Link>

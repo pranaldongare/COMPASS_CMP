@@ -9,6 +9,7 @@ application role, and a database trigger refuses the statement.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
@@ -16,6 +17,10 @@ from cmp.core.pagination import PageRequest, build_page
 from cmp.db.sql import Conn, Row, fetch_all, fetch_one, keyset_clause
 
 LIST_SORTS = ("occurred_at",)
+
+#: The most rows one CSV export carries. Enough for a month of a busy
+#: deployment; a question larger than that is a query, not a download.
+EXPORT_LIMIT = 10_000
 
 #: Events that are true, recorded, and not activity.
 #:
@@ -83,44 +88,80 @@ _FROM = """
 """
 
 
-async def search(
-    conn: Conn,
-    req: PageRequest,
-    *,
-    actor_uuid: str | None = None,
-    subject_uuid: str | None = None,
-    entity_type: str | None = None,
-    entity_id: int | None = None,
-    event_type: str | None = None,
-    date_from: datetime | None = None,
-    date_to: datetime | None = None,
-) -> tuple[list[Row], str | None, int]:
+@dataclass(frozen=True, slots=True)
+class AuditFilters:
+    """Every way the trail can be narrowed. One object, so the list, the
+    summary and the export are guaranteed to answer the same question."""
+
+    actor_uuid: str | None = None
+    actor_role: str | None = None
+    subject_uuid: str | None = None
+    entity_type: str | None = None
+    entity_id: int | None = None
+    event_type: str | None = None
+    #: The part of the event type before the dot: `consent`, `rights`, `auth`.
+    event_group: str | None = None
+    date_from: datetime | None = None
+    date_to: datetime | None = None
+    #: Free text, matched against the event type, the recorded detail (a
+    #: reference, a purpose name, a reason) and the names and addresses of
+    #: the actor and the subject. Not indexed; narrow the dates first on a
+    #: large trail.
+    q: str | None = None
+
+
+def _like(term: str) -> str:
+    escaped = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
+def _where(f: AuditFilters) -> tuple[str, list[Any]]:
     where: list[str] = ["1 = 1"]
     params: list[Any] = []
-
-    if actor_uuid:
+    if f.actor_uuid:
         where.append("actor.uuid = %s")
-        params.append(actor_uuid)
-    if subject_uuid:
+        params.append(f.actor_uuid)
+    if f.actor_role:
+        where.append("actor.role = %s")
+        params.append(f.actor_role)
+    if f.subject_uuid:
         where.append("subject.uuid = %s")
-        params.append(subject_uuid)
-    if entity_type:
+        params.append(f.subject_uuid)
+    if f.entity_type:
         where.append("l.entity_type = %s")
-        params.append(entity_type)
-    if entity_id is not None:
+        params.append(f.entity_type)
+    if f.entity_id is not None:
         where.append("l.entity_id = %s")
-        params.append(entity_id)
-    if event_type:
+        params.append(f.entity_id)
+    if f.event_type:
         where.append("l.event_type = %s")
-        params.append(event_type)
-    if date_from:
+        params.append(f.event_type)
+    if f.event_group:
+        where.append("l.event_type LIKE %s")
+        params.append(f"{f.event_group}.%")
+    if f.date_from:
         where.append("l.occurred_at >= %s")
-        params.append(date_from)
-    if date_to:
+        params.append(f.date_from)
+    if f.date_to:
         where.append("l.occurred_at <= %s")
-        params.append(date_to)
+        params.append(f.date_to)
+    if f.q and f.q.strip():
+        pattern = _like(f.q.strip())
+        where.append(
+            "(l.event_type ILIKE %s ESCAPE '\\'"
+            " OR (l.detail_json - '_hash' - '_prev')::text ILIKE %s ESCAPE '\\'"
+            " OR actor.full_name ILIKE %s ESCAPE '\\' OR actor.email ILIKE %s ESCAPE '\\'"
+            " OR subject.full_name ILIKE %s ESCAPE '\\' OR subject.email ILIKE %s ESCAPE '\\'"
+            " OR subject.mobile ILIKE %s ESCAPE '\\')"
+        )
+        params.extend([pattern] * 7)
+    return " AND ".join(where), params
 
-    clause = " AND ".join(where)
+
+async def search(
+    conn: Conn, req: PageRequest, filters: AuditFilters | None = None
+) -> tuple[list[Row], str | None, int]:
+    clause, params = _where(filters or AuditFilters())
     keyset, kparams = keyset_clause(req, alias="l", id_column="log_id")
     rows = await fetch_all(
         conn,
@@ -130,6 +171,68 @@ async def search(
     total = await fetch_one(conn, f"SELECT count(*) AS n {_FROM} WHERE {clause}", params)
     items, cursor = build_page(rows, req)
     return items, cursor, int((total or {}).get("n", 0))
+
+
+async def summary(conn: Conn, filters: AuditFilters, *, days: int = 30) -> dict[str, Any]:
+    """Counts over the rows the filters select: the shape of the answer.
+
+    By event, by group, by the actor's role, and by day for the last `days`;
+    plus the span. The same WHERE as the list, so the numbers describe the
+    rows on the page and not some other question.
+    """
+    clause, params = _where(filters)
+    span = await fetch_one(
+        conn,
+        f"SELECT count(*) AS n, min(l.occurred_at) AS first_at, max(l.occurred_at) AS last_at"
+        f" {_FROM} WHERE {clause}",
+        params,
+    ) or {"n": 0, "first_at": None, "last_at": None}
+    by_event = await fetch_all(
+        conn,
+        f"SELECT l.event_type AS key, count(*) AS n {_FROM} WHERE {clause}"
+        " GROUP BY l.event_type ORDER BY n DESC, l.event_type LIMIT 12",
+        params,
+    )
+    by_group = await fetch_all(
+        conn,
+        f"SELECT split_part(l.event_type, '.', 1) AS key, count(*) AS n {_FROM} WHERE {clause}"
+        " GROUP BY 1 ORDER BY n DESC, 1",
+        params,
+    )
+    by_role = await fetch_all(
+        conn,
+        f"SELECT coalesce(actor.role::text, 'system') AS key, count(*) AS n {_FROM}"
+        f" WHERE {clause} GROUP BY 1 ORDER BY n DESC, 1",
+        params,
+    )
+    by_day = await fetch_all(
+        conn,
+        f"SELECT (l.occurred_at AT TIME ZONE 'UTC')::date AS day, count(*) AS n {_FROM}"
+        f" WHERE {clause} AND l.occurred_at >= now() - make_interval(days => %s)"
+        " GROUP BY 1 ORDER BY 1",
+        [*params, days],
+    )
+    return {
+        "total": int(span["n"] or 0),
+        "first_at": span["first_at"],
+        "last_at": span["last_at"],
+        "by_event": [{"key": r["key"], "count": int(r["n"])} for r in by_event],
+        "by_group": [{"key": r["key"], "count": int(r["n"])} for r in by_group],
+        "by_actor_role": [{"key": r["key"], "count": int(r["n"])} for r in by_role],
+        "by_day": [{"day": r["day"], "count": int(r["n"])} for r in by_day],
+        "days": days,
+    }
+
+
+async def export_rows(conn: Conn, filters: AuditFilters, *, limit: int = EXPORT_LIMIT) -> list[Row]:
+    """The rows the filters select, newest first, bounded for a download."""
+    clause, params = _where(filters)
+    return await fetch_all(
+        conn,
+        f"SELECT {_SELECT}{_FROM} WHERE {clause} ORDER BY l.occurred_at DESC, l.log_id DESC"
+        " LIMIT %s",
+        [*params, limit],
+    )
 
 
 async def by_uuid(conn: Conn, log_uuid: str) -> Row | None:
