@@ -116,18 +116,20 @@ class TestWhoGetsACode:
 
         assert queued == []
 
-    async def test_a_staff_contact_gets_nothing_either(
+    async def test_a_staff_contact_gets_one_too(
         self, conn: Any, seeded: dict[str, Any], redis_conn: Any, queued: Any
     ) -> None:
-        """A consent link establishes a data principal's session. Letting a
-        staff address take one would bind staff identity to a subject record,
-        which `register_subject` already refused for the same reason."""
+        """Every person the register knows can be a data principal, a member of
+        staff included: the DPO's own consent is as much hers as anybody's. What
+        keeps this safe is not refusing her here but what the code earns - a
+        data principal's session and no more, decided in
+        `open_principal_session` and asserted in the security suite."""
         token = await a_link(conn, seeded)
         await unthrottle(redis_conn, "dpo@test.local")
 
         await consent_service.send_contact_code(conn, token=token, contact="dpo@test.local")
 
-        assert queued == []
+        assert [name for name, _ in queued] == [CONSENT_CODE]
 
     async def test_an_invalid_link_is_refused_before_any_of_this(
         self, conn: Any, seeded: dict[str, Any], redis_conn: Any, queued: Any

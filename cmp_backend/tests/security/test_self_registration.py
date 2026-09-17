@@ -275,6 +275,8 @@ async def test_a_mobile_only_principal_survives_the_response_models(
     me = MeResponse.model_validate(
         {
             **row,
+            # What the session acts as and what the row says; the same for her.
+            "account_role": row["role"],
             "mfa_verified": True,
             "session_expires_at": datetime.now(UTC) + timedelta(hours=8),
             "nav": ["consents", "requests", "notifications", "profile"],

@@ -16,6 +16,16 @@ export interface Me {
   email: string | null;
   /** The contact a data principal signs in with. */
   mobile: string | null;
+  /** A second address a person added themselves. Not used on the console;
+   *  carried because the response is one shape for both portals. */
+  secondary_email: string | null;
+  mobile_verified_at: Timestamp | null;
+  email_verified_at: Timestamp | null;
+  secondary_email_verified_at: Timestamp | null;
+  /** What the account row says. Differs from `role` only for a member of staff
+   *  signed in on the data-principal portal, whose session acts as
+   *  `data_subject`; on this console the two are always equal. */
+  account_role: Role;
   role: Role;
   person_type: PersonType | null;
   status: UserStatus;

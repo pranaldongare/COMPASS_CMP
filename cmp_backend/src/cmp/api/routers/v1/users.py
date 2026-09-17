@@ -343,19 +343,40 @@ async def change_role(user_uuid: UUID, body: RoleChange, principal: RequireAdmin
 
 @router.post("/{user_uuid}/deactivate", response_model=Acknowledged)
 async def deactivate(user_uuid: UUID, principal: RequireAdmin) -> dict[str, Any]:
+    """End a member of staff's access, or switch a data principal's account off.
+
+    Two different acts behind one button, and the row's role says which. For
+    staff the role and the password go and the person stays, active, as a data
+    principal - the consents they gave and the rights they hold are theirs
+    under the Act whether or not they still work here. For a data principal
+    there is nothing to keep them as, and the account is switched off.
+    """
     async with transaction() as conn:
         user = await repo.require_by_uuid(conn, str(user_uuid))
         if user["id"] == principal.user_id:
             raise Conflict("You cannot deactivate your own account", code="self_deactivate")
-        await repo.set_status(conn, user["id"], "deactivated")
-        await audit.record(
-            conn,
-            event=Event.USER_DEACTIVATED,
-            entity_type="auth_user",
-            entity_id=user["id"],
-            subject_user_id=user["id"],
-        )
+        if user["role"] != Role.DATA_SUBJECT.value:
+            await auth_service.end_staff_access(conn, user=user, actor_user_id=principal.user_id)
+            kept = True
+        else:
+            await repo.set_status(conn, user["id"], "deactivated")
+            await audit.record(
+                conn,
+                event=Event.USER_DEACTIVATED,
+                entity_type="auth_user",
+                entity_id=user["id"],
+                subject_user_id=user["id"],
+            )
+            kept = False
     revoked = await sessions.revoke_all(user["id"])
+    if kept:
+        return {
+            "ok": True,
+            "message": (
+                f"Staff access ended. {user['full_name']} keeps their account as a data "
+                f"principal. {revoked} session(s) terminated."
+            ),
+        }
     return {"ok": True, "message": f"Deactivated. {revoked} session(s) terminated."}
 
 

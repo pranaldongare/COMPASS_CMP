@@ -38,10 +38,10 @@ from cmp.core.logging import get_logger
 from cmp.core.permissions import ROLE_TITLES, Role, nav_for, writes_for
 from cmp.core.security import hash_password, password_needs_rehash, verify_password
 from cmp.db.repositories import users as user_repo
-from cmp.db.sql import Conn
+from cmp.db.sql import Conn, unique_violation
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
-from cmp.validation import is_mobile, normalise_mobile
+from cmp.validation import is_mobile, normalise_contact, normalise_mobile
 
 log = get_logger("cmp.auth")
 
@@ -128,6 +128,7 @@ async def authenticate(
         user_agent=user_agent,
         partial=mfa_needed,
         mfa_verified=not mfa_needed,
+        account_role=user["role"],
     )
 
     if mfa_needed:
@@ -270,11 +271,15 @@ async def verify_subject_otp(
     user = await user_repo.mark_contact_verified(
         conn, user["id"], "mobile" if is_mobile(contact) else "email"
     )
-    if user["status"] == "pending":
+    if user["status"] == "pending" and user["role"] == Role.DATA_SUBJECT.value:
         # A code proves the medium it came to. Sign-up authenticates every
         # medium she gave, so a pending account with one still unanswered is
         # not finished - and finishing it is the sign-up page's job. The codes
         # go out again so that she can.
+        #
+        # Only for a data principal's row. On a staff row `pending` means a
+        # console account whose owner has not set a password yet, and that has
+        # nothing to do with whether the person may act as a data principal.
         if user_repo.unverified_mediums(user):
             await _send_registration_codes(user)
             raise BadRequest(
@@ -285,13 +290,8 @@ async def verify_subject_otp(
             )
         await user_repo.set_status(conn, user["id"], "active")
 
-    token, session = await sessions.create(
-        user_id=user["id"],
-        user_uuid=str(user["uuid"]),
-        role=user["role"],
-        ip_address=ip_address,
-        user_agent=user_agent,
-        mfa_verified=True,
+    token, session = await open_principal_session(
+        user=user, ip_address=ip_address, user_agent=user_agent
     )
     await audit.record(
         conn,
@@ -308,9 +308,36 @@ async def verify_subject_otp(
         entity_id=user["id"],
         subject_user_id=user["id"],
         actor_user_id=user["id"],
-        detail={"method": "otp"},
+        detail={"method": "otp", "acting_as": Role.DATA_SUBJECT.value},
     )
     return {"token": token, "session": session, "user": user, "max_age": settings.session_ttl_s}
+
+
+async def open_principal_session(
+    *, user: dict[str, Any], ip_address: str | None, user_agent: str | None
+) -> tuple[str, sessions.Session]:
+    """A session that acts as a data principal, whatever the account's role.
+
+    The only way onto the data-principal portal and through a consent link is a
+    one-time code to a contact - no password, no second factor. That is the right
+    strength for what a data principal can do, and the wrong strength for what a
+    DPO can do, so the session minted here carries the data principal's powers
+    and not one more. Every permission check reads `session.role`, and this is
+    the one place that decides what it says for a code sign-in.
+
+    Before this existed the session took the account's role, and a code to a
+    staff mailbox produced a full staff session: the password and the second
+    factor that every staff role requires, bypassed by reading one email.
+    """
+    return await sessions.create(
+        user_id=user["id"],
+        user_uuid=str(user["uuid"]),
+        role=Role.DATA_SUBJECT.value,
+        account_role=user["role"],
+        ip_address=ip_address,
+        user_agent=user_agent,
+        mfa_verified=True,
+    )
 
 
 # ------------------------------------------------------------------ password
@@ -476,6 +503,168 @@ async def invite_staff(conn: Conn, *, user: dict[str, Any]) -> None:
     )
 
 
+async def end_staff_access(conn: Conn, *, user: dict[str, Any], actor_user_id: int) -> None:
+    """Take the staff role away and leave the person.
+
+    Deactivating a member of staff used to switch the whole row off, which also
+    ended their standing as a data principal: the consents they gave and the
+    rights they hold are theirs under the Act whether or not they still work
+    here. So the row is kept, active, as a data principal - the role goes, the
+    password goes, and `person_type` records that they are now an ex-employee.
+
+    Every session is revoked by the caller: one carrying the old role must not
+    survive the change.
+    """
+    if user["role"] == Role.DATA_SUBJECT.value:
+        raise ValidationFailed("That account holds no staff role", field="role")
+
+    await user_repo.set_role(conn, user["id"], Role.DATA_SUBJECT.value)
+    await user_repo.clear_password(conn, user["id"])
+    if user.get("person_type") in (None, "employee"):
+        await user_repo.set_person_type(conn, user["id"], "ex_employee")
+        await user_repo.record_person_type_change(
+            conn,
+            user_id=user["id"],
+            from_type=user.get("person_type"),
+            to_type="ex_employee",
+            reason="staff access ended",
+            changed_by=actor_user_id,
+        )
+    await audit.record(
+        conn,
+        event=Event.USER_ROLE_CHANGED,
+        entity_type="auth_user",
+        entity_id=user["id"],
+        subject_user_id=user["id"],
+        detail={
+            "from": user["role"],
+            "to": Role.DATA_SUBJECT.value,
+            "reason": "staff access ended",
+        },
+    )
+    await audit.record(
+        conn,
+        event=Event.USER_STAFF_ACCESS_ENDED,
+        entity_type="auth_user",
+        entity_id=user["id"],
+        subject_user_id=user["id"],
+        detail={"from_role": user["role"], "kept_as": Role.DATA_SUBJECT.value},
+    )
+
+
+# ------------------------------------------------------------ own contacts
+#
+# A person's own contacts, changed by the person. Every change leaves the
+# contact unconfirmed until a code sent to it comes back, and only a confirmed
+# contact can sign anyone in: a typed address is a claim, and a claim is not a
+# way in. The second email exists for the person whose first address is not
+# theirs to keep - a member of staff is also a data principal, and the day they
+# leave, the corporate mailbox goes with them while their consents do not.
+
+
+async def add_secondary_email(conn: Conn, *, user: dict[str, Any], email: str) -> dict[str, Any]:
+    """Set or replace the second address, and send it a code."""
+    email = email.strip().lower()
+    if user.get("email") and email == str(user["email"]).lower():
+        raise ValidationFailed(
+            "That is already the address on your account", field="secondary_email"
+        )
+    try:
+        updated = await user_repo.set_secondary_email(conn, user["id"], email)
+    except Exception as exc:
+        if unique_violation(exc):
+            raise Conflict("That address belongs to another account", code="contact_taken") from exc
+        raise
+    await audit.record(
+        conn,
+        event=Event.USER_CONTACT_CHANGED,
+        entity_type="auth_user",
+        entity_id=user["id"],
+        subject_user_id=user["id"],
+        detail={"medium": "secondary_email", "action": "set"},
+    )
+    await request_contact_code(conn, user=updated, contact=email)
+    return updated
+
+
+async def remove_secondary_email(conn: Conn, *, user: dict[str, Any]) -> dict[str, Any]:
+    if not user.get("secondary_email"):
+        raise ValidationFailed("There is no second address to remove", field="secondary_email")
+    updated = await user_repo.set_secondary_email(conn, user["id"], None)
+    await audit.record(
+        conn,
+        event=Event.USER_CONTACT_CHANGED,
+        entity_type="auth_user",
+        entity_id=user["id"],
+        subject_user_id=user["id"],
+        detail={"medium": "secondary_email", "action": "removed"},
+    )
+    return updated
+
+
+async def request_contact_code(conn: Conn, *, user: dict[str, Any], contact: str) -> None:
+    """A code to one of the person's own contacts that has not yet answered one."""
+    medium = user_repo.medium_of(user, contact)
+    if not medium:
+        raise ValidationFailed("That contact is not on your account", field="contact")
+    if user.get(f"{medium}_verified_at"):
+        raise ValidationFailed("That contact is already confirmed", field="contact")
+    wanted = normalise_contact(contact)
+
+    await ratelimit.enforce(
+        "contact_confirm",
+        wanted,
+        limit=settings.otp_requests_per_contact_per_hour,
+        window_s=3600,
+        message="Too many code requests for this contact.",
+    )
+    issued = await otp.issue(otp.Scope.CONTACT_VERIFY, f"{user['uuid']}:{wanted}")
+    from cmp.tasks.authentication import send_contact_confirmation
+    from cmp.tasks.dispatch import dispatch_required
+
+    dispatch_required(send_contact_confirmation, str(user["uuid"]), wanted, issued.code)
+    await audit.record(
+        conn,
+        event=Event.OTP_REQUESTED,
+        entity_type="auth_user",
+        entity_id=user["id"],
+        subject_user_id=user["id"],
+        detail={"flow": "contact_confirm", "medium": medium},
+    )
+
+
+async def confirm_contact(
+    conn: Conn, *, user: dict[str, Any], contact: str, code: str
+) -> dict[str, Any]:
+    """The code came back: the contact is theirs, and may now sign them in."""
+    medium = user_repo.medium_of(user, contact)
+    if not medium:
+        raise ValidationFailed("That contact is not on your account", field="contact")
+    wanted = normalise_contact(contact)
+    await otp.require(otp.Scope.CONTACT_VERIFY, f"{user['uuid']}:{wanted}", code)
+
+    updated = await user_repo.mark_contact_verified(conn, user["id"], medium)
+    # Registration's own rule, kept: a data principal mid-sign-up becomes active
+    # when the last medium she gave has answered.
+    if (
+        updated["status"] == "pending"
+        and updated["role"] == Role.DATA_SUBJECT.value
+        and not user_repo.unverified_mediums(updated)
+    ):
+        await user_repo.set_status(conn, user["id"], "active")
+    await audit.record(
+        conn,
+        event=Event.OTP_VERIFIED,
+        entity_type="auth_user",
+        entity_id=user["id"],
+        subject_user_id=user["id"],
+        detail={"flow": "contact_confirm", "medium": medium},
+    )
+    fresh = await user_repo.by_id(conn, user["id"])
+    assert fresh is not None
+    return fresh
+
+
 # --------------------------------------------------------------------- /me
 async def me_payload(conn: Conn, *, user_id: int, session: sessions.Session) -> dict[str, Any]:
     """What GET /auth/me returns.
@@ -487,9 +676,16 @@ async def me_payload(conn: Conn, *, user_id: int, session: sessions.Session) -> 
     user = await user_repo.by_id(conn, user_id)
     if not user:
         raise Unauthenticated("Your account is no longer available")
-    if user["status"] != "active":
+    if user["status"] in ("suspended", "deactivated"):
         # A session outlives a deactivation by however long it takes the next
         # request to arrive. This closes that window.
+        await sessions.revoke_all(user_id)
+        raise Forbidden("This account is not active", code="account_inactive")
+    if user["status"] == "pending" and session.role == user["role"]:
+        # Pending blocks the row's own role: a console account nobody has
+        # activated, a data principal mid-registration. It does not stop a
+        # member of staff with an unactivated console account from acting as
+        # a data principal, because that is not what is pending.
         await sessions.revoke_all(user_id)
         raise Forbidden("This account is not active", code="account_inactive")
 
@@ -500,7 +696,17 @@ async def me_payload(conn: Conn, *, user_id: int, session: sessions.Session) -> 
         "full_name": user["full_name"],
         "email": user["email"],
         "mobile": user.get("mobile"),
-        "role": user["role"],
+        "secondary_email": user.get("secondary_email"),
+        # Which contacts have answered a code. The account page says
+        # "confirmed" or offers to send one from these, without a second call.
+        "mobile_verified_at": user.get("mobile_verified_at"),
+        "email_verified_at": user.get("email_verified_at"),
+        "secondary_email_verified_at": user.get("secondary_email_verified_at"),
+        # What this session acts as, which is what the interface must render.
+        # `account_role` is what the row says, so the portal can tell a member
+        # of staff that they are using their staff account as a data principal.
+        "role": session.role,
+        "account_role": session.account_role,
         "person_type": user["person_type"],
         "status": user["status"],
         # Carried on first paint so the interface does not need a second call to
@@ -509,8 +715,8 @@ async def me_payload(conn: Conn, *, user_id: int, session: sessions.Session) -> 
         "is_minor": user["is_minor"],
         "mfa_verified": session.mfa_verified,
         "session_expires_at": datetime.fromtimestamp(session.expires_at, tz=UTC),
-        "nav": nav_for(user["role"]),
-        "writes": writes_for(user["role"]),
+        "nav": nav_for(session.role),
+        "writes": writes_for(session.role),
     }
 
 

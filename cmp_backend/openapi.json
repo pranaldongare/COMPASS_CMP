@@ -1850,6 +1850,7 @@
           "users"
         ],
         "summary": "Deactivate",
+        "description": "End a member of staff's access, or switch a data principal's account off.\n\nTwo different acts behind one button, and the row's role says which. For\nstaff the role and the password go and the person stays, active, as a data\nprincipal - the consents they gave and the rights they hold are theirs\nunder the Act whether or not they still work here. For a data principal\nthere is nothing to keep them as, and the account is switched off.",
         "operationId": "deactivate_users__user_uuid__deactivate_post",
         "parameters": [
           {
@@ -2089,6 +2090,7 @@
           "me"
         ],
         "summary": "Update Me",
+        "description": "Her own details. A contact that changes is sent a code in the same\nrequest, and cannot sign her in until it comes back.",
         "operationId": "update_me_me_patch",
         "requestBody": {
           "content": {
@@ -2124,12 +2126,54 @@
         }
       }
     },
+    "/me/contacts/code": {
+      "post": {
+        "tags": [
+          "me"
+        ],
+        "summary": "A code to confirm one of my contacts",
+        "operationId": "contact_code_me_contacts_code_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acknowledged"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/me/contact/verify": {
       "post": {
         "tags": [
           "me"
         ],
-        "summary": "Verify Contact",
+        "summary": "Confirm one of my contacts",
+        "description": "The code came back, so the contact is hers and may now sign her in.",
         "operationId": "verify_contact_me_contact_verify_post",
         "requestBody": {
           "content": {
@@ -2158,6 +2202,27 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/secondary-email": {
+      "delete": {
+        "tags": [
+          "me"
+        ],
+        "summary": "Remove my second address",
+        "operationId": "remove_secondary_email_me_secondary_email_delete",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acknowledged"
                 }
               }
             }
@@ -14139,6 +14204,22 @@
         ],
         "title": "ConsentSummary"
       },
+      "ContactCodeRequest": {
+        "properties": {
+          "contact": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Contact"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "contact"
+        ],
+        "title": "ContactCodeRequest"
+      },
       "ContactIn": {
         "properties": {
           "kind": {
@@ -16517,6 +16598,53 @@
           },
           "created_at": {
             "title": "Created At"
+          },
+          "secondary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secondary Email"
+          },
+          "mobile_verified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mobile Verified At"
+          },
+          "email_verified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Verified At"
+          },
+          "secondary_email_verified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secondary Email Verified At"
           }
         },
         "type": "object",
@@ -16530,7 +16658,11 @@
           "status",
           "dob",
           "is_minor",
-          "created_at"
+          "created_at",
+          "secondary_email",
+          "mobile_verified_at",
+          "email_verified_at",
+          "secondary_email_verified_at"
         ],
         "title": "MeProfile"
       },
@@ -16567,9 +16699,60 @@
             ],
             "title": "Mobile"
           },
+          "secondary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secondary Email"
+          },
+          "mobile_verified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mobile Verified At"
+          },
+          "email_verified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Verified At"
+          },
+          "secondary_email_verified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secondary Email Verified At"
+          },
           "role": {
             "type": "string",
             "title": "Role"
+          },
+          "account_role": {
+            "type": "string",
+            "title": "Account Role"
           },
           "person_type": {
             "anyOf": [
@@ -16638,7 +16821,12 @@
           "uuid",
           "full_name",
           "email",
+          "secondary_email",
+          "mobile_verified_at",
+          "email_verified_at",
+          "secondary_email_verified_at",
           "role",
+          "account_role",
           "person_type",
           "status",
           "mfa_verified",
@@ -22748,6 +22936,19 @@
               }
             ],
             "title": "Mobile"
+          },
+          "secondary_email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secondary Email"
           },
           "dob": {
             "anyOf": [

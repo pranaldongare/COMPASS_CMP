@@ -20,6 +20,7 @@ from cmp.validation import normalise_contact, normalise_mobile
 PUBLIC_COLUMNS = """
   u.uuid, u.username, u.full_name, u.email, u.mobile, u.organization_id,
   u.role, u.person_type, u.status, u.dob, u.mobile_verified_at, u.email_verified_at,
+  u.secondary_email, u.secondary_email_verified_at,
   -- Derived in SQL rather than in Python, because more than one caller asks and
   -- the answer changes on a birthday without the row being written to. NULL
   -- when the date of birth is unknown, which is not the same as adult.
@@ -77,7 +78,12 @@ async def by_email(conn: Conn, email: str) -> Row | None:
 
 
 async def by_contact(conn: Conn, contact: str) -> Row | None:
-    """Resolve a data subject by email or mobile - the two things they know.
+    """Resolve a person by a contact they know: email, mobile, or a second
+    email once a code sent to it has come back.
+
+    The second address counts only when confirmed. Until then it is a claim
+    somebody typed, and a claim must not be a way in - the address might be
+    somebody else's, mistyped, or simply unreachable.
 
     The mobile is compared as stored - digits and a leading plus - whatever
     spacing was typed. See `normalise_mobile`.
@@ -87,10 +93,23 @@ async def by_contact(conn: Conn, contact: str) -> Row | None:
         conn,
         f"""
         SELECT u.id, {PUBLIC_COLUMNS} FROM auth_user u
-        WHERE lower(u.email) = %s OR u.mobile = %s
+        WHERE lower(u.email) = %s
+           OR u.mobile = %s
+           OR (lower(u.secondary_email) = %s AND u.secondary_email_verified_at IS NOT NULL)
         """,
-        (wanted, wanted),
+        (wanted, wanted, wanted),
     )
+
+
+def medium_of(user: Row, contact: str) -> str | None:
+    """Which of this row's own contacts the given one is, or None if it is not
+    one of them. Compared normalised, so spacing and case do not matter."""
+    wanted = normalise_contact(contact)
+    for medium in ("mobile", "email", "secondary_email"):
+        value = user.get(medium)
+        if value and normalise_contact(str(value)) == wanted:
+            return medium
+    return None
 
 
 def unverified_mediums(user: Row) -> list[str]:
@@ -107,7 +126,11 @@ def unverified_mediums(user: Row) -> list[str]:
 
 async def mark_contact_verified(conn: Conn, user_id: int, medium: str) -> Row:
     """A code sent to this medium came back. The first time stands."""
-    column = {"mobile": "mobile_verified_at", "email": "email_verified_at"}[medium]
+    column = {
+        "mobile": "mobile_verified_at",
+        "email": "email_verified_at",
+        "secondary_email": "secondary_email_verified_at",
+    }[medium]
     row = await fetch_one(
         conn,
         f"""
@@ -178,21 +201,48 @@ async def update_profile(
     organization_id: str | None = None,
     dob: str | None = None,
 ) -> Row:
-    """Partial update. COALESCE keeps an omitted field unchanged rather than nulling it."""
+    """Partial update. COALESCE keeps an omitted field unchanged rather than nulling it.
+
+    A mobile that changes is unconfirmed until a code sent to the new number
+    comes back - the old confirmation was of the old number. Every SET reads
+    the row as it was, so `%s = mobile` compares with the previous value.
+    """
+    new_mobile = normalise_mobile(mobile) if mobile else None
     row = await fetch_one(
         conn,
         """
         UPDATE auth_user
-           SET full_name       = COALESCE(%s, full_name),
-               mobile          = COALESCE(%s, mobile),
-               organization_id = COALESCE(%s, organization_id),
-               dob             = COALESCE(%s::date, dob)
+           SET full_name          = COALESCE(%s, full_name),
+               mobile             = COALESCE(%s, mobile),
+               mobile_verified_at = CASE WHEN %s::varchar IS NULL OR %s::varchar = mobile
+                                         THEN mobile_verified_at ELSE NULL END,
+               organization_id    = COALESCE(%s, organization_id),
+               dob                = COALESCE(%s::date, dob)
          WHERE id = %s
         RETURNING id, uuid, username, full_name, email, mobile, organization_id,
                   role, person_type, status, dob, cmp_is_minor(dob) AS is_minor,
+                  mobile_verified_at, email_verified_at,
+                  secondary_email, secondary_email_verified_at,
                   created_at, updated_at
         """,
-        (full_name, normalise_mobile(mobile) if mobile else None, organization_id, dob, user_id),
+        (full_name, new_mobile, new_mobile, new_mobile, organization_id, dob, user_id),
+    )
+    assert row is not None
+    return row
+
+
+async def set_secondary_email(conn: Conn, user_id: int, email: str | None) -> Row:
+    """Set, replace or clear the second address. Any change leaves it unconfirmed:
+    a code has to come back from the new address before it signs anyone in."""
+    row = await fetch_one(
+        conn,
+        f"""
+        UPDATE auth_user u
+           SET secondary_email = %s, secondary_email_verified_at = NULL
+         WHERE u.id = %s
+        RETURNING u.id, {PUBLIC_COLUMNS}
+        """,
+        (email, user_id),
     )
     assert row is not None
     return row
@@ -228,6 +278,13 @@ async def set_password(conn: Conn, user_id: int, password_hash: str) -> None:
     await execute(
         conn, "UPDATE auth_user SET password_hash = %s WHERE id = %s", (password_hash, user_id)
     )
+
+
+async def clear_password(conn: Conn, user_id: int) -> None:
+    """No password at all, which is what a data principal has. Not a random one:
+    a random hash is a credential that exists, and this is a row that must
+    never again answer the console's sign-in form."""
+    await execute(conn, "UPDATE auth_user SET password_hash = NULL WHERE id = %s", (user_id,))
 
 
 async def set_person_type(conn: Conn, user_id: int, person_type: str) -> Row:

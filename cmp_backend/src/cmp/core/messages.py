@@ -51,6 +51,7 @@ class Message(StrEnum):
     CONSENT_CODE = "consent_code"
     PASSWORD_RESET = "password_reset"  # noqa: S105 - a message key, not a secret
     STAFF_INVITATION = "staff_invitation"
+    CONTACT_CONFIRMATION = "contact_confirmation"
     # consent
     CONSENT_RECEIPT = "consent_receipt"
     WITHDRAWAL_CONFIRMATION = "withdrawal_confirmation"
@@ -268,6 +269,28 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "time." + _SIGN_OFF_EMAIL
         ),
         sms_body=None,
+    ),
+    Junction(
+        key=Message.CONTACT_CONFIRMATION,
+        title="Contact confirmation code",
+        description=(
+            "Sent to a mobile or email a person has just added to their own account. "
+            "Until the code comes back the contact cannot sign them in."
+        ),
+        group="Sign-in",
+        channels=BOTH,
+        variables=(CODE, MINUTES, ORGANISATION),
+        email_subject="{code} confirms this email address",
+        email_body=(
+            "You added this address to your {organisation} account. Enter this code on "
+            "your account page to confirm it:\n\n    {code}\n\n"
+            "It works once and expires in {minutes} minutes. Until the address is "
+            "confirmed it cannot be used to sign in." + _SIGN_OFF_EMAIL
+        ),
+        sms_body=(
+            "{organisation}: {code} confirms this mobile number. Enter it on your account "
+            "page. Expires in {minutes} minutes."
+        ),
     ),
     # ---------------------------------------------------------------- consent
     Junction(

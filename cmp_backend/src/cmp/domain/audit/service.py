@@ -93,6 +93,8 @@ class Event:
     USER_SESSIONS_REVOKED = "user.sessions_revoked"
     USER_INVITED = "user.invited"
     USER_ACTIVATED = "user.activated"
+    USER_STAFF_ACCESS_ENDED = "user.staff_access_ended"
+    USER_CONTACT_CHANGED = "user.contact_changed"
 
     # authentication
     LOGIN_SUCCEEDED = "auth.login_succeeded"

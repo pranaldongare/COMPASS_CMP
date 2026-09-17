@@ -73,7 +73,14 @@ export function makeMe(overrides: Partial<Me> = {}): Me {
     full_name: "Asha Rao",
     email: "asha.rao@organisation.example",
     mobile: null,
+    secondary_email: null,
+    mobile_verified_at: null,
+    email_verified_at: null,
+    secondary_email_verified_at: null,
     role,
+    // The row's role and the session's agree unless a test says otherwise -
+    // which is what a member of staff on the data-principal portal looks like.
+    account_role: overrides.account_role ?? role,
     person_type: null,
     status: "active",
     // Unknown by default, which is the honest default: most accounts in this

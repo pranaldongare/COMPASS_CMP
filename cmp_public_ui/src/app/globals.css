@@ -15,3 +15,10 @@
 @import "../styles/base.css";
 @import "../styles/utilities.css";
 @import "../styles/print.css";
+
+/* Anything scrolled into view - a focused field, an anchor, a test driving the
+   page - has to clear the sticky header, or it lands underneath it and cannot
+   be tapped. The header is 3.5rem; the extra half rem is breathing room. */
+html {
+  scroll-padding-top: 4rem;
+}

@@ -20,6 +20,7 @@ from fastapi import APIRouter, Request, Response, status
 from pydantic import EmailStr, Field
 
 from cmp.api.dependencies import set_session_cookies
+from cmp.auth.authentication import service as auth_service
 from cmp.auth.rate_limit import service as ratelimit
 from cmp.auth.sessions import service as sessions
 from cmp.core.config import settings
@@ -182,13 +183,13 @@ async def verify_code(
         }
 
     user = result["user"]
-    raw, session = await sessions.create(
-        user_id=user["id"],
-        user_uuid=str(user["uuid"]),
-        role=user["role"],
+    # A data principal's session whatever the account's role: a code to a
+    # contact is the right strength for what she can do here and the wrong
+    # strength for what a DPO can do elsewhere.
+    raw, session = await auth_service.open_principal_session(
+        user=user,
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
-        mfa_verified=True,
     )
     set_session_cookies(response, raw, session.csrf_token, max_age=settings.session_ttl_s)
     return {

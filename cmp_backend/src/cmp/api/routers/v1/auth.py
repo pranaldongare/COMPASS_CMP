@@ -101,7 +101,18 @@ class MeResponse(Out):
     #: The contact she signs in with. Shown on her profile, where an account
     #: with no email otherwise showed nothing about how it is reached.
     mobile: str | None = None
+    #: A second address she added herself; signs her in once confirmed.
+    secondary_email: str | None
+    #: When each contact last answered a code. None means it never has.
+    mobile_verified_at: datetime | None
+    email_verified_at: datetime | None
+    secondary_email_verified_at: datetime | None
+    #: What this session acts as. A member of staff signed in on the
+    #: data-principal portal is `data_subject` here, whatever their account.
     role: str
+    #: What the account row says. For telling somebody they are using their
+    #: staff account as a data principal; never for deciding anything.
+    account_role: str
     person_type: str | None
     status: str
     dob: date | None = None

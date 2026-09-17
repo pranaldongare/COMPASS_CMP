@@ -59,6 +59,7 @@ class TestCatalogue:
             Message.REGISTRATION_CODE,
             Message.CONSENT_CODE,
             Message.PASSWORD_RESET,
+            Message.CONTACT_CONFIRMATION,
             Message.RIGHTS_VERIFICATION_CODE,
             Message.NOMINATION_CODE,
         ):

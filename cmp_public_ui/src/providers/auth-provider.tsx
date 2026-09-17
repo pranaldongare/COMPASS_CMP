@@ -208,5 +208,22 @@ export function RequireAuth({
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {/* A member of staff is also a data principal, and this is her signed in
+          as one. The session acts as a data principal and nothing more - which
+          is what makes a code to a staff mailbox the right strength here - so
+          say so, and say where the console is. */}
+      {me.account_role !== "data_subject" && (
+        <div
+          role="status"
+          className="border-b border-border px-4 py-2 text-center text-xs text-text-muted"
+        >
+          You are signed in with your staff account, as a data principal. Only your own
+          consents, requests and rights are here; your console is a separate site.
+        </div>
+      )}
+      {children}
+    </>
+  );
 }

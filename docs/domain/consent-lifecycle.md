@@ -45,8 +45,10 @@ Somebody with no account is offered one: the screen links to sign-up carrying
 the link's own address, so she returns to the same consent link once the
 account is hers, rather than having to find it again at a counter.
 
-A code is sent only to a contact the register knows, and to a data principal's
-account rather than a staff one. The reply does not say which happened - it is
+A code is sent only to a contact the register knows — a member of staff's
+included, since every account may act as a data principal; the session the code
+earns carries a data principal's powers and no others. The reply does not say
+whether a contact was known - it is
 the same sentence either way, so the form cannot be used to ask whether a
 number is registered. That is also why the offer to create an account is shown
 to everyone rather than only to the people who need it.

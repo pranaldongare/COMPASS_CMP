@@ -80,6 +80,34 @@ matrix, so it cannot drift into showing a button that answers 403.
 Tickets reach a respondent through their dashboard and the console's tickets
 page; the section is not in the navigation because most staff never hold one.
 
+## Staff are data principals too
+
+Every account may act as a data principal, a member of staff's included. On
+the data-principal portal and through a consent link, a one-time code to any
+registered contact signs its owner in — and the session it earns **acts as
+`data_subject` whatever the account's role**. The permission matrix,
+navigation and every gate read the session, so a DPO signed in on the portal
+sees her own consents, requests and rights and is refused everything else. The
+row is untouched; the session records `account_role` so the portal can say
+"you are using your staff account as a data principal". A password and code on
+the console are what buy the staff role. See
+[ADR 0013](../decisions/0013-every-account-is-a-data-principal.md), which also
+records the bypass this closed.
+
+**Deactivating a member of staff ends the role and keeps the person.** The
+register's button reads "End staff access" for a staff row: the role becomes
+`data_subject`, the password goes, `person_type` becomes `ex_employee`, and the
+account stays active so they still reach the consents they gave and the rights
+they hold. A data principal's account, having nothing to be kept as, is
+switched off as before.
+
+**A person may add a second email and a mobile** from the account page. Each
+is confirmed by a code sent to it, and until the code comes back it cannot
+sign anyone in — a typed contact is a claim, and a claim is not a way in. An
+address belongs to one account whichever column holds it. A member of staff
+who wants to keep reaching their own consents after leaving adds a personal
+address while the corporate one still works.
+
 ## How a staff account begins
 
 There is no self-registration. An administrator provisions the account, which

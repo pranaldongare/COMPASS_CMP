@@ -81,8 +81,14 @@ function UsersPageView() {
     const active = user.status === "active";
     try {
       if (active) {
-        await deactivate.mutateAsync(user.uuid);
-        toast.success("Account deactivated", "Every session was terminated immediately.");
+        const result = await deactivate.mutateAsync(user.uuid);
+        // Two different acts behind one button, and the server's message says
+        // which: a member of staff loses the role and keeps their account as a
+        // data principal; a data principal's account is switched off.
+        toast.success(
+          user.role === "data_subject" ? "Account deactivated" : "Staff access ended",
+          result.message ?? "Every session was terminated immediately.",
+        );
       } else {
         await reactivate.mutateAsync(user.uuid);
         toast.success("Account reactivated", `${user.full_name} can sign in again.`);
@@ -234,9 +240,14 @@ function UsersPageView() {
                       size="sm"
                       loading={deactivate.isPending}
                       onClick={() => toggle(u)}
+                      title={
+                        u.role === "data_subject"
+                          ? undefined
+                          : "Ends their staff role. They keep their account as a data principal, with their own consents."
+                      }
                     >
                       <UserX className="size-4" />
-                      Deactivate
+                      {u.role === "data_subject" ? "Deactivate" : "End staff access"}
                     </Button>
                   )}
                   {u.status === "deactivated" && (

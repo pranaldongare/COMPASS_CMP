@@ -819,7 +819,16 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Deactivate */
+        /**
+         * Deactivate
+         * @description End a member of staff's access, or switch a data principal's account off.
+         *
+         *     Two different acts behind one button, and the row's role says which. For
+         *     staff the role and the password go and the person stays, active, as a data
+         *     principal - the consents they gave and the rights they hold are theirs
+         *     under the Act whether or not they still work here. For a data principal
+         *     there is nothing to keep them as, and the account is switched off.
+         */
         post: operations["deactivate_users__user_uuid__deactivate_post"];
         delete?: never;
         options?: never;
@@ -915,8 +924,29 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Update Me */
+        /**
+         * Update Me
+         * @description Her own details. A contact that changes is sent a code in the same
+         *     request, and cannot sign her in until it comes back.
+         */
         patch: operations["update_me_me_patch"];
+        trace?: never;
+    };
+    "/me/contacts/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A code to confirm one of my contacts */
+        post: operations["contact_code_me_contacts_code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/me/contact/verify": {
@@ -928,9 +958,29 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Verify Contact */
+        /**
+         * Confirm one of my contacts
+         * @description The code came back, so the contact is hers and may now sign her in.
+         */
         post: operations["verify_contact_me_contact_verify_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/secondary-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove my second address */
+        delete: operations["remove_secondary_email_me_secondary_email_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -5053,6 +5103,11 @@ export interface components {
             /** Purpose Count */
             purpose_count: number;
         };
+        /** ContactCodeRequest */
+        ContactCodeRequest: {
+            /** Contact */
+            contact: string;
+        };
         /**
          * ContactIn
          * @description One line on a holder's contact log, optionally sending the mail too.
@@ -5892,6 +5947,14 @@ export interface components {
             is_minor: boolean | null;
             /** Created At */
             created_at: unknown;
+            /** Secondary Email */
+            secondary_email: string | null;
+            /** Mobile Verified At */
+            mobile_verified_at: string | null;
+            /** Email Verified At */
+            email_verified_at: string | null;
+            /** Secondary Email Verified At */
+            secondary_email_verified_at: string | null;
         };
         /** MeResponse */
         MeResponse: {
@@ -5906,8 +5969,18 @@ export interface components {
             email: string | null;
             /** Mobile */
             mobile?: string | null;
+            /** Secondary Email */
+            secondary_email: string | null;
+            /** Mobile Verified At */
+            mobile_verified_at: string | null;
+            /** Email Verified At */
+            email_verified_at: string | null;
+            /** Secondary Email Verified At */
+            secondary_email_verified_at: string | null;
             /** Role */
             role: string;
+            /** Account Role */
+            account_role: string;
             /** Person Type */
             person_type: string | null;
             /** Status */
@@ -7808,6 +7881,8 @@ export interface components {
             full_name?: string | null;
             /** Mobile */
             mobile?: string | null;
+            /** Secondary Email */
+            secondary_email?: string | null;
             /** Dob */
             dob?: string | null;
         };
@@ -9493,6 +9568,39 @@ export interface operations {
             };
         };
     };
+    contact_code_me_contacts_code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContactCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     verify_contact_me_contact_verify_post: {
         parameters: {
             query?: never;
@@ -9522,6 +9630,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_secondary_email_me_secondary_email_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
                 };
             };
         };

@@ -40,7 +40,13 @@ class Session:
     sid: str  # public identifier, used by DELETE /auth/sessions/{uuid}
     user_id: int
     user_uuid: str
+    #: The role this session *acts with*. Every permission check reads this, so
+    #: it is the whole of what a session may do. For a staff member signed in on
+    #: the data-principal portal it is `data_subject`, whatever the account says.
     role: str
+    #: The role on the account row. Display only - "you are using your staff
+    #: account as a data principal" - and never consulted for permission.
+    account_role: str
     created_at: float
     last_seen_at: float
     expires_at: float
@@ -95,8 +101,15 @@ async def create(
     user_agent: str | None,
     partial: bool = False,
     mfa_verified: bool = False,
+    account_role: str | None = None,
 ) -> tuple[str, Session]:
-    """Mint a session. Returns (raw token for the cookie, session record)."""
+    """Mint a session. Returns (raw token for the cookie, session record).
+
+    `role` is what the session acts with; `account_role` is what the row says
+    and defaults to the same. They differ for exactly one reason: a person with
+    a staff account has signed in where only data principals go, and the session
+    must carry a data principal's powers and not one more.
+    """
     token = new_token(32)
     fp = token_fingerprint(token)
     now = time.time()
@@ -109,6 +122,7 @@ async def create(
         "user_id": str(user_id),
         "user_uuid": user_uuid,
         "role": role,
+        "account_role": account_role or role,
         "created_at": str(now),
         "last_seen_at": str(now),
         "expires_at": str(now + ttl),
@@ -139,6 +153,8 @@ def _from_mapping(m: dict[str, str]) -> Session:
         user_id=int(m["user_id"]),
         user_uuid=m["user_uuid"],
         role=m["role"],
+        # Sessions minted before the field existed acted as their account role.
+        account_role=m.get("account_role") or m["role"],
         created_at=float(m["created_at"]),
         last_seen_at=float(m["last_seen_at"]),
         expires_at=float(m["expires_at"]),

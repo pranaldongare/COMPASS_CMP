@@ -16,7 +16,22 @@ export interface Me {
   email: string | null;
   /** The contact a data principal signs in with. */
   mobile: string | null;
+  /** A second address she added herself. Signs her in once confirmed - the way
+   *  an ex-employee still reaches their own consents after the corporate
+   *  mailbox is gone. */
+  secondary_email: string | null;
+  /** When each contact last answered a code. Null means it never has, and an
+   *  unconfirmed contact cannot sign anyone in. */
+  mobile_verified_at: Timestamp | null;
+  email_verified_at: Timestamp | null;
+  secondary_email_verified_at: Timestamp | null;
+  /** What this session acts as. On this portal it is always `data_subject`,
+   *  whatever the account's own role. */
   role: Role;
+  /** What the account row says. A member of staff signed in here has
+   *  `account_role` of their staff role and `role` of `data_subject`; the
+   *  difference is shown to them and decides nothing. */
+  account_role: Role;
   person_type: PersonType | null;
   status: UserStatus;
   /** ISO date. Null on accounts registered through a consent link, which never

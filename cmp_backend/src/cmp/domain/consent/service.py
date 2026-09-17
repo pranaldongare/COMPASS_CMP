@@ -256,11 +256,15 @@ async def send_contact_code(conn: Conn, *, token: str, contact: str) -> None:
     # stranger that no later step could have accepted anyway - `verify` has
     # always refused a contact with no account behind it.
     #
+    # Any account, including a member of staff's: every person the register
+    # knows can be a data principal, and the session the code earns carries a
+    # data principal's powers and no others (`open_principal_session`).
+    #
     # The caller's reply does not change, and must not: "if those details are
     # registered, a code has been sent" is the same sentence either way, so a
     # visitor cannot use this to find out whose number is on the register.
     user = await user_repo.by_contact(conn, contact)
-    if not user or user["role"] != "data_subject":
+    if not user or user["status"] not in ("active", "pending"):
         log.info("consent.code_requested_for_unknown_contact")
         return
 
@@ -298,9 +302,14 @@ async def verify_contact_code(conn: Conn, *, token: str, contact: str, code: str
     # A `pending` account is the other case, and the rule still holds there: it
     # is mid-enrolment, every medium it was created with has to answer, and the
     # account - and the session - waits for the last of them.
-    remaining = user_repo.unverified_mediums(user) if user["status"] == "pending" else []
+    #
+    # Only a data principal's row is ever pending here in that sense. On a staff
+    # row `pending` is a console account its owner has not set a password on,
+    # which says nothing about whether the person may consent.
+    enrolling = user["status"] == "pending" and user["role"] == "data_subject"
+    remaining = user_repo.unverified_mediums(user) if enrolling else []
     complete = not remaining
-    if complete and user["status"] == "pending":
+    if complete and enrolling:
         user = await user_repo.set_status(conn, user["id"], "active")
 
     await audit.record(

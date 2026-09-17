@@ -63,6 +63,15 @@ def send_consent_code(contact: str, code: str, project_name: str = "") -> dict[s
     )
 
 
+@shared_task(name="cmp.notifications.send_contact_confirmation", **RETRY_KW)
+def send_contact_confirmation(user_uuid: str, contact: str, code: str) -> dict[str, Any]:
+    """A contact somebody has just added to their own account, and is waiting
+    at the account page to confirm."""
+    return deliver(
+        Message.CONTACT_CONFIRMATION, to=contact, code=code, minutes=settings.otp_ttl_s // 60
+    )
+
+
 @shared_task(name="cmp.notifications.send_password_reset", **RETRY_KW)
 def send_password_reset(user_uuid: str, email: str, code: str) -> dict[str, Any]:
     return deliver(Message.PASSWORD_RESET, to=email, code=code, minutes=15)

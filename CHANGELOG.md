@@ -8,6 +8,12 @@ as a release yet.
 ## [Unreleased]
 
 ### Security
+- **A one-time code is worth exactly a data principal's session.** The
+  portal's code sign-in minted a session with whatever role the account held,
+  so a code to a staff mailbox - no password, no second factor - produced a
+  full staff session with every power of the role. Every code sign-in now
+  acts as `data_subject` whatever the row says; the row's role is carried as
+  `account_role` for display only ([ADR 0013](docs/decisions/0013-every-account-is-a-data-principal.md)).
 - Task arguments are withheld from Celery's task events. Celery puts a repr of
   every argument into `task-sent` and `task-received`, and anything reading
   those events renders it - the arguments here are one-time codes and personal
@@ -63,6 +69,19 @@ as a release yet.
   and test instead of reporting delivery.
 
 ### Added
+- **A member of staff is also a data principal.** Their corporate address
+  signs them in on the data-principal portal and through a consent link, with
+  a code like anybody's, into a session that acts as a data principal and
+  nothing more; the portal says which account is in use. Deactivating a
+  member of staff now ends the role and keeps the person: the row becomes a
+  data principal, the password goes, `person_type` becomes `ex_employee`, and
+  they still reach their own consents and rights ("End staff access" on the
+  register).
+- **A second email and a mobile, added by the person.** From the account
+  page, each confirmed by a code sent to it (`contact_confirmation`) before it
+  can sign them in; `PATCH /me`, `POST /me/contacts/code`,
+  `POST /me/contact/verify`, `DELETE /me/secondary-email`. An address belongs
+  to one account whichever column holds it (migration 0025).
 - **Flower, for watching the task queues.** Which tasks ran, on which queue, how
   long they took, which failed and what they raised. Behind a compose profile
   (`--profile monitoring`) and in the dev dependency group, so it is never in

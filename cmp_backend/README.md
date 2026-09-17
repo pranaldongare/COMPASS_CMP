@@ -1,7 +1,7 @@
 # CMP backend
 
 The API of the consent management platform: FastAPI 0.141 on Python 3.12,
-PostgreSQL 16, Redis 7, Celery 5. 239 endpoints over 32 tables, every query
+PostgreSQL 16, Redis 7, Celery 5. 241 endpoints over 32 tables, every query
 hand-written SQL over psycopg 3, every migration raw DDL. The repository-wide
 documentation is under [../docs/](../docs/README.md); this README is the
 backend's own front door.
@@ -23,7 +23,7 @@ Then:
 ```bash
 uv sync --all-extras --dev
 cp .env.example .env               # POSTGRES_DB=cmp_dev; PUBLIC_BASE_URL and CONSOLE_BASE_URL to the two portals
-uv run alembic upgrade head        # 24 migrations: 32 tables, 39 enums, triggers, grants
+uv run alembic upgrade head        # 25 migrations: 32 tables, 39 enums, triggers, grants
 uv run python scripts/seed.py      # one coherent world: a user per role, processors, sources, sites, a project through to approved, a live link
 
 uv run python -m cmp --port 8000
