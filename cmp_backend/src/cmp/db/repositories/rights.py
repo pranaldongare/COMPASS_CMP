@@ -1127,7 +1127,11 @@ async def counts(conn: Conn) -> Row:
              count(*) FILTER (WHERE status = 'received' AND verification_status = 'pending')
                AS requests_unverified,
              count(*) FILTER (WHERE status <> 'closed' AND about_dpo)
-               AS grievances_about_dpo
+               AS grievances_about_dpo,
+             -- The DPO's own share of those: the ones nobody has yet escalated
+             -- to the administrator. Once escalated, the DPO is locked out.
+             count(*) FILTER (WHERE status <> 'closed' AND about_dpo AND escalated_at IS NULL)
+               AS grievances_to_escalate
            FROM rights_request""",
     )
     return row or {}

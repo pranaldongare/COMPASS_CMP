@@ -31,6 +31,12 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Fixed
+- The dashboard's "Needs you today" showed things a role could not act on:
+  the administrator saw data principals mid-sign-up as "accounts awaiting
+  activation", plus lockouts and suspensions; the DPO saw draft notices,
+  access denials, and grievances already escalated away from them. Each row
+  now names an action the role has (staff invitations to resend, grievances
+  to escalate), and a test keeps it that way.
 - A nominee saw nothing of the request they raised. Found on a running stack:
   a request filed on a death trigger had been answered and closed a week
   earlier, and the nominee's account showed an empty list - while the

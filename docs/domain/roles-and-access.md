@@ -139,6 +139,28 @@ replacement, because the invitation carries the reset flow's own code rather
 than a second kind; an administrator can also send it again from the register,
 but only while the account is still pending.
 
+## What the dashboard asks of each role
+
+Each role's landing page opens with **Needs you today**: counts of things
+that role can act on, from the page each row opens. The rule is strict, and
+tested: a count the role can only look at is not on the list. Lockouts
+clear themselves; a suspended source was suspended on purpose; a draft
+notice is its author's to finish; refusals in the log are the audit trail's.
+Those stay in the queues and statistics further down.
+
+| Role | Needs you today |
+|---|---|
+| DPO | tickets past their date; rights requests overdue and due within seven days; requests awaiting verification; teams that have written on their tickets; grievances about the DPO not yet escalated; retention floors passed; tickets addressed to them; translations awaiting approval; projects pending approval; new collectors awaiting a decision |
+| Administrator | staff invitations not yet accepted (resend them); grievances about the DPO to review; tickets addressed to them |
+| DCO, RCO | tickets past their date; tickets addressed to them; imports that did not reconcile; assets with unmapped subjects |
+| DCO Admin | tickets past their date; sites awaiting a data source; sources with nobody accountable; processors with no collection set up; tickets addressed to them |
+| R&D User | projects needing something from them; tickets addressed to them |
+
+A data principal who has not finished her own sign-up is not the
+administrator's to activate, so she is not counted; a grievance about the
+DPO that has been escalated is the administrator's, so the DPO no longer
+sees it.
+
 ## Second factors
 
 Every staff role signs in with a password and then a six-digit code sent to

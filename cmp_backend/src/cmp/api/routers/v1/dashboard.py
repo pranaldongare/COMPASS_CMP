@@ -70,6 +70,13 @@ _QUEUE_HREF = {
 #: What needs each role today, in priority order. Each row names where its
 #: count comes from - a counts key or a queue - and where acting on it goes.
 #: An anchor href points at the queue further down the same page.
+#:
+#: The rule for a row: the role can *do* something about it, today, from the
+#: page the href opens. A count the role can only look at - lockouts that
+#: clear on their own, a source somebody suspended on purpose, a draft that
+#: is its author's to finish, refusals in the log - is information, and lives
+#: in the queues and stats below, not here. A list of things you cannot act
+#: on teaches people to stop reading the list.
 _ATTENTION: dict[str, list[dict[str, Any]]] = {
     "dpo": [
         {
@@ -102,8 +109,10 @@ _ATTENTION: dict[str, list[dict[str, Any]]] = {
             "href": "/requests?unread=1",
         },
         {
-            "count": "grievances_about_dpo",
-            "label": "Grievances about the DPO",
+            # Only the ones the DPO can still act on: escalating them to the
+            # administrator. Once escalated, they are the administrator's.
+            "count": "grievances_to_escalate",
+            "label": "Grievances about the DPO to escalate",
             "severity": "warning",
             "href": "/requests?type=grievance",
         },
@@ -125,12 +134,6 @@ _ATTENTION: dict[str, list[dict[str, Any]]] = {
             "href": "/notices",
         },
         {
-            "count": "draft_notices",
-            "label": "Notices in draft",
-            "severity": "info",
-            "href": "/notices?status=draft",
-        },
-        {
             "count": "pending_approval",
             "label": "Projects pending approval",
             "severity": "info",
@@ -141,35 +144,22 @@ _ATTENTION: dict[str, list[dict[str, Any]]] = {
             "label": "New collectors awaiting your decision",
             "severity": "info",
         },
-        {
-            "count": "access_denials_7d",
-            "label": "Access denials in the last 7 days",
-            "severity": "info",
-            "href": "/audit",
-        },
     ],
     "admin": [
         {
-            "count": "users_pending",
-            "label": "Accounts awaiting activation",
+            # Staff accounts whose owner has not yet accepted the invitation.
+            # The administrator's move is to resend it; a data principal in
+            # the same status is finishing her own sign-up, and is not counted.
+            "count": "staff_invites_pending",
+            "label": "Staff invitations not yet accepted",
             "severity": "warning",
             "href": "/users?status=pending",
-        },
-        {
-            "queue": "Lockouts (24h)",
-            "label": "Lockouts in the last 24 hours",
-            "severity": "warning",
         },
         {
             "count": "grievances_about_dpo",
             "label": "Grievances about the DPO to review",
             "severity": "warning",
             "href": "/requests",
-        },
-        {
-            "queue": "Suspended sources and processors",
-            "label": "Suspended sources and processors",
-            "severity": "info",
         },
         {
             "count": "tickets_for_me",
@@ -680,6 +670,10 @@ async def _dco_admin(conn: Any, user_id: int) -> dict[str, Any]:
 async def _admin(conn: Any) -> dict[str, Any]:
     by_status = await user_repo.count_by_status(conn)
     by_role = await user_repo.count_by_role(conn)
+    invites = await fetch_one(
+        conn,
+        "SELECT count(*) AS n FROM auth_user WHERE status = 'pending' AND role <> 'data_subject'",
+    )
     suspended = await fetch_all(
         conn,
         """SELECT source_uuid, source_code, name, status FROM data_source
@@ -712,6 +706,7 @@ async def _admin(conn: Any) -> dict[str, Any]:
             **{f"users_{k}": v for k, v in by_status.items()},
             **{f"role_{k}": v for k, v in by_role.items()},
             "suspended_registry_rows": len(suspended),
+            "staff_invites_pending": int((invites or {}).get("n", 0) or 0),
             "grievances_about_dpo": len(escalated),
         },
         "queues": [

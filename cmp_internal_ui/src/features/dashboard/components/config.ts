@@ -8,8 +8,6 @@
  * the label.
  */
 
-
-
 /** Counts worth surfacing, and what they mean. Anything not listed is rendered
  *  with a humanised key - a new backend count appears rather than disappearing. */
 export const COUNT_LABELS: Record<string, string> = {
@@ -24,6 +22,8 @@ export const COUNT_LABELS: Record<string, string> = {
   withdrawals: "Withdrawals",
   unapproved_languages: "Unapproved translations",
   access_denials_7d: "Access denials (7d)",
+  staff_invites_pending: "Staff invitations pending",
+  grievances_to_escalate: "Grievances about the DPO to escalate",
   approved_projects: "Approved projects",
   pending_processors: "Collectors awaiting your decision",
   projects: "Third-party projects",
