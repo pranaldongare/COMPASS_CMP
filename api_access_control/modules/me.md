@@ -269,6 +269,7 @@ Who has nominated me.
 - **Route guard:** `RequireDataSubject`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DATA_SUBJECT))]`.
 - **Rules:** Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.
+- Rows are nominations naming the caller, matched on `nomination.nominee_user_id` and falling back to the contacts the principal recorded. Pending and active, plus any nomination already invoked whatever its status now: revocation stops what comes next and does not withdraw a request the nominee lawfully raised.
 - Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject.
 - Matches nominations naming the caller’s verified contacts; this lists nominee relationships, not only nominations the caller created.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/rights.py#L1625).
@@ -345,6 +346,7 @@ My Request.
 - **Route guard:** `RequireDataSubject`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DATA_SUBJECT))]`.
 - **Rules:** Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.
+- Also reachable by the **nominee** who raised this request, matched through `nomination.nominee_user_id` (`request_as_nominee`). Under s.14 they are the person exercising the right, and every message about the request already goes to them. Reading only: `POST /me/requests/{request_uuid}/dispute` makes a new request in the principal's name and stays on the acting side, which needs the nominee page and a code ([ADR 0014](../../docs/decisions/0014-a-nominee-follows-the-request-they-raised.md)).
 - Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/rights.py#L1549).
 
@@ -375,6 +377,7 @@ The response, while the window is open.
 - **Route guard:** `RequireDataSubject`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DATA_SUBJECT))]`.
 - **Rules:** Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.
+- Also reachable by the **nominee** who raised this request, matched through `nomination.nominee_user_id` (`request_as_nominee`). Under s.14 they are the person exercising the right, and every message about the request already goes to them. Reading only: `POST /me/requests/{request_uuid}/dispute` makes a new request in the principal's name and stays on the acting side, which needs the nominee page and a code ([ADR 0014](../../docs/decisions/0014-a-nominee-follows-the-request-they-raised.md)).
 - Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/rights.py#L1567).
 
@@ -390,6 +393,7 @@ A file released with the response, while the window is open.
 - **Route guard:** `RequireDataSubject`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DATA_SUBJECT))]`.
 - **Rules:** Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.
+- Also reachable by the **nominee** who raised this request, matched through `nomination.nominee_user_id` (`request_as_nominee`). Under s.14 they are the person exercising the right, and every message about the request already goes to them. Reading only: `POST /me/requests/{request_uuid}/dispute` makes a new request in the principal's name and stays on the acting side, which needs the nominee page and a code ([ADR 0014](../../docs/decisions/0014-a-nominee-follows-the-request-they-raised.md)).
 - Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/rights.py#L1580).
 
@@ -405,6 +409,7 @@ What was recorded about my request.
 - **Route guard:** `RequireDataSubject`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DATA_SUBJECT))]`.
 - **Rules:** Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.
+- Also reachable by the **nominee** who raised this request, matched through `nomination.nominee_user_id` (`request_as_nominee`). Under s.14 they are the person exercising the right, and every message about the request already goes to them. Reading only: `POST /me/requests/{request_uuid}/dispute` makes a new request in the principal's name and stays on the acting side, which needs the nominee page and a code ([ADR 0014](../../docs/decisions/0014-a-nominee-follows-the-request-they-raised.md)).
 - Effective session role must be data_subject. Staff account holders can use this endpoint through a portal OTP session acting as data_subject.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/rights.py#L1556).
 
