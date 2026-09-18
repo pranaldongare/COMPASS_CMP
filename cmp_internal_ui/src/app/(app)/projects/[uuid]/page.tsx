@@ -101,7 +101,13 @@ export default function ProjectDetailPage() {
   const history = useProjectHistory(uuid);
   const notices = useNotices(uuid);
   const sites = useSites(uuid);
-  const links = useLinks(uuid);
+  // Only for the roles that may read them. An R&D User owns the project but
+  // holds no grant on `link`, so asking anyway answered 403 on every visit to
+  // every project page - a red line in their console and an audited denial in
+  // ours, for a card they cannot see. `writes` comes from the server, so this
+  // is not a second copy of the permission matrix.
+  const canReadLinks = me?.writes.includes("link") ?? false;
+  const links = useLinks(canReadLinks ? uuid : undefined);
 
   /** The live link for a site, if it has one. At most one by design. */
   const activeLinkFor = React.useCallback(

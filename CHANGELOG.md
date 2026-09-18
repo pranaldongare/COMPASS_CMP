@@ -31,6 +31,17 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Changed
+- **The interactive API docs load again.** `/docs` and `/redoc` are documents
+  that fetch Swagger UI from a CDN and start it with an inline script, and the
+  API's `default-src 'none'` blocked every part of that, so the page rendered
+  empty with four policy violations in the browser console. The middleware's
+  own docstring had claimed the docs were an exception; now they are, narrowly
+  — those two paths, the sources that page actually loads, and nothing else.
+  Every other response keeps the strict policy, and the docs do not exist in
+  production at all.
+- **Either portal's dev server can be reached by IP.** `DEV_ORIGINS` adds
+  origins to `allowedDevOrigins`, for testing from another machine on the
+  network, where the address differs per machine and cannot be committed.
 - **A notice has no maximum length any more.** The rendition a data principal
   reads was capped at 20,000 characters, which is not what its column holds —
   `notice_language.rendered_text` is `text` — but a number somebody chose. A
@@ -41,6 +52,11 @@ as a release yet.
   request body limit, which is the honest place for it.
 
 ### Fixed
+- An R&D User's project page asked for the project's consent links on every
+  visit and was refused every time: they own the project but hold no grant on
+  `link`. A red line in their browser console, and an audited denial in ours,
+  for a card they cannot see. The page now asks only when the role may read
+  them, decided from what the server already says the role may write.
 - **"Save changes" on a draft project did nothing at all.** No request, no
   message, and the dialog stayed open, which is how it was reported. The form
   was judged against the rule that belongs to *registering* a project — that

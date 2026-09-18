@@ -51,7 +51,32 @@ const nextConfig: NextConfig = {
    * browser (or a Playwright run) pointed at one while the server assumes the
    * other hits exactly this. Both are listed.
    */
-  allowedDevOrigins: ["localhost", "127.0.0.1", "[::1]"],
+  /**
+   * Origins the dev server will serve its own assets and HMR socket to.
+   *
+   * Next refuses an origin it does not recognise, and the symptom is not an
+   * error page: the app renders and then behaves oddly, because the dev
+   * assets behind it were refused. Testing from another machine on the
+   * network means reaching this one by IP, which is not in the list and
+   * cannot be - it differs per machine and per network. So the list is
+   * extensible from the environment:
+   *
+   *     DEV_ORIGINS=192.168.1.42,my-laptop.local npm run dev
+   *
+   * Development only; `next build` ignores it. Note that a plain-HTTP origin
+   * that is not `localhost` is not a secure context, so the browser will also
+   * ignore `Cross-Origin-Opener-Policy` and warn about it - harmless here, and
+   * not something this setting can change.
+   */
+  allowedDevOrigins: [
+    "localhost",
+    "127.0.0.1",
+    "[::1]",
+    ...(process.env.DEV_ORIGINS ?? "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  ],
 
   /**
    * Proxy the API through this origin.

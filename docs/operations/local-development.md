@@ -156,7 +156,17 @@ All four are clean on the integration branch as of 2026-09-17, `mypy
   `NEXT_PUBLIC_API_URL` is set. Use `localhost` for both portals.
 - **Every button does nothing** in the console: Next.js refuses dev assets
   from an origin it does not recognise. `allowedDevOrigins` in
-  `next.config.ts` lists `localhost` and `127.0.0.1`; use one of those.
+  `next.config.ts` lists `localhost` and `127.0.0.1`; use one of those, or
+  name the origin you are reaching it by:
+
+  ```bash
+  DEV_ORIGINS=192.168.1.42 npm run dev      # or a comma-separated list
+  ```
+
+  Reaching either portal by IP also means the origin is not a *secure
+  context*, so the browser ignores `Cross-Origin-Opener-Policy` and says so in
+  the console. That warning is expected over plain HTTP and changes nothing;
+  only HTTPS, or `localhost`, silences it.
 - **Playwright and pytest must not run at the same time** against one
   database. Both write audit rows, and the chain's advisory lock serialises
   them into timeouts.
