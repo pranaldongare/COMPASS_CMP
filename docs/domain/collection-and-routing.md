@@ -48,7 +48,15 @@ reached review looking complete, the DPO was told the only thing in the way was
 the text, approved the text, was offered the move, and the move then failed on a
 purpose no screen had named. Blocked at submission instead, the project waits in
 draft, which is where the DPO is already shown it, and reaches review ready to
-approve. The DPO decides each named processor and the
+approve.
+
+The DPO takes those decisions on the notice itself, one purpose at a time. One
+at a time deliberately: what is being signed off is each purpose, and a single
+control over the set would be a click rather than a review. Where they are taken
+is the part that changed - the checklist names each purpose, every line links to
+the card that clears it, and the activation happens there instead of in the
+purposes register, which the officer used to reach by a different route and
+filter by hand. The DPO decides each named processor and the
 project; a refusal carries a reason and is audited. After approval the R&D
 user may still ask to add a collector, which is a request the DPO decides,
 not an edit.

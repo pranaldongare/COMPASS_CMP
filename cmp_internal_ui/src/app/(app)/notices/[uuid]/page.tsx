@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   Check,
+  CheckCircle2,
   FileText,
   Globe,
   Lock,
@@ -60,6 +61,8 @@ import {
 import { useApproveLanguage } from "@/features/notices";
 import type { LanguageCode } from "@/types";
 import { formatDateTime, formatDuration, humanise, shortHash } from "@/lib/format";
+import { useActivatePurpose } from "@/features/registry";
+import { ApiError } from "@/lib/errors";
 import { useAuth, useToast } from "@/providers";
 import {
   Rule3Badge,
@@ -67,6 +70,24 @@ import {
 } from "@/features/notices/components/rule3-override";
 import { NoticeText } from "@/features/notices/components/notice-text";
 import type { PurposeOnNotice } from "@/types";
+
+/**
+ * Which card on this page clears a checklist line.
+ *
+ * The checklist arrives as sentences, and until this existed every one of them
+ * was dead text: a DPO read "the purpose X is draft, not activated" and had to
+ * work out for themselves that the Purposes card below could fix it. Matching
+ * the server's wording is a compromise, and a deliberate one - the only
+ * alternative is a section name per line in the API, and this list is the only
+ * caller that would ever read it. A line that stops matching loses its link and
+ * nothing else.
+ */
+function sectionFor(item: string): string | null {
+  if (/purpose/i.test(item)) return "notice-purposes";
+  if (/text is not legally approved|no text yet/i.test(item)) return "notice-languages";
+  if (/URL|DPO contact|who it addresses/i.test(item)) return "notice-rule3";
+  return null;
+}
 
 export default function NoticeDetailPage() {
   const { uuid } = useParams<{ uuid: string }>();
@@ -80,6 +101,24 @@ export default function NoticeDetailPage() {
   const languages = useNoticeLanguages(uuid);
   const publish = usePublishNotice(uuid);
   const approve = useApproveLanguage(uuid);
+  const activatePurpose = useActivatePurpose();
+  const [activating, setActivating] = React.useState<string | null>(null);
+
+  /** The officer's sign-off on one purpose, taken from the notice that carries it. */
+  async function onActivate(purpose: PurposeOnNotice) {
+    setActivating(purpose.purpose_uuid);
+    try {
+      await activatePurpose.mutateAsync(purpose.purpose_uuid);
+      toast.success(`${purpose.name} activated`, "It no longer blocks publication.");
+    } catch (err) {
+      toast.error(
+        "Could not activate that purpose",
+        err instanceof ApiError ? err.userMessage() : "Try again.",
+      );
+    } finally {
+      setActivating(null);
+    }
+  }
 
   const [confirming, setConfirming] = React.useState(false);
   const [editingNotice, setEditingNotice] = React.useState(false);
@@ -201,7 +240,23 @@ export default function NoticeDetailPage() {
                             className="mt-0.5 size-4 shrink-0 text-danger"
                             aria-hidden="true"
                           />
-                          <span>{item}</span>
+                          <span>
+                            {item}{" "}
+                            {/* Each line points at the card that fixes it, on
+                                this page. Matched on the server's own wording,
+                                which is the same trade the transitions card
+                                makes: the alternative is the API returning a
+                                section name per line, and this list is the only
+                                thing that would read it. */}
+                            {sectionFor(item) && (
+                              <a
+                                href={`#${sectionFor(item)}`}
+                                className="font-medium whitespace-nowrap text-accent-text underline underline-offset-2"
+                              >
+                                fix this
+                              </a>
+                            )}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -283,7 +338,7 @@ export default function NoticeDetailPage() {
             }
           />
 
-          <Card>
+          <Card id="notice-purposes">
             <CardHeader className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <CardTitle>Purposes</CardTitle>
@@ -330,6 +385,25 @@ export default function NoticeDetailPage() {
                         )}
                         <Rule3Badge purpose={purpose} />
                         <StatusBadge kind="purpose" value={purpose.status} dot={false} />
+                        {/* One decision per purpose, deliberately, and taken
+                            here rather than in the register. The officer used to
+                            read "the purpose X is draft, not activated" on the
+                            checklist above, copy that code, open Purposes, filter
+                            to drafts and find it, nine times for one imported
+                            document. The set is what they are reading; this is
+                            where they should be able to act on it. */}
+                        {isDpo && purpose.status === "draft" && isDraft && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            loading={activating === purpose.purpose_uuid}
+                            onClick={() => onActivate(purpose)}
+                            title="Make this purpose usable by a notice"
+                          >
+                            <CheckCircle2 className="size-4" />
+                            Activate
+                          </Button>
+                        )}
                         {/* Draft only. A published notice is frozen and hashed;
                             changing what it says is a new version, not an edit,
                             and the API refuses it either way. */}
@@ -381,7 +455,7 @@ export default function NoticeDetailPage() {
             )}
           </Card>
 
-          <Card>
+          <Card id="notice-languages">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Globe className="size-4" aria-hidden="true" />
@@ -499,7 +573,7 @@ export default function NoticeDetailPage() {
         </div>
 
         <div className="space-y-6">
-          <Card>
+          <Card id="notice-rule3">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="size-4" aria-hidden="true" />

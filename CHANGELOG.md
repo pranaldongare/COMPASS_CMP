@@ -62,6 +62,14 @@ as a release yet.
   had named. The wall now stands at submission, in draft, which is where the
   officer is already shown the project; their approval carries the same guard
   for anything submitted before this landed.
+- **The officer activates a purpose from the notice that carries it.** The
+  publication checklist named a purpose code and stopped there, and the only
+  control that acted on it was a row in the purposes register, reached by a
+  different route and filtered by hand, nine times for one imported document.
+  Each draft purpose now carries its own control on the notice, and every
+  blocking line links to the card that clears it. The decisions stay separate,
+  because what is signed off is each purpose and one control over the set would
+  be a click rather than a review.
 - **Every blocker is reported, not only the first.** A transition that cannot
   run now lists all of its unmet requirements. Clearing one to be told about the
   next reads as the system inventing objections, when the list was always there.

@@ -29,12 +29,19 @@ import type { ApiError } from "@/lib/errors";
 import { keys, prefixes, type Result } from "@/lib/query";
 import type { Acknowledged, Processor, ProcessorRespondent, Purpose, Uuid } from "@/types";
 
-
 export function useActivatePurpose() {
   const qc = useQueryClient();
   return useMutation<Acknowledged, ApiError, Uuid>({
     mutationFn: activatePurpose,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["purposes"] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["purposes"] });
+      // Every notice carrying it, because activating a purpose is what clears a
+      // line from a publication checklist. Without this the officer activates
+      // from the notice page and the list beside it still says the purpose is a
+      // draft, which reads as the click not having worked.
+      void qc.invalidateQueries({ queryKey: ["notice"] });
+      void qc.invalidateQueries({ queryKey: ["all", "notices"] });
+    },
   });
 }
 
@@ -76,8 +83,13 @@ export function useAssignSourceOwner(): Result<
 > {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ sourceUuid, ownerUserUuid }: { sourceUuid: Uuid; ownerUserUuid: Uuid | null }) =>
-      assignSourceOwner(sourceUuid, ownerUserUuid),
+    mutationFn: ({
+      sourceUuid,
+      ownerUserUuid,
+    }: {
+      sourceUuid: Uuid;
+      ownerUserUuid: Uuid | null;
+    }) => assignSourceOwner(sourceUuid, ownerUserUuid),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["sources"] });
       void qc.invalidateQueries({ queryKey: prefixes.anyProject });
@@ -142,7 +154,8 @@ export function useAddRespondent(processorUuid: Uuid) {
   const qc = useQueryClient();
   return useMutation<ProcessorRespondent, ApiError, RespondentInput>({
     mutationFn: (body) => addRespondent(processorUuid, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.registry.respondents(processorUuid) }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: keys.registry.respondents(processorUuid) }),
   });
 }
 
@@ -150,6 +163,7 @@ export function useRemoveRespondent(processorUuid: Uuid) {
   const qc = useQueryClient();
   return useMutation<Acknowledged, ApiError, Uuid>({
     mutationFn: (respondentUuid) => removeRespondent(processorUuid, respondentUuid),
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.registry.respondents(processorUuid) }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: keys.registry.respondents(processorUuid) }),
   });
 }
