@@ -57,7 +57,7 @@ _QUEUE_HREF = {
     "Rights requests, soonest due first": "/requests",
     "Tickets past their date": "/requests?status=awaiting_holders",
     "Teams have written on their tickets": "/requests?unread=1",
-    "Drafts waiting on you": "/projects?status=in_draft",
+    "Drafts whose purposes are not activated": "/projects?status=in_draft",
     "Pending Approval": "/projects?status=pending_approval",
     "Tickets addressed to you": "/tickets",
     "Needs your action": "/projects",
@@ -439,9 +439,12 @@ async def _dpo(conn: Any) -> dict[str, Any]:
     # - and a DPO who followed that row arrived at a project whose transition
     # card reads "There is nothing for your role to do at this stage", because
     # the only move out of draft belongs to the author. The one thing that *is*
-    # theirs on a draft is activating the purposes an imported document left,
-    # and since that now blocks the author's submission, it is work somebody is
-    # actually waiting on.
+    # theirs on a draft is activating the purposes an imported document left.
+    #
+    # Nobody is held up by it: the author submits whenever they are ready, and
+    # the activation gates the DPO's own approval. So this is work brought
+    # forward rather than work owed, and the queue says so - it is not in
+    # "Needs you today", and the name does not claim anyone is waiting.
     draft_queue = await fetch_all(
         conn,
         """SELECT p.project_uuid, p.project_name, p.updated_at,
@@ -536,7 +539,7 @@ async def _dpo(conn: Any) -> dict[str, Any]:
             {"name": "Rights requests, soonest due first", "items": rights_queue},
             {"name": "Tickets past their date", "items": overdue},
             {"name": "Teams have written on their tickets", "items": replies},
-            {"name": "Drafts waiting on you", "items": draft_queue},
+            {"name": "Drafts whose purposes are not activated", "items": draft_queue},
             {"name": "Pending Approval", "items": approval_queue},
             {"name": "New collectors awaiting your decision", "items": amendments},
             {"name": "Retention floors passed - erasure due", "items": floors},

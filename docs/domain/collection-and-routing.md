@@ -39,16 +39,18 @@ An R&D user registers the project, names the processors that will collect
 ("who is collecting"), and uploads its notice. Submitting for approval requires
 the pieces the DPO will judge: the notice, the collectors, the proofs.
 
-It also requires that the Privacy Office has activated every purpose the notice
-carries. That is the one requirement on this transition the author cannot
-satisfy alone, and it is there because the alternative was worse: the purposes
-an uploaded document creates arrive as drafts, publication refuses them, and
-publication happens inside the DPO's own approval. Without this the project
-reached review looking complete, the DPO was told the only thing in the way was
-the text, approved the text, was offered the move, and the move then failed on a
-purpose no screen had named. Blocked at submission instead, the project waits in
-draft, which is where the DPO is already shown it, and reaches review ready to
-approve.
+Every requirement on that move is the author's own, and nothing on it waits for
+the Privacy Office. The DPO's two acts on a notice - approving its text and
+activating the purposes it carries - gate their own approval instead.
+
+Both have to be stated somewhere, because approving a project publishes its
+notice in the same transaction and publication refuses a purpose nobody has
+activated. Stated on the approval, the move is offered as blocked with a
+sentence naming what is missing, and the controls for both are on the notice the
+officer is already reading. Before that it was checked at publication alone, so
+a project reached review looking complete, the officer was told the only thing
+in the way was the text, approved the text, was offered the move - and the move
+failed on a purpose no screen had named.
 
 The DPO takes those decisions on the notice itself, one purpose at a time. One
 at a time deliberately: what is being signed off is each purpose, and a single

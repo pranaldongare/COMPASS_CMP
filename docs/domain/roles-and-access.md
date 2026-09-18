@@ -163,10 +163,14 @@ Each role's landing page opens with **Needs you today**: counts of things
 that role can act on, from the page each row opens. The rule is strict, and
 tested: a count the role can only look at is not on the list. Lockouts
 clear themselves; a suspended source was suspended on purpose; refusals in the
-log are the audit trail's. A draft project is the exception that proves it: the
-DPO does have a queue of those, because the purposes an imported notice carries
-are theirs to activate and the author cannot submit until they have.
-Those stay in the queues and statistics further down.
+log are the audit trail's. Those stay in the queues and statistics further down.
+
+The DPO's queues include one of draft projects, which is not a contradiction:
+it lists only the drafts whose purposes are waiting to be activated, which is
+the one thing on a draft that is theirs. Nobody is held up by it - the author
+submits when they are ready, and the activation gates the officer's own
+approval - so it is work brought forward, and it is a queue rather than a row in
+**Needs you today**.
 
 | Role | Needs you today |
 |---|---|

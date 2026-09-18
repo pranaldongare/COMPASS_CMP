@@ -227,34 +227,54 @@ def test_available_reports_blockers_without_hiding_the_transition() -> None:
         "The notice is missing required Rule 3 elements",
         "The notice does not say who it applies to",
         "The notice has no text yet - add at least one language",
-        # Not the purpose-activation one: with no purposes at all, none of them
-        # are unactivated, and the requirement is met vacuously. It appears once
-        # a document has actually put some there.
         "No approval with a proof file",
     ]
 
 
-def test_a_draft_waits_on_the_office_to_activate_the_purposes_it_carries() -> None:
-    """The one requirement on this transition the author cannot satisfy.
+def test_unactivated_purposes_stop_the_approval_and_not_the_submission() -> None:
+    """The gate is on the reviewer's side of the wall, deliberately.
 
     A document import creates the purposes as drafts and only the DPO activates
-    them. This used to be checked at publication alone, so the author submitted,
-    the DPO was told the only blocker was the text, approved the text, was
-    offered the move - and the move failed inside the transaction on a purpose
-    nobody had mentioned. Blocked here, the project waits in draft, where the
-    DPO is already shown it, and reaches review ready to approve.
+    them, so this is not something the author can clear. Checking it at
+    publication alone was the original bug: the author submitted, the DPO was
+    told the only blocker was the text, approved the text, was offered the move
+    - and the move failed inside the transaction on a purpose nobody had
+    mentioned.
+
+    It was briefly checked at submission instead, which closed the hole and
+    opened a worse one: the author could not submit, and the DPO had to come
+    into somebody else's draft to unblock work nobody had asked them to review
+    yet. So it is stated here, on the approval, where publication happens and
+    where the person who can activate a purpose is already standing.
     """
     waiting = replace(SATISFIED, notice_purposes_unactivated=3)
 
-    view = available(S.IN_DRAFT, Role.RND_USER, waiting)
+    # The author is not held up by it.
+    assert available(S.IN_DRAFT, Role.RND_USER, waiting)[0]["allowed"] is True
 
-    assert view[0]["allowed"] is False
-    assert view[0]["blockers"] == [
-        "The Privacy Office has not activated every purpose on the notice yet"
+    # The reviewer is, and is told why.
+    approving = {e["to"]: e for e in available(S.PENDING_APPROVAL, Role.DPO, waiting)}
+    assert approving["approved"]["allowed"] is False
+    assert approving["approved"]["blockers"] == [
+        "The notice carries purposes that are not activated - activate them before approving"
     ]
 
     # And once they have, nothing else is in the way.
-    assert available(S.IN_DRAFT, Role.RND_USER, SATISFIED)[0]["allowed"] is True
+    assert approving["in_draft"]["allowed"] is True
+    assert available(S.PENDING_APPROVAL, Role.DPO, SATISFIED)[0]["allowed"] is True
+
+
+def test_submission_asks_nothing_of_anyone_but_the_author() -> None:
+    """The line the transition table is drawn along.
+
+    Every requirement on the author's move is theirs to satisfy. Whenever one is
+    not - and this is the one that tried - the project sits in a draft the
+    author cannot leave, waiting on a review that has not been requested.
+    """
+    view = available(S.IN_DRAFT, Role.RND_USER, replace(SATISFIED, notice_purposes_unactivated=9))
+
+    assert view[0]["allowed"] is True
+    assert "blockers" not in view[0]
 
 
 def test_available_hides_transitions_this_role_may_never_perform() -> None:

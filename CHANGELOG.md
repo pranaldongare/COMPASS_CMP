@@ -50,16 +50,19 @@ as a release yet.
   lawful document. The floor stays: an empty rendition is still nothing, and
   publication still refuses a notice without one. What bounds it now is the
   request body limit, which is the honest place for it.
-- **A project cannot be submitted while its purposes are unactivated.** The
+- **A project cannot be approved while its purposes are unactivated.** The
   purposes an uploaded document creates arrive as drafts and only the Privacy
-  Office activates them. Submission counted them without caring, and the
-  officer's own approval reported only the first unmet requirement, which was
-  the text. So the author submitted, the officer was told the one thing in the
-  way was the language, approved the language, was offered the move as allowed,
-  and the move then failed from inside the transaction on a purpose no screen
-  had named. The wall now stands at submission, in draft, which is where the
-  officer is already shown the project; their approval carries the same guard
-  for anything submitted before this landed.
+  Office activates them. Nothing checked for that outside publication, which
+  happens inside the officer's own approval: so the author submitted, the
+  officer was told the one thing in the way was the language, approved the
+  language, was offered the move as allowed, and the move then failed from
+  inside the transaction on a purpose no screen had named. It is now a
+  requirement on the approval, which turns that into a disabled button with a
+  sentence, and on a project submitted before this landed into a 409 rather
+  than an error after the click. The submission is deliberately left alone:
+  the author cannot activate a purpose, so blocking them there would park the
+  project in a draft they cannot leave, waiting on a review nobody has asked
+  for yet.
 - **The dead ends are gone.** Registering a project opens it, rather than
   closing onto a list with a toast telling you to do something on a page you
   are not on. A notice's breadcrumb returns to its own project instead of to
@@ -94,9 +97,10 @@ as a release yet.
 - **The officer's draft queue is work they can do.** It listed every draft with
   the action "Review and publish the notice", and following that row landed on a
   project whose card reads "There is nothing for your role to do at this stage",
-  because the only move out of draft is the author's. It now lists the drafts
-  whose purposes are waiting on them, which is the one thing there that is
-  theirs, and says so.
+  because the only move out of draft is the author's. It now lists only the
+  drafts whose purposes are not activated, which is the one thing there that is
+  theirs, and says so. Nobody is waiting on it, so it stays a queue rather than
+  becoming a row in **Needs you today**.
 
 - **A consent link now authenticates rather than enrols.** The first step asks
   for one contact - mobile by default, email instead - and confirms it with a

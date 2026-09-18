@@ -8,7 +8,7 @@ Four reachable states, five transitions, and nothing else. From DATA-MODEL.md:
 | From                | To                 | Actor                   | Requires                                                        |
 |---------------------|--------------------|-------------------------|-----------------------------------------------------------------|
 | -                   | `in_draft`         | RnD User                | name, description, >=1 processor                                |
-| `in_draft`          | `pending_approval` | RnD User                | notice with >=1 purpose **every one of them activated**, all Rule 3 links, an audience, its text written, and >=1 project_approval **with proof file** |
+| `in_draft`          | `pending_approval` | RnD User                | notice with >=1 purpose, all Rule 3 links, an audience, its text written, and >=1 project_approval **with proof file** |
 | `pending_approval`  | `approved`         | DPO                     | every language legally approved, every purpose activated; publishes the notice |
 | `pending_approval`  | `in_draft`         | DPO                     | a reason                                                        |
 | `approved`          | `closed`           | DPO or a collection owner | -                                                             |
@@ -39,10 +39,10 @@ text, and then approves the project. The check did not go away - it moved to the
 gate in front of the person who can satisfy it, where being blocked is
 actionable rather than circular.
 
-One requirement deliberately breaks that line, and `_submit` says why: a
-project cannot be submitted while a purpose on its notice is unactivated, which
-only the DPO can do. It is the exception, and it exists because the alternative
-put the failure after the DPO had already been told they could proceed.
+The line holds in both directions. The author is never blocked by an act of the
+DPO's, and the DPO's two acts on a notice - approving its text and activating
+its purposes - both gate their own approval, where the controls for them are on
+the screen they are already looking at.
 
 `ProjectStatus.UNDER_PROCESS` survives as a value because
 `project_status_history` rows still name it. Nothing transitions *to* it.
@@ -161,17 +161,18 @@ def _submit(f: ProjectFacts) -> Transition:
     purposes to it, complete Rule 3, say who it addresses, write the text, then
     get the approval signed off.
 
-    Legal approval of that text is not among them on purpose. It is the DPO's
-    act, and requiring it here left the author waiting on somebody who could not
-    see the project yet. It gates `pending_approval -> approved` instead.
+    Every requirement here is the author's alone, and that is the whole rule.
+    Neither of the DPO's two acts on a notice is among them - approving its text
+    and activating its purposes both gate `pending_approval -> approved`
+    instead.
 
-    Activation of the notice's purposes *is* among them, and is the exception
-    that proves the rule. It is equally the DPO's act, so it does leave the
-    author waiting - but the alternative was worse: without it the project
-    reached review looking ready, and the DPO's own approval then failed on it
-    from inside the transaction. The DPO is already shown draft projects, so
-    this is work they can see; what the author is waiting for is named in the
-    blocker.
+    Activating the purposes was briefly required here. It closed a real hole,
+    because publication happens inside the DPO's approval and refuses a draft
+    purpose, so a project could be offered for approval and then fail on one.
+    But it closed it in the wrong place: the author could not act, the DPO had
+    to come into draft to unblock somebody else's work, and a review that has
+    not been asked for yet is a queue nobody wants. The hole is closed at the
+    approval instead, where the person who can fix it is already standing.
     """
     return Transition(
         to=ProjectStatus.PENDING_APPROVAL,
@@ -193,10 +194,6 @@ def _submit(f: ProjectFacts) -> Transition:
             Requirement(
                 f.notice_language_count >= 1,
                 "The notice has no text yet - add at least one language",
-            ),
-            Requirement(
-                f.notice_purposes_unactivated == 0,
-                "The Privacy Office has not activated every purpose on the notice yet",
             ),
             Requirement(
                 f.approval_with_proof_count >= 1,
@@ -237,13 +234,16 @@ def _transitions(status: ProjectStatus, f: ProjectFacts) -> list[Transition]:
                             "The notice text is not legally approved - approve every "
                             "language on the notice first",
                         ),
-                        # Belt and braces. Submission blocks on this already, so
-                        # a project assembled under the current rules arrives
-                        # here with every purpose active. One that was submitted
-                        # before the rule existed did not, and publication would
-                        # refuse it from inside the transaction - an error after
-                        # the click, which is the exact failure the line above
-                        # was written to prevent.
+                        # The DPO's other act on a notice, and here for the same
+                        # reason as the one above: approving the project
+                        # publishes the notice, publication refuses a purpose
+                        # nobody has activated, and a requirement stated here is
+                        # a disabled button with a reason rather than an error
+                        # after the click.
+                        #
+                        # Both of these are the reviewer's own work, so being
+                        # blocked by them is not waiting on anybody: the two
+                        # controls are on the notice this button is about.
                         Requirement(
                             f.notice_purposes_unactivated == 0,
                             "The notice carries purposes that are not activated - "

@@ -256,65 +256,104 @@ async def test_activating_the_purposes_unblocks_publication(
     assert any("not legally approved" in b for b in blocking)
 
 
-async def test_a_project_cannot_be_submitted_until_the_office_activates_them(
+async def test_the_office_activates_them_before_approving_and_not_before_submitting(
     conn: Any, seeded: dict[str, Any], document: bytes
 ) -> None:
-    """The trap this rule was written to close.
+    """The whole gate, walked: import, submit, refuse, activate, approve.
 
-    Found by walking it on a running stack. Submission counted the purposes on
-    the notice without caring whether any had been activated, and the DPO's own
-    transition reported only the first unmet requirement, which was the text. So
-    the author submitted, the DPO was told the one thing in the way was the
-    language, approved the language, was offered the move as allowed - and the
-    move then failed with `notice_incomplete` on a purpose no screen had
-    mentioned, leaving the project where it was.
+    The trap this closes was found on a running stack. Approving a project
+    publishes its notice inside the same transaction, and publication refuses a
+    purpose nobody has activated - so a project could be offered for approval,
+    accepted by the DPO, and then fail with `notice_incomplete` on a purpose no
+    screen had mentioned, leaving the project where it was.
 
-    The wall now stands where the work is: in draft, while the DPO is already
-    being shown the project, and named in the blocker the author reads.
+    Stating it as a requirement on the approval is what closes it: the move is
+    offered as blocked, with a sentence, and pressing it anyway answers 409
+    rather than failing from inside a write. It is stated there rather than on
+    the submission because the author cannot activate a purpose - blocking them
+    would park the project in a draft they cannot leave, waiting on a review
+    nobody has asked for yet.
     """
+    from cmp.core.errors import TransitionNotPermitted
     from cmp.db.repositories import projects as project_repo
     from cmp.db.repositories import registry as registry_repo
     from cmp.domain.projects import service as project_service
+
+    rnd = seeded["users"]["rnd_user"]["id"]
+    dpo = seeded["users"]["dpo"]["id"]
 
     project = await _fresh_project(conn, seeded, "Submission Gate Project")
     notice = await importer.commit(
         conn,
         project_uuid=str(project["project_uuid"]),
-        actor_id=seeded["users"]["rnd_user"]["id"],
+        actor_id=rnd,
         role="rnd_user",
         payload=document,
     )
-    # Everything else the author owes, so the purposes are the only thing left.
     await _make_submittable(conn, seeded, project, notice)
 
+    facts = await project_repo.facts(conn, project["project_id"])
+    assert facts["notice_purposes_unactivated"] == 9, "the importer leaves them all draft"
+
+    # The author is not held up by the office's work. They submit.
     view = await project_service.transitions_for(
-        conn,
-        project_uuid=str(project["project_uuid"]),
-        role="rnd_user",
-        user_id=seeded["users"]["rnd_user"]["id"],
+        conn, project_uuid=str(project["project_uuid"]), role="rnd_user", user_id=rnd
     )
     submit = next(t for t in view["available"] if t["to"] == "pending_approval")
-    assert submit["allowed"] is False
-    assert submit["blockers"] == [
-        "The Privacy Office has not activated every purpose on the notice yet"
-    ], "and it says who is being waited on, not merely that something is wrong"
+    assert submit["allowed"] is True, "nothing on this move belongs to anybody else"
+    await project_service.transition(
+        conn,
+        project_uuid=str(project["project_uuid"]),
+        target="pending_approval",
+        role="rnd_user",
+        actor_id=rnd,
+    )
 
+    # The reviewer is, and both of their own outstanding acts are named at once.
+    review = await project_service.transitions_for(
+        conn, project_uuid=str(project["project_uuid"]), role="dpo", user_id=dpo
+    )
+    approve = next(t for t in review["available"] if t["to"] == "approved")
+    assert approve["allowed"] is False
+    assert approve["blockers"] == [
+        "The notice text is not legally approved - approve every language on the notice first",
+        "The notice carries purposes that are not activated - activate them before approving",
+    ]
+
+    # Approving the text is not enough, and pressing through is a 409 with a
+    # sentence rather than an error from inside the publication.
+    await notice_repo.approve_language(
+        conn, notice_id=notice["notice_id"], language_code="english", approved_by=dpo
+    )
+    with pytest.raises(TransitionNotPermitted) as exc:
+        await project_service.transition(
+            conn,
+            project_uuid=str(project["project_uuid"]),
+            target="approved",
+            role="dpo",
+            actor_id=dpo,
+        )
+    assert exc.value.code == "transition_blocked"
+    assert "not activated" in exc.value.message
+
+    # The control for it is on the notice the DPO is already reading.
     for purpose in await notice_repo.purposes_of(conn, notice["notice_id"]):
         await registry_repo.set_purpose_status(conn, purpose["purpose_id"], "active")
 
-    after = await project_service.transitions_for(
+    blocking = (await service.checklist(conn, notice["notice_id"]))["blocking"]
+    assert blocking == [], "and the checklist agrees the notice is ready"
+
+    moved = await project_service.transition(
         conn,
         project_uuid=str(project["project_uuid"]),
-        role="rnd_user",
-        user_id=seeded["users"]["rnd_user"]["id"],
+        target="approved",
+        role="dpo",
+        actor_id=dpo,
     )
-    assert next(t for t in after["available"] if t["to"] == "pending_approval")["allowed"] is True
-
-    # And the checklist the DPO will meet no longer names a purpose at all.
-    blocking = (await service.checklist(conn, notice["notice_id"]))["blocking"]
-    assert not any("not activated" in b for b in blocking)
-    facts = await project_repo.facts(conn, project["project_id"])
-    assert facts["notice_purposes_unactivated"] == 0
+    assert moved["to"] == "approved"
+    assert moved["published_notice_uuid"] == notice["notice_uuid"], (
+        "the notice goes live with the decision, in the same transaction"
+    )
 
 
 async def _make_submittable(
