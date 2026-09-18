@@ -16537,7 +16537,6 @@
         "properties": {
           "rendered_text": {
             "type": "string",
-            "maxLength": 20000,
             "minLength": 1,
             "title": "Rendered Text"
           }
@@ -18279,7 +18278,6 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 20000,
                 "minLength": 1
               },
               {

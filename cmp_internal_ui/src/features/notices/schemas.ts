@@ -71,11 +71,13 @@ export type NoticeValues = z.infer<typeof noticeSchema>;
  */
 export const languageSchema = z.object({
   language_code: z.string().min(1, "Choose a language"),
+  // A minimum, and no maximum. A notice is as long as the processing it has to
+  // describe, and the ceiling here was a number somebody picked rather than
+  // anything the column or the Act imposes.
   rendered_text: z
     .string()
     .trim()
-    .min(50, "The notice text looks too short to be complete")
-    .max(20_000, "That is longer than a notice rendition can be"),
+    .min(50, "The notice text looks too short to be complete"),
 });
 
 export type LanguageValues = z.infer<typeof languageSchema>;

@@ -30,6 +30,16 @@ as a release yet.
   person, and the request body's `served_at` is ignored ([ADR 0011](docs/decisions/0011-server-held-notice-serving.md)).
 - Export CSV cells that begin with a formula character are written as text.
 
+### Changed
+- **A notice has no maximum length any more.** The rendition a data principal
+  reads was capped at 20,000 characters, which is not what its column holds —
+  `notice_language.rendered_text` is `text` — but a number somebody chose. A
+  fiduciary running many purposes across several recipients writes a long
+  notice because section 5 requires it to, and refusing that is refusing the
+  lawful document. The floor stays: an empty rendition is still nothing, and
+  publication still refuses a notice without one. What bounds it now is the
+  request body limit, which is the honest place for it.
+
 ### Fixed
 - **"Save changes" on a draft project did nothing at all.** No request, no
   message, and the dialog stayed open, which is how it was reported. The form

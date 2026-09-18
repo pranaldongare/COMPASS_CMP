@@ -1539,7 +1539,7 @@ For state changes whose only interesting output is that they happened.
 
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
-| `rendered_text` | `string` | Yes | min length: `1`; max length: `20000` | — |
+| `rendered_text` | `string` | Yes | min length: `1` | — |
 
 <a id="schema-noticecopyin"></a>
 #### `NoticeCopyIn`
@@ -1563,7 +1563,7 @@ Start this project's notice from one that already exists.
 | `note` | `string` or `null` | No | max length: `4000` | — |
 | `notice_code` | `string` or `null` | No | min length: `1`; max length: `80`; pattern: `^[A-Za-z0-9][A-Za-z0-9._-]*$` | — |
 | `change_class` | `string` or `null` | No | — | — |
-| `rendered_text` | `string` or `null` | No | min length: `1`; max length: `20000` | — |
+| `rendered_text` | `string` or `null` | No | min length: `1` | — |
 | `language_code` | `string` or `null` | No | max length: `40` | — |
 
 <a id="schema-noticeout"></a>

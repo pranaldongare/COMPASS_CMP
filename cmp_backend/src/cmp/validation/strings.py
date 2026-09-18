@@ -20,8 +20,10 @@ from pydantic import StringConstraints
 #: A name, a label, a reference. Matches the `varchar(200)` family.
 ShortText = Annotated[str, StringConstraints(min_length=1, max_length=200)]
 
-#: A description, a notice rendition, a reason. 20k is roughly forty pages —
-#: generous for prose, and still a bound.
+#: A description, a reason. 20k is roughly forty pages — generous for prose, and
+#: still a bound. Not a notice rendition: that is `NoticeText` in
+#: `cmp.schemas.common`, which has a floor and no ceiling, because a notice is
+#: as long as the processing it has to describe.
 LongText = Annotated[str, StringConstraints(min_length=1, max_length=20_000)]
 
 #: A free-text reason attached to a state change. Optional at the call site, so

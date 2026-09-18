@@ -42,7 +42,15 @@ from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.notices import importer
 from cmp.domain.notices import service as service
-from cmp.schemas.common import Acknowledged, CodeText, HttpUrl, LongText, Out, Page, Schema
+from cmp.schemas.common import (
+    Acknowledged,
+    CodeText,
+    HttpUrl,
+    NoticeText,
+    Out,
+    Page,
+    Schema,
+)
 from cmp.validation import describe_format
 
 router = APIRouter(tags=["notices"])
@@ -108,8 +116,9 @@ class NoticeIn(Schema):
     change_class: str | None = None
     #: The text a data subject actually reads. Optional here only so a notice can
     #: be started before the wording exists; publication still refuses without a
-    #: rendition, so nothing gets served empty.
-    rendered_text: LongText | None = None
+    #: rendition, so nothing gets served empty. Unbounded above on purpose - see
+    #: `NoticeText`.
+    rendered_text: NoticeText | None = None
     language_code: Annotated[str | None, Field(default=None, max_length=40)] = None
 
 
@@ -136,7 +145,7 @@ class AttachPurpose(Schema):
 
 
 class LanguageIn(Schema):
-    rendered_text: LongText
+    rendered_text: NoticeText
 
 
 class PurposeOnNotice(Out):

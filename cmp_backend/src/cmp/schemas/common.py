@@ -98,6 +98,17 @@ CodeText = Annotated[
     StringConstraints(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]*$"),
 ]
 LongText = Annotated[str, StringConstraints(min_length=1, max_length=20_000)]
+
+#: A notice rendition: what a data principal actually reads.
+#:
+#: A minimum, and deliberately no maximum. Every other string here is bounded by
+#: what its column holds, but this one is held in `text` and the ceiling was a
+#: number somebody picked - and a notice is as long as the processing it has to
+#: describe. A fiduciary running many purposes across several recipients writes
+#: a long notice because section 5 requires it to, and refusing it is refusing
+#: the lawful document. The request body limit still bounds it
+#: (`client_max_body_size`, 25 MB in the shipped nginx configuration).
+NoticeText = Annotated[str, StringConstraints(min_length=1)]
 Mobile = Annotated[str, StringConstraints(min_length=6, max_length=20, pattern=r"^\+?[0-9 \-]+$")]
 OtpCode = Annotated[str, StringConstraints(min_length=4, max_length=10, pattern=r"^[0-9]+$")]
 
