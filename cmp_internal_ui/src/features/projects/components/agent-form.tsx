@@ -13,6 +13,7 @@ import { Copy, Check } from "lucide-react";
 import { FormError, useApiForm } from "@/components/forms";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Alert, Button, Field, Input, Mono } from "@/components/ui/primitives";
+import { consentLinkUrl } from "@/features/consent/link-url";
 import { type MintedLink, useAssignAgent } from "@/features/projects";
 import { useToast } from "@/providers";
 import { agentSchema } from "@/features/projects/schemas";
@@ -99,10 +100,7 @@ export function AgentForm({ siteUuid, onDone }: { siteUuid: string; onDone: () =
  */
 function MintedLinkPanel({ link, onDone }: { link: MintedLink; onDone: () => void }) {
   const [copied, setCopied] = React.useState(false);
-  const url =
-    typeof window !== "undefined"
-      ? `${window.location.origin}${link.url_path}`
-      : link.url_path;
+  const url = consentLinkUrl(link.url_path);
 
   return (
     <div>

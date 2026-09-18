@@ -103,11 +103,20 @@ one site cannot mint a link for a colleague's site on the same study.
 
 A site's owner mints a **consent link** for it: a capability URL on the
 data-principal portal, tied to the notice version current at minting, with an
-expiry and a use budget. The database stores only the link's fingerprint, so a
-link cannot be recovered after minting; it can be **reminted**, which replaces
+expiry and a use budget. The database keeps the token sealed as well as
+digested, so the address can be shown again to whoever has to share it; a link
+minted before that was so cannot be recovered, and the console says so rather
+than copying an empty string. Either way it can be **reminted**, which replaces
 it with a fresh one and records why. A field agent can be assigned to a site,
 which mints the agent's link. The 15-minute maintenance task expires links
 past their date.
+
+**The API returns the link as a path, and the console puts the portal in front
+of it.** Which host serves `/c/{token}` is deployment configuration, so baking
+one into the response would produce links that are confidently wrong after a
+move. The console reads `NEXT_PUBLIC_SUBJECT_PORTAL_URL` for it - the same
+origin it sends a data principal to from its own sign-in page - because the
+route belongs to the portal and not to the console it was copied from.
 
 ## Exports, imports and assets
 

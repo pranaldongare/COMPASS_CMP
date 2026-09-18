@@ -21,6 +21,7 @@ import * as React from "react";
 
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Alert, Button, Mono } from "@/components/ui/primitives";
+import { consentLinkUrl } from "@/features/consent/link-url";
 import { useRemintLink } from "@/features/consent/mutations";
 import type { RemintedLink } from "@/features/consent/api";
 import { formatDateTime } from "@/lib/format";
@@ -76,10 +77,10 @@ function ReplaceLinkBody({ link, onClose }: { link: ConsentLink; onClose: () => 
           <div>
             <Alert tone="warning" title="This revokes the current link">
               <p className="leading-relaxed">
-                Anyone holding the old URL — a field agent, a printed QR code, a
-                message thread — will find it stops resolving. It stays in the
-                register as revoked, with its {link.use_count} use(s), so the
-                consents gathered through it still point at it.
+                Anyone holding the old URL — a field agent, a printed QR code, a message
+                thread — will find it stops resolving. It stays in the register as revoked,
+                with its {link.use_count} use(s), so the consents gathered through it still
+                point at it.
               </p>
             </Alert>
 
@@ -99,8 +100,8 @@ function ReplaceLinkBody({ link, onClose }: { link: ConsentLink; onClose: () => 
                 keeps the original's terms, so this is a replacement and not a
                 chance to change the expiry. */}
             <p className="mt-4 text-xs text-text-muted">
-              The replacement inherits the same expiry and use limit. To change
-              those, revoke this link and mint a new one from the site.
+              The replacement inherits the same expiry and use limit. To change those,
+              revoke this link and mint a new one from the site.
             </p>
 
             <DialogFooter>
@@ -128,8 +129,7 @@ function ReplaceLinkBody({ link, onClose }: { link: ConsentLink; onClose: () => 
  */
 function MintedPanel({ link, onDone }: { link: RemintedLink; onDone: () => void }) {
   const [copied, setCopied] = React.useState(false);
-  const url =
-    typeof window !== "undefined" ? `${window.location.origin}${link.url_path}` : link.url_path;
+  const url = consentLinkUrl(link.url_path);
 
   return (
     <div>
@@ -141,7 +141,7 @@ function MintedPanel({ link, onDone }: { link: RemintedLink; onDone: () => void 
       </Alert>
 
       <div className="mt-4 rounded-md border border-border bg-bg-subtle p-3">
-        <Mono className="block break-all text-sm">{url}</Mono>
+        <Mono className="block text-sm break-all">{url}</Mono>
       </div>
 
       <Button
@@ -158,9 +158,8 @@ function MintedPanel({ link, onDone }: { link: RemintedLink; onDone: () => void 
       </Button>
 
       <p className="mt-4 text-xs text-text-muted">
-        Give this to the field agent. Anyone holding it can open the notice and
-        consent, so treat it as a credential — it is scrubbed from our access logs
-        for the same reason.
+        Give this to the field agent. Anyone holding it can open the notice and consent, so
+        treat it as a credential — it is scrubbed from our access logs for the same reason.
       </p>
 
       <DialogFooter>

@@ -118,6 +118,17 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **A consent link was copied out of the console pointing at the console.** The
+  API returns the link as a path, deliberately - which host serves `/c/{token}`
+  is deployment configuration. All three places that showed one put
+  `window.location.origin` in front of it, which is the console's own origin:
+  port 3000 in development, where that route does not exist. So every link
+  minted, reminted or copied was handed to a collector as a host that 404s, and
+  nothing about the URL looked wrong. They now use
+  `NEXT_PUBLIC_SUBJECT_PORTAL_URL`, the same origin the console already sends a
+  data principal to from its sign-in page, through one helper rather than three
+  string templates. A unit test pins it, because the failure is invisible from
+  inside the console: the string is well-formed and the token in it is correct.
 - **One page of every list in ten was refused as a malformed cursor.** A
   cursor carries a twelve-byte signature after a `.`, and the decoder found the
   separator by looking for the last `.` in the decoded bytes. Roughly one

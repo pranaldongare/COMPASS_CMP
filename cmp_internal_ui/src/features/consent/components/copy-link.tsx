@@ -25,6 +25,7 @@ import { Check, Copy, Link2Off } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/primitives";
+import { consentLinkUrl } from "@/features/consent/link-url";
 import { useToast } from "@/providers";
 import type { ConsentLink } from "@/types";
 
@@ -66,7 +67,7 @@ export function CopyLinkButton({
       variant="ghost"
       size={size}
       onClick={async () => {
-        const url = `${window.location.origin}${link.url_path}`;
+        const url = consentLinkUrl(link.url_path);
         try {
           await navigator.clipboard.writeText(url);
           setCopied(true);
@@ -77,7 +78,7 @@ export function CopyLinkButton({
           toast.error("Could not copy", "Your browser refused clipboard access.");
         }
       }}
-      title="Copy the collection URL. Anyone with it can open the consent form for this site."
+      title="Copy the collection URL on the data principal's portal. Anyone with it can open the consent form for this site."
     >
       {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
       {copied ? "Copied" : "Copy link"}
