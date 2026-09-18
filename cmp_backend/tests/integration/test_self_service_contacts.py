@@ -55,7 +55,7 @@ async def unthrottle(redis_conn: Any, *contacts: str) -> None:
         )
 
 
-async def her(conn: Any, seeded: dict[str, Any]) -> dict[str, Any]:
+async def her_row(conn: Any, seeded: dict[str, Any]) -> dict[str, Any]:
     row = await user_repo.by_id(conn, seeded["subject"]["id"])
     assert row is not None
     return row
@@ -67,7 +67,7 @@ class TestASecondEmail:
     ) -> None:
         await unthrottle(redis_conn, SECOND)
         updated = await auth_service.add_secondary_email(
-            conn, user=await her(conn, seeded), email=SECOND
+            conn, user=await her_row(conn, seeded), email=SECOND
         )
 
         assert updated["secondary_email"] == SECOND.lower()
@@ -81,7 +81,7 @@ class TestASecondEmail:
         """The whole rule. A typed address that could sign somebody in would let
         anyone with a session claim a stranger's address as theirs."""
         await unthrottle(redis_conn, SECOND)
-        await auth_service.add_secondary_email(conn, user=await her(conn, seeded), email=SECOND)
+        await auth_service.add_secondary_email(conn, user=await her_row(conn, seeded), email=SECOND)
 
         assert await user_repo.by_contact(conn, SECOND) is None
 
@@ -89,11 +89,11 @@ class TestASecondEmail:
         self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any, queued: Any
     ) -> None:
         await unthrottle(redis_conn, SECOND)
-        await auth_service.add_secondary_email(conn, user=await her(conn, seeded), email=SECOND)
+        await auth_service.add_secondary_email(conn, user=await her_row(conn, seeded), email=SECOND)
         code = last_code(queued, CONFIRMATION)
 
         confirmed = await auth_service.confirm_contact(
-            conn, user=await her(conn, seeded), contact=SECOND, code=code
+            conn, user=await her_row(conn, seeded), contact=SECOND, code=code
         )
         assert confirmed["secondary_email_verified_at"] is not None
 
@@ -116,12 +116,15 @@ class TestASecondEmail:
         self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any, queued: Any
     ) -> None:
         await unthrottle(redis_conn, SECOND)
-        await auth_service.add_secondary_email(conn, user=await her(conn, seeded), email=SECOND)
+        await auth_service.add_secondary_email(conn, user=await her_row(conn, seeded), email=SECOND)
         await auth_service.confirm_contact(
-            conn, user=await her(conn, seeded), contact=SECOND, code=last_code(queued, CONFIRMATION)
+            conn,
+            user=await her_row(conn, seeded),
+            contact=SECOND,
+            code=last_code(queued, CONFIRMATION),
         )
 
-        cleared = await auth_service.remove_secondary_email(conn, user=await her(conn, seeded))
+        cleared = await auth_service.remove_secondary_email(conn, user=await her_row(conn, seeded))
 
         assert cleared["secondary_email"] is None
         assert cleared["secondary_email_verified_at"] is None
@@ -132,7 +135,7 @@ class TestASecondEmail:
     ) -> None:
         with pytest.raises(ValidationFailed):
             await auth_service.add_secondary_email(
-                conn, user=await her(conn, seeded), email="Subject@test.local"
+                conn, user=await her_row(conn, seeded), email="Subject@test.local"
             )
 
     async def test_somebody_elses_address_is_a_conflict_not_a_takeover(
@@ -143,9 +146,94 @@ class TestASecondEmail:
         is rather than as a server error."""
         with pytest.raises(Conflict) as exc:
             await auth_service.add_secondary_email(
-                conn, user=await her(conn, seeded), email="dpo@test.local"
+                conn, user=await her_row(conn, seeded), email="dpo@test.local"
             )
         assert exc.value.code == "contact_taken"
+
+
+class TestGivingAContactThatIsAlreadyThere:
+    """Re-saving a contact the account already carries.
+
+    Reported from a running stack: a member of staff signed in to the portal as
+    the data principal she also is, opened her account page, pressed save on
+    the mobile already shown there, and no code ever arrived. The rule had been
+    "a contact that *changed* is sent a code", and the commonest case is the
+    one where nothing changes - an administrator had set the number on the
+    register, so the edit box opens pre-filled with it, and the natural act of
+    opening it and pressing save sent nothing at all while the screen said it
+    had.
+
+    The rule is now about the state she is left in rather than about the
+    difference: a contact she gives that is still unconfirmed afterwards is
+    sent a code. One that has already proved itself is left alone, because
+    re-sending would take away a way of signing in to no purpose.
+    """
+
+    async def test_an_unconfirmed_mobile_resaved_unchanged_is_sent_a_code(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any, queued: Any
+    ) -> None:
+        her = await her_row(conn, seeded)
+        assert her["mobile_verified_at"] is None, "the seeded principal has not confirmed hers"
+        await unthrottle(redis_conn, str(her["mobile"]))
+
+        same = str(her["mobile"])
+        updated = await user_repo.update_profile(conn, her["id"], mobile=same)
+        assert updated["mobile"] == same, "unchanged, and that is the point"
+        assert updated["mobile_verified_at"] is None
+
+        await auth_service.request_contact_code(conn, user=updated, contact=same)
+        assert [n for n, _ in queued] == [CONFIRMATION]
+        assert queued[0][1][1] == same
+
+    async def test_a_confirmed_mobile_resaved_keeps_its_confirmation(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
+    ) -> None:
+        """`update_profile` decides this, and the account page reads the answer
+        off the row it gets back."""
+        await user_repo.mark_contact_verified(conn, seeded["subject"]["id"], "mobile")
+        her = await her_row(conn, seeded)
+        assert her["mobile_verified_at"] is not None
+
+        again = await user_repo.update_profile(conn, her["id"], mobile=str(her["mobile"]))
+        assert again["mobile_verified_at"] is not None
+
+    async def test_a_confirmed_second_address_resaved_keeps_its_confirmation_and_is_sent_nothing(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any, queued: Any
+    ) -> None:
+        """It had proved itself. Unconfirming it to send another code would
+        cost her a way of signing in for no gain."""
+        await unthrottle(redis_conn, SECOND)
+        await auth_service.add_secondary_email(conn, user=await her_row(conn, seeded), email=SECOND)
+        await auth_service.confirm_contact(
+            conn,
+            user=await her_row(conn, seeded),
+            contact=SECOND,
+            code=last_code(queued, CONFIRMATION),
+        )
+        queued.clear()
+
+        again = await auth_service.add_secondary_email(
+            conn, user=await her_row(conn, seeded), email=SECOND.upper()
+        )
+
+        assert again["secondary_email_verified_at"] is not None
+        assert queued == [], "nothing to send: it is already confirmed"
+        found = await user_repo.by_contact(conn, SECOND)
+        assert found is not None, "and it still signs her in"
+
+    async def test_an_unconfirmed_second_address_resaved_is_sent_another_code(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any, queued: Any
+    ) -> None:
+        await unthrottle(redis_conn, SECOND)
+        await auth_service.add_secondary_email(conn, user=await her_row(conn, seeded), email=SECOND)
+        queued.clear()
+
+        again = await auth_service.add_secondary_email(
+            conn, user=await her_row(conn, seeded), email=SECOND
+        )
+
+        assert again["secondary_email_verified_at"] is None
+        assert [n for n, _ in queued] == [CONFIRMATION]
 
 
 class TestCodesGoOnlyToHerOwnContacts:
@@ -156,7 +244,7 @@ class TestCodesGoOnlyToHerOwnContacts:
         address or number they liked."""
         with pytest.raises(ValidationFailed):
             await auth_service.request_contact_code(
-                conn, user=await her(conn, seeded), contact="stranger@example.org"
+                conn, user=await her_row(conn, seeded), contact="stranger@example.org"
             )
         assert queued == []
 
@@ -166,7 +254,7 @@ class TestCodesGoOnlyToHerOwnContacts:
         await user_repo.mark_contact_verified(conn, seeded["subject"]["id"], "mobile")
         with pytest.raises(ValidationFailed):
             await auth_service.request_contact_code(
-                conn, user=await her(conn, seeded), contact="+915550000001"
+                conn, user=await her_row(conn, seeded), contact="+915550000001"
             )
         assert queued == []
 
@@ -177,7 +265,7 @@ class TestAChangedMobile:
     ) -> None:
         """The old confirmation was of the old number."""
         await user_repo.mark_contact_verified(conn, seeded["subject"]["id"], "mobile")
-        before = await her(conn, seeded)
+        before = await her_row(conn, seeded)
         assert before["mobile_verified_at"] is not None
 
         after = await user_repo.update_profile(

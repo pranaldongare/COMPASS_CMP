@@ -7,7 +7,7 @@
  */
 
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
-import type { Acknowledged, SessionInfo } from "@/types";
+import type { Acknowledged, MeProfile, SessionInfo } from "@/types";
 
 /** Every session this account holds, so somebody can spot one they don't recognise. */
 export function listMySessions(): Promise<SessionInfo[]> {
@@ -23,8 +23,16 @@ export interface UpdateMeInput {
   secondary_email?: string;
 }
 
-export function updateMe(body: UpdateMeInput): Promise<unknown> {
-  return apiPatch("/me", body);
+/**
+ * Save part of the record, and read back what the server decided.
+ *
+ * The reply is the row as it now stands, which is how the account page
+ * knows whether a code went out: a contact that comes back unconfirmed was
+ * sent one. Guessing from what was typed got this wrong in the one case
+ * that matters most - re-saving a number already on the account.
+ */
+export function updateMe(body: UpdateMeInput): Promise<MeProfile> {
+  return apiPatch<MeProfile>("/me", body);
 }
 
 /**

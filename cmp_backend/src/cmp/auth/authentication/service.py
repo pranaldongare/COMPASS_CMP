@@ -563,7 +563,14 @@ async def end_staff_access(conn: Conn, *, user: dict[str, Any], actor_user_id: i
 
 
 async def add_secondary_email(conn: Conn, *, user: dict[str, Any], email: str) -> dict[str, Any]:
-    """Set or replace the second address, and send it a code."""
+    """Set or replace the second address, and send a code to it.
+
+    The code goes out whenever the address is left unconfirmed, which covers
+    both the address that changed and the one re-saved without ever having
+    answered a code. An address already confirmed and re-saved is left exactly
+    as it was: it has proved itself, and taking that away to send another code
+    would cost her a way of signing in.
+    """
     email = email.strip().lower()
     if user.get("email") and email == str(user["email"]).lower():
         raise ValidationFailed(
@@ -575,15 +582,17 @@ async def add_secondary_email(conn: Conn, *, user: dict[str, Any], email: str) -
         if unique_violation(exc):
             raise Conflict("That address belongs to another account", code="contact_taken") from exc
         raise
-    await audit.record(
-        conn,
-        event=Event.USER_CONTACT_CHANGED,
-        entity_type="auth_user",
-        entity_id=user["id"],
-        subject_user_id=user["id"],
-        detail={"medium": "secondary_email", "action": "set"},
-    )
-    await request_contact_code(conn, user=updated, contact=email)
+    if email != (str(user.get("secondary_email") or "").lower() or None):
+        await audit.record(
+            conn,
+            event=Event.USER_CONTACT_CHANGED,
+            entity_type="auth_user",
+            entity_id=user["id"],
+            subject_user_id=user["id"],
+            detail={"medium": "secondary_email", "action": "set"},
+        )
+    if updated.get("secondary_email_verified_at") is None:
+        await request_contact_code(conn, user=updated, contact=email)
     return updated
 
 

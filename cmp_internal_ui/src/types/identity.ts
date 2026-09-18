@@ -45,6 +45,32 @@ export interface Me {
   writes: string[];
 }
 
+/**
+ * The person's own record, as `GET`/`PATCH /me` returns it.
+ *
+ * Distinct from `Me`, which is the *session* the two portals navigate from.
+ * This is the row: the contacts, and which of them have answered a code. The
+ * account page reads the verification fields off the reply to a save, because
+ * whether a code went out is the server's answer and not something the page
+ * can work out from what the person typed.
+ */
+export interface MeProfile {
+  uuid: Uuid;
+  full_name: string;
+  email: string | null;
+  mobile: string | null;
+  organization_id: string | null;
+  person_type: PersonType | null;
+  status: UserStatus;
+  dob: string | null;
+  is_minor: boolean | null;
+  created_at: Timestamp;
+  secondary_email: string | null;
+  mobile_verified_at: Timestamp | null;
+  email_verified_at: Timestamp | null;
+  secondary_email_verified_at: Timestamp | null;
+}
+
 export interface LoginResponse {
   mfa_required: boolean;
   user_uuid: Uuid | null;

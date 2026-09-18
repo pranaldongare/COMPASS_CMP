@@ -232,17 +232,27 @@ async def update_profile(
 
 
 async def set_secondary_email(conn: Conn, user_id: int, email: str | None) -> Row:
-    """Set, replace or clear the second address. Any change leaves it unconfirmed:
-    a code has to come back from the new address before it signs anyone in."""
+    """Set, replace or clear the second address.
+
+    A *changed* address is unconfirmed: a code has to come back from the new one
+    before it signs anyone in. An address re-saved unchanged keeps the
+    confirmation it already earned, the way a re-saved mobile does - otherwise
+    pressing save on a row she had already proved would quietly take away a way
+    of signing in. Compared lower-cased, because that is how it is stored.
+    """
     row = await fetch_one(
         conn,
         f"""
         UPDATE auth_user u
-           SET secondary_email = %s, secondary_email_verified_at = NULL
+           SET secondary_email = %s,
+               secondary_email_verified_at =
+                 CASE WHEN %s::varchar IS NOT NULL
+                       AND lower(%s::varchar) = lower(u.secondary_email)
+                      THEN u.secondary_email_verified_at ELSE NULL END
          WHERE u.id = %s
         RETURNING u.id, {PUBLIC_COLUMNS}
         """,
-        (email, user_id),
+        (email, email, email, user_id),
     )
     assert row is not None
     return row

@@ -52,6 +52,7 @@ import type {
   LinkStats,
   LoginResponse,
   Me,
+  MeProfile,
   NoticeListRow,
   Notice,
   DataSource,
@@ -78,7 +79,12 @@ type Covers<Name extends string, Generated, Local> = Local extends Generated
 // Each line is one type. A drift turns the right-hand side into the error
 // object above, and `true` stops being assignable.
 export type _Me = Covers<"Me", Schemas["MeResponse"], Me>;
-export type _LoginResponse = Covers<"LoginResponse", Schemas["LoginResponse"], LoginResponse>;
+export type _MeProfile = Covers<"MeProfile", Schemas["MeProfile"], MeProfile>;
+export type _LoginResponse = Covers<
+  "LoginResponse",
+  Schemas["LoginResponse"],
+  LoginResponse
+>;
 export type _Acknowledged = Covers<"Acknowledged", Schemas["Acknowledged"], Acknowledged>;
 
 export type _Project = Covers<"Project", Schemas["ProjectOut"], Project>;
@@ -90,7 +96,11 @@ export type _ApprovalListRow = Covers<
 >;
 
 export type _Notice = Covers<"Notice", Schemas["NoticeOut"], Notice>;
-export type _NoticeListRow = Covers<"NoticeListRow", Schemas["NoticeListRow"], NoticeListRow>;
+export type _NoticeListRow = Covers<
+  "NoticeListRow",
+  Schemas["NoticeListRow"],
+  NoticeListRow
+>;
 
 export type _Purpose = Covers<"Purpose", Schemas["PurposeOut"], Purpose>;
 export type _Processor = Covers<"Processor", Schemas["ProcessorOut"], Processor>;
@@ -100,11 +110,19 @@ export type _Processor = Covers<"Processor", Schemas["ProcessorOut"], Processor>
 export type _DataSource = Covers<"DataSource", Schemas["SourceOut"], DataSource>;
 
 export type _ConsentRow = Covers<"ConsentRow", Schemas["ConsentRow"], ConsentRow>;
-export type _ConsentListRow = Covers<"ConsentListRow", Schemas["ConsentListRow"], ConsentListRow>;
+export type _ConsentListRow = Covers<
+  "ConsentListRow",
+  Schemas["ConsentListRow"],
+  ConsentListRow
+>;
 export type _LinkListRow = Covers<"LinkListRow", Schemas["LinkListRow"], LinkListRow>;
 export type _LinkStats = Covers<"LinkStats", Schemas["LinkStats"], LinkStats>;
 
-export type _ExportListRow = Covers<"ExportListRow", Schemas["ExportListRow"], ExportListRow>;
+export type _ExportListRow = Covers<
+  "ExportListRow",
+  Schemas["ExportListRow"],
+  ExportListRow
+>;
 export type _CollectionListRow = Covers<
   "CollectionListRow",
   Schemas["CollectionListRow"],
@@ -122,6 +140,7 @@ export type _User = Covers<"User", Schemas["UserOut"], User>;
  */
 const _contractHolds: {
   Me: _Me;
+  MeProfile: _MeProfile;
   LoginResponse: _LoginResponse;
   Acknowledged: _Acknowledged;
   Project: _Project;
@@ -142,6 +161,7 @@ const _contractHolds: {
   User: _User;
 } = {
   Me: true,
+  MeProfile: true,
   LoginResponse: true,
   Acknowledged: true,
   Project: true,

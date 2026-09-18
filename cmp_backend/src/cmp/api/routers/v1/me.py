@@ -121,7 +121,7 @@ async def get_me(principal: CurrentUser) -> dict[str, Any]:
 
 @router.patch("", response_model=MeProfile)
 async def update_me(body: UpdateMe, principal: CurrentUser) -> dict[str, Any]:
-    """Her own details. A contact that changes is sent a code in the same
+    """Her own details. A contact she gives here is sent a code in the same
     request, and cannot sign her in until it comes back."""
     async with transaction() as conn:
         before = await user_repo.by_id(conn, principal.user_id)
@@ -143,18 +143,29 @@ async def update_me(body: UpdateMe, principal: CurrentUser) -> dict[str, Any]:
                 ) from exc
             raise
 
-        mobile_changed = body.mobile is not None and normalise_mobile(body.mobile) != (
-            before.get("mobile") or None
-        )
-        if mobile_changed:
-            await audit.record(
-                conn,
-                event=Event.USER_CONTACT_CHANGED,
-                entity_type="auth_user",
-                entity_id=principal.user_id,
-                subject_user_id=principal.user_id,
-                detail={"medium": "mobile", "action": "set"},
-            )
+        # A code goes out whenever she gives a mobile that is still unconfirmed
+        # afterwards - not only when the digits changed.
+        #
+        # Keying this on "changed" made the commonest case silent. An account
+        # often already carries an unconfirmed number: an administrator set it
+        # on the register, or she typed it and never answered the code. She
+        # opens the account page, and the edit box is pre-filled with that very
+        # number - so the natural act, opening it and pressing save, changed
+        # nothing, sent nothing, and left her at a code box waiting for a
+        # message that was never going to arrive.
+        #
+        # A number already confirmed is left alone: re-sending would unconfirm
+        # a contact that has already proved itself.
+        if body.mobile is not None and updated.get("mobile_verified_at") is None:
+            if normalise_mobile(body.mobile) != (before.get("mobile") or None):
+                await audit.record(
+                    conn,
+                    event=Event.USER_CONTACT_CHANGED,
+                    entity_type="auth_user",
+                    entity_id=principal.user_id,
+                    subject_user_id=principal.user_id,
+                    detail={"medium": "mobile", "action": "set"},
+                )
             await auth_service.request_contact_code(
                 conn, user=updated, contact=str(updated["mobile"])
             )

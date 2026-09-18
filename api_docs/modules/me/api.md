@@ -84,7 +84,7 @@ No request body.
 - **Operation ID:** `update_me_me_patch`
 - **Access:** Authenticated caller acting on their own records.
 
-Her own details. A contact that changes is sent a code in the same
+Her own details. A contact she gives here is sent a code in the same
 request, and cannot sign her in until it comes back.
 
 ### Validation

@@ -110,6 +110,16 @@ one account whichever column holds it. A member of staff who wants to keep
 reaching their own consents after leaving adds a personal address while the
 corporate one still works.
 
+**What sends a code is the state she is left in, not the difference.** A
+contact she gives that is still unconfirmed afterwards is sent one, whether or
+not the digits changed; one that has already answered a code is left exactly
+as it was, because re-sending would take away a way of signing in to no
+purpose. The rule used to be about the change, which made the commonest case
+silent: an account often already carries an unconfirmed number, the edit box
+opens pre-filled with it, and the natural act of opening it and pressing save
+sent nothing at all. The page says which of the two happened, reading the
+answer off the saved row rather than guessing from what was typed.
+
 **An administrator may set somebody's mobile** on the register, and the number
 is sent a code the same way: the person learns it is on their account and
 confirms it from their account page, and until they do it signs nobody in. The

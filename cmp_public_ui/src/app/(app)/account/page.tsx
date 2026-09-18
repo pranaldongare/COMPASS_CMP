@@ -271,7 +271,9 @@ function ContactsCard({ me }: { me: Me }) {
           verifiedAt={me.mobile_verified_at}
           inputType="tel"
           placeholder="+91 ..."
-          onSave={(mobile) => updateMe.mutateAsync({ mobile })}
+          onSave={async (mobile) =>
+            (await updateMe.mutateAsync({ mobile })).mobile_verified_at === null
+          }
         />
         <ContactRow
           testId="contact-secondary_email"
@@ -281,7 +283,10 @@ function ContactsCard({ me }: { me: Me }) {
           hint="A personal address that stays yours. Once confirmed it can sign you in, even if the first no longer can."
           inputType="email"
           placeholder="you@example.org"
-          onSave={(secondary_email) => updateMe.mutateAsync({ secondary_email })}
+          onSave={async (secondary_email) =>
+            (await updateMe.mutateAsync({ secondary_email }))
+              .secondary_email_verified_at === null
+          }
           onRemove={() => removeSecondary.mutateAsync()}
         />
       </CardBody>
@@ -307,8 +312,9 @@ function ContactRow({
   hint?: string;
   inputType: "email" | "tel";
   placeholder?: string;
-  /** Absent means the contact is not hers to change from here. */
-  onSave?: (value: string) => Promise<unknown>;
+  /** Absent means the contact is not hers to change from here. Resolves to
+   *  whether a code was sent to it, which decides what the row says next. */
+  onSave?: (value: string) => Promise<boolean>;
   onRemove?: () => Promise<unknown>;
 }) {
   const toast = useToast();
@@ -328,11 +334,19 @@ function ContactRow({
     setBusy(true);
     setError(null);
     try {
-      await onSave(draft.trim());
-      // The server sent the code as part of saving; ask for it straight away.
+      // Whether a code went out is the server's answer, read off the saved
+      // row. This used to be assumed, and the assumption was wrong in the one
+      // case that mattered: re-saving a number already on the account, which
+      // sent nothing while the screen said it had and offered a code box.
+      const sent = await onSave(draft.trim());
       setCode("");
-      setMode("code");
-      toast.success("Saved", `We have sent a code to ${draft.trim()}.`);
+      setMode(sent ? "code" : "view");
+      toast.success(
+        "Saved",
+        sent
+          ? `We have sent a code to ${draft.trim()}.`
+          : "That contact is already confirmed, so no code was needed.",
+      );
     } catch (err) {
       fail(err, "Could not save that contact.");
     } finally {

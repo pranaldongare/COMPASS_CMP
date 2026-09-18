@@ -15,9 +15,9 @@ import {
 } from "@/features/account/api";
 import type { Result } from "@/lib/query";
 import { keys } from "@/lib/query";
-import type { Acknowledged } from "@/types";
+import type { Acknowledged, MeProfile } from "@/types";
 
-export function useUpdateMe(): Result<unknown, UpdateMeInput> {
+export function useUpdateMe(): Result<MeProfile, UpdateMeInput> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: updateMe,

@@ -930,7 +930,7 @@ export interface paths {
         head?: never;
         /**
          * Update Me
-         * @description Her own details. A contact that changes is sent a code in the same
+         * @description Her own details. A contact she gives here is sent a code in the same
          *     request, and cannot sign her in until it comes back.
          */
         patch: operations["update_me_me_patch"];

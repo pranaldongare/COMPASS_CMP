@@ -2091,7 +2091,7 @@
           "me"
         ],
         "summary": "Update Me",
-        "description": "Her own details. A contact that changes is sent a code in the same\nrequest, and cannot sign her in until it comes back.",
+        "description": "Her own details. A contact she gives here is sent a code in the same\nrequest, and cannot sign her in until it comes back.",
         "operationId": "update_me_me_patch",
         "requestBody": {
           "content": {

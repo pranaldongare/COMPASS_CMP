@@ -56,6 +56,42 @@ test.describe("the account page's contacts", () => {
   });
 
   /**
+   * Reported from a running stack: pressing save on the number already shown
+   * sent nothing, while the screen said a code was on its way and offered a
+   * box to type it into. The edit box opens pre-filled, so "open it and press
+   * save" is the natural act and was the silent one.
+   */
+  test("re-saving the number already shown still sends a code", async ({ page }) => {
+    await page.goto("/account");
+    const row = page.getByTestId("contact-mobile");
+    await expect(row).toBeVisible();
+
+    // Put a number there first, so the state under test is the one people hit:
+    // a number on the account that has never answered a code.
+    const mobile = `+9198765${String(Date.now()).slice(-5)}`;
+    let before = latestCodeFor(mobile);
+    await row.getByRole("button", { name: /^(add|change)$/i }).click();
+    await row.getByLabel(/^mobile/i).fill(mobile);
+    await row.getByRole("button", { name: /save and send a code/i }).click();
+    await expect(row.getByText(/not confirmed/i)).toBeVisible();
+    await freshCode(mobile, before);
+
+    // Step away from the code box, the way somebody does who means to come
+    // back to it. "Later" is the row's own way out.
+    await row.getByRole("button", { name: /^later$/i }).click();
+
+    // Now the reported act: open it, change nothing, save.
+    before = latestCodeFor(mobile);
+    await row.getByRole("button", { name: /^change$/i }).click();
+    await row.getByRole("button", { name: /save and send a code/i }).click();
+
+    // A second, different code arrives, and the row asks for it.
+    const again = await freshCode(mobile, before);
+    expect(again).not.toBe(before);
+    await expect(row.getByLabel(/six-digit code/i)).toBeVisible();
+  });
+
+  /**
    * A session's user-agent is one long unbroken string, and the column holding
    * it defaulted to `min-width: auto` - so the page grew wider than the phone,
    * mobile Chrome zoomed out to the content width, and a contact's button was

@@ -31,6 +31,17 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Fixed
+- **Re-saving a contact already on the account sent no code, while the screen
+  said it had.** A member of staff signed in to the portal as the data
+  principal they also are, opened the account page, pressed save on the mobile
+  already shown there, and waited at a code box for a message that was never
+  going to arrive. A code went out only when the digits *changed*, and the
+  commonest case is the one where they do not: an administrator had set the
+  number on the register, so the edit box opens pre-filled with it. A code now
+  goes to any contact left unconfirmed, whether or not it changed; a contact
+  that has already answered one keeps its confirmation and is sent nothing,
+  including a second email, which used to unconfirm itself on every save. Both
+  account pages now say which of the two happened, read off the saved row.
 - The dashboard's "Needs you today" showed things a role could not act on:
   the administrator saw data principals mid-sign-up as "accounts awaiting
   activation", plus lockouts and suspensions; the DPO saw draft notices,
