@@ -303,3 +303,130 @@ class TestTheNoticeAudienceAndCollectorNote:
         preview = await notice_service.preview(conn, notice["notice_id"], None)
         assert "note" not in preview["notice"]
         assert "campus ID card" not in str(preview)
+
+
+class TestEveryNoticeRowCanBeReturned:
+    """ "The notice gets added, nothing says it failed, and the project shows
+    no notice at all - but a data principal opening the consent link sees it."
+
+    `NoticeOut` gained `project_uuid` and `project_name` so that a notice's page
+    could lead back to the project it belongs to. Both are required fields, and
+    four of the repository's six notice-row producers did not select them: the
+    two list queries had no join to `project`, and the two write queries could
+    not have one, because `RETURNING` cannot reach another table.
+
+    So `GET /projects/{uuid}/notices` raised `ResponseValidationError` and
+    answered 500 for every staff role. The console renders an empty list for a
+    failed query, which is why it looked like the notice had not been attached;
+    the data principal's route has its own response model and never carried the
+    project, which is why that one kept working and made it look like a
+    permissions problem.
+
+    The lesson this pins is the general one: a notice row is one shape wherever
+    it comes from. Each producer is checked against the model the API declares,
+    so a field added to `NoticeOut` fails here rather than in a page that
+    quietly renders nothing.
+    """
+
+    @staticmethod
+    def _accepted(row: Any) -> Any:
+        """The API's own model, applied to the row as the route would return it."""
+        from cmp.api.routers.v1.notices import NoticeOut
+
+        out = NoticeOut.model_validate(row, from_attributes=True)
+        assert out.project_uuid is not None
+        assert out.project_name
+        return out
+
+    async def test_the_project_list_carries_the_project(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        """The route that was answering 500. One notice, and it validates."""
+        from cmp.db.repositories import notices as notice_repo
+
+        rows = await notice_repo.list_for_project(conn, seeded["project"]["project_id"])
+
+        assert rows, "the fixture attaches one"
+        assert [self._accepted(r).notice_code for r in rows] == ["N-TEST"]
+        assert rows[0]["project_name"] == "Test Project"
+
+    async def test_the_version_history_carries_it_too(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        from cmp.db.repositories import notices as notice_repo
+
+        rows = await notice_repo.versions(conn, "N-TEST")
+
+        assert rows
+        for row in rows:
+            self._accepted(row)
+
+    async def test_a_notice_just_created_carries_it(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        """Composing one with no wording yet: the path that returns the insert.
+
+        Creating *with* wording re-read the row through `by_id` and so happened
+        to work, which is the kind of difference that makes a bug intermittent.
+        """
+        notice = await notice_service.create(
+            conn,
+            project_uuid=str(seeded["project"]["project_uuid"]),
+            actor_id=seeded["users"]["dpo"]["id"],
+            role=Role.DPO,
+            withdraw_url="https://x/w",
+            exercise_rights_url="https://x/r",
+            board_complaint_url="https://dpb.gov.in/complaint",
+            dpo_contact="privacy@example.org",
+        )
+
+        assert self._accepted(notice).project_uuid == seeded["project"]["project_uuid"]
+
+    async def test_an_edited_draft_carries_it(self, conn: Any, seeded: dict[str, Any]) -> None:
+        notice = await notice_service.create(
+            conn,
+            project_uuid=str(seeded["project"]["project_uuid"]),
+            actor_id=seeded["users"]["dpo"]["id"],
+            role=Role.DPO,
+            withdraw_url="https://x/w",
+            exercise_rights_url="https://x/r",
+            board_complaint_url="https://dpb.gov.in/complaint",
+            dpo_contact="privacy@example.org",
+        )
+
+        # Every field, the way the route passes them: `update_draft` names each
+        # placeholder in one statement and COALESCEs the ones left as None.
+        edited = await notice_service.update(
+            conn,
+            notice_id=notice["notice_id"],
+            withdraw_url=None,
+            exercise_rights_url=None,
+            board_complaint_url=None,
+            dpo_contact="someone.else@example.org",
+            applicable_to=None,
+            note=None,
+            change_class=None,
+        )
+
+        out = self._accepted(edited)
+        assert out.dpo_contact == "someone.else@example.org"
+        assert out.project_name == "Test Project"
+
+    async def test_the_detail_and_the_copy_carry_it(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        """The two that were always right, asserted so the set is complete."""
+        from cmp.db.repositories import notices as notice_repo
+
+        by_uuid = await notice_repo.by_uuid(
+            conn,
+            str(seeded["notice"]["notice_uuid"]),
+            role=Role.DPO,
+            user_id=seeded["users"]["dpo"]["id"],
+        )
+        assert by_uuid is not None
+        self._accepted(by_uuid)
+
+        by_id = await notice_repo.by_id(conn, seeded["notice"]["notice_id"])
+        assert by_id is not None
+        self._accepted(by_id)

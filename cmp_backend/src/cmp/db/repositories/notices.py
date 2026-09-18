@@ -20,8 +20,10 @@ NOTICE_COLUMNS = """
   n.change_class, n.published_at, n.created_at, n.updated_at
 """
 
-#: Repeated in three RETURNING clauses, which cannot use `NOTICE_COLUMNS`
-#: because RETURNING has no table alias to qualify with.
+#: Repeated in the RETURNING clauses, which cannot use `NOTICE_COLUMNS` because
+#: RETURNING has no table alias to qualify with - nor can they reach the project
+#: the notice belongs to, which is why `create` and `update_draft` read the row
+#: back through `by_id` rather than handing this straight to a caller.
 NOTICE_RETURNING = """
   notice_id, notice_uuid, notice_code, version, withdraw_url,
   exercise_rights_url, board_complaint_url, dpo_contact, recipients_text,
@@ -132,7 +134,12 @@ async def create(
         ),
     )
     assert row is not None
-    return row
+    # Read back rather than return the RETURNING row. A notice row is expected
+    # to carry the project it belongs to - the API's `NoticeOut` requires it -
+    # and RETURNING cannot join. Handing the bare insert back made the shape
+    # depend on which function produced it, which is how the list route came to
+    # answer 500.
+    return await by_id(conn, row["notice_id"]) or row
 
 
 async def update_draft(conn: Conn, notice_id: int, **f: Any) -> Row:
@@ -153,18 +160,20 @@ async def update_draft(conn: Conn, notice_id: int, **f: Any) -> Row:
         {**f, "notice_id": notice_id},
     )
     assert row is not None
-    return row
+    return await by_id(conn, row["notice_id"]) or row
 
 
 async def list_for_project(conn: Conn, project_id: int) -> list[Row]:
     return await fetch_all(
         conn,
         f"""SELECT n.notice_id, {NOTICE_COLUMNS},
+            p.project_uuid, p.project_name,
             (SELECT count(*) FROM notice_purpose np WHERE np.notice_id = n.notice_id)
               AS purpose_count,
             (SELECT count(*) FROM notice_language nl WHERE nl.notice_id = n.notice_id)
               AS language_count
-            FROM notice n WHERE n.project_id = %s
+            FROM notice n JOIN project p ON p.project_id = n.project_id
+            WHERE n.project_id = %s
             ORDER BY n.version DESC, n.notice_id DESC""",
         (project_id,),
     )
@@ -173,7 +182,8 @@ async def list_for_project(conn: Conn, project_id: int) -> list[Row]:
 async def versions(conn: Conn, notice_code: str) -> list[Row]:
     return await fetch_all(
         conn,
-        f"""SELECT n.notice_id, {NOTICE_COLUMNS} FROM notice n
+        f"""SELECT n.notice_id, {NOTICE_COLUMNS}, p.project_uuid, p.project_name
+            FROM notice n JOIN project p ON p.project_id = n.project_id
             WHERE n.notice_code = %s ORDER BY n.version DESC""",
         (notice_code,),
     )

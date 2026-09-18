@@ -85,7 +85,12 @@ is why `NEXT_PUBLIC_API_URL` stays unset in local development.
    applies the rules, writes, and records the audit row in the same
    transaction.
 5. The repository runs hand-written SQL in which the caller's scope is part of
-   the `WHERE` clause, so a row outside scope is never selected.
+   the `WHERE` clause, so a row outside scope is never selected. Every function
+   that returns a row of some entity returns the same shape, whether it read,
+   inserted or updated it: a write whose `RETURNING` cannot reach what the
+   response needs reads the row back rather than handing back the statement,
+   because a shape that depends on which function produced it fails response
+   validation in one route and not its neighbour.
 6. PostgreSQL holds the invariants: CHECK constraints, append-only triggers,
    the notice freeze, the audit hash chain, and a revoked `UPDATE` grant on
    evidence tables.

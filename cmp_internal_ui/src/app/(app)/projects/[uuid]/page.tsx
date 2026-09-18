@@ -334,6 +334,16 @@ export default function ProjectDetailPage() {
               <CardBody>
                 <Skeleton className="h-16" />
               </CardBody>
+            ) : notices.isError ? (
+              /* A failed query is not an empty project. Without this branch the
+                 two were the same screen, and a 500 on this list read as "the
+                 notice you just uploaded was not saved" - which sent people
+                 looking for the fault in the upload. */
+              <CardBody>
+                <Alert tone="danger" title="Could not load this project's notices">
+                  {notices.error.userMessage()}
+                </Alert>
+              </CardBody>
             ) : !notices.data?.length ? (
               <EmptyState
                 title="No notice yet"

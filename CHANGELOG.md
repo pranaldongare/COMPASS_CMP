@@ -118,6 +118,22 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **A project showed no notice, however many it had.** `NoticeOut` gained the
+  project a notice belongs to, so its page could lead back there, and both
+  fields are required. Four of the repository's six notice-row producers did
+  not select them - the two list queries had no join to `project`, and the two
+  write queries could not have one, because `RETURNING` cannot reach another
+  table. `GET /projects/{uuid}/notices` therefore failed response validation and
+  answered 500 for every staff role, as did a notice's version history. A
+  notice row now carries its project wherever it comes from, the two writes
+  reading the row back rather than returning the bare statement. The data
+  principal's own route was never affected, which is what made it look like a
+  permissions problem rather than a broken response.
+- **A list that fails to load no longer reads as a list with nothing in it.**
+  The project page drew the same "No notice yet" panel for an empty project and
+  for a query that had just answered 500, so the notice somebody had uploaded a
+  moment earlier appeared not to have been saved at all. A failed query now says
+  so, with the reason.
 - **A consent link was copied out of the console pointing at the console.** The
   API returns the link as a path, deliberately - which host serves `/c/{token}`
   is deployment configuration. All three places that showed one put

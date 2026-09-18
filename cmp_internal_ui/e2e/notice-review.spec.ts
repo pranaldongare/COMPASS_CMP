@@ -12,19 +12,48 @@
  * card that clears it, and the purposes can be activated from the notice that
  * carries them, one at a time, which is the review the separate decisions are
  * there to make somebody do.
+ *
+ * **It picks its notice rather than taking the first.** Activating a purpose is
+ * a real write against the development database, so this spec consumes the
+ * thing it needs: after enough runs the first draft in the list has nothing
+ * blocking left, and the assertions failed on a notice that was simply finished
+ * rather than on anything being wrong. So it asks the API which draft still has
+ * work outstanding, and skips - loudly - when none does.
  */
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { statePath } from "./support/session";
+
+/** A draft notice whose checklist still blocks, or null if every one is clear.
+ *
+ *  Through the console's own `/api` proxy, so it carries the same session
+ *  cookie the browser does and needs no second set of credentials. */
+async function aDraftStillBlocking(
+  page: Page,
+  wanted?: (blocking: string[]) => boolean,
+): Promise<string | null> {
+  const list = await page.request.get("/api/notices?status=draft&limit=25");
+  if (!list.ok()) return null;
+  const { items = [] } = (await list.json()) as { items?: { notice_uuid: string }[] };
+
+  for (const { notice_uuid } of items) {
+    const res = await page.request.get(`/api/notices/${notice_uuid}/checklist`);
+    if (!res.ok()) continue;
+    const { blocking = [] } = (await res.json()) as { blocking?: string[] };
+    if (blocking.length && (!wanted || wanted(blocking))) return notice_uuid;
+  }
+  return null;
+}
 
 test.describe("a draft notice, as the Privacy Office", () => {
   test.use({ storageState: statePath("dpo") });
 
   test("every blocker points at what clears it", async ({ page }) => {
     await page.goto("/notices?status=draft");
-    const first = page.locator('a[href^="/notices/"]').first();
-    await expect(first).toBeVisible({ timeout: 15_000 });
-    await first.click();
+    const uuid = await aDraftStillBlocking(page);
+    test.skip(uuid === null, "every draft notice is publishable - nothing to point at");
+
+    await page.goto(`/notices/${uuid}`);
     await expect(page).toHaveURL(/\/notices\/[0-9a-f-]{36}/, { timeout: 15_000 });
 
     await expect(page.getByText(/blocking publication/i)).toBeVisible({ timeout: 15_000 });
@@ -45,13 +74,21 @@ test.describe("a draft notice, as the Privacy Office", () => {
 
   test("a draft purpose is activated from the notice that carries it", async ({ page }) => {
     await page.goto("/notices?status=draft");
-    await page.locator('a[href^="/notices/"]').first().click();
+    const uuid = await aDraftStillBlocking(page, (lines) =>
+      lines.some((line) => /not activated/i.test(line)),
+    );
+    test.skip(uuid === null, "no draft notice is carrying an unactivated purpose");
+
+    await page.goto(`/notices/${uuid}`);
     await expect(page).toHaveURL(/\/notices\/[0-9a-f-]{36}/, { timeout: 15_000 });
     await expect(page.getByText(/blocking publication/i)).toBeVisible({ timeout: 15_000 });
 
     const activate = page.getByRole("button", { name: /^activate$/i });
     const before = await activate.count();
-    test.skip(before === 0, "this notice has no draft purposes left to activate");
+    expect(
+      before,
+      "the checklist named one, so the control has to be here",
+    ).toBeGreaterThan(0);
 
     const blocking = page.getByText(/item\(s\) blocking publication/i);
     const said = (await blocking.innerText()).trim();
