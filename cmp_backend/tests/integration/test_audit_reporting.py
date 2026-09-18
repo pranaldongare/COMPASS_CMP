@@ -10,12 +10,14 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from uuid import uuid4
 
 import pytest
 
 from cmp.core.pagination import Cursor, PageRequest
 from cmp.db.repositories import audit as repo
 from cmp.db.repositories import audit_lookup
+from cmp.db.sql import fetch_one
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 
@@ -170,9 +172,30 @@ class TestSummaryAndExport:
 
 class TestLookup:
     async def test_a_data_principal_by_name(self, conn: Any, seeded: dict[str, Any]) -> None:
-        name = await _name(conn, seeded["subject"]["id"])
-        hits = await audit_lookup.lookup(conn, "data_subject", name[:5])
-        assert any(h["uuid"] == str(seeded["subject"]["uuid"]) for h in hits)
+        """Searched on a name nothing else shares.
+
+        The lookup returns ten rows ordered by name, so a term the seeded
+        principal merely *contains* is not a test of anything: a database with
+        eleven other people matching it sorts her off the end and the assertion
+        fails for the size of the register rather than for the search. This
+        makes its own principal, with a name no other row can hold.
+        """
+        unique = f"Zzq{uuid4().hex[:10]}"
+        row = await fetch_one(
+            conn,
+            """INSERT INTO auth_user (full_name, email, mobile, role, status)
+               VALUES (%s, %s, %s, 'data_subject', 'active')
+               RETURNING uuid""",
+            (
+                f"{unique} Principal",
+                f"{unique.lower()}@test.local",
+                f"+9198765{uuid4().int % 100000:05d}",
+            ),
+        )
+
+        hits = await audit_lookup.lookup(conn, "data_subject", unique)
+
+        assert [h["uuid"] for h in hits] == [str(row["uuid"])]
         assert all(h["filter"] == "subject" and h["entity_type"] == "auth_user" for h in hits)
 
     async def test_staff_by_name_feed_the_actor_filter(
@@ -182,6 +205,20 @@ class TestLookup:
         assert hits and hits[0]["filter"] == "actor"
 
     async def test_records_by_kind(self, conn: Any, seeded: dict[str, Any]) -> None:
+        """Every kind the audit filter offers finds its own records.
+
+        The seeded world carries a project, a notice, a processor and a site but
+        no data source, so this used to pass only where one already existed -
+        which is every developer's database and no clean one. It makes the
+        missing row itself rather than hoping for it.
+        """
+        await conn.execute(
+            """INSERT INTO data_source
+                 (source_code, name, source_role, exchange_mode, processor_id, status)
+               VALUES ('SRC-LOOKUP-1', 'Lookup Rig', 'collection', 'file_import', %s, 'active')""",
+            (seeded["processors"]["external"]["processor_id"],),
+        )
+
         for kind, expected_type in (
             ("project", "project"),
             ("notice", "notice"),

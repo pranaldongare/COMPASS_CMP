@@ -1146,8 +1146,17 @@ class TestPublicForm:
             " WHERE reference = %s",
             (result["reference"],),
         )
+        # The sweep is global: it closes every public request that never verified,
+        # not only this one. Asserting a count of one held on an empty database
+        # and nowhere else, so it failed on any machine that had run the suite
+        # before. Counted first instead, which pins the same behaviour and says
+        # what it means - every eligible request, this one among them.
+        eligible = await repo.unverified_public_older_than(conn, 7)
+        assert any(r["reference"] == result["reference"] for r in eligible)
+
         swept = await service.sweep(conn)
-        assert swept["closed_unverified"] == 1
+
+        assert swept["closed_unverified"] == len(eligible)
         row = await repo.by_reference(conn, result["reference"])
         assert row is not None and row["outcome"] == "not_verified"
 
