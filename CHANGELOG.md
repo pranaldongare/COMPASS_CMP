@@ -114,6 +114,15 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **One page of every list in ten was refused as a malformed cursor.** A
+  cursor carries a twelve-byte signature after a `.`, and the decoder found the
+  separator by looking for the last `.` in the decoded bytes. Roughly one
+  signature in twenty-two contains that byte, so the split fell inside the
+  signature, the check failed, and a cursor the service had issued seconds
+  earlier came back as malformed. It affected every paginated list, about 4.6%
+  of the time, and survived because a single round trip passes 95% of the time
+  and it never reproduced twice. The split is by length now, which is safe
+  because the signature is fixed-width.
 - **The console stopped contradicting the system it describes.** A review of
   the project, notice and purpose journey found seven screens saying things
   that are not true: five project states where four are reachable, a progress

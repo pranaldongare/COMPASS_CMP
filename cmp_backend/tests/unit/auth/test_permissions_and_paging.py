@@ -89,6 +89,34 @@ class TestCursorPagination:
         cursor = Cursor(sort_value="2026-01-01T00:00:00+00:00", row_id=42)
         assert Cursor.decode(cursor.encode()) == cursor
 
+    def test_every_cursor_round_trips_whatever_its_signature_contains(self) -> None:
+        """One round trip is not a test of this.
+
+        The signature is twelve arbitrary bytes appended after a `.`, and the
+        decoder used to find the separator by looking for the *last* `.` in the
+        decoded blob. Roughly one signature in twenty-two contains `0x2E`, so
+        the split fell inside the signature, the comparison failed, and a cursor
+        the same process had just issued came back as "Malformed cursor" - on
+        every paginated list, about 4.6% of the time.
+
+        It survived because a single round trip passes 95% of the time and the
+        failure never reproduced. Five hundred of them is what it takes: the
+        chance of all five hundred passing under the old code is about one in
+        ten billion.
+        """
+        for i in range(500):
+            cursor = Cursor(sort_value=f"2026-01-01 00:00:00.{i:06d}+00:00", row_id=i)
+
+            assert Cursor.decode(cursor.encode()) == cursor, f"cursor {i} did not survive"
+
+    def test_a_cursor_this_service_did_not_sign_is_refused(self) -> None:
+        """The length-based split must not have cost the signature check."""
+        import base64
+
+        forged = base64.urlsafe_b64encode(b'{"v":"2026-01-01","i":9}' + b"." + b"x" * 12)
+        with pytest.raises(BadRequest):
+            Cursor.decode(forged.rstrip(b"=").decode("ascii"))
+
     def test_cursor_is_opaque(self) -> None:
         """Nobody should be able to read a cursor and start hand-crafting one."""
         encoded = Cursor(sort_value="2026-01-01", row_id=7).encode()

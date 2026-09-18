@@ -38,19 +38,37 @@ class Cursor:
         raw = payload.encode("utf-8")
         sig = hmac.new(
             settings.secret_key.get_secret_value().encode("utf-8"), raw, "sha256"
-        ).digest()[:12]
+        ).digest()[: self._SIG_BYTES]
         return base64.urlsafe_b64encode(raw + b"." + sig).rstrip(b"=").decode("ascii")
+
+    #: Bytes of HMAC appended to the payload. Fixed, and that is what makes the
+    #: split below safe.
+    _SIG_BYTES = 12
 
     @classmethod
     def decode(cls, token: str) -> Cursor:
+        """The reverse of `encode`, refusing anything this service did not sign.
+
+        Split by length, not by separator. It used to `rpartition(b".")`, and the
+        signature is twelve *arbitrary* bytes: roughly one in twenty-two contains
+        `0x2E`, which is `.`. When one did, the split fell inside the signature,
+        the comparison failed, and a cursor this process had just issued came
+        back as "Malformed cursor". It is a 4.6% chance per page, on every
+        paginated list, and it looked like a flaky test rather than a bug
+        because nothing reproduced it twice.
+        """
         try:
             padded = token + "=" * (-len(token) % 4)
             blob = base64.urlsafe_b64decode(padded.encode("ascii"))
-            raw, _, sig = blob.rpartition(b".")
+            raw, dot, sig = (
+                blob[: -cls._SIG_BYTES - 1],
+                blob[-cls._SIG_BYTES - 1 : -cls._SIG_BYTES],
+                blob[-cls._SIG_BYTES :],
+            )
             expected = hmac.new(
                 settings.secret_key.get_secret_value().encode("utf-8"), raw, "sha256"
-            ).digest()[:12]
-            if not raw or not hmac.compare_digest(sig, expected):
+            ).digest()[: cls._SIG_BYTES]
+            if not raw or dot != b"." or not hmac.compare_digest(sig, expected):
                 raise BadRequest("Malformed cursor", code="bad_cursor", field="cursor")
             data = json.loads(raw.decode("utf-8"))
             return cls(sort_value=str(data["v"]), row_id=int(data["i"]))
