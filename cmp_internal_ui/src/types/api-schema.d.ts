@@ -6401,6 +6401,13 @@ export interface components {
             notice_code: string;
             /** Version */
             version: number;
+            /**
+             * Project Uuid
+             * Format: uuid
+             */
+            project_uuid: string;
+            /** Project Name */
+            project_name: string;
             /** Withdraw Url */
             withdraw_url: string;
             /** Exercise Rights Url */

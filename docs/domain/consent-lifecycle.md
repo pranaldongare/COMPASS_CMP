@@ -8,7 +8,8 @@ Every step below exists to make the last one possible.
 A notice belongs to a project and says what the data principal needs to know
 before deciding: who is collecting, why (the purposes, each with its data
 categories, retention and rights), and how to withdraw or complain. It is
-written in the console or imported from the legal template, a `.docx` whose
+written in the console by the Privacy Office, or brought by the R&D User as
+the filled-in legal template, a `.docx` whose
 cells the parser reads: the language of the notice, the purposes and their
 categories, the retention period, the erasure trigger. A document with a
 placeholder still in it is refused, as is a language the platform does not

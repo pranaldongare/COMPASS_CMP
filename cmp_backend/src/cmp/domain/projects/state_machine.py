@@ -33,10 +33,16 @@ it deadlocked: approving a language is the DPO's act, the author could not submi
 without it, and the DPO does not see the project until it is submitted. Each side
 was waiting for the other and nothing on either screen said so.
 
-So the two halves are separated by who does them. The author writes the notice
-and its text; the DPO approves that text and then approves the project. The check
-did not go away - it moved to the gate in front of the person who can satisfy it,
-where being blocked is actionable rather than circular.
+So the two halves are separated by who does them. The author assembles the
+project around a notice they bring; the DPO writes that notice, approves its
+text, and then approves the project. The check did not go away - it moved to the
+gate in front of the person who can satisfy it, where being blocked is
+actionable rather than circular.
+
+One requirement deliberately breaks that line, and `_submit` says why: a
+project cannot be submitted while a purpose on its notice is unactivated, which
+only the DPO can do. It is the exception, and it exists because the alternative
+put the failure after the DPO had already been told they could proceed.
 
 `ProjectStatus.UNDER_PROCESS` survives as a value because
 `project_status_history` rows still name it. Nothing transitions *to* it.

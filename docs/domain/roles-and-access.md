@@ -33,14 +33,6 @@ denied: no wildcard, no inheritance.
 | approval | all | | scoped | scoped | scoped | own +w | |
 | site | all +w | | scoped +w | scoped +w | scoped +w | own | |
 | notice | all +w | | scoped | scoped | scoped | own +w | |
-
-The R&D User's write on a notice is narrower than the row can say. They bring
-one, by uploading the filled-in document, re-uploading a corrected one, or
-copying a notice the Privacy Office has approved. Composing one, editing its
-wording, attaching or narrowing its purposes and writing the text of a rendition
-are the office's, on routes guarded by role rather than by this resource. The
-split is by act rather than by resource, which is why the table alone does not
-show it; a unit test pins which route is on which side.
 | link | all +w | | scoped +w | scoped +w | scoped +w | | |
 | consent | all | | scoped | scoped | scoped | own | |
 | export | all +w | | scoped +w | scoped +w | scoped +w | | |
@@ -52,6 +44,14 @@ show it; a unit test pins which route is on which side.
 | rights_request | all +w | scoped +w | | | | | |
 | ticket | own +w | own +w | own +w | own +w | own +w | own +w | |
 | me | | | | | | | own +w |
+
+The R&D User's write on a notice is narrower than the row can say. They bring
+one, by uploading the filled-in document, re-uploading a corrected one, or
+copying a notice the Privacy Office has approved. Composing one, editing its
+wording, attaching or narrowing its purposes and writing the text of a rendition
+are the office's, on routes guarded by role rather than by this resource. The
+split is by act rather than by resource, which is why the table alone does not
+show it; a unit test pins which route is on which side.
 
 Where a cell says "own" for the R&D user, it means the projects they created
 and everything hanging off them. "Scoped" for a collection owner means the
@@ -162,13 +162,15 @@ but only while the account is still pending.
 Each role's landing page opens with **Needs you today**: counts of things
 that role can act on, from the page each row opens. The rule is strict, and
 tested: a count the role can only look at is not on the list. Lockouts
-clear themselves; a suspended source was suspended on purpose; a draft
-notice is its author's to finish; refusals in the log are the audit trail's.
+clear themselves; a suspended source was suspended on purpose; refusals in the
+log are the audit trail's. A draft project is the exception that proves it: the
+DPO does have a queue of those, because the purposes an imported notice carries
+are theirs to activate and the author cannot submit until they have.
 Those stay in the queues and statistics further down.
 
 | Role | Needs you today |
 |---|---|
-| DPO | tickets past their date; rights requests overdue and due within seven days; requests awaiting verification; teams that have written on their tickets; grievances about the DPO not yet escalated; retention floors passed; tickets addressed to them; translations awaiting approval; projects pending approval; new collectors awaiting a decision |
+| DPO | tickets past their date; rights requests overdue and due within seven days; requests awaiting verification; teams that have written on their tickets; grievances about the DPO not yet escalated; retention floors passed; tickets addressed to them; notice text awaiting approval; projects pending approval; new collectors awaiting a decision |
 | Administrator | staff invitations not yet accepted (resend them); grievances about the DPO to review; tickets addressed to them |
 | DCO, RCO | tickets past their date; tickets addressed to them; imports that did not reconcile; assets with unmapped subjects |
 | DCO Admin | tickets past their date; sites awaiting a data source; sources with nobody accountable; processors with no collection set up; tickets addressed to them |

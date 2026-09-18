@@ -485,13 +485,27 @@ No request body.
 
 | Status | Description | Content type | Schema |
 |---:|---|---|---|
-| `200` | Successful Response | `application/json` | `object` |
+| `200` | Successful Response | `application/json` | [`cmp__api__routers__v1__projects__TransitionsOut`](#schema-cmp_api_routers_v1_projects_transitionsout) |
 | `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
 
 **Example `200` `application/json` response:**
 
 ```json
-{}
+{
+  "current": "string",
+  "available": [
+    {
+      "to": "string",
+      "allowed": true,
+      "blocked_by": "…",
+      "blockers": [
+        "…"
+      ],
+      "reason_required": false,
+      "publishes_notice": false
+    }
+  ]
+}
 ```
 
 **Example `422` `application/json` response:**
@@ -1906,6 +1920,18 @@ collection is happening somewhere it is not.
 | `to` | `string` | Yes | — | — |
 | `reason` | `string` or `null` | No | max length: `1000` | — |
 
+<a id="schema-cmp_api_routers_v1_projects_transitionsout"></a>
+#### `cmp__api__routers__v1__projects__TransitionsOut`
+
+Declared rather than returned as a bare dict so the API reference says
+what this endpoint sends. It is the one the console draws its only forward
+control from, and it was documented as `{}`.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `current` | `string` | Yes | — | — |
+| `available` | array of [`TransitionOptionOut`](#schema-transitionoptionout) | Yes | — | — |
+
 <a id="schema-validationerror"></a>
 #### `ValidationError`
 
@@ -1950,3 +1976,17 @@ collection is happening somewhere it is not.
 | `processor_uuid` | `string` or `null` | No | format: `uuid` | — |
 | `processor_name` | `string` or `null` | No | — | — |
 | `active_links` | `integer` | Yes | — | — |
+
+<a id="schema-transitionoptionout"></a>
+#### `TransitionOptionOut`
+
+One move out of this project's state, and why it cannot be made.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `to` | `string` | Yes | — | — |
+| `allowed` | `boolean` | Yes | — | — |
+| `blocked_by` | `string` or `null` | No | — | — |
+| `blockers` | array of `string` | No | — | — |
+| `reason_required` | `boolean` | No | default: `False` | — |
+| `publishes_notice` | `boolean` | No | default: `False` | — |

@@ -5137,9 +5137,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Transitions Projects  Project Uuid  Transitions Get"
+                  "$ref": "#/components/schemas/cmp__api__routers__v1__projects__TransitionsOut"
                 }
               }
             }
@@ -9530,7 +9528,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TransitionsOut"
+                  "$ref": "#/components/schemas/cmp__api__routers__v1__rights__TransitionsOut"
                 }
               }
             }
@@ -23718,6 +23716,53 @@
         ],
         "title": "TransitionIn"
       },
+      "TransitionOptionOut": {
+        "properties": {
+          "to": {
+            "type": "string",
+            "title": "To"
+          },
+          "allowed": {
+            "type": "boolean",
+            "title": "Allowed"
+          },
+          "blocked_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blocked By"
+          },
+          "blockers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Blockers"
+          },
+          "reason_required": {
+            "type": "boolean",
+            "title": "Reason Required",
+            "default": false
+          },
+          "publishes_notice": {
+            "type": "boolean",
+            "title": "Publishes Notice",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "to",
+          "allowed"
+        ],
+        "title": "TransitionOptionOut",
+        "description": "One move out of this project's state, and why it cannot be made."
+      },
       "TransitionRequest": {
         "properties": {
           "to": {
@@ -23743,28 +23788,6 @@
           "to"
         ],
         "title": "TransitionRequest"
-      },
-      "TransitionsOut": {
-        "properties": {
-          "current": {
-            "type": "string",
-            "title": "Current"
-          },
-          "available": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Available"
-          }
-        },
-        "type": "object",
-        "required": [
-          "current",
-          "available"
-        ],
-        "title": "TransitionsOut"
       },
       "UpdateMe": {
         "properties": {
@@ -24449,6 +24472,28 @@
         ],
         "title": "MessageOut"
       },
+      "cmp__api__routers__v1__projects__TransitionsOut": {
+        "properties": {
+          "current": {
+            "type": "string",
+            "title": "Current"
+          },
+          "available": {
+            "items": {
+              "$ref": "#/components/schemas/TransitionOptionOut"
+            },
+            "type": "array",
+            "title": "Available"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current",
+          "available"
+        ],
+        "title": "TransitionsOut",
+        "description": "Declared rather than returned as a bare dict so the API reference says\nwhat this endpoint sends. It is the one the console draws its only forward\ncontrol from, and it was documented as `{}`."
+      },
       "cmp__api__routers__v1__rights__MessageOut": {
         "properties": {
           "message_uuid": {
@@ -24518,6 +24563,28 @@
           "created_at"
         ],
         "title": "MessageOut"
+      },
+      "cmp__api__routers__v1__rights__TransitionsOut": {
+        "properties": {
+          "current": {
+            "type": "string",
+            "title": "Current"
+          },
+          "available": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Available"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current",
+          "available"
+        ],
+        "title": "TransitionsOut"
       }
     }
   }

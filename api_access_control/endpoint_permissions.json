@@ -3438,11 +3438,10 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "NoticeAuthor",
-      "resolved_gate": "RequireResource(notice, write=True)",
+      "gate": "RequireDPO",
+      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
       "route_roles": [
-        "dpo",
-        "rnd_user"
+        "dpo"
       ],
       "inline_role_checks": [],
       "resource": "notice",
@@ -3453,7 +3452,7 @@
         "dco": "NO",
         "dco_admin": "NO",
         "rco": "NO",
-        "rnd_user": "OWN",
+        "rnd_user": "NO",
         "data_subject": "NO"
       },
       "conditions": [
@@ -3551,11 +3550,10 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "NoticeAuthor",
-      "resolved_gate": "RequireResource(notice, write=True)",
+      "gate": "RequireDPO",
+      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
       "route_roles": [
-        "dpo",
-        "rnd_user"
+        "dpo"
       ],
       "inline_role_checks": [],
       "resource": "notice",
@@ -3566,7 +3564,7 @@
         "dco": "NO",
         "dco_admin": "NO",
         "rco": "NO",
-        "rnd_user": "OWN",
+        "rnd_user": "NO",
         "data_subject": "NO"
       },
       "conditions": [
@@ -3588,11 +3586,10 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "NoticeAuthor",
-      "resolved_gate": "RequireResource(notice, write=True)",
+      "gate": "RequireDPO",
+      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
       "route_roles": [
-        "dpo",
-        "rnd_user"
+        "dpo"
       ],
       "inline_role_checks": [],
       "resource": "notice",
@@ -3603,7 +3600,7 @@
         "dco": "NO",
         "dco_admin": "NO",
         "rco": "NO",
-        "rnd_user": "OWN",
+        "rnd_user": "NO",
         "data_subject": "NO"
       },
       "conditions": [
@@ -3771,11 +3768,10 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "NoticeAuthor",
-      "resolved_gate": "RequireResource(notice, write=True)",
+      "gate": "RequireDPO",
+      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
       "route_roles": [
-        "dpo",
-        "rnd_user"
+        "dpo"
       ],
       "inline_role_checks": [],
       "resource": "notice",
@@ -3786,7 +3782,7 @@
         "dco": "NO",
         "dco_admin": "NO",
         "rco": "NO",
-        "rnd_user": "OWN",
+        "rnd_user": "NO",
         "data_subject": "NO"
       },
       "conditions": [
@@ -3843,11 +3839,10 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "NoticeAuthor",
-      "resolved_gate": "RequireResource(notice, write=True)",
+      "gate": "RequireDPO",
+      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
       "route_roles": [
-        "dpo",
-        "rnd_user"
+        "dpo"
       ],
       "inline_role_checks": [],
       "resource": "notice",
@@ -3858,7 +3853,7 @@
         "dco": "NO",
         "dco_admin": "NO",
         "rco": "NO",
-        "rnd_user": "OWN",
+        "rnd_user": "NO",
         "data_subject": "NO"
       },
       "conditions": [
@@ -3880,11 +3875,10 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "NoticeAuthor",
-      "resolved_gate": "RequireResource(notice, write=True)",
+      "gate": "RequireDPO",
+      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
       "route_roles": [
-        "dpo",
-        "rnd_user"
+        "dpo"
       ],
       "inline_role_checks": [],
       "resource": "notice",
@@ -3895,7 +3889,7 @@
         "dco": "NO",
         "dco_admin": "NO",
         "rco": "NO",
-        "rnd_user": "OWN",
+        "rnd_user": "NO",
         "data_subject": "NO"
       },
       "conditions": [
@@ -3993,11 +3987,10 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "NoticeAuthor",
-      "resolved_gate": "RequireResource(notice, write=True)",
+      "gate": "RequireDPO",
+      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
       "route_roles": [
-        "dpo",
-        "rnd_user"
+        "dpo"
       ],
       "inline_role_checks": [],
       "resource": "notice",
@@ -4008,7 +4001,7 @@
         "dco": "NO",
         "dco_admin": "NO",
         "rco": "NO",
-        "rnd_user": "OWN",
+        "rnd_user": "NO",
         "data_subject": "NO"
       },
       "conditions": [

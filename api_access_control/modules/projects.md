@@ -313,7 +313,7 @@ Transition.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
-- Not every listed role may perform every transition: R&D submits draft/under_process to pending_approval; DPO approves or returns to draft; DPO/DCO/DCO Admin/RCO close an approved project. Required evidence/state checks also apply.
+- Not every listed role may perform every transition: R&D submits a draft to pending_approval; DPO approves or returns it to draft; DPO/DCO/DCO Admin/RCO close an approved project. (`under_process` is not reachable; nothing transitions to it.) The submission also requires that the Privacy Office has activated every purpose on the notice, which is the one precondition on it the R&D User cannot satisfy themselves.
 - The service uses project write scope: DCO/RCO must own the primary site/project (or cover its owner), not merely another site.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/projects.py#L315), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/db/repositories/projects.py#L82), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/domain/projects/state_machine.py#L132), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/domain/projects/service.py#L364).
 

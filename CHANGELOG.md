@@ -50,8 +50,6 @@ as a release yet.
   lawful document. The floor stays: an empty rendition is still nothing, and
   publication still refuses a notice without one. What bounds it now is the
   request body limit, which is the honest place for it.
-
-### Changed
 - **A project cannot be submitted while its purposes are unactivated.** The
   purposes an uploaded document creates arrive as drafts and only the Privacy
   Office activates them. Submission counted them without caring, and the
@@ -99,6 +97,21 @@ as a release yet.
   because the only move out of draft is the author's. It now lists the drafts
   whose purposes are waiting on them, which is the one thing there that is
   theirs, and says so.
+
+- **A consent link now authenticates rather than enrols.** The first step asks
+  for one contact - mobile by default, email instead - and confirms it with a
+  code, where it used to take a name, a mobile and an email and create an
+  account from them. The artefact is bound to a data principal who already
+  exists and can therefore find it, read it and withdraw it. Somebody without
+  an account is linked to sign-up carrying the consent link, and returns to it
+  signed in. A code is sent only to a contact on the register, while the reply
+  stays the same sentence either way, so the form cannot be used to ask whether
+  a number is registered.
+- The three low-level design documents moved from `LLD/` to `docs/history/`
+  with banners stating what they describe and when.
+- `cmp_backend/openapi.json` regenerated from the running application.
+- Every README and backend document brought up to the current counts, the
+  22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
 - **The console stopped contradicting the system it describes.** A review of
@@ -289,22 +302,6 @@ as a release yet.
   development, testing, deployment, runbook, ten architecture decision
   records, a glossary, and this changelog.
 - `CONTRIBUTING.md`.
-
-### Changed
-- **A consent link now authenticates rather than enrols.** The first step asks
-  for one contact - mobile by default, email instead - and confirms it with a
-  code, where it used to take a name, a mobile and an email and create an
-  account from them. The artefact is bound to a data principal who already
-  exists and can therefore find it, read it and withdraw it. Somebody without
-  an account is linked to sign-up carrying the consent link, and returns to it
-  signed in. A code is sent only to a contact on the register, while the reply
-  stays the same sentence either way, so the form cannot be used to ask whether
-  a number is registered.
-- The three low-level design documents moved from `LLD/` to `docs/history/`
-  with banners stating what they describe and when.
-- `cmp_backend/openapi.json` regenerated from the running application.
-- Every README and backend document brought up to the current counts, the
-  22-migration chain, Node 22, the two portals and the rights module.
 
 ## 2026-09-10
 

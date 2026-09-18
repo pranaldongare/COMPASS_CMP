@@ -652,7 +652,7 @@ No request body.
 
 | Status | Description | Content type | Schema |
 |---:|---|---|---|
-| `200` | Successful Response | `application/json` | [`TransitionsOut`](#schema-transitionsout) |
+| `200` | Successful Response | `application/json` | [`cmp__api__routers__v1__rights__TransitionsOut`](#schema-cmp_api_routers_v1_rights_transitionsout) |
 | `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
 
 **Example `200` `application/json` response:**
@@ -4918,20 +4918,20 @@ A request that arrived by email, logged by the DPO. Same record as the others.
 | `to` | `string` | Yes | — | — |
 | `reason` | `string` or `null` | No | max length: `1000` | — |
 
-<a id="schema-transitionsout"></a>
-#### `TransitionsOut`
-
-| Field | Type | Required | Validation | Description |
-|---|---|---:|---|---|
-| `current` | `string` | Yes | — | — |
-| `available` | array of `object` | Yes | — | — |
-
 <a id="schema-withdrawin"></a>
 #### `WithdrawIn`
 
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
 | `reason` | `string` | Yes | min length: `1`; max length: `2000` | — |
+
+<a id="schema-cmp_api_routers_v1_rights_transitionsout"></a>
+#### `cmp__api__routers__v1__rights__TransitionsOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `current` | `string` | Yes | — | — |
+| `available` | array of `object` | Yes | — | — |
 
 <a id="schema-validationerror"></a>
 #### `ValidationError`

@@ -29,7 +29,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | project | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | RW / OWN | NO |
 | approval | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | RW / OWN | NO |
 | site | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | R / OWN | NO |
-| notice | RW / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | RW / OWN | NO |
+| notice | RW / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | RW / OWN [^notice] | NO |
 | link | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | NO | NO |
 | consent | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO |
 | export | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | NO | NO |
@@ -59,6 +59,14 @@ Roles refer to the **effective session role**. A staff account signed in through
 Standard session dependencies resolve the configured session cookie, reject expired sessions and enforce CSRF on POST/PUT/PATCH/DELETE. `CurrentUser` rejects partial MFA sessions. `PartialUser` accepts partial or full sessions and has no role filter; its two MFA endpoints must be read individually. The public consent capture endpoint loads a cookie directly, so the standard dependency’s CSRF check must not be assumed there.
 
 Role denials normally return 403; missing/expired sessions normally return 401. Scoped record lookups generally return 404 for records outside the caller’s scope. State/evidence/verification rules may refuse an otherwise eligible role. Public endpoints still validate tokens, codes, notice state and input as described in their entries.
+
+[^notice]: The R&D User's write on a notice is narrower than the matrix row can
+say. They may bring one - check a document, import it, or copy a notice the
+Privacy Office has approved - and that is all. Composing one, editing its
+wording, attaching, narrowing or removing a purpose, and writing the text of a
+rendition are the office's, on routes guarded by role rather than by this
+resource. The split is by act, not by resource, so it cannot be read off this
+table; `tests/unit/api/test_who_writes_a_notice.py` is where it is pinned.
 
 No live user-account listing was queried: “who” here means roles and ownership/assignment conditions, not employee names. This is a static source-based access reference, not a live authorization test or a claim of legal compliance.
 

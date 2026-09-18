@@ -300,7 +300,39 @@ async def update_project(
         )
 
 
-@router.get("/projects/{project_uuid}/transitions", summary="What may happen next, and why not")
+class TransitionOptionOut(Out):
+    """One move out of this project's state, and why it cannot be made."""
+
+    to: str
+    allowed: bool
+    #: The first unmet requirement. Absent when the move is allowed.
+    blocked_by: str | None = None
+    #: Every unmet requirement, of which `blocked_by` is the first. Reporting one
+    #: at a time taught people to clear it, press again, and be told about the
+    #: next, which reads as the system inventing objections.
+    blockers: list[str] = Field(default_factory=list)
+    #: This move needs a reason, which is recorded in the project's history.
+    reason_required: bool = False
+    #: Making this move publishes the project's notice and freezes its text.
+    publishes_notice: bool = False
+
+
+class TransitionsOut(Out):
+    """Declared rather than returned as a bare dict so the API reference says
+    what this endpoint sends. It is the one the console draws its only forward
+    control from, and it was documented as `{}`."""
+
+    current: str
+    #: Only the moves this caller's role may attempt. A transition somebody else
+    #: performs is omitted rather than shown as forbidden.
+    available: list[TransitionOptionOut]
+
+
+@router.get(
+    "/projects/{project_uuid}/transitions",
+    response_model=TransitionsOut,
+    summary="What may happen next, and why not",
+)
 async def transitions(project_uuid: UUID, principal: ProjectReader) -> dict[str, Any]:
     async with connection() as conn:
         return await service.transitions_for(

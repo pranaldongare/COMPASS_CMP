@@ -1,13 +1,21 @@
-"""Notices - the R&D User authors, the DPO reviews and may correct, all roles read.
+"""Notices - the R&D User brings one, the Privacy Office writes it, all roles read.
 
 `/checklist` returns exactly what is blocking publication, so the UI shows a list
 rather than a failed submit. It is readable by anybody who can read the notice,
 because the person being blocked is usually the author, not the DPO.
 
-Assembly belongs to the author - the notice, its purposes, its languages, and
-any Rule 3 narrowing. Approving a language and publishing stay with the DPO:
-those are the review, and an author who could sign off their own text would make
-the review a formality.
+The split is by act, not by resource, which is why two guards appear on routes
+over the same rows. The author *brings* a notice: they check a document, import
+it, or copy one the office has approved, and that is `NoticeAuthor`. The office
+*writes* it - composing one, editing its wording, attaching, narrowing or
+removing a purpose, and writing the text of a rendition - and every one of those
+is `RequireDPO`, as are approving a language and publishing.
+
+It used to be the other way round, with assembly belonging to the author on the
+argument that they are the one who knows what the study collects. That argument
+is still why they bring it; it was never an argument for them composing the
+words. `tests/unit/api/test_who_writes_a_notice.py` holds the line, and a route
+added without being placed on one side fails it.
 
 `/publish` runs in one transaction: validate all Rule 3 elements, generate
 `recipients_text` from the project's sites, compute `content_hash` per language,

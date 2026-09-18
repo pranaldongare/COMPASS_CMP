@@ -48,6 +48,6 @@ Paths here are backend paths as declared, without an invented `/v1` prefix. A fr
 
 ## Validation and maintenance
 
-The inventory was matched by method and path against every operation in `cmp_backend/openapi.json` and the registered router source. All 241 documented operations match exactly once; the three excluded system routes are separately identified. Role dependencies were resolved against `core/permissions.py`, explicit route-role denials were applied, and the service/repository exceptions in the notes were reviewed. This is static source validation, not execution against a live database or a complete security audit.
+The inventory was matched by method and path against every operation in `cmp_backend/openapi.json` and the registered router source. All 245 documented operations match exactly once; the three excluded system routes are separately identified. Role dependencies were resolved against `core/permissions.py`, explicit route-role denials were applied, and the service/repository exceptions in the notes were reviewed. This is static source validation, not execution against a live database or a complete security audit.
 
 This is a snapshot, not a new authorization system or a change to the existing generated API docs. Recheck it whenever route signatures, the permission matrix, service checks, state machines or SQL scopes change. Access means role/assignment eligibility; this folder does not list real user names.
