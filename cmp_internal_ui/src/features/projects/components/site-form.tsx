@@ -87,8 +87,8 @@ export function SiteForm({
             <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             <span>
               This project&apos;s notice is already published. Adding a site adds a
-              recipient that the published text does not name, which is a material
-              change requiring a new notice version before collection starts there.
+              recipient that the published text does not name, which is a material change
+              requiring a new notice version before collection starts there.
             </span>
           </p>
         </Alert>
@@ -116,9 +116,10 @@ export function SiteForm({
 
         {!sourcesLoading && !processors.isLoading && !eligible.length && (
           <Alert tone="info" title="Nothing registered yet">
-            None of this project&rsquo;s processors have a data source registered. A
-            collection owner can add one under <strong>Data sources</strong>, and it will
-            appear here.
+            None of this project&rsquo;s processors have a data source registered, so there
+            is nothing for a site to collect with. A collection owner registers one - the
+            DCO Admin for a third party&rsquo;s, the R&amp;D Collection Owner for collection
+            the team runs itself - and it appears here once they have.
           </Alert>
         )}
 
@@ -154,7 +155,9 @@ export function SiteForm({
           label="Location"
           hint="Optional. The line a data principal reads in the notice's recipient list."
         >
-          {(p) => <Input {...p} {...form.register("location")} placeholder="Pune, Maharashtra" />}
+          {(p) => (
+            <Input {...p} {...form.register("location")} placeholder="Pune, Maharashtra" />
+          )}
         </Field>
       </div>
 

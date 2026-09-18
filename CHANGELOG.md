@@ -62,6 +62,17 @@ as a release yet.
   had named. The wall now stands at submission, in draft, which is where the
   officer is already shown the project; their approval carries the same guard
   for anything submitted before this landed.
+- **The dead ends are gone.** Registering a project opens it, rather than
+  closing onto a list with a toast telling you to do something on a page you
+  are not on. A notice's breadcrumb returns to its own project instead of to
+  every notice, which needed the project on the notice response. The empty
+  states that said there was nothing and offered nothing - collection sites,
+  the notice's purposes, its renditions - carry the control that fills them.
+  The three messages naming a place in bold now say whose job it is, since
+  the reader often cannot do it themselves and two of those places are not in
+  their navigation. And one thing has one name: what the dashboard called a
+  translation awaiting approval is notice text awaiting approval, which is
+  what the notice calls it and what the button does.
 - **The Privacy Office composes a notice; the R&D User brings one.** Seven
   routes moved: writing a notice from nothing, editing its wording, attaching,
   narrowing or removing a purpose, and writing the text of a rendition are the

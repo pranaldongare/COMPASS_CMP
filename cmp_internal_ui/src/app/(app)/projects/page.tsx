@@ -10,6 +10,7 @@
 
 import { Plus, Search } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
@@ -49,6 +50,7 @@ function ProjectsPageView() {
 
   // The cursor stack: each entry is the cursor that produced that page, so
   // "Back" is a pop rather than a recomputation.
+  const router = useRouter();
   const [creating, setCreating] = React.useState(false);
   const [cursors, setCursors] = React.useState<Array<string | undefined>>([undefined]);
   const cursor = cursors[cursors.length - 1];
@@ -272,7 +274,14 @@ function ProjectsPageView() {
           title="Register a project"
           description="A name, a description and at least one processor. Who is accountable follows later, from the data sources."
         >
-          <ProjectForm onDone={() => setCreating(false)} />
+          <ProjectForm
+            onDone={(created) => {
+              setCreating(false);
+              // Straight to it. The toast says to attach a notice and an
+              // approval, and both of those live on the project's own page.
+              if (created) router.push(`/projects/${created.project_uuid}`);
+            }}
+          />
         </DialogContent>
       </Dialog>
     </>

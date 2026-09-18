@@ -34,17 +34,15 @@ export function OverrideBadge({ site }: { site: SiteWithOwner }) {
   return (
     <span
       className="inline-flex items-center gap-1 rounded-full border border-accent-border bg-accent-subtle px-2 py-0.5 text-2xs font-medium text-accent-text"
-      title={
-        [
-          site.source_owner_name
-            ? `Runs this site instead of ${site.source_owner_name}, who owns the data source`
-            : "Named for this site directly",
-          site.override_by_name ? `Set by ${site.override_by_name}` : null,
-          site.override_at ? formatDate(site.override_at) : null,
-        ]
-          .filter(Boolean)
-          .join(" · ")
-      }
+      title={[
+        site.source_owner_name
+          ? `Runs this site instead of ${site.source_owner_name}, who owns the data source`
+          : "Named for this site directly",
+        site.override_by_name ? `Set by ${site.override_by_name}` : null,
+        site.override_at ? formatDate(site.override_at) : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")}
     >
       <UserRoundCog className="size-2.5" aria-hidden="true" />
       named here
@@ -63,7 +61,13 @@ export function AssignSiteDcoDialog({
   return <AssignSiteDcoBody key={site.site_uuid} site={site} onClose={onClose} />;
 }
 
-function AssignSiteDcoBody({ site, onClose }: { site: SiteWithOwner; onClose: () => void }) {
+function AssignSiteDcoBody({
+  site,
+  onClose,
+}: {
+  site: SiteWithOwner;
+  onClose: () => void;
+}) {
   const toast = useToast();
   const owners = useCollectionOwners();
   const assign = useAssignSiteOwner();
@@ -176,8 +180,8 @@ function AssignSiteDcoBody({ site, onClose }: { site: SiteWithOwner; onClose: ()
               {changing && !site.is_primary && (
                 <Alert tone="info">
                   The project stays with its current owner. This site is not the one it
-                  follows, so whoever you name will be able to see the project and work
-                  this site only.
+                  follows, so whoever you name will be able to see the project and work this
+                  site only.
                 </Alert>
               )}
             </>

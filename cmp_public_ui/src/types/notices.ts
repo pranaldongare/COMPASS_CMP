@@ -10,6 +10,12 @@ export interface Notice {
   notice_uuid: Uuid;
   notice_code: string;
   version: number;
+  /** The project it belongs to. Carried by the API so the console can lead back
+   *  to it; this portal shows a notice only through a consent link and has no
+   *  use for either, but a hand-written type that omits a required field has
+   *  drifted from the API, which is what the contract test is for. */
+  project_uuid: Uuid;
+  project_name: string;
   withdraw_url: string;
   exercise_rights_url: string;
   /** The Data Protection Board portal, NOT the internal grievance form. */

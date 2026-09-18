@@ -112,8 +112,9 @@ describe("ApprovalForm", () => {
     await fillAndSubmit(user, { file: null });
 
     await waitFor(() =>
-      expect(screen.getByText(/proof file is mandatory|choose an approval document/i))
-        .toBeInTheDocument(),
+      expect(
+        screen.getByText(/proof file is mandatory|choose an approval document/i),
+      ).toBeInTheDocument(),
     );
   });
 

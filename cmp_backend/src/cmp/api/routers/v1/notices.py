@@ -79,6 +79,12 @@ class NoticeOut(Out):
     notice_uuid: UUID
     notice_code: str
     version: int
+    #: The project this notice belongs to. Carried because a notice is always
+    #: reached from somewhere and always has to lead back: without these the
+    #: detail page's only way out was the whole notices list, which is not where
+    #: the reader came from and not where the rest of the work is.
+    project_uuid: UUID
+    project_name: str
     withdraw_url: str
     exercise_rights_url: str
     board_complaint_url: str

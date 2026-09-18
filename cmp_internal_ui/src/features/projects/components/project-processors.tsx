@@ -178,7 +178,7 @@ function ProcessorRow({
         {/* A refusal is kept with its reason rather than deleted, because "we
             asked and were told no, because X" is a fact somebody will need. */}
         {p.status === "rejected" && p.decision_reason && (
-          <p className="mt-1 text-xs italic text-text-subtle">
+          <p className="mt-1 text-xs text-text-subtle italic">
             &ldquo;{p.decision_reason}&rdquo;
             {p.decided_by_name ? ` — ${p.decided_by_name}` : ""}
           </p>
@@ -293,9 +293,7 @@ function RequestDialog({
           </Field>
 
           {!available.length && (
-            <Alert tone="info">
-              Every active processor is already on this project.
-            </Alert>
+            <Alert tone="info">Every active processor is already on this project.</Alert>
           )}
 
           {/* Where the work lands once it is agreed, said before asking. */}
@@ -313,7 +311,12 @@ function RequestDialog({
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" loading={request.isPending} disabled={!selected}>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={request.isPending}
+              disabled={!selected}
+            >
               {needsApproval ? "Send to the DPO" : "Add"}
             </Button>
           </DialogFooter>
@@ -401,7 +404,11 @@ function DecisionDialog({
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="secondary" loading={decide.isPending} onClick={() => answer(false)}>
+          <Button
+            variant="secondary"
+            loading={decide.isPending}
+            onClick={() => answer(false)}
+          >
             <X className="size-4" />
             Refuse
           </Button>

@@ -129,7 +129,7 @@ _ATTENTION: dict[str, list[dict[str, Any]]] = {
         },
         {
             "count": "unapproved_languages",
-            "label": "Translations awaiting approval",
+            "label": "Notice text awaiting approval",
             "severity": "info",
             "href": "/notices",
         },

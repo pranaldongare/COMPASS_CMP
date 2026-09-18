@@ -16,6 +16,7 @@
 "use client";
 
 import { Building2, Home } from "lucide-react";
+import Link from "next/link";
 import * as React from "react";
 
 import { FormError, useApiForm } from "@/components/forms";
@@ -32,7 +33,8 @@ export function ProjectForm({
   onDone,
 }: {
   project?: Project;
-  onDone: () => void;
+  /** Handed the project when one was registered, so the caller can open it. */
+  onDone: (created?: Project) => void;
 }) {
   const toast = useToast();
   const create = useCreateProject();
@@ -79,14 +81,19 @@ export function ProjectForm({
         requesting_team: payload.requesting_team,
       });
       toast.success("Project updated");
-    } else {
-      await create.mutateAsync(payload);
-      toast.success(
-        "Project registered",
-        "It starts in draft. Attach a notice and an approval, then send it to the DPO.",
-      );
+      onDone();
+      return;
     }
-    onDone();
+
+    const created = await create.mutateAsync(payload);
+    toast.success(
+      "Project registered",
+      "It starts in draft. Attach a notice and an approval, then send it to the DPO.",
+    );
+    // Handed back so the caller can open it. Closing the dialog onto the list
+    // and leaving somebody to find the row they just made is a step nobody
+    // needs, and the toast tells them to do something on a page they are not on.
+    onDone(created);
   });
 
   return (
@@ -156,8 +163,16 @@ export function ProjectForm({
 
             {!processors?.items.length ? (
               <Alert tone="info">
-                No active processors are registered yet. Add one from{" "}
-                <strong>Processors</strong> before registering a project.
+                No active processors are registered yet, and a project cannot be registered
+                without one. The Privacy Office registers them; ask them, then come back.
+                You can see the register at{" "}
+                <Link
+                  href="/processors"
+                  className="font-medium underline underline-offset-2"
+                >
+                  Processors
+                </Link>
+                .
               </Alert>
             ) : (
               <div className="grid gap-1.5 sm:grid-cols-2">
@@ -205,7 +220,7 @@ export function ProjectForm({
       </div>
 
       <DialogFooter>
-        <Button type="button" variant="ghost" onClick={onDone}>
+        <Button type="button" variant="ghost" onClick={() => onDone()}>
           Cancel
         </Button>
         <Button type="submit" variant="primary" loading={busy}>

@@ -175,10 +175,15 @@ export default function NoticeDetailPage() {
   return (
     <>
       <PageHeader
+        // Back to the project, not to the list of every notice. The reader came
+        // from a project, and the rest of the work is there.
         breadcrumb={
-          <Link href="/projects" className="inline-flex items-center gap-1 hover:text-text">
+          <Link
+            href={`/projects/${n.project_uuid}`}
+            className="inline-flex items-center gap-1 hover:text-text"
+          >
             <ArrowLeft className="size-3.5" aria-hidden="true" />
-            Projects
+            {n.project_name}
           </Link>
         }
         title={`${n.notice_code} · version ${n.version}`}
@@ -371,6 +376,18 @@ export default function NoticeDetailPage() {
               <EmptyState
                 title="No purposes attached"
                 description="A notice with no purposes asks a data subject to agree to nothing in particular."
+                action={
+                  isDpo && isDraft ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setEditingPurposes(true)}
+                    >
+                      <Plus className="size-4" />
+                      Attach a purpose
+                    </Button>
+                  ) : undefined
+                }
               />
             ) : (
               <ul className="divide-y divide-border">
@@ -421,7 +438,7 @@ export default function NoticeDetailPage() {
                             title="State Rule 3(b) more narrowly on this notice"
                           >
                             <SlidersHorizontal className="size-4" />
-                            Narrow
+                            Narrow for this notice
                           </Button>
                         )}
                       </div>
@@ -489,7 +506,22 @@ export default function NoticeDetailPage() {
                 <Skeleton className="h-20" />
               </CardBody>
             ) : !languages.data?.length ? (
-              <EmptyState title="No renditions yet" />
+              <EmptyState
+                title="No text yet"
+                description="A notice cannot be published until it says something. Each rendition is approved on its own."
+                action={
+                  isDpo && isDraft ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setLanguageSheet({})}
+                    >
+                      <Plus className="size-4" />
+                      Add a rendition
+                    </Button>
+                  ) : undefined
+                }
+              />
             ) : (
               <ul className="divide-y divide-border">
                 {languages.data.map((lang) => (

@@ -140,6 +140,8 @@ No request body.
     "notice_uuid": "00000000-0000-4000-8000-000000000000",
     "notice_code": "string",
     "version": 1,
+    "project_uuid": "00000000-0000-4000-8000-000000000000",
+    "project_name": "string",
     "withdraw_url": "string",
     "exercise_rights_url": "string",
     "board_complaint_url": "string",
@@ -226,6 +228,8 @@ Request body required: **yes**.
   "notice_uuid": "00000000-0000-4000-8000-000000000000",
   "notice_code": "string",
   "version": 1,
+  "project_uuid": "00000000-0000-4000-8000-000000000000",
+  "project_name": "string",
   "withdraw_url": "string",
   "exercise_rights_url": "string",
   "board_complaint_url": "string",
@@ -310,6 +314,8 @@ Request body required: **yes**.
   "notice_uuid": "00000000-0000-4000-8000-000000000000",
   "notice_code": "string",
   "version": 1,
+  "project_uuid": "00000000-0000-4000-8000-000000000000",
+  "project_name": "string",
   "withdraw_url": "string",
   "exercise_rights_url": "string",
   "board_complaint_url": "string",
@@ -377,6 +383,8 @@ No request body.
   "notice_uuid": "00000000-0000-4000-8000-000000000000",
   "notice_code": "string",
   "version": 1,
+  "project_uuid": "00000000-0000-4000-8000-000000000000",
+  "project_name": "string",
   "withdraw_url": "string",
   "exercise_rights_url": "string",
   "board_complaint_url": "string",
@@ -459,6 +467,8 @@ Request body required: **yes**.
   "notice_uuid": "00000000-0000-4000-8000-000000000000",
   "notice_code": "string",
   "version": 1,
+  "project_uuid": "00000000-0000-4000-8000-000000000000",
+  "project_name": "string",
   "withdraw_url": "string",
   "exercise_rights_url": "string",
   "board_complaint_url": "string",
@@ -527,6 +537,8 @@ No request body.
     "notice_uuid": "00000000-0000-4000-8000-000000000000",
     "notice_code": "string",
     "version": 1,
+    "project_uuid": "00000000-0000-4000-8000-000000000000",
+    "project_name": "string",
     "withdraw_url": "string",
     "exercise_rights_url": "string",
     "board_complaint_url": "string",
@@ -1212,6 +1224,8 @@ No request body.
   "notice_uuid": "00000000-0000-4000-8000-000000000000",
   "notice_code": "string",
   "version": 1,
+  "project_uuid": "00000000-0000-4000-8000-000000000000",
+  "project_name": "string",
   "withdraw_url": "string",
   "exercise_rights_url": "string",
   "board_complaint_url": "string",
@@ -1349,6 +1363,8 @@ Request body required: **yes**.
   "notice_uuid": "00000000-0000-4000-8000-000000000000",
   "notice_code": "string",
   "version": 1,
+  "project_uuid": "00000000-0000-4000-8000-000000000000",
+  "project_name": "string",
   "withdraw_url": "string",
   "exercise_rights_url": "string",
   "board_complaint_url": "string",
@@ -1574,6 +1590,8 @@ Start this project's notice from one that already exists.
 | `notice_uuid` | `string` | Yes | format: `uuid` | — |
 | `notice_code` | `string` | Yes | — | — |
 | `version` | `integer` | Yes | — | — |
+| `project_uuid` | `string` | Yes | format: `uuid` | — |
+| `project_name` | `string` | Yes | — | — |
 | `withdraw_url` | `string` | Yes | — | — |
 | `exercise_rights_url` | `string` | Yes | — | — |
 | `board_complaint_url` | `string` | Yes | — | — |

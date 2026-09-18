@@ -10,6 +10,11 @@ export interface Notice {
   notice_uuid: Uuid;
   notice_code: string;
   version: number;
+  /** The project it belongs to. A notice is always reached from somewhere and
+   *  always has to lead back; without these the only way out was the whole
+   *  notices list. */
+  project_uuid: Uuid;
+  project_name: string;
   withdraw_url: string;
   exercise_rights_url: string;
   /** The Data Protection Board portal, NOT the internal grievance form. */

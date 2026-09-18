@@ -167,7 +167,11 @@ function AssignSiteOwnerBody({
             hint="Whoever owns the source becomes accountable for this site. Leave unattached if nothing has been decided yet."
           >
             {(props) => (
-              <Select {...props} value={selected} onChange={(e) => setSelected(e.target.value)}>
+              <Select
+                {...props}
+                value={selected}
+                onChange={(e) => setSelected(e.target.value)}
+              >
                 <option value="">Nothing — leave unattached</option>
                 {eligible.map((source) => (
                   <option key={source.source_uuid} value={source.source_uuid}>
@@ -181,8 +185,10 @@ function AssignSiteOwnerBody({
 
           {!processors.isLoading && !eligible.length && (
             <Alert tone="info">
-              None of this project&rsquo;s processors have a data source registered yet. Add one
-              under <strong>Sources</strong>, and it will appear here.
+              None of this project&rsquo;s processors have a data source registered yet. A
+              collection owner registers one - the DCO Admin for a third party&rsquo;s, the
+              R&amp;D Collection Owner for collection the team runs itself - and it appears
+              here once they have.
             </Alert>
           )}
 
@@ -213,9 +219,9 @@ function AssignSiteOwnerBody({
 
           {changing && !site.is_primary && (
             <Alert tone="info">
-              The project stays with its current owner. This site is not the one it follows, so
-              the new source&rsquo;s owner will be able to see the project and act on this site
-              only.
+              The project stays with its current owner. This site is not the one it follows,
+              so the new source&rsquo;s owner will be able to see the project and act on
+              this site only.
             </Alert>
           )}
 
@@ -223,7 +229,12 @@ function AssignSiteOwnerBody({
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" loading={assign.isPending} disabled={!changing}>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={assign.isPending}
+              disabled={!changing}
+            >
               {selected ? "Attach" : "Detach"}
             </Button>
           </div>

@@ -416,7 +416,19 @@ export default function ProjectDetailPage() {
             ) : !sites.data?.length ? (
               <EmptyState
                 title="No sites yet"
-                description="Sites are the recipients named in the notice. The R&D User adds them — collection cannot start at a site that is not registered here."
+                description="Sites are the recipients named in the notice. Collection cannot start at a site that is not registered here, and a notice with none says so in its recipient line."
+                action={
+                  canAddSite ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setSheet({ kind: "site" })}
+                    >
+                      <MapPin className="size-4" />
+                      Add site
+                    </Button>
+                  ) : undefined
+                }
               />
             ) : (
               <ul className="divide-y divide-border">

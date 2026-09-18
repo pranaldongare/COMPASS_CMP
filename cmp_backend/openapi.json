@@ -18404,6 +18404,15 @@
             "type": "integer",
             "title": "Version"
           },
+          "project_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Uuid"
+          },
+          "project_name": {
+            "type": "string",
+            "title": "Project Name"
+          },
           "withdraw_url": {
             "type": "string",
             "title": "Withdraw Url"
@@ -18518,6 +18527,8 @@
           "notice_uuid",
           "notice_code",
           "version",
+          "project_uuid",
+          "project_name",
           "withdraw_url",
           "exercise_rights_url",
           "board_complaint_url",

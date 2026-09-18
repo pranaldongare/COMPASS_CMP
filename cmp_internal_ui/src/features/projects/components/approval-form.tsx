@@ -56,10 +56,7 @@ export function ApprovalForm({
 
   const onSubmit = form.submit(async (values) => {
     await upload.mutateAsync(values);
-    toast.success(
-      "Approval uploaded",
-      "The project can now move to pending approval.",
-    );
+    toast.success("Approval uploaded", "The project can now move to pending approval.");
     onDone();
   });
 
@@ -86,7 +83,13 @@ export function ApprovalForm({
             error={form.formState.errors.reference_no?.message}
             required
           >
-            {(p) => <Input {...p} {...form.register("reference_no")} placeholder="SEC-2026-0142" />}
+            {(p) => (
+              <Input
+                {...p}
+                {...form.register("reference_no")}
+                placeholder="SEC-2026-0142"
+              />
+            )}
           </Field>
         </div>
 

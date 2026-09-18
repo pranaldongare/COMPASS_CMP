@@ -62,7 +62,13 @@ export function AgentForm({ siteUuid, onDone }: { siteUuid: string; onDone: () =
             error={form.formState.errors.max_uses?.message}
           >
             {(p) => (
-              <Input {...p} type="number" min={1} {...form.register("max_uses")} placeholder="unlimited" />
+              <Input
+                {...p}
+                type="number"
+                min={1}
+                {...form.register("max_uses")}
+                placeholder="unlimited"
+              />
             )}
           </Field>
 
@@ -94,7 +100,9 @@ export function AgentForm({ siteUuid, onDone }: { siteUuid: string; onDone: () =
 function MintedLinkPanel({ link, onDone }: { link: MintedLink; onDone: () => void }) {
   const [copied, setCopied] = React.useState(false);
   const url =
-    typeof window !== "undefined" ? `${window.location.origin}${link.url_path}` : link.url_path;
+    typeof window !== "undefined"
+      ? `${window.location.origin}${link.url_path}`
+      : link.url_path;
 
   return (
     <div>
@@ -103,7 +111,7 @@ function MintedLinkPanel({ link, onDone }: { link: MintedLink; onDone: () => voi
       </Alert>
 
       <div className="mt-4 rounded-md border border-border bg-bg-subtle p-3">
-        <Mono className="block break-all text-sm">{url}</Mono>
+        <Mono className="block text-sm break-all">{url}</Mono>
       </div>
 
       <Button
@@ -120,9 +128,8 @@ function MintedLinkPanel({ link, onDone }: { link: MintedLink; onDone: () => voi
       </Button>
 
       <p className="mt-4 text-xs text-text-muted">
-        Give this to the field agent. Anyone holding it can open the notice and
-        consent, so treat it as a credential — it is scrubbed from our access logs
-        for the same reason.
+        Give this to the field agent. Anyone holding it can open the notice and consent, so
+        treat it as a credential — it is scrubbed from our access logs for the same reason.
       </p>
 
       <DialogFooter>
