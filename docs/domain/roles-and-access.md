@@ -10,12 +10,12 @@ and the rows each may see are a scope compiled into every query.
 
 | Role | Enum value | Who they are | What they mainly do |
 |---|---|---|---|
-| Data Protection Officer | `dpo` | The Privacy Office | Approves projects, publishes notices, sees every register, runs the rights queue, reads the audit trail |
+| Data Protection Officer | `dpo` | The Privacy Office | Composes and approves notices, activates purposes, approves projects and publishes their notices, sees every register, runs the rights queue, reads the audit trail |
 | Administrator | `admin` | Provisions the platform | Creates accounts and assigns roles, sees the audit trail, arranges cover for anyone, edits the words of every message the platform sends, and is the independent reviewer for a grievance about the DPO |
 | Data Collection Owner | `dco` | Accountable for a third party's collection | Registers data sources and sites under their processors, mints and replaces consent links, exports and imports, answers tickets addressed to them |
 | DCO Admin | `dco_admin` | Routes third-party collection | Receives an approved project that names a third-party processor, attaches sources, registers sites and names who runs them |
 | Research Collection Owner | `rco` | A DCO for in-house collection | The same as a DCO, restricted to the organisation's own sources and sites |
-| R&D User | `rnd_user` | Owns a study | Registers the project, names purposes and collectors, authors the notice, uploads approval proofs, asks to add a collector after approval |
+| R&D User | `rnd_user` | Owns a study | Registers the project, names the collectors, brings the notice as a filled-in document or a copy of an approved one, uploads approval proofs, asks to add a collector after approval |
 | Data principal | `data_subject` | The person the data is about | Reads and withdraws her consents, sees her disclosures, makes and follows rights requests, names a nominee |
 
 ## The matrix
@@ -33,6 +33,14 @@ denied: no wildcard, no inheritance.
 | approval | all | | scoped | scoped | scoped | own +w | |
 | site | all +w | | scoped +w | scoped +w | scoped +w | own | |
 | notice | all +w | | scoped | scoped | scoped | own +w | |
+
+The R&D User's write on a notice is narrower than the row can say. They bring
+one, by uploading the filled-in document, re-uploading a corrected one, or
+copying a notice the Privacy Office has approved. Composing one, editing its
+wording, attaching or narrowing its purposes and writing the text of a rendition
+are the office's, on routes guarded by role rather than by this resource. The
+split is by act rather than by resource, which is why the table alone does not
+show it; a unit test pins which route is on which side.
 | link | all +w | | scoped +w | scoped +w | scoped +w | | |
 | consent | all | | scoped | scoped | scoped | own | |
 | export | all +w | | scoped +w | scoped +w | scoped +w | | |

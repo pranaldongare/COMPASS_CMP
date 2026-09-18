@@ -62,6 +62,15 @@ as a release yet.
   had named. The wall now stands at submission, in draft, which is where the
   officer is already shown the project; their approval carries the same guard
   for anything submitted before this landed.
+- **The Privacy Office composes a notice; the R&D User brings one.** Seven
+  routes moved: writing a notice from nothing, editing its wording, attaching,
+  narrowing or removing a purpose, and writing the text of a rendition are the
+  office's. The author keeps the three that matter to them - upload the
+  filled-in document, upload a corrected one, or start from a notice the office
+  has approved - and the console offers those two in that order, with
+  composing gone from their view. The copy picker widens from published notices
+  to approved ones as well, since a notice written as a model is never
+  published, and approved means the office signed its text off.
 - **The officer activates a purpose from the notice that carries it.** The
   publication checklist named a purpose code and stopped there, and the only
   control that acted on it was a row in the purposes register, reached by a

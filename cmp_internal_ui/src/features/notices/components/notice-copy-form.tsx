@@ -37,10 +37,18 @@ export function NoticeCopyForm({
   const [selected, setSelected] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
 
-  // Published notices only. Copying a half-finished draft propagates whatever is
-  // wrong with it, and a published one has at least been through the checklist.
-  const notices = useAllNotices({ status: "published", limit: 100 });
-  const options = notices.data?.items ?? [];
+  // Approved and published, not published alone.
+  //
+  // The bar is that somebody has signed the text off, which is what `approved`
+  // means: the Privacy Office has read that rendition and approved it. Published
+  // alone was too narrow once the office began writing notices for authors to
+  // start from - a notice written as a model is never published, because
+  // publishing attaches it to a project. Drafts stay out: copying a
+  // half-finished one propagates whatever is wrong with it.
+  const approved = useAllNotices({ status: "approved", limit: 100 });
+  const published = useAllNotices({ status: "published", limit: 100 });
+  const notices = approved.isLoading || published.isLoading ? approved : published;
+  const options = [...(approved.data?.items ?? []), ...(published.data?.items ?? [])];
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -66,21 +74,22 @@ export function NoticeCopyForm({
       <FormError message={error} />
 
       {notices.isLoading ? (
-        <p className="text-sm text-text-muted">Loading published notices…</p>
+        <p className="text-sm text-text-muted">Loading notices…</p>
       ) : options.length === 0 ? (
         <Alert tone="info">
-          There are no published notices to copy from yet. Create this project&rsquo;s
-          notice from scratch.
+          There is nothing to copy from yet. A notice becomes available here once the
+          Privacy Office has approved its text. Upload the filled-in document instead.
         </Alert>
       ) : (
         <div className="space-y-4">
           <Field label="Notice to copy" required>
             {(p) => (
               <Select {...p} value={selected} onChange={(e) => setSelected(e.target.value)}>
-                <option value="">Choose a published notice…</option>
+                <option value="">Choose a notice…</option>
                 {options.map((n) => (
                   <option key={n.notice_uuid} value={n.notice_uuid}>
                     {n.notice_code} v{n.version} — {n.project_name}
+                    {n.status === "approved" ? " (approved, not yet published)" : ""}
                   </option>
                 ))}
               </Select>
@@ -89,11 +98,10 @@ export function NoticeCopyForm({
 
           <Alert tone="warning" title="What comes across, and what does not">
             <p className="leading-relaxed">
-              The wording, the purposes and every language rendition are copied. The
-              legal approvals are not — a lawyer signed that text off for the other
-              project&rsquo;s recipients, and carrying the sign-off over would launder
-              an approval nobody gave. Re-approve each rendition here before
-              publishing.
+              The wording, the purposes and every language rendition are copied. The legal
+              approvals are not — a lawyer signed that text off for the other
+              project&rsquo;s recipients, and carrying the sign-off over would launder an
+              approval nobody gave. Re-approve each rendition here before publishing.
             </p>
           </Alert>
         </div>
@@ -103,7 +111,12 @@ export function NoticeCopyForm({
         <Button type="button" variant="ghost" onClick={onDone}>
           Cancel
         </Button>
-        <Button type="submit" variant="primary" loading={copy.isPending} disabled={!selected}>
+        <Button
+          type="submit"
+          variant="primary"
+          loading={copy.isPending}
+          disabled={!selected}
+        >
           Copy into this project
         </Button>
       </DialogFooter>

@@ -146,6 +146,12 @@ export default function NoticeDetailPage() {
   //
   // The server confines an R&D User to their own projects, so this flag being
   // role-wide is not a widening: a notice they cannot reach does not load.
+  // Who may *read* this notice's working surface: the checklist, which is
+  // usually blocking the author rather than the officer. Composing it is no
+  // longer theirs - the wording, the purposes and each rendition's text are the
+  // Privacy Office's, and every control that changes one is gated on `isDpo`.
+  // The author brings a notice by uploading a document or picking an approved
+  // one, both from the project page.
   const canAuthor = isDpo || me?.role === "rnd_user";
   const isDraft = n.status === "draft" || n.status === "approved";
 
@@ -189,7 +195,7 @@ export default function NoticeDetailPage() {
               uuid={n.notice_uuid}
               label={`${n.notice_code} v${n.version}`}
             />
-            {canAuthor && isDraft && (
+            {isDpo && isDraft && (
               <Button variant="secondary" size="sm" onClick={() => setEditingNotice(true)}>
                 <Pencil className="size-4" />
                 Edit
@@ -329,7 +335,7 @@ export default function NoticeDetailPage() {
           <NoticeText
             languages={languages.data}
             isLoading={languages.isLoading}
-            canEdit={canAuthor && isDraft}
+            canEdit={isDpo && isDraft}
             onEdit={(lang) =>
               setLanguageSheet({
                 code: lang.language_code,
@@ -346,7 +352,7 @@ export default function NoticeDetailPage() {
                   Rule 3(b): what each purpose enables, itemised, with its retention.
                 </p>
               </div>
-              {canAuthor && isDraft && (
+              {isDpo && isDraft && (
                 <Button
                   variant="secondary"
                   size="sm"
@@ -407,7 +413,7 @@ export default function NoticeDetailPage() {
                         {/* Draft only. A published notice is frozen and hashed;
                             changing what it says is a new version, not an edit,
                             and the API refuses it either way. */}
-                        {canAuthor && isDraft && (
+                        {isDpo && isDraft && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -466,7 +472,7 @@ export default function NoticeDetailPage() {
                 language, not once per notice: a DPO who reads English and approves eight
                 renditions has approved one.
               </p>
-              {canAuthor && isDraft && (
+              {isDpo && isDraft && (
                 <Button
                   variant="secondary"
                   size="sm"
@@ -516,7 +522,7 @@ export default function NoticeDetailPage() {
                         </span>
                       )}
 
-                      {canAuthor && isDraft && (
+                      {isDpo && isDraft && (
                         <>
                           <Button
                             variant="ghost"

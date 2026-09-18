@@ -9,22 +9,22 @@
 | GET | `/notices` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
 | GET | `/notices/import/template` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
 | GET | `/notices/{notice_uuid}` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| PUT | `/notices/{notice_uuid}` | `dpo`, `rnd_user` | Full session; anonymous NO |
+| PUT | `/notices/{notice_uuid}` | `dpo` | Full session; anonymous NO |
 | GET | `/notices/{notice_uuid}/checklist` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
 | GET | `/notices/{notice_uuid}/languages` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| POST | `/notices/{notice_uuid}/languages` | `dpo`, `rnd_user` | Full session; anonymous NO |
-| PUT | `/notices/{notice_uuid}/languages/{code}` | `dpo`, `rnd_user` | Full session; anonymous NO |
+| POST | `/notices/{notice_uuid}/languages` | `dpo` | Full session; anonymous NO |
+| PUT | `/notices/{notice_uuid}/languages/{code}` | `dpo` | Full session; anonymous NO |
 | POST | `/notices/{notice_uuid}/languages/{code}/approve` | `dpo` | Full session; anonymous NO |
 | GET | `/notices/{notice_uuid}/preview` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
 | POST | `/notices/{notice_uuid}/publish` | `dpo` | Full session; anonymous NO |
 | GET | `/notices/{notice_uuid}/purposes` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| POST | `/notices/{notice_uuid}/purposes` | `dpo`, `rnd_user` | Full session; anonymous NO |
+| POST | `/notices/{notice_uuid}/purposes` | `dpo` | Full session; anonymous NO |
 | POST | `/notices/{notice_uuid}/purposes/activate` | `dpo` | Full session; anonymous NO |
-| DELETE | `/notices/{notice_uuid}/purposes/{purpose_uuid}` | `dpo`, `rnd_user` | Full session; anonymous NO |
-| PUT | `/notices/{notice_uuid}/purposes/{purpose_uuid}` | `dpo`, `rnd_user` | Full session; anonymous NO |
+| DELETE | `/notices/{notice_uuid}/purposes/{purpose_uuid}` | `dpo` | Full session; anonymous NO |
+| PUT | `/notices/{notice_uuid}/purposes/{purpose_uuid}` | `dpo` | Full session; anonymous NO |
 | GET | `/notices/{notice_uuid}/versions` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
 | GET | `/projects/{project_uuid}/notices` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| POST | `/projects/{project_uuid}/notices` | `dpo`, `rnd_user` | Full session; anonymous NO |
+| POST | `/projects/{project_uuid}/notices` | `dpo` | Full session; anonymous NO |
 | POST | `/projects/{project_uuid}/notices/copy` | `dpo`, `rnd_user` | Full session; anonymous NO |
 | POST | `/projects/{project_uuid}/notices/import` | `dpo`, `rnd_user` | Full session; anonymous NO |
 | POST | `/projects/{project_uuid}/notices/import/validate` | `dpo`, `rnd_user` | Full session; anonymous NO |
@@ -77,13 +77,14 @@ Draft only.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | OWN | NO |
+| ALL | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `rnd_user`.
-- **Route guard:** `NoticeAuthor`.
-- **Resolved gate:** `RequireResource(notice, write=True)`.
-- **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
-- Authors are DPO and R&D owner only. Service checks restrict draft editing and require a new version for material changes.
+- **Who:** `dpo`.
+- **Route guard:** `RequireDPO`.
+- Composing a notice is the Privacy Office's. An R&D User brings one by uploading the filled-in document or copying a notice the office has approved; the wording, the purposes and each rendition's text are not theirs to write.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
+- **Rules:** The DPO's scope is every notice. Read permission alone does not permit editing, and an R&D User who can read this notice cannot change it.
+- The Privacy Office only. Service checks restrict draft editing and require a new version for material changes.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/notices.py#L309), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/domain/notices/service.py#L1).
 
 ## GET /notices/{notice_uuid}/checklist
@@ -120,13 +121,14 @@ Add Language.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | OWN | NO |
+| ALL | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `rnd_user`.
-- **Route guard:** `NoticeAuthor`.
-- **Resolved gate:** `RequireResource(notice, write=True)`.
-- **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
-- Authors are DPO and R&D owner only. Service checks restrict draft editing and require a new version for material changes.
+- **Who:** `dpo`.
+- **Route guard:** `RequireDPO`.
+- Composing a notice is the Privacy Office's. An R&D User brings one by uploading the filled-in document or copying a notice the office has approved; the wording, the purposes and each rendition's text are not theirs to write.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
+- **Rules:** The DPO's scope is every notice. Read permission alone does not permit editing, and an R&D User who can read this notice cannot change it.
+- The Privacy Office only. Service checks restrict draft editing and require a new version for material changes.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/notices.py#L511), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/domain/notices/service.py#L1).
 
 ## PUT /notices/{notice_uuid}/languages/{code}
@@ -135,13 +137,14 @@ Draft only.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | OWN | NO |
+| ALL | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `rnd_user`.
-- **Route guard:** `NoticeAuthor`.
-- **Resolved gate:** `RequireResource(notice, write=True)`.
-- **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
-- Authors are DPO and R&D owner only. Service checks restrict draft editing and require a new version for material changes.
+- **Who:** `dpo`.
+- **Route guard:** `RequireDPO`.
+- Composing a notice is the Privacy Office's. An R&D User brings one by uploading the filled-in document or copying a notice the office has approved; the wording, the purposes and each rendition's text are not theirs to write.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
+- **Rules:** The DPO's scope is every notice. Read permission alone does not permit editing, and an R&D User who can read this notice cannot change it.
+- The Privacy Office only. Service checks restrict draft editing and require a new version for material changes.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/notices.py#L529), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/domain/notices/service.py#L1).
 
 ## POST /notices/{notice_uuid}/languages/{code}/approve
@@ -208,13 +211,14 @@ Attach Purpose.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | OWN | NO |
+| ALL | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `rnd_user`.
-- **Route guard:** `NoticeAuthor`.
-- **Resolved gate:** `RequireResource(notice, write=True)`.
-- **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
-- Authors are DPO and R&D owner only. Service checks restrict draft editing and require a new version for material changes.
+- **Who:** `dpo`.
+- **Route guard:** `RequireDPO`.
+- Composing a notice is the Privacy Office's. An R&D User brings one by uploading the filled-in document or copying a notice the office has approved; the wording, the purposes and each rendition's text are not theirs to write.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
+- **Rules:** The DPO's scope is every notice. Read permission alone does not permit editing, and an R&D User who can read this notice cannot change it.
+- The Privacy Office only. Service checks restrict draft editing and require a new version for material changes.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/notices.py#L342), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/domain/notices/service.py#L1).
 
 ## POST /notices/{notice_uuid}/purposes/activate
@@ -238,13 +242,14 @@ Draft only.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | OWN | NO |
+| ALL | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `rnd_user`.
-- **Route guard:** `NoticeAuthor`.
-- **Resolved gate:** `RequireResource(notice, write=True)`.
-- **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
-- Authors are DPO and R&D owner only. Service checks restrict draft editing and require a new version for material changes.
+- **Who:** `dpo`.
+- **Route guard:** `RequireDPO`.
+- Composing a notice is the Privacy Office's. An R&D User brings one by uploading the filled-in document or copying a notice the office has approved; the wording, the purposes and each rendition's text are not theirs to write.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
+- **Rules:** The DPO's scope is every notice. Read permission alone does not permit editing, and an R&D User who can read this notice cannot change it.
+- The Privacy Office only. Service checks restrict draft editing and require a new version for material changes.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/notices.py#L483), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/domain/notices/service.py#L1).
 
 ## PUT /notices/{notice_uuid}/purposes/{purpose_uuid}
@@ -253,13 +258,14 @@ Narrow Rule 3(b) for this notice.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | OWN | NO |
+| ALL | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `rnd_user`.
-- **Route guard:** `NoticeAuthor`.
-- **Resolved gate:** `RequireResource(notice, write=True)`.
-- **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
-- Authors are DPO and R&D owner only. Service checks restrict draft editing and require a new version for material changes.
+- **Who:** `dpo`.
+- **Route guard:** `RequireDPO`.
+- Composing a notice is the Privacy Office's. An R&D User brings one by uploading the filled-in document or copying a notice the office has approved; the wording, the purposes and each rendition's text are not theirs to write.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
+- **Rules:** The DPO's scope is every notice. Read permission alone does not permit editing, and an R&D User who can read this notice cannot change it.
+- The Privacy Office only. Service checks restrict draft editing and require a new version for material changes.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/notices.py#L387), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/domain/notices/service.py#L1).
 
 ## GET /notices/{notice_uuid}/versions
@@ -296,13 +302,14 @@ Create Notice.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | OWN | NO |
+| ALL | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `rnd_user`.
-- **Route guard:** `NoticeAuthor`.
-- **Resolved gate:** `RequireResource(notice, write=True)`.
-- **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
-- Authors are DPO and R&D owner only. Service checks restrict draft editing and require a new version for material changes.
+- **Who:** `dpo`.
+- **Route guard:** `RequireDPO`.
+- Composing a notice is the Privacy Office's. An R&D User brings one by uploading the filled-in document or copying a notice the office has approved; the wording, the purposes and each rendition's text are not theirs to write.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
+- **Rules:** The DPO's scope is every notice. Read permission alone does not permit editing, and an R&D User who can read this notice cannot change it.
+- The Privacy Office only. Service checks restrict draft editing and require a new version for material changes.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/api/routers/v1/notices.py#L246), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/cmp_backend/src/cmp/domain/notices/service.py#L1).
 
 ## POST /projects/{project_uuid}/notices/copy

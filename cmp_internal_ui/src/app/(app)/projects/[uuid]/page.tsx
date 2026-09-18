@@ -227,14 +227,6 @@ export default function ProjectDetailPage() {
                   <Upload className="size-4" />
                   Upload a notice document
                 </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setSheet({ kind: "notice" })}
-                >
-                  <ScrollText className="size-4" />
-                  New notice
-                </Button>
                 {/* Most projects are a variation on one that already exists. The
                     server copies rather than shares — a notice belongs to one
                     project — so this is a starting point, not a link. */}
@@ -246,6 +238,20 @@ export default function ProjectDetailPage() {
                   <Copy className="size-4" />
                   Use an existing notice
                 </Button>
+                {/* Composing one from nothing is the Privacy Office's. An author
+                    brings a notice as a filled-in document or picks one the
+                    office has approved; the wording itself is not theirs to
+                    invent, and the API refuses it either way. */}
+                {isDpo && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setSheet({ kind: "notice" })}
+                  >
+                    <ScrollText className="size-4" />
+                    New notice
+                  </Button>
+                )}
               </>
             )}
             {/* Gated on the project's state as well as the role. The API
@@ -347,14 +353,15 @@ export default function ProjectDetailPage() {
                         <Upload className="size-4" />
                         Upload a notice document
                       </Button>
-                      {/* Second, and quieter: writing one by hand is the
-                          fallback for when there is no document yet. */}
+                      {/* Second, and quieter: starting from one the Privacy
+                          Office has already approved, for when there is no
+                          document yet. Writing one from nothing is theirs. */}
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => setSheet({ kind: "notice" })}
+                        onClick={() => setSheet({ kind: "notice-copy" })}
                       >
-                        Write one instead
+                        Use an existing notice
                       </Button>
                     </div>
                   ) : undefined

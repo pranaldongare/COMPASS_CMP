@@ -187,10 +187,18 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         # row that differed here would be a rule nobody could explain.
         Role.DCO_ADMIN: Grant(Scope.SCOPED),
         Role.RCO: Grant(Scope.SCOPED),
-        # Write, on their own projects. The R&D User writes the notice now: they
-        # are the one who knows what the study collects and why, and the DPO's
-        # job is to review that rather than to transcribe it. The DPO keeps
-        # Scope.ALL and can still correct any of it.
+        # Write, on their own projects - but a narrower write than it looks.
+        #
+        # The R&D User *brings* the notice, because they are the one who knows
+        # what the study collects: they upload the filled-in document, re-upload
+        # a corrected one, or start from a notice the Privacy Office has already
+        # approved. Those are the three routes this grant is for.
+        #
+        # Composing one is not among them. The wording, the purposes attached to
+        # it and the text of each rendition are the office's, and those routes
+        # take `RequireDPO` rather than this resource. The division is by act
+        # rather than by resource, so this row cannot express it on its own; see
+        # `api/routers/v1/notices.py` and the test that pins which is which.
         Role.RND_USER: Grant(Scope.OWN, write=True),
     },
     "link": {
@@ -408,9 +416,10 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "delegate",
         *PERSONAL,
     ),
-    # `notices` and `processors` because the R&D User now writes the notice and
-    # names who will collect. Both were the DPO's, and both were things the DPO
-    # had to be told before they could enter them.
+    # `notices` and `processors` because the R&D User brings the notice and names
+    # who will collect. Both were the DPO's, and both were things the DPO had to
+    # be told before they could enter them. The author reads the notice here and
+    # watches its checklist; composing it is the office's.
     Role.RND_USER: (
         "dashboard",
         "projects",

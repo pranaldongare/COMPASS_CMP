@@ -61,11 +61,17 @@ TEMPLATE_FILENAME = "DPDP_Consent_Notice_Template_v0_2.docx"
 
 NoticeReader = Annotated[Any, Depends(RequireResource("notice"))]
 
-#: Who may write a notice: the DPO anywhere, the R&D User on their own projects.
+#: Who may put a notice on a project: the DPO anywhere, the R&D User on their own.
 #:
-#: The R&D User writes it because they are the one who knows what the study
-#: collects and why. Asking the DPO to author it meant the DPO transcribing an
-#: email and then reviewing their own transcription, which is not a review.
+#: The R&D User still brings the notice, because they are the one who knows what
+#: the study collects - but they bring it as a filled-in document, or by picking
+#: one the Privacy Office has already written and approved. Both of those are
+#: writes, and this is the guard on them.
+#:
+#: What they no longer do is compose one: the wording, the purposes attached to
+#: it and the text of each rendition are the Privacy Office's, and those routes
+#: take `RequireDPO` below. The division is by *act*, not by resource, which is
+#: why this guard and that one both appear on notice routes.
 NoticeAuthor = Annotated[Any, Depends(RequireResource("notice", write=True))]
 
 
@@ -253,7 +259,7 @@ async def list_notices(project_uuid: UUID, principal: NoticeReader) -> list[dict
     status_code=status.HTTP_201_CREATED,
 )
 async def create_notice(
-    project_uuid: UUID, body: NoticeIn, principal: NoticeAuthor
+    project_uuid: UUID, body: NoticeIn, principal: RequireDPO
 ) -> dict[str, Any]:
     async with transaction() as conn:
         return await service.create(
@@ -316,7 +322,7 @@ async def get_notice(notice_uuid: UUID, principal: NoticeReader) -> dict[str, An
 
 @router.put("/notices/{notice_uuid}", response_model=NoticeOut, summary="Draft only")
 async def update_notice(
-    notice_uuid: UUID, body: NoticeUpdate, principal: NoticeAuthor
+    notice_uuid: UUID, body: NoticeUpdate, principal: RequireDPO
 ) -> dict[str, Any]:
     async with transaction() as conn:
         notice = await _require_notice(conn, str(notice_uuid), principal)
@@ -349,7 +355,7 @@ async def list_notice_purposes(notice_uuid: UUID, principal: NoticeReader) -> li
 
 @router.post("/notices/{notice_uuid}/purposes", status_code=status.HTTP_201_CREATED)
 async def attach_purpose(
-    notice_uuid: UUID, body: AttachPurpose, principal: NoticeAuthor
+    notice_uuid: UUID, body: AttachPurpose, principal: RequireDPO
 ) -> dict[str, Any]:
     """`is_mandatory = true` should be rare and should make you uncomfortable.
 
@@ -397,7 +403,7 @@ async def override_purpose(
     notice_uuid: UUID,
     purpose_uuid: UUID,
     body: PurposeOverride,
-    principal: NoticeAuthor,
+    principal: RequireDPO,
 ) -> dict[str, Any]:
     """State Rule 3(b) more narrowly on this notice than the purpose does.
 
@@ -489,7 +495,7 @@ async def override_purpose(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Draft only",
 )
-async def detach_purpose(notice_uuid: UUID, purpose_uuid: UUID, principal: NoticeAuthor) -> None:
+async def detach_purpose(notice_uuid: UUID, purpose_uuid: UUID, principal: RequireDPO) -> None:
     async with transaction() as conn:
         notice = await _require_notice(conn, str(notice_uuid), principal)
         await service.detach_purpose(
@@ -520,7 +526,7 @@ async def list_languages(notice_uuid: UUID, principal: NoticeReader) -> list[dic
 async def add_language(
     notice_uuid: UUID,
     body: LanguageIn,
-    principal: NoticeAuthor,
+    principal: RequireDPO,
     language_code: Annotated[str, Query()],
 ) -> dict[str, Any]:
     async with transaction() as conn:
@@ -536,7 +542,7 @@ async def add_language(
 
 @router.put("/notices/{notice_uuid}/languages/{code}", summary="Draft only")
 async def update_language(
-    notice_uuid: UUID, code: str, body: LanguageIn, principal: NoticeAuthor
+    notice_uuid: UUID, code: str, body: LanguageIn, principal: RequireDPO
 ) -> dict[str, Any]:
     """Replacing the text clears the approval.
 
