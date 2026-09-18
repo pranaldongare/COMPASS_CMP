@@ -50,6 +50,37 @@ test.describe("R&D User", () => {
     await expect(page.getByText(`E2E Project ${STAMP}`)).toBeVisible({ timeout: 15_000 });
   });
 
+  /**
+   * Reported by an R&D User: pressing "Save changes" did nothing at all - no
+   * request, no message, and the dialog stayed open. The form was judged
+   * against the registration rule that at least one processor be named, on a
+   * field the edit dialog has no control for, so the submit stopped before it
+   * started.
+   */
+  test("edits a draft project and the dialog closes", async ({ page }) => {
+    await page.goto("/projects?status=in_draft");
+    const project = page.locator('a[href^="/projects/"]').first();
+    await expect(project).toBeVisible({ timeout: 15_000 });
+    await project.click();
+    await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}/, { timeout: 15_000 });
+
+    await page
+      .getByRole("button", { name: /^edit$/i })
+      .first()
+      .click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+
+    const renamed = `E2E Renamed ${STAMP}`;
+    await dialog.getByLabel(/project name/i).fill(renamed);
+    await dialog.getByRole("button", { name: /save changes/i }).click();
+
+    await expect(dialog).not.toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: renamed })).toBeVisible({
+      timeout: 15_000,
+    });
+  });
+
   test("refuses a project with nobody named to collect", async ({ page }) => {
     // The field that replaced the DCO nomination. A project with no processor
     // cannot be routed at all, so it is refused at creation rather than
@@ -116,7 +147,6 @@ test.describe("DCO", () => {
   });
 
   test("offers a consent link only for an approved project", async ({ page }) => {
-
     // Filtered rather than picked off the first page. This test used to click
     // the seeded project directly, and passed until enough runs had created
     // enough projects to push it past the first page - at which point it failed
@@ -143,7 +173,6 @@ test.describe("DCO cannot reach what the matrix denies", () => {
   test.use({ storageState: statePath("dco") });
 
   test("no provisioning control on a page they can read", async ({ page }) => {
-
     // /users is not in the DCO's nav at all - going straight there must not
     // render a create button even if the page itself loads.
     await page.goto("/processors");

@@ -36,10 +36,27 @@ export const projectSchema = z.object({
   // data sources chosen under these processors, and those do not exist yet.
   processor_uuids: z
     .array(uuid("A processor"))
-    .min(1, "Choose at least one processor")
     .max(20, "That is more collectors than a project can have"),
   internal_project_name: optional(shortText("The internal name")),
   requesting_team: optional(refText("The requesting team")),
+});
+
+/**
+ * Registering one. The same fields, plus the rule that belongs to registration
+ * alone: somebody has to be named as collecting.
+ *
+ * Kept apart from the edit schema because a form must not be judged on a field
+ * it does not show. Editing a draft changes the four text fields and nothing
+ * else, and validating that against this rule failed on the collectors - a
+ * field the edit dialog has no control for - so the submit stopped before it
+ * started: no request, no message, and a dialog that would not close. The two
+ * schemas have the same shape, so one form can be judged by either.
+ */
+export const registerProjectSchema = projectSchema.extend({
+  processor_uuids: z
+    .array(uuid("A processor"))
+    .min(1, "Choose at least one processor")
+    .max(20, "That is more collectors than a project can have"),
 });
 
 export type ProjectValues = z.infer<typeof projectSchema>;

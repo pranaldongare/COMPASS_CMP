@@ -22,12 +22,18 @@ import { FormError, useApiForm } from "@/components/forms";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Alert, Button, Field, Input, Textarea } from "@/components/ui/primitives";
 import { useCreateProject, useUpdateProject } from "@/features/projects";
-import { projectSchema } from "@/features/projects/schemas";
+import { projectSchema, registerProjectSchema } from "@/features/projects/schemas";
 import { useProcessors } from "@/features/registry";
 import { useToast } from "@/providers";
 import type { Project } from "@/types";
 
-export function ProjectForm({ project, onDone }: { project?: Project; onDone: () => void }) {
+export function ProjectForm({
+  project,
+  onDone,
+}: {
+  project?: Project;
+  onDone: () => void;
+}) {
   const toast = useToast();
   const create = useCreateProject();
   const update = useUpdateProject(project?.project_uuid ?? "");
@@ -38,7 +44,9 @@ export function ProjectForm({ project, onDone }: { project?: Project; onDone: ()
   // up as an error on submit rather than an option that was never there.
   const { data: processors } = useProcessors({ status: "active" });
 
-  const form = useApiForm(projectSchema, {
+  // Judged by what this form actually asks for: registering names who will
+  // collect, editing does not show that field at all.
+  const form = useApiForm(project ? projectSchema : registerProjectSchema, {
     project_name: project?.project_name ?? "",
     description: project?.description ?? "",
     processor_uuids: [] as string[],
@@ -101,7 +109,11 @@ export function ProjectForm({ project, onDone }: { project?: Project; onDone: ()
           )}
         </Field>
 
-        <Field label="Description" error={form.formState.errors.description?.message} required>
+        <Field
+          label="Description"
+          error={form.formState.errors.description?.message}
+          required
+        >
           {(p) => (
             <Textarea
               {...p}
@@ -115,13 +127,21 @@ export function ProjectForm({ project, onDone }: { project?: Project; onDone: ()
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Internal name" hint="Optional. Not shown to data subjects.">
             {(p) => (
-              <Input {...p} {...form.register("internal_project_name")} placeholder="GAIT-2026" />
+              <Input
+                {...p}
+                {...form.register("internal_project_name")}
+                placeholder="GAIT-2026"
+              />
             )}
           </Field>
 
           <Field label="Requesting team" hint="Optional.">
             {(p) => (
-              <Input {...p} {...form.register("requesting_team")} placeholder="Computer Vision" />
+              <Input
+                {...p}
+                {...form.register("requesting_team")}
+                placeholder="Computer Vision"
+              />
             )}
           </Field>
         </div>
@@ -129,7 +149,7 @@ export function ProjectForm({ project, onDone }: { project?: Project; onDone: ()
         {!project && (
           <fieldset>
             <legend className="text-sm font-medium">Who will collect</legend>
-            <p className="mb-2 mt-0.5 text-xs text-text-muted">
+            <p className="mt-0.5 mb-2 text-xs text-text-muted">
               Choose one or more. A study can run at a partner site and in-house at the same
               time. The data sources under each are chosen later, once it is approved.
             </p>
@@ -152,7 +172,9 @@ export function ProjectForm({ project, onDone }: { project?: Project; onDone: ()
                       onChange={() => toggle(pr.processor_uuid)}
                       className="size-4 rounded border-border-strong accent-[var(--accent)]"
                     />
-                    <span className="block min-w-0 truncate font-medium">{pr.legal_name}</span>
+                    <span className="block min-w-0 truncate font-medium">
+                      {pr.legal_name}
+                    </span>
                     <span className="col-start-2 flex items-center gap-1 text-2xs text-text-muted">
                       {pr.is_in_house ? (
                         <Home className="size-3" aria-hidden="true" />
@@ -174,7 +196,9 @@ export function ProjectForm({ project, onDone }: { project?: Project; onDone: ()
 
             <RoutingNote
               inHouse={chosen.some((u) => byUuid(processors?.items, u)?.is_in_house)}
-              thirdParty={chosen.some((u) => byUuid(processors?.items, u)?.is_in_house === false)}
+              thirdParty={chosen.some(
+                (u) => byUuid(processors?.items, u)?.is_in_house === false,
+              )}
             />
           </fieldset>
         )}
@@ -192,7 +216,10 @@ export function ProjectForm({ project, onDone }: { project?: Project; onDone: ()
   );
 }
 
-function byUuid<T extends { processor_uuid: string }>(items: T[] | undefined, uuid: string) {
+function byUuid<T extends { processor_uuid: string }>(
+  items: T[] | undefined,
+  uuid: string,
+) {
   return items?.find((i) => i.processor_uuid === uuid);
 }
 
@@ -208,9 +235,12 @@ function RoutingNote({ inHouse, thirdParty }: { inHouse: boolean; thirdParty: bo
   return (
     <Alert tone="info" className="mt-3">
       Once the DPO approves this,{" "}
-      {thirdParty && "the DCO Admin assigns the data sources for the third-party collection"}
+      {thirdParty &&
+        "the DCO Admin assigns the data sources for the third-party collection"}
       {thirdParty && inHouse && ", and "}
-      {inHouse && "it comes back to you to name the data sources and an R&D Collection Owner"}.
+      {inHouse &&
+        "it comes back to you to name the data sources and an R&D Collection Owner"}
+      .
     </Alert>
   );
 }

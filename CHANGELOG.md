@@ -31,6 +31,14 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Fixed
+- **"Save changes" on a draft project did nothing at all.** No request, no
+  message, and the dialog stayed open, which is how it was reported. The form
+  was judged against the rule that belongs to *registering* a project — that
+  somebody be named as collecting — on a field the edit dialog has no control
+  for, so validation failed before the submit began, and the message for that
+  field is rendered inside the same block as the missing control, so even the
+  error was invisible. Registration and editing now have their own rules, and
+  both modes are covered by tests. Reachable only by an R&D User, on a draft.
 - **Re-saving a contact already on the account sent no code, while the screen
   said it had.** A member of staff signed in to the portal as the data
   principal they also are, opened the account page, pressed save on the mobile
