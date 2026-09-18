@@ -87,7 +87,7 @@ function ProjectsPageView() {
     <>
       <PageHeader
         title="Projects"
-        description="Every collection begins here and moves through five states. Only a DPO can publish the notice that unlocks collection."
+        description="Every collection begins here and moves through four states. Only a DPO can publish the notice that unlocks collection."
         actions={
           canCreate ? (
             <Button variant="primary" onClick={() => setCreating(true)}>
@@ -106,7 +106,7 @@ function ProjectsPageView() {
             </label>
             <div className="relative">
               <Search
-                className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-text-subtle"
+                className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-text-subtle"
                 aria-hidden="true"
               />
               <Input
@@ -140,7 +140,6 @@ function ProjectsPageView() {
             ))}
           </Select>
         </div>
-
       </div>
 
       {/* Each filter names itself and removes only itself. The bare "Clear"
@@ -191,7 +190,7 @@ function ProjectsPageView() {
               status || query
                 ? "Try widening the filters."
                 : canCreate
-                  ? "Register one to begin. You will need a name, a description and a nominated Data Collection Owner."
+                  ? "Register one to begin. You will need a name, a description, and at least one processor to collect through."
                   : "Projects you are assigned to will appear here."
             }
           />
@@ -259,9 +258,7 @@ function ProjectsPageView() {
                 variant="secondary"
                 size="sm"
                 disabled={!data.next_cursor}
-                onClick={() =>
-                  setCursors((s) => [...s, data.next_cursor ?? undefined])
-                }
+                onClick={() => setCursors((s) => [...s, data.next_cursor ?? undefined])}
               >
                 Next
               </Button>
@@ -273,7 +270,7 @@ function ProjectsPageView() {
       <Dialog open={creating} onOpenChange={setCreating}>
         <DialogContent
           title="Register a project"
-          description="Name, description and a nominated Data Collection Owner are all required to leave the starting gate."
+          description="A name, a description and at least one processor. Who is accountable follows later, from the data sources."
         >
           <ProjectForm onDone={() => setCreating(false)} />
         </DialogContent>

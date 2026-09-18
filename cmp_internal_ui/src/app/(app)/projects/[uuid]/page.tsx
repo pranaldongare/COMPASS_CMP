@@ -871,8 +871,8 @@ function ApprovalsCard({
             canUpload
               ? "A security approval with its proof file is what unlocks the move to pending approval."
               : projectStatus === "in_draft"
-                ? "Approvals are added once the project is under process. There is nothing to approve while it is still a draft."
-                : "Approvals are added while a project is under review. This one has moved past that."
+                ? "The R&D User who owns this project uploads the security approval and its proof. It is the last thing between the project and review."
+                : "Approvals are added while a project is in draft or under review. This one has moved past that."
           }
           action={
             canUpload ? (

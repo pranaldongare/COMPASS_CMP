@@ -52,6 +52,19 @@ as a release yet.
   request body limit, which is the honest place for it.
 
 ### Fixed
+- **The console stopped contradicting the system it describes.** A review of
+  the project, notice and purpose journey found seven screens saying things
+  that are not true: five project states where four are reachable, a progress
+  bar that printed "In Draft" twice because a dead state shares its label, two
+  empty states placing approvals in a state nothing reaches, a dialog still
+  asking for a Data Collection Owner the form no longer has, and a sites page
+  claiming a site is required before a notice can name recipients, which the
+  publication checklist deliberately does not require. The status filter no
+  longer offers the unreachable state, and the publication checklist names
+  what a reader sees on screen rather than the database column behind it.
+- **Publish was offered to people the API refuses.** An R&D User with a
+  complete notice was shown the button and got an error on pressing it.
+  Publication is the Privacy Office's, and the notice now says so instead.
 - An R&D User's project page asked for the project's consent links on every
   visit and was refused every time: they own the project but hold no grant on
   `link`. A red line in their browser console, and an audited denial in ours,

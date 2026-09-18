@@ -28,7 +28,7 @@ from cmp.core.config import settings
 from cmp.core.logging import get_logger
 from cmp.db import pool
 from cmp.db import redis as redis_db
-from cmp.domain.projects.state_machine import ALL_STATUSES
+from cmp.domain.projects.state_machine import REACHABLE_STATUSES
 from cmp.schemas.common import Out
 
 router = APIRouter(tags=["system"])
@@ -198,7 +198,11 @@ _ENUMS: dict[str, list[str]] = {
     "user_role": ["dpo", "dco", "rnd_user", "admin", "data_subject"],
     "person_type": ["external", "employee", "ex_employee", "vendor"],
     "user_status": ["pending", "active", "suspended", "deactivated"],
-    "project_status": list(ALL_STATUSES),
+    # Reachable, not every value the type carries. `under_process` survives in
+    # `project_status_history` and so in the enum, but nothing transitions to it
+    # any more, and this list is what the console builds its status filter from:
+    # offering it meant a filter that can only ever return nothing.
+    "project_status": list(REACHABLE_STATUSES),
     "purpose_status": ["draft", "pending_approval", "active", "retired"],
     "notice_status": ["draft", "approved", "published", "superseded"],
     "lawful_basis": ["consent_s6", "legitimate_use_s7"],

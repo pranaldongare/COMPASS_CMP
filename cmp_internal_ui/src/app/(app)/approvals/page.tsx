@@ -9,9 +9,7 @@
  */
 "use client";
 
-import {
-  Download,
-} from "lucide-react";
+import { Download } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
@@ -70,13 +68,21 @@ export default function ApprovalsPage() {
         query={query}
         stack={stack}
         caption="Approvals across all projects in scope"
-        columns={["Reference", "Project", "Type", "Approved on", "Proof SHA-256", "Uploaded", ""]}
+        columns={[
+          "Reference",
+          "Project",
+          "Type",
+          "Approved on",
+          "Proof SHA-256",
+          "Uploaded",
+          "",
+        ]}
         keyOf={(a) => a.approval_uuid}
         empty={{
           illustration: <EmptyQueue />,
           title: "No approvals yet",
           description:
-            "Upload a security approval with its proof file to move a project from under process to pending approval.",
+            "A security approval and its proof are uploaded from the project itself, and are what let it leave draft for review.",
         }}
         row={(a) => (
           <Tr>

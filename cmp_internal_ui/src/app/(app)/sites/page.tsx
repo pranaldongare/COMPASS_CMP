@@ -46,9 +46,9 @@ export default function SitesPage() {
       />
 
       <Alert tone="info" className="mb-4">
-        Adding a site to a project whose notice is already published is a material
-        change: it adds a recipient the published text does not name, so it
-        requires a new notice version before collection starts there.
+        Adding a site to a project whose notice is already published is a material change:
+        it adds a recipient the published text does not name, so it requires a new notice
+        version before collection starts there.
       </Alert>
 
       <FilterBar>
@@ -74,7 +74,7 @@ export default function SitesPage() {
           illustration: <EmptyRecords />,
           title: status ? "No sites match" : "No sites yet",
           description:
-            "A project needs at least one active site before its notice can state who receives the data.",
+            "Sites are added from a project. They become the recipient list its notice states at publication; a notice with none says so plainly.",
         }}
         row={(s) => (
           <Tr>
@@ -104,7 +104,9 @@ export default function SitesPage() {
             <Td>
               <StatusBadge kind="record" value={s.status} />
             </Td>
-            <Td className="whitespace-nowrap text-text-muted">{formatDate(s.created_at)}</Td>
+            <Td className="whitespace-nowrap text-text-muted">
+              {formatDate(s.created_at)}
+            </Td>
           </Tr>
         )}
       />

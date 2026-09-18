@@ -168,12 +168,11 @@ export function statusLabel(kind: StatusKind, value: string | null | undefined):
  * a step would imply every project is meant to end up there.
  */
 export function ProjectProgress({ status }: { status: ProjectStatus }) {
-  const steps: ProjectStatus[] = [
-    "in_draft",
-    "under_process",
-    "pending_approval",
-    "approved",
-  ];
+  // `under_process` is not here. Nothing transitions to it any more, and it
+  // carries the same label as `in_draft`, so drawing it made the bar read
+  // "In Draft -> In Draft -> Pending Approval -> Approved" and showed a draft
+  // project a second In Draft it was apparently yet to reach.
+  const steps: ProjectStatus[] = ["in_draft", "pending_approval", "approved"];
 
   if (status === "closed") {
     return (

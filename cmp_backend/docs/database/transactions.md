@@ -17,9 +17,10 @@ The service does everything inside it.
 property rather than a convention — there is no window in which the change exists
 and the record of it does not.
 
-**A transition and its side effects.** `in_draft → under_process` publishes the
-project's notice. Both happen together, or a project would be under process with
-an unpublished notice.
+**A transition and its side effects.** `pending_approval → approved` publishes
+the project's notice. Both happen together, or a project would be approved with
+an unpublished notice. (`under_process` used to sit in the middle of this and
+no longer does; nothing transitions to it.)
 
 **An import.** A manifest either lands or does not. Splitting it across a queue
 would make `partial` mean two different things.

@@ -221,10 +221,18 @@ export default function NoticeDetailPage() {
                   <Stat label="Sites" value={checklist.data.site_count} />
                 </dl>
 
-                {checklist.data.publishable && !confirming && (
+                {/* The officer's, and only theirs: the endpoint is DPO-only, so
+                    offering this to an author was a button that always failed. */}
+                {isDpo && checklist.data.publishable && !confirming && (
                   <Button variant="primary" onClick={() => setConfirming(true)}>
                     Publish this notice
                   </Button>
+                )}
+
+                {!isDpo && checklist.data.publishable && (
+                  <Alert tone="success">
+                    This notice is complete. The Privacy Office publishes it.
+                  </Alert>
                 )}
 
                 {confirming && (

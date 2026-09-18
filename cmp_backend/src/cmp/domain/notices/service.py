@@ -393,8 +393,12 @@ async def approve_language(
 async def checklist(conn: Conn, notice_id: int) -> dict[str, Any]:
     """Exactly what is blocking publication.
 
-    The UI shows a list, not a failed submit. Every item names the field so the
-    frontend can link straight to it.
+    The UI shows a list, not a failed submit. Every item names the thing the
+    reader has to go and fix, in the words the screen uses for it, so a line can
+    be read by whoever is blocked and linked to by whatever is showing it. It
+    used to name the database column instead, which told a DPO that
+    `board_complaint_url is empty` about a field their screen calls the Board
+    complaint URL.
     """
     notice = await repo.by_id(conn, notice_id)
     if not notice:
@@ -410,10 +414,10 @@ async def checklist(conn: Conn, notice_id: int) -> dict[str, Any]:
     blocking: list[str] = []
 
     for field, label in (
-        ("withdraw_url", "withdraw_url is empty"),
-        ("exercise_rights_url", "exercise_rights_url is empty"),
-        ("board_complaint_url", "board_complaint_url is empty"),
-        ("dpo_contact", "dpo_contact is empty"),
+        ("withdraw_url", "the withdrawal URL is missing"),
+        ("exercise_rights_url", "the rights URL is missing"),
+        ("board_complaint_url", "the Board complaint URL is missing"),
+        ("dpo_contact", "the DPO contact is missing"),
     ):
         if not (notice.get(field) or "").strip():
             blocking.append(label)
@@ -422,12 +426,12 @@ async def checklist(conn: Conn, notice_id: int) -> dict[str, Any]:
     # choice from a fixed set rather than free text, so "empty after trimming"
     # is not the question - it is either answered or it is not.
     if not notice.get("applicable_to"):
-        blocking.append("applicable_to is not set - the notice does not say who it addresses")
+        blocking.append("the notice does not say who it addresses")
 
     if not purposes:
-        blocking.append("no purposes attached")
+        blocking.append("no purposes are attached")
     if not languages:
-        blocking.append("no language rendition has been added")
+        blocking.append("the notice has no text yet")
 
     # A purpose that arrived with an uploaded notice document is a draft until
     # the DPO activates it. Blocking here rather than at attachment is what lets
@@ -436,12 +440,12 @@ async def checklist(conn: Conn, notice_id: int) -> dict[str, Any]:
     for purpose in purposes:
         if purpose["status"] != "active":
             blocking.append(
-                f"purpose '{purpose['purpose_code']}' is {purpose['status']}, not activated"
+                f"the purpose {purpose['purpose_code']} is {purpose['status']}, not activated"
             )
 
     for lang in languages:
         if lang["approved_at"] is None:
-            blocking.append(f"language '{lang['language_code']}' is not legally approved")
+            blocking.append(f"the {lang['language_code']} text is not legally approved")
 
     if notice["status"] in ("published", "superseded"):
         blocking.append(f"this notice is already {notice['status']}")
