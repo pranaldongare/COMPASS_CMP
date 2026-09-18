@@ -57,7 +57,7 @@ _QUEUE_HREF = {
     "Rights requests, soonest due first": "/requests",
     "Tickets past their date": "/requests?status=awaiting_holders",
     "Teams have written on their tickets": "/requests?unread=1",
-    "In Draft": "/projects?status=in_draft",
+    "Drafts waiting on you": "/projects?status=in_draft",
     "Pending Approval": "/projects?status=pending_approval",
     "Tickets addressed to you": "/tickets",
     "Needs your action": "/projects",
@@ -433,11 +433,30 @@ async def _dpo(conn: Any) -> dict[str, Any]:
              (SELECT count(*) FROM notice_language WHERE approved_at IS NULL)
                AS unapproved_languages""",
     )
+    # Drafts where the DPO has something to do, rather than every draft.
+    #
+    # It used to list them all, with the action "Review and publish the notice"
+    # - and a DPO who followed that row arrived at a project whose transition
+    # card reads "There is nothing for your role to do at this stage", because
+    # the only move out of draft belongs to the author. The one thing that *is*
+    # theirs on a draft is activating the purposes an imported document left,
+    # and since that now blocks the author's submission, it is work somebody is
+    # actually waiting on.
     draft_queue = await fetch_all(
         conn,
         """SELECT p.project_uuid, p.project_name, p.updated_at,
-                  'Review and publish the notice' AS action
-           FROM project p WHERE p.project_status = 'in_draft'
+                  'Activate the purposes on its notice' AS action
+           FROM project p
+           WHERE p.project_status = 'in_draft'
+             AND EXISTS (
+                   SELECT 1
+                     FROM notice n
+                     JOIN notice_purpose np ON np.notice_id = n.notice_id
+                     JOIN purpose pr        ON pr.purpose_id = np.purpose_id
+                    WHERE n.project_id = p.project_id
+                      AND n.status IN ('draft', 'approved')
+                      AND pr.status <> 'active'
+                 )
            ORDER BY p.updated_at DESC LIMIT 25""",
     )
     approval_queue = await fetch_all(
@@ -517,7 +536,7 @@ async def _dpo(conn: Any) -> dict[str, Any]:
             {"name": "Rights requests, soonest due first", "items": rights_queue},
             {"name": "Tickets past their date", "items": overdue},
             {"name": "Teams have written on their tickets", "items": replies},
-            {"name": "In Draft", "items": draft_queue},
+            {"name": "Drafts waiting on you", "items": draft_queue},
             {"name": "Pending Approval", "items": approval_queue},
             {"name": "New collectors awaiting your decision", "items": amendments},
             {"name": "Retention floors passed - erasure due", "items": floors},

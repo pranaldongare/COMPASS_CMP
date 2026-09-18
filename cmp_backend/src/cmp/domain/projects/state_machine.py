@@ -8,8 +8,8 @@ Four reachable states, five transitions, and nothing else. From DATA-MODEL.md:
 | From                | To                 | Actor                   | Requires                                                        |
 |---------------------|--------------------|-------------------------|-----------------------------------------------------------------|
 | -                   | `in_draft`         | RnD User                | name, description, >=1 processor                                |
-| `in_draft`          | `pending_approval` | RnD User                | notice with >=1 purpose, all Rule 3 links, an audience, its text written, and >=1 project_approval **with proof file** |
-| `pending_approval`  | `approved`         | DPO                     | every language legally approved; publishes the notice           |
+| `in_draft`          | `pending_approval` | RnD User                | notice with >=1 purpose **every one of them activated**, all Rule 3 links, an audience, its text written, and >=1 project_approval **with proof file** |
+| `pending_approval`  | `approved`         | DPO                     | every language legally approved, every purpose activated; publishes the notice |
 | `pending_approval`  | `in_draft`         | DPO                     | a reason                                                        |
 | `approved`          | `closed`           | DPO or a collection owner | -                                                             |
 
@@ -84,6 +84,16 @@ class ProjectFacts:
 
     has_notice: bool = False
     notice_purpose_count: int = 0
+    #: Purposes on the notice that the Privacy Office has not activated yet.
+    #:
+    #: A purpose arrives as a draft when a document is imported, and only the
+    #: DPO may activate it. It used to be checked at publication alone, which
+    #: put the wall in the wrong place: the author submitted, the DPO was told
+    #: the only blocker was the text, approved the text, was offered the move -
+    #: and the move then failed inside the transaction on a purpose nobody had
+    #: mentioned. Blocking here means the project waits in draft, where the DPO
+    #: is already asked to look, and arrives for review ready to approve.
+    notice_purposes_unactivated: int = 0
     #: The Rule 3 elements the *author* writes. Deliberately excludes whether
     #: the text has been legally approved - see `notice_language_approved`.
     notice_rule3_complete: bool = False
@@ -123,10 +133,18 @@ class Transition:
 
     @property
     def blocked_by(self) -> str | None:
-        for r in self.requirements:
-            if not r.met:
-                return r.message
-        return None
+        """The first unmet requirement, for a caller that wants one line."""
+        return next((r.message for r in self.requirements if not r.met), None)
+
+    @property
+    def blockers(self) -> tuple[str, ...]:
+        """Every unmet requirement, in the order somebody would hit them.
+
+        Reporting only the first taught people to clear one thing, press the
+        button again, and be told about the next - which reads as the system
+        finding new objections rather than as a list that was always there.
+        """
+        return tuple(r.message for r in self.requirements if not r.met)
 
 
 def _submit(f: ProjectFacts) -> Transition:
@@ -140,6 +158,14 @@ def _submit(f: ProjectFacts) -> Transition:
     Legal approval of that text is not among them on purpose. It is the DPO's
     act, and requiring it here left the author waiting on somebody who could not
     see the project yet. It gates `pending_approval -> approved` instead.
+
+    Activation of the notice's purposes *is* among them, and is the exception
+    that proves the rule. It is equally the DPO's act, so it does leave the
+    author waiting - but the alternative was worse: without it the project
+    reached review looking ready, and the DPO's own approval then failed on it
+    from inside the transaction. The DPO is already shown draft projects, so
+    this is work they can see; what the author is waiting for is named in the
+    blocker.
     """
     return Transition(
         to=ProjectStatus.PENDING_APPROVAL,
@@ -161,6 +187,10 @@ def _submit(f: ProjectFacts) -> Transition:
             Requirement(
                 f.notice_language_count >= 1,
                 "The notice has no text yet - add at least one language",
+            ),
+            Requirement(
+                f.notice_purposes_unactivated == 0,
+                "The Privacy Office has not activated every purpose on the notice yet",
             ),
             Requirement(
                 f.approval_with_proof_count >= 1,
@@ -200,6 +230,18 @@ def _transitions(status: ProjectStatus, f: ProjectFacts) -> list[Transition]:
                             f.notice_language_approved,
                             "The notice text is not legally approved - approve every "
                             "language on the notice first",
+                        ),
+                        # Belt and braces. Submission blocks on this already, so
+                        # a project assembled under the current rules arrives
+                        # here with every purpose active. One that was submitted
+                        # before the rule existed did not, and publication would
+                        # refuse it from inside the transaction - an error after
+                        # the click, which is the exact failure the line above
+                        # was written to prevent.
+                        Requirement(
+                            f.notice_purposes_unactivated == 0,
+                            "The notice carries purposes that are not activated - "
+                            "activate them before approving",
                         ),
                         Requirement(f.review_recorded, "The DPO review is not recorded"),
                     ),
@@ -245,6 +287,9 @@ def available(
         entry: dict[str, object] = {"to": t.to.value, "allowed": t.allowed}
         if t.blocked_by:
             entry["blocked_by"] = t.blocked_by
+            # Every one of them. `blocked_by` stays for the caller that wants a
+            # single line, and is the first of these.
+            entry["blockers"] = list(t.blockers)
         if t.reason_required:
             entry["reason_required"] = True
         if t.publishes_notice:

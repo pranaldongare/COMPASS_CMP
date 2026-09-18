@@ -35,10 +35,20 @@ stateDiagram-v2
   approved --> closed
 ```
 
-An R&D user registers the project, names its purposes, names the processors
-that will collect ("who is collecting"), and authors or uploads its notice.
-Submitting for approval requires the pieces the DPO will judge: the notice,
-the collectors, the proofs. The DPO decides each named processor and the
+An R&D user registers the project, names the processors that will collect
+("who is collecting"), and uploads its notice. Submitting for approval requires
+the pieces the DPO will judge: the notice, the collectors, the proofs.
+
+It also requires that the Privacy Office has activated every purpose the notice
+carries. That is the one requirement on this transition the author cannot
+satisfy alone, and it is there because the alternative was worse: the purposes
+an uploaded document creates arrive as drafts, publication refuses them, and
+publication happens inside the DPO's own approval. Without this the project
+reached review looking complete, the DPO was told the only thing in the way was
+the text, approved the text, was offered the move, and the move then failed on a
+purpose no screen had named. Blocked at submission instead, the project waits in
+draft, which is where the DPO is already shown it, and reaches review ready to
+approve. The DPO decides each named processor and the
 project; a refusal carries a reason and is audited. After approval the R&D
 user may still ask to add a collector, which is a request the DPO decides,
 not an edit.

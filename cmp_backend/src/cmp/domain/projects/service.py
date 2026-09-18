@@ -34,6 +34,7 @@ async def _facts(conn: Conn, project_id: int) -> ProjectFacts:
     return ProjectFacts(
         has_notice=bool(raw.get("has_notice")),
         notice_purpose_count=int(raw.get("notice_purpose_count") or 0),
+        notice_purposes_unactivated=int(raw.get("notice_purposes_unactivated") or 0),
         notice_rule3_complete=bool(raw.get("notice_rule3_complete")),
         notice_audience_set=bool(raw.get("notice_audience_set")),
         notice_language_count=int(raw.get("notice_language_count") or 0),

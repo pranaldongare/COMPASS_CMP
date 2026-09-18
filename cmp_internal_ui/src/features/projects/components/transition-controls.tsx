@@ -132,8 +132,8 @@ export function TransitionControls({
       <CardHeader>
         <CardTitle>What happens next</CardTitle>
         <p className="mt-1 text-xs text-text-muted">
-          Currently {statusLabel("project", data?.current ?? currentStatus)}. These are
-          the moves your role can make from here.
+          Currently {statusLabel("project", data?.current ?? currentStatus)}. These are the
+          moves your role can make from here.
         </p>
       </CardHeader>
 
@@ -152,25 +152,39 @@ export function TransitionControls({
                   </span>
                 )}
               </p>
-              {option.blocked_by && (
-                <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-warning-text">
+              {/* Every unmet requirement, not only the first. Clearing one to
+                  discover the next reads as the system finding new objections,
+                  when the list was always there. `blockers` falls back to
+                  `blocked_by` so an older server still renders. */}
+              {(option.blockers?.length
+                ? option.blockers
+                : option.blocked_by
+                  ? [option.blocked_by]
+                  : []
+              ).map((blocker) => (
+                <p
+                  key={blocker}
+                  className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-warning-text"
+                >
                   <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
-                  {option.blocked_by}
-                  {/* The one blocker whose fix is a different screen. Matched on
-                      the server's own wording rather than re-deriving the rule
-                      here — the frontend does not know the transition table, and
-                      guessing when to offer this would be a second copy of it. */}
-                  {noticeUuid && /legally approved/i.test(option.blocked_by) && (
+                  {blocker}
+                  {/* The blockers whose fix is a different screen. Matched on the
+                      server's own wording rather than re-deriving the rule here —
+                      the frontend does not know the transition table, and guessing
+                      when to offer this would be a second copy of it. */}
+                  {noticeUuid && /legally approved|activated/i.test(blocker) && (
                     <Link
                       href={`/notices/${noticeUuid}`}
                       className="inline-flex items-center gap-1 font-medium text-accent-text underline underline-offset-2"
                     >
-                      Approve the notice
+                      {/activated/i.test(blocker)
+                        ? "Open the notice"
+                        : "Approve the notice"}
                       <ArrowRight className="size-3" aria-hidden="true" />
                     </Link>
                   )}
                 </p>
-              )}
+              ))}
               {option.reason_required && option.allowed && (
                 <p className="mt-1 text-xs text-text-muted">
                   A reason is required and is recorded in the history.
@@ -192,7 +206,7 @@ export function TransitionControls({
             </Button>
             {option.blocked_by && (
               <span id={`blocked-${option.to}`} className="sr-only">
-                Blocked: {option.blocked_by}
+                Blocked: {(option.blockers ?? [option.blocked_by]).join("; ")}
               </span>
             )}
           </div>
@@ -207,10 +221,10 @@ export function TransitionControls({
             {pending.publishes_notice && (
               <Alert tone="warning" className="mt-3">
                 <p>
-                  This publishes the project&apos;s notice. Its text and hash are
-                  frozen at that moment and cannot be edited afterwards - a
-                  correction requires a new version. The data subjects who consent
-                  from now on are consenting to exactly this text.
+                  This publishes the project&apos;s notice. Its text and hash are frozen at
+                  that moment and cannot be edited afterwards - a correction requires a new
+                  version. The data subjects who consent from now on are consenting to
+                  exactly this text.
                 </p>
               </Alert>
             )}

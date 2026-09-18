@@ -659,6 +659,12 @@ async def facts(conn: Conn, project_id: int) -> dict[str, Any]:
     otherwise the newest published. The two picking differently is how a project
     passes its checks and then publishes something else.
 
+    `notice_purposes_unactivated` counts the notice's purposes that the register
+    does not yet call active. An imported document creates them as drafts and
+    only the DPO activates them, so this is the author's wait on somebody else -
+    the one such wait in the submit transition, and there because the
+    alternative was an approval that failed after it had been offered.
+
     `notice_published` is deliberately not read off that notice. It asks whether
     anything has been served to a data principal yet - which stays true while a
     replacement sits in draft, and that is exactly when adding a site is a
@@ -673,6 +679,9 @@ async def facts(conn: Conn, project_id: int) -> dict[str, Any]:
           coalesce(length(trim(p.description)), 0) > 0    AS has_description,
           n.notice_id IS NOT NULL                         AS has_notice,
           coalesce(np.purpose_count, 0)                   AS notice_purpose_count,
+          -- Counted from the register, not from the join row: a purpose is
+          -- activated in `purpose`, and the notice merely points at it.
+          coalesce(np.unactivated_count, 0)               AS notice_purposes_unactivated,
           EXISTS (SELECT 1 FROM notice pub
                    WHERE pub.project_id = p.project_id
                      AND pub.status = 'published')        AS notice_published,
@@ -709,7 +718,11 @@ async def facts(conn: Conn, project_id: int) -> dict[str, Any]:
           WHERE w.project_id = p.project_id AND w.status = 'approved'
         ) pp ON TRUE
         LEFT JOIN LATERAL (
-          SELECT count(*) AS purpose_count FROM notice_purpose x WHERE x.notice_id = n.notice_id
+          SELECT count(*)                                          AS purpose_count,
+                 count(*) FILTER (WHERE pr.status <> 'active')     AS unactivated_count
+            FROM notice_purpose x
+            JOIN purpose pr ON pr.purpose_id = x.purpose_id
+           WHERE x.notice_id = n.notice_id
         ) np ON TRUE
         LEFT JOIN LATERAL (
           SELECT count(*)                                        AS language_count,

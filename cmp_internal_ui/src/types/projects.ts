@@ -29,7 +29,11 @@ export interface Project {
 export interface TransitionOption {
   to: ProjectStatus;
   allowed: boolean;
+  /** The first unmet requirement. `blockers[0]`, kept for a caller that wants one line. */
   blocked_by?: string;
+  /** Every unmet requirement. Showing only the first taught people to clear one
+   *  thing, press again, and be told about the next. */
+  blockers?: string[];
   reason_required?: boolean;
   publishes_notice?: boolean;
 }

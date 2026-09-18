@@ -9,6 +9,7 @@ transitions which must *not* exist do not exist, and that no role can reach
 from __future__ import annotations
 
 import itertools
+from dataclasses import replace
 
 import pytest
 
@@ -206,11 +207,54 @@ def test_role_error_precedes_precondition_error() -> None:
 
 # ------------------------------------------------------- the transitions view
 def test_available_reports_blockers_without_hiding_the_transition() -> None:
-    """The UI shows a disabled button with a reason, not a missing button."""
+    """The UI shows a disabled button with its reasons, not a missing button.
+
+    Every unmet requirement, not only the first. Reporting one at a time taught
+    people to clear it, press again, and be told about the next - which reads as
+    the system inventing objections rather than as a list that was always there.
+    `blocked_by` stays, and is the first of them.
+    """
     view = available(S.IN_DRAFT, Role.RND_USER, ProjectFacts())
-    assert view == [
-        {"to": "pending_approval", "allowed": False, "blocked_by": "The project has no notice"}
+
+    assert len(view) == 1
+    option = view[0]
+    assert option["to"] == "pending_approval"
+    assert option["allowed"] is False
+    assert option["blocked_by"] == "The project has no notice"
+    assert option["blockers"] == [
+        "The project has no notice",
+        "The notice has no purposes attached",
+        "The notice is missing required Rule 3 elements",
+        "The notice does not say who it applies to",
+        "The notice has no text yet - add at least one language",
+        # Not the purpose-activation one: with no purposes at all, none of them
+        # are unactivated, and the requirement is met vacuously. It appears once
+        # a document has actually put some there.
+        "No approval with a proof file",
     ]
+
+
+def test_a_draft_waits_on_the_office_to_activate_the_purposes_it_carries() -> None:
+    """The one requirement on this transition the author cannot satisfy.
+
+    A document import creates the purposes as drafts and only the DPO activates
+    them. This used to be checked at publication alone, so the author submitted,
+    the DPO was told the only blocker was the text, approved the text, was
+    offered the move - and the move failed inside the transaction on a purpose
+    nobody had mentioned. Blocked here, the project waits in draft, where the
+    DPO is already shown it, and reaches review ready to approve.
+    """
+    waiting = replace(SATISFIED, notice_purposes_unactivated=3)
+
+    view = available(S.IN_DRAFT, Role.RND_USER, waiting)
+
+    assert view[0]["allowed"] is False
+    assert view[0]["blockers"] == [
+        "The Privacy Office has not activated every purpose on the notice yet"
+    ]
+
+    # And once they have, nothing else is in the way.
+    assert available(S.IN_DRAFT, Role.RND_USER, SATISFIED)[0]["allowed"] is True
 
 
 def test_available_hides_transitions_this_role_may_never_perform() -> None:

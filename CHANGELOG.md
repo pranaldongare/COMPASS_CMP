@@ -51,6 +51,27 @@ as a release yet.
   publication still refuses a notice without one. What bounds it now is the
   request body limit, which is the honest place for it.
 
+### Changed
+- **A project cannot be submitted while its purposes are unactivated.** The
+  purposes an uploaded document creates arrive as drafts and only the Privacy
+  Office activates them. Submission counted them without caring, and the
+  officer's own approval reported only the first unmet requirement, which was
+  the text. So the author submitted, the officer was told the one thing in the
+  way was the language, approved the language, was offered the move as allowed,
+  and the move then failed from inside the transaction on a purpose no screen
+  had named. The wall now stands at submission, in draft, which is where the
+  officer is already shown the project; their approval carries the same guard
+  for anything submitted before this landed.
+- **Every blocker is reported, not only the first.** A transition that cannot
+  run now lists all of its unmet requirements. Clearing one to be told about the
+  next reads as the system inventing objections, when the list was always there.
+- **The officer's draft queue is work they can do.** It listed every draft with
+  the action "Review and publish the notice", and following that row landed on a
+  project whose card reads "There is nothing for your role to do at this stage",
+  because the only move out of draft is the author's. It now lists the drafts
+  whose purposes are waiting on them, which is the one thing there that is
+  theirs, and says so.
+
 ### Fixed
 - **The console stopped contradicting the system it describes.** A review of
   the project, notice and purpose journey found seven screens saying things

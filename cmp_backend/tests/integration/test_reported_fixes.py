@@ -271,7 +271,8 @@ class TestTheNoticeAudienceAndCollectorNote:
             dpo_contact="privacy@example.org",
         )
         checklist = await notice_service.checklist(conn, notice["notice_id"])
-        assert any("applicable_to" in item for item in checklist["blocking"])
+        # The wording a reader sees, not the column behind it.
+        assert any("who it addresses" in item for item in checklist["blocking"])
 
     async def test_the_note_never_reaches_the_public_payload(
         self, conn: Any, seeded: dict[str, Any]
