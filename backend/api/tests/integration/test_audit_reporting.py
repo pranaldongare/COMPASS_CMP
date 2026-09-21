@@ -20,6 +20,7 @@ from cmp.db.repositories import audit_lookup
 from cmp.db.sql import fetch_one
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
+from tests.conftest import idx
 
 pytestmark = pytest.mark.integration
 
@@ -183,13 +184,15 @@ class TestLookup:
         unique = f"Zzq{uuid4().hex[:10]}"
         row = await fetch_one(
             conn,
-            """INSERT INTO auth_user (full_name, email, mobile, role, status)
-               VALUES (%s, %s, %s, 'data_subject', 'active')
+            """INSERT INTO auth_user (full_name, email, email_idx, mobile, mobile_idx, role, status)
+               VALUES (%s, %s, %s, %s, %s, 'data_subject', 'active')
                RETURNING uuid""",
             (
                 f"{unique} Principal",
                 f"{unique.lower()}@test.local",
-                f"+9198765{uuid4().int % 100000:05d}",
+                idx("email", f"{unique.lower()}@test.local"),
+                mobile := f"+9198765{uuid4().int % 100000:05d}",
+                idx("mobile", mobile),
             ),
         )
 

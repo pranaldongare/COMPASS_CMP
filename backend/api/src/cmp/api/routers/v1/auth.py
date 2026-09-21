@@ -115,7 +115,8 @@ class MeResponse(Out):
     account_role: str
     person_type: str | None
     status: str
-    dob: date | None = None
+    #: Served as stored - sealed - and opened by the portal. See `MeOut`.
+    dob: str | None = None
     is_minor: bool | None = None
     mfa_verified: bool
     session_expires_at: datetime

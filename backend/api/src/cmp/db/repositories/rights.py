@@ -21,7 +21,8 @@ from psycopg.types.json import Jsonb
 from cmp.core.pagination import PageRequest, build_page
 from cmp.core.permissions import Role
 from cmp.db.sql import Conn, Row, fetch_all, fetch_one, keyset_clause
-from cmp.infrastructure.dkms import seal, unseal_value
+from cmp.infrastructure.dkms import opened, seal, unseal_value
+from cmp.infrastructure.dkms.blind import index_of
 
 LIST_SORTS = ("received_at", "due_at")
 
@@ -139,12 +140,20 @@ async def create(
     consent_id: int | None = None,
 ) -> Row:
     """Insert a request. The reference is minted here and never reused."""
-    # `submitted_contact` is deliberately left as it is: a code is sent to it
-    # to verify the request, and later requests are matched against it.
+    # The contact is sealed like everything else, with its blind index beside
+    # it for the lookups that verify a request through it. A caller copying the
+    # contact off another row hands in ciphertext; the index has to come from
+    # the plaintext, so that case opens it first.
+    contact_plain = (
+        await unseal_value("rights_request", "submitted_contact", submitted_contact)
+        if submitted_contact.startswith("SE::")
+        else submitted_contact
+    )
     sealed = await seal(
         "rights_request",
         {
             "submitted_name": submitted_name,
+            "submitted_contact": contact_plain,
             "request_text": request_text,
             "verification_note": verification_note,
         },
@@ -157,7 +166,8 @@ async def create(
            submitted_contact, request_text, due_at, created_by,
            verification_method, verification_status, verified_at, verified_by,
            verification_note, linked_request_id, nomination_id, trigger_event,
-           trigger_evidence_ref, trigger_evidence_hash, about_dpo, consent_id)
+           trigger_evidence_ref, trigger_evidence_hash, about_dpo, consent_id,
+           submitted_contact_idx)
         VALUES
           ('RR-' || to_char(now(), 'YYYY') || '-'
              || lpad(nextval('rights_request_ref_seq')::text, 6, '0'),
@@ -170,7 +180,7 @@ async def create(
            %(verified_by)s, %(verification_note)s, %(linked_request_id)s,
            %(nomination_id)s, %(trigger_event)s::rights_trigger_event,
            %(trigger_evidence_ref)s, %(trigger_evidence_hash)s, %(about_dpo)s,
-           %(consent_id)s)
+           %(consent_id)s, %(submitted_contact_idx)s)
         RETURNING request_id, request_uuid, reference, received_at, due_at
         """,
         {
@@ -178,7 +188,8 @@ async def create(
             "channel": channel,
             "subject_user_id": subject_user_id,
             "submitted_name": sealed["submitted_name"],
-            "submitted_contact": submitted_contact,
+            "submitted_contact": sealed["submitted_contact"],
+            "submitted_contact_idx": index_of("contact", contact_plain),
             "request_text": sealed["request_text"],
             "due_at": due_at,
             "created_by": created_by,
@@ -362,12 +373,18 @@ async def list_requests(
         # A team has written on a ticket and the office has not read it.
         where.append(f"r.status <> 'closed' AND {_UNREAD_THREADS} > 0")
     if q:
+        # Names and contacts are sealed, and a substring of ciphertext matches
+        # nothing. A reference still matches as it did; a contact matches
+        # exactly, through the blind index - of the request, or of the account.
+        q = q.strip()
         where.append(
-            "(r.reference ILIKE %s OR s.full_name ILIKE %s OR s.email ILIKE %s "
-            "OR r.submitted_contact ILIKE %s)"
+            "(r.reference ILIKE %s OR r.submitted_contact_idx = %s "
+            "OR s.email_idx = %s OR s.mobile_idx = %s)"
         )
-        needle = f"%{q}%"
-        params.extend([needle, needle, needle, needle])
+        email_idx, mobile_idx = (
+            (index_of("email", q), None) if "@" in q else (None, index_of("mobile", q))
+        )
+        params.extend([f"%{q}%", index_of("contact", q), email_idx, mobile_idx])
 
     clause = " AND ".join(where)
     keyset, kparams = keyset_clause(req, alias="r", id_column="request_id")
@@ -786,16 +803,15 @@ async def holder_brief(
         "SELECT uuid, full_name, email, mobile FROM auth_user WHERE id = %s",
         (subject_user_id,),
     )
+    person = await opened("auth_user", subject)
     brief: dict[str, Any] = {
         "subject": {
             "uuid": str(subject["uuid"]) if subject else None,
-            # Unsealed here: the brief is prose the holder reads, and a
-            # sealed name in it would be a greeting nobody can read.
-            "full_name": (await unseal_value("auth_user", "full_name", subject["full_name"]))
-            if subject
-            else None,
-            "email": subject["email"] if subject else None,
-            "mobile": subject["mobile"] if subject else None,
+            # Opened here: the brief is prose the holder reads, and a sealed
+            # name or address in it would be a line nobody can act on.
+            "full_name": person.get("full_name"),
+            "email": person.get("email"),
+            "mobile": person.get("mobile"),
         },
         "scope": scope,
         "consents": [],
@@ -1227,6 +1243,7 @@ async def subject_counts(conn: Conn, subject_user_id: int) -> Row:
 # --------------------------------------------------------------- nominations
 _NOMINATION_SELECT = """
   n.nomination_id, n.nomination_uuid, n.nominee_name, n.nominee_mobile, n.nominee_email,
+  n.nominee_mobile_idx, n.nominee_email_idx,
   coalesce(n.nominee_mobile, n.nominee_email) AS nominee_contact,
   -- Cast: an enum array comes back unparsed unless its type is registered.
   n.rights::text[] AS rights,
@@ -1270,26 +1287,33 @@ async def create_nomination(
     accept_token_hash: str,
     accept_expires_at: datetime,
 ) -> Row:
-    # The nominee's contacts stay as they are: the acceptance flow finds the
-    # nomination by them and sends the code to them - see LOOKUP_FIELDS.
-    sealed = await seal("nomination", {"nominee_name": nominee_name})
+    sealed = await seal(
+        "nomination",
+        {
+            "nominee_name": nominee_name,
+            "nominee_mobile": nominee_mobile,
+            "nominee_email": nominee_email,
+        },
+    )
     row = await fetch_one(
         conn,
         """
         INSERT INTO nomination
           (principal_user_id, nominee_name, nominee_mobile, nominee_email, rights,
-           accept_token_hash, accept_expires_at)
-        VALUES (%s, %s, %s, %s, %s::rights_request_type[], %s, %s)
+           accept_token_hash, accept_expires_at, nominee_mobile_idx, nominee_email_idx)
+        VALUES (%s, %s, %s, %s, %s::rights_request_type[], %s, %s, %s, %s)
         RETURNING nomination_id, nomination_uuid
         """,
         (
             principal_user_id,
             sealed["nominee_name"],
-            nominee_mobile,
-            nominee_email,
+            sealed["nominee_mobile"],
+            sealed["nominee_email"],
             rights,
             accept_token_hash,
             accept_expires_at,
+            index_of("mobile", nominee_mobile),
+            index_of("email", nominee_email),
         ),
     )
     assert row is not None
@@ -1325,17 +1349,18 @@ async def nominations_of(conn: Conn, principal_user_id: int) -> list[Row]:
 _NOMINEE_IS_CALLER = """(
        (%s::int IS NOT NULL AND n.nominee_user_id = %s)
     OR (n.nominee_user_id IS NULL
-        AND ((%s::text IS NOT NULL AND n.nominee_mobile = %s)
-             OR (%s::text IS NOT NULL AND lower(n.nominee_email) = lower(%s))))
+        AND ((%s::text IS NOT NULL AND n.nominee_mobile_idx = %s)
+             OR (%s::text IS NOT NULL AND n.nominee_email_idx = %s)))
 )"""
 
 
-def _nominee_params(user_id: int, mobile: str | None, email: str | None) -> list[Any]:
-    return [user_id, user_id, mobile, mobile, email, email]
+def _nominee_params(user_id: int, mobile_idx: str | None, email_idx: str | None) -> list[Any]:
+    """The caller's own indexes, off their row - never a contact in the clear."""
+    return [user_id, user_id, mobile_idx, mobile_idx, email_idx, email_idx]
 
 
 async def nominations_naming(
-    conn: Conn, *, user_id: int, mobile: str | None, email: str | None
+    conn: Conn, *, user_id: int, mobile_idx: str | None, email_idx: str | None
 ) -> list[Row]:
     """Nominations that name this person as nominee.
 
@@ -1356,12 +1381,12 @@ async def nominations_naming(
              WHERE (n.status IN ('pending', 'active') OR n.invoked_request_id IS NOT NULL)
                AND {_NOMINEE_IS_CALLER}
              ORDER BY n.created_at DESC""",
-        _nominee_params(user_id, mobile, email),
+        _nominee_params(user_id, mobile_idx, email_idx),
     )
 
 
 async def request_as_nominee(
-    conn: Conn, request_uuid: str, *, user_id: int, mobile: str | None, email: str | None
+    conn: Conn, request_uuid: str, *, user_id: int, mobile_idx: str | None, email_idx: str | None
 ) -> Row | None:
     """A request this person raised as somebody's nominee, or None.
 
@@ -1379,7 +1404,7 @@ async def request_as_nominee(
              WHERE r.request_uuid = %s
                AND r.nomination_id IS NOT NULL
                AND {_NOMINEE_IS_CALLER}""",
-        [request_uuid, *_nominee_params(user_id, mobile, email)],
+        [request_uuid, *_nominee_params(user_id, mobile_idx, email_idx)],
     )
 
 

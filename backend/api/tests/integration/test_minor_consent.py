@@ -53,7 +53,12 @@ async def _set_dob(conn: Any, user_id: int, years_ago: int | None) -> None:
         if years_ago is None
         else datetime.now(UTC).date().replace(year=datetime.now(UTC).year - years_ago)
     )
-    await conn.execute("UPDATE auth_user SET dob = %s WHERE id = %s", (dob, user_id))
+    # The date itself is sealed and the s.9 test reads minor_until, so a fixture
+    # that writes the date directly writes the date the test reads as well.
+    await conn.execute(
+        "UPDATE auth_user SET dob = %s, minor_until = %s::date + INTERVAL '18 years' WHERE id = %s",
+        (dob.isoformat() if dob else None, dob, user_id),
+    )
 
 
 async def _capture(conn: Any, seeded: dict[str, Any], token: str) -> dict[str, Any]:

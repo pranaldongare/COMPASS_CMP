@@ -23,6 +23,7 @@ from cmp.db.redis import K_RATE
 from cmp.db.redis import key as rkey
 from cmp.db.repositories import users as user_repo
 from cmp.tasks import dispatch as dispatch_mod
+from tests.conftest import plain
 
 pytestmark = pytest.mark.integration
 
@@ -70,7 +71,7 @@ class TestASecondEmail:
             conn, user=await her_row(conn, seeded), email=SECOND
         )
 
-        assert updated["secondary_email"] == SECOND.lower()
+        assert plain(updated["secondary_email"]) == SECOND.lower()
         assert updated["secondary_email_verified_at"] is None
         assert [n for n, _ in queued] == [CONFIRMATION]
         assert queued[0][1][1] == SECOND.lower(), "the code goes to the new address"
@@ -178,7 +179,7 @@ class TestGivingAContactThatIsAlreadyThere:
 
         same = str(her["mobile"])
         updated = await user_repo.update_profile(conn, her["id"], mobile=same)
-        assert updated["mobile"] == same, "unchanged, and that is the point"
+        assert plain(updated["mobile"]) == same, "unchanged, and that is the point"
         assert updated["mobile_verified_at"] is None
 
         await auth_service.request_contact_code(conn, user=updated, contact=same)
@@ -271,7 +272,7 @@ class TestAChangedMobile:
         after = await user_repo.update_profile(
             conn, seeded["subject"]["id"], mobile="+915550000777"
         )
-        assert after["mobile"] == "+915550000777"
+        assert plain(after["mobile"]) == "+915550000777"
         assert after["mobile_verified_at"] is None
 
     async def test_an_unchanged_mobile_keeps_its_confirmation(

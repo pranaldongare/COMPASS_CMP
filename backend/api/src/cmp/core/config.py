@@ -120,6 +120,10 @@ class Settings(BaseSettings):
     #: deployment that silently stores plaintext is the exact failure the
     #: service exists to prevent.
     dkms_enabled: bool = False
+    #: The key the blind indexes are computed under. Separate from SECRET_KEY on
+    #: purpose: rotating the session secret must not change every index, and
+    #: the index key never leaves this process. 32+ bytes.
+    blind_index_key: SecretStr = SecretStr("dev-only-blind-index-key-32-bytes-long!")
 
     # ---------------------------------------------------------------- uploads
     max_upload_bytes: int = 25 * 1024 * 1024  # 25 MB — approval proof, import manifest
@@ -253,6 +257,9 @@ class Settings(BaseSettings):
             # the key service exists to prevent.
             if not self.dkms_enabled:
                 raise ValueError("DKMS_ENABLED must be true in production")
+            bik = self.blind_index_key.get_secret_value()
+            if bik.startswith("dev-only") or len(bik) < 32:
+                raise ValueError("BLIND_INDEX_KEY must be a real 32+ byte secret in production")
         if self.sms_transport == "http" and not self.sms_http_url.startswith("https://"):
             raise ValueError("SMS_HTTP_URL must be an https:// gateway when SMS_TRANSPORT=http")
         return self

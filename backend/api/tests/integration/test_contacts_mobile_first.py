@@ -23,6 +23,7 @@ from cmp.db.redis import key as rkey
 from cmp.db.repositories import users as user_repo
 from cmp.domain.consent import service as consent_service
 from cmp.domain.rights import service as rights_service
+from tests.conftest import idx, plain
 
 pytestmark = pytest.mark.integration
 
@@ -75,14 +76,14 @@ class TestSelfRegistration:
         self, conn: Any, redis_conn: Any
     ) -> None:
         user = await _register(conn, redis_conn)
-        assert user["mobile"] == STORED
-        assert user["email"] == EMAIL
+        assert plain(user["mobile"]) == STORED
+        assert plain(user["email"]) == EMAIL
         assert user["status"] == "pending"
         assert await user_repo.by_contact(conn, "+91-55500-00901") is not None
 
     async def test_email_is_optional(self, conn: Any, redis_conn: Any) -> None:
         user = await _register(conn, redis_conn, email=None)
-        assert user["email"] is None and user["mobile"] == STORED
+        assert user["email"] is None and plain(user["mobile"]) == STORED
 
     async def test_both_mediums_are_authenticated_before_she_is_signed_in(
         self, conn: Any, redis_conn: Any
@@ -187,7 +188,7 @@ class TestConsentLinkRegistration:
             organization_id=None,
             person_type=None,
         )
-        assert result["created"] and result["user"]["mobile"] == STORED
+        assert result["created"] and plain(result["user"]["mobile"]) == STORED
 
         link_uuid = str(result["link"]["link_uuid"])
         mobile_code = (await otp.issue(otp.Scope.CONSENT_LINK, f"{link_uuid}:{STORED}")).code
@@ -242,8 +243,8 @@ class TestNomination:
         self, conn: Any, seeded: dict[str, Any]
     ) -> None:
         row = await self._nominate(conn, seeded)
-        assert row["nominee_mobile"] == "+915550000777"
-        assert row["nominee_email"] == "ravi@example.org"
+        assert plain(row["nominee_mobile"]) == "+915550000777"
+        assert plain(row["nominee_email"]) == "ravi@example.org"
 
     async def test_without_a_mobile_there_is_no_nomination(
         self, conn: Any, seeded: dict[str, Any]
@@ -341,15 +342,17 @@ class TestTheSchemaHoldsTheRule:
     async def test_a_new_data_principal_needs_a_mobile(self, conn: Any) -> None:
         with pytest.raises(psycopg.errors.CheckViolation):
             await conn.execute(
-                """INSERT INTO auth_user (full_name, email, role, status)
-                   VALUES ('No Mobile', 'nomobile@example.org', 'data_subject', 'pending')"""
+                """INSERT INTO auth_user (full_name, email, email_idx, role, status)
+                   VALUES ('No Mobile', 'nomobile@example.org', %s, 'data_subject', 'pending')""",
+                (idx("email", "nomobile@example.org"),),
             )
 
     async def test_staff_still_need_an_email(self, conn: Any) -> None:
         with pytest.raises(psycopg.errors.CheckViolation):
             await conn.execute(
-                """INSERT INTO auth_user (full_name, mobile, role, status)
-                   VALUES ('No Email', '+915550000903', 'dco', 'active')"""
+                """INSERT INTO auth_user (full_name, mobile, mobile_idx, role, status)
+                   VALUES ('No Email', '+915550000903', %s, 'dco', 'active')""",
+                (idx("mobile", "+915550000903"),),
             )
 
     async def test_a_nomination_from_before_the_rule_can_still_be_revoked(
@@ -359,12 +362,12 @@ class TestTheSchemaHoldsTheRule:
         check, and revoking a nomination made under the old rule was a 500."""
         await conn.execute("ALTER TABLE nomination DISABLE TRIGGER trg_nominee_needs_mobile")
         legacy = await conn.execute(
-            """INSERT INTO nomination (principal_user_id, nominee_name, nominee_email, rights,
-                                       status, accepted_at)
-               VALUES (%s, 'Old Nominee', 'old@example.org',
+            """INSERT INTO nomination (principal_user_id, nominee_name, nominee_email,
+                                       nominee_email_idx, rights, status, accepted_at)
+               VALUES (%s, 'Old Nominee', 'old@example.org', %s,
                        ARRAY['access']::rights_request_type[], 'active', now())
                RETURNING nomination_uuid""",
-            (seeded["subject"]["id"],),
+            (seeded["subject"]["id"], idx("email", "old@example.org")),
         )
         await conn.execute("ALTER TABLE nomination ENABLE TRIGGER trg_nominee_needs_mobile")
         uuid = str((await legacy.fetchone())["nomination_uuid"])
@@ -376,8 +379,9 @@ class TestTheSchemaHoldsTheRule:
     async def test_a_new_nomination_needs_a_mobile(self, conn: Any, seeded: dict[str, Any]) -> None:
         with pytest.raises(psycopg.errors.CheckViolation):
             await conn.execute(
-                """INSERT INTO nomination (principal_user_id, nominee_name, nominee_email, rights)
-                   VALUES (%s, 'Email Only', 'only@example.org',
+                """INSERT INTO nomination (principal_user_id, nominee_name, nominee_email,
+                                           nominee_email_idx, rights)
+                   VALUES (%s, 'Email Only', 'only@example.org', %s,
                            ARRAY['access']::rights_request_type[])""",
-                (seeded["subject"]["id"],),
+                (seeded["subject"]["id"], idx("email", "only@example.org")),
             )

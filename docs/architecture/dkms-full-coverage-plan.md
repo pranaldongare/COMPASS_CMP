@@ -50,7 +50,7 @@ works as before; search by "part of a name" does not, and the documents say so.
 
 ## Phases
 
-- [ ] **A. Blind index and the eight columns.** `BLIND_INDEX_KEY` setting;
+- [x] **A. Blind index and the eight columns.** `BLIND_INDEX_KEY` setting;
   `cmp.infrastructure.dkms.blind`; migration 0028 (index columns, backfill from
   the plaintext still present, unique indexes moved from value to index, the
   three triggers rewritten, `minor_until`, columns widened to `text`); every
@@ -60,7 +60,7 @@ works as before; search by "part of a name" does not, and the documents say so.
   `detail_json` (the row's `user_id` already names the person); record the IP
   as its blind index rather than the address. One ADR, because the trail is
   the one store nothing can be erased from.
-- [ ] **C. Re-seal what is already there.** `scripts/reseal.py`: every sealed
+- [x] **C. Re-seal what is already there.** `scripts/reseal.py`: every sealed
   column, every plaintext row, in batches, idempotent - a row already `SE::` is
   skipped. Run once after A; runnable again at any time.
 - [ ] **D. Tests, endpoint by endpoint.** An HTTP harness (`httpx` over the

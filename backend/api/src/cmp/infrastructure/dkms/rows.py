@@ -77,4 +77,30 @@ async def unseal_value(table: str, column: str, value: Any) -> Any:
     """
     if not isinstance(value, str) or not value.startswith("SE::"):
         return value
-    return (await unseal(table, {column: value}))[column]
+    # The type comes off the envelope, not the column: a value copied from
+    # another column - an account's email becoming a request's contact - was
+    # sealed under the source's type, and asking for it under the destination's
+    # would be refused. The column map is the fallback for an envelope this
+    # code does not recognise.
+    from cmp.infrastructure.dkms.fields import type_of
+
+    data_type = type_of(value) or ENCRYPTED_FIELDS.get(table, {}).get(column)
+    if data_type is None:
+        return value
+    return (await decrypt_records([{column: value}], {column: data_type}, on_error="skip"))[0][
+        column
+    ]
+
+
+async def opened(table: str, row: Row | None) -> Row:
+    """A row with its sealed columns opened, for the backend's own use.
+
+    The API serves rows as stored and the portals decrypt; this is for the
+    places where the backend itself has to *act* on a value - send a code to
+    the mobile, put the address in a reset link, compare what was typed with
+    what is held. One call, whatever the number of columns. Never hand the
+    result to a response.
+    """
+    if not row:
+        return {}
+    return await unseal(table, dict(row))

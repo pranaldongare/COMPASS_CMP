@@ -18,7 +18,7 @@ from cmp.infrastructure.dkms.client import (
     unseal_variables_sync,
 )
 from cmp.infrastructure.dkms.fields import ENCRYPTED_FIELDS, DataType, fields_for
-from cmp.infrastructure.dkms.rows import seal, seal_many, unseal, unseal_many, unseal_value
+from cmp.infrastructure.dkms.rows import opened, seal, seal_many, unseal, unseal_many, unseal_value
 
 __all__ = [
     "ENCRYPTED_FIELDS",
@@ -29,6 +29,7 @@ __all__ = [
     "encrypt_records",
     "fields_for",
     "get_dkms",
+    "opened",
     "seal",
     "seal_many",
     "unseal",

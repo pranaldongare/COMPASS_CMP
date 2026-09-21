@@ -23,6 +23,7 @@ from cmp.core.logging import configure_logging, get_logger
 from cmp.core.security import content_hash, hash_password, new_token, token_fingerprint
 from cmp.db.pool import close_pool, open_pool, transaction
 from cmp.db.redis import close_redis, open_redis
+from cmp.db.repositories import users as user_repo
 from cmp.db.sql import fetch_one
 
 log = get_logger("cmp.seed")
@@ -337,24 +338,24 @@ async def seed() -> None:
             ids: dict[str, int] = {}
 
             # -------------------------------------------------------- accounts
+            # Through the repository rather than raw SQL: the personal columns
+            # are sealed and indexed on the way in, and a seed that wrote them
+            # in the clear would leave rows nothing could find. Re-running
+            # finds the existing account by its index and leaves it alone.
             for full_name, email, role, person_type, org in USERS:
-                row = await fetch_one(
-                    conn,
-                    """INSERT INTO auth_user (full_name, email, role, person_type, status,
-                                              organization_id, username, password_hash)
-                       VALUES (%s, %s, %s::user_role, %s::person_type, 'active', %s, %s, %s)
-                       ON CONFLICT (email) DO UPDATE SET full_name = EXCLUDED.full_name
-                       RETURNING id, uuid, role""",
-                    (
-                        full_name,
-                        email,
-                        role,
-                        person_type,
-                        org,
-                        email.split("@")[0],
-                        hash_password(PASSWORD),
-                    ),
-                )
+                row = await user_repo.by_email(conn, email)
+                if row is None:
+                    row = await user_repo.create(
+                        conn,
+                        full_name=full_name,
+                        email=email,
+                        role=role,
+                        username=email.split("@")[0],
+                        organization_id=org,
+                        person_type=person_type,
+                        status="active",
+                        password_hash=hash_password(PASSWORD),
+                    )
                 ids[role] = row["id"]
                 log.info("seed.user", role=role, email=email)
 
@@ -502,15 +503,18 @@ async def seed() -> None:
             # She signs in with a one-time code and has no password, which is
             # why she is created here rather than in USERS: `password_hash` is
             # nullable for exactly her.
-            subject = await fetch_one(
-                conn,
-                """INSERT INTO auth_user (full_name, email, mobile, role, person_type,
-                                          status, organization_id)
-                   VALUES ('Anjali Verma', 'subject@cmp.local', '+919000000001',
-                           'data_subject', 'external', 'active', 'ORG-SUB-001')
-                   ON CONFLICT (email) DO UPDATE SET status = 'active'
-                   RETURNING id, uuid""",
-            )
+            subject = await user_repo.by_email(conn, "subject@cmp.local")
+            if subject is None:
+                subject = await user_repo.create(
+                    conn,
+                    full_name="Anjali Verma",
+                    email="subject@cmp.local",
+                    mobile="+919000000001",
+                    role="data_subject",
+                    person_type="external",
+                    status="active",
+                    organization_id="ORG-SUB-001",
+                )
             log.info("seed.subject", email="subject@cmp.local")
 
             # One event about herself, so her feed is not empty. This is the

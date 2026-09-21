@@ -28,7 +28,7 @@ from __future__ import annotations
 # function-scoped because a redis-py connection belongs to the event loop it was
 # created on, and the limiter fails closed rather than open - so without it these
 # tests fail with ServiceUnavailable rather than silently skipping the check.
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -109,15 +109,18 @@ async def test_someone_who_turns_eighteen_is_no_longer_a_minor(conn: Any) -> Non
 
     Written against `cmp_is_minor` directly because the interesting property is
     that the answer changes with the date rather than with the row - a person
-    becomes an adult without anything being written.
+    becomes an adult without anything being written. Since 0028 the function
+    takes `minor_until` - the birthday plus eighteen years, the one date about
+    a birth kept in the clear - so a day short of eighteen is a `minor_until`
+    of tomorrow, and a day past is yesterday.
     """
     today = datetime.now(UTC).date()
 
     cur = await conn.execute(
         "SELECT cmp_is_minor(%s::date) AS a, cmp_is_minor(%s::date) AS b",
         (
-            (today.replace(year=today.year - 18) + timedelta(days=1)).isoformat(),  # a day short
-            (today.replace(year=today.year - 18) - timedelta(days=1)).isoformat(),  # a day over
+            (today + timedelta(days=1)).isoformat(),  # stops being a child tomorrow
+            (today - timedelta(days=1)).isoformat(),  # stopped yesterday
         ),
     )
     row = await cur.fetchone()
@@ -232,7 +235,7 @@ async def test_a_date_of_birth_can_be_corrected_later(conn: Any, seeded: dict[st
 
     updated = await user_repo.update_profile(conn, subject_id, dob=_years_ago(15))
 
-    assert updated["dob"] == date.fromisoformat(_years_ago(15))
+    assert plain(updated["dob"]) == _years_ago(15)
     assert updated["is_minor"] is True
 
 

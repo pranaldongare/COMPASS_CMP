@@ -536,7 +536,8 @@ async def capture(
     if granted_uuids:
         age = await (
             await conn.execute(
-                "SELECT cmp_is_minor(dob) AS is_minor FROM auth_user WHERE id = %s", (user_id,)
+                "SELECT cmp_is_minor(minor_until) AS is_minor FROM auth_user WHERE id = %s",
+                (user_id,),
             )
         ).fetchone()
         if age and age["is_minor"] is True:

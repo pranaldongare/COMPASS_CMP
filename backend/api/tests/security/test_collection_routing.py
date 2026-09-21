@@ -22,6 +22,7 @@ from cmp.core.permissions import Role
 from cmp.db.repositories import projects as project_repo
 from cmp.db.repositories import registry as registry_repo
 from cmp.db.sql import fetch_one
+from tests.conftest import idx
 
 pytestmark = pytest.mark.asyncio
 
@@ -29,9 +30,9 @@ pytestmark = pytest.mark.asyncio
 async def _user(conn: Any, role: str, email: str) -> int:
     row = await fetch_one(
         conn,
-        """INSERT INTO auth_user (full_name, email, role, status)
-           VALUES (%s, %s, %s::user_role, 'active') RETURNING id""",
-        (email.split("@")[0], email, role),
+        """INSERT INTO auth_user (full_name, email, email_idx, role, status)
+           VALUES (%s, %s, %s, %s::user_role, 'active') RETURNING id""",
+        (email.split("@")[0], email, idx("email", email), role),
     )
     assert row is not None
     return int(row["id"])

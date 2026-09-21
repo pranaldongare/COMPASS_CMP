@@ -45,7 +45,8 @@ from cmp.domain.rights import clock
 from cmp.domain.rights import state_machine as sm
 from cmp.domain.rights.scope import consent_scope, scope_text
 from cmp.domain.rights.state_machine import RequestFacts
-from cmp.infrastructure.dkms import unseal_value
+from cmp.infrastructure.dkms import opened, unseal_value
+from cmp.infrastructure.dkms.blind import index_of
 from cmp.validation import choice, mask_contact, normalise_contact, normalise_mobile
 
 log = get_logger("cmp.rights")
@@ -2601,11 +2602,9 @@ async def nominate(
     principal = await user_repo.by_id(conn, principal_user_id)
     if not principal:
         raise NotFound("User")
-    own = {
-        str(principal["email"] or "").lower(),
-        normalise_mobile(str(principal["mobile"] or "")),
-    } - {""}
-    if mobile in own or (email and email in own):
+    # Compared on the blind indexes: the principal's own contacts are sealed.
+    own = {principal.get("email_idx"), principal.get("mobile_idx")} - {None}
+    if index_of("mobile", mobile) in own or (email and index_of("email", email) in own):
         raise ValidationFailed(
             "A nominee has to be somebody other than you", field="nominee_mobile"
         )
@@ -2711,7 +2710,14 @@ async def send_nomination_code(conn: Conn, raw_token: str, *, medium: str) -> di
 
 
 async def nomination_from_token(conn: Conn, raw_token: str) -> Row:
-    """The acceptance link, resolved. Every failure is the same 404."""
+    """The acceptance link, resolved. Every failure is the same 404.
+
+    Returned with its contacts and the two names opened. Everything downstream
+    of a valid token acts on them - masks one for the page, sends a code to
+    one, makes an account from one - and the page that shows them has no
+    session to decrypt with. The token is the authorisation, and it was
+    checked before anything was opened.
+    """
     row = await repo.nomination_by_token_hash(conn, token_fingerprint(raw_token))
     if (
         not row
@@ -2720,7 +2726,16 @@ async def nomination_from_token(conn: Conn, raw_token: str) -> Row:
         or row["accept_expires_at"] < datetime.now(UTC)
     ):
         raise NotFound("Nomination")
-    return row
+    return await _opened_nomination(row)
+
+
+async def _opened_nomination(row: Row) -> Row:
+    """A nomination row with its contacts and names in the clear, for the
+    backend's own acts. Never handed to a session-bearing response."""
+    out = await opened("nomination", row)
+    if out.get("principal_name"):
+        out["principal_name"] = await unseal_value("auth_user", "full_name", out["principal_name"])
+    return out
 
 
 async def accept_nomination(conn: Conn, raw_token: str, *, code: str) -> Row:
@@ -2745,6 +2760,7 @@ async def accept_nomination(conn: Conn, raw_token: str, *, code: str) -> Row:
     )
     fresh = await repo.nomination_by_uuid(conn, str(row["nomination_uuid"]))
     assert fresh is not None
+    fresh = await _opened_nomination(fresh)
     ref = str(fresh["nomination_uuid"])
     proven = await get_redis().getdel(rkey(K_CACHE, "nomination_medium", ref))
     medium = str(proven) if proven in ("mobile", "email") else "mobile"
@@ -2892,7 +2908,7 @@ async def nominee_start(conn: Conn, *, nomination_uuid: str, contact: str) -> di
     )
     row = await repo.nomination_by_uuid(conn, nomination_uuid)
     matched = (
-        _recorded_contact(row, contact)
+        _recorded_contact(await _opened_nomination(row), contact)
         if row and row["status"] == NominationStatus.ACTIVE
         else None
     )

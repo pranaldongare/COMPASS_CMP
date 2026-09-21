@@ -90,12 +90,22 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
     "auth_user": {
         "full_name": DataType.NAME,
         "organization_id": DataType.ORG_ID,
+        # Sealed since 0028, when each got a blind index beside it. Sign-in,
+        # uniqueness and "which of her contacts is this" all read the index.
+        "email": DataType.EMAIL,
+        "secondary_email": DataType.EMAIL,
+        "mobile": DataType.MOBILE,
+        "username": DataType.NAME,
+        "dob": DataType.DOB,
     },
     "nomination": {
         "nominee_name": DataType.NAME,
+        "nominee_email": DataType.EMAIL,
+        "nominee_mobile": DataType.MOBILE,
     },
     "rights_request": {
         "submitted_name": DataType.NAME,
+        "submitted_contact": DataType.CONTACT,
         "request_text": DataType.FREE_TEXT,
         "verification_note": DataType.FREE_TEXT,
         "refusal_reason": DataType.FREE_TEXT,
@@ -142,27 +152,34 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
     },
 }
 
-#: Personal, and *not* in the list above, each with the reason. A field arrives
-#: here rather than being quietly omitted, so nobody has to work out whether it
-#: was considered.
-LOOKUP_FIELDS: dict[str, dict[str, str]] = {
+#: The sealed columns the platform finds rows by, and the blind index beside
+#: each. A lookup compares the index; the value is opened only to send to it.
+#: Before 0028 these stayed plaintext, for the reason each line still gives.
+BLIND_INDEXED: dict[str, dict[str, str]] = {
     "auth_user": {
-        "email": "signs a person in, and is unique across the register - a "
-        "randomised ciphertext cannot answer 'is this address taken'",
-        "secondary_email": "signs a person in as well, and carries the same "
-        "one-address-one-account rule",
-        "mobile": "signs a person in, and is where a one-time code is sent",
-        "username": "signs a person in, on the accounts that carry one",
-        "dob": "the s.9 minor test is a comparison, run in SQL",
+        "email": "email_idx",
+        "secondary_email": "secondary_email_idx",
+        "mobile": "mobile_idx",
+        "username": "username_idx",
+        "organization_id": "organization_id_idx",
     },
     "nomination": {
-        "nominee_email": "the acceptance flow finds the nomination by contact",
-        "nominee_mobile": "the acceptance flow finds the nomination by contact, "
-        "and the code is sent to it",
+        "nominee_email": "nominee_email_idx",
+        "nominee_mobile": "nominee_mobile_idx",
     },
     "rights_request": {
-        "submitted_contact": "the public request is verified by sending a code "
-        "to it, and later requests are matched against it",
+        "submitted_contact": "submitted_contact_idx",
+    },
+}
+
+#: Personal columns that are not sealed, each with the reason. Empty since
+#: 0028 for the lookup columns - they have their indexes now - and kept as a
+#: structure so the next column that cannot be sealed has somewhere to be
+#: written down rather than quietly omitted.
+LOOKUP_FIELDS: dict[str, dict[str, str]] = {
+    "auth_user": {
+        "minor_until": "the date a person stops being a child under s.9; a date "
+        "comparison in SQL, and it says nothing but that date",
     },
 }
 

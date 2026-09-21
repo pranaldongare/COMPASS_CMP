@@ -41,6 +41,8 @@ from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn, unique_violation
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
+from cmp.infrastructure.dkms import opened
+from cmp.infrastructure.dkms.blind import index_of
 from cmp.validation import is_mobile, normalise_contact, normalise_mobile
 
 log = get_logger("cmp.auth")
@@ -348,7 +350,7 @@ async def change_password(
     if not user:
         raise Unauthenticated("Sign in to continue")
 
-    creds = await user_repo.credentials_by_login(conn, user["email"])
+    creds = await user_repo.credentials_by_id(conn, user_id)
     if not creds or not verify_password(current_password, creds["password_hash"]):
         raise Unauthenticated("Your current password is not correct")
 
@@ -473,6 +475,9 @@ async def invite_staff(conn: Conn, *, user: dict[str, Any]) -> None:
         )
     if not user.get("email"):
         raise ValidationFailed("That account has no email address to write to", field="email")
+    # Opened here because the address goes into a URL as well as a message,
+    # and a URL is not something deliver() sees.
+    person = await opened("auth_user", user)
 
     issued = await otp.issue(
         otp.Scope.CONTACT_VERIFY,
@@ -486,20 +491,23 @@ async def invite_staff(conn: Conn, *, user: dict[str, Any]) -> None:
     dispatch_optional(
         send_staff_invitation,
         str(user["uuid"]),
-        user["email"],
-        user["full_name"],
+        person["email"],
+        person["full_name"],
         ROLE_TITLES.get(user["role"], user["role"]),
         issued.code,
-        _reset_url(user["email"]),
+        _reset_url(person["email"]),
         settings.staff_invite_ttl_h,
     )
+    # The row's subject_user_id names the person. The address is not repeated
+    # here: the trail can never be erased, and an address in it would outlive
+    # every right she has to have it removed.
     await audit.record(
         conn,
         event=Event.USER_INVITED,
         entity_type="auth_user",
         entity_id=user["id"],
         subject_user_id=user["id"],
-        detail={"role": user["role"], "email": user["email"]},
+        detail={"role": user["role"]},
     )
 
 
@@ -572,7 +580,7 @@ async def add_secondary_email(conn: Conn, *, user: dict[str, Any], email: str) -
     would cost her a way of signing in.
     """
     email = email.strip().lower()
-    if user.get("email") and email == str(user["email"]).lower():
+    if user.get("email_idx") and index_of("email", email) == user["email_idx"]:
         raise ValidationFailed(
             "That is already the address on your account", field="secondary_email"
         )
@@ -582,7 +590,7 @@ async def add_secondary_email(conn: Conn, *, user: dict[str, Any], email: str) -
         if unique_violation(exc):
             raise Conflict("That address belongs to another account", code="contact_taken") from exc
         raise
-    if email != (str(user.get("secondary_email") or "").lower() or None):
+    if index_of("email", email) != user.get("secondary_email_idx"):
         await audit.record(
             conn,
             event=Event.USER_CONTACT_CHANGED,

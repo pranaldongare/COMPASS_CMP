@@ -139,10 +139,10 @@ async def seeded(conn: Any, request_context: Any) -> dict[str, Any]:
     ]:
         row = await fetch_one(
             conn,
-            """INSERT INTO auth_user (full_name, email, role, status, password_hash)
-               VALUES (%s, %s, %s::user_role, 'active', %s)
+            """INSERT INTO auth_user (full_name, email, email_idx, role, status, password_hash)
+               VALUES (%s, %s, %s, %s::user_role, 'active', %s)
                RETURNING id, uuid""",
-            (f"Test {role}", email, role, hash_password("TestPassw0rd!123")),
+            (f"Test {role}", email, idx("email", email), role, hash_password("TestPassw0rd!123")),
         )
         ids[role] = row
 
@@ -245,11 +245,12 @@ async def seeded(conn: Any, request_context: Any) -> dict[str, Any]:
 
     subject = await fetch_one(
         conn,
-        """INSERT INTO auth_user (full_name, email, mobile, role, status, registered_via_link_id)
-           VALUES ('Test Subject', 'subject@test.local', '+915550000001', 'data_subject',
+        """INSERT INTO auth_user (full_name, email, email_idx, mobile, mobile_idx, role, status,
+                               registered_via_link_id)
+           VALUES ('Test Subject', 'subject@test.local', %s, '+915550000001', %s, 'data_subject',
                    'active', %s)
            RETURNING id, uuid""",
-        (link["link_id"],),
+        (idx("email", "subject@test.local"), idx("mobile", "+915550000001"), link["link_id"]),
     )
 
     return {
@@ -296,3 +297,18 @@ def plain(value: Any) -> Any:
     if isinstance(value, str) and value.startswith("SE::"):
         return unseal_values_sync([value])[0]
     return value
+
+
+# --------------------------------------------------------------- blind index
+#
+# Since 0028 a contact column carries a blind index beside it, and the database
+# refuses a contact without one. The repositories compute it; a fixture that
+# writes a row with plain SQL has to as well. `idx` is `index_of` under a
+# shorter name, for the INSERTs below.
+
+
+def idx(kind: str, value: Any) -> str | None:
+    """The blind index a fixture writes beside a contact it inserts directly."""
+    from cmp.infrastructure.dkms.blind import index_of
+
+    return index_of(kind, value) if value is not None else None  # type: ignore[arg-type]

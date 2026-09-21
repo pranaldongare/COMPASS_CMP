@@ -43,6 +43,7 @@ from cmp.db.repositories import rights as repo
 from cmp.db.repositories import users as user_repo
 from cmp.domain.rights import service
 from cmp.tasks import dispatch as dispatch_mod
+from tests.conftest import plain
 
 pytestmark = pytest.mark.integration
 
@@ -165,10 +166,13 @@ class TestAcceptanceRecordsTheAccount:
         him = await nominee_account(conn)
         await user_repo.update_profile(conn, int(him["id"]), mobile="+919876511009")
         moved = await user_repo.by_id(conn, int(him["id"]))
-        assert moved is not None and moved["mobile"] == "+919876511009"
+        assert moved is not None and plain(moved["mobile"]) == "+919876511009"
 
         listed = await repo.nominations_naming(
-            conn, user_id=int(him["id"]), mobile=moved["mobile"], email=moved.get("email")
+            conn,
+            user_id=int(him["id"]),
+            mobile_idx=moved.get("mobile_idx"),
+            email_idx=moved.get("email_idx"),
         )
         assert [str(r["nomination_uuid"]) for r in listed] == [str(accepted["nomination_uuid"])], (
             "his own nomination went missing when he changed his number"
@@ -186,7 +190,10 @@ class TestWhatHeCanSee:
         row = await raise_request(conn, accepted)
 
         listed = await repo.nominations_naming(
-            conn, user_id=int(him["id"]), mobile=him["mobile"], email=him.get("email")
+            conn,
+            user_id=int(him["id"]),
+            mobile_idx=him.get("mobile_idx"),
+            email_idx=him.get("email_idx"),
         )
         assert len(listed) == 1
         one = listed[0]
@@ -208,8 +215,8 @@ class TestWhatHeCanSee:
             conn,
             str(row["request_uuid"]),
             user_id=int(him["id"]),
-            mobile=him["mobile"],
-            email=him.get("email"),
+            mobile_idx=him.get("mobile_idx"),
+            email_idx=him.get("email_idx"),
         )
         hers = await repo.subject_request(conn, str(row["request_uuid"]), seeded["subject"]["id"])
         assert his is not None and hers is not None
@@ -231,8 +238,8 @@ class TestWhatHeCanSee:
                 conn,
                 str(row["request_uuid"]),
                 user_id=int(stranger["id"]),
-                mobile=stranger.get("mobile"),
-                email=stranger.get("email"),
+                mobile_idx=stranger.get("mobile_idx"),
+                email_idx=stranger.get("email_idx"),
             )
             is None
         )
@@ -261,8 +268,8 @@ class TestWhatHeCanSee:
                 conn,
                 str(hers["request_uuid"]),
                 user_id=int(him["id"]),
-                mobile=him["mobile"],
-                email=him.get("email"),
+                mobile_idx=him.get("mobile_idx"),
+                email_idx=him.get("email_idx"),
             )
             is None
         ), "a request she made herself is not his, whoever else he acts for"
@@ -283,7 +290,10 @@ class TestRevocation:
         )
 
         listed = await repo.nominations_naming(
-            conn, user_id=int(him["id"]), mobile=him["mobile"], email=him.get("email")
+            conn,
+            user_id=int(him["id"]),
+            mobile_idx=him.get("mobile_idx"),
+            email_idx=him.get("email_idx"),
         )
         assert [r["invoked_reference"] for r in listed] == [row["reference"]]
         assert listed[0]["status"] == "revoked", "and it says plainly that it is over"
@@ -292,8 +302,8 @@ class TestRevocation:
                 conn,
                 str(row["request_uuid"]),
                 user_id=int(him["id"]),
-                mobile=him["mobile"],
-                email=him.get("email"),
+                mobile_idx=him.get("mobile_idx"),
+                email_idx=him.get("email_idx"),
             )
             is not None
         )
@@ -310,7 +320,10 @@ class TestRevocation:
 
         assert (
             await repo.nominations_naming(
-                conn, user_id=int(him["id"]), mobile=him["mobile"], email=him.get("email")
+                conn,
+                user_id=int(him["id"]),
+                mobile_idx=him.get("mobile_idx"),
+                email_idx=him.get("email_idx"),
             )
             == []
         )
@@ -327,7 +340,7 @@ class TestWhoIsTold:
         accepted = await nominate_and_accept(conn, seeded["subject"]["id"])
         row = await raise_request(conn, accepted, event="incapacity")
 
-        told = [args[0] for name, args in queued if name == ACKNOWLEDGEMENT]
+        told = [plain(args[0]) for name, args in queued if name == ACKNOWLEDGEMENT]
         assert NOMINEE_MOBILE in told, "the nominee is the requester and hears first"
         assert "subject@test.local" in told, "and she is told it was done in her name"
         assert row["trigger_event"] == "incapacity"
@@ -340,5 +353,5 @@ class TestWhoIsTold:
         accepted = await nominate_and_accept(conn, seeded["subject"]["id"])
         await raise_request(conn, accepted, event="death")
 
-        told = [args[0] for name, args in queued if name == ACKNOWLEDGEMENT]
+        told = [plain(args[0]) for name, args in queued if name == ACKNOWLEDGEMENT]
         assert told == [NOMINEE_MOBILE]

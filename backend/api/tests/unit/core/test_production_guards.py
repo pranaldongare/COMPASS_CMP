@@ -25,6 +25,7 @@ PRODUCTION: dict[str, Any] = {
     "sms_transport": "http",
     "sms_http_url": "https://sms-gateway.example.org/send",
     "dkms_enabled": True,
+    "blind_index_key": "a-real-blind-index-key-of-thirty-two-bytes",
 }
 
 
@@ -53,6 +54,12 @@ class TestTransportsInProduction:
     def test_the_http_gateway_must_be_https(self) -> None:
         with pytest.raises(ValueError, match="https"):
             _settings(sms_http_url="http://sms-gateway.example.org/send")
+
+    def test_production_will_not_boot_on_the_development_index_key(self) -> None:
+        """A blind index under a key in the repository is a lookup table for
+        anyone holding the repository."""
+        with pytest.raises(ValueError, match="BLIND_INDEX_KEY"):
+            _settings(blind_index_key="dev-only-blind-index-key-32-bytes-long!")
 
     def test_production_will_not_boot_writing_personal_data_in_the_clear(self) -> None:
         """The same shape of failure as the transports above, and worse.

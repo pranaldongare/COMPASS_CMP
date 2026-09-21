@@ -31,6 +31,7 @@ from cmp.db.repositories import users as users_repo
 from cmp.db.sql import unique_violation
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
+from cmp.infrastructure.dkms import opened
 from cmp.schemas.common import Acknowledged, CodeText, LongText, Out, Page, Schema, ShortText
 from cmp.validation import Email
 
@@ -442,8 +443,11 @@ async def add_respondent(
             if not account or account["role"] == "data_subject" or account["status"] != "active":
                 raise ValidationFailed("Choose an active member of staff", field="user_uuid")
             user_id = int(account["id"])
-            name = str(account["full_name"])
-            contact = str(account["email"])
+            # Opened: the respondent row seals its own copy under its own type,
+            # and a ciphertext copied across would be sealed under the wrong one.
+            person = await opened("auth_user", account)
+            name = str(person["full_name"])
+            contact = str(person["email"])
         elif processor["is_in_house"]:
             raise ValidationFailed(
                 "An in-house processor's respondent must be a CMP account, so they "

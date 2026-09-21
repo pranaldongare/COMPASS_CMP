@@ -145,6 +145,7 @@ class TestProductionStartupGuards:
             # And since the key service arrived, one that writes personal data
             # through it rather than in the clear.
             "dkms_enabled": True,
+            "blind_index_key": SecretStr("a-real-blind-index-key-of-thirty-two-bytes"),
         }
 
     def test_a_complete_production_configuration_is_accepted(self) -> None:

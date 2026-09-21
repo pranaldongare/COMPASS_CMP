@@ -34,6 +34,7 @@ from cmp.db.repositories import users as repo
 from cmp.db.sql import unique_violation
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
+from cmp.infrastructure.dkms.blind import index_of
 from cmp.schemas.common import Acknowledged, Mobile, Out, Page, Schema, ShortText
 from cmp.validation import Email, normalise_mobile
 
@@ -246,7 +247,7 @@ async def create_user(body: CreateUser, principal: RequireAdmin) -> dict[str, An
             entity_type="auth_user",
             entity_id=user["id"],
             subject_user_id=user["id"],
-            detail={"role": body.role, "email": str(body.email), "sources": assigned},
+            detail={"role": body.role, "sources": assigned},
         )
 
         # An account nobody has been told about is an account nobody can use, so
@@ -258,9 +259,9 @@ async def create_user(body: CreateUser, principal: RequireAdmin) -> dict[str, An
         # sent a code the way any new contact is, so the person learns the
         # number is on their account and can confirm it; until then it signs
         # nobody in.
-        if user.get("mobile"):
+        if body.mobile:
             await auth_service.request_contact_code_on_behalf(
-                conn, user=user, contact=str(user["mobile"])
+                conn, user=user, contact=str(body.mobile)
             )
     return {**user, "sources": assigned}
 
@@ -329,9 +330,11 @@ async def update_user(user_uuid: UUID, body: UpdateUser, principal: RequireAdmin
             detail={"fields": sorted(k for k, v in body.model_dump().items() if v is not None)},
         )
 
-        mobile_changed = body.mobile is not None and normalise_mobile(body.mobile) != (
-            user.get("mobile") or None
-        )
+        # "Changed" is decided on the blind index: the stored number is sealed
+        # and differs on every write.
+        mobile_changed = body.mobile is not None and index_of(
+            "mobile", normalise_mobile(body.mobile)
+        ) != (user.get("mobile_idx") or None)
         if mobile_changed:
             await audit.record(
                 conn,
@@ -342,7 +345,7 @@ async def update_user(user_uuid: UUID, body: UpdateUser, principal: RequireAdmin
                 detail={"medium": "mobile", "action": "set", "by": "administrator"},
             )
             await auth_service.request_contact_code_on_behalf(
-                conn, user=updated, contact=str(updated["mobile"])
+                conn, user=updated, contact=str(body.mobile)
             )
     return updated
 

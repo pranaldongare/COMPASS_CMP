@@ -29,7 +29,7 @@ from cmp.db.repositories import rights as repo
 from cmp.db.repositories import users as user_repo
 from cmp.domain.consent import service as consent_service
 from cmp.domain.rights import service
-from tests.conftest import plain
+from tests.conftest import idx, plain
 
 pytestmark = pytest.mark.integration
 
@@ -780,19 +780,25 @@ class TestNomination:
         # belongs to nobody the nomination names.
         stranger = seeded["users"]["dpo"]["id"]
         by_mobile = await repo.nominations_naming(
-            conn, user_id=stranger, mobile="+915550000091", email=None
+            conn, user_id=stranger, mobile_idx=idx("mobile", "+915550000091"), email_idx=None
         )
         assert [str(r["nomination_uuid"]) for r in by_mobile] == [ref]
         assert by_mobile[0]["status"] == "pending"
         assert by_mobile[0]["principal_name"] == "Test Subject"  # the seeded principal
 
         by_email = await repo.nominations_naming(
-            conn, user_id=stranger, mobile=None, email="meera.nominee@example.org"
+            conn,
+            user_id=stranger,
+            mobile_idx=None,
+            email_idx=idx("email", "meera.nominee@example.org"),
         )
         assert [str(r["nomination_uuid"]) for r in by_email] == [ref]
 
         nobody = await repo.nominations_naming(
-            conn, user_id=stranger, mobile="+915559999999", email="nobody@example.org"
+            conn,
+            user_id=stranger,
+            mobile_idx=idx("mobile", "+915559999999"),
+            email_idx=idx("email", "nobody@example.org"),
         )
         assert nobody == []
 
@@ -801,7 +807,7 @@ class TestNomination:
         await service.revoke_nomination(conn, nomination_uuid=ref, principal_user_id=principal)
         assert (
             await repo.nominations_naming(
-                conn, user_id=stranger, mobile="+915550000091", email=None
+                conn, user_id=stranger, mobile_idx=idx("mobile", "+915550000091"), email_idx=None
             )
             == []
         )
@@ -850,7 +856,7 @@ class TestNomination:
         assert made is not None
         assert made["role"] == "data_subject" and made["status"] == "active"
         assert plain(made["full_name"]) == "Nominee Who Accepts"
-        assert made["email"] == "stranger.nominee@example.org"
+        assert plain(made["email"]) == "stranger.nominee@example.org"
         assert made["mobile_verified_at"] is not None and made["email_verified_at"] is None
 
         # Somebody with an account already: the same person, named again on a
@@ -960,7 +966,9 @@ class TestNomination:
         )
         assert row["channel"] == "nominee" and row["subject_user_id"] == principal
         assert row["verification_status"] == "verified"
-        assert service.contact_for(row) == "+915550000077", "the nominee is written to, not her"
+        assert plain(service.contact_for(row)) == "+915550000077", (
+            "the nominee is written to, not her"
+        )
 
         row = await service.classify(
             conn, row, request_type="access", note=None, role=DPO, actor_id=dpo
@@ -1188,7 +1196,7 @@ class TestPublicForm:
             conn, row, note="No match", role=DPO, actor_id=seeded["users"]["dpo"]["id"]
         )
         closed = [a for a in sent if a[0] == "send_rights_closed"]
-        assert closed and closed[0][1] == "stranger@example.org"
+        assert closed and plain(closed[0][1]) == "stranger@example.org"
         assert closed[0][3] == "not_verified"
         assert "could not verify" in closed[0][4] and "match" not in closed[0][4].lower()
 

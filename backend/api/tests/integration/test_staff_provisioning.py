@@ -205,7 +205,7 @@ class TestTheInvitation:
             user_agent="test",
         )
         assert session["mfa_required"] is True
-        assert only(queued, "cmp.notifications.send_mfa_code")[1] == "firstsignin@test.local"
+        assert plain(only(queued, "cmp.notifications.send_mfa_code")[1]) == "firstsignin@test.local"
         assert user["id"] is not None
 
     async def test_the_trail_shows_who_was_invited_and_when_they_activated(
@@ -255,7 +255,7 @@ class TestAskingForTheCodeAgain:
 
         await auth_service.request_password_reset(conn, email="expired@test.local")
 
-        assert only(queued, RESET)[1] == "expired@test.local"
+        assert plain(only(queued, RESET)[1]) == "expired@test.local"
         assert user["status"] == UserStatus.PENDING.value
 
     @pytest.mark.parametrize("status", [UserStatus.SUSPENDED.value, UserStatus.DEACTIVATED.value])

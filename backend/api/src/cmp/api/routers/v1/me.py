@@ -27,6 +27,7 @@ from cmp.db.sql import unique_violation
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.consent import service as consent_service
+from cmp.infrastructure.dkms.blind import index_of
 from cmp.schemas.common import Acknowledged, Mobile, OtpCode, Out, Schema, ShortText
 from cmp.validation import Email, normalise_mobile
 
@@ -42,10 +43,12 @@ class MeProfile(Out):
     organization_id: str | None
     person_type: str | None
     status: str
-    dob: date | None
-    #: Derived from `dob` by the database, so every reader gets the same answer
-    #: on the same day. `None` means the date of birth is unknown - which is not
-    #: the same as adult, and must not be rendered as one.
+    #: A string, not a date: it is served as stored, and it is stored sealed.
+    #: The portal opens it. `is_minor` is the answer the server can still give.
+    dob: str | None
+    #: Derived by the database from `minor_until`, so every reader gets the same
+    #: answer on the same day. `None` means the date of birth is unknown - which
+    #: is not the same as adult, and must not be rendered as one.
     is_minor: bool | None
     created_at: Any
     #: A second address she added herself. Signs her in once confirmed - the
@@ -157,7 +160,9 @@ async def update_me(body: UpdateMe, principal: CurrentUser) -> dict[str, Any]:
         # A number already confirmed is left alone: re-sending would unconfirm
         # a contact that has already proved itself.
         if body.mobile is not None and updated.get("mobile_verified_at") is None:
-            if normalise_mobile(body.mobile) != (before.get("mobile") or None):
+            if index_of("mobile", normalise_mobile(body.mobile)) != (
+                before.get("mobile_idx") or None
+            ):
                 await audit.record(
                     conn,
                     event=Event.USER_CONTACT_CHANGED,
@@ -166,9 +171,7 @@ async def update_me(body: UpdateMe, principal: CurrentUser) -> dict[str, Any]:
                     subject_user_id=principal.user_id,
                     detail={"medium": "mobile", "action": "set"},
                 )
-            await auth_service.request_contact_code(
-                conn, user=updated, contact=str(updated["mobile"])
-            )
+            await auth_service.request_contact_code(conn, user=updated, contact=str(body.mobile))
         if body.secondary_email is not None:
             updated = await auth_service.add_secondary_email(
                 conn, user=updated, email=str(body.secondary_email)

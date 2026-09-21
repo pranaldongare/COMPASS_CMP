@@ -14,7 +14,8 @@ from typing import Any
 from cmp.core.pagination import PageRequest, build_page
 from cmp.db.sql import Conn, Row, execute, fetch_all, fetch_one, keyset_clause, require_one
 from cmp.infrastructure.dkms import seal
-from cmp.validation import normalise_contact, normalise_mobile
+from cmp.infrastructure.dkms.blind import index_of
+from cmp.validation import normalise_mobile
 
 # The columns any caller may see. `password_hash` is not among them and must
 # never be added: a SELECT * here is one refactor away from a response body.
@@ -24,10 +25,26 @@ PUBLIC_COLUMNS = """
   u.secondary_email, u.secondary_email_verified_at,
   -- Derived in SQL rather than in Python, because more than one caller asks and
   -- the answer changes on a birthday without the row being written to. NULL
-  -- when the date of birth is unknown, which is not the same as adult.
-  cmp_is_minor(u.dob) AS is_minor,
+  -- when the date of birth is unknown, which is not the same as adult. Read off
+  -- minor_until, the one date about a birth that stays in the clear.
+  cmp_is_minor(u.minor_until) AS is_minor,
+  -- The blind indexes of the sealed contacts. Keyed hashes, not personal data;
+  -- here so a row can be matched against a contact without opening anything.
+  u.email_idx, u.mobile_idx, u.secondary_email_idx,
   u.created_at, u.updated_at
 """
+
+
+def contact_indexes(contact: str) -> tuple[str | None, str | None]:
+    """The index a contact would have as an email and as a mobile.
+
+    A contact is one or the other, decided the way the platform decides it
+    everywhere: an @ makes it an address. The other index is None, so a query
+    comparing both columns matches only the one that applies.
+    """
+    if "@" in contact:
+        return index_of("email", contact), None
+    return None, index_of("mobile", contact)
 
 
 async def by_uuid(conn: Conn, user_uuid: str) -> Row | None:
@@ -54,9 +71,9 @@ async def by_id(conn: Conn, user_id: int) -> Row | None:
 async def credentials_by_login(conn: Conn, login: str) -> Row | None:
     """Fetch the hash for a sign-in attempt.
 
-    Matched case-insensitively on email or username: people type their address
-    with whatever capitalisation their keyboard produced, and a sign-in that
-    fails on case is a support ticket, not a security control.
+    Matched through the blind index of what was typed, as an email and as a
+    username, so case and spacing do not matter - the index is computed on the
+    normalised form. The stored columns are sealed and never compared.
     """
     return await fetch_one(
         conn,
@@ -64,17 +81,30 @@ async def credentials_by_login(conn: Conn, login: str) -> Row | None:
         SELECT u.id, u.uuid, u.email, u.username, u.full_name, u.role, u.status,
                u.password_hash
         FROM auth_user u
-        WHERE lower(u.email) = lower(%s) OR lower(u.username) = lower(%s)
+        WHERE u.email_idx = %s OR u.username_idx = %s
         """,
-        (login, login),
+        (index_of("email", login), index_of("username", login)),
+    )
+
+
+async def credentials_by_id(conn: Conn, user_id: int) -> Row | None:
+    """The hash for a signed-in person changing their own password.
+
+    By id, because the row's email is sealed and cannot be looked up by; the
+    person is already known.
+    """
+    return await fetch_one(
+        conn,
+        "SELECT u.id, u.uuid, u.role, u.status, u.password_hash FROM auth_user u WHERE u.id = %s",
+        (user_id,),
     )
 
 
 async def by_email(conn: Conn, email: str) -> Row | None:
     return await fetch_one(
         conn,
-        f"SELECT u.id, {PUBLIC_COLUMNS} FROM auth_user u WHERE lower(u.email) = lower(%s)",
-        (email,),
+        f"SELECT u.id, {PUBLIC_COLUMNS} FROM auth_user u WHERE u.email_idx = %s",
+        (index_of("email", email),),
     )
 
 
@@ -86,30 +116,35 @@ async def by_contact(conn: Conn, contact: str) -> Row | None:
     somebody typed, and a claim must not be a way in - the address might be
     somebody else's, mistyped, or simply unreachable.
 
-    The mobile is compared as stored - digits and a leading plus - whatever
-    spacing was typed. See `normalise_mobile`.
+    Compared through the blind indexes, which are computed on the normalised
+    form - so spacing and case in what was typed do not matter, and the sealed
+    columns themselves are never read.
     """
-    wanted = normalise_contact(contact)
+    email_idx, mobile_idx = contact_indexes(contact)
     return await fetch_one(
         conn,
         f"""
         SELECT u.id, {PUBLIC_COLUMNS} FROM auth_user u
-        WHERE lower(u.email) = %s
-           OR u.mobile = %s
-           OR (lower(u.secondary_email) = %s AND u.secondary_email_verified_at IS NOT NULL)
+        WHERE (%s::text IS NOT NULL AND u.email_idx = %s)
+           OR (%s::text IS NOT NULL AND u.mobile_idx = %s)
+           OR (%s::text IS NOT NULL AND u.secondary_email_idx = %s
+               AND u.secondary_email_verified_at IS NOT NULL)
         """,
-        (wanted, wanted, wanted),
+        (email_idx, email_idx, mobile_idx, mobile_idx, email_idx, email_idx),
     )
 
 
 def medium_of(user: Row, contact: str) -> str | None:
     """Which of this row's own contacts the given one is, or None if it is not
-    one of them. Compared normalised, so spacing and case do not matter."""
-    wanted = normalise_contact(contact)
-    for medium in ("mobile", "email", "secondary_email"):
-        value = user.get(medium)
-        if value and normalise_contact(str(value)) == wanted:
-            return medium
+    one of them. Compared by blind index, so spacing and case do not matter and
+    the sealed value is never opened."""
+    email_idx, mobile_idx = contact_indexes(contact)
+    if mobile_idx and user.get("mobile_idx") == mobile_idx:
+        return "mobile"
+    if email_idx and user.get("email_idx") == email_idx:
+        return "email"
+    if email_idx and user.get("secondary_email_idx") == email_idx:
+        return "secondary_email"
     return None
 
 
@@ -163,33 +198,53 @@ async def create(
     #: ask, and an assumed date would be worse than an absent one.
     dob: str | None = None,
 ) -> Row:
-    # The personal columns go in sealed. Email and mobile do not: they are what
-    # the person signs in with, and are looked up - see LOOKUP_FIELDS.
-    sealed = await seal("auth_user", {"full_name": full_name, "organization_id": organization_id})
+    # Every personal column goes in sealed. The ones the platform finds rows by
+    # - email, mobile, username, the employee id - also get their blind index,
+    # computed on the normalised form, which is what every lookup compares.
+    mobile_n = normalise_mobile(mobile) if mobile else None
+    email_n = email.strip().lower() if email else None
+    sealed = await seal(
+        "auth_user",
+        {
+            "full_name": full_name,
+            "organization_id": organization_id,
+            "email": email_n,
+            "mobile": mobile_n,
+            "username": username,
+            "dob": dob,
+        },
+    )
     row = await fetch_one(
         conn,
         """
         INSERT INTO auth_user (username, full_name, email, mobile, organization_id,
                                role, person_type, status, password_hash,
-                               registered_via_link_id, dob)
+                               registered_via_link_id, dob, minor_until,
+                               email_idx, mobile_idx, username_idx, organization_id_idx)
         VALUES (%s, %s, %s, %s, %s, %s::user_role, %s::person_type, %s::user_status, %s, %s,
-                %s::date)
+                %s, %s::date + INTERVAL '18 years', %s, %s, %s, %s)
         RETURNING id, uuid, username, full_name, email, mobile, organization_id,
-                  role, person_type, status, dob, cmp_is_minor(dob) AS is_minor,
+                  role, person_type, status, dob, cmp_is_minor(minor_until) AS is_minor,
+                  email_idx, mobile_idx, secondary_email_idx,
                   created_at, updated_at
         """,
         (
-            username,
+            sealed["username"],
             sealed["full_name"],
-            email,
-            normalise_mobile(mobile) if mobile else None,
+            sealed["email"],
+            sealed["mobile"],
             sealed["organization_id"],
             role,
             person_type,
             status,
             password_hash,
             registered_via_link_id,
+            sealed["dob"],
             dob,
+            index_of("email", email_n),
+            index_of("mobile", mobile_n),
+            index_of("username", username),
+            index_of("text", organization_id),
         ),
     )
     assert row is not None
@@ -212,30 +267,48 @@ async def update_profile(
     the row as it was, so `%s = mobile` compares with the previous value.
     """
     new_mobile = normalise_mobile(mobile) if mobile else None
-    sealed = await seal("auth_user", {"full_name": full_name, "organization_id": organization_id})
+    new_mobile_idx = index_of("mobile", new_mobile)
+    sealed = await seal(
+        "auth_user",
+        {
+            "full_name": full_name,
+            "organization_id": organization_id,
+            "mobile": new_mobile,
+            "dob": dob,
+        },
+    )
     row = await fetch_one(
         conn,
         """
         UPDATE auth_user
            SET full_name          = COALESCE(%s, full_name),
                mobile             = COALESCE(%s, mobile),
-               mobile_verified_at = CASE WHEN %s::varchar IS NULL OR %s::varchar = mobile
+               mobile_idx         = COALESCE(%s, mobile_idx),
+               -- A changed number is unconfirmed; the comparison is on the
+               -- index, because the sealed value differs on every write.
+               mobile_verified_at = CASE WHEN %s::text IS NULL OR %s::text = mobile_idx
                                          THEN mobile_verified_at ELSE NULL END,
                organization_id    = COALESCE(%s, organization_id),
-               dob                = COALESCE(%s::date, dob)
+               organization_id_idx = COALESCE(%s, organization_id_idx),
+               dob                = COALESCE(%s, dob),
+               minor_until        = COALESCE(%s::date + INTERVAL '18 years', minor_until)
          WHERE id = %s
         RETURNING id, uuid, username, full_name, email, mobile, organization_id,
-                  role, person_type, status, dob, cmp_is_minor(dob) AS is_minor,
+                  role, person_type, status, dob, cmp_is_minor(minor_until) AS is_minor,
                   mobile_verified_at, email_verified_at,
                   secondary_email, secondary_email_verified_at,
+                  email_idx, mobile_idx, secondary_email_idx,
                   created_at, updated_at
         """,
         (
             sealed["full_name"],
-            new_mobile,
-            new_mobile,
-            new_mobile,
+            sealed["mobile"],
+            new_mobile_idx,
+            new_mobile_idx,
+            new_mobile_idx,
             sealed["organization_id"],
+            index_of("text", organization_id),
+            sealed["dob"],
             dob,
             user_id,
         ),
@@ -251,21 +324,25 @@ async def set_secondary_email(conn: Conn, user_id: int, email: str | None) -> Ro
     before it signs anyone in. An address re-saved unchanged keeps the
     confirmation it already earned, the way a re-saved mobile does - otherwise
     pressing save on a row she had already proved would quietly take away a way
-    of signing in. Compared lower-cased, because that is how it is stored.
+    of signing in. "Unchanged" is decided on the blind index, since the sealed
+    value differs on every write.
     """
+    email_n = email.strip().lower() if email else None
+    idx = index_of("email", email_n)
+    sealed = await seal("auth_user", {"secondary_email": email_n})
     row = await fetch_one(
         conn,
         f"""
         UPDATE auth_user u
-           SET secondary_email = %s,
-               secondary_email_verified_at =
-                 CASE WHEN %s::varchar IS NOT NULL
-                       AND lower(%s::varchar) = lower(u.secondary_email)
-                      THEN u.secondary_email_verified_at ELSE NULL END
+           SET secondary_email_verified_at =
+                 CASE WHEN %s::text IS NOT NULL AND %s::text = u.secondary_email_idx
+                      THEN u.secondary_email_verified_at ELSE NULL END,
+               secondary_email = %s,
+               secondary_email_idx = %s
          WHERE u.id = %s
         RETURNING u.id, {PUBLIC_COLUMNS}
         """,
-        (email, email, email, user_id),
+        (idx, idx, sealed["secondary_email"], idx, user_id),
     )
     assert row is not None
     return row
@@ -349,12 +426,18 @@ async def list_users(
         where.append("u.person_type = %s::person_type")
         params.append(person_type)
     if q:
-        # Bounded prefix/substring search over the three fields a person is
-        # looked up by. ILIKE is adequate at this scale; if the register grows
-        # past six figures this becomes a trigram index, not a bigger LIKE.
-        where.append("(u.full_name ILIKE %s OR u.email ILIKE %s OR u.organization_id ILIKE %s)")
-        like = f"%{q}%"
-        params.extend([like, like, like])
+        # Every column a person used to be searched by is sealed, and a
+        # substring of ciphertext matches nothing. What still works, and is
+        # what people actually paste in: an exact email, mobile, username or
+        # employee id, matched through its blind index.
+        email_idx, mobile_idx = contact_indexes(q.strip())
+        where.append(
+            "(u.email_idx = %s OR u.secondary_email_idx = %s OR u.mobile_idx = %s "
+            "OR u.username_idx = %s OR u.organization_id_idx = %s)"
+        )
+        params.extend(
+            [email_idx, email_idx, mobile_idx, index_of("username", q), index_of("text", q)]
+        )
 
     clause = " AND ".join(where)
     keyset, keyset_params = keyset_clause(req, alias="u", id_column="id")

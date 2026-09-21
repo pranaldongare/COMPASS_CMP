@@ -84,6 +84,10 @@ ignore = [
 # their entire user interface, so T201 is not a finding there — a structured log
 # line is the wrong medium for "here are the seeded accounts".
 "scripts/*" = ["T201"]
+# reseal.py builds its statements from ENCRYPTED_FIELDS and BLIND_INDEXED -
+# module constants naming tables and columns - and binds every value. The same
+# reasoning as the repositories, in a script that has to walk every column.
+"scripts/reseal.py" = ["T201", "S608"]
 # The GRANT statements interpolate a role *name*, because GRANT accepts no bind
 # parameter. It comes from a module constant or an operator-set environment
 # variable - never a request - and PL/pgSQL's format(%I) quotes it as an

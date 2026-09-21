@@ -1576,8 +1576,8 @@ async def _mine_or_raised(conn: Any, request_uuid: UUID, user_id: int) -> dict[s
             conn,
             str(request_uuid),
             user_id=user_id,
-            mobile=me.get("mobile"),
-            email=me.get("email"),
+            mobile_idx=me.get("mobile_idx"),
+            email_idx=me.get("email_idx"),
         )
     if not row:
         raise NotFound("Rights request")
@@ -1679,14 +1679,19 @@ async def nominations_naming_me(principal: RequireDataSubject) -> list[dict[str,
         if me is None:
             return []
         rows = await repo.nominations_naming(
-            conn, user_id=principal.user_id, mobile=me.get("mobile"), email=me.get("email")
+            conn,
+            user_id=principal.user_id,
+            mobile_idx=me.get("mobile_idx"),
+            email_idx=me.get("email_idx"),
         )
         out: list[dict[str, Any]] = []
         for row in rows:
-            mine_mobile = me.get("mobile")
+            # Which of the caller's contacts the nomination named, decided on
+            # the indexes: the values are sealed and differ on every write.
+            mine_mobile_idx = me.get("mobile_idx")
             matched = (
                 str(row["nominee_mobile"])
-                if mine_mobile and row.get("nominee_mobile") == mine_mobile
+                if mine_mobile_idx and row.get("nominee_mobile_idx") == mine_mobile_idx
                 else str(row.get("nominee_email") or "")
             )
             out.append({**row, "contact": matched})

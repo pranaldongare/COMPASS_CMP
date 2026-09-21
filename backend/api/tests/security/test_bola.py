@@ -27,6 +27,7 @@ from cmp.core.permissions import Role
 from cmp.db.repositories import consent as consent_repo
 from cmp.db.repositories import notices as notice_repo
 from cmp.db.repositories import projects as project_repo
+from tests.conftest import idx
 
 pytestmark = pytest.mark.integration
 
@@ -34,9 +35,10 @@ pytestmark = pytest.mark.integration
 async def _other_rnd_user(conn: Any, seeded: dict[str, Any]) -> dict[str, Any]:
     """A second R&D User who owns nothing in the seeded world."""
     result = await conn.execute(
-        """INSERT INTO auth_user (full_name, email, role, status)
-           VALUES ('Other Researcher', 'other.rnd@test.local', 'rnd_user', 'active')
+        """INSERT INTO auth_user (full_name, email, email_idx, role, status)
+           VALUES ('Other Researcher', 'other.rnd@test.local', %s, 'rnd_user', 'active')
            RETURNING id, uuid""",
+        (idx("email", "other.rnd@test.local"),),
     )
     row = await result.fetchone()
     return dict(row)
@@ -102,9 +104,10 @@ class TestProjectScope:
         self, conn: Any, seeded: dict[str, Any]
     ) -> None:
         other = await conn.execute(
-            """INSERT INTO auth_user (full_name, email, role, status)
-               VALUES ('Other DCO', 'other.dco@test.local', 'dco', 'active')
+            """INSERT INTO auth_user (full_name, email, email_idx, role, status)
+               VALUES ('Other DCO', 'other.dco@test.local', %s, 'dco', 'active')
                RETURNING id""",
+            (idx("email", "other.dco@test.local"),),
         )
         other_dco = (await other.fetchone())["id"]
 

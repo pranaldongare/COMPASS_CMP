@@ -18,6 +18,8 @@ from typing import Any
 import psycopg
 import pytest
 
+from tests.conftest import idx
+
 pytestmark = pytest.mark.integration
 
 
@@ -26,8 +28,9 @@ async def test_a_second_address_may_not_be_somebody_elses_first(
 ) -> None:
     with pytest.raises(psycopg.errors.UniqueViolation):
         await conn.execute(
-            "UPDATE auth_user SET secondary_email = 'DPO@test.local' WHERE id = %s",
-            (seeded["subject"]["id"],),
+            "UPDATE auth_user SET secondary_email = 'DPO@test.local', secondary_email_idx = %s "
+            "WHERE id = %s",
+            (idx("email", "DPO@test.local"), seeded["subject"]["id"]),
         )
 
 
@@ -35,25 +38,28 @@ async def test_a_first_address_may_not_be_somebody_elses_second(
     conn: Any, seeded: dict[str, Any]
 ) -> None:
     await conn.execute(
-        "UPDATE auth_user SET secondary_email = 'kept@example.org' WHERE id = %s",
-        (seeded["subject"]["id"],),
+        "UPDATE auth_user SET secondary_email = 'kept@example.org', secondary_email_idx = %s "
+        "WHERE id = %s",
+        (idx("email", "kept@example.org"), seeded["subject"]["id"]),
     )
     with pytest.raises(psycopg.errors.UniqueViolation):
         await conn.execute(
-            "UPDATE auth_user SET email = 'Kept@example.org' WHERE id = %s",
-            (seeded["users"]["dco"]["id"],),
+            "UPDATE auth_user SET email = 'Kept@example.org', email_idx = %s WHERE id = %s",
+            (idx("email", "Kept@example.org"), seeded["users"]["dco"]["id"]),
         )
 
 
 async def test_two_people_may_not_share_a_second_address(conn: Any, seeded: dict[str, Any]) -> None:
     await conn.execute(
-        "UPDATE auth_user SET secondary_email = 'Shared@example.org' WHERE id = %s",
-        (seeded["subject"]["id"],),
+        "UPDATE auth_user SET secondary_email = 'Shared@example.org', secondary_email_idx = %s "
+        "WHERE id = %s",
+        (idx("email", "Shared@example.org"), seeded["subject"]["id"]),
     )
     with pytest.raises(psycopg.errors.UniqueViolation):
         await conn.execute(
-            "UPDATE auth_user SET secondary_email = 'shared@example.org' WHERE id = %s",
-            (seeded["users"]["dco"]["id"],),
+            "UPDATE auth_user SET secondary_email = 'shared@example.org', secondary_email_idx = %s "
+            "WHERE id = %s",
+            (idx("email", "shared@example.org"), seeded["users"]["dco"]["id"]),
         )
 
 
@@ -64,6 +70,7 @@ async def test_the_same_address_twice_on_one_row_is_refused(
     confirmed one."""
     with pytest.raises(psycopg.errors.CheckViolation):
         await conn.execute(
-            "UPDATE auth_user SET secondary_email = 'SUBJECT@test.local' WHERE id = %s",
-            (seeded["subject"]["id"],),
+            "UPDATE auth_user SET secondary_email = 'SUBJECT@test.local', secondary_email_idx = %s "
+            "WHERE id = %s",
+            (idx("email", "SUBJECT@test.local"), seeded["subject"]["id"]),
         )
