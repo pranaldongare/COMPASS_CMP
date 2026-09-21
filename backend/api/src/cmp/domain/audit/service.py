@@ -32,6 +32,7 @@ from psycopg.types.json import Jsonb
 from cmp.core.context import current_context
 from cmp.core.logging import get_logger
 from cmp.db.sql import Conn, fetch_all, fetch_one
+from cmp.infrastructure.dkms.blind import index_of
 
 log = get_logger("cmp.audit")
 
@@ -282,7 +283,12 @@ async def record(
     payload: dict[str, Any] = dict(detail or {})
     payload.setdefault("request_id", ctx.request_id)
     if ctx.ip_address:
-        payload.setdefault("ip", ctx.ip_address)
+        # The address's blind index, not the address. This trail can never be
+        # edited or erased, so an address written here would outlive every
+        # right its owner has to have it removed. The index still answers what
+        # an investigator asks of it - "was this the same address as that", and
+        # "did this known address appear" - and nothing else. ADR 0015.
+        payload.setdefault("ip", index_of("ip", ctx.ip_address))
 
     row = await fetch_one(
         conn,

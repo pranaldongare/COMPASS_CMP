@@ -1844,10 +1844,15 @@ async def reassign_holder(
         actor_user_id=actor_id,
         entity_type="rights_request_holder",
         entity_id=int(holder["holder_id"]),
+        # Who it went from and to, by account and respondent rather than by
+        # contact: the trail is permanent, and a contact - sealed or not - does
+        # not belong in it.
         detail={
             "label": holder["label"],
-            "from": holder.get("responder_contact"),
-            "to": fresh.get("responder_contact"),
+            "from_respondent_id": holder.get("respondent_id"),
+            "from_user_id": holder.get("responder_user_id"),
+            "to_respondent_id": fresh.get("respondent_id"),
+            "to_user_id": fresh.get("responder_user_id"),
             "channel": fresh.get("channel"),
         },
     )

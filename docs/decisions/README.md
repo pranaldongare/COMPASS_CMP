@@ -21,6 +21,7 @@ one stays and points forward.
 | [0012](0012-side-effects-after-commit.md) | Side effects wait for the commit; a durable outbox is deferred | accepted |
 | [0013](0013-every-account-is-a-data-principal.md) | Every account is a data principal; staff is a role the session acts with, and a code sign-in is worth exactly that | accepted |
 | [0014](0014-a-nominee-follows-the-request-they-raised.md) | A nominee follows the request they raised, and reading is not acting | accepted |
+| [0015](0015-nothing-erasable-in-a-trail-nobody-can-erase.md) | Nothing erasable goes into a trail nobody can erase | accepted |
 
 ## Writing one
 

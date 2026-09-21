@@ -56,7 +56,7 @@ works as before; search by "part of a name" does not, and the documents say so.
   three triggers rewritten, `minor_until`, columns widened to `text`); every
   write computes the index and seals; the nine exact-match lookups use the
   index; the partial searches drop the sealed columns. `dob` sealed.
-- [ ] **B. The audit trail.** Stop writing the invited email into
+- [x] **B. The audit trail.** Stop writing the invited email into
   `detail_json` (the row's `user_id` already names the person); record the IP
   as its blind index rather than the address. One ADR, because the trail is
   the one store nothing can be erased from.

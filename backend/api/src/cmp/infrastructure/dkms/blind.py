@@ -33,7 +33,7 @@ from typing import Literal
 from cmp.core.config import settings
 from cmp.validation import normalise_mobile
 
-Kind = Literal["email", "mobile", "username", "contact", "text"]
+Kind = Literal["email", "mobile", "username", "contact", "text", "ip"]
 
 
 def normalise(kind: Kind, value: str) -> str:
@@ -41,6 +41,9 @@ def normalise(kind: Kind, value: str) -> str:
     v = value.strip()
     if kind == "mobile":
         return normalise_mobile(v)
+    if kind == "ip":
+        # An address as the socket reported it. Lowercased for IPv6's hex.
+        return v.lower()
     if kind == "text":
         # An identifier compared as typed - an employee number. Stripped, and
         # nothing else: case is part of it.
