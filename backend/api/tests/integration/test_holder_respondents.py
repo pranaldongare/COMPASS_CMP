@@ -234,7 +234,8 @@ class TestChannels:
     ) -> None:
         row, mailed, portal = await self._issued(conn, seeded)
         assert [e["kind"] for e in mailed["contact_log"]] == ["mail_sent"]
-        assert mailed["contact_log"][0]["to"] == "mail@third.example"
+        # The log keeps the address sealed, like the row it is on.
+        assert plain(mailed["contact_log"][0]["to"]) == "mail@third.example"
         assert [e["kind"] for e in portal["contact_log"]] == ["ticket_on_portal"]
 
         mine = await service.tickets_for(conn, int(seeded["users"]["dco"]["id"]))
@@ -634,7 +635,7 @@ class TestLifecycle:
         assert moved["seen_at"] is None, "the new person has not seen it"
         kinds = [c["kind"] for c in moved["contact_log"]]
         assert kinds[-2:] == ["reassigned", "mail_sent"], kinds
-        assert moved["contact_log"][-1]["to"] == "else@third.example"
+        assert plain(moved["contact_log"][-1]["to"]) == "else@third.example"
         # Gone from the old person's inbox.
         assert ref not in {str(t["holder_uuid"]) for t in await service.tickets_for(conn, dco)}
 

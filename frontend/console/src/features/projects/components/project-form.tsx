@@ -44,7 +44,9 @@ export function ProjectForm({
   // collecting through, so offering it would let somebody schedule collection
   // that must not happen — and the server refuses it anyway, which would show
   // up as an error on submit rather than an option that was never there.
-  const { data: processors } = useProcessors({ status: "active" });
+  // Every active processor, not the first page of them: this is a list of
+  // checkboxes, and a processor on page two is one nobody can pick.
+  const { data: processors } = useProcessors({ status: "active", limit: 200 });
 
   // Judged by what this form actually asks for: registering names who will
   // collect, editing does not show that field at all.

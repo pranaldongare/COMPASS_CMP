@@ -139,7 +139,7 @@ function UsersPageView() {
 
       <FilterBar>
         <SearchBox
-          placeholder="Name, email or organisation id"
+          placeholder="Exact email, mobile, username or organisation id"
           onSubmit={(term) => {
             setQ(term);
             stack.reset();

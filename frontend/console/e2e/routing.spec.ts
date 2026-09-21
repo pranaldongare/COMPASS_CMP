@@ -27,10 +27,16 @@ test.describe("DCO Admin", () => {
     // Without it the registry lists rigs and says nothing about who answers for
     // them, which is the one question the routing turns on.
     await expect(page.getByRole("columnheader", { name: /accountable/i })).toBeVisible();
+    // Filtered, not the first page: a registry with more than a page of rigs
+    // is the normal case, not a broken one.
+    await page.getByPlaceholder("Name or code").fill("CIT");
+    await page.getByPlaceholder("Name or code").press("Enter");
     await expect(page.getByRole("cell", { name: /CIT/ }).first()).toBeVisible();
   });
 
-  test("arrives from the dashboard count with the filter already applied", async ({ page }) => {
+  test("arrives from the dashboard count with the filter already applied", async ({
+    page,
+  }) => {
     // A count is a claim about a subset. Landing on the unfiltered registry
     // makes the reader find those rows themselves, which is the difference
     // between a number that is a link and a number that is a lead.
@@ -38,8 +44,12 @@ test.describe("DCO Admin", () => {
     await expect(page.getByRole("checkbox", { name: /nobody accountable/i })).toBeChecked();
   });
 
-  test("names the roles a source can be handed to, and refuses the wrong one", async ({ page }) => {
+  test("names the roles a source can be handed to, and refuses the wrong one", async ({
+    page,
+  }) => {
     await page.goto("/sources");
+    await page.getByPlaceholder("Name or code").fill("SRC-SEED-CIT");
+    await page.getByPlaceholder("Name or code").press("Enter");
 
     // CIT sits under SEED, which is collected by a third party — so the dialog
     // asks for a DCO. Offering an RCO here would record in-house staff as
@@ -50,29 +60,39 @@ test.describe("DCO Admin", () => {
 
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByText(/collection from this source is by a third party/i)).toBeVisible();
+    await expect(
+      dialog.getByText(/collection from this source is by a third party/i),
+    ).toBeVisible();
 
     // Asserted with locators rather than by reading the options into an array:
     // the list arrives from a query, and `allInnerTexts()` resolves once against
     // whatever is there at that instant. Expectations on a locator retry.
     const select = dialog.getByLabel(/data collection owner/i);
-    await expect(select.locator("option").filter({ hasText: "Arun Shetty" })).toHaveCount(1);
+    await expect(select.locator("option").filter({ hasText: "Arun Shetty" })).toHaveCount(
+      1,
+    );
     // Meera Iyer is the seeded RCO. Her absence is the assertion.
     await expect(select.locator("option").filter({ hasText: "Meera Iyer" })).toHaveCount(0);
   });
 
   test("an in-house source asks for an RCO instead", async ({ page }) => {
     await page.goto("/sources");
+    await page.getByPlaceholder("Name or code").fill("SRC-SRIB-SE");
+    await page.getByPlaceholder("Name or code").press("Enter");
 
     const row = page.getByRole("row").filter({ hasText: "SRC-SRIB-SE" });
     await row.getByRole("button", { name: /assign|reassign/i }).click();
 
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByText(/collection from this source is in-house/i)).toBeVisible();
+    await expect(
+      dialog.getByText(/collection from this source is in-house/i),
+    ).toBeVisible();
 
     const select = dialog.getByLabel(/r&d collection owner/i);
     await expect(select.locator("option").filter({ hasText: "Meera Iyer" })).toHaveCount(1);
-    await expect(select.locator("option").filter({ hasText: "Arun Shetty" })).toHaveCount(0);
+    await expect(select.locator("option").filter({ hasText: "Arun Shetty" })).toHaveCount(
+      0,
+    );
   });
 });
 
@@ -129,14 +149,17 @@ test.describe("DCO Admin on an approved project", () => {
     ).toBeVisible();
   });
 
-  test("attaching a source is a separate control from naming a person", async ({ page }) => {
+  test("attaching a source is a separate control from naming a person", async ({
+    page,
+  }) => {
     // Two decisions that look alike and are not. If they ever collapse into one
     // button, the one that moves every project wins by accident.
     await page.goto("/projects?status=approved");
     await page.locator("table a").first().click();
 
-    await expect(page.getByRole("button", { name: /attach source|change source/i }).first())
-      .toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /attach source|change source/i }).first(),
+    ).toBeVisible();
     await expect(page.getByRole("button", { name: /who runs it/i }).first()).toBeVisible();
   });
 });
@@ -191,8 +214,9 @@ test.describe("adding a collector after approval", () => {
       await page.getByRole("button", { name: /request a collector/i }).click();
 
       const dialog = page.getByRole("dialog");
-      await expect(dialog.getByText(/the dpo has to agree before anything can collect/i))
-        .toBeVisible();
+      await expect(
+        dialog.getByText(/the dpo has to agree before anything can collect/i),
+      ).toBeVisible();
     });
 
     test("every collector says where it stands", async ({ page }) => {
@@ -205,20 +229,22 @@ test.describe("adding a collector after approval", () => {
       const card = page.locator("section, div").filter({
         has: page.getByRole("heading", { name: /who is collecting/i }),
       });
-      await expect(card.getByText(/approved|awaiting the dpo|refused/i).first()).toBeVisible();
+      await expect(
+        card.getByText(/approved|awaiting the dpo|refused/i).first(),
+      ).toBeVisible();
     });
   });
 
   test.describe("as the DPO", () => {
     test.use({ storageState: statePath("dpo") });
 
-    test("the decision is on their dashboard, not buried in the project", async ({ page }) => {
+    test("the decision is on their dashboard, not buried in the project", async ({
+      page,
+    }) => {
       // Its own queue: a live project waiting to expand looks like nothing is
       // wrong, which is how it gets left sitting.
       await page.goto("/dashboard");
-      await expect(
-        page.getByText(/new collectors awaiting your decision/i),
-      ).toBeVisible();
+      await expect(page.getByText(/new collectors awaiting your decision/i)).toBeVisible();
     });
   });
 });
@@ -238,13 +264,19 @@ test.describe("R&D User", () => {
     // name — "SRIB collected in-house" — which is what a screen reader should
     // hear, so the locator matches that rather than the name alone.
     await dialog.getByRole("checkbox", { name: /^SRIB collected in-house$/ }).check();
-    await expect(dialog.getByText(/comes back to you to name the data sources/i)).toBeVisible();
+    await expect(
+      dialog.getByText(/comes back to you to name the data sources/i),
+    ).toBeVisible();
 
     // Both at once is the ordinary case, not an edge one, and the sentence has
     // to cover it rather than picking whichever was ticked last.
-    await dialog.getByRole("checkbox", { name: /^SEED collected by a third party$/ }).check();
+    await dialog
+      .getByRole("checkbox", { name: /^SEED collected by a third party$/ })
+      .check();
     await expect(dialog.getByText(/the dco admin assigns the data sources/i)).toBeVisible();
-    await expect(dialog.getByText(/comes back to you to name the data sources/i)).toBeVisible();
+    await expect(
+      dialog.getByText(/comes back to you to name the data sources/i),
+    ).toBeVisible();
   });
 
   test("can author a notice, which used to be the DPO's alone", async ({ page }) => {

@@ -21,7 +21,7 @@ from psycopg.types.json import Jsonb
 from cmp.core.pagination import PageRequest, build_page
 from cmp.core.permissions import Role
 from cmp.db.sql import Conn, Row, fetch_all, fetch_one, keyset_clause
-from cmp.infrastructure.dkms import opened, seal, unseal_value
+from cmp.infrastructure.dkms import seal, unseal_value
 from cmp.infrastructure.dkms.blind import index_of
 
 LIST_SORTS = ("received_at", "due_at")
@@ -803,12 +803,15 @@ async def holder_brief(
         "SELECT uuid, full_name, email, mobile FROM auth_user WHERE id = %s",
         (subject_user_id,),
     )
-    person = await opened("auth_user", subject)
+    person = subject or {}
     brief: dict[str, Any] = {
         "subject": {
             "uuid": str(subject["uuid"]) if subject else None,
-            # Opened here: the brief is prose the holder reads, and a sealed
-            # name or address in it would be a line nobody can act on.
+            # Kept sealed, as the account row holds them: the brief is stored
+            # on the holder as jsonb and served to the console as it stands,
+            # and a name or address in the clear inside it would be the one
+            # copy of hers nobody sealed. The prose for the mail and the
+            # opening message opens them first - `service.opened_brief`.
             "full_name": person.get("full_name"),
             "email": person.get("email"),
             "mobile": person.get("mobile"),

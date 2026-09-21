@@ -51,6 +51,39 @@ across scopes expecting 404, mass assignment, CSRF, lockout, the neutral
 answers, the second factor. `test_matrix_integrity.py` holds the invariants
 the matrix itself must keep.
 
+**HTTP** tests (`tests/http/`) drive the whole application over HTTP -
+`httpx` on the ASGI app, the real database and Redis, a session minted per
+role - and are the proof that personal data leaves the API sealed. Every
+response passes `contract.call()`: each field named in `contract.SEALED` is
+`SE::…` or null, nothing under a contact's name looks like an address, and
+the (method, path) is recorded. Three tests at the end (`test_zz_coverage.py`)
+close the loop: every one of the 159 endpoints the documentation lists as
+carrying personal data was called during the run; every endpoint that
+answered with a sealed field is in that list; and every sealed column in the
+database holds only ciphertext after everything the suite wrote. Adding an
+endpoint that carries personal data means adding it to the suite, or the
+build fails.
+
+Two things about these tests are unlike the integration tier. They **commit**:
+the application owns its connections, so nothing is rolled back, and every
+run leaves a world behind - a project, a processor, a source, people named
+`*@http-suite.test` and mobiles under `+9198765`. Against the shared
+development database that accumulates (a hundred runs is a hundred
+processors on the registry's second page), so run them against a scratch
+database when running them often:
+
+```bash
+createdb -h 127.0.0.1 -U cmp cmp_http
+POSTGRES_DB=cmp_http alembic upgrade head
+POSTGRES_DB=cmp_http pytest tests/http
+```
+
+And they **touch the public forms**, which limit by address per hour; the
+suite drops the loopback address's `rate:*_ip:*` buckets when it starts, and
+nobody else's. `.ledger.json` beside the tests is a copy of the run's ledger
+for reading afterwards, not an input: the coverage test reads the in-process
+set, so a stale file cannot make a missing endpoint look covered.
+
 Static checks:
 
 ```bash
@@ -71,6 +104,15 @@ formatting of values a data principal reads, the zod schemas mirroring the
 API's validation, and the contract between the hand-curated types and the
 generated OpenAPI schema (`npm run api:check` regenerates that schema from a
 running API and type-checks against it).
+
+`src/lib/api/client.test.ts`, in both portals, runs the real axios client
+against MSW at the network boundary and proves the other half of the sealing
+arrangement: a JSON body with `SE::…` values anywhere in it comes out of the
+client opened, in one call to this origin's `/dkms/decrypt`, with nothing
+else changed - and a body with nothing sealed makes no call at all.
+`e2e/sealed-never-shown.spec.ts` in each portal then checks the same thing
+on the screen: on the pages that show people, the API answered with sealed
+values and not one reached the page.
 
 ## Browser tests
 

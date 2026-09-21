@@ -1,7 +1,7 @@
 # DKMS: every personal field, every endpoint — the plan
 
-**Status: in progress.** Each phase is a commit; the checkbox is ticked when it
-lands.
+**Status: done.** Each phase was a commit; every checkbox is ticked. Kept as the
+record of what was decided and why.
 
 ## Where it stands
 
@@ -9,14 +9,13 @@ Of the 54 personal columns in [pii-fields-and-endpoints.md](../domain/pii-fields
 
 | Group | Columns | State |
 |---|---|---|
-| Sealed on write | 25 | Done. Every repository write goes through `seal()`; the API serves `SE::…`; the portals decrypt in one call per response |
-| Plaintext — lookup keys | 8 | `email`, `secondary_email`, `mobile`, `username`, `dob`, `nominee_email`, `nominee_mobile`, `submitted_contact`. **This plan seals them** |
-| Plaintext by nature | 21 | ids, flags, hashes, storage paths, jsonb. Two need work: `audit_log.detail_json` carries the client IP and invited emails, and cannot be erased |
+| Sealed on write | 33 | Done. Every repository write goes through `seal()`; the API serves `SE::…`; the portals decrypt in one call per response. Includes the eight former lookup keys, behind their blind indexes |
+| Plaintext by nature | 21 | ids, flags, hashes, storage paths, jsonb. `audit_log.detail_json` now carries the IP's index and no email; the two jsonb copies on the holder carry sealed values |
 
-Every endpoint that *writes* a sealed column already encrypts, because the
-seal is at the repository and every endpoint goes through one. What is not
-yet true: the eight lookup columns, the audit trail, rows written before the
-switch, and a test that proves each of the 159 endpoints behaves.
+Every endpoint that *writes* a sealed column encrypts, because the seal is at
+the repository and every endpoint goes through one. The eight lookup columns,
+the audit trail, the rows written before the switch, and a test over each of
+the 159 endpoints were what this plan added.
 
 ## Why the eight are hard, and how they get sealed anyway
 
@@ -63,18 +62,27 @@ works as before; search by "part of a name" does not, and the documents say so.
 - [x] **C. Re-seal what is already there.** `scripts/reseal.py`: every sealed
   column, every plaintext row, in batches, idempotent - a row already `SE::` is
   skipped. Run once after A; runnable again at any time.
-- [ ] **D. Tests, endpoint by endpoint.** An HTTP harness (`httpx` over the
+- [x] **D. Tests, endpoint by endpoint.** An HTTP harness (`httpx` over the
   ASGI app, the real database, a session minted per role) and a generated
   suite over the 159 endpoints in the PII list: every GET is called and every
   sealed field in its response is asserted to be `SE::…` or null and never
   plaintext; every POST/PUT/PATCH that writes a personal field is called with a
   valid body and the row it wrote is read back and asserted sealed. Plus a
   repository-level test, parametrised over the field map, that each column's
-  writer seals it.
-- [ ] **E. The portals.** A test that the API client's interceptor opens a
+  writer seals it. *As built:* `tests/http/` - a world built through the API,
+  five files of journeys, `contract.call()` on every response, and
+  `test_zz_coverage.py` closing the loop from three sides (ledger ⊇ documented
+  list; nothing seen sealed is undocumented; every sealed column holds only
+  ciphertext after the run). Three leaks it found are fixed: the ticket brief
+  and the contact log held contacts in clear jsonb; the audit search matched
+  sealed names.
+- [x] **E. The portals.** A test that the API client's interceptor opens a
   sealed response end to end (unit, both apps), and a browser test that the
-  users list and a request page show plaintext and no `SE::`.
-- [ ] **F. Documents.** `personal-data.md`, `pii-fields-and-endpoints.md`,
+  users list and a request page show plaintext and no `SE::`. *As built:*
+  `src/lib/api/client.test.ts` in both portals (MSW at the network boundary);
+  `e2e/sealed-never-shown.spec.ts` in both, which also requires the API to
+  have answered sealed on the pages that always show a person.
+- [x] **F. Documents.** `personal-data.md`, `pii-fields-and-endpoints.md`,
   `roles-and-access.md` (search), the changelog.
 
 ## Verification, at the end

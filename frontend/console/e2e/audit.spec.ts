@@ -36,10 +36,12 @@ test.describe("audit trail", () => {
     await expect(page).not.toHaveURL(/event_group=/);
   });
 
-  test("finds a data principal by name and filters on her", async ({ page }) => {
+  test("finds a data principal by her contact and filters on her", async ({ page }) => {
+    // The whole address: names and contacts are sealed, so a fragment finds
+    // nobody, and the field says so.
     await page.goto("/audit");
     await page.getByLabel("About").selectOption({ label: "Data principal" });
-    await page.getByLabel("Name").fill("Anjali");
+    await page.getByLabel("Email or mobile").fill("subject@cmp.local");
     const option = page.getByRole("listbox").getByRole("option").first();
     await expect(option).toBeVisible();
     await option.click();

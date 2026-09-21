@@ -45,13 +45,55 @@ as a release yet.
   sealed, and a table of two hundred rows is one round trip. The backend opens
   a value in exactly four places, each where it hands one to a person: the
   greeting in a message, the contact a ticket goes to, the export CSV, and the
-  response package. The lookup columns — `email`, `mobile`, `username`,
-  `submitted_contact`, the nominee's contacts — stay plaintext by decision,
-  written down beside each with its reason. The key service listens on `32688`
-  at `/bulk_encrypt` and `/bulk_decrypt`; its first paths still answer.
-  Walked live: a public rights request lands as `SE::` in the row, comes off
-  the wire as `SE::`, and reads as the person wrote it on the console page;
-  a staff invitation greets its recipient by name.
+  response package. The key service listens on `32688` at `/bulk_encrypt` and
+  `/bulk_decrypt`; its first paths still answer. Walked live: a public rights
+  request lands as `SE::` in the row, comes off the wire as `SE::`, and reads
+  as the person wrote it on the console page; a staff invitation greets its
+  recipient by name.
+- **The lookup columns are sealed too, behind a blind index.** `email`,
+  `secondary_email`, `mobile`, `username`, the nominee's contacts and a
+  request's `submitted_contact` were left plaintext because the platform
+  finds rows by them - sign-in, "is this address taken", a code to a mobile,
+  a nomination found by the nominee's contact. Each now carries an index
+  column beside it, `HMAC-SHA256(normalised value, BLIND_INDEX_KEY)`,
+  deterministic so it can be unique-indexed and looked up and opaque without
+  the key; every lookup goes through the index and the value itself is
+  ciphertext (migration 0028: the columns, a Python backfill, every uniqueness
+  rule and the one cross-column trigger moved onto the indexes). Date of birth
+  is sealed and the section 9 test moves to `minor_until`, the one date kept
+  in the clear. What is given up is partial search: the users list, the
+  requests list and the audit lookup find a person by the whole contact, or
+  by reference, uuid and project as before, and not by a few letters of a
+  name; the fields say so. `scripts/reseal.py` sealed every row written before
+  the switch, and `--check` reports zero plaintext.
+- **The audit trail carries no words of anybody.** The client address is
+  written as its blind index; the invited email is not written (the row's
+  `user_id` names the person); the free-text reasons that eight events copied
+  into `detail_json` are replaced by `reason_given`, with the reason itself in
+  the sealed row it belongs to. A static test fails the build on the next
+  string that would carry one ([ADR 0015](docs/decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md)).
+  Rows from before stand as written: the chain hashes `detail_json`, so
+  rewriting them would break the property the trail exists for.
+- **Every personal-data endpoint is tested over HTTP, and the build knows
+  which ones.** `tests/http/` drives the application through `httpx` with the
+  real database: a world is built through the API - purpose, processor,
+  project, notice, source, site, link, a principal who registers and
+  consents, an export, an import - and then every one of the 159 endpoints
+  the documentation lists is called, over the office's rights flow, a
+  nominee's, the tickets, the messages, the trail. Each response passes one
+  contract: sealed fields are `SE::…` or null, nothing under a contact's name
+  looks like an address, and the call is recorded. The last file asserts that
+  the ledger covers the documented list, that nothing the suite saw sealed is
+  undocumented, and that every sealed column in the database holds only
+  ciphertext after all of it. Each portal's API client has the mirror test
+  against MSW - a sealed body comes out opened in one call, nothing else
+  changes - and a browser spec checks the pages that show people: the API
+  answered sealed, the page shows the person. Found on the way and fixed:
+  the ticket brief and the contact log copied a person's contacts into jsonb
+  in the clear (now the sealed values, opened only for the mail's prose);
+  a collection's assets 500ed when the manifest gave no `storage_ref`; the
+  audit search still pattern-matched sealed names, finding nothing and
+  scanning for it.
 
 ### Changed
 - **The API is installed with `pip`, and nothing ships as a container.** `uv`

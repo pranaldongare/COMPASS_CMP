@@ -45,7 +45,7 @@ from cmp.domain.rights import clock
 from cmp.domain.rights import state_machine as sm
 from cmp.domain.rights.scope import consent_scope, scope_text
 from cmp.domain.rights.state_machine import RequestFacts
-from cmp.infrastructure.dkms import opened, unseal_value
+from cmp.infrastructure.dkms import opened, seal, unseal_value
 from cmp.infrastructure.dkms.blind import index_of
 from cmp.validation import choice, mask_contact, normalise_contact, normalise_mobile
 
@@ -989,9 +989,10 @@ async def issue_tickets(
             due_at=when,
             brief=brief,
         )
+        prose = brief_text(await opened_brief(brief)) if brief is not None else ""
         if brief is not None:
             await repo.add_message(
-                conn, int(h["holder_id"]), side="system", kind="brief", body=brief_text(brief)
+                conn, int(h["holder_id"]), side="system", kind="brief", body=prose
             )
         await repo.add_message(
             conn,
@@ -1018,7 +1019,7 @@ async def issue_tickets(
             text=text,
             due=when,
             actor_id=actor_id,
-            brief_text=brief_text(brief) if brief else "",
+            brief_text=prose,
         )
     if row["status"] == Status.IN_PROGRESS:
         fresh = await reload(conn, row)
@@ -1162,7 +1163,12 @@ async def escalate_ticket(
     await repo.append_contact(
         conn,
         int(holder["holder_id"]),
-        _contact_entry("escalated", to=to, by=actor_id, note="Escalation sent" if to else None),
+        _contact_entry(
+            "escalated",
+            to=await _sealed_address(holder) if to else None,
+            by=actor_id,
+            note="Escalation sent" if to else None,
+        ),
     )
     await repo.add_message(
         conn,
@@ -1220,9 +1226,31 @@ async def _ticket_address(holder: Row) -> str | None:
     return str(contact or "") or None
 
 
+async def _sealed_address(holder: Row) -> str | None:
+    """The address a ticket's messages go to, sealed, for the contact log.
+
+    The log is jsonb on the holder and is served to the console as it stands;
+    the console opens a sealed value wherever it sits, and an address in the
+    clear here would be the one copy nobody sealed. The row's own value is
+    already ciphertext; a row from before sealing is sealed on the way in.
+    `_ticket_address` is the opened form, for the message about to be sent.
+    """
+    if holder.get("channel") == "portal":
+        raw = holder.get("responder_user_email") or holder.get("responder_contact")
+    else:
+        raw = holder.get("responder_contact")
+    if not raw:
+        return None
+    if str(raw).startswith("SE::"):
+        return str(raw)
+    sealed = await seal("rights_request_holder", {"responder_contact": str(raw)})
+    return str(sealed["responder_contact"])
+
+
 def _contact_entry(
     kind: str, *, to: str | None, by: int | None, note: str | None = None
 ) -> dict[str, Any]:
+    """One line of a holder's contact log. `to` is the sealed address (`_sealed_address`)."""
     return {
         "at": datetime.now(UTC).isoformat(),
         "kind": kind,
@@ -1262,7 +1290,7 @@ async def _deliver_ticket(
         int(holder["holder_id"]),
         _contact_entry(
             kind,
-            to=to,
+            to=await _sealed_address(holder) if to else None,
             by=actor_id,
             note="Instruction sent" if to else "No address on record - nothing was sent",
         ),
@@ -1322,7 +1350,12 @@ async def log_contact(
     await repo.append_contact(
         conn,
         int(holder["holder_id"]),
-        _contact_entry(kind, to=to, by=actor_id, note=(note or "").strip() or None),
+        _contact_entry(
+            kind,
+            to=await _sealed_address(holder) if to else None,
+            by=actor_id,
+            note=(note or "").strip() or None,
+        ),
     )
     await _record(
         conn,
@@ -1339,8 +1372,24 @@ async def log_contact(
 
 
 # ------------------------------------------------------------- the brief
+async def opened_brief(brief: dict[str, Any]) -> dict[str, Any]:
+    """The brief with the person's name and contacts opened, for prose.
+
+    The stored brief keeps them sealed (see `repo.holder_brief`); the mail to
+    a holder and the opening message of a thread are read by a person, so
+    they are opened here, once, on the way to `brief_text`.
+    """
+    subject = dict(brief.get("subject") or {})
+    person = await opened("auth_user", subject)
+    return {**brief, "subject": {**subject, **person}}
+
+
 def brief_text(brief: dict[str, Any]) -> str:
-    """The brief as prose, for the mail and the opening message of a thread."""
+    """The brief as prose, for the mail and the opening message of a thread.
+
+    Takes the brief opened - `opened_brief` - or a sealed name goes into the
+    mail where the person's name should be.
+    """
     s = brief.get("subject") or {}
     who = [s.get("full_name") or "the person named"]
     contacts = ", ".join(str(c) for c in (s.get("email"), s.get("mobile")) if c)
@@ -1412,7 +1461,12 @@ async def _tell_holder(conn: Conn, row: Row, holder: Row, *, author_id: int, bod
         await repo.append_contact(
             conn,
             int(holder["holder_id"]),
-            _contact_entry("mail_sent", to=to, by=author_id, note="Message on the ticket"),
+            _contact_entry(
+                "mail_sent",
+                to=await _sealed_address(holder),
+                by=author_id,
+                note="Message on the ticket",
+            ),
         )
 
 
@@ -1631,7 +1685,7 @@ async def withdraw_ticket(
     await repo.append_contact(
         conn,
         int(holder["holder_id"]),
-        _contact_entry("withdrawn", to=await _ticket_address(holder), by=actor_id, note=why),
+        _contact_entry("withdrawn", to=await _sealed_address(holder), by=actor_id, note=why),
     )
     await _record(
         conn,
@@ -1719,7 +1773,7 @@ async def send_back_ticket(
     await repo.append_contact(
         conn,
         int(holder["holder_id"]),
-        _contact_entry("sent_back", to=await _ticket_address(holder), by=actor_id, note=why),
+        _contact_entry("sent_back", to=await _sealed_address(holder), by=actor_id, note=why),
     )
     await _record(
         conn,
@@ -1826,7 +1880,7 @@ async def reassign_holder(
     await repo.append_contact(
         conn,
         int(holder["holder_id"]),
-        _contact_entry("reassigned", to=await _ticket_address(fresh), by=actor_id, note=None),
+        _contact_entry("reassigned", to=await _sealed_address(fresh), by=actor_id, note=None),
     )
     await _deliver_ticket(
         conn,
@@ -1835,7 +1889,7 @@ async def reassign_holder(
         text=str(fresh.get("instruction") or _default_instruction(row)),
         due=fresh["due_at"] or datetime.now(UTC),
         actor_id=actor_id,
-        brief_text=brief_text(fresh["brief"]) if fresh.get("brief") else "",
+        brief_text=brief_text(await opened_brief(fresh["brief"])) if fresh.get("brief") else "",
     )
     await _record(
         conn,
@@ -1893,7 +1947,12 @@ async def _send_reminder(
     await repo.append_contact(
         conn,
         int(ticket["holder_id"]),
-        _contact_entry("reminder", to=to, by=actor_id, note=f"{stage} ({source})"),
+        _contact_entry(
+            "reminder",
+            to=await _sealed_address(ticket) if to else None,
+            by=actor_id,
+            note=f"{stage} ({source})",
+        ),
     )
     await repo.add_message(
         conn,

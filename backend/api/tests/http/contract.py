@@ -101,6 +101,19 @@ PLAIN_BY_DESIGN: frozenset[tuple[str, str]] = frozenset(
         ("/dashboard", "reason"),
         ("/audit", "reason"),
         ("/audit/{log_uuid}", "reason"),
+        # The words of a message template are the office's, with `{variables}`
+        # where a person's details go at send time. They share a name with a
+        # ticket message's body and nothing else.
+        *(
+            (path, field)
+            for path in (
+                "/messages",
+                "/messages/{key}",
+                "/messages/{key}/{channel}",
+                "/messages/{key}/{channel}/preview",
+            )
+            for field in ("body", "subject")
+        ),
     }
 )
 
@@ -128,10 +141,17 @@ def assert_sealed(body: Any, *, where: str, endpoint: str = "") -> None:
         )
 
 
+#: Keys that are not sealed columns but may carry an address in a structure
+#: served as it is stored - a contact log's `to`. Whatever their value, it may
+#: not look like a contact.
+ADDRESS_SHAPED: frozenset[str] = frozenset({"to"})
+
+
 def assert_no_plaintext_contacts(body: Any, *, where: str) -> None:
     """No string under a sealed contact name looks like an address or a number."""
     found: list[tuple[str, str, Any]] = []
     _walk(body, "$", found)
+    _walk_keys(body, "$", ADDRESS_SHAPED, found)
     for path, field, value in found:
         if field in ALLOWED_PLAIN:
             continue
@@ -139,8 +159,24 @@ def assert_no_plaintext_contacts(body: Any, *, where: str) -> None:
         assert not MOBILE.match(value), f"{where}: {path} carries a plaintext mobile"
 
 
+def _walk_keys(node: Any, path: str, keys: frozenset[str], out: list[tuple[str, str, Any]]) -> None:
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if isinstance(v, str) and k in keys:
+                out.append((f"{path}.{k}", k, v))
+            _walk_keys(v, f"{path}.{k}", keys, out)
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            _walk_keys(v, f"{path}[{i}]", keys, out)
+
+
 # ------------------------------------------------------------------ the ledger
 LEDGER: set[tuple[str, str]] = set()
+#: The subset of the ledger whose responses carried at least one sealed field.
+TOUCHED_SEALED: set[tuple[str, str]] = set()
+#: A copy of the ledger on disk, for reading after a run (`docs/tools`), not
+#: for the coverage test, which reads the in-process set so a stale file from
+#: an earlier run can never make a missing endpoint look covered.
 _LEDGER_FILE = Path(__file__).with_name(".ledger.json")
 
 
@@ -192,6 +228,10 @@ async def call(
             where = f"{method} {template or path}"
             assert_sealed(body, where=where, endpoint=template or path)
             assert_no_plaintext_contacts(body, where=where)
+            found: list[tuple[str, str, Any]] = []
+            _walk(body, "$", found)
+            if any(v.startswith("SE::") for _, _, v in found):
+                TOUCHED_SEALED.add(key)
     return response
 
 

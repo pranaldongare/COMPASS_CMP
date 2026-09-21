@@ -296,6 +296,8 @@ function AboutPicker({
     setOpen(false);
   }
 
+  const aboutAPerson = effectiveKind === "data_subject" || effectiveKind === "staff";
+
   return (
     <div className="flex items-end gap-2">
       <Field label="About">
@@ -315,7 +317,11 @@ function AboutPicker({
         )}
       </Field>
       <div className="relative">
-        <Field label="Name">
+        {/* A person is sealed in the database, so a few letters of a name
+            find nobody: what finds them is the whole email or mobile, through
+            the blind index. Records - projects, notices, processors - still
+            match on a fragment of their name. */}
+        <Field label={aboutAPerson ? "Email or mobile" : "Name"}>
           {(p) => (
             <Input
               {...p}
@@ -325,7 +331,9 @@ function AboutPicker({
               aria-autocomplete="list"
               className="w-64"
               value={typed}
-              placeholder="Type a few letters"
+              placeholder={
+                aboutAPerson ? "The whole address or number" : "Type a few letters"
+              }
               onChange={(e) => {
                 setTyped(e.target.value);
                 setOpen(true);

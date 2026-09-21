@@ -149,7 +149,7 @@ class ConsentAssetOut(Out):
     asset_uuid: UUID
     asset_type: str
     source_asset_ref: str
-    storage_ref: str
+    storage_ref: str | None = None
     has_unmapped_subjects: bool
     created_at: datetime
     subject_role: str | None

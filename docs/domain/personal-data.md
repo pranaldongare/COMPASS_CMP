@@ -682,21 +682,24 @@ fixture's suffix.
 address, card or bank account number, serial number, Aadhaar, PAN. The platform
 holds none of these, and the inventory above is complete for what it does hold.
 
-**Present where the schema does not label it:**
+**Present where the schema does not label it, and what was done about each:**
 
-| Where | What | Why it matters |
+| Where | What | State |
 |---|---|---|
-| `audit_log.detail_json` → `ip` | the client address, in 2,261 of 2,264 rows | The trail is hash-chained and append-only by trigger. Nothing in it can ever be erased, so this is the one store where an erasure request cannot be honoured for the address. Decision needed: pseudonymise or drop the IP at write |
-| `audit_log.detail_json` → `email` | the invited address, on `user.invited` and `user.created` | Same store, same problem; the `user_id` on the row already identifies the person, so the address adds nothing the trail needs |
-| `rights_request_holder.brief` (jsonb) | the subject's email and phone, copied in when the ticket opens | A copy of sealed columns, in the clear, in a derived structure |
-| `rights_request_holder.contact_log` (jsonb) | the responder's email, per contact attempt | As above |
-| `rights_ticket_message.body`, rows before sealing | contacts people typed into replies | New messages are sealed; these are not, until a re-seal pass runs |
+| `audit_log.detail_json` → `ip` | the client address | Written as its blind index since ADR 0015; rows before that stand as written - the trail is hash-chained over `detail_json` and cannot be rewritten |
+| `audit_log.detail_json` → `email` | the invited address, on `user.invited` and `user.created` | No longer written; the row's `user_id` names the person |
+| `rights_request_holder.brief` (jsonb) | the subject's name, email and phone, copied in when the ticket opens | Copied sealed, as the account row holds them; opened only for the prose of the mail (`opened_brief`) |
+| `rights_request_holder.contact_log` (jsonb) | the responder's address, per contact attempt | Stored sealed, as the holder row holds it (`_sealed_address`); the console opens it like any other value |
+| `rights_ticket_message.body`, rows before sealing | contacts people typed into replies | Resealed by `scripts/reseal.py`; `--check` reports zero plaintext rows |
 
-**Rows written before sealing are plaintext.** `seal()` runs on write, so a
-column is ciphertext only from the day it was switched on: `auth_user.full_name`
-was sealed in 1 of 66 rows on the day of the scan. A one-off re-seal over the
-existing rows of the 25 sealed columns is the outstanding step, and until it
-runs the read path tolerates both forms.
+**Rows written before sealing were resealed.** `seal()` runs on write, so a
+column was ciphertext only from the day it was switched on; `scripts/reseal.py`
+then sealed every plaintext row of every sealed column, in batches, setting the
+append-only triggers aside for the duration of its transaction. It is
+idempotent and `--check` says whether anything is left - the HTTP suite asks
+the same question of every sealed column after its own writes
+(`tests/http/test_zz_coverage.py`). The read path still tolerates both forms,
+so a value that arrives plaintext from an old backup is not a crash.
 
 ## Answering a data principal
 

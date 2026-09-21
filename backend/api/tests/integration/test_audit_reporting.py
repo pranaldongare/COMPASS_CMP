@@ -107,16 +107,22 @@ class TestFilters:
         items, _, _ = await repo.search(conn, _page(), repo.AuditFilters(event_group="consent"))
         assert items and all(r["event_type"].startswith("consent.") for r in items)
 
-    async def test_free_text_reaches_the_detail_and_the_names(
+    async def test_free_text_reaches_the_detail_but_not_the_names(
         self, conn: Any, seeded: dict[str, Any]
     ) -> None:
+        """Names and addresses are sealed, so the search does not look at them.
+
+        The seeded subject is written with a plaintext name by the fixture, so
+        a pattern *would* match it if the clause were still there; that it
+        finds nothing is the assertion that the clause is gone. A person is
+        found through `audit_lookup`, by the whole contact.
+        """
         await _write_some(conn, seeded)
         items, _, _ = await repo.search(conn, _page(), repo.AuditFilters(q="pune campus"))
         assert any(r["event_type"] == "project.updated" for r in items)
-        # The subject's name, not only the detail.
         name = await _name(conn, seeded["subject"]["id"])
         items, _, _ = await repo.search(conn, _page(), repo.AuditFilters(q=name[:6]))
-        assert items
+        assert items == []
 
     async def test_a_wildcard_in_the_term_is_literal(
         self, conn: Any, seeded: dict[str, Any]
@@ -172,40 +178,42 @@ class TestSummaryAndExport:
 
 
 class TestLookup:
-    async def test_a_data_principal_by_name(self, conn: Any, seeded: dict[str, Any]) -> None:
-        """Searched on a name nothing else shares.
+    async def test_a_data_principal_by_exact_contact(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        """Found by the contact typed in full, through the blind index.
 
-        The lookup returns ten rows ordered by name, so a term the seeded
-        principal merely *contains* is not a test of anything: a database with
-        eleven other people matching it sorts her off the end and the assertion
-        fails for the size of the register rather than for the search. This
-        makes its own principal, with a name no other row can hold.
+        Names and contacts are sealed in the database, so a few letters of a
+        name find nobody - there is no plaintext for them to match. What finds
+        a person is the whole email or mobile, as the person would give it,
+        with the label and hint coming back sealed for the console to open.
         """
         unique = f"Zzq{uuid4().hex[:10]}"
+        email = f"{unique.lower()}@test.local"
+        mobile = f"+9198765{uuid4().int % 100000:05d}"
         row = await fetch_one(
             conn,
             """INSERT INTO auth_user (full_name, email, email_idx, mobile, mobile_idx, role, status)
                VALUES (%s, %s, %s, %s, %s, 'data_subject', 'active')
                RETURNING uuid""",
-            (
-                f"{unique} Principal",
-                f"{unique.lower()}@test.local",
-                idx("email", f"{unique.lower()}@test.local"),
-                mobile := f"+9198765{uuid4().int % 100000:05d}",
-                idx("mobile", mobile),
-            ),
+            (f"{unique} Principal", email, idx("email", email), mobile, idx("mobile", mobile)),
         )
 
-        hits = await audit_lookup.lookup(conn, "data_subject", unique)
+        by_email = await audit_lookup.lookup(conn, "data_subject", email.upper())
+        by_mobile = await audit_lookup.lookup(conn, "data_subject", mobile)
+        by_name = await audit_lookup.lookup(conn, "data_subject", unique)
 
-        assert [h["uuid"] for h in hits] == [str(row["uuid"])]
-        assert all(h["filter"] == "subject" and h["entity_type"] == "auth_user" for h in hits)
+        assert [h["uuid"] for h in by_email] == [str(row["uuid"])]
+        assert [h["uuid"] for h in by_mobile] == [str(row["uuid"])]
+        assert by_name == [], "a fragment of a sealed name matches nothing"
+        assert all(h["filter"] == "subject" and h["entity_type"] == "auth_user" for h in by_email)
 
-    async def test_staff_by_name_feed_the_actor_filter(
+    async def test_staff_by_exact_email_feed_the_actor_filter(
         self, conn: Any, seeded: dict[str, Any]
     ) -> None:
-        hits = await audit_lookup.lookup(conn, "staff", "dpo@test")
+        hits = await audit_lookup.lookup(conn, "staff", "dpo@test.local")
         assert hits and hits[0]["filter"] == "actor"
+        assert await audit_lookup.lookup(conn, "staff", "dpo@test") == []
 
     async def test_records_by_kind(self, conn: Any, seeded: dict[str, Any]) -> None:
         """Every kind the audit filter offers finds its own records.

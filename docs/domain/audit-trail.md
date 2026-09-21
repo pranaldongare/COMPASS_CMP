@@ -25,8 +25,8 @@ it can be bookmarked or handed to a colleague.
 
 | Filter | Asks | On the API |
 |---|---|---|
-| Search | anything the trail recorded: a request reference, a purpose name, a reason, a person's name or address | `q` |
-| About | a person or a record found by name: data principal, member of staff, consent record, processor, data source, project, notice, collection site, rights request | `subject`, `actor`, or `entity_type` + `entity` |
+| Search | anything the trail recorded: a request reference, a purpose name, an event's name | `q` |
+| About | a person found by their whole email or mobile, or a record found by name: data principal, member of staff, consent record, processor, data source, project, notice, collection site, rights request | `subject`, `actor`, or `entity_type` + `entity` |
 | Area | the part of the platform: sign-in and access, consent, rights requests, notices, ... | `event_group` |
 | Event | one kind of event, within an area or across all | `event_type` |
 | Record type | every event recorded against one table, whichever row | `entity_type` |
@@ -34,22 +34,27 @@ it can be bookmarked or handed to a colleague.
 | From, To | a period, in whole days | `from`, `to` |
 
 The **About** picker asks the server for matches as you type; each answer
-says which filter it feeds, so "Asha Rao" as a data principal filters on
-the events about her, and "Priya Nair" as staff filters on what she did.
-Picking one clears the other two of that trio, because "about this consent
-record" and "about this person" are different questions.
+says which filter it feeds, so `asha@example.org` as a data principal filters
+on the events about her, and `priya@example.org` as staff filters on what she
+did. A person is found by the *whole* email or mobile, never by a few letters
+of a name: names and contacts are sealed in the database, and the lookup goes
+through the blind index of what was typed. A record - a project, a notice, a
+processor - is still found by part of its name. Picking one clears the other
+two of that trio, because "about this consent record" and "about this person"
+are different questions.
 
-**Search** is a contains-match over the event type, the recorded details,
-and the names and addresses of the actor and the subject. It is not indexed;
-on a large trail, set the dates first.
+**Search** is a contains-match over the event type and the recorded details.
+It does not look at names or addresses, for the same reason. It is not
+indexed; on a large trail, set the dates first.
 
 Some questions, and how to ask them:
 
 - *What happened to this consent record?* Open the record; the **Audit
   trail** button on its page arrives here pre-filtered. The same button is on
   projects, notices and rights requests.
-- *Everything about this data principal.* About: Data principal, her name.
-- *What has this DCO done since Monday?* About: Member of staff, their name;
+- *Everything about this data principal.* About: Data principal, her email or
+  mobile in full.
+- *What has this DCO done since Monday?* About: Member of staff, their email;
   From: Monday.
 - *Every refused request last month.* Area: Sign-in and access; Event:
   Access denied; From and To.

@@ -85,16 +85,26 @@ def main() -> None:
     for table, cols in COLUMNS:
         out.append(f"| `{table}` | " + ", ".join(f"`{c}`" for c in cols) + " |")
     out.append("")
-    out.append("**Sealed by DKMS on write** (ciphertext in the row): `full_name`, `organization_id`,\n"
-               "`nominee_name`, `submitted_name`, `request_text`, `verification_note`,\n"
-               "`refusal_reason`, `remedy_text`, `response_text`, `responder_name`,\n"
-               "`responder_contact`, `instruction`, `return_summary`, `sent_back_reason`, `body`,\n"
-               "`evidence_name`, `file_name` (both tables), `ip_address`, `name` and `contact` on\n"
-               "`processor_respondent`, every `reason`, `decision_reason` — 25 columns.\n\n"
-               "**Plaintext because the platform looks rows up by them:** `email`,\n"
-               "`secondary_email`, `mobile`, `username`, `dob`, `nominee_email`, `nominee_mobile`,\n"
-               "`submitted_contact` — 8 columns.\n\n"
-               "**Plaintext by nature** (ids, flags, hashes, storage paths, jsonb): the rest.\n")
+    out.append("**Sealed by DKMS on write** (ciphertext in the row): `full_name`, `email`,\n"
+               "`secondary_email`, `mobile`, `username`, `organization_id`, `dob`, `nominee_name`,\n"
+               "`nominee_email`, `nominee_mobile`, `submitted_name`, `submitted_contact`,\n"
+               "`request_text`, `verification_note`, `refusal_reason`, `remedy_text`,\n"
+               "`response_text`, `responder_name`, `responder_contact`, `instruction`,\n"
+               "`return_summary`, `sent_back_reason`, `body`, `evidence_name`, `file_name` (both\n"
+               "tables), `ip_address`, `name` and `contact` on `processor_respondent`, every\n"
+               "`reason`, `decision_reason` — 33 columns. The eight the platform looks rows up\n"
+               "by (`email`, `secondary_email`, `mobile`, `username`, `nominee_email`,\n"
+               "`nominee_mobile`, `submitted_contact`, and `dob` for the minor test) carry a\n"
+               "blind index beside them - `*_idx`, an HMAC of the normalised value - or, for\n"
+               "`dob`, the plaintext date `minor_until`, so the lookup works and the value\n"
+               "itself is ciphertext.\n\n"
+               "**Sealed inside jsonb:** the subject's name and contacts in\n"
+               "`rights_request_holder.brief`, and the address on each line of\n"
+               "`rights_request_holder.contact_log`, are the sealed values copied as they are.\n\n"
+               "**Plaintext by nature** (ids, flags, hashes, storage paths, the rest of the\n"
+               "jsonb): the rest. In `audit_log.detail_json` the address is stored as its blind\n"
+               "index and no email is written; rows from before that change stand as written,\n"
+               "because the trail is hash-chained and cannot be rewritten.\n")
 
     by = defaultdict(list)
     for r in rows:

@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 from cmp.db.sql import Conn, fetch_all, fetch_one
+from cmp.infrastructure.dkms.blind import index_of
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,37 +86,45 @@ LOOKUP_KINDS: Final[dict[str, str]] = {
 
 _LOOKUPS: Final[dict[str, tuple[str, str]]] = {
     # kind -> (entity_type, sql); every sql selects uuid, label, hint and takes
-    # one ILIKE pattern, bound twice or more.
+    # one ILIKE pattern `p`, bound as often as needed, and the blind indexes of
+    # the term read as an email `e`, a mobile `m` and a username `u`.
+    #
+    # A person's name and contacts are sealed in the database, so no pattern
+    # can be matched against them: a person is found by the exact contact or
+    # username typed, through the index, and nothing else. The label and hint
+    # that come back sealed are opened by the console, like every other
+    # personal value it shows - which is why a label never concatenates a
+    # sealed column with a plain one: the console could open neither half.
     "data_subject": (
         "auth_user",
         """SELECT uuid::text AS uuid, full_name AS label,
                   coalesce(email, mobile, '') AS hint
            FROM auth_user
            WHERE role = 'data_subject'
-             AND (full_name ILIKE %(p)s OR email ILIKE %(p)s OR mobile ILIKE %(p)s)
-           ORDER BY full_name LIMIT %(n)s""",
+             AND (email_idx = %(e)s OR secondary_email_idx = %(e)s OR mobile_idx = %(m)s
+                  OR uuid::text = %(t)s)
+           ORDER BY created_at DESC LIMIT %(n)s""",
     ),
     "staff": (
         "auth_user",
-        """SELECT uuid::text AS uuid, full_name AS label,
-                  role::text || coalesce(' · ' || email, '') AS hint
+        """SELECT uuid::text AS uuid, full_name AS label, role::text AS hint
            FROM auth_user
            WHERE role <> 'data_subject'
-             AND (full_name ILIKE %(p)s OR email ILIKE %(p)s)
-           ORDER BY full_name LIMIT %(n)s""",
+             AND (email_idx = %(e)s OR username_idx = %(u)s OR uuid::text = %(t)s)
+           ORDER BY created_at DESC LIMIT %(n)s""",
     ),
     "consent": (
         "consent_artefact",
         """SELECT ca.consent_uuid::text AS uuid,
-                  u.full_name || ' — ' || p.project_name AS label,
-                  to_char(ca.affirmative_action_at, 'DD Mon YYYY')
-                    || CASE WHEN ca.is_withdrawal THEN ' (withdrawal)' ELSE '' END AS hint
+                  p.project_name || ' — ' || to_char(ca.affirmative_action_at, 'DD Mon YYYY')
+                    || CASE WHEN ca.is_withdrawal THEN ' (withdrawal)' ELSE '' END AS label,
+                  u.full_name AS hint
            FROM consent_artefact ca
            JOIN auth_user u ON u.id = ca.auth_user_id
            JOIN notice n    ON n.notice_id = ca.notice_id
            JOIN project p   ON p.project_id = n.project_id
-           WHERE u.full_name ILIKE %(p)s OR p.project_name ILIKE %(p)s
-              OR ca.consent_uuid::text ILIKE %(p)s
+           WHERE p.project_name ILIKE %(p)s OR ca.consent_uuid::text ILIKE %(p)s
+              OR u.email_idx = %(e)s OR u.mobile_idx = %(m)s
            ORDER BY ca.affirmative_action_at DESC LIMIT %(n)s""",
     ),
     "processor": (
@@ -162,8 +171,8 @@ _LOOKUPS: Final[dict[str, tuple[str, str]]] = {
                   r.reference || ' — ' || r.request_type::text AS label,
                   coalesce(s.full_name, r.submitted_name, '') AS hint
            FROM rights_request r LEFT JOIN auth_user s ON s.id = r.subject_user_id
-           WHERE r.reference ILIKE %(p)s OR s.full_name ILIKE %(p)s
-              OR r.submitted_name ILIKE %(p)s
+           WHERE r.reference ILIKE %(p)s OR r.submitted_contact_idx = %(c)s
+              OR s.email_idx = %(e)s OR s.mobile_idx = %(m)s
            ORDER BY r.received_at DESC LIMIT %(n)s""",
     ),
 }
@@ -180,7 +189,17 @@ async def lookup(conn: Conn, kind: str, term: str, *, limit: int = 10) -> list[d
     if kind not in _LOOKUPS:
         return []
     entity_type, sql = _LOOKUPS[kind]
-    rows = await fetch_all(conn, sql, {"p": like_pattern(term), "n": limit})
+    t = term.strip()
+    params = {
+        "p": like_pattern(t),
+        "n": limit,
+        "t": t,
+        "e": index_of("email", t),
+        "m": index_of("mobile", t),
+        "u": index_of("username", t),
+        "c": index_of("contact", t),
+    }
+    rows = await fetch_all(conn, sql, params)
     return [
         {
             "kind": kind,

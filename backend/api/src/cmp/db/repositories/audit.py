@@ -146,15 +146,16 @@ def _where(f: AuditFilters) -> tuple[str, list[Any]]:
         where.append("l.occurred_at <= %s")
         params.append(f.date_to)
     if f.q and f.q.strip():
+        # The event type and the recorded details. Not the actor's or the
+        # subject's name or address: those columns are sealed, so a pattern
+        # matched against them finds nothing and costs a scan. A person is
+        # found through the About picker, by the whole contact (audit_lookup).
         pattern = _like(f.q.strip())
         where.append(
             "(l.event_type ILIKE %s ESCAPE '\\'"
-            " OR (l.detail_json - '_hash' - '_prev')::text ILIKE %s ESCAPE '\\'"
-            " OR actor.full_name ILIKE %s ESCAPE '\\' OR actor.email ILIKE %s ESCAPE '\\'"
-            " OR subject.full_name ILIKE %s ESCAPE '\\' OR subject.email ILIKE %s ESCAPE '\\'"
-            " OR subject.mobile ILIKE %s ESCAPE '\\')"
+            " OR (l.detail_json - '_hash' - '_prev')::text ILIKE %s ESCAPE '\\')"
         )
-        params.extend([pattern] * 7)
+        params.extend([pattern] * 2)
     return " AND ".join(where), params
 
 

@@ -14012,7 +14012,14 @@
             "title": "Asset Type"
           },
           "storage_ref": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Storage Ref"
           },
           "has_unmapped_subjects": {
@@ -14038,7 +14045,6 @@
           "asset_uuid",
           "source_asset_ref",
           "asset_type",
-          "storage_ref",
           "has_unmapped_subjects",
           "created_at",
           "subject_count",
@@ -14480,7 +14486,14 @@
             "title": "Source Asset Ref"
           },
           "storage_ref": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Storage Ref"
           },
           "has_unmapped_subjects": {
@@ -14559,7 +14572,6 @@
           "asset_uuid",
           "asset_type",
           "source_asset_ref",
-          "storage_ref",
           "has_unmapped_subjects",
           "created_at",
           "subject_role",
@@ -17341,8 +17353,7 @@
           "dob": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "date"
+                "type": "string"
               },
               {
                 "type": "null"
@@ -17537,8 +17548,7 @@
           "dob": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "date"
+                "type": "string"
               },
               {
                 "type": "null"

@@ -92,7 +92,9 @@ class CollectionAssetOut(Out):
     asset_uuid: UUID
     source_asset_ref: str
     asset_type: str
-    storage_ref: str
+    # Optional in the manifest, so optional here: a collection whose tool
+    # records no storage location is still a collection somebody can see.
+    storage_ref: str | None = None
     has_unmapped_subjects: bool
     created_at: datetime
     subject_count: int

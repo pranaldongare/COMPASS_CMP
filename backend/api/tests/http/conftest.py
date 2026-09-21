@@ -49,6 +49,11 @@ def fresh_mobile() -> str:
     return f"{MOBILE_BLOCK}{secrets.randbelow(100000):05d}"
 
 
+#: The address the request context resolves for every request the in-process
+#: transport carries.
+TEST_CLIENT_HOST = "127.0.0.1"
+
+
 @pytest.fixture
 async def http(db_pool: Any, redis_conn: Any) -> AsyncIterator[httpx.AsyncClient]:
     """The application, in-process, with the pool and Redis the other fixtures opened.
@@ -57,6 +62,15 @@ async def http(db_pool: Any, redis_conn: Any) -> AsyncIterator[httpx.AsyncClient
     session-scoped fixtures already opened what the lifespan would.
     """
     from cmp.bootstrap.application import create_app
+    from cmp.db.redis import K_RATE
+
+    # Every request here arrives from the one loopback address, and the public
+    # forms limit by address per hour. A second run of the suite within the
+    # hour would be refused by the first run's counters, so the per-address
+    # buckets for loopback are dropped - those only; a person's own buckets
+    # are the behaviour under test.
+    async for k in redis_conn.scan_iter(match=f"{K_RATE}:*_ip:{TEST_CLIENT_HOST}"):
+        await redis_conn.delete(k)
 
     transport = httpx.ASGITransport(app=create_app())
     async with httpx.AsyncClient(
