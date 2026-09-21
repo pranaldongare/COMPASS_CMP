@@ -1,18 +1,28 @@
 # A proposed repository structure
 
-**Status: a proposal.** Nothing here has been done. It is written to be argued
-with, and the last section lists the four decisions that are yours rather than
-mine.
+**Status: a proposal.** Nothing here has been done.
 
-The repository works. Four deployables build, test and ship; the documentation
-is unusually good; the backend's internal layering is sound and enforced. This
-is not a rescue. It is the restructure a codebase earns when it has grown from
-one service to four and the shape of the folder has not caught up.
+**The shape you asked for:** three layers at the root and nothing else.
+Everything the server does under one folder, everything the browser does under
+another, and **every document in the repository under `docs/`** — including the
+three reference trees and the backend's own seventeen internal documents, which
+today sit in two other places.
+
+```
+compass/
+├── backend/      every server-side thing: the API, the worker, the key service
+├── frontend/     every browser-side thing: both portals and the code they share
+├── docs/         every document, generated or written
+└── .github/  README.md  CONTRIBUTING.md  CHANGELOG.md  .gitignore
+```
+
+Four entries. A person opening this repository for the first time can say what
+the system is before scrolling.
 
 ## What is there today, measured
 
 ```
-COMPASS_CMP/                      920 tracked files
+COMPASS_CMP/                      921 tracked files
   cmp_backend/          319       API + worker + migrations   36,101 lines src, 13,818 tests
   cmp_internal_ui/      285       staff console, port 3000
   cmp_public_ui/        173       data-principal portal, port 3001
@@ -25,6 +35,9 @@ COMPASS_CMP/                      920 tracked files
   .baseline_routes.txt    4 lines, unexplained
   README · CONTRIBUTING · CHANGELOG
 ```
+
+Eight top-level directories, of which four are deployables, three are
+documentation wearing a project's clothes, and one is CI. Plus a stray file.
 
 ## What actually hurts
 
@@ -42,291 +55,110 @@ Four things, each with the evidence rather than an opinion.
 `api-schema.d.ts`, `components/ui/primitives.tsx`, `components/ui/charts.tsx` —
 identical files, maintained by copying. The remaining 37 shared paths are
 near-duplicates: `lib/config/index.ts`, `app-shell.tsx`, `auth-provider.tsx`,
-diverged by a few lines each, and it is no longer obvious which differences are
-deliberate.
+diverged by a few lines each, and it is no longer obvious which of those
+differences are deliberate.
 
-This is not theoretical. Adding the DKMS layer this week meant writing five
-files and then copying them across. A bug fixed in one portal's toast provider
-is a bug still live in the other, and nothing fails to tell you.
+Not theoretical: adding the DKMS layer this week meant writing five files and
+then copying them across. A bug fixed in one portal's toast provider is still
+live in the other, and nothing tells you.
 
-**2. Four deployables, four naming conventions.**
+**2. Documentation lives in three places.** `docs/` (39 files),
+`cmp_backend/docs/` (17 files), and three root directories that are references
+rather than projects (76 files). `docs/README.md` currently spends two whole
+sections explaining where the other documentation is — a signpost compensating
+for a layout.
 
-`cmp_backend` names a tier. `cmp_internal_ui` and `cmp_public_ui` name an
-audience. `cmp_dkms` names a product. The `cmp_` prefix is repeated inside a
-repository already called COMPASS_CMP. A newcomer cannot tell from the root
-which of these is a Next application and which is a Python service.
+**3. Four deployables, four naming conventions.** `cmp_backend` names a tier.
+`cmp_internal_ui` and `cmp_public_ui` name an audience. `cmp_dkms` names a
+product. The `cmp_` prefix repeats the name of the repository it is inside.
 
-**3. Three reference trees sit as peers of the deployables.**
-
-`api_docs/`, `database_schema/` and `api_access_control/` are documentation —
-two generated, one hand-reviewed. At the root they read as projects. The
-practical cost: `docs/README.md` has to explain that three of the eight
-top-level directories are really part of the documentation, which is a
-signpost compensating for a layout.
-
-**4. Two Python toolchains, chosen by accident.**
-
-`cmp_backend` uses `uv` with a lockfile. `cmp_dkms` uses `venv` + `pip` +
-`requirements.txt`, because that is what was asked for when it was built. Both
-are defensible; having both, undocumented, is not.
-
-## The proposal
-
-Three top-level directories with one meaning each, which is the whole idea:
-**`apps/` is what you deploy, `packages/` is what they share, `docs/` is what
-explains them.** Everything else at the root is repository furniture.
-
-```
-compass/
-│
-├── apps/                        ← every deployable, one folder each
-│   ├── api/                     the platform API, the worker, the migrations
-│   │   ├── src/cmp/             (unchanged inside: the layering is good)
-│   │   ├── migrations/
-│   │   ├── tests/{unit,integration,security}/
-│   │   ├── scripts/
-│   │   └── README.md
-│   ├── dkms/                    the key service
-│   ├── console/                 the staff console            :3000
-│   │   ├── src/{app,features,styles}/
-│   │   ├── e2e/
-│   │   └── README.md
-│   └── portal/                  the data-principal portal    :3001
-│       ├── src/{app,features,styles}/
-│       ├── e2e/
-│       └── README.md
-│
-├── packages/                    ← shared, imported by name, never copied
-│   ├── ui/                      primitives, charts, layout, tokens, themes
-│   ├── web-core/                providers, proxy, lib/, test harness, schemas
-│   ├── api-types/               generated api-schema.d.ts + the curated types
-│   ├── dkms-client/             the browser/server decrypt layer, once
-│   └── tsconfig/                one TypeScript and lint preset, extended by each app
-│
-├── docs/                        ← the only place documentation lives
-│   ├── architecture/            system overview, layers, this file
-│   ├── decisions/               ADRs 0001-0014
-│   ├── domain/                  behaviour by obligation, personal-data.md
-│   ├── operations/              local development, deployment, runbook, testing
-│   ├── security/                authn, authz, sessions, csrf, audit  (from apps/api)
-│   ├── reference/               ← the three trees, as what they are
-│   │   ├── api/                 generated from openapi.json
-│   │   ├── database/            generated from the schema
-│   │   └── access-control/      hand-reviewed
-│   ├── history/
-│   └── README.md                the map
-│
-├── tools/                       ← things that build or check the repo
-│   ├── generate-api-docs.py
-│   ├── generate-schema-docs.py
-│   └── personal-data-scan.py
-│
-├── .github/workflows/
-├── package.json                 workspaces: apps/console, apps/portal, packages/*
-├── CHANGELOG.md · CONTRIBUTING.md · README.md
-└── .gitignore
-```
-
-### The rules that keep it that way
-
-A structure without rules is a structure that drifts back. Four, each of which
-can be enforced by a check rather than a reviewer's memory.
-
-1. **An app never imports another app.** Two apps needing the same code is the
-   definition of a package. (`packages/` exists for exactly this, and the
-   65 identical files are its first inhabitants.)
-2. **A package never imports an app.** Dependencies point one way; a cycle is a
-   build failure, not a discussion.
-3. **A package is named for what it is, not for who uses it.** `ui`, not
-   `shared`; `api-types`, not `common`. A folder called `shared` or `utils`
-   becomes the place things go to stop being findable.
-4. **Documentation lives in `docs/`.** Not beside the code it describes, not at
-   the root. `apps/*/README.md` is the exception and holds one thing: how to
-   run *that* app.
-
-### What moves where
-
-| Today | Becomes | Note |
-|---|---|---|
-| `cmp_backend/` | `apps/api/` | Contents unchanged |
-| `cmp_backend/docs/` | `docs/{architecture,security,database,operations}/` | Merged into the one tree |
-| `cmp_internal_ui/` | `apps/console/` | Minus what moves to `packages/` |
-| `cmp_public_ui/` | `apps/portal/` | Same |
-| `cmp_dkms/` | `apps/dkms/` | Contents unchanged |
-| `api_docs/` | `docs/reference/api/` | Generator to `tools/` |
-| `database_schema/` | `docs/reference/database/` | Generator to `tools/` |
-| `api_access_control/` | `docs/reference/access-control/` | |
-| `docs/scripts/` | `tools/` | With the other generators |
-| `.baseline_routes.txt` | deleted, or `tools/` with a comment | Four lines nobody has explained |
-
-### The 65 files, specifically
-
-The first package is not a design exercise; it is a list that already exists.
-
-| To `packages/web-core` | To `packages/ui` | To `packages/api-types` |
-|---|---|---|
-| `proxy.ts` | `components/ui/primitives.tsx` | `api-schema.d.ts` (generated) |
-| `providers/*` (5 files) | `components/ui/charts.tsx` | `types/{consent,exchange,meta,envelope,primitives,enums}.ts` |
-| `schemas/*` (5 files) | `styles/*` | `api-contract.test-d.ts` |
-| `test/{server,render}.ts` | | |
-| `features/dkms/*` (4 files) | | |
-
-The near-duplicates are the interesting half. `lib/config/index.ts`,
-`auth-provider.tsx` and `app-shell.tsx` differ *on purpose* — one console, one
-portal. Those become a shared module with the difference passed in, and the
-work of splitting them is where you find out which differences were deliberate
-and which were drift. Budget for that; it is the only genuinely thoughtful part
-of the migration.
-
-## How it would be done
-
-Five phases, each one landing on its own and leaving the repository working.
-Nothing here is a big-bang weekend.
-
-| Phase | What | Risk | Rough size |
-|---|---|---|---|
-| 1 | `git mv` the four projects into `apps/`, rename them, fix CI paths and the `.env.example` references | Low — a rename, history preserved | Half a day |
-| 2 | Move the three reference trees under `docs/reference/`, the generators into `tools/` | Low — paths in two scripts and the docs map | Two hours |
-| 3 | Create `packages/ui`, `web-core`, `api-types`; move the **65 identical files**; point both apps at them | Medium — npm workspaces, path aliases, both test suites | Two days |
-| 4 | Reconcile the 37 near-duplicates, one at a time, deciding each difference | Medium — this is judgement, not mechanics | Two to three days |
-| 5 | Settle the Python toolchain, and the API's own `docs/` folding into `docs/` | Low | Half a day |
-
-**Do it with `git mv`, one phase per commit, and no content edits in the same
-commit as a move.** A rename plus an edit is a diff nobody can review; a rename
-alone is a diff anybody can. The history follows the file either way, but only
-one of those can be read.
-
-**What tells you it worked:** after phase 3, `cp` between the two apps stops
-being a thing anybody does, and the suites still pass unchanged. After phase 4,
-`git grep -l "useToast" apps/` returns one file.
-
-## What I would not change
-
-Restructuring is a good time to break working things, so it is worth naming
-what should be left alone.
-
-- **The backend's internal layering.** `api → domain → db`, with `core`
-  importing nothing local, is enforced by a test and works. It does not become
-  better inside `apps/api/`; it just moves.
-- **Raw SQL and the migration chain.** 0001 to 0026, both directions, is an
-  asset. Renumbering or squashing it for tidiness would destroy the one record
-  of how the schema came to be.
-- **Tests beside their app.** Unit, integration and security tests belong to
-  `apps/api`; the Playwright suites belong to the apps they drive. A top-level
-  `tests/` would separate a test from the thing it tests.
-- **The documentation's voice.** The docs explain *why*, which is rare and
-  expensive to rebuild. Moving files must not turn into rewriting them.
-- **The three reference trees themselves.** Generated and hand-reviewed
-  references that are actually current are worth more than most code. They move
-  and are otherwise untouched.
-
-## Three smaller things worth doing anyway
-
-Independent of the restructure, and cheap.
-
-1. **Fold the two near-empty domain packages.** `domain/registry` is 10 lines,
-   `domain/users` is 11, against `domain/rights` at 3,820 across 6 files. Those
-   two are import shims pretending to be aggregates. Either give them their
-   service layer or fold them into their callers.
-2. **Split `domain/rights`.** 3,820 lines in one package, with `service.py`
-   carrying most of it, is the one place in the backend where the layering is
-   sound but the file is not. Clock, tickets, scope and nominations are four
-   things.
-3. **Add `CODEOWNERS`.** With four apps and a shared package tree, "who reviews
-   a change to `packages/ui`" should be answerable by the repository rather
-   than by asking.
-
-## The four decisions that are yours
-
-I have a recommendation for each; none of them is mine to take.
-
-| Decision | Options | My recommendation |
-|---|---|---|
-| **Monorepo tooling** | npm workspaces (built in, no new tool) · pnpm + Turborepo (faster, caches, another tool) | **npm workspaces.** Two Next apps and four packages do not need a build orchestrator, and the one you do not install cannot break |
-| **Python toolchain** | `uv` everywhere · `venv` + `pip` + `requirements.txt` everywhere | **One of them, written down.** You asked for venv + pip on the new service, so make that the standard and convert `apps/api`, or keep `uv` and convert `apps/dkms`. Not both |
-| **Naming** | `apps/console` + `apps/portal` · keep `internal-ui` / `public-ui` | **`console` and `portal`.** They are the words the documentation and the team already use in prose |
-| **Timing** | All five phases now · phases 1–2 now, 3–4 when the portals next need shared work | **Phases 1–2 now, 3–4 next.** The renames are cheap and stop the bleeding of "which folder is this"; the package split is where the real value is and deserves its own window |
-
-## What this is worth
-
-The honest summary: phases 1 and 2 buy legibility — a newcomer reads the root
-and knows what the system is. Phase 3 and 4 buy something measurable, which is
-that a fix applied once is applied everywhere. Sixty-five files are currently
-maintained by copying, and the count goes up every time either portal gains a
-feature: it went up by five this week, when the DKMS layer was added to both by
-hand.
-
-That is the argument. The structure above is conventional on purpose — `apps/`
-and `packages/` is what most people mean by a well-kept monorepo, and a
-convention a new engineer already knows is worth more than a better layout they
-have to learn.
+**4. Two Python toolchains, chosen by accident.** `cmp_backend` uses `uv` with
+a lockfile; `cmp_dkms` uses `venv` + `pip` + `requirements.txt`. Both are
+defensible; having both, undocumented, is not.
 
 ---
 
 # The complete tree, for approval
 
 Every directory that exists today, placed where it would go. Nothing is
-invented: each line is either a folder that exists now, a folder that holds
-files which exist now, or is marked **new**.
+invented: each line is a folder that exists now, or holds files that exist now,
+or is marked **new**.
 
-Read the right-hand column as the decision. `moved` is a `git mv` and nothing
-else. `shared` means the files are currently duplicated in both portals and
-would live in one place. **new** means a file that does not exist yet and would
-have to be written.
+The right-hand column is the decision. `moved` is a `git mv` and nothing else.
+`shared` means files currently duplicated in both portals that would live in one
+place. **new** means a file that would have to be written.
+
+## `backend/` — everything the server does
 
 ```
 compass/
 │
-├── apps/
+├── backend/
 │   │
 │   ├── api/                                    ← cmp_backend/            moved
 │   │   ├── src/cmp/
 │   │   │   ├── main.py  __main__.py
 │   │   │   ├── bootstrap/                      factory, lifespan, container
 │   │   │   ├── api/
-│   │   │   │   ├── routers/v1/                 14 modules
-│   │   │   │   ├── routers/public/             consent, rights
-│   │   │   │   ├── dependencies/               sessions, csrf, authz, paging
-│   │   │   │   ├── middleware/                 context, headers, body, access log
+│   │   │   │   ├── routers/v1/                 audit, auth, consents, dashboard,
+│   │   │   │   │                               delegations, exchange, me, messages,
+│   │   │   │   │                               notices, projects, registry, rights,
+│   │   │   │   │                               system, users
+│   │   │   │   ├── routers/public/             consent (/c/{token}), rights
+│   │   │   │   ├── dependencies/               sessions, csrf, authz, paging, filters
+│   │   │   │   ├── middleware/                 context, headers, body limit, access log
 │   │   │   │   └── errors/                     one error contract
 │   │   │   ├── auth/
-│   │   │   │   ├── identity/  authentication/  authorization/
-│   │   │   │   └── sessions/  rate_limit/
+│   │   │   │   ├── identity/                   Principal — who is calling
+│   │   │   │   ├── authentication/             password, MFA, one-time codes
+│   │   │   │   ├── authorization/              roles, resources, scopes, policy
+│   │   │   │   ├── sessions/                   server-side, in Redis
+│   │   │   │   └── rate_limit/                 limits, lockout, locks
 │   │   │   ├── domain/                         the only layer that writes
-│   │   │   │   ├── audit/  consent/  delegations/  exchange/
-│   │   │   │   ├── messaging/  notices/{assets}/  projects/
-│   │   │   │   ├── registry/  rights/  shared/  users/
+│   │   │   │   ├── audit/  consent/  delegations/  exchange/  messaging/
+│   │   │   │   ├── notices/{assets}/  projects/  registry/
+│   │   │   │   └── rights/  shared/  users/
 │   │   │   ├── db/
 │   │   │   │   ├── pool.py  sql.py  redis.py
 │   │   │   │   └── repositories/               one per table cluster
 │   │   │   ├── infrastructure/
-│   │   │   │   ├── dkms/                       client for apps/dkms
-│   │   │   │   ├── email/  sms/  storage/  external/  messaging/
-│   │   │   ├── tasks/
+│   │   │   │   ├── dkms/                       the client for backend/dkms
+│   │   │   │   └── email/  sms/  storage/  external/  messaging/
+│   │   │   ├── tasks/                          Celery
 │   │   │   │   └── authentication/  notifications/  maintenance/  exchange/
 │   │   │   ├── validation/  schemas/
-│   │   │   └── core/                           imports nothing local
-│   │   ├── migrations/versions/                0001 … 0026, raw SQL
+│   │   │   └── core/                           config, permissions, errors,
+│   │   │                                       pagination — imports nothing local
+│   │   ├── migrations/versions/                0001 … 0026, raw SQL, both ways
 │   │   ├── tests/
 │   │   │   ├── unit/{api,auth,core,domain,infrastructure,tasks,validation}/
 │   │   │   ├── integration/{auth,database,enforcement}/
-│   │   │   ├── security/
+│   │   │   ├── security/                       BOLA, BFLA, CSRF, rate limits
 │   │   │   └── fixtures/
 │   │   ├── scripts/                            seed, create_admin, reset_dev, db
 │   │   ├── openapi.json                        generated
-│   │   ├── pyproject.toml
-│   │   ├── .env.example
-│   │   └── README.md                           how to run this app, nothing else
+│   │   ├── pyproject.toml  .env.example
+│   │   └── README.md                           how to run this service
 │   │
-│   ├── dkms/                                   ← cmp_dkms/               moved
-│   │   ├── app/
-│   │   │   ├── main.py  config.py  engine.py  schemas.py
-│   │   │   ├── api/routes.py
-│   │   │   └── dkms/                           base, local, sdk, types
-│   │   ├── tests/
-│   │   ├── requirements.txt  requirements-dev.txt
-│   │   ├── .env.example
-│   │   └── README.md
+│   └── dkms/                                   ← cmp_dkms/               moved
+│       ├── app/
+│       │   ├── main.py  config.py  engine.py  schemas.py
+│       │   ├── api/routes.py                   /encrypt/bulk  /decrypt/bulk
+│       │   └── dkms/                           base, local, sdk, types
+│       ├── tests/
+│       ├── requirements.txt  requirements-dev.txt  .env.example
+│       └── README.md
+```
+
+Nothing inside either service changes. Every Python import path below `src/` is
+exactly what it is today; the layering, the domain packages, the migration
+chain and the three test suites are untouched. Only the two directories above
+them move.
+
+## `frontend/` — everything the browser does
+
+```
+├── frontend/
 │   │
 │   ├── console/                                ← cmp_internal_ui/        moved
 │   │   ├── src/
@@ -341,12 +173,11 @@ compass/
 │   │   │   │   │   ├── users/  audit/  delegate/
 │   │   │   │   │   └── notifications/  account/
 │   │   │   │   ├── sign-in/{verify,reset}/
-│   │   │   │   └── dkms/decrypt/route.ts       3 lines, calls the package
+│   │   │   │   └── dkms/decrypt/route.ts       3 lines; the handler is shared
 │   │   │   ├── features/                       console-only
-│   │   │   │   ├── projects/  notices/  registry/  consent/
-│   │   │   │   ├── exchange/  rights/  audit/  users/
-│   │   │   │   ├── messages/  delegations/  dashboard/
-│   │   │   ├── components/                     console-only: audit-detail, …
+│   │   │   │   ├── projects/  notices/  registry/  consent/  exchange/
+│   │   │   │   └── rights/  audit/  users/  messages/  delegations/  dashboard/
+│   │   │   ├── components/                     console-only, e.g. audit-detail
 │   │   │   └── app-config.ts                   what differs from the portal   new
 │   │   ├── e2e/
 │   │   │   ├── support/                        sessions, outbox, layout
@@ -355,171 +186,259 @@ compass/
 │   │   ├── next.config.ts  package.json  .env.example
 │   │   └── README.md
 │   │
-│   └── portal/                                 ← cmp_public_ui/          moved
-│       ├── src/
-│       │   ├── app/
-│       │   │   ├── (app)/                      my-consents, my-requests,
-│       │   │   │                               notifications, account
-│       │   │   ├── c/[token]/                  the consent flow
-│       │   │   ├── rights/{nominee,nominations/[token]}/
-│       │   │   ├── sign-in/  sign-up/
-│       │   │   └── dkms/decrypt/route.ts       3 lines, calls the package
-│       │   ├── features/                       portal-only
-│       │   │   ├── public-consent/  my-consents/  rights/
-│       │   ├── components/                     portal-only
-│       │   └── app-config.ts                                              new
-│       ├── e2e/support/
-│       ├── public/
-│       ├── next.config.ts  package.json  .env.example
-│       └── README.md
-```
-
-```
-compass/  (continued)
-│
-├── packages/                                   everything below is currently
-│   │                                           duplicated in both portals
-│   │
-│   ├── ui/                                     the design system
+│   ├── portal/                                 ← cmp_public_ui/          moved
 │   │   ├── src/
-│   │   │   ├── primitives.tsx                  identical today          shared
-│   │   │   ├── charts.tsx                      identical today          shared
+│   │   │   ├── app/
+│   │   │   │   ├── (app)/                      my-consents, my-requests,
+│   │   │   │   │                               notifications, account
+│   │   │   │   ├── c/[token]/                  the consent flow
+│   │   │   │   ├── rights/{nominee,nominations/[token]}/
+│   │   │   │   ├── sign-in/  sign-up/
+│   │   │   │   └── dkms/decrypt/route.ts       3 lines; the handler is shared
+│   │   │   ├── features/                       portal-only
+│   │   │   │   └── public-consent/  my-consents/  rights/
+│   │   │   ├── components/                     portal-only
+│   │   │   └── app-config.ts                                              new
+│   │   ├── e2e/support/
+│   │   ├── public/
+│   │   ├── next.config.ts  package.json  .env.example
+│   │   └── README.md
+│   │
+│   ├── shared/                                 the 65 identical files, once
+│   │   │
+│   │   ├── ui/                                 the design system
+│   │   │   ├── primitives.tsx  charts.tsx      identical today          shared
 │   │   │   ├── dialog.tsx  status.tsx  graphics.tsx
-│   │   │   ├── layout/                         app-shell, nav, page header
+│   │   │   ├── layout/                         app shell, nav, page header
 │   │   │   ├── forms/                          Field, useApiForm, FormError
 │   │   │   ├── feedback/                       error boundary, empty state
 │   │   │   └── styles/                         tokens, themes, base, print
-│   │   └── package.json
-│   │
-│   ├── web-core/                               the shell every Next app needs
-│   │   ├── src/
+│   │   │
+│   │   ├── core/                               the shell both apps need
 │   │   │   ├── proxy.ts                        identical today          shared
-│   │   │   ├── providers/                      query, toast, theme, error    5 files
-│   │   │   ├── auth/                           auth-provider, require-section
-│   │   │   ├── lib/
-│   │   │   │   ├── api/                        the fetch client, envelope
-│   │   │   │   ├── errors/  format/  query/  security/  permissions/
-│   │   │   ├── schemas/                        contacts, files, primitives   5 files
+│   │   │   ├── providers/                      query, toast, theme, error   5 files
+│   │   │   ├── auth/                           auth provider, require-section
+│   │   │   ├── lib/                            api client, errors, format,
+│   │   │   │                                   query keys, security, permissions
+│   │   │   ├── schemas/                        contacts, files, primitives  5 files
 │   │   │   └── test/                           MSW server, render helper
-│   │   └── package.json
-│   │
-│   ├── api-types/                              one contract, two consumers
-│   │   ├── src/
+│   │   │
+│   │   ├── api-types/                          one contract, two consumers
 │   │   │   ├── api-schema.d.ts                 generated from openapi.json
-│   │   │   ├── consent.ts  exchange.ts  meta.ts  envelope.ts
-│   │   │   ├── primitives.ts  enums.ts  identity.ts  projects.ts
-│   │   │   ├── rights.ts  notices.ts  registry.ts  audit.ts  dashboard.ts
+│   │   │   ├── consent.ts  exchange.ts  meta.ts  envelope.ts  primitives.ts
+│   │   │   ├── enums.ts  identity.ts  projects.ts  rights.ts  notices.ts
+│   │   │   ├── registry.ts  audit.ts  dashboard.ts  public.ts
 │   │   │   └── api-contract.test-d.ts          the curated types, checked
-│   │   └── package.json
-│   │
-│   ├── dkms-client/                            added to both by hand this week
-│   │   ├── src/
+│   │   │
+│   │   ├── dkms-client/                        added to both by hand this week
 │   │   │   ├── api.ts                          decryptRecords, isEncrypted
 │   │   │   ├── use-decrypted.ts                one call for a whole list
-│   │   │   └── route-handler.ts                the POST each app re-exports   new
-│   │   └── package.json
+│   │   │   └── route-handler.ts                what each app's route.ts calls  new
+│   │   │
+│   │   └── config/                             one TypeScript and lint preset  new
+│   │       └── base.json  next.json  eslint.config.mjs
 │   │
-│   └── tsconfig/                                                          new
-│       ├── base.json  next.json  eslint.config.mjs
-│       └── package.json
-│
+│   └── package.json                            npm workspaces: console, portal,
+│                                               shared/*                       new
+```
+
+## `docs/` — every document in the repository
+
+```
 ├── docs/
-│   ├── README.md                               the map
+│   ├── README.md                               the map — and it gets shorter,
+│   │                                           because there is one tree to map
 │   ├── glossary.md
+│   │
 │   ├── architecture/
-│   │   ├── system-overview.md  repository-layout.md  domain-model.md  api.md
-│   │   ├── layers.md  dependency-rules.md  request-lifecycle.md   ← apps/api/docs
-│   │   └── rights.md                                              ← apps/api/docs
-│   ├── security/                                                  ← apps/api/docs
+│   │   ├── system-overview.md                  the deployables, the datastores,
+│   │   │                                       how a request travels
+│   │   ├── repository-layout.md                what each folder owns
+│   │   ├── domain-model.md  api.md
+│   │   ├── layers.md                           ← cmp_backend/docs/       moved
+│   │   ├── dependency-rules.md                 ← cmp_backend/docs/       moved
+│   │   ├── request-lifecycle.md                ← cmp_backend/docs/       moved
+│   │   └── rights.md                           ← cmp_backend/docs/       moved
+│   │
+│   ├── security/                               ← cmp_backend/docs/security/
 │   │   ├── authentication.md  authorization.md  sessions.md
-│   │   ├── csrf.md  rate-limiting.md  audit.md
-│   ├── database/                                                  ← apps/api/docs
-│   │   ├── schema.md  migrations.md  transactions.md
-│   ├── domain/
+│   │   └── csrf.md  rate-limiting.md  audit.md
+│   │
+│   ├── database/                               ← cmp_backend/docs/database/
+│   │   └── schema.md  migrations.md  transactions.md
+│   │
+│   ├── domain/                                 behaviour, by obligation
 │   │   ├── roles-and-access.md  consent-lifecycle.md
 │   │   ├── collection-and-routing.md  rights-requests.md
-│   │   ├── messages.md  audit-trail.md  personal-data.md
+│   │   └── messages.md  audit-trail.md  personal-data.md
+│   │
 │   ├── operations/
 │   │   ├── local-development.md  deployment.md  runbook.md  testing.md
-│   │   ├── configuration.md  monitoring.md                        ← apps/api/docs
+│   │   ├── configuration.md                    ← cmp_backend/docs/       moved
+│   │   └── monitoring.md                       ← cmp_backend/docs/       moved
+│   │
 │   ├── decisions/                              ADR 0001 … 0014
-│   ├── reviews/                                implementation review, DPDP gap
+│   ├── reviews/                                implementation review,
+│   │                                           DPDP Act gap assessment
+│   │
 │   ├── reference/                              generated and hand-reviewed
-│   │   ├── api/                                ← api_docs/              moved
-│   │   ├── database/                           ← database_schema/       moved
-│   │   └── access-control/                     ← api_access_control/    moved
-│   └── history/
-│
-├── tools/                                      what builds or checks the repo
-│   ├── generate-api-docs.py                    ← api_docs/generate.py
-│   ├── personal-data-scan.py                   ← docs/scripts/
-│   ├── schema-diagrams/                        ← database_schema/source/
-│   │                                           the Graphviz sources the SVGs
-│   │                                           are drawn from (10 .dot files)
-│   └── README.md                               what each tool regenerates    new
+│   │   ├── api/                                ← api_docs/               moved
+│   │   │   ├── README.md  modules/  roles/
+│   │   ├── database/                           ← database_schema/        moved
+│   │   │   ├── README.md  table_reference.md  enum_reference.md
+│   │   │   ├── schema.sql  schema_inventory.json
+│   │   │   ├── *.svg  modules/*.svg            the drawings
+│   │   │   └── source/                         10 Graphviz .dot sources
+│   │   └── access-control/                     ← api_access_control/     moved
+│   │       ├── README.md  endpoint_permissions.{md,json}
+│   │       ├── roles_and_scopes.md  module_permissions.md
+│   │       └── modules/                        17 per-module pages
+│   │
+│   ├── tools/                                  what regenerates the above
+│   │   ├── generate-api-docs.py                ← api_docs/generate.py    moved
+│   │   ├── personal-data-scan.py               ← docs/scripts/           moved
+│   │   └── README.md                           what each tool regenerates  new
+│   │
+│   └── history/                                superseded design documents
 │
 ├── .github/workflows/ci.yml
-├── package.json                                workspaces: apps/*, packages/*  new
 ├── README.md  CONTRIBUTING.md  CHANGELOG.md
 └── .gitignore
 ```
 
-## What the tree is claiming, in four sentences
+`.baseline_routes.txt` — four lines, unexplained — is deleted, or moved to
+`docs/tools/` with a sentence saying what it baselines.
 
-**The root answers "what is this system".** Four apps, five packages, one
-documentation tree, one tools folder. Nothing at the root is a mystery, and
-`.baseline_routes.txt` is gone.
+## The rules that keep it that way
 
-**`apps/api` and `apps/dkms` are unchanged inside.** Every Python path below
-`src/` is exactly what it is today. The restructure does not touch the
-backend's layering, its domain packages, its migrations or its tests — only the
-two directories above them.
+A structure without rules drifts back. Four, each enforceable by a check rather
+than a reviewer's memory.
 
-**The two Next apps keep what makes them different and lose what does not.**
-What stays: routes, the features that are genuinely theirs, the components only
-one of them has. What leaves: the providers, the fetch client, the schemas, the
-test harness, the primitives, the types — 65 files that are identical today and
-37 more that differ only by drift.
+1. **`frontend/` never imports from `backend/`, and the reverse.** They talk
+   over HTTP. The only thing that crosses is the generated
+   `api-schema.d.ts`, and it crosses by being generated, not imported.
+2. **`console/` and `portal/` never import each other.** Two apps needing the
+   same code is the definition of `shared/` — which is why the 65 identical
+   files are its first inhabitants.
+3. **`shared/` never imports from `console/` or `portal/`.** Dependencies point
+   one way; a cycle is a build failure, not a discussion.
+4. **Every document is under `docs/`.** The exception is one `README.md` per
+   service, and it holds one thing: how to run that service.
 
-**`app-config.ts` is where the difference lives.** Where `auth-provider.tsx`,
-`app-shell.tsx` and `lib/config/index.ts` differ between the portals today, the
-shared module takes the difference as configuration and each app supplies it in
-one small file. That is the piece of real design work in this proposal, and it
-is also where you find out which of the current differences were decisions.
+## What moves where
+
+| Today | Becomes | Note |
+|---|---|---|
+| `cmp_backend/` | `backend/api/` | Contents unchanged |
+| `cmp_backend/docs/` (17 files) | `docs/{architecture,security,database,operations}/` | Merged into the one tree |
+| `cmp_dkms/` | `backend/dkms/` | Contents unchanged |
+| `cmp_internal_ui/` | `frontend/console/` | Minus what moves to `shared/` |
+| `cmp_public_ui/` | `frontend/portal/` | Same |
+| the 65 identical files | `frontend/shared/{ui,core,api-types,dkms-client}/` | The point of the exercise |
+| `api_docs/` | `docs/reference/api/` | Generator to `docs/tools/` |
+| `database_schema/` | `docs/reference/database/` | |
+| `api_access_control/` | `docs/reference/access-control/` | |
+| `docs/scripts/` | `docs/tools/` | |
+| `.baseline_routes.txt` | deleted, or `docs/tools/` with a comment | |
+
+## How it would be done
+
+Five phases. Each lands on its own and leaves the repository working; none is a
+big-bang weekend.
+
+| Phase | What | Risk | Rough size |
+|---|---|---|---|
+| 1 | `git mv` the four services into `backend/` and `frontend/`, rename them, fix CI paths and `.env.example` references | Low — a rename; history preserved | Half a day |
+| 2 | Move all documentation under `docs/`: the backend's 17, the three reference trees, the generators | Low — paths in two scripts and the docs map | Two to three hours |
+| 3 | Create `frontend/shared/`; move the **65 identical files**; point both apps at them | Medium — npm workspaces, path aliases, both suites | Two days |
+| 4 | Reconcile the 37 near-duplicates, one at a time, deciding each difference | Medium — judgement, not mechanics | Two to three days |
+| 5 | Settle on one Python toolchain across `backend/api` and `backend/dkms` | Low | Half a day |
+
+**Use `git mv`, one phase per commit, and never a content edit in a commit that
+moves files.** A rename plus an edit is a diff nobody can review; a rename alone
+is a diff anybody can.
+
+**What tells you it worked:** after phase 3, copying a file between the two
+portals stops being something anyone does, and both suites still pass unchanged.
+After phase 4, `git grep -l "useToast" frontend/` returns one file.
+
+## What I would not change
+
+A restructure is a good opportunity to break working things, so it is worth
+naming what stays exactly as it is.
+
+- **The backend's internal layering.** `api → domain → db`, with `core`
+  importing nothing local, is enforced by a test and works. It does not become
+  better inside `backend/api/`; it just moves.
+- **Raw SQL and the migration chain.** 0001 to 0026, both directions, is the
+  only record of how the schema came to be. Renumbering or squashing it for
+  tidiness would destroy that.
+- **Tests beside the thing they test.** The three Python suites belong to
+  `backend/api`; the Playwright suites belong to the apps they drive. A
+  top-level `tests/` would separate a test from its subject.
+- **The documentation's voice.** These documents explain *why*, which is rare
+  and expensive to rebuild. Moving files must not become rewriting them.
+- **The reference trees' contents.** Generated and hand-reviewed references
+  that are genuinely current are worth more than most code. They move and are
+  otherwise untouched.
 
 ## Two details worth approving explicitly
 
 **The DKMS route handler.** Next requires a `route.ts` inside `app/`, so it
-cannot live wholly in a package. The package exports the handler and each app's
-file is three lines:
+cannot live wholly in `shared/`. The shared package exports the handler and each
+app's file is three lines:
 
 ```ts
-// apps/console/src/app/dkms/decrypt/route.ts
+// frontend/console/src/app/dkms/decrypt/route.ts
 import { createDecryptHandler } from "@compass/dkms-client/route-handler";
 export const POST = createDecryptHandler();
 ```
 
-**The `docs/security/` and `docs/database/` folders come from `apps/api/docs`.**
-Today the backend keeps seventeen documents about its own internals, and
-`docs/README.md` has a whole section pointing at them. Merging them removes the
-signpost. The counter-argument is real — documentation next to the code it
-describes is easier to keep current — so this is the one move in the tree I would
-most readily drop if you disagree.
+**`app-config.ts` is where the two portals differ.** `auth-provider.tsx`,
+`app-shell.tsx` and `lib/config/index.ts` differ between them today — one is a
+console, one is a portal, and some of that difference is real. The shared module
+takes the difference as configuration and each app supplies it in one small
+file. This is the only genuinely thoughtful part of the migration, and it is
+where you find out which of the current differences were decisions and which
+were drift. Budget for it.
 
-## Names, for approval
+## Three smaller things worth doing anyway
 
-| Proposed | Instead of | Why |
+Independent of the restructure, and cheap.
+
+1. **Fold the two near-empty domain packages.** `domain/registry` is 10 lines
+   and `domain/users` is 11, against `domain/rights` at 3,820 across 6 files.
+   Those two are import shims pretending to be aggregates: give them a service
+   layer or fold them into their callers.
+2. **Split `domain/rights`.** 3,820 lines in one package is the one place where
+   the layering is sound but the file is not. Clock, tickets, scope and
+   nominations are four things.
+3. **Add `CODEOWNERS`.** With two layers and a shared tree, "who reviews a
+   change to `frontend/shared/ui`" should be answerable by the repository rather
+   than by asking.
+
+## The three decisions that are yours
+
+| Decision | Options | My recommendation |
 |---|---|---|
-| `apps/api` | `cmp_backend` | It is the API; "backend" names a tier, not a thing |
-| `apps/console` | `cmp_internal_ui` | The word the docs and the team already use |
-| `apps/portal` | `cmp_public_ui` | Same |
-| `apps/dkms` | `cmp_dkms` | The `cmp_` prefix repeats the repository's own name |
-| `packages/web-core` | — | Named for what it is; not `shared`, not `common` |
-| `docs/reference/` | three root folders | They are reference documentation, not projects |
+| **Frontend tooling** | npm workspaces (built in, no new tool) · pnpm + Turborepo (faster, caches, another tool) | **npm workspaces.** Two apps and four shared folders do not need a build orchestrator, and the tool you do not install cannot break |
+| **Python toolchain** | `uv` for both services · `venv` + `pip` + `requirements.txt` for both | **One of them, written down.** You asked for venv + pip on the key service, so make that the standard and convert `backend/api` — or keep `uv` and convert `backend/dkms`. Not both |
+| **Timing** | All five phases now · phases 1–2 now, 3–5 later | **Phases 1–2 now.** They are renames, they are cheap, and they deliver the shape you asked for. Phases 3–4 are where the duplication actually dies and deserve their own window |
+
+## What this is worth
+
+Phases 1 and 2 buy legibility: four entries at the root, one documentation
+tree, and a `docs/README.md` that no longer has to explain where the other
+documentation lives.
+
+Phases 3 and 4 buy something measurable. Sixty-five files are maintained today
+by copying, and the count rises every time either portal gains a feature — it
+rose by five this week when the DKMS layer was added to both by hand. After the
+split, a fix applied once is applied everywhere.
 
 ## Approve, or tell me which lines are wrong
 
-The tree above is the whole proposal made concrete. If it is right, phase 1
-(the four `git mv`s and the CI paths) is about half a day and changes no code.
-If a line is wrong — a name, a package boundary, the `apps/api/docs` merge —
-say which, and I will redraw it before anything moves.
+The tree above is the whole proposal made concrete. If it is right, phase 1 —
+four `git mv`s and the CI paths — is about half a day and changes no code. If a
+line is wrong, a name, a boundary, or the merging of the backend's own `docs/`
+into the one tree, say which and I will redraw it before anything moves.
