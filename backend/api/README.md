@@ -8,36 +8,42 @@ backend's own front door.
 
 ## Running it
 
-Two datastores, natively or as containers:
+Two datastores. If you have PostgreSQL 16 and Redis 7 already, point `.env` at
+them. If not, the one Docker file in this repository starts exactly those two
+and nothing else:
 
 ```bash
-docker compose -f docker/docker-compose.yml -p cmp up -d db redis
+docker compose -f dev-services.yml up -d        # PostgreSQL + Redis, and only those
 ```
 
-The compose project is `cmp`. The development database is `cmp_dev`; if the
-`cmp_pgdata` volume carries an older database named `cmp` from another
-project, leave it be.
-
-Then:
+Then a virtualenv, with pip:
 
 ```bash
-uv sync --all-extras --dev
-cp .env.example .env               # POSTGRES_DB=cmp_dev; PUBLIC_BASE_URL and CONSOLE_BASE_URL to the two portals
-uv run alembic upgrade head        # 26 migrations: 32 tables, 39 enums, triggers, grants
-uv run python scripts/seed.py      # one coherent world: a user per role, processors, sources, sites, a project through to approved, a live link
+python3.12 -m venv .venv
+. .venv/bin/activate                # Windows: .venv\Scripts\activate
+pip install -r requirements-dev.txt # the runtime, the tools, and this package (editable)
 
-uv run python -m cmp --port 8000
-uv run celery -A cmp.tasks.app worker -Q high_priority,email,documents,reports,notifications,default -l info --pool=solo
-uv run celery -A cmp.tasks.app beat -l info
+cp .env.example .env                # PUBLIC_BASE_URL and CONSOLE_BASE_URL to the two portals
+alembic upgrade head                # 26 migrations: 32 tables, 39 enums, triggers, grants
+python scripts/seed.py              # one coherent world: a user per role, processors, sources, sites, a project through to approved, a live link
+
+python -m cmp --port 8000
+celery -A cmp.tasks.app worker -Q high_priority,email,documents,reports,notifications,default -l info --pool=solo
+celery -A cmp.tasks.app beat -l info
 ```
+
+Every command after `activate` assumes the virtualenv is active. `requirements.txt`
+is the runtime alone, pinned to exact versions; `requirements-dev.txt` adds the
+suite, the linters and the type checker. To change a dependency, edit the line,
+`pip install -r requirements-dev.txt` again, and run the suite.
 
 `http://127.0.0.1:8000/docs` is the interactive reference outside production.
 
 > **Why `python -m cmp` and not `uvicorn cmp.main:app`?** psycopg's async
 > mode cannot run on Windows' `ProactorEventLoop`, and uvicorn builds its loop
 > through a `loop_factory` that bypasses the policy. The module entrypoint
-> supplies the loop. On Linux the two are equivalent; production uses
-> gunicorn (see `docker/Dockerfile`).
+> supplies the loop. On Linux the two are equivalent; a deployment would run
+> `gunicorn cmp.main:app` with uvicorn workers.
 
 ### Development codes
 
@@ -117,11 +123,11 @@ purpose.
 ## Testing
 
 ```bash
-uv run pytest                        # everything; integration and security need PostgreSQL and Redis
-uv run pytest tests/unit             # pure functions, no I/O
-uv run pytest tests/integration      # real datastores; rolls back per test
-uv run pytest tests/security         # BOLA, BFLA, mass assignment, CSRF, rate limits, the matrix
-uv run ruff check . && uv run ruff format --check . && uv run mypy
+pytest                               # everything; integration and security need PostgreSQL and Redis
+pytest tests/unit                    # pure functions, no I/O
+pytest tests/integration             # real datastores; rolls back per test
+pytest tests/security                # BOLA, BFLA, mass assignment, CSRF, rate limits, the matrix
+ruff check . && ruff format --check . && mypy src
 ```
 
 The project state machine is asserted over every (from, to, role)
@@ -156,11 +162,11 @@ at-least-once and every task is idempotent; imports upsert on
 Operator scripts:
 
 ```bash
-uv run python scripts/seed.py          # development data; refuses outside local/test
-uv run python scripts/create_admin.py  # the bootstrap administrator; refuses if one exists
-uv run python scripts/reset_dev.py     # drop and rebuild the configured database; local/test only, asks first
-uv run python scripts/healthcheck.py   # post-deploy checks; read-only, safe in production
-uv run python scripts/db.py [table|SQL] # read the database; every statement rolled back
+python scripts/seed.py                 # development data; refuses outside local/test
+python scripts/create_admin.py         # the bootstrap administrator; refuses if one exists
+python scripts/reset_dev.py            # drop and rebuild the configured database; local/test only, asks first
+python scripts/healthcheck.py          # checks a running instance; read-only
+python scripts/db.py [table|SQL]        # read the database; every statement rolled back
 ```
 
 ## Layout
@@ -191,8 +197,8 @@ src/cmp/
 migrations/          26 raw-SQL Alembic revisions (docs/database/migrations.md)
 tests/               unit/, integration/ (with enforcement/, database/, auth/), security/
 scripts/             seed, create_admin, reset_dev, healthcheck, db
-docs/                architecture, security, database, operations (this service's own)
-docker/              Dockerfile, docker-compose.yml, nginx
+dev-services.yml     PostgreSQL and Redis for development; the one Docker file
+requirements*.txt    the runtime, pinned; and the tools on top of it
 openapi.json         the generated API document; regenerate after a route change
 ```
 

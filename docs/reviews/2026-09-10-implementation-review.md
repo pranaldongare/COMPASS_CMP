@@ -84,7 +84,7 @@ narrowed:
 | Item | Where tracked |
 |---|---|
 | Durable outbox and recipient-level deduplication | [ADR 0012](../decisions/0012-side-effects-after-commit.md) |
-| Runtime database role with least privilege across every table | [deployment.md](../operations/deployment.md), production hardening |
+| Runtime database role with least privilege across every table | [deployment.md](../history/deployment-with-containers.md), production hardening |
 | Idempotency keys on consent capture | this page |
 | Shared frontend packages; splitting the rights modules | this page |
 | Load test of the audit-chain lock | [ADR 0005](../decisions/0005-audit-chain-position-inside-the-lock.md) |

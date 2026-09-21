@@ -47,27 +47,14 @@ Locally, against the worker already running:
 
 ```bash
 cd backend/api
-uv run celery -A cmp.tasks.app:celery_app flower \
+celery -A cmp.tasks.app:celery_app flower \
   --address=127.0.0.1 --port=5555 --basic-auth=you:a-real-password
 ```
 
-As a container, alongside the rest of the stack:
-
-```bash
-FLOWER_BASIC_AUTH=you:a-real-password \
-  docker compose -f docker/docker-compose.yml --profile monitoring up -d flower
-```
-
-It is behind a profile, so it does not start with `docker compose up -d`. The
-password has no default and the service refuses to start without one, because
-Flower can revoke and terminate running tasks and has no notion of roles:
-everybody who reaches it can do everything it can do. The port is bound to the
-loopback for the same reason. Putting it on a routable address means putting
-your own proxy and your own authentication in front of it first.
-
-`FLOWER_BASIC_AUTH` is read by Docker Compose, not by the application, so it
-belongs in the shell or in `docker/.env` — **not** in `backend/api/.env`, which
-refuses to load an unknown key ([configuration.md](configuration.md)).
+Always with `--basic-auth`, and always on the loopback. Flower can revoke and
+terminate running tasks and has no notion of roles: everybody who reaches it can
+do everything it can do. Putting it on a routable address means putting your own
+proxy and your own authentication in front of it first.
 
 ### Task arguments do not appear in it
 

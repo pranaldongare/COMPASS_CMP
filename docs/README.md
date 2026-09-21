@@ -26,7 +26,7 @@ you need. **Every document is in this tree.** The one exception is a
 
 **Running it somewhere**
 
-- [Deployment](operations/deployment.md): processes, containers, order of operations, what production refuses
+- [Local development](operations/local-development.md) is also how it runs anywhere: a virtualenv per Python service, `npm run dev` per portal, PostgreSQL and Redis beside them. How it was once meant to be containerised is in [history/](history/README.md)
 - [Runbook](operations/runbook.md): restarts, rebuilding a development database, an audit chain that does not verify, rate-limit buckets
 
 **Understanding why**
@@ -70,7 +70,6 @@ asserts that every relative link in every document resolves.
 | [database/migrations.md](database/migrations.md) | The revision chain, and how to add one |
 | [database/transactions.md](database/transactions.md) | What must commit together, and the timeouts |
 | [operations/configuration.md](operations/configuration.md) | Settings, and what production refuses to start on |
-| [operations/api-deployment.md](operations/api-deployment.md) | The API's processes and health endpoints |
 | [operations/monitoring.md](operations/monitoring.md) | Logs, metrics, what to alert on |
 | [security/authentication.md](security/authentication.md) | Passwords, MFA, one-time codes, the two populations |
 | [security/authorization.md](security/authorization.md) | The matrix, scopes, 403 versus 404 |

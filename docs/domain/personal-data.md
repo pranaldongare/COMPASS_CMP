@@ -256,7 +256,7 @@ opened in a spreadsheet cannot execute what a name field contained.
 
 | Log | What it may contain | Control |
 |---|---|---|
-| Access log | Method, path, status, request id, duration | Consent and nomination tokens are scrubbed from the path, in the application and again in the shipped nginx configuration |
+| Access log | Method, path, status, request id, duration | Consent and nomination tokens are scrubbed from the path by the application; a reverse proxy in front, if any, must do the same in its own log |
 | Application log | Structured events; identifiers, not contents | A domain error on a capability path logs no token |
 | Celery task events | The name of a task and **the number of its arguments** | The arguments themselves are withheld: they are one-time codes and contacts, and anything that renders task events would print them |
 | `var/outbox.log` | **Development only.** Every email and SMS the platform would have sent, in full — addresses, names and codes | It exists because there is no real transport locally. It is a plain file; treat it as a live mailbox |
@@ -608,7 +608,7 @@ rediscover them.
 | A code sign-in acts as `data_subject` whatever the account's role, so a code to a staff mailbox cannot produce a staff session | [ADR 0013](../decisions/0013-every-account-is-a-data-principal.md) |
 | Out of scope is 404, not 403; every real 403 is audited | [ADR 0004](../decisions/0004-scope-in-the-where-clause.md) |
 | Scope is compiled into the `WHERE` clause, so an out-of-scope row is never selected in the first place | `cmp/db/repositories/*` |
-| Tokens are scrubbed from access logs, in the application and in nginx | `cmp/api/middleware/access_log.py` |
+| Tokens are scrubbed from access logs by the application | `cmp/api/middleware/access_log.py` |
 | Celery task events carry the argument *count*, not the arguments | `cmp/tasks/dispatch.py` |
 | Export CSV cells beginning with a formula character are written as text | `cmp/domain/exchange/service.py` |
 | A notice's collector `note` is projected out of every public payload, and a test asserts it | `tests/integration/test_reported_fixes.py` |

@@ -33,7 +33,7 @@ state machine.
 
 ## Consequences
 
-- Two builds, two test suites, two Dockerfiles; the shared code is
+- Two builds, two test suites, two dev servers; the shared code is
   duplicated by copy, not by a package, which is a known cost.
 - A public-surface change cannot break the console's bundle.
 - The data principal's origin exposes no staff route to enumerate.

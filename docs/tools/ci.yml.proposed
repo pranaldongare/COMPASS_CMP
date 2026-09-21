@@ -1,0 +1,222 @@
+# CI for the monorepo: the backend (lint, types, migrations both ways, the three
+# pytest suites, the OpenAPI document, the image) and the two portals
+# (typecheck, lint, unit tests, production build).
+#
+# Lives at the repository root because GitHub reads workflows from
+# `.github/workflows` at the root only. It sat under `backend/api/` from
+# August to September 2026 and never ran; a review noticed zero runs.
+#
+# Two things this pipeline does that a default one does not:
+#
+# 1. **It runs the integration tests against a real PostgreSQL.** The constraints
+#    in migration 0002 are the enforcement layer; testing them against a mock
+#    tests the mock. The empty-array CHECK bug fixed in 0004 was only findable
+#    against a real database.
+#
+# 2. **It exercises the migrations in both directions.** `upgrade -> downgrade ->
+#    upgrade` proves the rollback path works *before* it is needed at 2am, which
+#    is the only time anyone finds out otherwise.
+
+name: CI
+
+on:
+  push:
+    branches: [main, refactor/frontend-architecture]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # A new push supersedes the run in flight for the same ref.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "22"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: backend/api
+
+jobs:
+  quality:
+    name: Backend lint, format and types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/api/requirements-dev.txt
+
+      # Exact pins, so CI runs what the suite was run against and nothing newer.
+      - name: Install
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check src tests migrations scripts --output-format=github
+
+      - name: Format check
+        run: ruff format --check src tests migrations scripts
+
+      - name: Type check
+        run: mypy src
+
+  test:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: cmp
+          POSTGRES_USER: cmp
+          POSTGRES_PASSWORD: cmp
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U cmp -d cmp"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      ENVIRONMENT: test
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: cmp
+      POSTGRES_USER: cmp
+      POSTGRES_PASSWORD: cmp
+      REDIS_URL: redis://localhost:6379/0
+      CELERY_BROKER_URL: redis://localhost:6379/1
+      CELERY_RESULT_BACKEND: redis://localhost:6379/2
+      SECRET_KEY: ci-secret-key-at-least-thirty-two-bytes
+      COOKIE_SECURE: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/api/requirements-dev.txt
+
+      - run: pip install -r requirements-dev.txt
+
+      - name: Apply migrations
+        run: alembic upgrade head
+
+      # The rollback path, exercised on every commit rather than discovered
+      # during an incident.
+      - name: Migrations are reversible
+        run: |
+          alembic downgrade base
+          alembic upgrade head
+
+      # The committed API document must be the one the code produces. A stale
+      # openapi.json means the portals' generated types were checked against
+      # something the server no longer says.
+      - name: OpenAPI document is current
+        run: |
+          python -c "from cmp.main import app; import json; json.dump(app.openapi(), open('openapi.generated.json','w'), indent=2)"
+          diff -q openapi.json openapi.generated.json
+
+      - name: Unit tests
+        run: pytest tests/unit -q
+
+      - name: Integration tests
+        run: pytest tests/integration -q
+
+      - name: Security tests
+        run: pytest tests/security -q
+
+      - name: Full suite with coverage
+        run: pytest --cov --cov-report=term-missing --cov-report=xml -q
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: backend/api/coverage.xml
+          retention-days: 7
+
+  portals:
+    name: ${{ matrix.portal }} typecheck, lint, tests, build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        portal: [console, portal]
+    defaults:
+      run:
+        working-directory: frontend/${{ matrix.portal }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ matrix.portal }}/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # typecheck + lint + vitest, the same gate a developer runs locally.
+      - name: Verify
+        run: npm run verify
+
+      # The production build fails on a type or lint error the dev server
+      # tolerates, so it is part of the gate rather than of the deploy.
+      - name: Build
+        run: npm run build
+
+  security:
+    name: Dependency and secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # gitleaks needs history to scan it
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/api/requirements-dev.txt
+
+      - run: pip install -r requirements-dev.txt
+
+      # Known CVEs in the pinned dependency set.
+      - name: Audit dependencies
+        # Against the requirements files, not the environment: pip-audit refuses
+        # the project itself, which requirements-dev.txt installs editable and
+        # which is not on PyPI, and would stop there without auditing anything.
+        run: pip-audit --strict --desc -r requirements.txt -r requirements-dev.txt --skip-editable
+
+      # Bandit rules are already part of ruff's `S` selection, so this step is
+      # the belt to that pipeline's braces rather than a duplicate.
+      - name: Static security scan
+        # `--ignore S101` restated here: any selector given on the command line
+        # re-enables S101 over the ignore in pyproject, and this codebase
+        # uses `assert` for RETURNING invariants on purpose - see the note there.
+        run: ruff check src --extend-select S --ignore S101 --output-format=github
+
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,9 +1,16 @@
 # Deployment
 
+> **Historical.** This describes how the platform was meant to be deployed as
+> containers behind nginx. In September 2026 the images, the compose stack and
+> the proxy were removed: every service runs as a process in a virtualenv or
+> under `npm run dev`, and the only Docker file left starts PostgreSQL and
+> Redis. Kept because it records decisions - queue names, worker counts, the
+> body-size cap, one Beat - that still hold.
+
 The platform is five processes and two datastores. This page is the topology
 and the order of operations; the backend's own notes on fail-fast startup and
 what production refuses are in
-[docs/operations/deployment.md](../operations/api-deployment.md)
+[docs/operations/deployment.md](api-deployment-with-containers.md)
 and [configuration.md](../operations/configuration.md).
 
 ## Topology

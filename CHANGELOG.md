@@ -31,6 +31,23 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Changed
+- **The API is installed with `pip`, and nothing ships as a container.** `uv`
+  and its lockfile are gone; `backend/api/requirements.txt` carries the runtime
+  pinned to the exact versions the lockfile held on the day of the change, so
+  nothing moved version in the move, and `requirements-dev.txt` adds the suite,
+  the tools and the project itself editable. `pyproject.toml` keeps every
+  `[tool.*]` block and reads its dependencies from `requirements.txt`, so there
+  is one list. The Dockerfiles for all three deployables, the compose stack, the
+  nginx configuration and the `.dockerignore` files are removed; the two
+  documents that described deploying them are in `docs/history/`. One Docker
+  file remains, `backend/api/dev-services.yml`, and it starts PostgreSQL and
+  Redis and nothing else — it exists because the machine this is developed on
+  has no other PostgreSQL, and it is written to adopt the database that already
+  exists rather than start an empty one beside it. Three comments that said the
+  proxy enforced the body-size cap now say the application does, because it
+  does. Verified under `venv` + `pip` alone: 1154 backend tests, lint, format
+  and types all pass. `.github/workflows/ci.yml` still installs with `uv` and
+  builds the deleted image; the corrected file is `docs/tools/ci.yml.proposed`.
 - **The repository is three layers.** `backend/` holds everything the server
   does — the platform API (was `cmp_backend`) and the key service (was
   `cmp_dkms`). `frontend/` holds everything the browser does — the staff console

@@ -1,0 +1,100 @@
+# The API's runtime, pinned to the exact versions the suite runs against.
+#
+# Every line is the resolution `uv.lock` held on the day the project moved to
+# pip, so nothing changed version in the move. Transitive dependencies are
+# listed too, deliberately: a requirements file that names only the direct
+# dependencies lets a transitive one drift on the next install, and a floor
+# nobody has tested is a guess.
+#
+#   python3.12 -m venv .venv
+#   . .venv/bin/activate
+#   pip install -r requirements.txt          # to run it
+#   pip install -r requirements-dev.txt      # to work on it
+#
+# To change a version: edit the line, reinstall, run the suite. The direct
+# dependencies and why each is here are described in README.md.
+
+alembic==1.19.1
+amqp==5.3.1
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.14.2
+argon2-cffi==25.1.0
+argon2-cffi-bindings==26.1.0
+billiard==4.2.4
+celery==5.6.3
+certifi==2026.7.22
+cffi==2.1.1
+click==8.4.2
+click-didyoumean==0.3.1
+click-plugins==1.1.1.2
+click-repl==0.3.0
+colorama==0.4.6 ; sys_platform == 'win32'
+cryptography==50.0.0
+deprecated==1.3.1
+detect-installer==0.1.0
+dnspython==2.8.0
+email-validator==2.3.0
+fastapi==0.141.1
+fastapi-cli==0.0.32
+fastapi-cloud-cli==0.23.0
+fastar==0.12.0
+greenlet==3.5.5 ; platform_machine == 'AMD64' or platform_machine == 'WIN32' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'ppc64le' or platform_machine == 'win32' or platform_machine == 'x86_64'
+gunicorn==26.1.0
+h11==0.16.0
+httpcore==1.0.9
+httptools==0.8.0
+httpx==0.28.1
+idna==3.19
+jinja2==3.1.6
+kombu==5.6.2
+limits==5.8.0
+lxml==6.1.2
+mako==1.4.1
+markdown-it-py==4.2.0
+markupsafe==3.0.3
+mdurl==0.1.2
+orjson==3.12.0
+packaging==26.3
+prometheus-client==0.26.0
+prometheus-fastapi-instrumentator==8.1.0
+prompt-toolkit==3.0.53
+psycopg==3.3.4
+psycopg-binary==3.3.4 ; implementation_name != 'pypy'
+psycopg-pool==3.3.1
+pycparser==3.0 ; implementation_name != 'PyPy'
+pydantic==2.13.4
+pydantic-core==2.46.4
+pydantic-extra-types==2.11.1
+pydantic-settings==2.15.0
+pygments==2.21.0
+pyjwt==2.13.0
+python-dateutil==2.9.0.post0
+python-docx==1.2.0
+python-dotenv==1.2.3
+python-multipart==0.0.32
+pyyaml==6.0.3
+redis==6.4.0
+rich==15.0.0
+rich-toolkit==0.20.3
+rignore==0.8.1
+sentry-sdk==2.68.0
+shellingham==1.5.4
+six==1.17.0
+slowapi==0.1.10
+sqlalchemy==2.0.52
+starlette==1.6.0
+structlog==26.1.0
+typer==0.27.1
+typing-extensions==4.16.0
+typing-inspection==0.4.4
+tzdata==2026.3
+tzlocal==5.4.4
+urllib3==2.7.0
+uvicorn==0.52.4
+uvloop==0.22.1 ; platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32'
+vine==5.1.0
+watchfiles==1.2.0
+wcwidth==0.8.2
+websockets==17.0.1
+wrapt==2.3.0

@@ -106,8 +106,8 @@ LongText = Annotated[str, StringConstraints(min_length=1, max_length=20_000)]
 #: number somebody picked - and a notice is as long as the processing it has to
 #: describe. A fiduciary running many purposes across several recipients writes
 #: a long notice because section 5 requires it to, and refusing it is refusing
-#: the lawful document. The request body limit still bounds it
-#: (`client_max_body_size`, 25 MB in the shipped nginx configuration).
+#: the lawful document. The request body limit still bounds it - `MAX_UPLOAD_BYTES`,
+#: 25 MB by default, enforced by `BodyLimitMiddleware`.
 NoticeText = Annotated[str, StringConstraints(min_length=1)]
 Mobile = Annotated[str, StringConstraints(min_length=6, max_length=20, pattern=r"^\+?[0-9 \-]+$")]
 OtpCode = Annotated[str, StringConstraints(min_length=4, max_length=10, pattern=r"^[0-9]+$")]

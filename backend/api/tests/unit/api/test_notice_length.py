@@ -11,7 +11,7 @@ lawful document. So the maximum is gone and the minimum stays: an empty
 rendition is still nothing, and publication still refuses a notice without one.
 
 What bounds it now is the request body limit, which is the honest place for it —
-`client_max_body_size` in the shipped nginx configuration. This file pins the
+`MAX_UPLOAD_BYTES`, enforced by the body-limit middleware. This file pins the
 decision so that a later tidy-up of "unbounded string field" does not quietly
 put the ceiling back.
 """

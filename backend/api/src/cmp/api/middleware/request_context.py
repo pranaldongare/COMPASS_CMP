@@ -54,9 +54,10 @@ def client_ip(request: Request) -> str | None:
     """The client address, trusting the proxy only where we run one.
 
     `X-Forwarded-For` is client-controlled unless something in front overwrites
-    it. Nginx does; a direct caller does not. Outside production we take the
-    socket address, so a developer cannot spoof an address into the audit trail
-    by setting a header.
+    it. A reverse proxy does; a direct caller does not. Outside production we
+    take the socket address, so a developer cannot spoof an address into the
+    audit trail by setting a header - and a production deployment that trusts
+    the header is asserting that a proxy it controls is the only way in.
     """
     if settings.is_production:
         forwarded = request.headers.get("x-forwarded-for", "")

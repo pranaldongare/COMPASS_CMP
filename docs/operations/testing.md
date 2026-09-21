@@ -15,10 +15,10 @@ Four suites, each answering a different question. Counts are as of
 
 ```bash
 cd backend/api
-uv run pytest                    # everything
-uv run pytest tests/unit         # no datastores needed
-uv run pytest -k rights          # by name
-uv run pytest --cov              # with coverage
+pytest                           # everything
+pytest tests/unit                # no datastores needed
+pytest -k rights                 # by name
+pytest --cov                     # with coverage
 ```
 
 **Unit** tests are the state machines over every (from, to, role)
@@ -54,7 +54,7 @@ the matrix itself must keep.
 Static checks:
 
 ```bash
-uv run ruff check . && uv run ruff format --check . && uv run mypy
+ruff check . && ruff format --check . && mypy src
 ```
 
 All three are clean as of 2026-09-17; anything reported is new.

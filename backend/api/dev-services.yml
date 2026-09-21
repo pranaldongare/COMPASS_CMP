@@ -1,0 +1,78 @@
+# The two things this platform needs that are not in this repository:
+# PostgreSQL and Redis. Nothing else. No image of ours, no proxy, no worker -
+# those are `python -m cmp` and `celery` in a virtualenv, started by hand.
+#
+# This is the one Docker file left, and it exists for one reason: the machine
+# this is developed on has no other PostgreSQL. If you have one, point
+# backend/api/.env at it and never run this.
+#
+#   docker compose -f dev-services.yml up -d       # start both
+#   docker compose -f dev-services.yml stop        # stop, keep the data
+#   docker compose -f dev-services.yml down        # remove containers, KEEP the data
+#   docker compose -f dev-services.yml down -v     # ...and delete the data. Be sure.
+#
+# `name: compass` and the volume names below are not cosmetic. They match the
+# project and volumes the database has lived in since the first `up`, so this
+# file finds the existing data rather than starting an empty cluster beside it.
+
+name: compass
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cmp}
+      POSTGRES_USER: ${POSTGRES_USER:-cmp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cmp}
+      # Deterministic collation: an index built under a different collation
+      # sorts differently, and a keyset cursor then skips rows.
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    command:
+      - postgres
+      - -c
+      - log_min_duration_statement=500
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - max_connections=100
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cmp} -d ${POSTGRES_DB:-cmp}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    # Everything in this Redis is state, not cache: sessions, one-time codes,
+    # lockouts, rate counters, the Celery broker. Every key carries a TTL, so
+    # an eviction policy would evict *live* sessions under memory pressure and
+    # people would be signed out with no error anywhere. noeviction refuses
+    # writes instead, which the API reports as 503 and a person can see.
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - noeviction
+    volumes:
+      - redisdata:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:

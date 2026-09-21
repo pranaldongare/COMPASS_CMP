@@ -48,13 +48,13 @@ flowchart LR
 
 | Component | Directory | Runs as | Talks to |
 |---|---|---|---|
-| API | `backend/api/` | `python -m cmp` locally; gunicorn with uvicorn workers in a container | PostgreSQL, Redis, file storage |
+| API | `backend/api/` | `python -m cmp` in a virtualenv | PostgreSQL, Redis, file storage |
 | Worker | `backend/api/` | `celery worker` on six queues | PostgreSQL, Redis, the email and SMS transports |
 | Beat | `backend/api/` | `celery beat`, exactly one instance | Redis |
 | Staff console | `frontend/console/` | Next.js on port 3000 | the API, through its own `/api` proxy |
 | Data-principal portal | `frontend/portal/` | Next.js on port 3001 | the API, through its own `/api` proxy |
-| PostgreSQL | container `cmp-db-1` | 32 tables, 39 enums, 27 triggers, one view | |
-| Redis | container `cmp-redis-1` | three logical databases: sessions and limits, broker, results | |
+| PostgreSQL | native, or `dev-services.yml` | 32 tables, 39 enums, 27 triggers, one view | |
+| Redis | native, or `dev-services.yml` | three logical databases: sessions and limits, broker, results | |
 
 ## Two audiences, two portals
 

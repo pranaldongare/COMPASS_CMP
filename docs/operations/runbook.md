@@ -124,7 +124,7 @@ you need to step back.
 ## Resetting a development machine
 
 ```bash
-cd backend/api && uv run python scripts/reset_dev.py
+cd backend/api && . .venv/bin/activate && python scripts/reset_dev.py
 ```
 
 Never on staging or production; the script refuses, and the refusal is the
@@ -136,7 +136,7 @@ point.
 |---|---|
 | API | stdout, JSON in production, every line with `request_id` |
 | worker, beat | stdout |
-| nginx | its access log, with `/c/{token}` scrubbed to `/c/[token]` |
+| a reverse proxy, if one is in front | its own access log; scrub `/c/{token}` to `/c/[token]` there too, as the application does |
 | what was sent to whom | `audit_log` entries of type notification, and in local the outbox |
 
 Signals worth an alert are listed in

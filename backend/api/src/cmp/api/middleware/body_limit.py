@@ -26,10 +26,10 @@ Next = Callable[[Request], Awaitable[Response]]
 class BodyLimitMiddleware(BaseHTTPMiddleware):
     """Refuse oversized bodies before they are read into memory.
 
-    Nginx enforces the same cap in front. Both, because the application is also
-    reachable directly in development and in a container-to-container call, and
-    a limit that only exists in the proxy is a limit that disappears the moment
-    someone bypasses the proxy.
+    Enforced here, in the application, and not left to whatever sits in front
+    of it. A deployment may put a proxy with its own cap ahead of this; a limit
+    that exists only in the proxy is a limit that disappears the moment someone
+    bypasses the proxy, and in development nothing sits in front at all.
     """
 
     async def dispatch(self, request: Request, call_next: Next) -> Response:

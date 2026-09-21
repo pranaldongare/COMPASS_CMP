@@ -20,7 +20,7 @@ edited.
 ## Before you open a pull request
 
 ```bash
-cd backend/api && uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest
+cd backend/api && . .venv/bin/activate && ruff check . && ruff format --check . && mypy src && pytest
 cd frontend/console && npm run verify
 cd frontend/portal && npm run verify
 ```
@@ -67,7 +67,7 @@ transitions endpoint.
 
 ## Changing the schema
 
-1. `uv run alembic revision -m "what it does"` and write the SQL by hand,
+1. `alembic revision -m "what it does"` and write the SQL by hand,
    both directions.
 2. If the change adds a rule, add it as a constraint or trigger and add a
    test under `tests/integration/enforcement/` that breaks it with raw SQL.

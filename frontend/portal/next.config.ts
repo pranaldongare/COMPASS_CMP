@@ -17,23 +17,6 @@ const API_ORIGIN = process.env.API_ORIGIN ?? "http://127.0.0.1:8000";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
 
-  /**
-   * Standalone output, for the container image only.
-   *
-   * It traces the server and the dependencies actually reached, so the runtime
-   * image carries those rather than the whole `node_modules` — which is worth a
-   * lot in an image and nothing at all on a laptop.
-   *
-   * Opt-in rather than always-on, because unconditionally it costs more than it
-   * gives locally: `next start` does not serve a standalone build (it warns and
-   * serves the wrong thing), the static assets have to be copied into
-   * `.next/standalone` by hand, and a rebuild fails with EBUSY while a
-   * standalone server is holding the directory.
-   *
-   * The Dockerfile sets `NEXT_OUTPUT=standalone`.
-   */
-  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
-
   // Never advertise the framework version to a scanner.
   poweredByHeader: false,
 
@@ -89,9 +72,9 @@ const nextConfig: NextConfig = {
    * is a 401. Login appears to fail for no reason.
    *
    * Proxying makes every API call same-origin and first-party, so the cookie
-   * works and CORS stops being involved at all. It also mirrors production,
-   * where nginx sits in front of both - so development exercises the same
-   * cookie path that ships.
+   * works and CORS stops being involved at all. It is also the shape any
+   * deployment should keep - one origin in front of both - so development
+   * exercises the same cookie path that ships.
    */
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${API_ORIGIN}/:path*` }];

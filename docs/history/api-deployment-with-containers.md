@@ -1,7 +1,14 @@
 # Deployment
 
+> **Historical.** This describes how the platform was meant to be deployed as
+> containers behind nginx. In September 2026 the images, the compose stack and
+> the proxy were removed: every service runs as a process in a virtualenv or
+> under `npm run dev`, and the only Docker file left starts PostgreSQL and
+> Redis. Kept because it records decisions - queue names, worker counts, the
+> body-size cap, one Beat - that still hold.
+
 The whole topology, including the two portals and the compose file, is in
-[docs/operations/deployment.md](../operations/deployment.md). This
+[docs/operations/deployment.md](deployment-with-containers.md). This
 page is the backend's part of it.
 
 ## Requirements
@@ -35,7 +42,7 @@ stream of 503s that look like an application bug. An orchestrator can restart a
 dead process; it cannot diagnose a live one that is quietly broken.
 
 Production also refuses to start on any of five conditions — see
-[configuration.md](configuration.md).
+[configuration.md](../operations/configuration.md).
 
 ## Health endpoints
 

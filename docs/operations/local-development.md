@@ -8,38 +8,48 @@ commands are the same on macOS and Linux unless noted.
 
 | Tool | Version | Notes |
 |---|---|---|
-| Python | 3.12 | managed by `uv` |
-| uv | current | `pip install uv` or the installer |
-| Node.js | 22 | the Dockerfiles use `node:22-alpine`; on Windows, `fnm` makes switching painless |
-| Docker Desktop | current | for PostgreSQL 16 and Redis 7, or install both natively |
+| Python | 3.12 | `python3.12 -m venv` and `pip`; nothing else manages it |
+| Node.js | 22 | on Windows, `fnm` makes switching painless |
+| PostgreSQL | 16 | natively, or from `dev-services.yml` below |
+| Redis | 7 | the same |
+| Docker Desktop | current | **only** if you have no other PostgreSQL and Redis |
 | Git | current | |
 
-Native alternatives to Docker on Windows: PostgreSQL 16 or 17 via `winget`, and
-Memurai (Redis-compatible). The application does not care which.
+Native alternatives on Windows: PostgreSQL 16 or 17 via `winget`, and Memurai
+(Redis-compatible). The application does not care which.
 
 ## 1. Datastores
 
+If PostgreSQL and Redis are already on the machine, point `backend/api/.env`
+at them and skip this step. Otherwise:
+
 ```bash
 cd backend/api
-docker compose -f docker/docker-compose.yml -p cmp up -d db redis
+docker compose -f dev-services.yml up -d
 ```
 
-The compose project is named `cmp`; its volumes are `cmp_pgdata` and
-`cmp_redisdata`. The development database is **`cmp_dev`**. If the volume
-already holds an older database called `cmp` from a previous project, leave it
-alone; the backend's `.env` points at `cmp_dev`, and `reset_dev.py` only ever
-touches the database it is configured for.
+That file starts PostgreSQL and Redis and nothing else. It is the one Docker
+file in the repository, and it exists for exactly this case. The compose
+project is named `compass`; its volumes are `compass_pgdata` and
+`compass_redisdata`, and `down` without `-v` keeps them.
 
 ## 2. Backend
 
 ```bash
 cd backend/api
-cp .env.example .env            # POSTGRES_DB=cmp_dev, PUBLIC_BASE_URL, CONSOLE_BASE_URL - see below
-uv sync --all-extras --dev
-uv run alembic upgrade head     # 26 migrations
-uv run python scripts/seed.py   # one coherent world; refuses outside local/test
-uv run python -m cmp --port 8000
+python3.12 -m venv .venv
+. .venv/bin/activate            # Windows: .venv\Scripts\activate
+pip install -r requirements-dev.txt
+cp .env.example .env            # PUBLIC_BASE_URL, CONSOLE_BASE_URL - see below
+alembic upgrade head            # 26 migrations
+python scripts/seed.py          # one coherent world; refuses outside local/test
+python -m cmp --port 8000
 ```
+
+Every command from here on assumes the virtualenv is active in that terminal.
+`requirements.txt` is the runtime pinned to exact versions; `-dev` adds the
+suite and the tools, and installs this package editable so `import cmp`
+resolves to `src/cmp`.
 
 `python -m cmp` rather than `uvicorn cmp.main:app`: psycopg's async mode
 cannot run on Windows' default event loop, and the module entrypoint supplies
@@ -64,8 +74,8 @@ Two processes, in two terminals:
 
 ```bash
 cd backend/api
-uv run celery -A cmp.tasks.app worker -Q high_priority,email,documents,reports,notifications,default -l info --pool=solo
-uv run celery -A cmp.tasks.app beat -l info
+celery -A cmp.tasks.app worker -Q high_priority,email,documents,reports,notifications,default -l info --pool=solo
+celery -A cmp.tasks.app beat -l info
 ```
 
 `--pool=solo` is for Windows. Run exactly one beat. Without the worker,
@@ -113,16 +123,17 @@ per contact per hour; if you hit that during manual testing, clear the
 counters:
 
 ```bash
-docker exec cmp-redis-1 redis-cli --scan --pattern 'rate:*' | xargs -r docker exec -i cmp-redis-1 redis-cli del
+redis-cli --scan --pattern 'rate:*' | xargs -r redis-cli del
+# or, if Redis is the container: docker exec compass-redis-1 redis-cli --scan --pattern 'rate:*' | xargs -r docker exec -i compass-redis-1 redis-cli del
 ```
 
 ## Looking at the database
 
 ```bash
 cd backend/api
-uv run python scripts/db.py                 # tables with row counts
-uv run python scripts/db.py rights_request  # describe one
-uv run python scripts/db.py "select reference, status from rights_request order by 1"
+python scripts/db.py                 # tables with row counts
+python scripts/db.py rights_request  # describe one
+python scripts/db.py "select reference, status from rights_request order by 1"
 ```
 
 Read-only by construction: every statement runs in a transaction that is
@@ -132,7 +143,7 @@ rolled back.
 
 ```bash
 cd backend/api
-uv run python scripts/reset_dev.py    # drops the public schema of the configured DB, migrates, seeds
+python scripts/reset_dev.py    # drops the public schema of the configured DB, migrates, seeds
 ```
 
 It asks for confirmation and refuses outside `local` and `test`. It has no
@@ -141,7 +152,7 @@ It asks for confirmation and refuses outside `local` and `test`. It has no
 ## Checks before you push
 
 ```bash
-cd backend/api && uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest
+cd backend/api && . .venv/bin/activate && ruff check . && ruff format --check . && mypy src && pytest
 cd frontend/console && npm run verify
 cd frontend/portal && npm run verify
 ```

@@ -3,75 +3,29 @@ name = "cmp-backend"
 version = "0.1.0"
 description = "Consent Management Platform — DPDP Act 2023 / DPDP Rules 2025 consent backend"
 requires-python = ">=3.12,<3.13"
-# Every constraint is a floor at the version the suite actually runs against,
-# and a cap at the next release that is allowed to break us.
+# The dependencies are not listed here. They are in requirements.txt, pinned
+# to exact versions, and setuptools reads that file at install time - so there
+# is one list, and `pip install -r requirements.txt` and `pip install -e .`
+# cannot disagree about what it says.
 #
-# The floors used to say things like `fastapi>=0.121` while the lock resolved
-# 0.141.1 - a claim to support twenty minor versions nobody had ever run. A
-# floor that has not been tested is not a floor, it is a guess.
-#
-# The caps matter at a different moment from the lock. `uv.lock` decides what
-# gets installed and `uv sync --frozen` in the Dockerfile means production
-# installs exactly that. These bounds decide what a *re-lock* may pull in - so
-# `uv lock --upgrade` cannot quietly cross a breaking boundary and hand the next
-# deploy a library the suite has never seen.
-#
-# Where the cap sits depends on what each project promises. A 0.x project can
-# break on a minor, so those are capped at the next minor; one past 1.0
-# following semver is capped at the next major.
-dependencies = [
-    "alembic>=1.19.1,<2",
-    "argon2-cffi>=25.1,<26",
-    "celery[redis]>=5.6.3,<6",
-    "cryptography>=50.0,<51",
-    "email-validator>=2.3,<3",
-    # 0.x: the minor is the breaking unit, and pinning it is FastAPI's own
-    # guidance. Moving to 0.142 is a deliberate edit followed by a test run.
-    "fastapi[standard]>=0.141.1,<0.142.0",
-    "gunicorn>=26.1,<27",
-    "httpx>=0.28.1,<0.29.0",
-    "orjson>=3.12,<4",
-    "prometheus-fastapi-instrumentator>=8.1,<9",
-    "psycopg[binary,pool]>=3.3.4,<4",
-    "pydantic>=2.13.4,<3",
-    "pydantic-settings>=2.15,<3",
-    "pyjwt[crypto]>=2.13,<3",
-    "python-docx>=1.2,<2",
-    "python-multipart>=0.0.32,<0.1.0",
-    "redis>=6.4,<7",
-    "slowapi>=0.1.10,<0.2.0",
-    # Alembic requires it. No application code imports SQLAlchemy - every query
-    # is written by hand against psycopg.
-    "sqlalchemy>=2.0,<3",
-    "structlog>=26.1,<27",
-    "uvicorn[standard]>=0.52.4,<0.53.0",
-]
-
-[dependency-groups]
-dev = [
-    "anyio>=4.11",
-    "faker>=38.0",
-    # The task monitor. A development and operations tool, never imported by
-    # the application, so it sits here rather than in `dependencies` and stays
-    # out of the runtime image - where it would be a web server nobody asked
-    # for. Deployments run it from its own container; see docker-compose.yml.
-    "flower>=2.0.1,<3",
-    "mypy>=1.19",
-    "pip-audit>=2.9",
-    "pre-commit>=4.4",
-    "pytest>=8.4",
-    "pytest-asyncio>=1.3",
-    "pytest-cov>=7.0",
-    "ruff>=0.15",
-]
+# Pinned rather than ranged, deliberately. A range like `fastapi>=0.121` is a
+# claim to support twenty minor versions nobody has run the suite against. A
+# pin is the version the suite runs against, and changing it is an edit
+# followed by a test run, which is what changing a dependency should be.
+dynamic = ["dependencies"]
 
 [build-system]
-requires = ["uv_build>=0.12.5,<0.13.0"]
-build-backend = "uv_build"
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
 
-[tool.uv.build-backend]
-module-name = "cmp"
-module-root = "src"
+# The src layout: `import cmp` resolves to src/cmp. `pip install -e .` puts a
+# link to it in the environment, which is what lets the tests, alembic and
+# `python -m cmp` find the package without anybody setting PYTHONPATH.
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
 
 # ---------------------------------------------------------------- ruff
 [tool.ruff]

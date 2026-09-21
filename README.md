@@ -58,39 +58,44 @@ Five decisions carry most of the weight, each recorded under
 
 The full walkthrough, with what to do when a sign-in looks broken, is
 [docs/operations/local-development.md](docs/operations/local-development.md).
-The short form, with Docker Desktop for the datastores and Node 22:
+The short form, with Python 3.12, Node 22, and PostgreSQL 16 + Redis 7 - which
+the one Docker file in the repository provides if you have them no other way:
 
 ```bash
-# datastores
-cd backend/api && docker compose -f docker/docker-compose.yml -p cmp up -d db redis
+# datastores - skip if you have PostgreSQL and Redis already; point .env at them
+cd backend/api && docker compose -f dev-services.yml up -d
 
 # API, migrations, seed
-cp .env.example .env                      # POSTGRES_DB=cmp_dev, PUBLIC_BASE_URL=http://localhost:3001, CONSOLE_BASE_URL=http://localhost:3000
-uv sync --all-extras --dev
-uv run alembic upgrade head
-uv run python scripts/seed.py             # refuses outside local/test
-uv run python -m cmp --port 8000
+python3.12 -m venv .venv && . .venv/bin/activate
+pip install -r requirements-dev.txt
+cp .env.example .env                      # PUBLIC_BASE_URL=http://localhost:3001, CONSOLE_BASE_URL=http://localhost:3000
+alembic upgrade head
+python scripts/seed.py                    # refuses outside local/test
+python -m cmp --port 8000
 
-# workers, two terminals
-uv run celery -A cmp.tasks.app worker -Q high_priority,email,documents,reports,notifications,default -l info --pool=solo
-uv run celery -A cmp.tasks.app beat -l info
+# workers, two terminals (activate the venv in each)
+celery -A cmp.tasks.app worker -Q high_priority,email,documents,reports,notifications,default -l info --pool=solo
+celery -A cmp.tasks.app beat -l info
 
 # what the workers are doing, optional
-uv run celery -A cmp.tasks.app:celery_app flower --address=127.0.0.1 --port=5555 --basic-auth=you:a-password
+celery -A cmp.tasks.app:celery_app flower --address=127.0.0.1 --port=5555 --basic-auth=you:a-password
+
+# the key service, its own venv
+cd ../dkms && python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cp .env.example .env && .venv/bin/python -m app.main                                  # http://127.0.0.1:8100
 
 # the two portals
-cd ../frontend/console && cp .env.example .env.local && npm install && npm run dev    # http://localhost:3000
-cd ../frontend/portal   && cp .env.example .env.local && npm install && npm run dev    # http://localhost:3001
+cd ../../frontend/console && cp .env.example .env.local && npm install && npm run dev  # http://localhost:3000
+cd ../portal            && cp .env.example .env.local && npm install && npm run dev  # http://localhost:3001
 ```
 
 Leave `NEXT_PUBLIC_API_URL` unset in both portals: each proxies `/api` so
 the session cookie stays first-party. The API reference is at
 `http://127.0.0.1:8000/docs`.
 
-The whole backend can also run as containers from
-`backend/api/docker/docker-compose.yml` (`db`, `redis`, `migrate`, `api`,
-`worker`, `beat`, and `nginx` under the `proxy` profile); see
-[docs/operations/deployment.md](docs/operations/deployment.md).
+Everything runs as a process on your machine. There are no images to build and
+no proxy to configure; how the platform was once meant to be containerised is
+kept in [docs/history/](docs/history/README.md) for the record.
 
 ## Seeded accounts
 
@@ -112,7 +117,7 @@ every staff sign-in then asks for a code, which a local deployment writes to
 ## Tests
 
 ```bash
-cd backend/api && uv run pytest                       # unit, integration, security; needs PostgreSQL and Redis
+cd backend/api && . .venv/bin/activate && pytest     # unit, integration, security; needs PostgreSQL and Redis
 cd frontend/console && npm run verify                  # typecheck, lint, vitest
 cd frontend/portal && npm run verify
 cd frontend/console && npx playwright test --workers=1 # browser, against the running stack
@@ -125,7 +130,7 @@ are in [docs/operations/testing.md](docs/operations/testing.md).
 ## Repository layout
 
 ```
-backend/api/       the API, migrations, Celery tasks, operator scripts, docker/, its own docs/
+backend/api/       the API, migrations, Celery tasks, operator scripts, dev-services.yml
 frontend/console/   the staff console
 frontend/portal/     the data principal's portal
 docs/              architecture, domain workflows, operations, decisions, glossary, history

@@ -12,8 +12,9 @@ and changes nothing.
 So on Windows this module drives uvicorn's `Server.serve()` inside a loop it
 creates itself, and the factory is ours. Elsewhere it is a plain `uvicorn.run`.
 
-Production does not use this: it runs gunicorn with uvicorn workers (see the
-Dockerfile), where `--reload` is absent and the worker count is explicit.
+A deployment would not use this: it would run gunicorn with uvicorn workers,
+where `--reload` is absent and the worker count is explicit. `cmp.main:app` is
+the stable target for that.
 """
 
 from __future__ import annotations
@@ -64,9 +65,7 @@ def main() -> None:
         # it a factory. Say so rather than starting something that will fail at
         # the first query.
         sys.exit(
-            "--reload cannot be combined with the Windows selector loop.\n"
-            "Run without --reload, or develop against the container:\n"
-            "    docker compose up api"
+            "--reload cannot be combined with the Windows selector loop.\nRun without --reload."
         )
 
     asyncio.run(
