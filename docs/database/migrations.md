@@ -71,6 +71,26 @@ The CI workflow runs `upgrade → downgrade → upgrade` on every push. The roll
 proven to work **before** it is needed, which is the only time anyone finds out
 otherwise.
 
+**Never rehearse that against a database you care about.** `downgrade base`
+drops every column and table the chain added, in reverse, and it does exactly
+what it says on the development database too. To run the check by hand, give
+it a database of its own:
+
+```bash
+docker exec compass-db-1 createdb -U cmp cmp_ci      # or createdb, natively
+POSTGRES_DB=cmp_ci alembic upgrade head
+POSTGRES_DB=cmp_ci alembic downgrade base
+POSTGRES_DB=cmp_ci alembic upgrade head
+docker exec compass-db-1 dropdb -U cmp cmp_ci
+```
+
+And stop the API and the worker first if they share the server: a DDL waiting
+on a lock their pooled connections hold runs into `DB_STATEMENT_TIMEOUT_MS` and
+fails part-way, which leaves the schema at whichever revision it reached.
+This paragraph exists because that happened, on 21 September 2026, to the
+development database: the downgrade reached 0018 before the upgrade stalled,
+and the columns and two tables added by 0019–0026 came back empty.
+
 ## The env is synchronous
 
 `migrations/env.py` uses a sync engine. psycopg's async mode cannot run under
