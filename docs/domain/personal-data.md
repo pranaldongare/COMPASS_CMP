@@ -615,6 +615,35 @@ rediscover them.
 | The audit trail is append-only and hash-chained; a trigger refuses an `UPDATE` | [domain/audit-trail.md](audit-trail.md) |
 | Consent is recorded only against a serving the **server** witnessed | [ADR 0011](../decisions/0011-server-held-notice-serving.md) |
 
+## Encrypting it: the DKMS layer
+
+A separate service, [`cmp_dkms`](../../cmp_dkms/README.md), holds the key and
+does the encrypting. Separate because this API holds the database: one
+compromise should not be both, and the key should rotate on its own schedule.
+
+| Layer | What it does |
+|---|---|
+| `cmp_dkms` | `POST /encrypt/bulk` and `/decrypt/bulk` over a batch of records and a mapping of field names to data types. AES-256-GCM, a key derived per data type, the type bound into the ciphertext as AAD |
+| `cmp.infrastructure.dkms` | The platform API's client. One call per batch, never per field. **Fails closed**: if the service cannot be reached, the write fails rather than storing plaintext |
+| `/dkms/decrypt` in each portal | Decryption in the portal's **server**, so the browser never holds a key. The page sends back ciphertext the API already served it — which means it already passed the permission matrix — and gets plaintext |
+| `useDecrypted()` | One call for a whole list. A table of two hundred rows costs one round trip, not two hundred |
+
+**Which fields.** `cmp/infrastructure/dkms/fields.py` is this document made
+executable: `ENCRYPTED_FIELDS` per table, and `LOOKUP_FIELDS` for the personal
+columns that **cannot** be encrypted yet, each with its reason. A unit test
+holds the two lists apart and checks the vocabulary against the service's own.
+
+**Why the second list exists.** DKMS ciphertext is randomised — the same
+address encrypts differently every time, which is the property that makes it
+safe at rest. It also means an encrypted column cannot be looked up, joined,
+sorted or uniquely indexed. `auth_user.email` is what you sign in with and is
+unique across the register; `mobile` is where a code is sent; `submitted_contact`
+is how a public request is verified and matched. Encrypting those without a
+deterministic blind index beside them would not be a stricter system, it would
+be a broken sign-in. The blind index is the next piece of work, and until it
+lands those columns stay in plaintext **by decision, written down**, rather than
+by oversight.
+
 ## Answering a data principal
 
 Which endpoint satisfies which section, when she asks.

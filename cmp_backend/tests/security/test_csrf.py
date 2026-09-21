@@ -142,6 +142,9 @@ class TestProductionStartupGuards:
             "email_transport": "smtp",
             "sms_transport": "http",
             "sms_http_url": "https://sms-gateway.example.org/send",
+            # And since the key service arrived, one that writes personal data
+            # through it rather than in the clear.
+            "dkms_enabled": True,
         }
 
     def test_a_complete_production_configuration_is_accepted(self) -> None:

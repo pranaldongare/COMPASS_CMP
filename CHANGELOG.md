@@ -118,6 +118,35 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Added
+- **A key service, and the two layers that use it.** `cmp_dkms` is a separate
+  FastAPI deployable holding one secret and doing one thing with it:
+  `POST /encrypt/bulk` and `POST /decrypt/bulk` take an array of records and a
+  mapping of field names to DKMS data types, encrypt only the fields named, and
+  pass everything else through. `method` picks the form — `string` for the
+  `SE::` prefix, `bytes` for base64 — and both carry the same envelope.
+  AES-256-GCM, a key derived per data type by HKDF, and the type bound into the
+  ciphertext as additional authenticated data, so a value written as `MOBILE`
+  refuses to open as `NAME` rather than returning plausible rubbish. The thread
+  pool is real parallelism, because OpenSSL releases the GIL: 15,000 values in
+  74 ms across 14 workers, measured. Separate from the platform API on purpose —
+  that process holds the database, this one holds the key that makes it
+  readable. Installed with `python -m venv` and `pip install -r
+  requirements.txt`; 35 tests, including the caller's own example asserted
+  verbatim and key rotation walked end to end.
+- **`cmp.infrastructure.dkms`**, the platform API's client. Batches a write's
+  personal fields into one call rather than one per field, and **fails closed**:
+  if the key service cannot be reached the write fails rather than quietly
+  storing plaintext. `fields.py` is the field map — which column holds which
+  kind of personal data — with a second list naming every personal column that
+  *cannot* be encrypted yet and why, so a plaintext column is a decision on the
+  record rather than an oversight. Production now refuses to start with
+  `DKMS_ENABLED=false`.
+- **Decryption in each portal's server layer**, at `/dkms/decrypt`, with a
+  `useDecrypted()` hook that decrypts a whole list in one call. The browser
+  never holds a key and never learns where the service is: it sends back
+  ciphertext the API already served it, which means the permission matrix and
+  the scope have already run, and gets plaintext. A page that cannot decrypt
+  says so rather than rendering a blank where a name should be.
 - **An inventory of the personal data this platform holds.**
   [docs/domain/personal-data.md](docs/domain/personal-data.md) lists every table
   and column that carries something about a person, the four stores that are

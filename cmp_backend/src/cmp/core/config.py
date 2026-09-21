@@ -106,6 +106,21 @@ class Settings(BaseSettings):
     cors_origins: Annotated[tuple[str, ...], NoDecode] = ("http://localhost:3000",)
     trusted_hosts: Annotated[tuple[str, ...], NoDecode] = ("*",)
 
+    # ---------------------------------------------------------------- DKMS
+    #
+    # The key service. A separate process holding the key that makes this
+    # database readable, so that a compromise of the API is not both.
+    dkms_url: str = "http://127.0.0.1:8100"
+    dkms_timeout_s: float = 5.0
+    #: Records per call. The service refuses past DKMS_MAX_RECORDS; staying
+    #: well under it keeps one slow batch from holding a connection open.
+    dkms_batch_size: int = 500
+    #: Switchable for a development database of plaintext rows, and for the
+    #: tests that are about something else. Refused in production below: a
+    #: deployment that silently stores plaintext is the exact failure the
+    #: service exists to prevent.
+    dkms_enabled: bool = False
+
     # ---------------------------------------------------------------- uploads
     max_upload_bytes: int = 25 * 1024 * 1024  # 25 MB — approval proof, import manifest
     upload_root: str = "./var/uploads"
@@ -232,6 +247,12 @@ class Settings(BaseSettings):
                 raise ValueError("EMAIL_TRANSPORT must be smtp in production")
             if self.sms_transport != "http":
                 raise ValueError("SMS_TRANSPORT must be http in production")
+            # The switch exists for a development database of plaintext rows.
+            # Off in production means personal data written in the clear, with
+            # nothing in the system ever reporting it - which is the failure
+            # the key service exists to prevent.
+            if not self.dkms_enabled:
+                raise ValueError("DKMS_ENABLED must be true in production")
         if self.sms_transport == "http" and not self.sms_http_url.startswith("https://"):
             raise ValueError("SMS_HTTP_URL must be an https:// gateway when SMS_TRANSPORT=http")
         return self

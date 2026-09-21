@@ -24,6 +24,7 @@ PRODUCTION: dict[str, Any] = {
     "email_transport": "smtp",
     "sms_transport": "http",
     "sms_http_url": "https://sms-gateway.example.org/send",
+    "dkms_enabled": True,
 }
 
 
@@ -52,6 +53,18 @@ class TestTransportsInProduction:
     def test_the_http_gateway_must_be_https(self) -> None:
         with pytest.raises(ValueError, match="https"):
             _settings(sms_http_url="http://sms-gateway.example.org/send")
+
+    def test_production_will_not_boot_writing_personal_data_in_the_clear(self) -> None:
+        """The same shape of failure as the transports above, and worse.
+
+        `DKMS_ENABLED=false` is correct on a development database full of
+        plaintext rows. In production it means every personal field is written
+        in the clear, with nothing in the system ever reporting it - the API
+        answers 200, the row is saved, and the only way to find out is to look
+        in the table.
+        """
+        with pytest.raises(ValueError, match="DKMS_ENABLED"):
+            _settings(dkms_enabled=False)
 
 
 class TestOutsideProduction:

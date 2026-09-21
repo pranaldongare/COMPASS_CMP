@@ -95,6 +95,12 @@ is why `NEXT_PUBLIC_API_URL` stays unset in local development.
    the notice freeze, the audit hash chain, and a revoked `UPDATE` grant on
    evidence tables.
 
+A third process, [`cmp_dkms`](../../cmp_dkms/README.md), holds the key that
+personal fields are encrypted under. It is separate from this one because this
+one holds the database, and a single compromise should not be both. The API
+encrypts through it on the way in; each portal decrypts through its own server
+side, so no browser ever holds a key.
+
 Side effects that a person is not waiting for - a code, an acknowledgement, a
 ticket, a report - are queued to Celery and delivered by the worker. Codes go
 on `high_priority`, so a sign-in never waits behind an export.

@@ -37,8 +37,22 @@ import { isPublicPath } from "@/lib/security/public-routes";
  * disagree about whether a person registering has to be signed in first.
  */
 
-/** Static assets and internals — never redirect, never CSP-nonce. */
-const SKIP_PREFIXES = ["/_next", "/api", "/favicon", "/icon", "/apple-icon", "/robots", "/sitemap"] as const;
+/** Static assets and internals — never redirect, never CSP-nonce.
+ *
+ *  `/dkms` is here for a different reason from the rest: it is a JSON route
+ *  handler, and redirecting a JSON POST to an HTML sign-in page answers the
+ *  wrong question in the wrong format. It refuses an unauthenticated call
+ *  itself, with a 401 and a sentence. */
+const SKIP_PREFIXES = [
+  "/_next",
+  "/api",
+  "/dkms",
+  "/favicon",
+  "/icon",
+  "/apple-icon",
+  "/robots",
+  "/sitemap",
+] as const;
 
 const SESSION_COOKIE = process.env.NEXT_PUBLIC_SESSION_COOKIE ?? "cmp_session";
 

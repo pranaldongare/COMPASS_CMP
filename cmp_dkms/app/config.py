@@ -39,7 +39,7 @@ class Settings(BaseSettings):
 
     host: str = "127.0.0.1"
     port: int = 8100
-    cors_origins: str = "http://localhost:3000,http://localhost:3001"
+    cors_origins: str = ""   # no browser calls this directly; see .env.example
 
     @field_validator("master_key")
     @classmethod
