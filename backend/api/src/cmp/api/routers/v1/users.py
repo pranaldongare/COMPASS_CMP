@@ -370,7 +370,7 @@ async def change_role(user_uuid: UUID, body: RoleChange, principal: RequireAdmin
             entity_type="auth_user",
             entity_id=user["id"],
             subject_user_id=user["id"],
-            detail={"from": user["role"], "to": body.role, "reason": body.reason},
+            detail={"from": user["role"], "to": body.role, "reason_given": bool(body.reason)},
         )
     # A role change must not leave a session carrying the old role's permissions.
     revoked = await sessions.revoke_all(user["id"])

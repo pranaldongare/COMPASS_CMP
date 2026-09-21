@@ -111,7 +111,7 @@ def apply_retention_lapse() -> dict[str, Any]:
                         detail={
                             "quarantined": quarantined,
                             "erase_due": erase_due,
-                            "reason": "consent_validity_elapsed",
+                            "cause": "consent_validity_elapsed",
                         },
                     )
 

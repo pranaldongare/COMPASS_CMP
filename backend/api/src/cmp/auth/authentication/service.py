@@ -80,7 +80,7 @@ async def authenticate(
                 entity_id=user["id"],
                 subject_user_id=user["id"],
                 actor_user_id=user["id"],
-                detail={"reason": "bad_password", "failures": fails},
+                detail={"cause": "bad_password", "failures": fails},
             )
         if fails >= settings.login_max_attempts and user:
             await audit.record(
@@ -104,7 +104,7 @@ async def authenticate(
             entity_id=user["id"],
             subject_user_id=user["id"],
             actor_user_id=user["id"],
-            detail={"reason": f"status_{user['status']}"},
+            detail={"cause": f"status_{user['status']}"},
         )
         raise Unauthenticated(_GENERIC_FAILURE)
 
@@ -547,7 +547,7 @@ async def end_staff_access(conn: Conn, *, user: dict[str, Any], actor_user_id: i
         detail={
             "from": user["role"],
             "to": Role.DATA_SUBJECT.value,
-            "reason": "staff access ended",
+            "cause": "staff access ended",
         },
     )
     await audit.record(

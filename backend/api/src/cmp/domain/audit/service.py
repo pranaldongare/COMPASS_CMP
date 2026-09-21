@@ -324,7 +324,8 @@ async def record_denial(
         detail={
             "resource": resource,
             "target_id": entity_id,
-            "reason": reason,
+            # A denial's cause is the system's sentence, never a person's words.
+            "cause": reason,
             "role": ctx.actor_role,
         },
     )

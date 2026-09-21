@@ -120,7 +120,7 @@ async def grant(
             "delegate": delegate_uuid,
             "role": delegator["role"],
             "ends_at": ends_at.isoformat() if ends_at else None,
-            "reason": reason,
+            "reason_given": bool(reason),
         },
     )
 

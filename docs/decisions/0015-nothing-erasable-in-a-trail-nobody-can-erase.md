@@ -34,10 +34,15 @@ Nothing that a person could ask to have erased is written into the trail.
   on every row already. The invited email and the responder contacts are gone
   from the detail; the reassignment event records the respondent and account
   ids it moved between.
-- **The office's reasons for its decisions stay.** A refusal reason, a role
-  change's justification, a transition's reason are the accountability record
-  — they are the office's words about its own act, and the trail is where they
-  belong. They are not the principal's own data. The line is *whose words*.
+- **The office's reasons live in their rows, sealed; the trail records that
+  one was given.** A refusal reason, a role change's justification, a
+  transition's reason, a delegation's are the accountability record and are
+  kept — in `rights_request.refusal_reason`, `project_status_history.reason`,
+  `delegation.reason` and the rest, every one of them a sealed column with an
+  audited write. Copying the words into the trail as well made a plaintext
+  twin of a sealed column that no erasure could reach, and the dashboard's
+  recent-activity feed was showing it. The trail now carries `reason_given:
+  true`; the reader who needs the words follows the entity to its row.
 
 ## Consequences
 

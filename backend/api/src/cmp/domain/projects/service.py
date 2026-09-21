@@ -265,7 +265,7 @@ async def decide_processor(
         entity_id=project["project_id"],
         detail={
             "processor": processor["legal_name"],
-            "reason": reason,
+            "reason_given": bool(reason),
             "in_house": bool(processor["is_in_house"]),
         },
     )
@@ -409,7 +409,7 @@ async def transition(
         detail={
             "from": current,
             "to": permitted.to.value,
-            "reason": reason,
+            "reason_given": bool(reason),
             "published_notice": str(published_notice["notice_uuid"]) if published_notice else None,
         },
     )
@@ -623,7 +623,7 @@ async def close(
         entity_id=(await repo.require(conn, project_uuid, role=role, user_id=actor_id, write=True))[
             "project_id"
         ],
-        detail={"links_revoked": revoked, "reason": reason},
+        detail={"links_revoked": revoked, "reason_given": bool(reason)},
     )
     return {**result, "links_revoked": revoked}
 

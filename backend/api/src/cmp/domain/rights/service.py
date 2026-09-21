@@ -650,7 +650,7 @@ async def _close_account_on_death(conn: Conn, row: Row, *, actor_id: int) -> Non
         subject_user_id=int(principal_id),
         actor_user_id=actor_id,
         detail={
-            "reason": "death evidenced on a nominee's request",
+            "cause": "death evidenced on a nominee's request",
             "reference": row["reference"],
             "sessions_revoked": revoked,
         },
@@ -741,7 +741,7 @@ async def transition(
         row,
         Event.RIGHTS_STATUS_CHANGED,
         actor_user_id=actor_id,
-        detail={"from": before, "to": match.to.value, "reason": reason},
+        detail={"from": before, "to": match.to.value, "reason_given": bool(reason)},
     )
     return row
 
@@ -1057,7 +1057,7 @@ async def _settle(conn: Conn, row: Row, *, actor_id: int | None) -> None:
         detail={
             "from": Status.AWAITING_HOLDERS.value,
             "to": Status.COLLATING.value,
-            "reason": "Every ticket has been returned or withdrawn",
+            "cause": "Every ticket has been returned or withdrawn",
             "automatic": True,
         },
     )
@@ -1640,7 +1640,7 @@ async def withdraw_ticket(
         actor_user_id=actor_id,
         entity_type="rights_request_holder",
         entity_id=int(holder["holder_id"]),
-        detail={"label": holder["label"], "reason": why},
+        detail={"label": holder["label"], "reason_given": bool(why)},
     )
     await _tell_holder(
         conn,
@@ -1728,7 +1728,7 @@ async def send_back_ticket(
         actor_user_id=actor_id,
         entity_type="rights_request_holder",
         entity_id=int(holder["holder_id"]),
-        detail={"label": holder["label"], "reason": why, "due_at": when.isoformat()},
+        detail={"label": holder["label"], "reason_given": bool(why), "due_at": when.isoformat()},
     )
     await _tell_holder(
         conn,
@@ -1753,7 +1753,7 @@ async def send_back_ticket(
             detail={
                 "from": Status.COLLATING.value,
                 "to": Status.AWAITING_HOLDERS.value,
-                "reason": f"The ticket for {holder['label']} was sent back",
+                "cause": f"The ticket for {holder['label']} was sent back",
                 "automatic": True,
             },
         )
