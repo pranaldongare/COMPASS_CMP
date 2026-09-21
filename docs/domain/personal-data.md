@@ -668,6 +668,36 @@ be a broken sign-in. The blind index is the next piece of work, and until it
 lands those columns stay in plaintext **by decision, written down**, rather than
 by oversight.
 
+## What a scan of the values finds that the column names do not
+
+Run on 21 September 2026 over every text, varchar and jsonb column in the
+development database, by pattern - email, phone, IPv4/6, MAC, IMEI and card
+numbers with a Luhn check, Aadhaar, PAN, PIN code, birthday-shaped dates - and
+then checked by hand, because pattern scans lie: every Luhn-valid "card number"
+was a hex request id or the digits of a hash, every "Aadhaar" in `mobile` was
+`+91` and ten digits, and every "PIN code" in `project_name` was a test
+fixture's suffix.
+
+**Not present anywhere, by column or by value:** postal address, IMEI, MAC
+address, card or bank account number, serial number, Aadhaar, PAN. The platform
+holds none of these, and the inventory above is complete for what it does hold.
+
+**Present where the schema does not label it:**
+
+| Where | What | Why it matters |
+|---|---|---|
+| `audit_log.detail_json` → `ip` | the client address, in 2,261 of 2,264 rows | The trail is hash-chained and append-only by trigger. Nothing in it can ever be erased, so this is the one store where an erasure request cannot be honoured for the address. Decision needed: pseudonymise or drop the IP at write |
+| `audit_log.detail_json` → `email` | the invited address, on `user.invited` and `user.created` | Same store, same problem; the `user_id` on the row already identifies the person, so the address adds nothing the trail needs |
+| `rights_request_holder.brief` (jsonb) | the subject's email and phone, copied in when the ticket opens | A copy of sealed columns, in the clear, in a derived structure |
+| `rights_request_holder.contact_log` (jsonb) | the responder's email, per contact attempt | As above |
+| `rights_ticket_message.body`, rows before sealing | contacts people typed into replies | New messages are sealed; these are not, until a re-seal pass runs |
+
+**Rows written before sealing are plaintext.** `seal()` runs on write, so a
+column is ciphertext only from the day it was switched on: `auth_user.full_name`
+was sealed in 1 of 66 rows on the day of the scan. A one-off re-seal over the
+existing rows of the 25 sealed columns is the outstanding step, and until it
+runs the read path tolerates both forms.
+
 ## Answering a data principal
 
 Which endpoint satisfies which section, when she asks.
