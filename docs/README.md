@@ -14,7 +14,8 @@ you need. Documents live in three places, deliberately:
 **New to the codebase**
 
 1. [Architecture - system overview](architecture/system-overview.md): the three deployables, the two datastores, and how a request travels
-2. [Repository layout](architecture/repository-layout.md): where things live and what each directory owns
+2. [Repository layout](architecture/repository-layout.md): where things live and what each directory owns —
+   and [a proposal for restructuring it](architecture/proposed-repository-structure.md), written to be argued with and not yet acted on
 3. [Glossary](glossary.md): the vocabulary of the DPDP Act and of this platform
 4. [Local development](operations/local-development.md): a working system on your machine in one sitting
 
