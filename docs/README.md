@@ -23,6 +23,7 @@ you need. Documents live in three places, deliberately:
 - [Domain model](architecture/domain-model.md): the tables, the state machines, and the invariants the database holds
 - [Roles and access](domain/roles-and-access.md): the seven roles and what each may reach
 - Behaviour, by obligation: [consent lifecycle](domain/consent-lifecycle.md), [collection and routing](domain/collection-and-routing.md), [rights requests](domain/rights-requests.md), [messages the platform sends](domain/messages.md), [reading the audit trail](domain/audit-trail.md)
+- [Personal data](domain/personal-data.md): every table, store and endpoint that holds or moves something about a person, and what protects it
 - [API](architecture/api.md): route families, the error contract, pagination, identifiers
 - [Testing](operations/testing.md): what each suite proves and how to run it without fighting the rate limiter
 - [Contributing](../CONTRIBUTING.md): the checks a change must pass and how commits are written
@@ -37,6 +38,7 @@ you need. Documents live in three places, deliberately:
 - [Decisions](decisions/README.md): the architecture decision records, one per choice that would otherwise be re-litigated
 - [Reviews](reviews/2026-09-10-implementation-review.md): what an external review found, what was done about each finding, and why the suites had not caught it
 - [DPDP Act gap assessment](reviews/2026-09-17-dpdp-act-gap-assessment.md): statutory requirement map, implemented capabilities, prioritised gaps and remediation sequence
+- [Personal data inventory](domain/personal-data.md): what the platform holds about people, where, and which of the 245 operations touch it
 - [Changelog](../CHANGELOG.md): what changed, by area and date
 
 ## Reference trees

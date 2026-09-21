@@ -117,6 +117,20 @@ as a release yet.
 - Every README and backend document brought up to the current counts, the
   22-migration chain, Node 22, the two portals and the rights module.
 
+### Added
+- **An inventory of the personal data this platform holds.**
+  [docs/domain/personal-data.md](docs/domain/personal-data.md) lists every table
+  and column that carries something about a person, the four stores that are
+  not the database — Redis, the file store, the logs, the messages that leave —
+  and all 159 of the 245 API operations that accept or return personal data,
+  each with the fields by name and the permission matrix's own answer for who
+  may call it. The 20 operations that answer without a session are pulled out
+  separately, with what stops each being an oracle. It is a join over
+  `openapi.json`, `endpoint_permissions.json` and `schema_inventory.json`, so
+  `docs/scripts/personal_data_scan.py` regenerates the endpoint tables; the
+  script exits non-zero on a field name it has not been taught to classify,
+  which is the one thing a document like this cannot notice on its own.
+
 ### Fixed
 - **A project showed no notice, however many it had.** `NoticeOut` gained the
   project a notice belongs to, so its page could lead back there, and both
