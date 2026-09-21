@@ -1,0 +1,166 @@
+/**
+ * Reaching the notice upload as the person who has to use it.
+ *
+ * This exists because the control was built, wired and tested at every layer
+ * below the screen — the endpoints worked, the parser worked, the dialog
+ * worked — and an R&D User still could not find it. The page header carried the
+ * button among several others, while the card that said "No notice yet" offered
+ * nothing to click. Every unit test passed the whole time.
+ *
+ * So the assertion here is deliberately about *reachability from the empty
+ * state*, not about whether the button exists somewhere on the page. A control
+ * that exists but that nobody looking for it will find is not a control.
+ */
+import { expect, test, type Page } from "@playwright/test";
+
+import path from "node:path";
+
+import { expectNoSidewaysScroll } from "./support/layout";
+import { statePath } from "./support/session";
+
+/**
+ * A document that is known to parse, kept with the backend's own tests.
+ *
+ * Shared rather than copied: two fixtures drift, and the day they disagree the
+ * browser suite passes on a document the parser would reject.
+ */
+const FILLED_TEMPLATE = path.join(
+  __dirname,
+  "..",
+  "..",
+  "..",
+  "backend",
+  "api",
+  "tests",
+  "fixtures",
+  "notice_filled.docx",
+);
+
+test.describe.configure({ mode: "serial" });
+
+/**
+ * A draft project to open the upload from.
+ *
+ * The seed's own project has moved on to approval, and the drafts this suite
+ * otherwise contains are made by another spec that may not have run yet - the
+ * projects run in parallel. Without one the list is empty and the test fails
+ * for a reason that has nothing to do with the upload, so it makes its own
+ * through the API, as the same user, with the same cookie and CSRF token the
+ * browser would send.
+ */
+async function ensureDraftProject(page: Page) {
+  await page.goto("/projects?status=in_draft");
+  const links = page.locator('a[href^="/projects/"]');
+  await links
+    .first()
+    .waitFor({ state: "attached", timeout: 5_000 })
+    .catch(() => {});
+  if ((await links.count()) > 0) return;
+
+  const csrf =
+    (await page.context().cookies()).find((c) => c.name === "cmp_csrf")?.value ?? "";
+  const processors = await page.request.get("/api/processors");
+  expect(processors.ok(), "the R&D user can list processors").toBeTruthy();
+  const { items } = (await processors.json()) as { items: { processor_uuid: string }[] };
+  const created = await page.request.post("/api/projects", {
+    headers: { "X-CSRF-Token": csrf },
+    data: {
+      project_name: `E2E draft ${Date.now()}`,
+      description: "Created by the notice-upload journey so it has a draft to open.",
+      processor_uuids: items.slice(0, 1).map((p) => p.processor_uuid),
+    },
+  });
+  expect(created.ok(), await created.text()).toBeTruthy();
+  await page.goto("/projects?status=in_draft");
+}
+
+test.describe("R&D User", () => {
+  test.use({ storageState: statePath("rnd") });
+
+  test("can reach the notice upload from a draft project's notices card", async ({
+    page,
+  }) => {
+    await ensureDraftProject(page);
+
+    // Selected by where the link goes, not by its text. Matching on a name like
+    // /Project/ also matches the sidebar entry and the breadcrumb, and clicking
+    // one of those lands on the list again — which then fails further down for
+    // a reason that has nothing to do with what is under test.
+    const firstProject = page.locator('a[href^="/projects/"]').first();
+    await expect(firstProject).toBeVisible({ timeout: 15_000 });
+    await firstProject.click();
+
+    await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}/, { timeout: 15_000 });
+
+    const noticesCard = page.locator("section, div").filter({
+      has: page.getByRole("heading", { name: /^notices$/i }),
+    });
+    await expect(page.getByRole("heading", { name: /^notices$/i })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expectNoSidewaysScroll(page);
+
+    // From the card, not the page header. The header carries one too, and this
+    // test is about the other one — the control on the card that says there is
+    // no notice yet, which is where somebody looking for it actually looks.
+    const fromCard = noticesCard
+      .getByRole("button", { name: /upload a notice document/i })
+      .last();
+    await expect(fromCard).toBeVisible({ timeout: 15_000 });
+    await fromCard.click();
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText(/need the template/i)).toBeVisible();
+
+    // The check cannot run before a file is chosen, and the import cannot run
+    // before the check — the ordering is the point of the two-step flow.
+    await expect(
+      dialog.getByRole("button", { name: /check the document/i }),
+    ).toBeDisabled();
+    await expect(dialog.getByRole("button", { name: /create the notice/i })).toBeDisabled();
+  });
+
+  /**
+   * A real .docx, chosen in a real file picker, reaching the parser.
+   *
+   * Everything above this stops at the dialog opening, and everything in the
+   * backend suite stops at the service — so the multipart hop between them was
+   * the one part of the journey nothing covered. That hop is where an upload
+   * quietly breaks: a client that sets its own Content-Type loses the boundary,
+   * and the file arrives as something the parser reads as "not a .docx".
+   *
+   * Only the check step runs. It is a dry run that writes nothing, so this can
+   * run as often as it likes without leaving notices behind.
+   */
+  test("a filled-in .docx passes the check", async ({ page }) => {
+    await ensureDraftProject(page);
+    await page.locator('a[href^="/projects/"]').first().click();
+    await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}/, { timeout: 15_000 });
+
+    await page
+      .getByRole("button", { name: /upload a notice document/i })
+      .last()
+      .click();
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+
+    await dialog.locator('input[type="file"]').setInputFiles(FILLED_TEMPLATE);
+
+    const check = dialog.getByRole("button", { name: /check the document/i });
+    await expect(check).toBeEnabled();
+    await check.click();
+
+    // The import button unlocks only once the server has answered with a report,
+    // so it enabling is the whole round trip: file chosen, posted, parsed,
+    // understood. Asserted instead of the report's text, which is the parser's
+    // output rather than the upload's.
+    await expect(
+      dialog.getByRole("button", { name: /create the notice|replace the draft/i }),
+    ).toBeEnabled({
+      timeout: 20_000,
+    });
+    await expect(dialog.getByText(/not a \.docx|could not be read/i)).toHaveCount(0);
+  });
+});

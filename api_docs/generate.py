@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-OPENAPI = ROOT / "cmp_backend" / "openapi.json"
+OPENAPI = ROOT / "backend" / "api" / "openapi.json"
 OUT = ROOT / "api_docs"
 METHODS = ("get", "post", "put", "patch", "delete")
 
@@ -247,7 +247,7 @@ def generate_modules(spec: dict[str, Any]) -> list[tuple[str, int]]:
         lines = [
             f"# {tag.title()} API",
             "",
-            f"Generated from `cmp_backend/openapi.json`. **{len(operations)} operations.**",
+            f"Generated from `backend/api/openapi.json`. **{len(operations)} operations.**",
             "",
         ]
         lines += [
@@ -285,7 +285,7 @@ def generate_modules(spec: dict[str, Any]) -> list[tuple[str, int]]:
 
 
 def generate_roles() -> None:
-    sys.path.insert(0, str(ROOT / "cmp_backend" / "src"))
+    sys.path.insert(0, str(ROOT / "backend" / "api" / "src"))
     from cmp.core.permissions import MATRIX, NAV_BY_ROLE, ROLE_TITLES, Role
 
     roles_dir = OUT / "roles"
@@ -382,9 +382,9 @@ def generate_readme(spec: dict[str, Any], modules: list[tuple[str, int]]) -> Non
         "",
         "## Source and regeneration",
         "",
-        "- API source: `cmp_backend/openapi.json`",
-        "- Role source: `cmp_backend/src/cmp/core/permissions.py`",
-        "- Regenerate: `cd cmp_backend && uv run python ../api_docs/generate.py`",
+        "- API source: `backend/api/openapi.json`",
+        "- Role source: `backend/api/src/cmp/core/permissions.py`",
+        "- Regenerate: `cd backend/api && uv run python ../../api_docs/generate.py`",
         "",
         "Do not hand-edit generated module or role files; update the API schema or permission matrix and regenerate.",
         "",

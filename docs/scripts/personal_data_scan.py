@@ -3,7 +3,7 @@
 
 Three artefacts the repository already keeps current are joined here:
 
-* `cmp_backend/openapi.json` - every operation and every field of every request
+* `backend/api/openapi.json` - every operation and every field of every request
   and response schema, resolved through `$ref` so a field nested several models
   deep is still found;
 * `api_access_control/endpoint_permissions.json` - the guard on each route and
@@ -151,7 +151,7 @@ def category(field: str) -> str | None:
 
 # ----------------------------------------------------------------- the join
 def load() -> tuple[dict, list, dict]:
-    spec = json.loads((ROOT / "cmp_backend/openapi.json").read_text())
+    spec = json.loads((ROOT / "backend/api/openapi.json").read_text())
     perms = json.loads((ROOT / "api_access_control/endpoint_permissions.json").read_text())
     schema = json.loads((ROOT / "database_schema/schema_inventory.json").read_text())
     return spec, perms["endpoints"], schema
