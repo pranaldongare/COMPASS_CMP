@@ -31,6 +31,21 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Changed
+- **The repository is three layers.** `backend/` holds everything the server
+  does — the platform API (was `cmp_backend`) and the key service (was
+  `cmp_dkms`). `frontend/` holds everything the browser does — the staff console
+  (was `cmp_internal_ui`) and the data-principal portal (was `cmp_public_ui`).
+  `docs/` holds every document: the API's seventeen internal documents that sat
+  under `cmp_backend/docs/`, and the three reference trees — `api_docs/`,
+  `database_schema/`, `api_access_control/` — that sat at the root looking like
+  projects, now `docs/reference/{api,database,access-control}/`. The generators
+  are in `docs/tools/`, joined by `check-links.py`, which asserts every relative
+  link in every document resolves (555 of them do). Nothing inside any service
+  changed: every project already resolved its own paths, so the whole move was
+  four `git mv`s and seven files that pointed between projects. All four suites
+  match their pre-move counts. `.github/workflows/ci.yml` still names the old
+  paths — that file cannot be pushed from the environment the work was done in;
+  the nine changes are in `docs/tools/ci-paths.md`.
 - **The interactive API docs load again.** `/docs` and `/redoc` are documents
   that fetch Swagger UI from a CDN and start it with an inline script, and the
   API's `default-src 'none'` blocked every part of that, so the page rendered
@@ -113,12 +128,12 @@ as a release yet.
   a number is registered.
 - The three low-level design documents moved from `LLD/` to `docs/history/`
   with banners stating what they describe and when.
-- `cmp_backend/openapi.json` regenerated from the running application.
+- `backend/api/openapi.json` regenerated from the running application.
 - Every README and backend document brought up to the current counts, the
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Added
-- **A key service, and the two layers that use it.** `cmp_dkms` is a separate
+- **A key service, and the two layers that use it.** `backend/dkms` is a separate
   FastAPI deployable holding one secret and doing one thing with it:
   `POST /encrypt/bulk` and `POST /decrypt/bulk` take an array of records and a
   mapping of field names to DKMS data types, encrypt only the fields named, and
@@ -350,7 +365,7 @@ as a release yet.
   (`--profile monitoring`) and in the dev dependency group, so it is never in
   the runtime image; bound to the loopback and refusing to start without
   `FLOWER_BASIC_AUTH`, because it can revoke and terminate tasks and has no
-  roles ([monitoring.md](cmp_backend/docs/operations/monitoring.md)).
+  roles ([monitoring.md](docs/operations/monitoring.md)).
 - **A provisioned staff account now invites its owner.** Creating one sends
   `staff_invitation` to the address on the account: their role in words, a
   link to the reset page with the address filled in, and a code that lasts
@@ -448,8 +463,8 @@ as a release yet.
 ## 2026-09-07
 
 ### Changed
-- **Two portals**: the data principal's portal (`cmp_public_ui`, port 3001)
-  split out of the staff console (`cmp_internal_ui`, port 3000). Nothing a
+- **Two portals**: the data principal's portal (`frontend/portal`, port 3001)
+  split out of the staff console (`frontend/console`, port 3000). Nothing a
   member of staff uses ships on the portal, and the reverse.
 - The whole lifecycle, backend to browser, made to pass on the new layout.
 

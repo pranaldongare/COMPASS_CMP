@@ -1,27 +1,47 @@
 # Repository layout
 
-One repository, three deployable projects, and the documents that describe
-them. The projects share a backend and a design system but are built, tested
-and deployed separately.
+Three layers at the root and nothing else: everything the server does, everything
+the browser does, and every document.
 
 ```
-COMPASS_CMP/
-  README.md                 what this is and how to run it
-  CONTRIBUTING.md           the checks a change must pass; how commits are written
-  CHANGELOG.md              what changed, by area and date
-  docs/                     cross-cutting documentation (this tree)
-  api_docs/                 generated: every endpoint by module, and each role's reach
-  database_schema/          generated: the schema drawn, every table and enum listed
-  api_access_control/       hand-reviewed: which role may call each endpoint, and on what
-  cmp_backend/              the API, the worker, the migrations
-  cmp_internal_ui/          the staff console, port 3000
-  cmp_public_ui/            the data-principal portal, port 3001
+compass/
+  backend/                  every server-side thing
+    api/                    the platform API, the worker, the migrations
+    dkms/                   the key service: bulk field encryption
+  frontend/                 every browser-side thing
+    console/                the staff console, port 3000
+    portal/                 the data-principal portal, port 3001
+  docs/                     every document in the repository
+    architecture/           the system, the API's internals, this file
+    security/  database/    the mechanisms, the schema
+    domain/                 behaviour by obligation
+    operations/             running it, locally and elsewhere
+    decisions/              ADRs, one per choice worth not re-litigating
+    reviews/  history/
+    reference/              generated and hand-reviewed references
+      api/  database/  access-control/
+    tools/                  what regenerates and checks the above
+  .github/                  CI
+  README.md  CONTRIBUTING.md  CHANGELOG.md
 ```
 
-## `cmp_backend/`
+Four rules keep it that way:
+
+1. **`frontend/` never imports from `backend/`, and the reverse.** They talk
+   over HTTP. The only thing that crosses is the generated `api-schema.d.ts`,
+   and it crosses by being generated rather than imported.
+2. **`console/` and `portal/` never import each other.** Two apps needing the
+   same code is the definition of a shared package.
+3. **Documentation lives in `docs/`.** The exception is one `README.md` per
+   service, holding one thing: how to run that service.
+4. **Generated artefacts are regenerated, never edited.** `docs/tools/` holds
+   the generators; `docs/tools/check-links.py` asserts every relative link in
+   every document still resolves.
+
+## `backend/api/`
 
 ```
-cmp_backend/
+backend/api/
   src/cmp/
     main.py               ASGI entrypoint; `python -m cmp` supplies the event loop
     bootstrap/            assembly: factory, lifespan, middleware, routers, container
@@ -64,11 +84,11 @@ cmp_backend/
 ```
 
 The layering rule - a layer may only call the layer below it - is in
-[layers.md](../../cmp_backend/docs/architecture/layers.md), and the import
+[layers.md](../architecture/layers.md), and the import
 graph in
-[dependency-rules.md](../../cmp_backend/docs/architecture/dependency-rules.md).
+[dependency-rules.md](../architecture/dependency-rules.md).
 
-## `cmp_internal_ui/` and `cmp_public_ui/`
+## `frontend/console/` and `frontend/portal/`
 
 Both portals share one shape:
 
@@ -98,23 +118,23 @@ Both portals share one shape:
 
 | Portal | Routes |
 |---|---|
-| `cmp_internal_ui` | dashboard, projects, approvals, notices, purposes, sites, sources, processors, links, consents, exports, imports, collections, requests, tickets, users, audit, cover, notifications, account; sign-in with MFA and reset |
-| `cmp_public_ui` | `c/[token]` (the consent flow), sign-up, sign-in, rights, rights/nominee, rights/nominations/[token]; signed in: my-consents, my-requests, notifications, account |
+| `frontend/console` | dashboard, projects, approvals, notices, purposes, sites, sources, processors, links, consents, exports, imports, collections, requests, tickets, users, audit, cover, notifications, account; sign-in with MFA and reset |
+| `frontend/portal` | `c/[token]` (the consent flow), sign-up, sign-in, rights, rights/nominee, rights/nominations/[token]; signed in: my-consents, my-requests, notifications, account |
 
 ## Where to find a thing
 
 | Looking for | Start at |
 |---|---|
-| What a role may do | `cmp_backend/src/cmp/core/permissions.py` (`MATRIX`, `NAV_BY_ROLE`) |
+| What a role may do | `backend/api/src/cmp/core/permissions.py` (`MATRIX`, `NAV_BY_ROLE`) |
 | A state machine | `domain/projects/state_machine.py`, `domain/rights/state_machine.py` |
 | The rights clock | `domain/rights/clock.py` |
 | A table's shape | the migration that created it, under `migrations/versions/` |
-| A setting | `core/config.py`, documented in `cmp_backend/.env.example` |
+| A setting | `core/config.py`, documented in `backend/api/.env.example` |
 | A scheduled task | `tasks/app.py` (`beat_schedule`) |
 | A queue | `tasks/app.py` (`task_routes`) |
 | An error code | `core/errors.py` |
 | An email or SMS wording | `infrastructure/email/templates.py`, `tasks/authentication/otp.py` |
-| A console page's data | `cmp_internal_ui/src/features/<area>/queries.ts` |
+| A console page's data | `frontend/console/src/features/<area>/queries.ts` |
 | A form's validation | `src/features/<area>/schemas.ts` in either portal |
 | How a browser test signs in | `e2e/auth.setup.ts` and `e2e/support/` in either portal |
 
@@ -122,17 +142,17 @@ Both portals share one shape:
 
 | File | Generated by | When to regenerate |
 |---|---|---|
-| `cmp_backend/openapi.json` | `uv run python -c "from cmp.main import app; import json; json.dump(app.openapi(), open('openapi.json','w'), indent=2)"` | Any route or schema change |
+| `backend/api/openapi.json` | `uv run python -c "from cmp.main import app; import json; json.dump(app.openapi(), open('openapi.json','w'), indent=2)"` | Any route or schema change |
 | `src/types/api-schema.d.ts` in each portal | `npm run api:types`, against the running API | After regenerating the OpenAPI document |
-| `e2e/__screenshots__/` in `cmp_internal_ui` | `npx playwright test visual.spec.ts --project=visual --update-snapshots` | A deliberate visual change, reviewed image by image |
+| `e2e/__screenshots__/` in `frontend/console` | `npx playwright test visual.spec.ts --project=visual --update-snapshots` | A deliberate visual change, reviewed image by image |
 
 ## Local, ignored files
 
 | Path | Holds |
 |---|---|
-| `cmp_backend/.env`, `<portal>/.env.local` | Local settings; created from the `.env.example` beside each |
-| `cmp_backend/var/outbox.log` | Every email and SMS the local system "sent": codes, links, notices |
-| `cmp_backend/var/uploads/` | Files stored by the local storage backend |
+| `backend/api/.env`, `<portal>/.env.local` | Local settings; created from the `.env.example` beside each |
+| `backend/api/var/outbox.log` | Every email and SMS the local system "sent": codes, links, notices |
+| `backend/api/var/uploads/` | Files stored by the local storage backend |
 | `<portal>/e2e/.auth/` | Browser sessions saved by the Playwright setup project |
 | `<portal>/test-results/`, `playwright-report/` | Failure artefacts |
 

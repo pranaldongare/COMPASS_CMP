@@ -17,11 +17,11 @@ flowchart LR
     T[Staff<br/>DPO, owners, admin]
   end
   subgraph Portals
-    P[cmp_public_ui<br/>Next.js, port 3001]
-    C[cmp_internal_ui<br/>Next.js, port 3000]
+    P[frontend/portal<br/>Next.js, port 3001]
+    C[frontend/console<br/>Next.js, port 3000]
   end
   subgraph Backend
-    A[cmp_backend API<br/>FastAPI, port 8000]
+    A[backend/api API<br/>FastAPI, port 8000]
     W[Celery worker]
     B[Celery beat]
   end
@@ -48,11 +48,11 @@ flowchart LR
 
 | Component | Directory | Runs as | Talks to |
 |---|---|---|---|
-| API | `cmp_backend/` | `python -m cmp` locally; gunicorn with uvicorn workers in a container | PostgreSQL, Redis, file storage |
-| Worker | `cmp_backend/` | `celery worker` on six queues | PostgreSQL, Redis, the email and SMS transports |
-| Beat | `cmp_backend/` | `celery beat`, exactly one instance | Redis |
-| Staff console | `cmp_internal_ui/` | Next.js on port 3000 | the API, through its own `/api` proxy |
-| Data-principal portal | `cmp_public_ui/` | Next.js on port 3001 | the API, through its own `/api` proxy |
+| API | `backend/api/` | `python -m cmp` locally; gunicorn with uvicorn workers in a container | PostgreSQL, Redis, file storage |
+| Worker | `backend/api/` | `celery worker` on six queues | PostgreSQL, Redis, the email and SMS transports |
+| Beat | `backend/api/` | `celery beat`, exactly one instance | Redis |
+| Staff console | `frontend/console/` | Next.js on port 3000 | the API, through its own `/api` proxy |
+| Data-principal portal | `frontend/portal/` | Next.js on port 3001 | the API, through its own `/api` proxy |
 | PostgreSQL | container `cmp-db-1` | 32 tables, 39 enums, 27 triggers, one view | |
 | Redis | container `cmp-redis-1` | three logical databases: sessions and limits, broker, results | |
 
@@ -95,7 +95,7 @@ is why `NEXT_PUBLIC_API_URL` stays unset in local development.
    the notice freeze, the audit hash chain, and a revoked `UPDATE` grant on
    evidence tables.
 
-A third process, [`cmp_dkms`](../../cmp_dkms/README.md), holds the key that
+A third process, [`backend/dkms`](../../backend/dkms/README.md), holds the key that
 personal fields are encrypted under. It is separate from this one because this
 one holds the database, and a single compromise should not be both. The API
 encrypts through it on the way in; each portal decrypts through its own server
@@ -106,7 +106,7 @@ ticket, a report - are queued to Celery and delivered by the worker. Codes go
 on `high_priority`, so a sign-in never waits behind an export.
 
 The detail is in
-[request-lifecycle.md](../../cmp_backend/docs/architecture/request-lifecycle.md).
+[request-lifecycle.md](../architecture/request-lifecycle.md).
 
 ## The four workflows
 
@@ -132,7 +132,7 @@ session. See [ADR 0002](../decisions/0002-evidence-enforced-in-the-database.md).
 
 | Environment | Set by | Differences |
 |---|---|---|
-| `local` | default | Email and SMS are written to `cmp_backend/var/outbox.log`; `/docs` is served; cookies need not be `Secure` |
+| `local` | default | Email and SMS are written to `backend/api/var/outbox.log`; `/docs` is served; cookies need not be `Secure` |
 | `test` | the test suites | As local, with the outbox |
 | `production` | `ENVIRONMENT=production` | Refuses to start on the development secret key, a default database password, insecure cookies, `DEBUG`, or a wildcard CORS origin; `/docs` and `/openapi.json` are not served |
 

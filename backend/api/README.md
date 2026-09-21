@@ -3,7 +3,7 @@
 The API of the consent management platform: FastAPI 0.141 on Python 3.12,
 PostgreSQL 16, Redis 7, Celery 5. 241 endpoints over 32 tables, every query
 hand-written SQL over psycopg 3, every migration raw DDL. The repository-wide
-documentation is under [../docs/](../docs/README.md); this README is the
+documentation is under [../docs/](../../docs/README.md); this README is the
 backend's own front door.
 
 ## Running it
@@ -63,7 +63,7 @@ HTTP  ->  middleware  ->  router  ->  permission guard  ->  service  ->  reposit
 | Repository | `src/cmp/db/` | SQL | business logic |
 | Database | `migrations/` | constraints, triggers, grants | |
 
-**There is no ORM, deliberately** ([ADR 0001](../docs/decisions/0001-no-orm-raw-sql.md)).
+**There is no ORM, deliberately** ([ADR 0001](../../docs/decisions/0001-no-orm-raw-sql.md)).
 The migrations are the schema; a model layer would be a second copy that
 drifts.
 
@@ -72,16 +72,16 @@ audit row and the change it describes share one transaction, so a change
 that rolled back leaves no audit row, and one that committed cannot be
 missing one.
 
-The layers in detail: [docs/architecture/layers.md](docs/architecture/layers.md)
-and [dependency-rules.md](docs/architecture/dependency-rules.md). A request's
-path: [request-lifecycle.md](docs/architecture/request-lifecycle.md).
+The layers in detail: [docs/architecture/layers.md](../../docs/architecture/layers.md)
+and [dependency-rules.md](../../docs/architecture/dependency-rules.md). A request's
+path: [request-lifecycle.md](../../docs/architecture/request-lifecycle.md).
 
 ## What the database enforces
 
 The application refuses these first, to give a better error. The database
 refuses them too, because "the application always calls the service layer"
 is a claim about a codebase, and a codebase changes
-([ADR 0002](../docs/decisions/0002-evidence-enforced-in-the-database.md)).
+([ADR 0002](../../docs/decisions/0002-evidence-enforced-in-the-database.md)).
 
 | Guarantee | Mechanism |
 |---|---|
@@ -109,9 +109,9 @@ purpose.
 - **Unknown query parameters are 400**, never ignored.
 - **Out of scope is 404.** Scope is compiled into the `WHERE`; 403 is for a
   row you can see but may not act on, and is audited
-  ([ADR 0004](../docs/decisions/0004-scope-in-the-where-clause.md)).
+  ([ADR 0004](../../docs/decisions/0004-scope-in-the-where-clause.md)).
 - **Unknown enumerated values are 422** with the choices named, through
-  `cmp.validation.choice()` ([ADR 0008](../docs/decisions/0008-unknown-choices-are-422.md)).
+  `cmp.validation.choice()` ([ADR 0008](../../docs/decisions/0008-unknown-choices-are-422.md)).
 - **One error shape:** `{"error": {"code", "message", "field", "request_id"}}`.
 
 ## Testing
@@ -128,7 +128,7 @@ The project state machine is asserted over every (from, to, role)
 combination, not only the legal ones; the rights state machine likewise. Do
 not run pytest while a Playwright suite is running against the same database:
 both write audit rows, and the chain's lock turns them into timeouts. More in
-[../docs/operations/testing.md](../docs/operations/testing.md).
+[../docs/operations/testing.md](../../docs/operations/testing.md).
 
 ## Operations
 
@@ -201,9 +201,9 @@ openapi.json         the generated API document; regenerate after a route change
 | Question | Where |
 |---|---|
 | How is the app assembled? | `bootstrap/application.py` |
-| What happens to a request? | [docs/architecture/request-lifecycle.md](docs/architecture/request-lifecycle.md) |
-| Who may do what? | `core/permissions.py`, then [../docs/domain/roles-and-access.md](../docs/domain/roles-and-access.md) |
+| What happens to a request? | [docs/architecture/request-lifecycle.md](../../docs/architecture/request-lifecycle.md) |
+| Who may do what? | `core/permissions.py`, then [../docs/domain/roles-and-access.md](../../docs/domain/roles-and-access.md) |
 | How does a project move state? | `domain/projects/state_machine.py` |
-| How does a rights request work? | [docs/architecture/rights.md](docs/architecture/rights.md) |
-| What makes the audit trail evidence? | [docs/security/audit.md](docs/security/audit.md) |
-| Why no ORM? | [docs/architecture/overview.md](docs/architecture/overview.md) |
+| How does a rights request work? | [docs/architecture/rights.md](../../docs/architecture/rights-module.md) |
+| What makes the audit trail evidence? | [docs/security/audit.md](../../docs/security/audit.md) |
+| Why no ORM? | [docs/architecture/overview.md](../../docs/architecture/api-internals.md) |

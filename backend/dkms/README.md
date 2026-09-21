@@ -75,7 +75,7 @@ Neither changes the contract: leave them out and the behaviour is the original.
 ## Data types
 
 `GET /types` publishes the roster. It comes from
-[docs/domain/personal-data.md](../docs/domain/personal-data.md), the inventory
+[docs/domain/personal-data.md](../../docs/domain/personal-data.md), the inventory
 of what this platform holds about people.
 
 `NAME` · `EMAIL` · `MOBILE` · `CONTACT` · `DOB` · `ORG_ID` · `PERSON_TYPE` ·
@@ -157,7 +157,7 @@ it **fails at startup**, not on the first record of the first batch.
 
 The fields worth encrypting, and the ones that cannot be until they have a
 blind index, are listed in
-[docs/domain/personal-data.md](../docs/domain/personal-data.md).
+[docs/domain/personal-data.md](../../docs/domain/personal-data.md).
 
 ## Checks
 

@@ -2,7 +2,7 @@
 
 One FastAPI service, 245 endpoints over 215 paths, all under the API's root
 with no version prefix. The interactive reference is at `/docs` in local
-development, and `cmp_backend/openapi.json` is the same document, regenerated
+development, and `backend/api/openapi.json` is the same document, regenerated
 from the application whenever a route or schema changes. This page is the map;
 the reference is the territory.
 
@@ -42,9 +42,9 @@ never be shadowed by a path parameter on another router.
 - Both portals reach the API through their own `/api` proxy so the cookie is
   first-party. A direct cross-origin call from a browser will lose it.
 
-Details: [sessions.md](../../cmp_backend/docs/security/sessions.md),
-[csrf.md](../../cmp_backend/docs/security/csrf.md),
-[authentication.md](../../cmp_backend/docs/security/authentication.md).
+Details: [sessions.md](../security/sessions.md),
+[csrf.md](../security/csrf.md),
+[authentication.md](../security/authentication.md).
 
 ## Conventions every route follows
 
@@ -123,7 +123,7 @@ difference would tell a stranger something about who is registered:
 ## Rate limits and lockout
 
 Bounded surfaces and their keys are listed in
-[rate-limiting.md](../../cmp_backend/docs/security/rate-limiting.md). The
+[rate-limiting.md](../security/rate-limiting.md). The
 ones a developer meets first: five sign-in failures lock an account for
 thirty minutes; five one-time codes per contact per hour; five attempts per
 code. All counters live in Redis under `rate:*`, which is why a test suite
@@ -133,7 +133,7 @@ clears its own buckets rather than waiting an hour.
 
 | Artefact | Command |
 |---|---|
-| `cmp_backend/openapi.json` | `uv run python -c "from cmp.main import app; import json; json.dump(app.openapi(), open('openapi.json','w'), indent=2)"` from `cmp_backend/` |
+| `backend/api/openapi.json` | `uv run python -c "from cmp.main import app; import json; json.dump(app.openapi(), open('openapi.json','w'), indent=2)"` from `backend/api/` |
 | `src/types/api-schema.d.ts` in each portal | `npm run api:types` while the API is running |
 
 The portals' hand-curated types in `src/types/*.ts` are contract-tested

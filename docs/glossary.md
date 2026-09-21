@@ -161,7 +161,7 @@ that the administrator or the DPO may replace from the console's Messages
 page. See [messages.md](domain/messages.md).
 
 **Outbox.** In local and test environments, the file every email and SMS is
-appended to instead of being sent: `cmp_backend/var/outbox.log`. Where
+appended to instead of being sent: `backend/api/var/outbox.log`. Where
 one-time codes and acceptance links are read from during development and
 browser tests.
 

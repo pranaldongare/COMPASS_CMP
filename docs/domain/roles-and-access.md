@@ -3,7 +3,7 @@
 Seven roles. Six are staff and sign in on the console with a password and an
 emailed code; the seventh is the data principal, who signs in on the portal
 with a code alone. What each may reach is a static matrix in
-`cmp_backend/src/cmp/core/permissions.py`, consulted before any work is done,
+`backend/api/src/cmp/core/permissions.py`, consulted before any work is done,
 and the rows each may see are a scope compiled into every query.
 
 ## The roles

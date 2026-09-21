@@ -20,7 +20,7 @@ npm run dev                    # http://localhost:3001
 ```
 
 The API must be running (see the backend README, or
-[docs/operations/local-development.md](../docs/operations/local-development.md)
+[docs/operations/local-development.md](../../docs/operations/local-development.md)
 for the whole stack). Node 22. The backend's
 `PUBLIC_BASE_URL` should point here, because the links it puts in emails - a
 nominee's acceptance link, for one - land on this portal.

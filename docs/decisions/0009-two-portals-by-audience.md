@@ -18,8 +18,8 @@ Two deployments from one API:
 
 | Portal | Audience | Port |
 |---|---|---|
-| `cmp_internal_ui` | staff: password and code sign-in, the registers, the rights queue, tickets | 3000 |
-| `cmp_public_ui` | data principals and the public: `/c/{token}`, sign-up, code sign-in, rights, her records | 3001 |
+| `frontend/console` | staff: password and code sign-in, the registers, the rights queue, tickets | 3000 |
+| `frontend/portal` | data principals and the public: `/c/{token}`, sign-up, code sign-in, rights, her records | 3001 |
 
 Nothing a member of staff uses ships on the portal and nothing a data
 principal uses ships on the console. Each portal proxies `/api` from its own

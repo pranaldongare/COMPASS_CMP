@@ -4,7 +4,7 @@ How a data principal exercises the rights the Act gives her (ss.11 to 14),
 and how the Privacy Office answers within a published period with a record it
 can produce. The backend's own reference, including the clock arithmetic and
 the enforcement inventory, is
-[rights.md](../../cmp_backend/docs/architecture/rights.md); this page is the
+[rights.md](../architecture/rights-module.md); this page is the
 workflow as people experience it.
 
 ## The four rights
@@ -192,5 +192,5 @@ escalations.
 | Every action audited | the audit chain, same transaction |
 
 Open decisions taken as defaults, and how to change them, are listed at the
-end of [rights.md](../../cmp_backend/docs/architecture/rights.md) and in
+end of [rights.md](../architecture/rights-module.md) and in
 [ADR 0010](../decisions/0010-rights-clock-and-defaults.md).

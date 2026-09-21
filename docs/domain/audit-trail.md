@@ -3,7 +3,7 @@
 Every write to the platform records one entry in `audit_log`, in the same
 transaction as the change, hash-chained so that tampering is detectable.
 How the trail is protected is the backend's
-[audit.md](../../cmp_backend/docs/security/audit.md). This page is about
+[audit.md](../security/audit.md). This page is about
 asking it questions, which is what the DPO and the administrator do on the
 console's **Audit trail** page.
 

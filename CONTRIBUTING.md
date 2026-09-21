@@ -20,17 +20,17 @@ edited.
 ## Before you open a pull request
 
 ```bash
-cd cmp_backend && uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest
-cd cmp_internal_ui && npm run verify
-cd cmp_public_ui && npm run verify
+cd backend/api && uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest
+cd frontend/console && npm run verify
+cd frontend/portal && npm run verify
 ```
 
 Run the browser suites when you touched a page or a route they cover, one at
 a time and never alongside pytest:
 
 ```bash
-cd cmp_internal_ui && npx playwright test --workers=1
-cd cmp_public_ui && npx playwright test --workers=1
+cd frontend/console && npx playwright test --workers=1
+cd frontend/portal && npx playwright test --workers=1
 ```
 
 [docs/operations/testing.md](docs/operations/testing.md) says what each suite
@@ -41,7 +41,7 @@ covers and how to read a failure.
 **Only a service writes.** A router parses and calls a service; a repository
 runs SQL. A write anywhere else bypasses the audit recorder. The layer
 rules are in
-[cmp_backend/docs/architecture/layers.md](cmp_backend/docs/architecture/layers.md).
+[docs/architecture/layers.md](docs/architecture/layers.md).
 
 **Evidence is never edited.** A correction to a consent, a notice, a
 disclosure or an audit row is a new row. If a change needs to touch an
@@ -77,12 +77,12 @@ transitions endpoint.
    parity test compares the two.
 5. Run `alembic downgrade -1` and `upgrade head` before you commit.
 6. Add the revision to
-   [migrations.md](cmp_backend/docs/database/migrations.md).
+   [migrations.md](docs/database/migrations.md).
 
 ## Changing the API
 
 1. Update the response model; the repository's select list; the service.
-2. Regenerate `cmp_backend/openapi.json` (the command is in
+2. Regenerate `backend/api/openapi.json` (the command is in
    [docs/architecture/api.md](docs/architecture/api.md)).
 3. In each portal that uses the route, `npm run api:check` regenerates the
    schema types and fails on a mismatch with the hand-curated types.

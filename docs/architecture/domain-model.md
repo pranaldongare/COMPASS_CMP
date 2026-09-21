@@ -2,9 +2,9 @@
 
 Thirty-two tables, one view, thirty-nine enumerations, twenty-seven triggers.
 The column-level reference is
-[schema.md](../../cmp_backend/docs/database/schema.md), and the migrations
+[schema.md](../database/schema.md), and the migrations
 that built it are listed in
-[migrations.md](../../cmp_backend/docs/database/migrations.md). This page is
+[migrations.md](../database/migrations.md). This page is
 the shape: which tables exist, how they hang together, and which rules the
 database itself refuses to let anyone break.
 

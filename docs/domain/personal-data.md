@@ -57,7 +57,7 @@ member of staff who acted.
 34 objects, of which **22 carry personal data** and 12 do not. Each table below
 lists only its personal-data columns; the full column list, with types,
 defaults, constraints and triggers, is in
-[database_schema/table_reference.md](../../database_schema/table_reference.md).
+[docs/reference/database/table_reference.md](../reference/database/table_reference.md).
 
 ### The person
 
@@ -239,7 +239,7 @@ it. A dump of Redis yields sessions you cannot resume and codes you cannot use.
 
 ### Files on disk
 
-Under `UPLOAD_ROOT` (`cmp_backend/var/uploads` in development), four
+Under `UPLOAD_ROOT` (`backend/api/var/uploads` in development), four
 directories, all of which contain personal data:
 
 | Directory | What is in it | Who put it there |
@@ -617,13 +617,13 @@ rediscover them.
 
 ## Encrypting it: the DKMS layer
 
-A separate service, [`cmp_dkms`](../../cmp_dkms/README.md), holds the key and
+A separate service, [`backend/dkms`](../../backend/dkms/README.md), holds the key and
 does the encrypting. Separate because this API holds the database: one
 compromise should not be both, and the key should rotate on its own schedule.
 
 | Layer | What it does |
 |---|---|
-| `cmp_dkms` | `POST /encrypt/bulk` and `/decrypt/bulk` over a batch of records and a mapping of field names to data types. AES-256-GCM, a key derived per data type, the type bound into the ciphertext as AAD |
+| `backend/dkms` | `POST /encrypt/bulk` and `/decrypt/bulk` over a batch of records and a mapping of field names to data types. AES-256-GCM, a key derived per data type, the type bound into the ciphertext as AAD |
 | `cmp.infrastructure.dkms` | The platform API's client. One call per batch, never per field. **Fails closed**: if the service cannot be reached, the write fails rather than storing plaintext |
 | `/dkms/decrypt` in each portal | Decryption in the portal's **server**, so the browser never holds a key. The page sends back ciphertext the API already served it — which means it already passed the permission matrix — and gets plaintext |
 | `useDecrypted()` | One call for a whole list. A table of two hundred rows costs one round trip, not two hundred |
@@ -665,9 +665,9 @@ It is produced by joining three artefacts the repository already regenerates:
 
 | Source | What it contributes |
 |---|---|
-| `cmp_backend/openapi.json` | Every operation, and every field of every request and response schema |
-| `api_access_control/endpoint_permissions.json` | The gate on each route, and the matrix's answer per role |
-| `database_schema/schema_inventory.json` | Every table, column, type and comment |
+| `backend/api/openapi.json` | Every operation, and every field of every request and response schema |
+| `docs/reference/access-control/endpoint_permissions.json` | The gate on each route, and the matrix's answer per role |
+| `docs/reference/database/schema_inventory.json` | Every table, column, type and comment |
 
 To redo the join after a change, regenerate those three
 ([CONTRIBUTING.md](../../CONTRIBUTING.md) says how), then re-run the classifier

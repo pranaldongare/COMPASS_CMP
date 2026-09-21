@@ -3,8 +3,8 @@
 The platform is five processes and two datastores. This page is the topology
 and the order of operations; the backend's own notes on fail-fast startup and
 what production refuses are in
-[cmp_backend/docs/operations/deployment.md](../../cmp_backend/docs/operations/deployment.md)
-and [configuration.md](../../cmp_backend/docs/operations/configuration.md).
+[docs/operations/deployment.md](../operations/api-deployment.md)
+and [configuration.md](../operations/configuration.md).
 
 ## Topology
 
@@ -14,8 +14,8 @@ flowchart LR
     NG[nginx<br/>TLS, rate limits, token scrubbing]
   end
   subgraph portals
-    CON[cmp_internal_ui<br/>staff console]
-    POR[cmp_public_ui<br/>data-principal portal]
+    CON[frontend/console<br/>staff console]
+    POR[frontend/portal<br/>data-principal portal]
   end
   subgraph backend
     API[api<br/>gunicorn + uvicorn workers]
@@ -37,16 +37,16 @@ flowchart LR
 
 | Process | Image | Scales | Notes |
 |---|---|---|---|
-| `api` | `cmp_backend/docker/Dockerfile` | horizontally | stateless; sessions are in Redis |
+| `api` | `backend/api/docker/Dockerfile` | horizontally | stateless; sessions are in Redis |
 | `worker` | same image | per queue | `acks_late`, so at-least-once; every task is idempotent |
 | `beat` | same image | **one replica** | two produce duplicate scheduled work |
 | `migrate` | same image | runs to completion | `alembic upgrade head` before the API starts |
-| console | `cmp_internal_ui/Dockerfile`, `node:22-alpine` | horizontally | serves `/api` as a reverse proxy to the API |
-| portal | `cmp_public_ui/Dockerfile`, `node:22-alpine` | horizontally | the same, on 3001 |
+| console | `frontend/console/Dockerfile`, `node:22-alpine` | horizontally | serves `/api` as a reverse proxy to the API |
+| portal | `frontend/portal/Dockerfile`, `node:22-alpine` | horizontally | the same, on 3001 |
 | `nginx` | `nginx:1.27-alpine`, compose profile `proxy` | | optional edge; TLS, per-address limits, scrubs `/c/{token}` from logs |
 | `flower` | compose profile `monitoring` | | optional task monitor; loopback only, basic auth required; task arguments are withheld from the events it renders |
 
-The compose file at `cmp_backend/docker/docker-compose.yml` defines the
+The compose file at `backend/api/docker/docker-compose.yml` defines the
 backend half with health-checked dependencies: `migrate` waits for `db`,
 `api` waits for `migrate`. The portals are built from their own Dockerfiles
 and put behind the same edge; each must reach the API at the address in its

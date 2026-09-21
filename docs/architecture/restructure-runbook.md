@@ -35,7 +35,7 @@ Measured with `git grep`, not estimated.
 | `api_docs/generate.py` | 6 paths: the OpenAPI source, `sys.path` for the permission matrix, three strings in the generated output |
 | `docs/scripts/personal_data_scan.py` | `ROOT = parents[2]` and three paths under it |
 | `cmp_backend/tests/unit/infrastructure/test_dkms_field_map.py` | `parents[3].parent / "cmp_dkms/app/dkms/types.py"` |
-| `cmp_internal_ui/e2e/support/outbox.ts` | `../../../cmp_backend/var/outbox.log` |
+| `cmp_internal_ui/e2e/support/outbox.ts` | `../../../backend/api/var/outbox.log` |
 | `cmp_internal_ui/e2e/notice-upload.spec.ts` | the same, spelled as path segments |
 | `cmp_public_ui/e2e/support/outbox.ts` and `e2e/rights.spec.ts` | the same two |
 
@@ -51,7 +51,7 @@ That is the whole build-breaking surface of phase 1. Seven files.
 
 The 16 are the fiddly ones: a file moving from
 `cmp_backend/docs/architecture/` to `docs/architecture/` goes from
-`../../../docs/domain/x.md` to `../domain/x.md`. Three levels become one.
+`../domain/x.md` to `../domain/x.md`. Three levels become one.
 
 ### Two comments, cosmetic
 
@@ -123,7 +123,7 @@ sed -i '' 's|cmp_backend/openapi.json|backend/api/openapi.json|; \
 #    "cmp_dkms/app/dkms/types.py" -> ROOT / "backend/dkms/app/dkms/types.py"
 
 # 5-7. the outbox path in four e2e files
-#      ../../../cmp_backend/var/outbox.log -> ../../../../backend/api/var/outbox.log
+#      ../../../backend/api/var/outbox.log -> ../../../../backend/api/var/outbox.log
 #      (one level deeper, because console/ and portal/ now sit inside frontend/)
 ```
 

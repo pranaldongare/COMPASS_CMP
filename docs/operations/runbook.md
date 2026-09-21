@@ -124,7 +124,7 @@ you need to step back.
 ## Resetting a development machine
 
 ```bash
-cd cmp_backend && uv run python scripts/reset_dev.py
+cd backend/api && uv run python scripts/reset_dev.py
 ```
 
 Never on staging or production; the script refuses, and the refusal is the
@@ -140,4 +140,4 @@ point.
 | what was sent to whom | `audit_log` entries of type notification, and in local the outbox |
 
 Signals worth an alert are listed in
-[monitoring.md](../../cmp_backend/docs/operations/monitoring.md).
+[monitoring.md](../operations/monitoring.md).

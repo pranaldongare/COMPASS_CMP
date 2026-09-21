@@ -5,7 +5,7 @@ which it writes to a person, with the channels it uses, the variables its
 words may carry, and a default subject and body. The administrator and the
 DPO can replace the words for any junction from the console, per channel;
 the defaults are what is sent until they do. The catalogue lives in
-`cmp_backend/src/cmp/core/messages.py`.
+`backend/api/src/cmp/core/messages.py`.
 
 ## The junctions
 
@@ -105,4 +105,4 @@ transport, which is what stops a message being sent around the catalogue.
 | `OTP_TTL_S`, `MFA_TTL_S` | `{minutes}` on the code messages |
 
 The transports themselves (`EMAIL_TRANSPORT`, `SMS_TRANSPORT`) are described
-in [configuration.md](../../cmp_backend/docs/operations/configuration.md).
+in [configuration.md](../operations/configuration.md).

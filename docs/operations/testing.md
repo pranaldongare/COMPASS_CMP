@@ -5,16 +5,16 @@ Four suites, each answering a different question. Counts are as of
 
 | Suite | Where | Runs against | Count |
 |---|---|---|---|
-| Backend unit | `cmp_backend/tests/unit` | nothing; pure functions | 468 |
-| Backend integration | `cmp_backend/tests/integration` | real PostgreSQL and Redis | 277 |
-| Backend security | `cmp_backend/tests/security` | the ASGI app with real datastores | 365 |
+| Backend unit | `backend/api/tests/unit` | nothing; pure functions | 468 |
+| Backend integration | `backend/api/tests/integration` | real PostgreSQL and Redis | 277 |
+| Backend security | `backend/api/tests/security` | the ASGI app with real datastores | 365 |
 | Portal unit | `src/**/*.test.ts*` in each portal | vitest with MSW | 139 console, 108 portal |
 | Browser | `e2e/` in each portal | the running stack in a real browser | 48 console and 20 portal tests, run across five Playwright projects |
 
 ## Backend
 
 ```bash
-cd cmp_backend
+cd backend/api
 uv run pytest                    # everything
 uv run pytest tests/unit         # no datastores needed
 uv run pytest -k rights          # by name
@@ -62,8 +62,8 @@ All three are clean as of 2026-09-17; anything reported is new.
 ## Portal unit tests
 
 ```bash
-cd cmp_internal_ui && npm run verify   # typecheck, lint, vitest
-cd cmp_public_ui && npm run verify
+cd frontend/console && npm run verify   # typecheck, lint, vitest
+cd frontend/portal && npm run verify
 ```
 
 Node 22. They cover what a review cannot see: error classification, the
@@ -75,13 +75,13 @@ running API and type-checks against it).
 ## Browser tests
 
 ```bash
-cd cmp_internal_ui && npx playwright test --workers=1
-cd cmp_public_ui && npx playwright test --workers=1
+cd frontend/console && npx playwright test --workers=1
+cd frontend/portal && npx playwright test --workers=1
 E2E_CONSENT_TOKEN=<token> npx playwright test --workers=1   # portal: includes the consent journey
 ```
 
 The stack must be running: API, worker, beat, and the portal under test.
-Codes are read from `cmp_backend/var/outbox.log` by `e2e/support/outbox.ts`.
+Codes are read from `backend/api/var/outbox.log` by `e2e/support/outbox.ts`.
 
 The console suite has five projects. `setup` signs in every role once, with
 its emailed code, and saves the sessions; `chromium` and `mobile` run the

@@ -1,13 +1,8 @@
 # Documentation map
 
 Everything written about COMPASS CMP, and where to start depending on what
-you need. Documents live in three places, deliberately:
-
-| Where | What belongs there |
-|---|---|
-| `docs/` (this tree) | What crosses project boundaries: the system as a whole, the product behaviour it implements, how to run and operate it, and the decisions that shaped it |
-| `cmp_backend/docs/` | The API's internals: layers, request lifecycle, the database, security mechanisms |
-| Each project's `README.md` | How to run and work on that one project |
+you need. **Every document is in this tree.** The one exception is a
+`README.md` per service, which holds a single thing: how to run that service.
 
 ## Start here
 
@@ -42,47 +37,54 @@ you need. Documents live in three places, deliberately:
 - [Personal data inventory](domain/personal-data.md): what the platform holds about people, where, and which of the 245 operations touch it
 - [Changelog](../CHANGELOG.md): what changed, by area and date
 
-## Reference trees
+## Reference
 
-Three trees sit beside `docs/`. Two are produced from the code and
-regenerated when it changes; the third is reviewed by hand against it:
+Under [reference/](reference/). Two are produced from the code and regenerated
+when it changes; the third is reviewed by hand against it:
 
-- [api_docs/README.md](../api_docs/README.md): every operation by module, with
+- [reference/api/](reference/api/README.md): every operation by module, with
   validation, payload and response, and one page per role listing what it may
-  reach (`api_docs/generate.py`)
-- [database_schema/README.md](../database_schema/README.md): the schema drawn,
-  every table with its columns and constraints, every enumeration
-- [api_access_control/README.md](../api_access_control/README.md): which role may
-  call each endpoint, on which rows, under what conditions, with the guard and
-  the source line as evidence; hand-reviewed, amended when a route changes
+  reach — regenerate with `python3 docs/tools/generate-api-docs.py`
+- [reference/database/](reference/database/README.md): the schema drawn, every
+  table with its columns and constraints, every enumeration
+- [reference/access-control/](reference/access-control/README.md): which role
+  may call each endpoint, on which rows, under what conditions, with the guard
+  and the source line as evidence; hand-reviewed, amended when a route changes
 
-## The backend's own documents
+## Tools
+
+[tools/](tools/) holds what regenerates and checks this tree:
+`generate-api-docs.py`, `personal-data-scan.py`, and `check-links.py`, which
+asserts that every relative link in every document resolves.
+
+## The API's internals
 
 | Document | Answers |
 |---|---|
-| [architecture/overview.md](../cmp_backend/docs/architecture/overview.md) | Why the API is layered the way it is, and why there is no ORM |
-| [architecture/layers.md](../cmp_backend/docs/architecture/layers.md) | What each layer may and may not do |
-| [architecture/dependency-rules.md](../cmp_backend/docs/architecture/dependency-rules.md) | The import graph and how it stays acyclic |
-| [architecture/request-lifecycle.md](../cmp_backend/docs/architecture/request-lifecycle.md) | Middleware order, dependencies, the transaction boundary |
-| [architecture/rights.md](../cmp_backend/docs/architecture/rights.md) | The rights module's design: clock, state machine, tickets, scope, nominations |
-| [database/schema.md](../cmp_backend/docs/database/schema.md) | Table groups and the shapes that are not obvious |
-| [database/migrations.md](../cmp_backend/docs/database/migrations.md) | The revision chain, and how to add one |
-| [database/transactions.md](../cmp_backend/docs/database/transactions.md) | What must commit together, and the timeouts |
-| [operations/configuration.md](../cmp_backend/docs/operations/configuration.md) | Settings, and what production refuses to start on |
-| [operations/deployment.md](../cmp_backend/docs/operations/deployment.md) | The API's processes and health endpoints |
-| [operations/monitoring.md](../cmp_backend/docs/operations/monitoring.md) | Logs, metrics, what to alert on |
-| [security/authentication.md](../cmp_backend/docs/security/authentication.md) | Passwords, MFA, one-time codes, the two populations |
-| [security/authorization.md](../cmp_backend/docs/security/authorization.md) | The matrix, scopes, 403 versus 404 |
-| [security/sessions.md](../cmp_backend/docs/security/sessions.md) | Server-side sessions and the first-party proxy |
-| [security/csrf.md](../cmp_backend/docs/security/csrf.md) | The double-submit defence |
-| [security/rate-limiting.md](../cmp_backend/docs/security/rate-limiting.md) | The bounded surfaces and why the counters live in Redis |
-| [security/audit.md](../cmp_backend/docs/security/audit.md) | The append-only, hash-chained trail |
+| [architecture/api-internals.md](architecture/api-internals.md) | Why the API is layered the way it is, and why there is no ORM |
+| [architecture/layers.md](architecture/layers.md) | What each layer may and may not do |
+| [architecture/dependency-rules.md](architecture/dependency-rules.md) | The import graph and how it stays acyclic |
+| [architecture/request-lifecycle.md](architecture/request-lifecycle.md) | Middleware order, dependencies, the transaction boundary |
+| [architecture/rights-module.md](architecture/rights-module.md) | The rights module's design: clock, state machine, tickets, scope, nominations |
+| [database/schema.md](database/schema.md) | Table groups and the shapes that are not obvious |
+| [database/migrations.md](database/migrations.md) | The revision chain, and how to add one |
+| [database/transactions.md](database/transactions.md) | What must commit together, and the timeouts |
+| [operations/configuration.md](operations/configuration.md) | Settings, and what production refuses to start on |
+| [operations/api-deployment.md](operations/api-deployment.md) | The API's processes and health endpoints |
+| [operations/monitoring.md](operations/monitoring.md) | Logs, metrics, what to alert on |
+| [security/authentication.md](security/authentication.md) | Passwords, MFA, one-time codes, the two populations |
+| [security/authorization.md](security/authorization.md) | The matrix, scopes, 403 versus 404 |
+| [security/sessions.md](security/sessions.md) | Server-side sessions and the first-party proxy |
+| [security/csrf.md](security/csrf.md) | The double-submit defence |
+| [security/rate-limiting.md](security/rate-limiting.md) | The bounded surfaces and why the counters live in Redis |
+| [security/audit.md](security/audit.md) | The append-only, hash-chained trail |
 
-## The projects' own documents
+## The services' own documents
 
-- [cmp_backend/README.md](../cmp_backend/README.md): the API
-- [cmp_internal_ui/README.md](../cmp_internal_ui/README.md): the staff console
-- [cmp_public_ui/README.md](../cmp_public_ui/README.md): the data-principal portal
+- [backend/api/README.md](../backend/api/README.md): the platform API
+- [backend/dkms/README.md](../backend/dkms/README.md): the key service
+- [frontend/console/README.md](../frontend/console/README.md): the staff console
+- [frontend/portal/README.md](../frontend/portal/README.md): the data-principal portal
 
 ## Historical documents
 
@@ -104,5 +106,5 @@ A document that is wrong is worse than none: it is read with trust. So:
 - Every user-visible change gets a line in the [changelog](../CHANGELOG.md).
 - Counts (endpoints, tables, tests) are quoted sparingly and only where they
   carry meaning; where quoted, they are measured, not remembered.
-- `cmp_backend/openapi.json` and each portal's `src/types/api-schema.d.ts`
+- `backend/api/openapi.json` and each portal's `src/types/api-schema.d.ts`
   are generated from the running API. Regenerate them rather than editing.

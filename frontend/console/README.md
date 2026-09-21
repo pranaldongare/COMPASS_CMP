@@ -21,7 +21,7 @@ npm run dev
 ```
 
 The API must be running (see the backend README, or
-[docs/operations/local-development.md](../docs/operations/local-development.md)
+[docs/operations/local-development.md](../../docs/operations/local-development.md)
 for the whole stack). Node 22. `npm run verify` runs the type check, the linter
 and the unit tests together.
 
@@ -145,7 +145,7 @@ once and saves the sessions, then `chromium`, `mobile`, `localhost-cookies` and
 `visual` run the specs (auth, controls, detail pages, forms, links, navigation
 coverage, notice upload, routing, visual). Run it serially and never alongside
 pytest; the why is in
-[docs/operations/testing.md](../docs/operations/testing.md).
+[docs/operations/testing.md](../../docs/operations/testing.md).
 
 Unit tests cover the pieces where a mistake is invisible in review: error
 classification, and the formatting of values a data subject reads (a retention

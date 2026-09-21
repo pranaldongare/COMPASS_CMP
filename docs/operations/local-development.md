@@ -20,7 +20,7 @@ Memurai (Redis-compatible). The application does not care which.
 ## 1. Datastores
 
 ```bash
-cd cmp_backend
+cd backend/api
 docker compose -f docker/docker-compose.yml -p cmp up -d db redis
 ```
 
@@ -33,7 +33,7 @@ touches the database it is configured for.
 ## 2. Backend
 
 ```bash
-cd cmp_backend
+cd backend/api
 cp .env.example .env            # POSTGRES_DB=cmp_dev, PUBLIC_BASE_URL, CONSOLE_BASE_URL - see below
 uv sync --all-extras --dev
 uv run alembic upgrade head     # 26 migrations
@@ -63,7 +63,7 @@ The interactive API reference is at `http://127.0.0.1:8000/docs`.
 Two processes, in two terminals:
 
 ```bash
-cd cmp_backend
+cd backend/api
 uv run celery -A cmp.tasks.app worker -Q high_priority,email,documents,reports,notifications,default -l info --pool=solo
 uv run celery -A cmp.tasks.app beat -l info
 ```
@@ -75,8 +75,8 @@ step.
 ## 4. The two portals
 
 ```bash
-cd cmp_internal_ui && cp .env.example .env.local && npm install && npm run dev   # http://localhost:3000
-cd cmp_public_ui   && cp .env.example .env.local && npm install && npm run dev   # http://localhost:3001
+cd frontend/console && cp .env.example .env.local && npm install && npm run dev   # http://localhost:3000
+cd frontend/portal   && cp .env.example .env.local && npm install && npm run dev   # http://localhost:3001
 ```
 
 Leave `NEXT_PUBLIC_API_URL` unset in both. Each portal proxies `/api` to the
@@ -101,11 +101,11 @@ Seeded by `scripts/seed.py`. The password for every staff account is
 | Data principal | mobile `+919000000001`, email `subject@cmp.local`; no password |
 
 **Reading a code.** In `local` and `test`, every email and SMS is appended to
-`cmp_backend/var/outbox.log` instead of being sent. The newest entry is at the
+`backend/api/var/outbox.log` instead of being sent. The newest entry is at the
 bottom:
 
 ```bash
-tail -n 20 cmp_backend/var/outbox.log
+tail -n 20 backend/api/var/outbox.log
 ```
 
 A code is valid for ten minutes (five for MFA) and five attempts. Five codes
@@ -119,7 +119,7 @@ docker exec cmp-redis-1 redis-cli --scan --pattern 'rate:*' | xargs -r docker ex
 ## Looking at the database
 
 ```bash
-cd cmp_backend
+cd backend/api
 uv run python scripts/db.py                 # tables with row counts
 uv run python scripts/db.py rights_request  # describe one
 uv run python scripts/db.py "select reference, status from rights_request order by 1"
@@ -131,7 +131,7 @@ rolled back.
 ## Starting over
 
 ```bash
-cd cmp_backend
+cd backend/api
 uv run python scripts/reset_dev.py    # drops the public schema of the configured DB, migrates, seeds
 ```
 
@@ -141,9 +141,9 @@ It asks for confirmation and refuses outside `local` and `test`. It has no
 ## Checks before you push
 
 ```bash
-cd cmp_backend && uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest
-cd cmp_internal_ui && npm run verify
-cd cmp_public_ui && npm run verify
+cd backend/api && uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest
+cd frontend/console && npm run verify
+cd frontend/portal && npm run verify
 ```
 
 All four are clean on the integration branch as of 2026-09-17, `mypy

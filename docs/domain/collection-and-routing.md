@@ -67,7 +67,7 @@ not an edit.
 transitions exist, which are allowed now, and what blocks the others. The
 console renders that answer as it is - a blocked transition is a disabled
 button with its reason, never a hidden one. The rules live in
-`cmp_backend/src/cmp/domain/projects/state_machine.py` and are tested over
+`backend/api/src/cmp/domain/projects/state_machine.py` and are tested over
 every (from, to, role) combination.
 
 ## Where an approved project goes
