@@ -128,6 +128,16 @@ def deliver(key: Message, *, to: str, **variables: Any) -> dict[str, Any]:
     retryable outage into silent loss, so nothing is caught here; the task's
     retry policy decides what happens next.
     """
+    # Whatever a caller hands in - a name for the greeting, the contact a ticket
+    # is addressed to - may be sealed at rest. It is opened here, once, at the
+    # one point every message passes through, rather than at every call site
+    # that might have read it from a row.
+    from cmp.infrastructure.dkms import unseal_values_sync, unseal_variables_sync
+
+    variables = unseal_variables_sync(variables)
+    if to.startswith("SE::"):
+        to = unseal_values_sync([to])[0]
+
     j: Junction = junction(key)
     ch = channel_for(to)
     if ch not in j.channels:

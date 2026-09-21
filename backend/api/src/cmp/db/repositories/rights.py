@@ -21,6 +21,7 @@ from psycopg.types.json import Jsonb
 from cmp.core.pagination import PageRequest, build_page
 from cmp.core.permissions import Role
 from cmp.db.sql import Conn, Row, fetch_all, fetch_one, keyset_clause
+from cmp.infrastructure.dkms import seal, unseal_value
 
 LIST_SORTS = ("received_at", "due_at")
 
@@ -138,6 +139,16 @@ async def create(
     consent_id: int | None = None,
 ) -> Row:
     """Insert a request. The reference is minted here and never reused."""
+    # `submitted_contact` is deliberately left as it is: a code is sent to it
+    # to verify the request, and later requests are matched against it.
+    sealed = await seal(
+        "rights_request",
+        {
+            "submitted_name": submitted_name,
+            "request_text": request_text,
+            "verification_note": verification_note,
+        },
+    )
     row = await fetch_one(
         conn,
         """
@@ -166,15 +177,15 @@ async def create(
             "request_type": request_type,
             "channel": channel,
             "subject_user_id": subject_user_id,
-            "submitted_name": submitted_name,
+            "submitted_name": sealed["submitted_name"],
             "submitted_contact": submitted_contact,
-            "request_text": request_text,
+            "request_text": sealed["request_text"],
             "due_at": due_at,
             "created_by": created_by,
             "verification_method": verification_method,
             "verification_status": verification_status,
             "verified_by": verified_by,
-            "verification_note": verification_note,
+            "verification_note": sealed["verification_note"],
             "linked_request_id": linked_request_id,
             "nomination_id": nomination_id,
             "trigger_event": trigger_event,
@@ -258,6 +269,9 @@ async def update(conn: Conn, request_id: int, **cols: Any) -> None:
         raise ValueError(f"not a mutable rights_request column: {sorted(unknown)}")
     if not cols:
         return
+    # Every write of a request's text columns comes through here, so this is
+    # the one place they are sealed. Columns not in the field map pass through.
+    cols = await seal("rights_request", cols)
     assignments = ", ".join(
         f"{name} = %({name})s::{_CASTS[name]}" if name in _CASTS else f"{name} = %({name})s"
         for name in cols
@@ -387,6 +401,7 @@ async def add_response_file(
     uploaded_by: int | None,
 ) -> Row:
     """A file released with the response. Kept with the request; never edited."""
+    file_name = (await seal("rights_response_file", {"file_name": file_name}))["file_name"]
     row = await fetch_one(
         conn,
         """INSERT INTO rights_response_file
@@ -533,6 +548,10 @@ async def add_holder(
 ) -> Row:
     """One row per processor per request. Deriving twice refreshes the
     evidence rather than adding a second holder."""
+    sealed = await seal(
+        "rights_request_holder",
+        {"responder_name": responder_name, "responder_contact": responder_contact},
+    )
     row = await fetch_one(
         conn,
         """
@@ -550,8 +569,8 @@ async def add_holder(
             label,
             derived_from,
             Jsonb(evidence),
-            responder_name,
-            responder_contact,
+            sealed["responder_name"],
+            sealed["responder_contact"],
             respondent_id,
             responder_user_id,
             channel,
@@ -644,6 +663,7 @@ async def add_message(
     evidence_name: str | None = None,
 ) -> Row:
     """One more message on the thread. Append-only at the trigger level."""
+    sealed = await seal("rights_ticket_message", {"body": body, "evidence_name": evidence_name})
     row = await fetch_one(
         conn,
         """INSERT INTO rights_ticket_message
@@ -651,7 +671,16 @@ async def add_message(
               evidence_name, created_at)
            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, clock_timestamp())
            RETURNING message_id, message_uuid""",
-        (holder_id, author_user_id, side, kind, body, evidence_ref, evidence_hash, evidence_name),
+        (
+            holder_id,
+            author_user_id,
+            side,
+            kind,
+            sealed["body"],
+            evidence_ref,
+            evidence_hash,
+            sealed["evidence_name"],
+        ),
     )
     assert row is not None
     return row
@@ -760,7 +789,11 @@ async def holder_brief(
     brief: dict[str, Any] = {
         "subject": {
             "uuid": str(subject["uuid"]) if subject else None,
-            "full_name": subject["full_name"] if subject else None,
+            # Unsealed here: the brief is prose the holder reads, and a
+            # sealed name in it would be a greeting nobody can read.
+            "full_name": (await unseal_value("auth_user", "full_name", subject["full_name"]))
+            if subject
+            else None,
             "email": subject["email"] if subject else None,
             "mobile": subject["mobile"] if subject else None,
         },
@@ -925,6 +958,7 @@ async def update_holder(conn: Conn, holder_id: int, **cols: Any) -> None:
         raise ValueError(f"not a mutable holder column: {sorted(unknown)}")
     if not cols:
         return
+    cols = await seal("rights_request_holder", cols)
     assignments = ", ".join(
         f"{name} = %({name})s::rights_ticket_status"
         if name == "ticket_status"
@@ -1236,6 +1270,9 @@ async def create_nomination(
     accept_token_hash: str,
     accept_expires_at: datetime,
 ) -> Row:
+    # The nominee's contacts stay as they are: the acceptance flow finds the
+    # nomination by them and sends the code to them - see LOOKUP_FIELDS.
+    sealed = await seal("nomination", {"nominee_name": nominee_name})
     row = await fetch_one(
         conn,
         """
@@ -1247,7 +1284,7 @@ async def create_nomination(
         """,
         (
             principal_user_id,
-            nominee_name,
+            sealed["nominee_name"],
             nominee_mobile,
             nominee_email,
             rights,

@@ -275,3 +275,24 @@ def pytest_collection_modifyitems(config: Any, items: list[Any]) -> None:
     for item in items:
         if "integration" in str(item.fspath):
             item.add_marker(pytest.mark.integration)
+
+
+# ------------------------------------------------------------- sealed columns
+#
+# Personal columns are encrypted through the key service on their way into the
+# database and come back out of the repositories as they are stored - sealed.
+# Decrypting is the portals' job, so a test that wants to compare what was
+# written with what it meant to write opens the value first.
+
+
+def plain(value: Any) -> Any:
+    """A sealed value back to plaintext; anything else as it is.
+
+    Uses the synchronous path, the same one message delivery uses, so a test
+    can call it from any assertion without an event loop in hand.
+    """
+    from cmp.infrastructure.dkms import unseal_values_sync
+
+    if isinstance(value, str) and value.startswith("SE::"):
+        return unseal_values_sync([value])[0]
+    return value

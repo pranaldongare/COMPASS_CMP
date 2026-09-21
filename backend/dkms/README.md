@@ -13,10 +13,12 @@ python3 -m venv .venv
 . .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-python3 -m app.main                 # http://127.0.0.1:8100
+python3 -m app.main                 # http://127.0.0.1:32688
 ```
 
 `GET /health` says what it is running. `GET /docs` is the interactive reference.
+The service listens on **32688**; the platform API and both portals are
+configured for `http://localhost:32688`.
 
 ## The two operations
 
@@ -24,7 +26,7 @@ Both take a batch of records and a mapping of field names to data types. **Only
 the fields named in `key` are touched**; every other field passes through
 exactly as it arrived.
 
-### `POST /encrypt/bulk`
+### `POST /bulk_encrypt`
 
 ```json
 {
@@ -48,7 +50,7 @@ exactly as it arrived.
 }
 ```
 
-### `POST /decrypt/bulk`
+### `POST /bulk_decrypt`
 
 The same body, with encrypted values in, plaintext out. The data type in `key`
 must be the one the value was written under.
@@ -152,8 +154,8 @@ it **fails at startup**, not on the first record of the first batch.
 
 | Side | How |
 |---|---|
-| Platform API | `cmp.infrastructure.dkms` — a client that batches a write's personal fields into one call rather than one call per field |
-| Portals | Decryption happens in the portal's **server** layer (`/api/dkms/decrypt`), not in the browser. The browser never holds a key, and a decrypt is a request an authenticated session makes for rows it was already allowed to read |
+| Platform API | `cmp.infrastructure.dkms` — `seal()` at every repository write of a personal column, one call per row; `unseal*()` only where the backend hands a value to a person (messages, tickets, exports, the response package) |
+| Portals | Every API response is walked by the client and every `SE::` value opened in one call to `/dkms/decrypt`, which runs in the portal's **server** layer, not the browser. The browser never holds a key, and a decrypt is a request an authenticated session makes for rows it was already allowed to read |
 
 The fields worth encrypting, and the ones that cannot be until they have a
 blind index, are listed in

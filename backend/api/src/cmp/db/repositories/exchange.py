@@ -18,6 +18,7 @@ from typing import Any
 from cmp.core.pagination import PageRequest, build_page
 from cmp.core.permissions import Role, Scope, scope_of
 from cmp.db.sql import Conn, Row, fetch_all, fetch_one, keyset_clause
+from cmp.infrastructure.dkms import seal
 
 
 def _scope(resource: str, role: Role | str, user_id: int) -> tuple[str, list[Any]]:
@@ -327,6 +328,7 @@ async def create_batch(
     declared_rows: int,
     imported_by: int,
 ) -> Row:
+    file_name = (await seal("import_batch", {"file_name": file_name}))["file_name"]
     row = await fetch_one(
         conn,
         """

@@ -27,6 +27,7 @@ from cmp.db.repositories import rights as rights_repo
 from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn
 from cmp.domain.rights.scope import consent_scope, scope_text
+from cmp.infrastructure.dkms import unseal, unseal_many
 
 #: What the file does not contain, said inside the file, so a reader who has
 #: only the file still knows the shape of what they were given.
@@ -93,7 +94,11 @@ async def build_response(
     record *is* the answer to "what do you hold", even when it is all of it.
     """
     subject_id = int(request["subject_user_id"])
-    subject = await user_repo.by_id(conn, subject_id) or {}
+    subject = await unseal("auth_user", dict(await user_repo.by_id(conn, subject_id) or {}))
+    # And the request's own text, which the package quotes back to her, and
+    # the names of the files released with it - both are hers to read.
+    request = await unseal("rights_request", dict(request))
+    attachments = await unseal_many("rights_response_file", [dict(a) for a in (attachments or [])])
     scope = consent_scope(request)
     scope_ids: list[int] | None = (
         await rights_repo.consent_chain_ids(conn, int(request["consent_id"])) if scope else None

@@ -14,6 +14,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from cmp.db.sql import Conn, Row, fetch_all, fetch_one
+from cmp.infrastructure.dkms import seal
 
 _SELECT = """
   d.delegation_uuid, d.reason, d.starts_at, d.ends_at, d.revoked_at, d.created_at,
@@ -44,6 +45,7 @@ async def create(
     ends_at: datetime | None,
     created_by: int,
 ) -> Row:
+    sealed = await seal("delegation", {"reason": reason})
     row = await fetch_one(
         conn,
         """
@@ -52,7 +54,7 @@ async def create(
         VALUES (%s, %s, %s, COALESCE(%s, now()), %s, %s)
         RETURNING delegation_id, delegation_uuid
         """,
-        (delegator_user_id, delegate_user_id, reason, starts_at, ends_at, created_by),
+        (delegator_user_id, delegate_user_id, sealed["reason"], starts_at, ends_at, created_by),
     )
     assert row is not None
     return row

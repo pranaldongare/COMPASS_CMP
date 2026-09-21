@@ -38,8 +38,8 @@ class Settings(BaseSettings):
     chunk_size: int = Field(64, alias="DKMS_CHUNK_SIZE", ge=1)
 
     host: str = "127.0.0.1"
-    port: int = 8100
-    cors_origins: str = ""   # no browser calls this directly; see .env.example
+    port: int = 32688
+    cors_origins: str = ""  # no browser calls this directly; see .env.example
 
     @field_validator("master_key")
     @classmethod

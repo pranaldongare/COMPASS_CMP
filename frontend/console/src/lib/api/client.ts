@@ -23,6 +23,7 @@ import axios, {
 
 import { ApiError, type ApiErrorBody, networkError } from "@/lib/errors";
 import { config } from "@/lib/config";
+import { decryptDeep, hasSealed } from "@/lib/dkms";
 
 const UNSAFE_METHODS = new Set(["post", "put", "patch", "delete"]);
 
@@ -75,7 +76,18 @@ http.interceptors.request.use((request: InternalAxiosRequestConfig) => {
 
 /* ----------------------------------------------------------------- response */
 http.interceptors.response.use(
-  (response) => response,
+  // Personal columns arrive sealed - `SE::…` - and this is the portal's side
+  // of the arrangement: every JSON body is walked once, every sealed value in
+  // it is opened in one call to this origin's /dkms/decrypt, and the page
+  // never learns any of that happened. Files and empty bodies pass straight
+  // through. See lib/dkms/deep.ts for why it is done here and not per page.
+  async (response) => {
+    const type = String(response.headers?.["content-type"] ?? "");
+    if (response.data && type.includes("application/json") && hasSealed(response.data)) {
+      response.data = await decryptDeep(response.data);
+    }
+    return response;
+  },
   (error: AxiosError<{ error?: ApiErrorBody }>) => {
     if (!error.response) {
       const message =

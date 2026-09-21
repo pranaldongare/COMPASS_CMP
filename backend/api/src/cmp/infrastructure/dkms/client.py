@@ -17,6 +17,7 @@ which the service writes to be safe to repeat.
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Literal
 
 import httpx
@@ -76,11 +77,17 @@ class DkmsClient:
         if not records or not key:
             return [dict(r) for r in records]
 
+        # Only the named fields travel. The rest of the row - ids, timestamps,
+        # everything the key service has no business seeing - stays here, and
+        # is put back around the answer. This is also what lets a row carry a
+        # UUID or a datetime, which JSON would otherwise refuse to carry.
+        travelling = [{f: r[f] for f in key if isinstance(r.get(f), str)} for r in records]
+
         out: list[Record] = []
         # Chunked here as well as inside the service: one enormous body is a
         # timeout waiting to happen, and the service refuses past its own limit.
         for start in range(0, len(records), self._batch_size):
-            chunk = records[start : start + self._batch_size]
+            chunk = travelling[start : start + self._batch_size]
             body = {
                 "data": chunk,
                 "key": {field: t.value for field, t in key.items()},
@@ -104,7 +111,7 @@ class DkmsClient:
                 raise DkmsUnavailable(f"answered {response.status_code}")
 
             out.extend(response.json()["data"])
-        return out
+        return [{**original, **answered} for original, answered in zip(records, out, strict=True)]
 
     async def encrypt_records(
         self,
@@ -114,7 +121,7 @@ class DkmsClient:
         method: Method = "string",
     ) -> list[Record]:
         """Encrypt the named fields of every record, in order."""
-        return await self._call("/encrypt/bulk", records, key, method=method, on_error="fail")
+        return await self._call("/bulk_encrypt", records, key, method=method, on_error="fail")
 
     async def decrypt_records(
         self,
@@ -130,29 +137,40 @@ class DkmsClient:
         where some rows are ciphertext and some are still plaintext: those come
         back as they are rather than failing the page.
         """
-        return await self._call("/decrypt/bulk", records, key, method=method, on_error=on_error)
+        return await self._call("/bulk_decrypt", records, key, method=method, on_error=on_error)
 
 
 _client: DkmsClient | None = None
+_client_loop: asyncio.AbstractEventLoop | None = None
 
 
 def get_dkms() -> DkmsClient:
-    """The process's client, built on first use."""
-    global _client
-    if _client is None:
+    """The process's client, built on first use - and rebuilt for a new loop.
+
+    An `httpx.AsyncClient` belongs to the event loop it was first used on. The
+    API runs one loop for its lifetime, so one client serves it; the test suite
+    runs a loop per test, and a client carried from one to the next fails with
+    "Event loop is closed" on the first request. So the client is bound to the
+    loop that built it and replaced when the loop changes.
+    """
+    global _client, _client_loop
+    loop = asyncio.get_running_loop()
+    if _client is None or _client_loop is not loop:
         _client = DkmsClient(
             settings.dkms_url,
             timeout_s=settings.dkms_timeout_s,
             batch_size=settings.dkms_batch_size,
         )
+        _client_loop = loop
     return _client
 
 
 async def close_dkms() -> None:
-    global _client
+    global _client, _client_loop
     if _client is not None:
         await _client.aclose()
         _client = None
+        _client_loop = None
 
 
 # ------------------------------------------------------------------ shortcuts
@@ -185,3 +203,61 @@ async def decrypt_records(
     if not settings.dkms_enabled:
         return [dict(r) for r in records]
     return await get_dkms().decrypt_records(records, key, method=method, on_error=on_error)
+
+
+# ------------------------------------------------------- the synchronous path
+#
+# Messages are rendered inside Celery tasks, which are synchronous, and the
+# name in a greeting or the contact a ticket goes to may be sealed. This is the
+# one place the service is called without an event loop.
+
+
+def unseal_values_sync(values: list[str]) -> list[str]:
+    """Decrypt a list of sealed strings, in one call, each under its own type.
+
+    The type is read off each envelope, so the caller needs to know nothing
+    but that it holds ciphertext. Values that are not sealed come back as they
+    are, in their original positions. Fails closed like the async client: a
+    key service that cannot be reached raises rather than sending a message
+    with `SE::...` where a person's name should be.
+    """
+    from cmp.infrastructure.dkms.fields import type_of
+
+    if not settings.dkms_enabled:
+        return list(values)
+
+    positions: list[tuple[int, DataType]] = []
+    records: list[Record] = []
+    for i, v in enumerate(values):
+        t = type_of(v) if isinstance(v, str) else None
+        if t is not None:
+            positions.append((i, t))
+            records.append({t.value: v})
+    if not records:
+        return list(values)
+
+    key = {t.value: t.value for _, t in positions}
+    body = {"data": records, "key": key, "method": "string", "on_error": "fail"}
+    try:
+        with httpx.Client(base_url=settings.dkms_url, timeout=settings.dkms_timeout_s) as client:
+            response = client.post("/bulk_decrypt", json=body)
+    except httpx.HTTPError as exc:
+        log.error("dkms.unreachable", path="/bulk_decrypt", records=len(records), error=str(exc))
+        raise DkmsUnavailable(str(exc)) from exc
+    if response.status_code >= 400:
+        log.error("dkms.error", path="/bulk_decrypt", status=response.status_code)
+        raise DkmsUnavailable(f"answered {response.status_code}")
+
+    out = list(values)
+    for (i, t), record in zip(positions, response.json()["data"], strict=True):
+        out[i] = record[t.value]
+    return out
+
+
+def unseal_variables_sync(variables: dict[str, Any]) -> dict[str, Any]:
+    """The template variables of a message, with every sealed string opened."""
+    keys = [k for k, v in variables.items() if isinstance(v, str) and v.startswith("SE::")]
+    if not keys:
+        return variables
+    opened = unseal_values_sync([variables[k] for k in keys])
+    return {**variables, **dict(zip(keys, opened, strict=True))}

@@ -30,6 +30,29 @@ as a release yet.
   person, and the request body's `served_at` is ignored ([ADR 0011](docs/decisions/0011-server-held-notice-serving.md)).
 - Export CSV cells that begin with a formula character are written as text.
 
+### Added
+- **Personal data is encrypted on its way into the database, and opened only
+  where a person reads it.** Every repository write of a column in
+  `ENCRYPTED_FIELDS` goes through `seal()` — one call to the key service per
+  row, however many columns — and the database holds `SE::…` where the value
+  was: names, employee ids, a request in the principal's own words, the
+  office's notes and reasons, ticket messages, file names, the address a
+  consent came from. Migration 0027 widened those columns to `text`, recreating
+  `v_current_consent` around the one it depended on. The API serves the
+  ciphertext as stored. Each portal's API client walks every JSON response,
+  reads the data type off each envelope, and opens every sealed value in one
+  call to its own `/dkms/decrypt` — so no page knows which of its fields are
+  sealed, and a table of two hundred rows is one round trip. The backend opens
+  a value in exactly four places, each where it hands one to a person: the
+  greeting in a message, the contact a ticket goes to, the export CSV, and the
+  response package. The lookup columns — `email`, `mobile`, `username`,
+  `submitted_contact`, the nominee's contacts — stay plaintext by decision,
+  written down beside each with its reason. The key service listens on `32688`
+  at `/bulk_encrypt` and `/bulk_decrypt`; its first paths still answer.
+  Walked live: a public rights request lands as `SE::` in the row, comes off
+  the wire as `SE::`, and reads as the person wrote it on the console page;
+  a staff invitation greets its recipient by name.
+
 ### Changed
 - **The API is installed with `pip`, and nothing ships as a container.** `uv`
   and its lockfile are gone; `backend/api/requirements.txt` carries the runtime

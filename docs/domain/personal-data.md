@@ -623,15 +623,39 @@ compromise should not be both, and the key should rotate on its own schedule.
 
 | Layer | What it does |
 |---|---|
-| `backend/dkms` | `POST /encrypt/bulk` and `/decrypt/bulk` over a batch of records and a mapping of field names to data types. AES-256-GCM, a key derived per data type, the type bound into the ciphertext as AAD |
+| `backend/dkms` on `:32688` | `POST /bulk_encrypt` and `/bulk_decrypt` over a batch of records and a mapping of field names to data types. AES-256-GCM, a key derived per data type, the type bound into the ciphertext as AAD |
 | `cmp.infrastructure.dkms` | The platform API's client. One call per batch, never per field. **Fails closed**: if the service cannot be reached, the write fails rather than storing plaintext |
 | `/dkms/decrypt` in each portal | Decryption in the portal's **server**, so the browser never holds a key. The page sends back ciphertext the API already served it — which means it already passed the permission matrix — and gets plaintext |
 | `useDecrypted()` | One call for a whole list. A table of two hundred rows costs one round trip, not two hundred |
 
-**Which fields.** `cmp/infrastructure/dkms/fields.py` is this document made
-executable: `ENCRYPTED_FIELDS` per table, and `LOOKUP_FIELDS` for the personal
-columns that **cannot** be encrypted yet, each with its reason. A unit test
-holds the two lists apart and checks the vocabulary against the service's own.
+**Which fields, and it is live.** `cmp/infrastructure/dkms/fields.py` is this
+document made executable: `ENCRYPTED_FIELDS` per table, and `LOOKUP_FIELDS` for
+the personal columns that **cannot** be encrypted yet, each with its reason. A
+unit test holds the two lists apart and checks the vocabulary and the envelope
+type table against the service's own. Since 21 September 2026 every write of a
+column in the first list goes through `seal()` at the repository, and the
+database holds `SE::…` where the value was:
+
+| Table | Sealed on write |
+|---|---|
+| `auth_user` | `full_name`, `organization_id` |
+| `nomination` | `nominee_name` |
+| `rights_request` | `submitted_name`, `request_text`, `verification_note`, `refusal_reason`, `remedy_text`, `response_text` |
+| `rights_request_holder` | `responder_name`, `responder_contact`, `instruction`, `return_summary`, `sent_back_reason` |
+| `rights_ticket_message` | `body`, `evidence_name` |
+| `rights_response_file`, `import_batch` | `file_name` |
+| `consent_artefact` | `ip_address` (the column became `text` in 0027) |
+| `processor_respondent` | `name`, `contact` |
+| `person_type_history`, `delegation`, `project_status_history` | `reason` |
+| `project_processor` | `decision_reason` |
+
+**The API serves ciphertext; the portals open it.** Every JSON response is
+walked once by the portal's API client; every `SE::` value in it is opened in
+one call to that origin's `/dkms/decrypt`, which runs on the portal's server and
+holds the session cookie. The data type is read off the envelope, so no page
+knows which of its fields are sealed. The backend itself opens a value only
+where it hands one to a person: the greeting in a message (`deliver()`), the
+contact a ticket is sent to, the export CSV, and the response package.
 
 **Why the second list exists.** DKMS ciphertext is randomised — the same
 address encrypts differently every time, which is the property that makes it

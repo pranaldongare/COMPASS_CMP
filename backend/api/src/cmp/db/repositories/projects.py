@@ -24,6 +24,7 @@ from cmp.core.errors import Conflict
 from cmp.core.pagination import PageRequest, build_page
 from cmp.core.permissions import Role, Scope, scope_of
 from cmp.db.sql import Conn, Row, fetch_all, fetch_one, keyset_clause, require_one
+from cmp.infrastructure.dkms import seal
 
 PROJECT_COLUMNS = """
   p.project_uuid, p.project_name, p.internal_project_name, p.description,
@@ -351,6 +352,7 @@ async def record_transition(
     reason: str | None,
     actor_user_id: int,
 ) -> Row:
+    sealed = await seal("project_status_history", {"reason": reason})
     row = await fetch_one(
         conn,
         """
@@ -359,7 +361,7 @@ async def record_transition(
         VALUES (%s, %s::project_status, %s::project_status, %s, %s)
         RETURNING history_uuid, from_status, to_status, reason, occurred_at
         """,
-        (project_id, from_status, to_status, reason, actor_user_id),
+        (project_id, from_status, to_status, sealed["reason"], actor_user_id),
     )
     assert row is not None
     return row
@@ -536,6 +538,7 @@ async def decide_processor(
     reason: str | None,
 ) -> Row | None:
     """Record the DPO's answer on one pending request."""
+    reason = (await seal("project_processor", {"decision_reason": reason}))["decision_reason"]
     return await fetch_one(
         conn,
         """UPDATE project_processor

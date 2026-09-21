@@ -32,7 +32,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /** Server-only. The key service is not on the public internet and not in the bundle. */
-const DKMS_URL = (process.env.DKMS_URL ?? "http://127.0.0.1:8100").replace(/\/+$/, "");
+const DKMS_URL = (process.env.DKMS_URL ?? "http://localhost:32688").replace(/\/+$/, "");
 const SESSION_COOKIE = process.env.NEXT_PUBLIC_SESSION_COOKIE ?? "cmp_session";
 
 /** Matches the service's own ceiling, so a refusal happens here rather than there. */
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   let answer: Response;
   try {
-    answer = await fetch(`${DKMS_URL}/decrypt/bulk`, {
+    answer = await fetch(`${DKMS_URL}/bulk_decrypt`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       // `skip`, not `fail`: a page rendering rows written before the rollout

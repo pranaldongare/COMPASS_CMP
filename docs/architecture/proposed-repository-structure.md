@@ -26,7 +26,7 @@ COMPASS_CMP/                      921 tracked files
   cmp_backend/          319       API + worker + migrations   36,101 lines src, 13,818 tests
   cmp_internal_ui/      285       staff console, port 3000
   cmp_public_ui/        173       data-principal portal, port 3001
-  cmp_dkms/              22       key service, port 8100      (added this week)
+  cmp_dkms/              22       key service, port 32688     (added this week)
   docs/                  39       cross-cutting documentation
   api_docs/              27       generated from openapi.json
   database_schema/       26       generated from the database
@@ -143,7 +143,7 @@ compass/
 │   └── dkms/                                   ← cmp_dkms/               moved
 │       ├── app/
 │       │   ├── main.py  config.py  engine.py  schemas.py
-│       │   ├── api/routes.py                   /encrypt/bulk  /decrypt/bulk
+│       │   ├── api/routes.py                   /bulk_encrypt  /bulk_decrypt
 │       │   └── dkms/                           base, local, sdk, types
 │       ├── tests/
 │       ├── requirements.txt  requirements-dev.txt  .env.example

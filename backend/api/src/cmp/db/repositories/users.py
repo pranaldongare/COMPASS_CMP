@@ -13,6 +13,7 @@ from typing import Any
 
 from cmp.core.pagination import PageRequest, build_page
 from cmp.db.sql import Conn, Row, execute, fetch_all, fetch_one, keyset_clause, require_one
+from cmp.infrastructure.dkms import seal
 from cmp.validation import normalise_contact, normalise_mobile
 
 # The columns any caller may see. `password_hash` is not among them and must
@@ -162,6 +163,9 @@ async def create(
     #: ask, and an assumed date would be worse than an absent one.
     dob: str | None = None,
 ) -> Row:
+    # The personal columns go in sealed. Email and mobile do not: they are what
+    # the person signs in with, and are looked up - see LOOKUP_FIELDS.
+    sealed = await seal("auth_user", {"full_name": full_name, "organization_id": organization_id})
     row = await fetch_one(
         conn,
         """
@@ -176,10 +180,10 @@ async def create(
         """,
         (
             username,
-            full_name,
+            sealed["full_name"],
             email,
             normalise_mobile(mobile) if mobile else None,
-            organization_id,
+            sealed["organization_id"],
             role,
             person_type,
             status,
@@ -208,6 +212,7 @@ async def update_profile(
     the row as it was, so `%s = mobile` compares with the previous value.
     """
     new_mobile = normalise_mobile(mobile) if mobile else None
+    sealed = await seal("auth_user", {"full_name": full_name, "organization_id": organization_id})
     row = await fetch_one(
         conn,
         """
@@ -225,7 +230,15 @@ async def update_profile(
                   secondary_email, secondary_email_verified_at,
                   created_at, updated_at
         """,
-        (full_name, new_mobile, new_mobile, new_mobile, organization_id, dob, user_id),
+        (
+            sealed["full_name"],
+            new_mobile,
+            new_mobile,
+            new_mobile,
+            sealed["organization_id"],
+            dob,
+            user_id,
+        ),
     )
     assert row is not None
     return row
@@ -366,6 +379,7 @@ async def record_person_type_change(
     reason: str | None,
     changed_by: int,
 ) -> Row:
+    sealed = await seal("person_type_history", {"reason": reason})
     row = await fetch_one(
         conn,
         """
@@ -373,7 +387,7 @@ async def record_person_type_change(
         VALUES (%s, %s::person_type, %s::person_type, %s, %s)
         RETURNING history_uuid, from_type, to_type, reason, changed_at
         """,
-        (user_id, from_type, to_type, reason, changed_by),
+        (user_id, from_type, to_type, sealed["reason"], changed_by),
     )
     assert row is not None
     return row

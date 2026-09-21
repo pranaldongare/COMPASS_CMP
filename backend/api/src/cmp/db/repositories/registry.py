@@ -11,6 +11,7 @@ from typing import Any
 
 from cmp.core.pagination import PageRequest, build_page
 from cmp.db.sql import Conn, Row, fetch_all, fetch_one, keyset_clause
+from cmp.infrastructure.dkms import seal
 
 # ------------------------------------------------------------------ processor
 PROCESSOR_COLUMNS = """
@@ -531,12 +532,15 @@ async def respondent_by_uuid(conn: Conn, processor_id: int, respondent_uuid: str
 async def add_respondent(
     conn: Conn, processor_id: int, *, name: str, contact: str, user_id: int | None
 ) -> Row:
+    # A respondent is a named human being at a third party, unlike the
+    # processor itself, which is an organisation.
+    sealed = await seal("processor_respondent", {"name": name, "contact": contact})
     row = await fetch_one(
         conn,
         """INSERT INTO processor_respondent (processor_id, name, contact, user_id)
            VALUES (%s, %s, %s, %s)
            RETURNING respondent_id, respondent_uuid""",
-        (processor_id, name, contact, user_id),
+        (processor_id, sealed["name"], sealed["contact"], user_id),
     )
     assert row is not None
     return row

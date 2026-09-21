@@ -37,6 +37,7 @@ from cmp.auth.authentication import service as auth_service
 from cmp.db.redis import K_RATE
 from cmp.db.redis import key as rkey
 from cmp.db.repositories import users as user_repo
+from tests.conftest import plain
 
 # Deliberately *not* marked `anyio`. Every other module here runs under
 # pytest-asyncio's auto mode, and mixing the two plugins in one module had
@@ -245,7 +246,7 @@ async def test_omitting_the_date_on_a_profile_update_leaves_it_alone(
 
     after = await user_repo.update_profile(conn, subject_id, full_name="Renamed Only")
 
-    assert after["full_name"] == "Renamed Only"
+    assert plain(after["full_name"]) == "Renamed Only"
     assert after["dob"] is not None, "an unmentioned date of birth must survive"
 
 

@@ -38,6 +38,7 @@ from cmp.db.repositories import users as user_repo
 from cmp.db.sql import fetch_all
 from cmp.domain.audit.service import Event
 from cmp.tasks import dispatch as dispatch_mod
+from tests.conftest import plain
 
 pytestmark = pytest.mark.integration
 
@@ -148,7 +149,8 @@ class TestTheInvitation:
 
         _uuid, email, full_name, role_title, code, reset_url, hours = only(queued, INVITATION)
         assert email == "invited@test.local"
-        assert full_name == "New Joiner"
+        # Sealed on the row, and it travels sealed; delivery opens it.
+        assert plain(full_name) == "New Joiner"
         # The role is named in words. "dco" is a column value, not a job title.
         assert role_title == "Data Collection Owner"
         assert len(code) == 6 and code.isdigit()

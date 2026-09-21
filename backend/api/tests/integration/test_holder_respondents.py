@@ -20,6 +20,7 @@ from cmp.db.repositories import registry as registry_repo
 from cmp.db.repositories import rights as repo
 from cmp.db.sql import fetch_one
 from cmp.domain.rights import service
+from tests.conftest import plain
 
 
 async def _processor(conn: Any, *, name: str, in_house: bool) -> dict[str, Any]:
@@ -80,8 +81,8 @@ class TestRespondents:
             actor_id=seeded["users"]["dpo"]["id"],
         )
         assert mailed["channel"] == "email"
-        assert mailed["responder_name"] == "Priya at Acme"
-        assert mailed["responder_contact"] == "privacy@acme.example"
+        assert plain(mailed["responder_name"]) == "Priya at Acme"
+        assert plain(mailed["responder_contact"]) == "privacy@acme.example"
         assert mailed["responder_user_id"] is None
 
         portal = await service.add_holder(
@@ -96,7 +97,7 @@ class TestRespondents:
         )
         assert portal["channel"] == "portal"
         assert portal["responder_user_id"] == int(dco["id"])
-        assert portal["responder_contact"] == "dco@test.local"
+        assert plain(portal["responder_contact"]) == "dco@test.local"
 
     async def test_a_third_party_may_be_represented_by_one_of_our_own_accounts(
         self, conn: Any, seeded: dict[str, Any], request_context: Any
@@ -629,7 +630,7 @@ class TestLifecycle:
             actor_id=dpo,
         )
         assert moved["channel"] == "email"
-        assert moved["responder_contact"] == "else@third.example"
+        assert plain(moved["responder_contact"]) == "else@third.example"
         assert moved["seen_at"] is None, "the new person has not seen it"
         kinds = [c["kind"] for c in moved["contact_log"]]
         assert kinds[-2:] == ["reassigned", "mail_sent"], kinds
@@ -651,7 +652,7 @@ class TestLifecycle:
             conn, row, holder_uuid=str(holder["holder_uuid"]), role="dpo"
         )
         assert thread["messages"][-1]["kind"] == "status"
-        assert "Reminder sent" in thread["messages"][-1]["body"]
+        assert "Reminder sent" in plain(thread["messages"][-1]["body"])
 
     async def test_the_platform_reminds_on_a_cadence_and_once_a_day(
         self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
@@ -707,7 +708,7 @@ class TestLifecycle:
             evidence_hash="c" * 64,
             evidence_name="gait-extract-2026.csv",
         )
-        assert after["messages"][-1]["evidence_name"] == "gait-extract-2026.csv"
+        assert plain(after["messages"][-1]["evidence_name"]) == "gait-extract-2026.csv"
         done = await service.return_own_ticket(
             conn,
             user_id=dco,
@@ -759,13 +760,15 @@ class TestSendBack:
             actor_id=dpo,
         )
         assert back["ticket_status"] == "issued"
-        assert back["sent_back_count"] == 1 and back["sent_back_reason"].startswith("Say which")
+        assert back["sent_back_count"] == 1
+        assert plain(back["sent_back_reason"]).startswith("Say which")
         assert back["return_summary"] is None and back["returned_at"] is None
         assert back["contact_log"][-1]["kind"] == "sent_back"
         assert back["unread_for_holder"] >= 1, "reads as unseen until they open it again"
         assert (await service.reload(conn, row))["status"] == "awaiting_holders"
         messages = await repo.messages_of(conn, int(portal["holder_id"]))
-        assert messages[-1]["kind"] == "status" and messages[-1]["body"].startswith("Sent back:")
+        assert messages[-1]["kind"] == "status"
+        assert plain(messages[-1]["body"]).startswith("Sent back:")
         assert any(m["kind"] == "return" for m in messages), "the return stays on the thread"
 
         # It can be returned again; and only a returned ticket can go back.

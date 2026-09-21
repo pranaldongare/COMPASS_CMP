@@ -9,7 +9,7 @@
 
 import { describe, expect, it, vi } from "vitest";
 
-import { decryptRecords, isEncrypted } from "@/features/dkms/api";
+import { decryptRecords, isEncrypted } from "@/lib/dkms";
 
 function answerWith(data: unknown[], status = 200) {
   return vi.fn().mockResolvedValue({

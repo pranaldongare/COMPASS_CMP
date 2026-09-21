@@ -24,6 +24,7 @@ from cmp.core.permissions import Role
 from cmp.db.repositories import projects as project_repo
 from cmp.db.sql import fetch_one
 from cmp.domain.projects import service as project_service
+from tests.conftest import plain
 
 pytestmark = pytest.mark.asyncio
 
@@ -317,7 +318,7 @@ class TestTheDecision:
             if str(r["processor_uuid"]) == str(seeded["processors"]["in_house"]["processor_uuid"])
         )
         assert refused["status"] == "rejected"
-        assert "No contract" in refused["decision_reason"]
+        assert "No contract" in plain(refused["decision_reason"])
         assert refused["decided_by_name"]
 
     async def test_asking_again_after_a_refusal_is_allowed(

@@ -22,8 +22,10 @@ import pytest
 from cmp.infrastructure.dkms.fields import (
     ENCRYPTED_FIELDS,
     LOOKUP_FIELDS,
+    TYPE_IDS,
     DataType,
     fields_for,
+    type_of,
 )
 
 #: The service's own roster, read from its source rather than from a copy. A
@@ -121,3 +123,42 @@ def test_free_text_is_the_commonest_type_and_names_the_second() -> None:
     assert ranked[0][0] is DataType.FREE_TEXT
     assert ranked[1][0] is DataType.NAME
     assert DataType.GENERIC not in counted, "GENERIC means somebody skipped the decision"
+
+
+def _service_type_ids() -> dict[int, str]:
+    """`TYPE_IDS` in the service, parsed the same way as the enum."""
+    tree = ast.parse(TYPES_PY.read_text())
+    for node in tree.body:
+        if (
+            isinstance(node, ast.AnnAssign)
+            and isinstance(node.target, ast.Name)
+            and node.target.id == "TYPE_IDS"
+        ):
+            assert isinstance(node.value, ast.Dict)
+            out = {}
+            for k, v in zip(node.value.keys, node.value.values, strict=True):
+                assert isinstance(k, ast.Attribute) and isinstance(v, ast.Constant)
+                out[int(v.value)] = k.attr
+            return out
+    raise AssertionError("the service has no TYPE_IDS any more")
+
+
+@pytest.mark.skipif(not TYPES_PY.exists(), reason="the DKMS service is not in this checkout")
+def test_the_envelope_type_ids_match_the_service() -> None:
+    """Byte 3 of every envelope is read against this table. If it drifts, a
+    NAME is asked for as an EMAIL and every decrypt refuses."""
+    ours = {i: t.value for i, t in TYPE_IDS.items()}
+    theirs = {i: getattr(DataType, name).value for i, name in _service_type_ids().items()}
+    assert ours == theirs
+
+
+def test_type_of_reads_a_real_envelope_and_refuses_the_rest() -> None:
+    # Produced by the service for a NAME and an EMAIL.
+    assert type_of("SE::REsBAQNY0o7rJCgfEWj-d0FITi5nT2bKzXhQ3pOGL9Hk8w1YtmJY") is DataType.NAME
+    assert (
+        type_of("SE::REsBAjWbQ-khS5sacN5Z3yLHVxqQnm9AN9QrJLeV0up7eDkAnidmv-aSO8rH5XU_")
+        is DataType.EMAIL
+    )
+    assert type_of("Amruta Shukla") is None
+    assert type_of("SE::") is None
+    assert type_of("SE::QUJDRA==") is None  # valid base64, wrong magic

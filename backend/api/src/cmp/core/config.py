@@ -110,7 +110,7 @@ class Settings(BaseSettings):
     #
     # The key service. A separate process holding the key that makes this
     # database readable, so that a compromise of the API is not both.
-    dkms_url: str = "http://127.0.0.1:8100"
+    dkms_url: str = "http://localhost:32688"
     dkms_timeout_s: float = 5.0
     #: Records per call. The service refuses past DKMS_MAX_RECORDS; staying
     #: well under it keeps one slow batch from holding a connection open.

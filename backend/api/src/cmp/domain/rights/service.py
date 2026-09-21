@@ -45,6 +45,7 @@ from cmp.domain.rights import clock
 from cmp.domain.rights import state_machine as sm
 from cmp.domain.rights.scope import consent_scope, scope_text
 from cmp.domain.rights.state_machine import RequestFacts
+from cmp.infrastructure.dkms import unseal_value
 from cmp.validation import choice, mask_contact, normalise_contact, normalise_mobile
 
 log = get_logger("cmp.rights")
@@ -1147,7 +1148,7 @@ async def escalate_ticket(
         entity_id=int(holder["holder_id"]),
         detail={"label": holder["label"]},
     )
-    to = _ticket_address(holder)
+    to = await _ticket_address(holder)
     if to:
         _dispatch(
             "send_holder_instruction",
@@ -1203,14 +1204,19 @@ async def _apply_respondent(conn: Conn, holder_id: int, processor_id: int) -> No
         await repo.update_holder(conn, holder_id, **_respondent_columns(respondents[0]))
 
 
-def _ticket_address(holder: Row) -> str | None:
+async def _ticket_address(holder: Row) -> str | None:
     """Where a ticket's message goes. An account's own address on the portal
-    channel - a courtesy copy; the ticket itself is in their console."""
+    channel - a courtesy copy; the ticket itself is in their console.
+
+    `responder_contact` is sealed at rest, so it is opened here, at the one
+    place a message is actually about to be sent to it.
+    """
+    contact = await unseal_value(
+        "rights_request_holder", "responder_contact", holder.get("responder_contact")
+    )
     if holder.get("channel") == "portal":
-        return (
-            str(holder.get("responder_user_email") or holder.get("responder_contact") or "") or None
-        )
-    return str(holder.get("responder_contact") or "") or None
+        return str(holder.get("responder_user_email") or contact or "") or None
+    return str(contact or "") or None
 
 
 def _contact_entry(
@@ -1238,7 +1244,7 @@ async def _deliver_ticket(
     """Send the instruction the way this holder is reached, and write down
     that it was sent. On the portal the ticket is in the team's console the
     moment it is issued; the message is a copy so they hear about it."""
-    to = _ticket_address(holder)
+    to = await _ticket_address(holder)
     if to:
         _dispatch(
             "send_holder_instruction",
@@ -1296,7 +1302,7 @@ async def log_contact(
             raise Conflict(
                 "This holder answers on the portal; there is no mail to send", code="portal_holder"
             )
-        to = _ticket_address(holder)
+        to = await _ticket_address(holder)
         if not to:
             raise ValidationFailed(
                 "No address on record for this holder", field="responder_contact"
@@ -1385,8 +1391,12 @@ def _console_url(path: str) -> str:
 async def _tell_holder(conn: Conn, row: Row, holder: Row, *, author_id: int, body: str) -> None:
     """The office wrote; the holder hears about it the way it is reached."""
     author = await user_repo.by_id(conn, author_id)
-    name = str(author["full_name"]) if author else "The Privacy Office"
-    to = _ticket_address(holder)
+    name = (
+        str(await unseal_value("auth_user", "full_name", author["full_name"]))
+        if author
+        else "The Privacy Office"
+    )
+    to = await _ticket_address(holder)
     if not to:
         return
     where = (
@@ -1408,7 +1418,11 @@ async def _tell_holder(conn: Conn, row: Row, holder: Row, *, author_id: int, bod
 async def _tell_office(conn: Conn, row: Row, holder: Row, *, author_id: int, body: str) -> None:
     """The holder wrote; every active DPO hears, and the dashboard queues it."""
     author = await user_repo.by_id(conn, author_id)
-    name = str(author["full_name"]) if author else str(holder["label"])
+    name = (
+        str(await unseal_value("auth_user", "full_name", author["full_name"]))
+        if author
+        else str(holder["label"])
+    )
     where = _console_url(f"/requests/{row['request_uuid']}")
     for to in await user_repo.active_emails_for_role(conn, Role.DPO.value):
         _dispatch(
@@ -1616,7 +1630,7 @@ async def withdraw_ticket(
     await repo.append_contact(
         conn,
         int(holder["holder_id"]),
-        _contact_entry("withdrawn", to=_ticket_address(holder), by=actor_id, note=why),
+        _contact_entry("withdrawn", to=await _ticket_address(holder), by=actor_id, note=why),
     )
     await _record(
         conn,
@@ -1704,7 +1718,7 @@ async def send_back_ticket(
     await repo.append_contact(
         conn,
         int(holder["holder_id"]),
-        _contact_entry("sent_back", to=_ticket_address(holder), by=actor_id, note=why),
+        _contact_entry("sent_back", to=await _ticket_address(holder), by=actor_id, note=why),
     )
     await _record(
         conn,
@@ -1811,7 +1825,7 @@ async def reassign_holder(
     await repo.append_contact(
         conn,
         int(holder["holder_id"]),
-        _contact_entry("reassigned", to=_ticket_address(fresh), by=actor_id, note=None),
+        _contact_entry("reassigned", to=await _ticket_address(fresh), by=actor_id, note=None),
     )
     await _deliver_ticket(
         conn,
@@ -1849,7 +1863,7 @@ async def _send_reminder(
     on the holder, and audited."""
     due = ticket["due_at"]
     days = (due.date() - today).days
-    to = _ticket_address(ticket)
+    to = await _ticket_address(ticket)
     where = (
         _console_url(f"/tickets?ticket={ticket['holder_uuid']}")
         if ticket.get("channel") == "portal"

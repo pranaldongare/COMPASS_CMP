@@ -17,7 +17,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { decryptRecords, isEncrypted, type KeyMap } from "@/features/dkms/api";
+import { decryptRecords, isEncrypted, type KeyMap } from "@/lib/dkms";
 
 /** Separators for the fingerprint below: two characters that cannot occur in a
  *  base64 ciphertext, so two different lists cannot collide into one key. */

@@ -17,7 +17,7 @@ SPEC_EXAMPLE: dict[str, Any] = {
 
 
 def test_the_specified_request_is_accepted_as_written(client: Any) -> None:
-    r = client.post("/encrypt/bulk", json=SPEC_EXAMPLE)
+    r = client.post("/bulk_encrypt", json=SPEC_EXAMPLE)
 
     assert r.status_code == 200, r.text
     body = r.json()
@@ -36,8 +36,8 @@ def test_a_batch_comes_back_out_the_way_it_went_in(client: Any) -> None:
     data = [{"i": str(n), "fullName": f"Person {n}"} for n in range(500)]
     key = {"fullName": "NAME"}
 
-    sealed = client.post("/encrypt/bulk", json={"data": data, "key": key}).json()["data"]
-    opened = client.post("/decrypt/bulk", json={"data": sealed, "key": key}).json()["data"]
+    sealed = client.post("/bulk_encrypt", json={"data": data, "key": key}).json()["data"]
+    opened = client.post("/bulk_decrypt", json={"data": sealed, "key": key}).json()["data"]
 
     assert [r["i"] for r in opened] == [r["i"] for r in data]
     assert [r["fullName"] for r in opened] == [r["fullName"] for r in data]
@@ -45,12 +45,12 @@ def test_a_batch_comes_back_out_the_way_it_went_in(client: Any) -> None:
 
 def test_the_bytes_method_round_trips(client: Any) -> None:
     body = {**SPEC_EXAMPLE, "method": "bytes"}
-    sealed = client.post("/encrypt/bulk", json=body).json()
+    sealed = client.post("/bulk_encrypt", json=body).json()
 
     assert not sealed["data"][0]["fullName"].startswith("SE::")
 
     opened = client.post(
-        "/decrypt/bulk", json={"data": sealed["data"], "key": body["key"], "method": "bytes"}
+        "/bulk_decrypt", json={"data": sealed["data"], "key": body["key"], "method": "bytes"}
     ).json()
     assert opened["data"][0]["fullName"] == "Amruta Shukla"
 
@@ -59,7 +59,7 @@ def test_fields_outside_the_key_are_never_touched(client: Any) -> None:
     data = [
         {"fullName": "Amruta Shukla", "employeeID": "E-1", "salary": 100, "tags": ["a"], "x": None}
     ]
-    out = client.post("/encrypt/bulk", json={"data": data, "key": {"fullName": "NAME"}}).json()
+    out = client.post("/bulk_encrypt", json={"data": data, "key": {"fullName": "NAME"}}).json()
 
     record = out["data"][0]
     assert record["employeeID"] == "E-1"
@@ -72,7 +72,7 @@ def test_a_null_stays_null_and_a_missing_field_stays_missing(client: Any) -> Non
     """Encrypting an absence would invent a value that means something."""
     data = [{"fullName": None}, {"employeeID": "E-2"}]
     out = client.post(
-        "/encrypt/bulk", json={"data": data, "key": {"fullName": "NAME", "emailId": "EMAIL"}}
+        "/bulk_encrypt", json={"data": data, "key": {"fullName": "NAME", "emailId": "EMAIL"}}
     ).json()
 
     assert out["data"][0]["fullName"] is None
@@ -82,24 +82,24 @@ def test_a_null_stays_null_and_a_missing_field_stays_missing(client: Any) -> Non
 
 def test_running_the_same_batch_twice_does_not_encrypt_it_twice(client: Any) -> None:
     """The failure this prevents is silent and unrecoverable by one decrypt."""
-    once = client.post("/encrypt/bulk", json=SPEC_EXAMPLE).json()["data"]
-    twice = client.post("/encrypt/bulk", json={"data": once, "key": SPEC_EXAMPLE["key"]}).json()
+    once = client.post("/bulk_encrypt", json=SPEC_EXAMPLE).json()["data"]
+    twice = client.post("/bulk_encrypt", json={"data": once, "key": SPEC_EXAMPLE["key"]}).json()
 
     assert twice["data"] == once
     assert twice["values"] == 0
     assert twice["skipped"] == 4
 
     opened = client.post(
-        "/decrypt/bulk", json={"data": twice["data"], "key": SPEC_EXAMPLE["key"]}
+        "/bulk_decrypt", json={"data": twice["data"], "key": SPEC_EXAMPLE["key"]}
     ).json()
     assert opened["data"][0]["fullName"] == "Amruta Shukla"
 
 
 def test_the_wrong_type_in_the_key_refuses_the_batch(client: Any) -> None:
-    sealed = client.post("/encrypt/bulk", json=SPEC_EXAMPLE).json()["data"]
+    sealed = client.post("/bulk_encrypt", json=SPEC_EXAMPLE).json()["data"]
 
     r = client.post(
-        "/decrypt/bulk",
+        "/bulk_decrypt",
         json={"data": sealed, "key": {"fullName": "EMAIL", "emailId": "EMAIL"}},
     )
 
@@ -112,11 +112,11 @@ def test_the_wrong_type_in_the_key_refuses_the_batch(client: Any) -> None:
 
 def test_skip_keeps_the_good_records_and_reports_the_bad(client: Any) -> None:
     """What a migration over rows of unknown vintage actually needs."""
-    sealed = client.post("/encrypt/bulk", json=SPEC_EXAMPLE).json()["data"]
+    sealed = client.post("/bulk_encrypt", json=SPEC_EXAMPLE).json()["data"]
     sealed.append({"employeeID": "E-0003", "fullName": "SE::not-real", "emailId": None})
 
     out = client.post(
-        "/decrypt/bulk",
+        "/bulk_decrypt",
         json={"data": sealed, "key": SPEC_EXAMPLE["key"], "on_error": "skip"},
     ).json()
 
@@ -127,22 +127,22 @@ def test_skip_keeps_the_good_records_and_reports_the_bad(client: Any) -> None:
 
 def test_an_unknown_data_type_is_refused_before_any_work_happens(client: Any) -> None:
     r = client.post(
-        "/encrypt/bulk",
+        "/bulk_encrypt",
         json={"data": [{"fullName": "x"}], "key": {"fullName": "SHOE_SIZE"}},
     )
     assert r.status_code == 422
 
 
 def test_an_empty_batch_is_refused(client: Any) -> None:
-    assert client.post("/encrypt/bulk", json={"data": [], "key": {"a": "NAME"}}).status_code == 422
-    assert client.post("/encrypt/bulk", json={"data": [{}], "key": {}}).status_code == 422
+    assert client.post("/bulk_encrypt", json={"data": [], "key": {"a": "NAME"}}).status_code == 422
+    assert client.post("/bulk_encrypt", json={"data": [{}], "key": {}}).status_code == 422
 
 
 def test_a_batch_past_the_limit_is_refused_rather_than_attempted(client: Any) -> None:
     client.app.state.max_records = 3
     try:
         r = client.post(
-            "/encrypt/bulk",
+            "/bulk_encrypt",
             json={"data": [{"fullName": "x"}] * 4, "key": {"fullName": "NAME"}},
         )
         assert r.status_code == 413
@@ -162,3 +162,14 @@ def test_health_says_what_it_is_running(client: Any) -> None:
     assert body["status"] == "ok"
     assert body["provider"] == "local-aes-gcm"
     assert body["workers"] == 4
+
+
+def test_the_first_paths_still_answer(client: Any) -> None:
+    """`/encrypt/bulk` and `/decrypt/bulk` were the names for a week. A caller
+    written against them is not broken by the rename."""
+    sealed = client.post("/encrypt/bulk", json=SPEC_EXAMPLE)
+    assert sealed.status_code == 200
+    opened = client.post(
+        "/decrypt/bulk", json={"data": sealed.json()["data"], "key": SPEC_EXAMPLE["key"]}
+    )
+    assert opened.json()["data"][0]["fullName"] == "Amruta Shukla"

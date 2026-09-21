@@ -29,7 +29,7 @@ def _guard(body: BulkRequest, engine: BulkEngine, limit: int) -> None:
 
 
 @router.post(
-    "/encrypt/bulk",
+    "/bulk_encrypt",
     response_model=BulkResponse,
     summary="Bulk encrypt data with parallel thread-pool processing",
 )
@@ -55,7 +55,7 @@ async def encrypt_bulk(body: BulkRequest, request: Request, engine: Engine) -> B
 
 
 @router.post(
-    "/decrypt/bulk",
+    "/bulk_decrypt",
     response_model=BulkResponse,
     summary="Bulk decrypt data with parallel thread-pool processing",
 )
@@ -77,6 +77,25 @@ async def decrypt_bulk(body: BulkRequest, request: Request, engine: Engine) -> B
                 "errors": [e.model_dump(mode="json") for e in failed.errors],
             },
         ) from failed
+
+
+# The paths this service first answered on. Kept, hidden from the reference,
+# so anything written against them keeps working; `/bulk_encrypt` and
+# `/bulk_decrypt` are the names.
+router.add_api_route(
+    "/encrypt/bulk",
+    encrypt_bulk,
+    methods=["POST"],
+    response_model=BulkResponse,
+    include_in_schema=False,
+)
+router.add_api_route(
+    "/decrypt/bulk",
+    decrypt_bulk,
+    methods=["POST"],
+    response_model=BulkResponse,
+    include_in_schema=False,
+)
 
 
 @router.get("/types", summary="The data types this service accepts")

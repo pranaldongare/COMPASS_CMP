@@ -29,6 +29,7 @@ from cmp.db.repositories import rights as repo
 from cmp.db.repositories import users as user_repo
 from cmp.domain.consent import service as consent_service
 from cmp.domain.rights import service
+from tests.conftest import plain
 
 pytestmark = pytest.mark.integration
 
@@ -238,7 +239,7 @@ class TestAccessRequest:
             conn, row, instruction=None, due_at=None, role=DPO, actor_id=dpo
         )
         assert issued[0]["ticket_status"] == "issued"
-        assert issued[0]["instruction"] and row["reference"] in issued[0]["instruction"]
+        assert issued[0]["instruction"] and row["reference"] in plain(issued[0]["instruction"])
         clock = service.clock_of(row)
         assert issued[0]["due_at"] == clock["halfway_at"], "tickets fall due at halfway by default"
 
@@ -396,7 +397,7 @@ class TestErasureRequest:
             conn, row, note="Confirmed on the phone", role=DPO, actor_id=dpo
         )
         assert row["status"] == "closed" and row["outcome"] == "reclassified_withdrawal"
-        assert "does not delete" in str(row["response_text"])
+        assert "does not delete" in str(plain(row["response_text"]))
 
     async def test_an_asset_holding_others_is_redacted_never_erased(
         self, conn: Any, seeded: dict[str, Any]
@@ -716,7 +717,8 @@ class TestGrievance:
         linked = as_dpo["linked_request"]
         assert linked is not None
         assert linked["reference"] == original["reference"]
-        assert linked["response_text"] == "Nothing held." and linked["outcome"] == "no_records"
+        assert plain(linked["response_text"]) == "Nothing held."
+        assert linked["outcome"] == "no_records"
         assert linked["request_text"] == original["request_text"]
         assert linked["clock"]["overdue"] is False
         assert linked["in_scope"] is True
@@ -847,7 +849,7 @@ class TestNomination:
         made = await user_repo.by_contact(conn, "+915550000201")
         assert made is not None
         assert made["role"] == "data_subject" and made["status"] == "active"
-        assert made["full_name"] == "Nominee Who Accepts"
+        assert plain(made["full_name"]) == "Nominee Who Accepts"
         assert made["email"] == "stranger.nominee@example.org"
         assert made["mobile_verified_at"] is not None and made["email_verified_at"] is None
 
@@ -1073,7 +1075,7 @@ class TestNomination:
             conn, row, evidenced=False, note="No medical evidence supplied", role=DPO, actor_id=dpo
         )
         assert row["status"] == "closed" and row["outcome"] == "refused"
-        assert "not evidenced" in str(row["refusal_reason"])
+        assert "not evidenced" in str(plain(row["refusal_reason"]))
 
         revoked = await service.revoke_nomination(
             conn, nomination_uuid=str(nomination["nomination_uuid"]), principal_user_id=principal
@@ -1338,7 +1340,7 @@ class TestConfinedToConsent:
         assert [c["consent_uuid"] for c in brief["consents"]] == [str(first["consent_uuid"])]
         assert brief["exports"] == []
         assert [a["ref"] for a in brief["assets"]] == ["ASSET-ONE"]
-        assert "confined to the consent" in issued[0]["instruction"]
+        assert "confined to the consent" in plain(issued[0]["instruction"])
         assert "Confined to:" in service.brief_text(brief)
 
         # The response attaches that consent's record and nothing else.
@@ -1436,7 +1438,7 @@ class TestFilesReleasedWithTheResponse:
             files=[stored],
         )
         files = await repo.response_files_of(conn, int(row["request_id"]))
-        assert [f["file_name"] for f in files] == ["extract.csv"]
+        assert [plain(f["file_name"]) for f in files] == ["extract.csv"]
         assert files[0]["file_hash"] == stored["hash"] and int(files[0]["size_bytes"]) == len(
             payload
         )

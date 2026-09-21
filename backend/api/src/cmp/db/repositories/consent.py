@@ -15,6 +15,7 @@ from typing import Any
 from cmp.core.pagination import PageRequest, build_page
 from cmp.core.permissions import Role, Scope, scope_of
 from cmp.db.sql import Conn, Row, fetch_all, fetch_one, keyset_clause
+from cmp.infrastructure.dkms import seal
 
 
 def _project_scope(role: Role | str, user_id: int) -> tuple[str, list[Any]]:
@@ -247,6 +248,9 @@ async def create_artefact(
     is_withdrawal: bool = False,
     supersedes_consent_id: int | None = None,
 ) -> Row:
+    # The address she consented from is sealed like every other personal
+    # column; the column became text in 0027 because ciphertext is not an inet.
+    ip_address = (await seal("consent_artefact", {"ip_address": ip_address}))["ip_address"]
     row = await fetch_one(
         conn,
         """
@@ -254,7 +258,7 @@ async def create_artefact(
           (auth_user_id, notice_id, notice_language_id, notice_content_hash, link_id,
            served_at, affirmative_action_at, action_type, ip_address, is_withdrawal,
            supersedes_consent_id)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s::action_type, %s::inet, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s::action_type, %s, %s, %s)
         RETURNING consent_id, consent_uuid, served_at, affirmative_action_at,
                   action_type, is_withdrawal, created_at
         """,

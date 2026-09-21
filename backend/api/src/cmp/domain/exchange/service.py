@@ -43,6 +43,7 @@ from cmp.db.sql import Conn
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.consent.service import link_path as consent_link_path
+from cmp.infrastructure.dkms import unseal_many
 
 log = get_logger("cmp.exchange")
 
@@ -247,6 +248,10 @@ async def _project_export(
     consents = await repo.project_consents(
         conn, project_id=project["project_id"], role=role, user_id=user_id
     )
+    # The file is for whoever collects, and a name they cannot read is not a
+    # name. The person's columns are opened here, on the way into the CSV; the
+    # rows in the database stay sealed.
+    consents = await unseal_many("auth_user", consents)
     payload = _write_csv(project, consents)
     lines = [(c["auth_user_id"], c["consent_id"]) for c in consents]
     return payload, len(consents), lines
@@ -280,6 +285,7 @@ async def render(conn: Conn, export: dict[str, Any]) -> tuple[str, str, str]:
     # through today's builder produces a file that may differ from the one
     # given out; the recorded hash says whether it does.
     consents = await repo.consents_in_export(conn, export["export_id"])
+    consents = await unseal_many("auth_user", consents)
     return _write_csv(project, consents), "text/csv", "csv"
 
 

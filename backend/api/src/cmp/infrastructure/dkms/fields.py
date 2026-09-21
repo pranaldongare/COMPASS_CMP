@@ -44,6 +44,46 @@ class DataType(StrEnum):
     GENERIC = "GENERIC"
 
 
+#: The number each type is written into a ciphertext envelope under, byte 3 of
+#: the header. Mirrors `TYPE_IDS` in the service and is checked against it by
+#: the same test that checks the enum. It is what lets a consumer holding a
+#: sealed value - and nothing else - ask for it back under the right type.
+TYPE_IDS: dict[int, DataType] = {
+    1: DataType.NAME,
+    2: DataType.EMAIL,
+    3: DataType.MOBILE,
+    4: DataType.CONTACT,
+    5: DataType.DOB,
+    6: DataType.ORG_ID,
+    7: DataType.PERSON_TYPE,
+    8: DataType.ADDRESS,
+    9: DataType.IP,
+    10: DataType.FREE_TEXT,
+    11: DataType.FILE_NAME,
+    12: DataType.GOVT_ID,
+    13: DataType.GENERIC,
+}
+
+
+def type_of(sealed: str) -> DataType | None:
+    """The data type a sealed value was written as, read off its envelope.
+
+    `SE::` + base64url( 'D' 'K' version type_id nonce ciphertext ). Anything
+    that does not parse as that is not ours, and the answer is None.
+    """
+    import base64
+
+    if not sealed.startswith("SE::"):
+        return None
+    try:
+        head = base64.urlsafe_b64decode(sealed[4:12] + "==")[:4]
+    except (ValueError, TypeError):
+        return None
+    if len(head) < 4 or head[:2] != b"DK":
+        return None
+    return TYPE_IDS.get(head[3])
+
+
 #: Table to {column: type}. Written once, read back whole, never searched -
 #: so a randomised ciphertext costs nothing but the decryption.
 ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
@@ -66,7 +106,8 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
         "responder_name": DataType.NAME,
         "responder_contact": DataType.CONTACT,
         "instruction": DataType.FREE_TEXT,
-        "brief": DataType.FREE_TEXT,
+        # `brief` is not here: it is jsonb, a structured scope summary the
+        # holder reads, and it is derived from rows that are sealed themselves.
         "return_summary": DataType.FREE_TEXT,
         "sent_back_reason": DataType.FREE_TEXT,
     },
