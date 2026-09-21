@@ -1,5 +1,0 @@
-GET     /docs
-GET     /docs/oauth2-redirect
-GET     /metrics
-GET     /openapi.json
-GET     /redoc
