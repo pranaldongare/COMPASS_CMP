@@ -260,3 +260,266 @@ That is the argument. The structure above is conventional on purpose — `apps/`
 and `packages/` is what most people mean by a well-kept monorepo, and a
 convention a new engineer already knows is worth more than a better layout they
 have to learn.
+
+---
+
+# The complete tree, for approval
+
+Every directory that exists today, placed where it would go. Nothing is
+invented: each line is either a folder that exists now, a folder that holds
+files which exist now, or is marked **new**.
+
+Read the right-hand column as the decision. `moved` is a `git mv` and nothing
+else. `shared` means the files are currently duplicated in both portals and
+would live in one place. **new** means a file that does not exist yet and would
+have to be written.
+
+```
+compass/
+│
+├── apps/
+│   │
+│   ├── api/                                    ← cmp_backend/            moved
+│   │   ├── src/cmp/
+│   │   │   ├── main.py  __main__.py
+│   │   │   ├── bootstrap/                      factory, lifespan, container
+│   │   │   ├── api/
+│   │   │   │   ├── routers/v1/                 14 modules
+│   │   │   │   ├── routers/public/             consent, rights
+│   │   │   │   ├── dependencies/               sessions, csrf, authz, paging
+│   │   │   │   ├── middleware/                 context, headers, body, access log
+│   │   │   │   └── errors/                     one error contract
+│   │   │   ├── auth/
+│   │   │   │   ├── identity/  authentication/  authorization/
+│   │   │   │   └── sessions/  rate_limit/
+│   │   │   ├── domain/                         the only layer that writes
+│   │   │   │   ├── audit/  consent/  delegations/  exchange/
+│   │   │   │   ├── messaging/  notices/{assets}/  projects/
+│   │   │   │   ├── registry/  rights/  shared/  users/
+│   │   │   ├── db/
+│   │   │   │   ├── pool.py  sql.py  redis.py
+│   │   │   │   └── repositories/               one per table cluster
+│   │   │   ├── infrastructure/
+│   │   │   │   ├── dkms/                       client for apps/dkms
+│   │   │   │   ├── email/  sms/  storage/  external/  messaging/
+│   │   │   ├── tasks/
+│   │   │   │   └── authentication/  notifications/  maintenance/  exchange/
+│   │   │   ├── validation/  schemas/
+│   │   │   └── core/                           imports nothing local
+│   │   ├── migrations/versions/                0001 … 0026, raw SQL
+│   │   ├── tests/
+│   │   │   ├── unit/{api,auth,core,domain,infrastructure,tasks,validation}/
+│   │   │   ├── integration/{auth,database,enforcement}/
+│   │   │   ├── security/
+│   │   │   └── fixtures/
+│   │   ├── scripts/                            seed, create_admin, reset_dev, db
+│   │   ├── openapi.json                        generated
+│   │   ├── pyproject.toml
+│   │   ├── .env.example
+│   │   └── README.md                           how to run this app, nothing else
+│   │
+│   ├── dkms/                                   ← cmp_dkms/               moved
+│   │   ├── app/
+│   │   │   ├── main.py  config.py  engine.py  schemas.py
+│   │   │   ├── api/routes.py
+│   │   │   └── dkms/                           base, local, sdk, types
+│   │   ├── tests/
+│   │   ├── requirements.txt  requirements-dev.txt
+│   │   ├── .env.example
+│   │   └── README.md
+│   │
+│   ├── console/                                ← cmp_internal_ui/        moved
+│   │   ├── src/
+│   │   │   ├── app/
+│   │   │   │   ├── (app)/                      the authenticated shell
+│   │   │   │   │   ├── dashboard/  projects/[uuid]/  approvals/
+│   │   │   │   │   ├── notices/[uuid]/  purposes/[uuid]/
+│   │   │   │   │   ├── sites/  sources/  processors/  links/
+│   │   │   │   │   ├── consents/[uuid]/  collections/[uuid]/
+│   │   │   │   │   ├── exports/  imports/[uuid]/
+│   │   │   │   │   ├── requests/[uuid]/  tickets/  messages/
+│   │   │   │   │   ├── users/  audit/  delegate/
+│   │   │   │   │   └── notifications/  account/
+│   │   │   │   ├── sign-in/{verify,reset}/
+│   │   │   │   └── dkms/decrypt/route.ts       3 lines, calls the package
+│   │   │   ├── features/                       console-only
+│   │   │   │   ├── projects/  notices/  registry/  consent/
+│   │   │   │   ├── exchange/  rights/  audit/  users/
+│   │   │   │   ├── messages/  delegations/  dashboard/
+│   │   │   ├── components/                     console-only: audit-detail, …
+│   │   │   └── app-config.ts                   what differs from the portal   new
+│   │   ├── e2e/
+│   │   │   ├── support/                        sessions, outbox, layout
+│   │   │   └── __screenshots__/visual/
+│   │   ├── public/
+│   │   ├── next.config.ts  package.json  .env.example
+│   │   └── README.md
+│   │
+│   └── portal/                                 ← cmp_public_ui/          moved
+│       ├── src/
+│       │   ├── app/
+│       │   │   ├── (app)/                      my-consents, my-requests,
+│       │   │   │                               notifications, account
+│       │   │   ├── c/[token]/                  the consent flow
+│       │   │   ├── rights/{nominee,nominations/[token]}/
+│       │   │   ├── sign-in/  sign-up/
+│       │   │   └── dkms/decrypt/route.ts       3 lines, calls the package
+│       │   ├── features/                       portal-only
+│       │   │   ├── public-consent/  my-consents/  rights/
+│       │   ├── components/                     portal-only
+│       │   └── app-config.ts                                              new
+│       ├── e2e/support/
+│       ├── public/
+│       ├── next.config.ts  package.json  .env.example
+│       └── README.md
+```
+
+```
+compass/  (continued)
+│
+├── packages/                                   everything below is currently
+│   │                                           duplicated in both portals
+│   │
+│   ├── ui/                                     the design system
+│   │   ├── src/
+│   │   │   ├── primitives.tsx                  identical today          shared
+│   │   │   ├── charts.tsx                      identical today          shared
+│   │   │   ├── dialog.tsx  status.tsx  graphics.tsx
+│   │   │   ├── layout/                         app-shell, nav, page header
+│   │   │   ├── forms/                          Field, useApiForm, FormError
+│   │   │   ├── feedback/                       error boundary, empty state
+│   │   │   └── styles/                         tokens, themes, base, print
+│   │   └── package.json
+│   │
+│   ├── web-core/                               the shell every Next app needs
+│   │   ├── src/
+│   │   │   ├── proxy.ts                        identical today          shared
+│   │   │   ├── providers/                      query, toast, theme, error    5 files
+│   │   │   ├── auth/                           auth-provider, require-section
+│   │   │   ├── lib/
+│   │   │   │   ├── api/                        the fetch client, envelope
+│   │   │   │   ├── errors/  format/  query/  security/  permissions/
+│   │   │   ├── schemas/                        contacts, files, primitives   5 files
+│   │   │   └── test/                           MSW server, render helper
+│   │   └── package.json
+│   │
+│   ├── api-types/                              one contract, two consumers
+│   │   ├── src/
+│   │   │   ├── api-schema.d.ts                 generated from openapi.json
+│   │   │   ├── consent.ts  exchange.ts  meta.ts  envelope.ts
+│   │   │   ├── primitives.ts  enums.ts  identity.ts  projects.ts
+│   │   │   ├── rights.ts  notices.ts  registry.ts  audit.ts  dashboard.ts
+│   │   │   └── api-contract.test-d.ts          the curated types, checked
+│   │   └── package.json
+│   │
+│   ├── dkms-client/                            added to both by hand this week
+│   │   ├── src/
+│   │   │   ├── api.ts                          decryptRecords, isEncrypted
+│   │   │   ├── use-decrypted.ts                one call for a whole list
+│   │   │   └── route-handler.ts                the POST each app re-exports   new
+│   │   └── package.json
+│   │
+│   └── tsconfig/                                                          new
+│       ├── base.json  next.json  eslint.config.mjs
+│       └── package.json
+│
+├── docs/
+│   ├── README.md                               the map
+│   ├── glossary.md
+│   ├── architecture/
+│   │   ├── system-overview.md  repository-layout.md  domain-model.md  api.md
+│   │   ├── layers.md  dependency-rules.md  request-lifecycle.md   ← apps/api/docs
+│   │   └── rights.md                                              ← apps/api/docs
+│   ├── security/                                                  ← apps/api/docs
+│   │   ├── authentication.md  authorization.md  sessions.md
+│   │   ├── csrf.md  rate-limiting.md  audit.md
+│   ├── database/                                                  ← apps/api/docs
+│   │   ├── schema.md  migrations.md  transactions.md
+│   ├── domain/
+│   │   ├── roles-and-access.md  consent-lifecycle.md
+│   │   ├── collection-and-routing.md  rights-requests.md
+│   │   ├── messages.md  audit-trail.md  personal-data.md
+│   ├── operations/
+│   │   ├── local-development.md  deployment.md  runbook.md  testing.md
+│   │   ├── configuration.md  monitoring.md                        ← apps/api/docs
+│   ├── decisions/                              ADR 0001 … 0014
+│   ├── reviews/                                implementation review, DPDP gap
+│   ├── reference/                              generated and hand-reviewed
+│   │   ├── api/                                ← api_docs/              moved
+│   │   ├── database/                           ← database_schema/       moved
+│   │   └── access-control/                     ← api_access_control/    moved
+│   └── history/
+│
+├── tools/                                      what builds or checks the repo
+│   ├── generate-api-docs.py                    ← api_docs/generate.py
+│   ├── personal-data-scan.py                   ← docs/scripts/
+│   ├── schema-diagrams/                        ← database_schema/source/
+│   │                                           the Graphviz sources the SVGs
+│   │                                           are drawn from (10 .dot files)
+│   └── README.md                               what each tool regenerates    new
+│
+├── .github/workflows/ci.yml
+├── package.json                                workspaces: apps/*, packages/*  new
+├── README.md  CONTRIBUTING.md  CHANGELOG.md
+└── .gitignore
+```
+
+## What the tree is claiming, in four sentences
+
+**The root answers "what is this system".** Four apps, five packages, one
+documentation tree, one tools folder. Nothing at the root is a mystery, and
+`.baseline_routes.txt` is gone.
+
+**`apps/api` and `apps/dkms` are unchanged inside.** Every Python path below
+`src/` is exactly what it is today. The restructure does not touch the
+backend's layering, its domain packages, its migrations or its tests — only the
+two directories above them.
+
+**The two Next apps keep what makes them different and lose what does not.**
+What stays: routes, the features that are genuinely theirs, the components only
+one of them has. What leaves: the providers, the fetch client, the schemas, the
+test harness, the primitives, the types — 65 files that are identical today and
+37 more that differ only by drift.
+
+**`app-config.ts` is where the difference lives.** Where `auth-provider.tsx`,
+`app-shell.tsx` and `lib/config/index.ts` differ between the portals today, the
+shared module takes the difference as configuration and each app supplies it in
+one small file. That is the piece of real design work in this proposal, and it
+is also where you find out which of the current differences were decisions.
+
+## Two details worth approving explicitly
+
+**The DKMS route handler.** Next requires a `route.ts` inside `app/`, so it
+cannot live wholly in a package. The package exports the handler and each app's
+file is three lines:
+
+```ts
+// apps/console/src/app/dkms/decrypt/route.ts
+import { createDecryptHandler } from "@compass/dkms-client/route-handler";
+export const POST = createDecryptHandler();
+```
+
+**The `docs/security/` and `docs/database/` folders come from `apps/api/docs`.**
+Today the backend keeps seventeen documents about its own internals, and
+`docs/README.md` has a whole section pointing at them. Merging them removes the
+signpost. The counter-argument is real — documentation next to the code it
+describes is easier to keep current — so this is the one move in the tree I would
+most readily drop if you disagree.
+
+## Names, for approval
+
+| Proposed | Instead of | Why |
+|---|---|---|
+| `apps/api` | `cmp_backend` | It is the API; "backend" names a tier, not a thing |
+| `apps/console` | `cmp_internal_ui` | The word the docs and the team already use |
+| `apps/portal` | `cmp_public_ui` | Same |
+| `apps/dkms` | `cmp_dkms` | The `cmp_` prefix repeats the repository's own name |
+| `packages/web-core` | — | Named for what it is; not `shared`, not `common` |
+| `docs/reference/` | three root folders | They are reference documentation, not projects |
+
+## Approve, or tell me which lines are wrong
+
+The tree above is the whole proposal made concrete. If it is right, phase 1
+(the four `git mv`s and the CI paths) is about half a day and changes no code.
+If a line is wrong — a name, a package boundary, the `apps/api/docs` merge —
+say which, and I will redraw it before anything moves.
