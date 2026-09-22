@@ -22,6 +22,7 @@ you need. **Every document is in this tree.** The one exception is a
 - [Personal data](domain/personal-data.md): every table, store and endpoint that holds or moves something about a person, and what protects it
 - [PII fields and endpoints](domain/pii-fields-and-endpoints.md): the short form — the 54 personal columns by table, and every endpoint that carries one, by module
 - [API](architecture/api.md): route families, the error contract, pagination, identifiers
+- [Frontend best practices](frontend/best-practices.md): the React and Next.js standard — each rule, how the portals meet it and where, what is deliberately different, and the decision matrix a pull request answers
 - [Testing](operations/testing.md): what each suite proves and how to run it without fighting the rate limiter
 - [Contributing](../CONTRIBUTING.md): the checks a change must pass and how commits are written
 
