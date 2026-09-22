@@ -31,8 +31,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-/** Server-only. The key service is not on the public internet and not in the bundle. */
-const DKMS_URL = (process.env.DKMS_URL ?? "http://localhost:32688").replace(/\/+$/, "");
+/**
+ * Server-only. The key service is not on the public internet and not in the
+ * bundle. Required, with no fallback to a local instance: the service this
+ * portal decrypts with is whichever one `DKMS_URL` names - on another host,
+ * as `http://<ip>:32688` - and a default would have a misconfigured portal
+ * quietly asking a service that is not the one the data was sealed with.
+ */
+const DKMS_URL = (process.env.DKMS_URL ?? "").replace(/\/+$/, "");
 const SESSION_COOKIE = process.env.NEXT_PUBLIC_SESSION_COOKIE ?? "cmp_session";
 
 /** The host alone, for a diagnostic: never the path, never a value. */
@@ -58,6 +64,16 @@ interface DecryptBody {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  if (!DKMS_URL) {
+    console.error(
+      "[dkms] DKMS_URL is not set; set it to the key service, e.g. http://<ip>:32688",
+    );
+    return NextResponse.json(
+      { error: "the encryption service is not configured" },
+      { status: 503 },
+    );
+  }
+
   if (!request.cookies.get(SESSION_COOKIE)) {
     // Not an authorisation decision — the API made that when it served the
     // ciphertext. This only refuses to be an open oracle.
