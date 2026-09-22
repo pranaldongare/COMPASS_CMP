@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 from cmp.db.sql import Conn, fetch_all, fetch_one
-from cmp.infrastructure.dkms.blind import index_of
+from cmp.infrastructure.dkms.blind import index_of, search_ngrams
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,12 +89,13 @@ _LOOKUPS: Final[dict[str, tuple[str, str]]] = {
     # one ILIKE pattern `p`, bound as often as needed, and the blind indexes of
     # the term read as an email `e`, a mobile `m` and a username `u`.
     #
-    # A person's name and contacts are sealed in the database, so no pattern
-    # can be matched against them: a person is found by the exact contact or
-    # username typed, through the index, and nothing else. The label and hint
-    # that come back sealed are opened by the console, like every other
-    # personal value it shows - which is why a label never concatenates a
-    # sealed column with a plain one: the console could open neither half.
+    # A person's name and contacts are sealed, so no pattern can be matched
+    # against them directly. Two things find a person instead: the whole
+    # contact or username typed, through its hash, and part of a name,
+    # through the hashed runs beside it (`@>`). The label and hint come back
+    # sealed and are opened by the console, like every other personal value
+    # it shows - which is why a label never concatenates a sealed column with
+    # a plain one: the console could open neither half.
     "data_subject": (
         "auth_user",
         """SELECT uuid::text AS uuid, full_name AS label,
@@ -102,7 +103,8 @@ _LOOKUPS: Final[dict[str, tuple[str, str]]] = {
            FROM auth_user
            WHERE role = 'data_subject'
              AND (email_hash = %(e)s OR secondary_email_hash = %(e)s OR mobile_hash = %(m)s
-                  OR uuid::text = %(t)s)
+                  OR uuid::text = %(t)s
+                  OR (%(g)s::text[] IS NOT NULL AND full_name_ngrams @> %(g)s))
            ORDER BY created_at DESC LIMIT %(n)s""",
     ),
     "staff": (
@@ -110,7 +112,8 @@ _LOOKUPS: Final[dict[str, tuple[str, str]]] = {
         """SELECT uuid::text AS uuid, full_name AS label, role::text AS hint
            FROM auth_user
            WHERE role <> 'data_subject'
-             AND (email_hash = %(e)s OR username_hash = %(u)s OR uuid::text = %(t)s)
+             AND (email_hash = %(e)s OR username_hash = %(u)s OR uuid::text = %(t)s
+                  OR (%(g)s::text[] IS NOT NULL AND full_name_ngrams @> %(g)s))
            ORDER BY created_at DESC LIMIT %(n)s""",
     ),
     "consent": (
@@ -173,6 +176,8 @@ _LOOKUPS: Final[dict[str, tuple[str, str]]] = {
            FROM rights_request r LEFT JOIN auth_user s ON s.id = r.subject_user_id
            WHERE r.reference ILIKE %(p)s OR r.submitted_contact_hash = %(c)s
               OR s.email_hash = %(e)s OR s.mobile_hash = %(m)s
+              OR (%(g)s::text[] IS NOT NULL AND
+                  (r.submitted_name_ngrams @> %(g)s OR s.full_name_ngrams @> %(g)s))
            ORDER BY r.received_at DESC LIMIT %(n)s""",
     ),
 }
@@ -190,6 +195,7 @@ async def lookup(conn: Conn, kind: str, term: str, *, limit: int = 10) -> list[d
         return []
     entity_type, sql = _LOOKUPS[kind]
     t = term.strip()
+    runs = search_ngrams(t)
     params = {
         "p": like_pattern(t),
         "n": limit,
@@ -198,6 +204,10 @@ async def lookup(conn: Conn, kind: str, term: str, *, limit: int = 10) -> list[d
         "m": index_of("mobile", t),
         "u": index_of("username", t),
         "c": index_of("contact", t),
+        # None rather than an empty array: a term too short to have a run
+        # should match on the other clauses, not on "contains nothing", which
+        # every row satisfies.
+        "g": runs or None,
     }
     rows = await fetch_all(conn, sql, params)
     return [

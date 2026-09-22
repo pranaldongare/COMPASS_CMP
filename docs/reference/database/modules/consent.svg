@@ -10,7 +10,7 @@
 <title>Schema</title>
 <polygon fill="#f7fafc" stroke="none" points="-36,36 -36,-1054 1487,-1054 1487,36 -36,36"/>
 <text xml:space="preserve" text-anchor="start" x="8" y="-988" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="30.00" fill="#142c44">COMPASS / CONSENT</text>
-<text xml:space="preserve" text-anchor="start" x="8" y="-972.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0029 / full module tables with outgoing references / source f145a7c</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-972.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0030 / full module tables with outgoing references / source cddde41</text>
 <text xml:space="preserve" text-anchor="start" x="8" y="-946.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">FK arrow: child column to referenced key &#160;&#160;| &#160;&#160;Solid = required FK; dashed = nullable FK; dotted = view dependency</text>
 <text xml:space="preserve" text-anchor="start" x="13.43" y="-934.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">PK = primary key; FK = foreign key; UQ = member of unique constraint (possibly composite); ? = nullable column</text>
 <g id="clust1" class="cluster">
@@ -526,7 +526,7 @@
 <polygon fill="#174e82" stroke="none" points="1262.38,-446.2 1262.38,-477.4 1450,-477.4 1450,-446.2 1262.38,-446.2"/>
 <text xml:space="preserve" text-anchor="start" x="1268.38" y="-458" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="white">auth_user</text>
 <polygon fill="#f1f5f9" stroke="none" points="1262.38,-422.2 1262.38,-446.2 1450,-446.2 1450,-422.2 1262.38,-422.2"/>
-<text xml:space="preserve" text-anchor="start" x="1268.38" y="-430.2" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">IDENTITY / 25 columns / 1 foreign keys</text>
+<text xml:space="preserve" text-anchor="start" x="1268.38" y="-430.2" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">IDENTITY / 26 columns / 1 foreign keys</text>
 <polygon fill="#f8fafc" stroke="none" points="1262.38,-397 1262.38,-422.2 1290.11,-422.2 1290.11,-397 1262.38,-397"/>
 <text xml:space="preserve" text-anchor="start" x="1268.38" y="-406" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#174e82">PK</text>
 <polygon fill="#f8fafc" stroke="none" points="1290.11,-397 1290.11,-422.2 1416.86,-422.2 1416.86,-397 1290.11,-397"/>

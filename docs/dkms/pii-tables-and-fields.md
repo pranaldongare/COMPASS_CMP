@@ -14,7 +14,8 @@ and checked against the database on 2026-09-22. The narrative version is
 |---|---|
 | **Sealed** | The value in the row is ciphertext, `SE::…`. Written through `seal()`, never written in the clear |
 | **Type** | Which of the 13 DKMS data types it is sealed as. The type is in the envelope, so a reader needs to know nothing but that it holds ciphertext |
-| **Hash** | A keyed-hash column beside it, `*_hash` = `HMAC-SHA256(normalised value, BLIND_INDEX_KEY)`. What the platform looks rows up by, since ciphertext cannot be searched |
+| **Hash** | A keyed-hash column beside it, `*_hash` = `HMAC-SHA256(normalised value, BLIND_INDEX_KEY)`. What the platform looks rows up by *whole*, since ciphertext cannot be searched |
+| **Runs** | A `*_ngrams text[]` beside it, holding the hashed three-character runs of the value, with a GIN index. What a search by *part* of a value matches, with `@>` |
 | **Plain** | Deliberately in the clear, with the reason |
 
 The 13 types and their ids (byte 3 of every envelope):
@@ -35,7 +36,7 @@ The 13 types and their ids (byte 3 of every envelope):
 
 | Column | Type | Hash column | What it is |
 |---|---|---|---|
-| `full_name` | NAME | — | The name shown everywhere a person appears |
+| `full_name` | NAME | `full_name_ngrams` (runs) | The name shown everywhere a person appears; searched by part of it |
 | `email` | EMAIL | `email_hash` | Primary address: sign-in, every code, every notice |
 | `secondary_email` | EMAIL | `secondary_email_hash` | A second address she asked us to use |
 | `mobile` | MOBILE | `mobile_hash` | Primary number: sign-in, OTP, consent codes |
@@ -47,7 +48,7 @@ The 13 types and their ids (byte 3 of every envelope):
 
 | Column | Type | Hash column |
 |---|---|---|
-| `nominee_name` | NAME | — |
+| `nominee_name` | NAME | `nominee_name_ngrams` (runs) |
 | `nominee_email` | EMAIL | `nominee_email_hash` |
 | `nominee_mobile` | MOBILE | `nominee_mobile_hash` |
 
@@ -55,7 +56,7 @@ The 13 types and their ids (byte 3 of every envelope):
 
 | Column | Type | Hash column | What it is |
 |---|---|---|---|
-| `submitted_name` | NAME | — | The name on the form |
+| `submitted_name` | NAME | `submitted_name_ngrams` (runs) | The name on the form, searched by part of it before it is matched to an account |
 | `submitted_contact` | CONTACT | `submitted_contact_hash` | Where the answer goes; `CONTACT` because it may be either kind |
 | `request_text` | FREE_TEXT | — | Her words |
 | `verification_note` | FREE_TEXT | — | How identity was established, in the DPO's words |
@@ -119,10 +120,34 @@ send something to it.
 | `nomination` | `nominee_mobile` | `nominee_mobile_hash` | E.164 |
 | `rights_request` | `submitted_contact` | `submitted_contact_hash` | `@` decides email or mobile |
 
-**What this costs.** Partial search is gone. A person is found by the
-*whole* email, mobile, username or employee number; by reference, uuid or
-project as before; **not** by a few letters of a name. The users list, the
-requests list and the audit lookup all say so in their fields.
+**What this costs.** A contact is matched *whole*: a complete address, a
+complete number, a complete username or employee number. Half an address
+matches nothing, which is the point - all an exact hash ever leaks is
+equality.
+
+## 2a. Searching by part of a name
+
+Three columns carry a second index, `*_ngrams`: the value cut into
+overlapping runs of three characters, each hashed under the same key, stored
+as a `text[]` with a GIN index on it. A search hashes the runs of the term
+and asks for rows holding all of them (`@>`), so "shu" finds "Amruta
+Shukla". The answer is candidates, not certainty - a row holding the runs of
+"ana" might be "banana" - which for a search box is what is wanted.
+
+| Table | Sealed column | Runs column | Where it is used |
+|---|---|---|---|
+| `auth_user` | `full_name` | `full_name_ngrams` | the staff register, the audit trail's About picker |
+| `rights_request` | `submitted_name` | `submitted_name_ngrams` | the requests list |
+| `nomination` | `nominee_name` | `nominee_name_ngrams` | finding a nomination somebody is asking about |
+
+**What the runs cost, stated plainly.** They leak more than an exact hash.
+Anyone holding the column can count how often each run appears and compare
+that against the letter statistics of a language; with enough rows, common
+names can be recovered without the key. That is inherent to substring search
+over encrypted data, not a flaw in this implementation. So the list above is
+short by design, and a **contact is never in it** - contacts are searched
+whole. Adding a fourth column means accepting that trade for that column,
+and writing down why.
 
 ---
 
@@ -150,6 +175,7 @@ sealed column after everything it writes.
 | Personal columns | 54 |
 | **Sealed columns** | **33** in 14 tables |
 | With a `*_hash` lookup column | 8 |
+| With a `*_ngrams` search column | 3 |
 | Plaintext by decision | 1 (`minor_until`) |
 | Plaintext by nature (ids, flags, hashes, paths) | 12 |
 | API endpoints carrying any of it | 159 |

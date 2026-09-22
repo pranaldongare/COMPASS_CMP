@@ -50,7 +50,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings.assert_shippable()
     provider = build_provider()
     app.state.engine = BulkEngine(
-        provider, workers=settings.workers, chunk_size=settings.chunk_size
+        provider,
+        workers=settings.workers,
+        chunk_size=settings.chunk_size,
+        hash_key=settings.hash_key_bytes,
     )
     app.state.max_records = settings.max_records
     log.info(

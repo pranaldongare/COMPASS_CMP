@@ -22,7 +22,7 @@ from cmp.core.pagination import PageRequest, build_page
 from cmp.core.permissions import Role
 from cmp.db.sql import Conn, Row, fetch_all, fetch_one, keyset_clause
 from cmp.infrastructure.dkms import seal, unseal_value
-from cmp.infrastructure.dkms.blind import index_of
+from cmp.infrastructure.dkms.blind import index_of, ngrams_of, search_ngrams
 
 LIST_SORTS = ("received_at", "due_at")
 
@@ -167,7 +167,7 @@ async def create(
            verification_method, verification_status, verified_at, verified_by,
            verification_note, linked_request_id, nomination_id, trigger_event,
            trigger_evidence_ref, trigger_evidence_hash, about_dpo, consent_id,
-           submitted_contact_hash)
+           submitted_contact_hash, submitted_name_ngrams)
         VALUES
           ('RR-' || to_char(now(), 'YYYY') || '-'
              || lpad(nextval('rights_request_ref_seq')::text, 6, '0'),
@@ -180,7 +180,7 @@ async def create(
            %(verified_by)s, %(verification_note)s, %(linked_request_id)s,
            %(nomination_id)s, %(trigger_event)s::rights_trigger_event,
            %(trigger_evidence_ref)s, %(trigger_evidence_hash)s, %(about_dpo)s,
-           %(consent_id)s, %(submitted_contact_hash)s)
+           %(consent_id)s, %(submitted_contact_hash)s, %(submitted_name_ngrams)s)
         RETURNING request_id, request_uuid, reference, received_at, due_at
         """,
         {
@@ -190,6 +190,9 @@ async def create(
             "submitted_name": sealed["submitted_name"],
             "submitted_contact": sealed["submitted_contact"],
             "submitted_contact_hash": index_of("contact", contact_plain),
+            # The name as typed on the form, in hashed runs, so the office can
+            # find a request by part of it before it is matched to an account.
+            "submitted_name_ngrams": ngrams_of(submitted_name),
             "request_text": sealed["request_text"],
             "due_at": due_at,
             "created_by": created_by,
@@ -373,18 +376,26 @@ async def list_requests(
         # A team has written on a ticket and the office has not read it.
         where.append(f"r.status <> 'closed' AND {_UNREAD_THREADS} > 0")
     if q:
-        # Names and contacts are sealed, and a substring of ciphertext matches
-        # nothing. A reference still matches as it did; a contact matches
-        # exactly, through the blind index - of the request, or of the account.
+        # A reference matches as it always did. A contact matches whole,
+        # through its hash - the request's own, or the account's. A name
+        # matches by part of it, through the hashed runs: the name typed on
+        # the form, and the name on the account it was matched to.
         q = q.strip()
-        where.append(
-            "(r.reference ILIKE %s OR r.submitted_contact_hash = %s "
-            "OR s.email_hash = %s OR s.mobile_hash = %s)"
-        )
         email_hash, mobile_hash = (
             (index_of("email", q), None) if "@" in q else (None, index_of("mobile", q))
         )
+        clauses = [
+            "r.reference ILIKE %s",
+            "r.submitted_contact_hash = %s",
+            "s.email_hash = %s",
+            "s.mobile_hash = %s",
+        ]
         params.extend([f"%{q}%", index_of("contact", q), email_hash, mobile_hash])
+        runs = search_ngrams(q)
+        if runs:
+            clauses += ["r.submitted_name_ngrams @> %s", "s.full_name_ngrams @> %s"]
+            params.extend([runs, runs])
+        where.append("(" + " OR ".join(clauses) + ")")
 
     clause = " AND ".join(where)
     keyset, kparams = keyset_clause(req, alias="r", id_column="request_id")
@@ -1303,8 +1314,9 @@ async def create_nomination(
         """
         INSERT INTO nomination
           (principal_user_id, nominee_name, nominee_mobile, nominee_email, rights,
-           accept_token_hash, accept_expires_at, nominee_mobile_hash, nominee_email_hash)
-        VALUES (%s, %s, %s, %s, %s::rights_request_type[], %s, %s, %s, %s)
+           accept_token_hash, accept_expires_at, nominee_mobile_hash, nominee_email_hash,
+           nominee_name_ngrams)
+        VALUES (%s, %s, %s, %s, %s::rights_request_type[], %s, %s, %s, %s, %s)
         RETURNING nomination_id, nomination_uuid
         """,
         (
@@ -1317,6 +1329,7 @@ async def create_nomination(
             accept_expires_at,
             index_of("mobile", nominee_mobile),
             index_of("email", nominee_email),
+            ngrams_of(nominee_name),
         ),
     )
     assert row is not None

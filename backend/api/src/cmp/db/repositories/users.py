@@ -14,7 +14,7 @@ from typing import Any
 from cmp.core.pagination import PageRequest, build_page
 from cmp.db.sql import Conn, Row, execute, fetch_all, fetch_one, keyset_clause, require_one
 from cmp.infrastructure.dkms import seal
-from cmp.infrastructure.dkms.blind import index_of
+from cmp.infrastructure.dkms.blind import index_of, ngrams_of, search_ngrams
 from cmp.validation import normalise_mobile
 
 # The columns any caller may see. `password_hash` is not among them and must
@@ -201,6 +201,9 @@ async def create(
     # Every personal column goes in sealed. The ones the platform finds rows by
     # - email, mobile, username, the employee id - also get their blind index,
     # computed on the normalised form, which is what every lookup compares.
+    # The name additionally gets its hashed runs, which is what a search by
+    # part of a name compares; both are taken from the plaintext, here, the
+    # one place it exists on the way in.
     mobile_n = normalise_mobile(mobile) if mobile else None
     email_n = email.strip().lower() if email else None
     sealed = await seal(
@@ -220,9 +223,10 @@ async def create(
         INSERT INTO auth_user (username, full_name, email, mobile, organization_id,
                                role, person_type, status, password_hash,
                                registered_via_link_id, dob, minor_until,
-                               email_hash, mobile_hash, username_hash, organization_id_hash)
+                               email_hash, mobile_hash, username_hash, organization_id_hash,
+                               full_name_ngrams)
         VALUES (%s, %s, %s, %s, %s, %s::user_role, %s::person_type, %s::user_status, %s, %s,
-                %s, %s::date + INTERVAL '18 years', %s, %s, %s, %s)
+                %s, %s::date + INTERVAL '18 years', %s, %s, %s, %s, %s)
         RETURNING id, uuid, username, full_name, email, mobile, organization_id,
                   role, person_type, status, dob, cmp_is_minor(minor_until) AS is_minor,
                   email_hash, mobile_hash, secondary_email_hash,
@@ -245,6 +249,7 @@ async def create(
             index_of("mobile", mobile_n),
             index_of("username", username),
             index_of("text", organization_id),
+            ngrams_of(full_name),
         ),
     )
     assert row is not None
@@ -282,6 +287,7 @@ async def update_profile(
         """
         UPDATE auth_user
            SET full_name          = COALESCE(%s, full_name),
+               full_name_ngrams   = COALESCE(%s, full_name_ngrams),
                mobile             = COALESCE(%s, mobile),
                mobile_hash         = COALESCE(%s, mobile_hash),
                -- A changed number is unconfirmed; the comparison is on the
@@ -302,6 +308,7 @@ async def update_profile(
         """,
         (
             sealed["full_name"],
+            ngrams_of(full_name) if full_name else None,
             sealed["mobile"],
             new_mobile_idx,
             new_mobile_idx,
@@ -426,18 +433,33 @@ async def list_users(
         where.append("u.person_type = %s::person_type")
         params.append(person_type)
     if q:
-        # Every column a person used to be searched by is sealed, and a
-        # substring of ciphertext matches nothing. What still works, and is
-        # what people actually paste in: an exact email, mobile, username or
-        # employee id, matched through its blind index.
+        # Two searches, because the columns are sealed and a substring of
+        # ciphertext matches nothing.
+        #
+        # A *contact* is matched whole, through its hash: an address, a
+        # number, a username, an employee id, as the person would paste it.
+        #
+        # A *name* is matched by part of it, through the hashed runs beside
+        # it: `@>` asks for a row whose set contains every run of the term,
+        # which is "shu" appearing somewhere in the name. Those are
+        # candidates, not certainty - a row holding the runs of "ana" could
+        # be "banana" - which for a search box is what is wanted.
         email_hash, mobile_hash = contact_indexes(q.strip())
-        where.append(
-            "(u.email_hash = %s OR u.secondary_email_hash = %s OR u.mobile_hash = %s "
-            "OR u.username_hash = %s OR u.organization_id_hash = %s)"
-        )
+        runs = search_ngrams(q)
+        clauses = [
+            "u.email_hash = %s",
+            "u.secondary_email_hash = %s",
+            "u.mobile_hash = %s",
+            "u.username_hash = %s",
+            "u.organization_id_hash = %s",
+        ]
         params.extend(
             [email_hash, email_hash, mobile_hash, index_of("username", q), index_of("text", q)]
         )
+        if runs:
+            clauses.append("u.full_name_ngrams @> %s")
+            params.append(runs)
+        where.append("(" + " OR ".join(clauses) + ")")
 
     clause = " AND ".join(where)
     keyset, keyset_params = keyset_clause(req, alias="u", id_column="id")

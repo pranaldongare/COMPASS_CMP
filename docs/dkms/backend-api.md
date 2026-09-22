@@ -24,11 +24,12 @@ each handing a value to a person outside the browser.
 
 ## The key service
 
-A separate FastAPI service, `backend/dkms`, on port **32688**. Contract, for
-both directions:
+A separate FastAPI service, `backend/dkms`, on port **32688**. Five
+endpoints: three that act on batches of records, two that answer "what
+should I look for".
 
 ```
-POST /bulk_encrypt        POST /bulk_decrypt
+POST /bulk_encrypt        POST /bulk_decrypt        POST /bulk_hash
 {
   "data":   [ {"NAME": "Amruta Shukla"}, {"EMAIL": "a@x.org"} ],
   "key":    {"NAME": "NAME", "EMAIL": "EMAIL"},
@@ -37,9 +38,42 @@ POST /bulk_encrypt        POST /bulk_decrypt
 → { "data": [ {"NAME": "SE::…"}, {"EMAIL": "SE::…"} ] }
 ```
 
-Optional, defaults behave as the plain contract does: `on_error` (`fail` |
-`skip`), `skip_encrypted`. Aliases `/encrypt/bulk` and `/decrypt/bulk`
-answer the same. `GET /health` and `GET /types` are the operational surface.
+`/bulk_encrypt` takes two more options that turn one call into everything a
+row needs: `with_hash` returns `<field>_hash` beside each encrypted field,
+and `with_ngrams` returns `<field>_ngrams`. Both are taken from the
+plaintext, which is why they are offered here - encrypting is the one moment
+both forms exist. Off by default, so the contract is what it always was
+unless it is asked for.
+
+`/bulk_hash` does the hashing alone, for a caller that has no ciphertext to
+write: a backfill, or a second system that stores its own index.
+
+```
+POST /search                          POST /search_ngram
+{ "term": "a@x.org", "type": "EMAIL" }  { "term": "shu", "type": "NAME" }
+→ { "hash": "…", "sql": "<field>_hash = :hash" }
+→ { "ngrams": ["…","…"], "sql": "<field>_ngrams @> :ngrams" }
+```
+
+The service holds keys, not rows: it cannot search anything, and says so by
+answering with the tokens a caller's own `WHERE` clause needs. `/search` is
+for a whole value - an address, a number - and `/search_ngram` for part of
+one, which is refused below three characters rather than answered with an
+empty list that would read as "nothing matched".
+
+Optional on the bulk calls, defaults behaving as the plain contract does:
+`on_error` (`fail` | `skip`), `skip_encrypted`. Aliases `/encrypt/bulk` and
+`/decrypt/bulk` answer the same. `GET /health` and `GET /types` are the
+operational surface.
+
+**Two keys.** `DKMS_MASTER_KEY` encrypts; `DKMS_HASH_KEY` hashes. Separate,
+so a hash says nothing about an encryption key and either can be rotated
+alone. The hash key is shared with the platform - `BLIND_INDEX_KEY` is the
+same string - for one reason worth stating plainly: the platform computes
+the same hashes locally, so that people can still sign in when this service
+is unreachable. That makes the labels and the normalisation a contract
+between two codebases; `tests/test_searchable.py` pins them on one side and
+`tests/unit/infrastructure/` on the other.
 
 **The envelope.** `'D' 'K' version type_id nonce ciphertext+tag`, base64url,
 prefixed `SE::`. AES-256-GCM with a per-type key derived from
@@ -105,7 +139,7 @@ the contact log — leaves sealed.
 | Was | Is now |
 |---|---|
 | `WHERE lower(email) = lower(%s)` | `WHERE email_hash = %s` with `index_of("email", typed)` |
-| `WHERE full_name ILIKE %s` | Gone. A person is found by a whole contact; records still match on their names |
+| `WHERE full_name ILIKE %s` | `full_name_ngrams @> %s` — the hashed runs of the term, all of which the row must hold. Part of a name finds a person again, from three characters up; a contact has no runs and is still matched whole |
 | `u.full_name \|\| ' — ' \|\| p.project_name AS label` | `label_parts`: an array the reader joins **after** opening. A sealed value glued to plaintext is a string nobody can open, and it makes the key service refuse the batch it travels in. `tests/unit/infrastructure/test_no_sealed_column_is_concatenated.py` fails the build on the next one |
 | `ORDER BY full_name` | By `created_at`, or by a plaintext column. Ciphertext sorts arbitrarily |
 | `CHECK (email ~ '...')` | On the index instead; the format is validated before sealing |

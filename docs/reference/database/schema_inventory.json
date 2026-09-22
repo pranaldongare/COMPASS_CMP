@@ -1,6 +1,6 @@
 {
-  "commit": "f145a7c45df14ee6418fad6889d87bb7e663c105",
-  "migration_head": "0029",
+  "commit": "cddde4144d96af24c3d6a4941e7d5f1a1fa900fd",
+  "migration_head": "0030",
   "migrations": [
     {
       "revision": "0001",
@@ -117,6 +117,10 @@
     {
       "revision": "0029",
       "source": "backend/api/migrations/versions/0029_hash_columns.py"
+    },
+    {
+      "revision": "0030",
+      "source": "backend/api/migrations/versions/0030_ngram_search.py"
     }
   ],
   "postgres_version": "16.15",
@@ -670,6 +674,15 @@
       "not_null": false,
       "default_value": null,
       "comment": "The date this person stops being a child under s.9: date of birth plus eighteen years. Kept in the clear so the test stays a comparison; dob itself is sealed"
+    },
+    {
+      "table_name": "auth_user",
+      "name": "full_name_ngrams",
+      "position": 26,
+      "type": "text[]",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
     },
     {
       "table_name": "collection",
@@ -1837,6 +1850,15 @@
       "name": "nominee_mobile_hash",
       "position": 21,
       "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "nomination",
+      "name": "nominee_name_ngrams",
+      "position": 22,
+      "type": "text[]",
       "not_null": false,
       "default_value": null,
       "comment": null
@@ -3475,6 +3497,15 @@
       "name": "submitted_contact_hash",
       "position": 47,
       "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "rights_request",
+      "name": "submitted_name_ngrams",
+      "position": 48,
+      "type": "text[]",
       "not_null": false,
       "default_value": null,
       "comment": null
@@ -7670,6 +7701,11 @@
     },
     {
       "table_name": "auth_user",
+      "name": "idx_auth_user_full_name_ngrams",
+      "definition": "CREATE INDEX idx_auth_user_full_name_ngrams ON public.auth_user USING gin (full_name_ngrams)"
+    },
+    {
+      "table_name": "auth_user",
       "name": "idx_user_role_status",
       "definition": "CREATE INDEX idx_user_role_status ON public.auth_user USING btree (role, status)"
     },
@@ -7917,6 +7953,11 @@
       "table_name": "nomination",
       "name": "idx_nomination_nominee_mobile_hash",
       "definition": "CREATE INDEX idx_nomination_nominee_mobile_hash ON public.nomination USING btree (nominee_mobile_hash)"
+    },
+    {
+      "table_name": "nomination",
+      "name": "idx_nomination_nominee_name_ngrams",
+      "definition": "CREATE INDEX idx_nomination_nominee_name_ngrams ON public.nomination USING gin (nominee_name_ngrams)"
     },
     {
       "table_name": "nomination",
@@ -8182,6 +8223,11 @@
       "table_name": "rights_request",
       "name": "idx_rights_request_subject",
       "definition": "CREATE INDEX idx_rights_request_subject ON public.rights_request USING btree (subject_user_id)"
+    },
+    {
+      "table_name": "rights_request",
+      "name": "idx_rights_request_submitted_name_ngrams",
+      "definition": "CREATE INDEX idx_rights_request_submitted_name_ngrams ON public.rights_request USING gin (submitted_name_ngrams)"
     },
     {
       "table_name": "rights_request",
@@ -8955,7 +9001,7 @@
     "application_tables": 32,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 423,
+    "table_columns": 426,
     "foreign_keys": 93,
     "enums": 39,
     "triggers": 27,

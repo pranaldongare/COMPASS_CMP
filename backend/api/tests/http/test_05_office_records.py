@@ -70,7 +70,7 @@ class TestTheAuditTrail:
         summary = await call(http, "GET", "/audit/summary", session=world.dpo, params={"days": 1})
         assert summary.json()["total"] >= len(items)
 
-    async def test_the_lookup_finds_a_person_by_the_whole_contact_only(
+    async def test_the_lookup_finds_a_person_by_contact_and_by_part_of_a_name(
         self, http: httpx.AsyncClient, world: World
     ) -> None:
         hits = await call(
@@ -82,12 +82,25 @@ class TestTheAuditTrail:
         )
         assert [h["uuid"] for h in hits.json()] == [world.principal.uuid]
         assert hits.json()[0]["label"].startswith("SE::"), "the name comes back sealed"
+        # Part of a *name* finds her, through the hashed runs beside it.
+        name = plain(world.principal.user["full_name"])
+        by_name = await call(
+            http,
+            "GET",
+            "/audit/lookup",
+            session=world.dpo,
+            params={"kind": "data_subject", "q": name.split()[0][:6]},
+        )
+        assert world.principal.uuid in [h["uuid"] for h in by_name.json()]
+        # Part of an *address* still finds nobody. The domain every account
+        # in this suite shares is the sharpest test of it: if a contact
+        # carried runs, this one term would return the whole register.
         fragment = await call(
             http,
             "GET",
             "/audit/lookup",
             session=world.dpo,
-            params={"kind": "data_subject", "q": world.principal_email.split("@")[0][:6]},
+            params={"kind": "data_subject", "q": world.principal_email.split("@")[1][:7]},
         )
         assert fragment.json() == []
         staff = await call(

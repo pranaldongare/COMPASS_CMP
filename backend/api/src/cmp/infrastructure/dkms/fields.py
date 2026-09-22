@@ -7,6 +7,7 @@ this is that document made executable.
 **Two lists, and the difference between them is the whole design.**
 
 `ENCRYPTED_FIELDS` is what can be encrypted with a randomised scheme: written
+
 once, read back whole, never searched. `LOOKUP_FIELDS` is what cannot - not
 because it is less sensitive, but because the platform *finds rows by it*. DKMS
 ciphertext is randomised, so two encryptions of the same address differ; an
@@ -170,6 +171,32 @@ BLIND_INDEXED: dict[str, dict[str, str]] = {
     "rights_request": {
         "submitted_contact": "submitted_contact_hash",
     },
+}
+
+#: Columns that also carry a *substring* index: `<column>_ngrams`, a text
+#: array of hashed three-character runs with a GIN index on it, so staff can
+#: search by part of a name again.
+#:
+#: Three columns, and the shortness of the list is the point. A set of runs
+#: leaks letter statistics that a single hash does not - with enough rows a
+#: common name can be recovered from it without the key - so a column earns
+#: one only where somebody genuinely types part of a value into a search box
+#: and the alternative is that they cannot do their job:
+#:
+#: * `auth_user.full_name` - the staff register and the audit trail's "who
+#:   was this about" picker.
+#: * `rights_request.submitted_name` - the name on a request that has not
+#:   been matched to an account yet, which is exactly when it is searched for.
+#: * `nomination.nominee_name` - finding the nomination somebody is asking
+#:   about on the phone.
+#:
+#: A contact is never here: it is searched whole, through the exact hash,
+#: which leaks nothing but equality. Neither is free text - a request's words
+#: are read on the request, not searched across the register.
+NGRAM_INDEXED: dict[str, dict[str, str]] = {
+    "auth_user": {"full_name": "full_name_ngrams"},
+    "rights_request": {"submitted_name": "submitted_name_ngrams"},
+    "nomination": {"nominee_name": "nominee_name_ngrams"},
 }
 
 #: Personal columns that are not sealed, each with the reason. Empty since

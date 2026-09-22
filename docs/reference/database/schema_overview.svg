@@ -10,7 +10,7 @@
 <title>Schema</title>
 <polygon fill="#f7fafc" stroke="none" points="-36,36 -36,-2290 2324.4,-2290 2324.4,36 -36,36"/>
 <text xml:space="preserve" text-anchor="start" x="8" y="-2224" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="30.00" fill="#142c44">COMPASS / RELATIONSHIPS</text>
-<text xml:space="preserve" text-anchor="start" x="8" y="-2208.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0029 / 33 tables and views / source f145a7c</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-2208.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0030 / 33 tables and views / source cddde41</text>
 <text xml:space="preserve" text-anchor="start" x="8" y="-2182.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">FK arrow: child column to referenced key &#160;&#160;| &#160;&#160;Solid = required FK; dashed = nullable FK; dotted = view dependency</text>
 <text xml:space="preserve" text-anchor="start" x="13.43" y="-2170.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">PK = primary key; FK = foreign key; UQ = member of unique constraint (possibly composite); ? = nullable column</text>
 <!-- asset_consent&#45;&gt;consent_artefact -->
@@ -504,7 +504,7 @@
 <polygon fill="#174e82" stroke="none" points="1508.38,-1025.6 1508.38,-1058.4 1629.41,-1058.4 1629.41,-1025.6 1508.38,-1025.6"/>
 <text xml:space="preserve" text-anchor="start" x="1516.38" y="-1038.8" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="14.00" fill="white">auth_user</text>
 <polygon fill="#f1f5f9" stroke="none" points="1508.38,-997.6 1508.38,-1025.6 1629.41,-1025.6 1629.41,-997.6 1508.38,-997.6"/>
-<text xml:space="preserve" text-anchor="start" x="1516.38" y="-1007.6" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">IDENTITY / 25 columns</text>
+<text xml:space="preserve" text-anchor="start" x="1516.38" y="-1007.6" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">IDENTITY / 26 columns</text>
 </a>
 </g>
 </g>
@@ -660,7 +660,7 @@
 <polygon fill="#174e82" stroke="none" points="527.07,-1388.6 527.07,-1421.4 640.32,-1421.4 640.32,-1388.6 527.07,-1388.6"/>
 <text xml:space="preserve" text-anchor="start" x="535.07" y="-1401.8" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="14.00" fill="white">nomination</text>
 <polygon fill="#f1f5f9" stroke="none" points="527.07,-1360.6 527.07,-1388.6 640.32,-1388.6 640.32,-1360.6 527.07,-1360.6"/>
-<text xml:space="preserve" text-anchor="start" x="535.07" y="-1370.6" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">RIGHTS / 20 columns</text>
+<text xml:space="preserve" text-anchor="start" x="535.07" y="-1370.6" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">RIGHTS / 21 columns</text>
 </a>
 </g>
 </g>
@@ -829,7 +829,7 @@
 <polygon fill="#174e82" stroke="none" points="788.71,-1388.6 788.71,-1421.4 901.96,-1421.4 901.96,-1388.6 788.71,-1388.6"/>
 <text xml:space="preserve" text-anchor="start" x="796.71" y="-1401.8" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="14.00" fill="white">rights_request</text>
 <polygon fill="#f1f5f9" stroke="none" points="788.71,-1360.6 788.71,-1388.6 901.96,-1388.6 901.96,-1360.6 788.71,-1360.6"/>
-<text xml:space="preserve" text-anchor="start" x="796.71" y="-1370.6" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">RIGHTS / 47 columns</text>
+<text xml:space="preserve" text-anchor="start" x="796.71" y="-1370.6" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">RIGHTS / 48 columns</text>
 </a>
 </g>
 </g>

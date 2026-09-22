@@ -6,7 +6,7 @@ decisions behind each choice are in
 [the backend document](backend-api.md) and
 [the frontend document](frontend-layer.md); this is the plan.
 
-**Status: phases 1–7 complete** (September 2026). Phase 8 is the standing
+**Status: phases 1–9 complete** (September 2026). Phase 10 is the standing
 work — what a new field, a new endpoint or a new environment costs.
 
 ## The goal, stated once
@@ -131,15 +131,49 @@ Four real defects, each fixed where it was found:
 
 The last one is now a static test over the repositories' SQL.
 
+## Phase 8 — the hash columns are called `*_hash`
+
+0028 named them `*_idx`, after what an index is built on rather than what
+the column holds, and six ordinary btree indexes in the schema end the same
+way. Migration 0029 renames all eight; a test holds the field map and the
+migration together so the two cannot drift into an undefined column at
+sign-in.
+
+The schema reference was rebuilt at the same time, and is now **generated**
+- `docs/tools/generate-schema-docs.py` reads the catalogue and writes the
+inventory, the column reference, the enum reference and every diagram. It
+had been hand-built at 0026 and described a schema that no longer existed.
+
+## Phase 9 — search comes back
+
+Sealing the names took a search away: the users list, the requests list and
+the audit trail's About picker were narrowed to whole contacts, and a member
+of staff holding a half-legible name on a piece of paper had no way to find
+the person.
+
+The key service gained three endpoints - `/bulk_hash`, `/search`,
+`/search_ngram` - and `/bulk_encrypt` gained `with_hash` and `with_ngrams`,
+so one call returns the ciphertext and everything the row needs beside it.
+Migration 0030 added `*_ngrams text[]` with GIN indexes to three name
+columns and backfilled them by decrypting each name through the key service,
+hashing it, and writing the hashes back. The three searches use `@>`.
+
+**The trade-off, recorded rather than buried:** a set of runs leaks letter
+statistics that a single hash does not, so it is three name columns and
+never a contact. [The field list](pii-tables-and-fields.md#2a-searching-by-part-of-a-name)
+carries the reasoning.
+
 ---
 
-## Phase 8 — the standing work
+## Phase 10 — the standing work
 
 ### A new personal field
 
 1. Add it to `ENCRYPTED_FIELDS` with its type.
 2. Make the column `text` in a migration. If anything looks the row up by
-   it, add a blind index column and use it in the lookup.
+   it whole, add a `*_hash` column and `BLIND_INDEXED` entry. If staff will
+   search by *part* of it, add a `*_ngrams text[]` with a GIN index and an
+   `NGRAM_INDEXED` entry — and write down why the leak is worth it.
 3. Write it through the repository, so `seal()` applies.
 4. Add its name to `contract.SEALED` in the HTTP suite.
 5. If the frontend shows it, nothing to do — the interceptor is generic.

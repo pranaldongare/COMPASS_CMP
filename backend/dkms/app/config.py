@@ -15,6 +15,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 #: rather than comparing against a string spelled out in two places.
 DEV_MASTER_KEY = "ZGV2LW9ubHktbWFzdGVyLWtleS0zMi1ieXRlcy1sb25nISE="
 
+#: The hashing key, in the clear rather than base64, because the platform
+#: holds the same string under `BLIND_INDEX_KEY` and the two must be typed
+#: identically into two .env files by a person.
+DEV_HASH_KEY = "dev-only-blind-index-key-32-bytes-long!"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
@@ -26,6 +31,13 @@ class Settings(BaseSettings):
     sdk_factory: str = Field("get_client", alias="DKMS_SDK_FACTORY")
 
     master_key: str = Field(DEV_MASTER_KEY, alias="DKMS_MASTER_KEY")
+    #: The key the exact and n-gram hashes are computed under. Separate from
+    #: the master key so that a hash says nothing about an encryption key and
+    #: either can be rotated alone - and shared with the platform, which
+    #: computes the same hashes locally so that people can still sign in when
+    #: this service is unreachable. It must equal the platform's
+    #: `BLIND_INDEX_KEY`, to the character.
+    hash_key: str = Field(DEV_HASH_KEY, alias="DKMS_HASH_KEY")
     key_version: int = Field(1, alias="DKMS_KEY_VERSION", ge=1, le=255)
     #: Retired master keys by version, so their ciphertext still opens.
     previous_keys: str = Field("{}", alias="DKMS_PREVIOUS_KEYS")
@@ -62,6 +74,10 @@ class Settings(BaseSettings):
         return {int(k): base64.b64decode(v) for k, v in parsed.items()}
 
     @property
+    def hash_key_bytes(self) -> bytes:
+        return self.hash_key.encode()
+
+    @property
     def origins(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
@@ -78,6 +94,12 @@ class Settings(BaseSettings):
                 "refusing to start: DKMS_MASTER_KEY is the key from .env.example. "
                 "Everything encrypted under it is readable by anyone with this "
                 "repository."
+            )
+        if self.hash_key == DEV_HASH_KEY or len(self.hash_key) < 32:
+            raise RuntimeError(
+                "refusing to start: DKMS_HASH_KEY is the key from .env.example, or is "
+                "too short. Every hash computed under it can be recomputed by anyone "
+                "with this repository, which is the whole protection a blind index has."
             )
         if "*" in self.origins:
             raise RuntimeError("refusing to start: CORS_ORIGINS is a wildcard")

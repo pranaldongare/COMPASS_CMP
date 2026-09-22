@@ -317,11 +317,11 @@ function AboutPicker({
         )}
       </Field>
       <div className="relative">
-        {/* A person is sealed in the database, so a few letters of a name
-            find nobody: what finds them is the whole email or mobile, through
-            the blind index. Records - projects, notices, processors - still
-            match on a fragment of their name. */}
-        <Field label={aboutAPerson ? "Email or mobile" : "Name"}>
+        {/* A person's name is sealed, and is searched through the hashed
+            runs beside it: part of a name finds them, from three characters
+            up. A contact has no runs - it is matched whole, through its own
+            hash - so the label names both. */}
+        <Field label={aboutAPerson ? "Name, email or mobile" : "Name"}>
           {(p) => (
             <Input
               {...p}

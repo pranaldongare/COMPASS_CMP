@@ -30,8 +30,22 @@ from typing import Any
 
 from app.dkms.base import DkmsError, DkmsProvider
 from app.dkms.local import PREFIX
+from app.dkms.searchable import (
+    hash_of,
+    ngrams_of,
+    normalise,
+    normalise_for_ngrams,
+    search_ngrams,
+)
 from app.dkms.types import DataType
-from app.schemas import BulkRequest, BulkResponse, FieldError, Record
+from app.schemas import (
+    BulkRequest,
+    BulkResponse,
+    FieldError,
+    HashRequest,
+    HashResponse,
+    Record,
+)
 
 
 def _chunks(records: list[Record], size: int) -> Iterator[tuple[int, list[Record]]]:
@@ -43,10 +57,13 @@ def _chunks(records: list[Record], size: int) -> Iterator[tuple[int, list[Record
 class BulkEngine:
     """Owns the pool, and turns a request into a response."""
 
-    def __init__(self, provider: DkmsProvider, *, workers: int, chunk_size: int) -> None:
+    def __init__(
+        self, provider: DkmsProvider, *, workers: int, chunk_size: int, hash_key: bytes
+    ) -> None:
         self._provider = provider
         self._workers = workers
         self._chunk_size = chunk_size
+        self._hash_key = hash_key
         self._pool = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="dkms")
 
     @property
@@ -115,6 +132,17 @@ class BulkEngine:
                     skipped += 1
                     continue
                 try:
+                    # The hash is of the *plaintext*, so it has to be taken
+                    # before the value is replaced. This is the one moment
+                    # both forms exist, which is why encrypting offers it at
+                    # all: a caller that hashed afterwards would have to
+                    # decrypt to do it.
+                    if encrypting and request.with_hash:
+                        copy[f"{field}_hash"] = hash_of(self._hash_key, data_type, value)
+                    if encrypting and request.with_ngrams:
+                        copy[f"{field}_ngrams"] = ngrams_of(
+                            self._hash_key, data_type, value, n=request.ngram_size
+                        )
                     copy[field] = operation(value, data_type)
                     changed += 1
                 except DkmsError as exc:
@@ -174,6 +202,50 @@ class BulkEngine:
             took_ms=round((time.perf_counter() - started) * 1000, 3),
             provider=self.provider_name,
             workers=self._workers,
+        )
+
+    # ----------------------------------------------------------- the hashes
+    def hash(self, request: HashRequest) -> HashResponse:
+        """Hash the named fields of every record, in place.
+
+        Not on the pool: HMAC-SHA256 over a contact is microseconds, and the
+        hand-off to a worker would cost more than the work. Encryption is on
+        the pool because AES-GCM through OpenSSL releases the GIL and a batch
+        of five thousand is real arithmetic; this is not.
+        """
+        started = time.perf_counter()
+        out: list[Record] = []
+        values = 0
+        for record in request.data:
+            copy = dict(record)
+            for field, data_type in request.key.items():
+                value = record.get(field)
+                if not isinstance(value, str) or not value:
+                    continue
+                copy[field] = hash_of(self._hash_key, data_type, value)
+                if request.with_ngrams:
+                    copy[f"{field}_ngrams"] = ngrams_of(
+                        self._hash_key, data_type, value, n=request.ngram_size
+                    )
+                values += 1
+            out.append(copy)
+        return HashResponse(
+            data=out,
+            records=len(out),
+            values=values,
+            took_ms=round((time.perf_counter() - started) * 1000, 3),
+        )
+
+    # ---------------------------------------------------------- the searches
+    def search(self, data_type: DataType, term: str) -> tuple[str, str]:
+        """(normalised term, hash) for an exact lookup."""
+        return normalise(data_type, term), hash_of(self._hash_key, data_type, term)
+
+    def search_ngram(self, data_type: DataType, term: str, n: int) -> tuple[str, list[str]]:
+        """(normalised term, the runs a row must contain) for a substring lookup."""
+        return (
+            normalise_for_ngrams(term),
+            search_ngrams(self._hash_key, data_type, term, n=n),
         )
 
 

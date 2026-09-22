@@ -1,6 +1,6 @@
 # COMPASS complete database schema
 
-Generated from the catalogue of a scratch database built by replaying migrations **0001 → 0029**, on 2026-09-22. Rebuild it with `python3 docs/tools/generate-schema-docs.py --database <db>`; nothing here is maintained by hand.
+Generated from the catalogue of a scratch database built by replaying migrations **0001 → 0030**, on 2026-09-22. Rebuild it with `python3 docs/tools/generate-schema-docs.py --database <db>`; nothing here is maintained by hand.
 
 ## Open the diagrams
 
@@ -34,13 +34,15 @@ Module diagrams include full local tables and their outgoing foreign keys. Refer
 | Application Tables | 32 |
 | Metadata Tables | 1 |
 | Views | 1 |
-| Table Columns | 423 |
+| Table Columns | 426 |
 | Foreign Keys | 93 |
 | Enums | 39 |
 | Triggers | 27 |
 | Checks | 42 |
 
-The Alembic `alembic_version` table is included separately as migration metadata. Its one column and the view’s 14 derived columns are additional to the 414 application-table columns. The three older documentation counts for tables/triggers/CHECKs were not used as the source: the inventory above comes from PostgreSQL catalogs after replaying the full migration chain.
+The Alembic `alembic_version` table is included separately as migration metadata. Its one column and the view's derived columns are additional to the 426 application-table columns; the inventory above comes from PostgreSQL's catalogues after replaying the full migration chain.
+
+Since **0027–0030** the personal columns are `text` rather than `varchar(n)` - ciphertext is longer than the plaintext it replaces - and each column the platform looks rows up by carries a `*_hash` column beside it holding `HMAC-SHA256(normalised value, BLIND_INDEX_KEY)`. Three name columns additionally carry `*_ngrams text[]` with a GIN index: the hashed three-character runs that let staff search by part of a name without the name being readable. `auth_user.minor_until` is the one date kept in the clear, for the section 9 test. What each column holds and why is in [docs/dkms/](../../dkms/README.md).
 
 ## Reading relationships and keys
 

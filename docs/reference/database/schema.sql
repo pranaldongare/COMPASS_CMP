@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict PaDxNKWTR52nEracMdqGpxTAR3GOXqmwYwNOetnVhxyGWwk4bMYNk1KjFfei152
+\restrict unFgVPf0byVBjujp72hF1EEPO4qjyTYMEFlLYfipX5CiEBNddX1VrRJpaAZ6h2Y
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -1204,6 +1204,7 @@ CREATE TABLE public.auth_user (
     username_hash text,
     organization_id_hash text,
     minor_until date,
+    full_name_ngrams text[],
     CONSTRAINT auth_user_email_indexed CHECK (((email IS NULL) OR (email_hash IS NOT NULL))),
     CONSTRAINT auth_user_mobile_indexed CHECK (((mobile IS NULL) OR (mobile_hash IS NOT NULL))),
     CONSTRAINT auth_user_organization_id_indexed CHECK (((organization_id IS NULL) OR (organization_id_hash IS NOT NULL))),
@@ -1774,6 +1775,7 @@ CREATE TABLE public.nomination (
     nominee_user_id integer,
     nominee_email_hash text,
     nominee_mobile_hash text,
+    nominee_name_ngrams text[],
     CONSTRAINT nomination_email_indexed CHECK (((nominee_email IS NULL) OR (nominee_email_hash IS NOT NULL))),
     CONSTRAINT nomination_mobile_indexed CHECK (((nominee_mobile IS NULL) OR (nominee_mobile_hash IS NOT NULL))),
     CONSTRAINT nomination_rights_not_empty CHECK ((cardinality(rights) >= 1)),
@@ -2417,6 +2419,7 @@ CREATE TABLE public.rights_request (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     consent_id integer,
     submitted_contact_hash text,
+    submitted_name_ngrams text[],
     CONSTRAINT rights_closed_has_outcome CHECK (((status <> 'closed'::public.rights_request_status) OR (outcome IS NOT NULL))),
     CONSTRAINT rights_due_after_receipt CHECK ((due_at > received_at)),
     CONSTRAINT rights_nominee_has_nomination CHECK (((channel <> 'nominee'::public.rights_request_channel) OR (nomination_id IS NOT NULL))),
@@ -3601,6 +3604,13 @@ CREATE INDEX idx_audit_subject ON public.audit_log USING btree (subject_user_id,
 
 
 --
+-- Name: idx_auth_user_full_name_ngrams; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_auth_user_full_name_ngrams ON public.auth_user USING gin (full_name_ngrams);
+
+
+--
 -- Name: idx_batch_project; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3703,6 +3713,13 @@ CREATE INDEX idx_nomination_nominee_email_hash ON public.nomination USING btree 
 --
 
 CREATE INDEX idx_nomination_nominee_mobile_hash ON public.nomination USING btree (nominee_mobile_hash);
+
+
+--
+-- Name: idx_nomination_nominee_name_ngrams; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_nomination_nominee_name_ngrams ON public.nomination USING gin (nominee_name_ngrams);
 
 
 --
@@ -3843,6 +3860,13 @@ CREATE INDEX idx_rights_request_status_due ON public.rights_request USING btree 
 --
 
 CREATE INDEX idx_rights_request_subject ON public.rights_request USING btree (subject_user_id);
+
+
+--
+-- Name: idx_rights_request_submitted_name_ngrams; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rights_request_submitted_name_ngrams ON public.rights_request USING gin (submitted_name_ngrams);
 
 
 --
@@ -4901,5 +4925,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict PaDxNKWTR52nEracMdqGpxTAR3GOXqmwYwNOetnVhxyGWwk4bMYNk1KjFfei152
+\unrestrict unFgVPf0byVBjujp72hF1EEPO4qjyTYMEFlLYfipX5CiEBNddX1VrRJpaAZ6h2Y
 

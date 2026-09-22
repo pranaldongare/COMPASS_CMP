@@ -62,6 +62,25 @@ class BulkRequest(BaseModel):
             "cannot be undone by the second decrypt."
         ),
     )
+    with_hash: bool = Field(
+        False,
+        description=(
+            "On encrypt, return `<field>_hash` beside each encrypted field: the "
+            "exact-match hash of what was encrypted, for the caller to store in "
+            "the column it looks rows up by. Off by default, so the contract is "
+            "what it always was unless it is asked for."
+        ),
+    )
+    with_ngrams: bool = Field(
+        False,
+        description=(
+            "On encrypt, also return `<field>_ngrams`: the hashed character runs "
+            "that make substring search possible. Ask for these only on fields "
+            "that are searched by part of a value - they leak more than the "
+            "exact hash, which is why they are not the default."
+        ),
+    )
+    ngram_size: int = Field(3, ge=2, le=8, description="Characters per run.")
 
 
 class FieldError(BaseModel):
@@ -85,3 +104,69 @@ class BulkResponse(BaseModel):
     took_ms: float
     provider: str
     workers: int
+
+
+# ------------------------------------------------------------------- hashing
+class HashRequest(BaseModel):
+    """The same shape as a bulk call, for the hashing of whole records."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    data: Annotated[list[Record], Field(min_length=1, description="The records, in order.")]
+    key: Annotated[
+        dict[str, DataType],
+        Field(min_length=1, description="Field name to DKMS data type."),
+    ]
+    with_ngrams: bool = Field(
+        False, description="Also return `<field>_ngrams` for substring search."
+    )
+    ngram_size: int = Field(3, ge=2, le=8)
+
+
+class HashResponse(BaseModel):
+    """The records back, each named field replaced by its hash.
+
+    A field that was `"amruta@x.org"` comes back as 64 hex characters; when
+    `with_ngrams` is asked for, `<field>_ngrams` is added beside it. Values
+    that are not strings, and absent fields, pass through as they arrived.
+    """
+
+    data: list[Record]
+    records: int
+    values: int
+    took_ms: float
+
+
+class SearchRequest(BaseModel):
+    """One term, and what kind of value it is."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    term: Annotated[str, Field(min_length=1, max_length=400)]
+    type: DataType = Field(description="The type the stored column was sealed as.")
+
+
+class SearchResponse(BaseModel):
+    """What to look for, and what the caller should do with it.
+
+    The service holds keys, not rows: it cannot search anything. It answers
+    with the hash the caller's own `WHERE` clause needs, and says so in
+    `sql`, so that two callers do not invent two different queries.
+    """
+
+    term_normalised: str = Field(description="What the term was reduced to before hashing.")
+    hash: str = Field(description="Look for a row whose `<field>_hash` equals this.")
+    sql: str = Field(description="The comparison this answer is for.")
+
+
+class NgramSearchRequest(SearchRequest):
+    ngram_size: int = Field(3, ge=2, le=8)
+
+
+class NgramSearchResponse(BaseModel):
+    """The runs a row must contain, all of them, for the term to be in it."""
+
+    term_normalised: str
+    ngrams: list[str] = Field(description="Every one must be present in the row's set.")
+    ngram_size: int
+    sql: str

@@ -36,12 +36,14 @@ test.describe("audit trail", () => {
     await expect(page).not.toHaveURL(/event_group=/);
   });
 
-  test("finds a data principal by her contact and filters on her", async ({ page }) => {
-    // The whole address: names and contacts are sealed, so a fragment finds
-    // nobody, and the field says so.
+  test("finds a data principal by part of her name and filters on her", async ({
+    page,
+  }) => {
+    // The name is sealed; what finds it is the hashed runs beside it, so a
+    // fragment works again - three characters up.
     await page.goto("/audit");
     await page.getByLabel("About").selectOption({ label: "Data principal" });
-    await page.getByLabel("Email or mobile").fill("subject@cmp.local");
+    await page.getByLabel("Name, email or mobile").fill("Anjali");
     const option = page.getByRole("listbox").getByRole("option").first();
     await expect(option).toBeVisible();
     await option.click();
