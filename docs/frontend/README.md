@@ -11,11 +11,12 @@ run each (that is in each portal's own `README.md`).
   and what is still open. Ends with the fifteen-question decision matrix a
   pull request answers.
 
-- [Decryption in the frontend layer](dkms-decryption.md): how every API
-  response is opened in the portal - one client, one interceptor, one call
-  to the portal's own `/dkms/decrypt` and on to `${DKMS_URL}/bulk_decrypt` -
-  which endpoints that was proven on, the three files, the one setting, and
-  what breaks it with the guard for each.
+- [Decryption in the frontend layer](../dkms/frontend-layer.md): how every
+  API response is opened in the portal - one client, one interceptor, one
+  call to the portal's own `/dkms/decrypt` and on to
+  `${DKMS_URL}/bulk_decrypt` - which endpoints that was proven on, the three
+  files, the one setting, and what breaks it. Sits with the rest of the
+  [DKMS documents](../dkms/README.md).
 
 Related, elsewhere in the tree:
 
