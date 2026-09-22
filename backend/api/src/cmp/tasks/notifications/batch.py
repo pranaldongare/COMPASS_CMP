@@ -16,13 +16,17 @@ from celery.exceptions import SoftTimeLimitExceeded
 from cmp.core.config import settings
 from cmp.core.logging import get_logger
 from cmp.core.messages import Message
+from cmp.infrastructure.dkms.client import DkmsUnavailable
 from cmp.infrastructure.email.transport import obscure
 from cmp.infrastructure.messaging import deliver
 
 log = get_logger("cmp.tasks.notifications")
 
 RETRY_KW: dict[str, Any] = {
-    "autoretry_for": (ConnectionError, TimeoutError, OSError),
+    # `DkmsUnavailable` among them: every message opens a sealed recipient
+    # before it can be addressed, so a key service that blinks would
+    # otherwise lose the code outright rather than send it a moment later.
+    "autoretry_for": (ConnectionError, TimeoutError, OSError, DkmsUnavailable),
     "retry_backoff": 5,
     "retry_backoff_max": 300,
     "retry_jitter": True,

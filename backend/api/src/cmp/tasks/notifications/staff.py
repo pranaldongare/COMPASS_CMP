@@ -20,10 +20,14 @@ from typing import Any
 from celery import shared_task
 
 from cmp.core.messages import Message
+from cmp.infrastructure.dkms.client import DkmsUnavailable
 from cmp.infrastructure.messaging import deliver
 
 RETRY_KW: dict[str, Any] = {
-    "autoretry_for": (ConnectionError, TimeoutError, OSError),
+    # `DkmsUnavailable` among them: every message opens a sealed recipient
+    # before it can be addressed, so a key service that blinks would
+    # otherwise lose the code outright rather than send it a moment later.
+    "autoretry_for": (ConnectionError, TimeoutError, OSError, DkmsUnavailable),
     "retry_backoff": 5,
     "retry_backoff_max": 300,
     "retry_jitter": True,

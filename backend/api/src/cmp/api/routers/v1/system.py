@@ -29,6 +29,7 @@ from cmp.core.logging import get_logger
 from cmp.db import pool
 from cmp.db import redis as redis_db
 from cmp.domain.projects.state_machine import REACHABLE_STATUSES
+from cmp.infrastructure.dkms import client as dkms_client
 from cmp.schemas.common import Out
 
 router = APIRouter(tags=["system"])
@@ -146,9 +147,13 @@ async def health_live() -> dict[str, str]:
 
 @router.get("/ready", response_model=Ready, summary="Readiness")
 async def ready(response: Response) -> dict[str, Any]:
-    """Database reachable, migrations current, Redis reachable."""
+    """Database reachable, migrations current, Redis reachable, key service reachable."""
     db_ok = await pool.healthcheck()
     redis_ok = await redis_db.healthcheck()
+    # Without the key service nothing personal can be written or read - and no
+    # sign-in code can be sent, because the contact it is addressed to is
+    # sealed. An API that cannot reach it is not ready.
+    dkms_ok, dkms_detail = await dkms_client.healthcheck()
     version = await pool.schema_version() if db_ok else None
     expected = expected_schema_head()
     migrations_ok, migrations_detail = migrations_check(version, expected)
@@ -157,6 +162,7 @@ async def ready(response: Response) -> dict[str, Any]:
         ReadyCheck(name="postgresql", ok=db_ok, detail=None if db_ok else "unreachable"),
         ReadyCheck(name="redis", ok=redis_ok, detail=None if redis_ok else "unreachable"),
         ReadyCheck(name="migrations", ok=migrations_ok, detail=migrations_detail),
+        ReadyCheck(name="encryption", ok=dkms_ok, detail=dkms_detail),
     ]
     all_ok = all(c.ok for c in checks)
     if not all_ok:

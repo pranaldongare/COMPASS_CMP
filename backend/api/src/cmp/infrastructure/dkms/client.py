@@ -97,8 +97,13 @@ class DkmsClient:
             try:
                 response = await self._client.post(path, json=body)
             except httpx.HTTPError as exc:
-                log.error("dkms.unreachable", path=path, records=len(chunk), error=str(exc))
-                raise DkmsUnavailable(str(exc)) from exc
+                log.error(
+                    "dkms.unreachable",
+                    url=f"{self._base_url}{path}",
+                    records=len(chunk),
+                    error=str(exc),
+                )
+                raise DkmsUnavailable(f"{self._base_url}{path}: {exc}") from exc
 
             if response.status_code == 422:
                 # The service names the record and the field; it never quotes
@@ -107,8 +112,8 @@ class DkmsClient:
                 log.error("dkms.refused", path=path, detail=detail)
                 raise ValueError(f"DKMS refused the batch: {detail}")
             if response.status_code >= 400:
-                log.error("dkms.error", path=path, status=response.status_code)
-                raise DkmsUnavailable(f"answered {response.status_code}")
+                log.error("dkms.error", url=f"{self._base_url}{path}", status=response.status_code)
+                raise DkmsUnavailable(f"{self._base_url}{path} answered {response.status_code}")
 
             out.extend(response.json()["data"])
         return [{**original, **answered} for original, answered in zip(records, out, strict=True)]
@@ -242,11 +247,13 @@ def unseal_values_sync(values: list[str]) -> list[str]:
         with httpx.Client(base_url=settings.dkms_url, timeout=settings.dkms_timeout_s) as client:
             response = client.post("/bulk_decrypt", json=body)
     except httpx.HTTPError as exc:
-        log.error("dkms.unreachable", path="/bulk_decrypt", records=len(records), error=str(exc))
-        raise DkmsUnavailable(str(exc)) from exc
+        url = f"{settings.dkms_url.rstrip('/')}/bulk_decrypt"
+        log.error("dkms.unreachable", url=url, records=len(records), error=str(exc))
+        raise DkmsUnavailable(f"{url}: {exc}") from exc
     if response.status_code >= 400:
-        log.error("dkms.error", path="/bulk_decrypt", status=response.status_code)
-        raise DkmsUnavailable(f"answered {response.status_code}")
+        url = f"{settings.dkms_url.rstrip('/')}/bulk_decrypt"
+        log.error("dkms.error", url=url, status=response.status_code)
+        raise DkmsUnavailable(f"{url} answered {response.status_code}")
 
     out = list(values)
     for (i, t), record in zip(positions, response.json()["data"], strict=True):
@@ -261,3 +268,26 @@ def unseal_variables_sync(variables: dict[str, Any]) -> dict[str, Any]:
         return variables
     opened = unseal_values_sync([variables[k] for k in keys])
     return {**variables, **dict(zip(keys, opened, strict=True))}
+
+
+async def healthcheck() -> tuple[bool, str | None]:
+    """Can the key service be reached, and is it the one we are configured for?
+
+    Personal data cannot be written or read without it: a sign-in code cannot
+    be addressed, because the contact it goes to is sealed. So an API or a
+    worker that cannot reach it is not ready, and saying so here is the
+    difference between one curl and reading a worker traceback.
+
+    Returns `(ok, detail)`; the detail names the URL, never a value.
+    """
+    if not settings.dkms_enabled:
+        return True, "disabled"
+    url = settings.dkms_url.rstrip("/")
+    try:
+        async with httpx.AsyncClient(timeout=settings.dkms_timeout_s) as client:
+            response = await client.get(f"{url}/health")
+    except httpx.HTTPError as exc:
+        return False, f"{url} unreachable: {exc}"
+    if response.status_code >= 400:
+        return False, f"{url} answered {response.status_code}"
+    return True, None

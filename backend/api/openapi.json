@@ -38,7 +38,7 @@
           "system"
         ],
         "summary": "Readiness",
-        "description": "Database reachable, migrations current, Redis reachable.",
+        "description": "Database reachable, migrations current, Redis reachable, key service reachable.",
         "operationId": "ready_ready_get",
         "responses": {
           "200": {

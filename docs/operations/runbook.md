@@ -8,12 +8,36 @@ API error carries a `request_id`; ask for it first, then search the log.
 | Symptom | Cause | Do |
 |---|---|---|
 | "Account locked" | five failed passwords in thirty minutes | wait thirty minutes, or clear `rate:login:<email>` in Redis if you are sure it is them |
-| The code never arrives (staff) | worker not running, or the email transport is `console` | check the worker is consuming `high_priority`; in local, read `var/outbox.log` |
+| The code never arrives (staff) | worker not running, the email transport is `console`, **or the key service cannot be reached from the worker** | `curl <api>/ready` - the `encryption` check names the URL and the reason; then the worker is consuming `high_priority`; in local, read `var/outbox.log` |
 | The code never arrives (data principal) | as above, or the SMS transport | the same; the sign-in page offers the other contact if one is on file |
 | "Too many codes" | five per contact per hour | wait, or clear `rate:otp_request:<contact>` |
 | Signed in, then everything answers 401 `mfa_required` | the second factor was never completed | finish the code step; the partial session is worth nothing else |
 | Signed in on the wrong portal | a staff account on the portal or a principal on the console | each portal points the wrong kind of account at the other |
 | Works on `localhost`, not on `127.0.0.1` | the cookie is first-party to one origin | use the proxied origin |
+
+## No message of any kind is sent, and the request said one was
+
+Every message is addressed to a contact that is **sealed in the database**.
+The worker opens it through the key service on the way out - that is the one
+step between "a code was queued" and "a code was sent" - so a key service it
+cannot reach means no email and no SMS, anywhere, while every request
+carries on answering normally. Validation is unaffected: sign-in, "is this
+contact taken" and the searches match on the blind index and never need the
+key service. So the symptom is precisely: **nothing arrives, everything else
+works.**
+
+1. `curl <api>/ready`. The `encryption` check is `ok: false` with the URL and
+   the reason - `unreachable`, `answered 404`, or the wrong host entirely.
+   That is the whole diagnosis in one line.
+2. The worker has its own environment. It is the process that opens the
+   recipient, so **its** `DKMS_URL` is the one that matters for messages;
+   `grep message.not_sent` in its log names the service it tried.
+3. The service must also hold the key the data was sealed with - the API's
+   own `DKMS_URL`. A reachable service with a different key answers 4xx and
+   opens nothing.
+4. Fix the setting and **restart the worker and the API**; each reads it at
+   start. Codes queued in the meantime are retried with backoff and delivered
+   when the service returns - nothing queued is lost.
 
 ## A data principal reports a problem with her record
 

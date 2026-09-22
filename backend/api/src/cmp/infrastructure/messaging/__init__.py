@@ -133,10 +133,25 @@ def deliver(key: Message, *, to: str, **variables: Any) -> dict[str, Any]:
     # one point every message passes through, rather than at every call site
     # that might have read it from a row.
     from cmp.infrastructure.dkms import unseal_values_sync, unseal_variables_sync
+    from cmp.infrastructure.dkms.client import DkmsUnavailable
 
-    variables = unseal_variables_sync(variables)
-    if to.startswith("SE::"):
-        to = unseal_values_sync([to])[0]
+    try:
+        variables = unseal_variables_sync(variables)
+        if to.startswith("SE::"):
+            to = unseal_values_sync([to])[0]
+    except DkmsUnavailable as exc:
+        # The one failure that is invisible from the outside: the request that
+        # asked for this message answered "a code has been sent", because it
+        # had queued one. It cannot be sent, because the address it goes to is
+        # sealed and the key service cannot open it. Said plainly, once, with
+        # the service named and no value quoted; the task then retries.
+        log.error(
+            "message.not_sent",
+            message=str(getattr(key, "value", key)),
+            reason="the key service could not open the recipient",
+            error=str(exc),
+        )
+        raise
 
     j: Junction = junction(key)
     ch = channel_for(to)
