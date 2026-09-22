@@ -23,7 +23,7 @@ from cmp.db.redis import key as rkey
 from cmp.db.repositories import users as user_repo
 from cmp.domain.consent import service as consent_service
 from cmp.domain.rights import service as rights_service
-from tests.conftest import idx, plain
+from tests.conftest import hashed, plain
 
 pytestmark = pytest.mark.integration
 
@@ -342,17 +342,17 @@ class TestTheSchemaHoldsTheRule:
     async def test_a_new_data_principal_needs_a_mobile(self, conn: Any) -> None:
         with pytest.raises(psycopg.errors.CheckViolation):
             await conn.execute(
-                """INSERT INTO auth_user (full_name, email, email_idx, role, status)
+                """INSERT INTO auth_user (full_name, email, email_hash, role, status)
                    VALUES ('No Mobile', 'nomobile@example.org', %s, 'data_subject', 'pending')""",
-                (idx("email", "nomobile@example.org"),),
+                (hashed("email", "nomobile@example.org"),),
             )
 
     async def test_staff_still_need_an_email(self, conn: Any) -> None:
         with pytest.raises(psycopg.errors.CheckViolation):
             await conn.execute(
-                """INSERT INTO auth_user (full_name, mobile, mobile_idx, role, status)
+                """INSERT INTO auth_user (full_name, mobile, mobile_hash, role, status)
                    VALUES ('No Email', '+915550000903', %s, 'dco', 'active')""",
-                (idx("mobile", "+915550000903"),),
+                (hashed("mobile", "+915550000903"),),
             )
 
     async def test_a_nomination_from_before_the_rule_can_still_be_revoked(
@@ -363,11 +363,11 @@ class TestTheSchemaHoldsTheRule:
         await conn.execute("ALTER TABLE nomination DISABLE TRIGGER trg_nominee_needs_mobile")
         legacy = await conn.execute(
             """INSERT INTO nomination (principal_user_id, nominee_name, nominee_email,
-                                       nominee_email_idx, rights, status, accepted_at)
+                                       nominee_email_hash, rights, status, accepted_at)
                VALUES (%s, 'Old Nominee', 'old@example.org', %s,
                        ARRAY['access']::rights_request_type[], 'active', now())
                RETURNING nomination_uuid""",
-            (seeded["subject"]["id"], idx("email", "old@example.org")),
+            (seeded["subject"]["id"], hashed("email", "old@example.org")),
         )
         await conn.execute("ALTER TABLE nomination ENABLE TRIGGER trg_nominee_needs_mobile")
         uuid = str((await legacy.fetchone())["nomination_uuid"])
@@ -380,8 +380,8 @@ class TestTheSchemaHoldsTheRule:
         with pytest.raises(psycopg.errors.CheckViolation):
             await conn.execute(
                 """INSERT INTO nomination (principal_user_id, nominee_name, nominee_email,
-                                           nominee_email_idx, rights)
+                                           nominee_email_hash, rights)
                    VALUES (%s, 'Email Only', 'only@example.org', %s,
                            ARRAY['access']::rights_request_type[])""",
-                (seeded["subject"]["id"], idx("email", "only@example.org")),
+                (seeded["subject"]["id"], hashed("email", "only@example.org")),
             )

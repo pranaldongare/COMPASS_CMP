@@ -2667,7 +2667,7 @@ async def nominate(
     if not principal:
         raise NotFound("User")
     # Compared on the blind indexes: the principal's own contacts are sealed.
-    own = {principal.get("email_idx"), principal.get("mobile_idx")} - {None}
+    own = {principal.get("email_hash"), principal.get("mobile_hash")} - {None}
     if index_of("mobile", mobile) in own or (email and index_of("email", email) in own):
         raise ValidationFailed(
             "A nominee has to be somebody other than you", field="nominee_mobile"

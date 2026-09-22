@@ -104,7 +104,7 @@ the contact log — leaves sealed.
 
 | Was | Is now |
 |---|---|
-| `WHERE lower(email) = lower(%s)` | `WHERE email_idx = %s` with `index_of("email", typed)` |
+| `WHERE lower(email) = lower(%s)` | `WHERE email_hash = %s` with `index_of("email", typed)` |
 | `WHERE full_name ILIKE %s` | Gone. A person is found by a whole contact; records still match on their names |
 | `u.full_name \|\| ' — ' \|\| p.project_name AS label` | `label_parts`: an array the reader joins **after** opening. A sealed value glued to plaintext is a string nobody can open, and it makes the key service refuse the batch it travels in. `tests/unit/infrastructure/test_no_sealed_column_is_concatenated.py` fails the build on the next one |
 | `ORDER BY full_name` | By `created_at`, or by a plaintext column. Ciphertext sorts arbitrarily |

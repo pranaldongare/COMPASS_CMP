@@ -30,7 +30,7 @@ PUBLIC_COLUMNS = """
   cmp_is_minor(u.minor_until) AS is_minor,
   -- The blind indexes of the sealed contacts. Keyed hashes, not personal data;
   -- here so a row can be matched against a contact without opening anything.
-  u.email_idx, u.mobile_idx, u.secondary_email_idx,
+  u.email_hash, u.mobile_hash, u.secondary_email_hash,
   u.created_at, u.updated_at
 """
 
@@ -81,7 +81,7 @@ async def credentials_by_login(conn: Conn, login: str) -> Row | None:
         SELECT u.id, u.uuid, u.email, u.username, u.full_name, u.role, u.status,
                u.password_hash
         FROM auth_user u
-        WHERE u.email_idx = %s OR u.username_idx = %s
+        WHERE u.email_hash = %s OR u.username_hash = %s
         """,
         (index_of("email", login), index_of("username", login)),
     )
@@ -103,7 +103,7 @@ async def credentials_by_id(conn: Conn, user_id: int) -> Row | None:
 async def by_email(conn: Conn, email: str) -> Row | None:
     return await fetch_one(
         conn,
-        f"SELECT u.id, {PUBLIC_COLUMNS} FROM auth_user u WHERE u.email_idx = %s",
+        f"SELECT u.id, {PUBLIC_COLUMNS} FROM auth_user u WHERE u.email_hash = %s",
         (index_of("email", email),),
     )
 
@@ -120,17 +120,17 @@ async def by_contact(conn: Conn, contact: str) -> Row | None:
     form - so spacing and case in what was typed do not matter, and the sealed
     columns themselves are never read.
     """
-    email_idx, mobile_idx = contact_indexes(contact)
+    email_hash, mobile_hash = contact_indexes(contact)
     return await fetch_one(
         conn,
         f"""
         SELECT u.id, {PUBLIC_COLUMNS} FROM auth_user u
-        WHERE (%s::text IS NOT NULL AND u.email_idx = %s)
-           OR (%s::text IS NOT NULL AND u.mobile_idx = %s)
-           OR (%s::text IS NOT NULL AND u.secondary_email_idx = %s
+        WHERE (%s::text IS NOT NULL AND u.email_hash = %s)
+           OR (%s::text IS NOT NULL AND u.mobile_hash = %s)
+           OR (%s::text IS NOT NULL AND u.secondary_email_hash = %s
                AND u.secondary_email_verified_at IS NOT NULL)
         """,
-        (email_idx, email_idx, mobile_idx, mobile_idx, email_idx, email_idx),
+        (email_hash, email_hash, mobile_hash, mobile_hash, email_hash, email_hash),
     )
 
 
@@ -138,12 +138,12 @@ def medium_of(user: Row, contact: str) -> str | None:
     """Which of this row's own contacts the given one is, or None if it is not
     one of them. Compared by blind index, so spacing and case do not matter and
     the sealed value is never opened."""
-    email_idx, mobile_idx = contact_indexes(contact)
-    if mobile_idx and user.get("mobile_idx") == mobile_idx:
+    email_hash, mobile_hash = contact_indexes(contact)
+    if mobile_hash and user.get("mobile_hash") == mobile_hash:
         return "mobile"
-    if email_idx and user.get("email_idx") == email_idx:
+    if email_hash and user.get("email_hash") == email_hash:
         return "email"
-    if email_idx and user.get("secondary_email_idx") == email_idx:
+    if email_hash and user.get("secondary_email_hash") == email_hash:
         return "secondary_email"
     return None
 
@@ -220,12 +220,12 @@ async def create(
         INSERT INTO auth_user (username, full_name, email, mobile, organization_id,
                                role, person_type, status, password_hash,
                                registered_via_link_id, dob, minor_until,
-                               email_idx, mobile_idx, username_idx, organization_id_idx)
+                               email_hash, mobile_hash, username_hash, organization_id_hash)
         VALUES (%s, %s, %s, %s, %s, %s::user_role, %s::person_type, %s::user_status, %s, %s,
                 %s, %s::date + INTERVAL '18 years', %s, %s, %s, %s)
         RETURNING id, uuid, username, full_name, email, mobile, organization_id,
                   role, person_type, status, dob, cmp_is_minor(minor_until) AS is_minor,
-                  email_idx, mobile_idx, secondary_email_idx,
+                  email_hash, mobile_hash, secondary_email_hash,
                   created_at, updated_at
         """,
         (
@@ -283,13 +283,13 @@ async def update_profile(
         UPDATE auth_user
            SET full_name          = COALESCE(%s, full_name),
                mobile             = COALESCE(%s, mobile),
-               mobile_idx         = COALESCE(%s, mobile_idx),
+               mobile_hash         = COALESCE(%s, mobile_hash),
                -- A changed number is unconfirmed; the comparison is on the
                -- index, because the sealed value differs on every write.
-               mobile_verified_at = CASE WHEN %s::text IS NULL OR %s::text = mobile_idx
+               mobile_verified_at = CASE WHEN %s::text IS NULL OR %s::text = mobile_hash
                                          THEN mobile_verified_at ELSE NULL END,
                organization_id    = COALESCE(%s, organization_id),
-               organization_id_idx = COALESCE(%s, organization_id_idx),
+               organization_id_hash = COALESCE(%s, organization_id_hash),
                dob                = COALESCE(%s, dob),
                minor_until        = COALESCE(%s::date + INTERVAL '18 years', minor_until)
          WHERE id = %s
@@ -297,7 +297,7 @@ async def update_profile(
                   role, person_type, status, dob, cmp_is_minor(minor_until) AS is_minor,
                   mobile_verified_at, email_verified_at,
                   secondary_email, secondary_email_verified_at,
-                  email_idx, mobile_idx, secondary_email_idx,
+                  email_hash, mobile_hash, secondary_email_hash,
                   created_at, updated_at
         """,
         (
@@ -335,10 +335,10 @@ async def set_secondary_email(conn: Conn, user_id: int, email: str | None) -> Ro
         f"""
         UPDATE auth_user u
            SET secondary_email_verified_at =
-                 CASE WHEN %s::text IS NOT NULL AND %s::text = u.secondary_email_idx
+                 CASE WHEN %s::text IS NOT NULL AND %s::text = u.secondary_email_hash
                       THEN u.secondary_email_verified_at ELSE NULL END,
                secondary_email = %s,
-               secondary_email_idx = %s
+               secondary_email_hash = %s
          WHERE u.id = %s
         RETURNING u.id, {PUBLIC_COLUMNS}
         """,
@@ -430,13 +430,13 @@ async def list_users(
         # substring of ciphertext matches nothing. What still works, and is
         # what people actually paste in: an exact email, mobile, username or
         # employee id, matched through its blind index.
-        email_idx, mobile_idx = contact_indexes(q.strip())
+        email_hash, mobile_hash = contact_indexes(q.strip())
         where.append(
-            "(u.email_idx = %s OR u.secondary_email_idx = %s OR u.mobile_idx = %s "
-            "OR u.username_idx = %s OR u.organization_id_idx = %s)"
+            "(u.email_hash = %s OR u.secondary_email_hash = %s OR u.mobile_hash = %s "
+            "OR u.username_hash = %s OR u.organization_id_hash = %s)"
         )
         params.extend(
-            [email_idx, email_idx, mobile_idx, index_of("username", q), index_of("text", q)]
+            [email_hash, email_hash, mobile_hash, index_of("username", q), index_of("text", q)]
         )
 
     clause = " AND ".join(where)

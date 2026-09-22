@@ -23,7 +23,7 @@ from cmp.core.permissions import Role
 from cmp.db.repositories import projects as project_repo
 from cmp.db.sql import fetch_one
 from cmp.domain.exchange import service as exchange_service
-from tests.conftest import idx
+from tests.conftest import hashed
 
 pytestmark = pytest.mark.asyncio
 
@@ -31,9 +31,9 @@ pytestmark = pytest.mark.asyncio
 async def _owner(conn: Any, role: str, email: str) -> int:
     row = await fetch_one(
         conn,
-        """INSERT INTO auth_user (full_name, email, email_idx, role, status)
+        """INSERT INTO auth_user (full_name, email, email_hash, role, status)
            VALUES (%s, %s, %s, %s::user_role, 'active') RETURNING id""",
-        (email.split("@")[0], email, idx("email", email), role),
+        (email.split("@")[0], email, hashed("email", email), role),
     )
     assert row is not None
     return int(row["id"])
@@ -101,14 +101,14 @@ async def _site_with_consent(
     assert link is not None
     subject = await fetch_one(
         conn,
-        """INSERT INTO auth_user (full_name, email, email_idx, mobile, mobile_idx, role, status)
+        """INSERT INTO auth_user (full_name, email, email_hash, mobile, mobile_hash, role, status)
            VALUES (%s, %s, %s, %s, %s, 'data_subject', 'active') RETURNING id""",
         (
             person,
             f"{person.replace(' ', '.').lower()}@example.org",
-            idx("email", f"{person.replace(' ', '.').lower()}@example.org"),
+            hashed("email", f"{person.replace(' ', '.').lower()}@example.org"),
             mobile,
-            idx("mobile", mobile),
+            hashed("mobile", mobile),
         ),
     )
     assert subject is not None

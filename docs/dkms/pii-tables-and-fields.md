@@ -14,7 +14,7 @@ and checked against the database on 2026-09-22. The narrative version is
 |---|---|
 | **Sealed** | The value in the row is ciphertext, `SE::…`. Written through `seal()`, never written in the clear |
 | **Type** | Which of the 13 DKMS data types it is sealed as. The type is in the envelope, so a reader needs to know nothing but that it holds ciphertext |
-| **Index** | A blind index column beside it, `HMAC-SHA256(normalised value)`. What the platform looks rows up by, since ciphertext cannot be searched |
+| **Hash** | A keyed-hash column beside it, `*_hash` = `HMAC-SHA256(normalised value, BLIND_INDEX_KEY)`. What the platform looks rows up by, since ciphertext cannot be searched |
 | **Plain** | Deliberately in the clear, with the reason |
 
 The 13 types and their ids (byte 3 of every envelope):
@@ -33,30 +33,30 @@ The 13 types and their ids (byte 3 of every envelope):
 
 ### `auth_user` — the person
 
-| Column | Type | Index | What it is |
+| Column | Type | Hash column | What it is |
 |---|---|---|---|
 | `full_name` | NAME | — | The name shown everywhere a person appears |
-| `email` | EMAIL | `email_idx` | Primary address: sign-in, every code, every notice |
-| `secondary_email` | EMAIL | `secondary_email_idx` | A second address she asked us to use |
-| `mobile` | MOBILE | `mobile_idx` | Primary number: sign-in, OTP, consent codes |
-| `username` | NAME | `username_idx` | Optional staff sign-in alias |
-| `organization_id` | ORG_ID | `organization_id_idx` | Employee number |
+| `email` | EMAIL | `email_hash` | Primary address: sign-in, every code, every notice |
+| `secondary_email` | EMAIL | `secondary_email_hash` | A second address she asked us to use |
+| `mobile` | MOBILE | `mobile_hash` | Primary number: sign-in, OTP, consent codes |
+| `username` | NAME | `username_hash` | Optional staff sign-in alias |
+| `organization_id` | ORG_ID | `organization_id_hash` | Employee number |
 | `dob` | DOB | — | Date of birth. See `minor_until` below |
 
 ### `nomination` — who may act for her (s.14)
 
-| Column | Type | Index |
+| Column | Type | Hash column |
 |---|---|---|
 | `nominee_name` | NAME | — |
-| `nominee_email` | EMAIL | `nominee_email_idx` |
-| `nominee_mobile` | MOBILE | `nominee_mobile_idx` |
+| `nominee_email` | EMAIL | `nominee_email_hash` |
+| `nominee_mobile` | MOBILE | `nominee_mobile_hash` |
 
 ### `rights_request` — what she asked for (s.11–13)
 
-| Column | Type | Index | What it is |
+| Column | Type | Hash column | What it is |
 |---|---|---|---|
 | `submitted_name` | NAME | — | The name on the form |
-| `submitted_contact` | CONTACT | `submitted_contact_idx` | Where the answer goes; `CONTACT` because it may be either kind |
+| `submitted_contact` | CONTACT | `submitted_contact_hash` | Where the answer goes; `CONTACT` because it may be either kind |
 | `request_text` | FREE_TEXT | — | Her words |
 | `verification_note` | FREE_TEXT | — | How identity was established, in the DPO's words |
 | `refusal_reason` | FREE_TEXT | — | Why it was refused |
@@ -97,27 +97,27 @@ carry ciphertext their reader opens like any other value.
 
 ---
 
-## 2. The eight lookup columns, and how they stay findable
+## 2. The eight lookup columns and their hash columns
 
 Randomised ciphertext cannot be searched, and the platform has to find rows
 by these: sign-in, "is this address taken", a code to a mobile, a nomination
 found by the nominee's contact, a public request verified by the contact it
-gave. Each carries a **blind index** beside it —
+gave. Each carries a **keyed hash** beside it, named `*_hash` —
 `HMAC-SHA256(normalised value, BLIND_INDEX_KEY)`, deterministic so it can be
 unique-indexed and looked up, opaque without the key. Every lookup goes
 through the index; the value beside it is ciphertext and is opened only to
 send something to it.
 
-| Table | Sealed column | Index column | Normalised as |
+| Table | Sealed column | Hash column | Normalised as |
 |---|---|---|---|
-| `auth_user` | `email` | `email_idx` | lowercased |
-| `auth_user` | `secondary_email` | `secondary_email_idx` | lowercased |
-| `auth_user` | `mobile` | `mobile_idx` | E.164 |
-| `auth_user` | `username` | `username_idx` | lowercased |
-| `auth_user` | `organization_id` | `organization_id_idx` | as typed (case is part of it) |
-| `nomination` | `nominee_email` | `nominee_email_idx` | lowercased |
-| `nomination` | `nominee_mobile` | `nominee_mobile_idx` | E.164 |
-| `rights_request` | `submitted_contact` | `submitted_contact_idx` | `@` decides email or mobile |
+| `auth_user` | `email` | `email_hash` | lowercased |
+| `auth_user` | `secondary_email` | `secondary_email_hash` | lowercased |
+| `auth_user` | `mobile` | `mobile_hash` | E.164 |
+| `auth_user` | `username` | `username_hash` | lowercased |
+| `auth_user` | `organization_id` | `organization_id_hash` | as typed (case is part of it) |
+| `nomination` | `nominee_email` | `nominee_email_hash` | lowercased |
+| `nomination` | `nominee_mobile` | `nominee_mobile_hash` | E.164 |
+| `rights_request` | `submitted_contact` | `submitted_contact_hash` | `@` decides email or mobile |
 
 **What this costs.** Partial search is gone. A person is found by the
 *whole* email, mobile, username or employee number; by reference, uuid or
@@ -149,7 +149,7 @@ sealed column after everything it writes.
 | Tables holding personal data | 20 |
 | Personal columns | 54 |
 | **Sealed columns** | **33** in 14 tables |
-| Blind-indexed | 8 |
+| With a `*_hash` lookup column | 8 |
 | Plaintext by decision | 1 (`minor_until`) |
 | Plaintext by nature (ids, flags, hashes, paths) | 12 |
 | API endpoints carrying any of it | 159 |

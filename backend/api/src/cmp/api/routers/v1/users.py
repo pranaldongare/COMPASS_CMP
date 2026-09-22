@@ -334,7 +334,7 @@ async def update_user(user_uuid: UUID, body: UpdateUser, principal: RequireAdmin
         # and differs on every write.
         mobile_changed = body.mobile is not None and index_of(
             "mobile", normalise_mobile(body.mobile)
-        ) != (user.get("mobile_idx") or None)
+        ) != (user.get("mobile_hash") or None)
         if mobile_changed:
             await audit.record(
                 conn,

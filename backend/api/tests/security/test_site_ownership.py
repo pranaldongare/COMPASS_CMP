@@ -31,7 +31,7 @@ import pytest
 from cmp.core.permissions import Role
 from cmp.db.repositories import projects as project_repo
 from cmp.db.sql import fetch_one
-from tests.conftest import idx
+from tests.conftest import hashed
 
 pytestmark = pytest.mark.asyncio
 
@@ -39,9 +39,9 @@ pytestmark = pytest.mark.asyncio
 async def _make_dco(conn: Any, name: str, email: str) -> int:
     row = await fetch_one(
         conn,
-        """INSERT INTO auth_user (full_name, email, email_idx, role, status)
+        """INSERT INTO auth_user (full_name, email, email_hash, role, status)
            VALUES (%s, %s, %s, 'dco', 'active') RETURNING id""",
-        (name, email, idx("email", email)),
+        (name, email, hashed("email", email)),
     )
     assert row is not None
     return int(row["id"])

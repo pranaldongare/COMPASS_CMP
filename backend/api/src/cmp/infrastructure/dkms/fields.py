@@ -157,18 +157,18 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
 #: Before 0028 these stayed plaintext, for the reason each line still gives.
 BLIND_INDEXED: dict[str, dict[str, str]] = {
     "auth_user": {
-        "email": "email_idx",
-        "secondary_email": "secondary_email_idx",
-        "mobile": "mobile_idx",
-        "username": "username_idx",
-        "organization_id": "organization_id_idx",
+        "email": "email_hash",
+        "secondary_email": "secondary_email_hash",
+        "mobile": "mobile_hash",
+        "username": "username_hash",
+        "organization_id": "organization_id_hash",
     },
     "nomination": {
-        "nominee_email": "nominee_email_idx",
-        "nominee_mobile": "nominee_mobile_idx",
+        "nominee_email": "nominee_email_hash",
+        "nominee_mobile": "nominee_mobile_hash",
     },
     "rights_request": {
-        "submitted_contact": "submitted_contact_idx",
+        "submitted_contact": "submitted_contact_hash",
     },
 }
 

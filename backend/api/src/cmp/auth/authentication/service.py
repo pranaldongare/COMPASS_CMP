@@ -580,7 +580,7 @@ async def add_secondary_email(conn: Conn, *, user: dict[str, Any], email: str) -
     would cost her a way of signing in.
     """
     email = email.strip().lower()
-    if user.get("email_idx") and index_of("email", email) == user["email_idx"]:
+    if user.get("email_hash") and index_of("email", email) == user["email_hash"]:
         raise ValidationFailed(
             "That is already the address on your account", field="secondary_email"
         )
@@ -590,7 +590,7 @@ async def add_secondary_email(conn: Conn, *, user: dict[str, Any], email: str) -
         if unique_violation(exc):
             raise Conflict("That address belongs to another account", code="contact_taken") from exc
         raise
-    if index_of("email", email) != user.get("secondary_email_idx"):
+    if index_of("email", email) != user.get("secondary_email_hash"):
         await audit.record(
             conn,
             event=Event.USER_CONTACT_CHANGED,

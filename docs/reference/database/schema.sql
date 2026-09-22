@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict KHbccLCHPmvgdB5m4rIRLi4UuVMGgxgQ5WjIp3kG9pTMx9QYXORCwW3f3K9zEzo
+\restrict PaDxNKWTR52nEracMdqGpxTAR3GOXqmwYwNOetnVhxyGWwk4bMYNk1KjFfei152
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -693,15 +693,15 @@ CREATE FUNCTION public.cmp_contact_belongs_to_one_person() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
-  IF NEW.secondary_email IS NOT NULL AND EXISTS (
+  IF NEW.secondary_email_hash IS NOT NULL AND EXISTS (
        SELECT 1 FROM auth_user u
-        WHERE u.id <> NEW.id AND lower(u.email) = lower(NEW.secondary_email)) THEN
+        WHERE u.id <> NEW.id AND u.email_hash = NEW.secondary_email_hash) THEN
     RAISE EXCEPTION 'that address belongs to another account'
       USING ERRCODE = 'unique_violation';
   END IF;
-  IF NEW.email IS NOT NULL AND EXISTS (
+  IF NEW.email_hash IS NOT NULL AND EXISTS (
        SELECT 1 FROM auth_user u
-        WHERE u.id <> NEW.id AND lower(u.secondary_email) = lower(NEW.email)) THEN
+        WHERE u.id <> NEW.id AND u.secondary_email_hash = NEW.email_hash) THEN
     RAISE EXCEPTION 'that address belongs to another account'
       USING ERRCODE = 'unique_violation';
   END IF;
@@ -762,21 +762,11 @@ $$;
 -- Name: cmp_is_minor(date); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.cmp_is_minor(birth date) RETURNS boolean
+CREATE FUNCTION public.cmp_is_minor(until date) RETURNS boolean
     LANGUAGE sql STABLE
     AS $$
-  SELECT CASE
-    WHEN birth IS NULL THEN NULL
-    ELSE birth > (CURRENT_DATE - INTERVAL '18 years')
-  END;
+  SELECT CASE WHEN until IS NULL THEN NULL ELSE until > CURRENT_DATE END;
 $$;
-
-
---
--- Name: FUNCTION cmp_is_minor(birth date); Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON FUNCTION public.cmp_is_minor(birth date) IS 'True when the date of birth is under eighteen years ago. NULL when unknown - which is not the same as false, and callers must not treat it as adult.';
 
 
 --
@@ -1191,11 +1181,11 @@ ALTER SEQUENCE public.audit_log_log_id_seq OWNED BY public.audit_log.log_id;
 CREATE TABLE public.auth_user (
     id integer NOT NULL,
     uuid uuid DEFAULT gen_random_uuid() NOT NULL,
-    username character varying(120),
-    full_name character varying(200) NOT NULL,
-    email character varying(255),
-    mobile character varying(20),
-    organization_id character varying(60),
+    username text,
+    full_name text NOT NULL,
+    email text,
+    mobile text,
+    organization_id text,
     role public.user_role DEFAULT 'data_subject'::public.user_role NOT NULL,
     person_type public.person_type,
     status public.user_status DEFAULT 'pending'::public.user_status NOT NULL,
@@ -1203,22 +1193,39 @@ CREATE TABLE public.auth_user (
     password_hash character varying(255),
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    dob date,
+    dob text,
     mobile_verified_at timestamp with time zone,
     email_verified_at timestamp with time zone,
-    secondary_email character varying(255),
+    secondary_email text,
     secondary_email_verified_at timestamp with time zone,
-    CONSTRAINT auth_user_secondary_email_differs CHECK (((secondary_email IS NULL) OR (email IS NULL) OR (lower((secondary_email)::text) <> lower((email)::text)))),
+    email_hash text,
+    secondary_email_hash text,
+    mobile_hash text,
+    username_hash text,
+    organization_id_hash text,
+    minor_until date,
+    CONSTRAINT auth_user_email_indexed CHECK (((email IS NULL) OR (email_hash IS NOT NULL))),
+    CONSTRAINT auth_user_mobile_indexed CHECK (((mobile IS NULL) OR (mobile_hash IS NOT NULL))),
+    CONSTRAINT auth_user_organization_id_indexed CHECK (((organization_id IS NULL) OR (organization_id_hash IS NOT NULL))),
+    CONSTRAINT auth_user_secondary_email_differs CHECK (((secondary_email_hash IS NULL) OR (email_hash IS NULL) OR (secondary_email_hash <> email_hash))),
+    CONSTRAINT auth_user_secondary_email_indexed CHECK (((secondary_email IS NULL) OR (secondary_email_hash IS NOT NULL))),
     CONSTRAINT auth_user_staff_email_required CHECK (((role = 'data_subject'::public.user_role) OR (email IS NOT NULL))),
-    CONSTRAINT dob_is_plausible CHECK (((dob IS NULL) OR ((dob > '1900-01-01'::date) AND (dob < CURRENT_DATE))))
+    CONSTRAINT auth_user_username_indexed CHECK (((username IS NULL) OR (username_hash IS NOT NULL)))
 );
+
+
+--
+-- Name: COLUMN auth_user.full_name; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.auth_user.full_name IS 'Sealed by the key service on write; the portals decrypt. Length is bounded by the API, not the column';
 
 
 --
 -- Name: COLUMN auth_user.dob; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.auth_user.dob IS 'Date of birth. Drives the section 9 test for whether this is a child''s account. NULL on accounts created before 0012 and on any account registered through a consent link, which does not ask - absent, not assumed adult.';
+COMMENT ON COLUMN public.auth_user.dob IS 'Date of birth, sealed by the key service; text because ciphertext is not a date. The s.9 test reads minor_until';
 
 
 --
@@ -1233,6 +1240,13 @@ COMMENT ON COLUMN public.auth_user.secondary_email IS 'A second address the pers
 --
 
 COMMENT ON COLUMN public.auth_user.secondary_email_verified_at IS 'When a code sent to secondary_email came back; NULL means it never has';
+
+
+--
+-- Name: COLUMN auth_user.minor_until; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.auth_user.minor_until IS 'The date this person stops being a child under s.9: date of birth plus eighteen years. Kept in the clear so the test stays a comparison; dob itself is sealed';
 
 
 --
@@ -1309,12 +1323,19 @@ CREATE TABLE public.consent_artefact (
     served_at timestamp with time zone NOT NULL,
     affirmative_action_at timestamp with time zone NOT NULL,
     action_type public.action_type NOT NULL,
-    ip_address inet,
+    ip_address text,
     is_withdrawal boolean DEFAULT false NOT NULL,
     supersedes_consent_id integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT served_before_action CHECK ((served_at <= affirmative_action_at))
 );
+
+
+--
+-- Name: COLUMN consent_artefact.ip_address; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.consent_artefact.ip_address IS 'The address she consented from, sealed by the key service; text rather than inet because ciphertext is not an address';
 
 
 --
@@ -1652,7 +1673,7 @@ CREATE TABLE public.import_batch (
     batch_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
     source_id integer NOT NULL,
     project_id integer,
-    file_name character varying(255) NOT NULL,
+    file_name text NOT NULL,
     file_hash text NOT NULL,
     declared_rows integer NOT NULL,
     accepted_rows integer DEFAULT 0 NOT NULL,
@@ -1736,7 +1757,7 @@ CREATE TABLE public.nomination (
     nomination_id integer NOT NULL,
     nomination_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
     principal_user_id integer NOT NULL,
-    nominee_name character varying(200) NOT NULL,
+    nominee_name text NOT NULL,
     rights public.rights_request_type[] NOT NULL,
     status public.nomination_status DEFAULT 'pending'::public.nomination_status NOT NULL,
     accept_token_hash text,
@@ -1745,12 +1766,16 @@ CREATE TABLE public.nomination (
     declined_at timestamp with time zone,
     revoked_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    nominee_mobile character varying(20),
-    nominee_email character varying(255),
+    nominee_mobile text,
+    nominee_email text,
     invoked_at timestamp with time zone,
     invoked_event public.rights_trigger_event,
     invoked_request_id integer,
     nominee_user_id integer,
+    nominee_email_hash text,
+    nominee_mobile_hash text,
+    CONSTRAINT nomination_email_indexed CHECK (((nominee_email IS NULL) OR (nominee_email_hash IS NOT NULL))),
+    CONSTRAINT nomination_mobile_indexed CHECK (((nominee_mobile IS NULL) OR (nominee_mobile_hash IS NOT NULL))),
     CONSTRAINT nomination_rights_not_empty CHECK ((cardinality(rights) >= 1)),
     CONSTRAINT nomination_some_contact CHECK (((nominee_mobile IS NOT NULL) OR (nominee_email IS NOT NULL))),
     CONSTRAINT nomination_status_dates CHECK ((((status = 'active'::public.nomination_status) AND (accepted_at IS NOT NULL)) OR ((status = 'declined'::public.nomination_status) AND (declined_at IS NOT NULL)) OR ((status = 'revoked'::public.nomination_status) AND (revoked_at IS NOT NULL)) OR (status = 'pending'::public.nomination_status)))
@@ -2025,8 +2050,8 @@ CREATE TABLE public.processor_respondent (
     respondent_id integer NOT NULL,
     respondent_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
     processor_id integer NOT NULL,
-    name character varying(200) NOT NULL,
-    contact character varying(255) NOT NULL,
+    name text NOT NULL,
+    contact text NOT NULL,
     user_id integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     removed_at timestamp with time zone
@@ -2354,8 +2379,8 @@ CREATE TABLE public.rights_request (
     outcome public.rights_request_outcome,
     channel public.rights_request_channel NOT NULL,
     subject_user_id integer,
-    submitted_name character varying(200),
-    submitted_contact character varying(255) NOT NULL,
+    submitted_name text,
+    submitted_contact text NOT NULL,
     request_text text NOT NULL,
     received_at timestamp with time zone DEFAULT now() NOT NULL,
     due_at timestamp with time zone NOT NULL,
@@ -2391,10 +2416,12 @@ CREATE TABLE public.rights_request (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     consent_id integer,
+    submitted_contact_hash text,
     CONSTRAINT rights_closed_has_outcome CHECK (((status <> 'closed'::public.rights_request_status) OR (outcome IS NOT NULL))),
     CONSTRAINT rights_due_after_receipt CHECK ((due_at > received_at)),
     CONSTRAINT rights_nominee_has_nomination CHECK (((channel <> 'nominee'::public.rights_request_channel) OR (nomination_id IS NOT NULL))),
     CONSTRAINT rights_refusal_has_reason CHECK (((outcome <> 'refused'::public.rights_request_outcome) OR (refusal_reason IS NOT NULL))),
+    CONSTRAINT rights_request_contact_indexed CHECK (((submitted_contact IS NULL) OR (submitted_contact_hash IS NOT NULL))),
     CONSTRAINT rights_verified_is_attributed CHECK (((verification_status <> 'verified'::public.rights_verification_status) OR ((verified_at IS NOT NULL) AND (verification_method IS NOT NULL))))
 );
 
@@ -2429,8 +2456,8 @@ CREATE TABLE public.rights_request_holder (
     confirmed_by integer,
     ticket_status public.rights_ticket_status DEFAULT 'pending'::public.rights_ticket_status NOT NULL,
     instruction text,
-    responder_name character varying(200),
-    responder_contact character varying(255),
+    responder_name text,
+    responder_contact text,
     issued_at timestamp with time zone,
     due_at timestamp with time zone,
     escalated_at timestamp with time zone,
@@ -2574,7 +2601,7 @@ CREATE TABLE public.rights_response_file (
     request_id integer NOT NULL,
     file_ref text NOT NULL,
     file_hash text NOT NULL,
-    file_name character varying(255) NOT NULL,
+    file_name text NOT NULL,
     size_bytes integer NOT NULL,
     content_type character varying(120),
     uploaded_by integer,
@@ -2617,7 +2644,7 @@ CREATE TABLE public.rights_ticket_message (
     evidence_ref text,
     evidence_hash text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    evidence_name character varying(255),
+    evidence_name text,
     CONSTRAINT ticket_message_kind CHECK (((kind)::text = ANY ((ARRAY['brief'::character varying, 'instruction'::character varying, 'message'::character varying, 'return'::character varying, 'escalation'::character varying, 'status'::character varying])::text[]))),
     CONSTRAINT ticket_message_side CHECK (((author_side)::text = ANY ((ARRAY['office'::character varying, 'holder'::character varying, 'system'::character varying])::text[])))
 );
@@ -2886,11 +2913,11 @@ ALTER TABLE ONLY public.rights_ticket_message ALTER COLUMN message_id SET DEFAUL
 
 
 --
--- Name: alembic_version alembic_version_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: alembic_version alembic_version_pkc; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.alembic_version
-    ADD CONSTRAINT alembic_version_pkey PRIMARY KEY (version_num);
+    ADD CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num);
 
 
 --
@@ -2918,43 +2945,11 @@ ALTER TABLE ONLY public.audit_log
 
 
 --
--- Name: auth_user auth_user_email_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.auth_user
-    ADD CONSTRAINT auth_user_email_key UNIQUE (email);
-
-
---
--- Name: auth_user auth_user_mobile_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.auth_user
-    ADD CONSTRAINT auth_user_mobile_key UNIQUE (mobile);
-
-
---
--- Name: auth_user auth_user_organization_id_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.auth_user
-    ADD CONSTRAINT auth_user_organization_id_key UNIQUE (organization_id);
-
-
---
 -- Name: auth_user auth_user_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_user
     ADD CONSTRAINT auth_user_pkey PRIMARY KEY (id);
-
-
---
--- Name: auth_user auth_user_username_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.auth_user
-    ADD CONSTRAINT auth_user_username_key UNIQUE (username);
 
 
 --
@@ -3494,10 +3489,38 @@ ALTER TABLE ONLY public.rights_ticket_message
 
 
 --
--- Name: auth_user_secondary_email_lower_key; Type: INDEX; Schema: public; Owner: -
+-- Name: auth_user_email_hash_key; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX auth_user_secondary_email_lower_key ON public.auth_user USING btree (lower((secondary_email)::text));
+CREATE UNIQUE INDEX auth_user_email_hash_key ON public.auth_user USING btree (email_hash);
+
+
+--
+-- Name: auth_user_mobile_hash_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX auth_user_mobile_hash_key ON public.auth_user USING btree (mobile_hash);
+
+
+--
+-- Name: auth_user_organization_id_hash_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX auth_user_organization_id_hash_key ON public.auth_user USING btree (organization_id_hash);
+
+
+--
+-- Name: auth_user_secondary_email_hash_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX auth_user_secondary_email_hash_key ON public.auth_user USING btree (secondary_email_hash);
+
+
+--
+-- Name: auth_user_username_hash_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX auth_user_username_hash_key ON public.auth_user USING btree (username_hash);
 
 
 --
@@ -3669,6 +3692,20 @@ CREATE INDEX idx_link_site ON public.consent_link USING btree (site_id) WHERE (s
 
 
 --
+-- Name: idx_nomination_nominee_email_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_nomination_nominee_email_hash ON public.nomination USING btree (nominee_email_hash);
+
+
+--
+-- Name: idx_nomination_nominee_mobile_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_nomination_nominee_mobile_hash ON public.nomination USING btree (nominee_mobile_hash);
+
+
+--
 -- Name: idx_nomination_principal; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3781,6 +3818,13 @@ CREATE INDEX idx_rights_item_request ON public.rights_request_item USING btree (
 
 
 --
+-- Name: idx_rights_request_contact_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rights_request_contact_hash ON public.rights_request USING btree (submitted_contact_hash);
+
+
+--
 -- Name: idx_rights_request_linked; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3841,13 +3885,6 @@ CREATE INDEX idx_status_hist_project ON public.project_status_history USING btre
 --
 
 CREATE INDEX idx_ticket_message_holder ON public.rights_ticket_message USING btree (holder_id, message_id);
-
-
---
--- Name: idx_user_email_lower; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_user_email_lower ON public.auth_user USING btree (lower((email)::text));
 
 
 --
@@ -3973,7 +4010,7 @@ CREATE TRIGGER trg_consent_coherent BEFORE INSERT ON public.consent_artefact FOR
 -- Name: auth_user trg_contact_belongs_to_one_person; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER trg_contact_belongs_to_one_person BEFORE INSERT OR UPDATE OF email, secondary_email ON public.auth_user FOR EACH ROW EXECUTE FUNCTION public.cmp_contact_belongs_to_one_person();
+CREATE TRIGGER trg_contact_belongs_to_one_person BEFORE INSERT OR UPDATE OF email_hash, secondary_email_hash ON public.auth_user FOR EACH ROW EXECUTE FUNCTION public.cmp_contact_belongs_to_one_person();
 
 
 --
@@ -4864,5 +4901,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict KHbccLCHPmvgdB5m4rIRLi4UuVMGgxgQ5WjIp3kG9pTMx9QYXORCwW3f3K9zEzo
+\unrestrict PaDxNKWTR52nEracMdqGpxTAR3GOXqmwYwNOetnVhxyGWwk4bMYNk1KjFfei152
 

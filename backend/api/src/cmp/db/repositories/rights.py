@@ -167,7 +167,7 @@ async def create(
            verification_method, verification_status, verified_at, verified_by,
            verification_note, linked_request_id, nomination_id, trigger_event,
            trigger_evidence_ref, trigger_evidence_hash, about_dpo, consent_id,
-           submitted_contact_idx)
+           submitted_contact_hash)
         VALUES
           ('RR-' || to_char(now(), 'YYYY') || '-'
              || lpad(nextval('rights_request_ref_seq')::text, 6, '0'),
@@ -180,7 +180,7 @@ async def create(
            %(verified_by)s, %(verification_note)s, %(linked_request_id)s,
            %(nomination_id)s, %(trigger_event)s::rights_trigger_event,
            %(trigger_evidence_ref)s, %(trigger_evidence_hash)s, %(about_dpo)s,
-           %(consent_id)s, %(submitted_contact_idx)s)
+           %(consent_id)s, %(submitted_contact_hash)s)
         RETURNING request_id, request_uuid, reference, received_at, due_at
         """,
         {
@@ -189,7 +189,7 @@ async def create(
             "subject_user_id": subject_user_id,
             "submitted_name": sealed["submitted_name"],
             "submitted_contact": sealed["submitted_contact"],
-            "submitted_contact_idx": index_of("contact", contact_plain),
+            "submitted_contact_hash": index_of("contact", contact_plain),
             "request_text": sealed["request_text"],
             "due_at": due_at,
             "created_by": created_by,
@@ -378,13 +378,13 @@ async def list_requests(
         # exactly, through the blind index - of the request, or of the account.
         q = q.strip()
         where.append(
-            "(r.reference ILIKE %s OR r.submitted_contact_idx = %s "
-            "OR s.email_idx = %s OR s.mobile_idx = %s)"
+            "(r.reference ILIKE %s OR r.submitted_contact_hash = %s "
+            "OR s.email_hash = %s OR s.mobile_hash = %s)"
         )
-        email_idx, mobile_idx = (
+        email_hash, mobile_hash = (
             (index_of("email", q), None) if "@" in q else (None, index_of("mobile", q))
         )
-        params.extend([f"%{q}%", index_of("contact", q), email_idx, mobile_idx])
+        params.extend([f"%{q}%", index_of("contact", q), email_hash, mobile_hash])
 
     clause = " AND ".join(where)
     keyset, kparams = keyset_clause(req, alias="r", id_column="request_id")
@@ -1246,7 +1246,7 @@ async def subject_counts(conn: Conn, subject_user_id: int) -> Row:
 # --------------------------------------------------------------- nominations
 _NOMINATION_SELECT = """
   n.nomination_id, n.nomination_uuid, n.nominee_name, n.nominee_mobile, n.nominee_email,
-  n.nominee_mobile_idx, n.nominee_email_idx,
+  n.nominee_mobile_hash, n.nominee_email_hash,
   coalesce(n.nominee_mobile, n.nominee_email) AS nominee_contact,
   -- Cast: an enum array comes back unparsed unless its type is registered.
   n.rights::text[] AS rights,
@@ -1303,7 +1303,7 @@ async def create_nomination(
         """
         INSERT INTO nomination
           (principal_user_id, nominee_name, nominee_mobile, nominee_email, rights,
-           accept_token_hash, accept_expires_at, nominee_mobile_idx, nominee_email_idx)
+           accept_token_hash, accept_expires_at, nominee_mobile_hash, nominee_email_hash)
         VALUES (%s, %s, %s, %s, %s::rights_request_type[], %s, %s, %s, %s)
         RETURNING nomination_id, nomination_uuid
         """,
@@ -1352,18 +1352,18 @@ async def nominations_of(conn: Conn, principal_user_id: int) -> list[Row]:
 _NOMINEE_IS_CALLER = """(
        (%s::int IS NOT NULL AND n.nominee_user_id = %s)
     OR (n.nominee_user_id IS NULL
-        AND ((%s::text IS NOT NULL AND n.nominee_mobile_idx = %s)
-             OR (%s::text IS NOT NULL AND n.nominee_email_idx = %s)))
+        AND ((%s::text IS NOT NULL AND n.nominee_mobile_hash = %s)
+             OR (%s::text IS NOT NULL AND n.nominee_email_hash = %s)))
 )"""
 
 
-def _nominee_params(user_id: int, mobile_idx: str | None, email_idx: str | None) -> list[Any]:
+def _nominee_params(user_id: int, mobile_hash: str | None, email_hash: str | None) -> list[Any]:
     """The caller's own indexes, off their row - never a contact in the clear."""
-    return [user_id, user_id, mobile_idx, mobile_idx, email_idx, email_idx]
+    return [user_id, user_id, mobile_hash, mobile_hash, email_hash, email_hash]
 
 
 async def nominations_naming(
-    conn: Conn, *, user_id: int, mobile_idx: str | None, email_idx: str | None
+    conn: Conn, *, user_id: int, mobile_hash: str | None, email_hash: str | None
 ) -> list[Row]:
     """Nominations that name this person as nominee.
 
@@ -1384,12 +1384,12 @@ async def nominations_naming(
              WHERE (n.status IN ('pending', 'active') OR n.invoked_request_id IS NOT NULL)
                AND {_NOMINEE_IS_CALLER}
              ORDER BY n.created_at DESC""",
-        _nominee_params(user_id, mobile_idx, email_idx),
+        _nominee_params(user_id, mobile_hash, email_hash),
     )
 
 
 async def request_as_nominee(
-    conn: Conn, request_uuid: str, *, user_id: int, mobile_idx: str | None, email_idx: str | None
+    conn: Conn, request_uuid: str, *, user_id: int, mobile_hash: str | None, email_hash: str | None
 ) -> Row | None:
     """A request this person raised as somebody's nominee, or None.
 
@@ -1407,7 +1407,7 @@ async def request_as_nominee(
              WHERE r.request_uuid = %s
                AND r.nomination_id IS NOT NULL
                AND {_NOMINEE_IS_CALLER}""",
-        [request_uuid, *_nominee_params(user_id, mobile_idx, email_idx)],
+        [request_uuid, *_nominee_params(user_id, mobile_hash, email_hash)],
     )
 
 

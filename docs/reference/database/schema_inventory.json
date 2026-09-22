@@ -1,6 +1,6 @@
 {
-  "commit": "0b9ee4185034c44ee9b0d53484cb2c3fc317656e",
-  "migration_head": "0026",
+  "commit": "f145a7c45df14ee6418fad6889d87bb7e663c105",
+  "migration_head": "0029",
   "migrations": [
     {
       "revision": "0001",
@@ -105,10 +105,27 @@
     {
       "revision": "0026",
       "source": "backend/api/migrations/versions/0026_nominee_account.py"
+    },
+    {
+      "revision": "0027",
+      "source": "backend/api/migrations/versions/0027_room_for_ciphertext.py"
+    },
+    {
+      "revision": "0028",
+      "source": "backend/api/migrations/versions/0028_blind_index.py"
+    },
+    {
+      "revision": "0029",
+      "source": "backend/api/migrations/versions/0029_hash_columns.py"
     }
   ],
   "postgres_version": "16.15",
   "tables": [
+    {
+      "name": "v_current_consent",
+      "kind": "v",
+      "comment": null
+    },
     {
       "name": "alembic_version",
       "kind": "r",
@@ -272,11 +289,6 @@
     {
       "name": "rights_ticket_message",
       "kind": "r",
-      "comment": null
-    },
-    {
-      "name": "v_current_consent",
-      "kind": "v",
       "comment": null
     }
   ],
@@ -456,7 +468,7 @@
       "table_name": "auth_user",
       "name": "username",
       "position": 3,
-      "type": "character varying(120)",
+      "type": "text",
       "not_null": false,
       "default_value": null,
       "comment": null
@@ -465,16 +477,16 @@
       "table_name": "auth_user",
       "name": "full_name",
       "position": 4,
-      "type": "character varying(200)",
+      "type": "text",
       "not_null": true,
       "default_value": null,
-      "comment": null
+      "comment": "Sealed by the key service on write; the portals decrypt. Length is bounded by the API, not the column"
     },
     {
       "table_name": "auth_user",
       "name": "email",
       "position": 5,
-      "type": "character varying(255)",
+      "type": "text",
       "not_null": false,
       "default_value": null,
       "comment": null
@@ -483,7 +495,7 @@
       "table_name": "auth_user",
       "name": "mobile",
       "position": 6,
-      "type": "character varying(20)",
+      "type": "text",
       "not_null": false,
       "default_value": null,
       "comment": null
@@ -492,7 +504,7 @@
       "table_name": "auth_user",
       "name": "organization_id",
       "position": 7,
-      "type": "character varying(60)",
+      "type": "text",
       "not_null": false,
       "default_value": null,
       "comment": null
@@ -564,10 +576,10 @@
       "table_name": "auth_user",
       "name": "dob",
       "position": 15,
-      "type": "date",
+      "type": "text",
       "not_null": false,
       "default_value": null,
-      "comment": "Date of birth. Drives the section 9 test for whether this is a child's account. NULL on accounts created before 0012 and on any account registered through a consent link, which does not ask - absent, not assumed adult."
+      "comment": "Date of birth, sealed by the key service; text because ciphertext is not a date. The s.9 test reads minor_until"
     },
     {
       "table_name": "auth_user",
@@ -591,7 +603,7 @@
       "table_name": "auth_user",
       "name": "secondary_email",
       "position": 18,
-      "type": "character varying(255)",
+      "type": "text",
       "not_null": false,
       "default_value": null,
       "comment": "A second address the person added themselves; signs them in only once a code sent to it has come back"
@@ -604,6 +616,60 @@
       "not_null": false,
       "default_value": null,
       "comment": "When a code sent to secondary_email came back; NULL means it never has"
+    },
+    {
+      "table_name": "auth_user",
+      "name": "email_hash",
+      "position": 20,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "auth_user",
+      "name": "secondary_email_hash",
+      "position": 21,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "auth_user",
+      "name": "mobile_hash",
+      "position": 22,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "auth_user",
+      "name": "username_hash",
+      "position": 23,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "auth_user",
+      "name": "organization_id_hash",
+      "position": 24,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "auth_user",
+      "name": "minor_until",
+      "position": 25,
+      "type": "date",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The date this person stops being a child under s.9: date of birth plus eighteen years. Kept in the clear so the test stays a comparison; dob itself is sealed"
     },
     {
       "table_name": "collection",
@@ -798,10 +864,10 @@
       "table_name": "consent_artefact",
       "name": "ip_address",
       "position": 11,
-      "type": "inet",
+      "type": "text",
       "not_null": false,
       "default_value": null,
-      "comment": null
+      "comment": "The address she consented from, sealed by the key service; text rather than inet because ciphertext is not an address"
     },
     {
       "table_name": "consent_artefact",
@@ -1455,7 +1521,7 @@
       "table_name": "import_batch",
       "name": "file_name",
       "position": 5,
-      "type": "character varying(255)",
+      "type": "text",
       "not_null": true,
       "default_value": null,
       "comment": null
@@ -1626,7 +1692,7 @@
       "table_name": "nomination",
       "name": "nominee_name",
       "position": 4,
-      "type": "character varying(200)",
+      "type": "text",
       "not_null": true,
       "default_value": null,
       "comment": null
@@ -1707,7 +1773,7 @@
       "table_name": "nomination",
       "name": "nominee_mobile",
       "position": 14,
-      "type": "character varying(20)",
+      "type": "text",
       "not_null": false,
       "default_value": null,
       "comment": null
@@ -1716,7 +1782,7 @@
       "table_name": "nomination",
       "name": "nominee_email",
       "position": 15,
-      "type": "character varying(255)",
+      "type": "text",
       "not_null": false,
       "default_value": null,
       "comment": null
@@ -1756,6 +1822,24 @@
       "not_null": false,
       "default_value": null,
       "comment": "The account the nominee accepted with, set at acceptance; NULL for a nomination never accepted, or accepted before this column existed and matching no account"
+    },
+    {
+      "table_name": "nomination",
+      "name": "nominee_email_hash",
+      "position": 20,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "nomination",
+      "name": "nominee_mobile_hash",
+      "position": 21,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
     },
     {
       "table_name": "notice",
@@ -2283,7 +2367,7 @@
       "table_name": "processor_respondent",
       "name": "name",
       "position": 4,
-      "type": "character varying(200)",
+      "type": "text",
       "not_null": true,
       "default_value": null,
       "comment": null
@@ -2292,7 +2376,7 @@
       "table_name": "processor_respondent",
       "name": "contact",
       "position": 5,
-      "type": "character varying(255)",
+      "type": "text",
       "not_null": true,
       "default_value": null,
       "comment": null
@@ -3057,7 +3141,7 @@
       "table_name": "rights_request",
       "name": "submitted_name",
       "position": 10,
-      "type": "character varying(200)",
+      "type": "text",
       "not_null": false,
       "default_value": null,
       "comment": null
@@ -3066,7 +3150,7 @@
       "table_name": "rights_request",
       "name": "submitted_contact",
       "position": 11,
-      "type": "character varying(255)",
+      "type": "text",
       "not_null": true,
       "default_value": null,
       "comment": null
@@ -3387,6 +3471,15 @@
       "comment": null
     },
     {
+      "table_name": "rights_request",
+      "name": "submitted_contact_hash",
+      "position": 47,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
       "table_name": "rights_request_holder",
       "name": "holder_id",
       "position": 1,
@@ -3489,7 +3582,7 @@
       "table_name": "rights_request_holder",
       "name": "responder_name",
       "position": 12,
-      "type": "character varying(200)",
+      "type": "text",
       "not_null": false,
       "default_value": null,
       "comment": null
@@ -3498,7 +3591,7 @@
       "table_name": "rights_request_holder",
       "name": "responder_contact",
       "position": 13,
-      "type": "character varying(255)",
+      "type": "text",
       "not_null": false,
       "default_value": null,
       "comment": null
@@ -3876,7 +3969,7 @@
       "table_name": "rights_response_file",
       "name": "file_name",
       "position": 6,
-      "type": "character varying(255)",
+      "type": "text",
       "not_null": true,
       "default_value": null,
       "comment": null
@@ -4011,7 +4104,7 @@
       "table_name": "rights_ticket_message",
       "name": "evidence_name",
       "position": 11,
-      "type": "character varying(255)",
+      "type": "text",
       "not_null": false,
       "default_value": null,
       "comment": null
@@ -4110,7 +4203,7 @@
       "table_name": "v_current_consent",
       "name": "ip_address",
       "position": 11,
-      "type": "inet",
+      "type": "text",
       "not_null": false,
       "default_value": null,
       "comment": null
@@ -4146,7 +4239,7 @@
   "constraints": [
     {
       "table_name": "alembic_version",
-      "name": "alembic_version_pkey",
+      "name": "alembic_version_pkc",
       "kind": "p",
       "definition": "PRIMARY KEY (version_num)",
       "columns": [
@@ -4290,11 +4383,12 @@
     },
     {
       "table_name": "auth_user",
-      "name": "auth_user_email_key",
-      "kind": "u",
-      "definition": "UNIQUE (email)",
+      "name": "auth_user_email_indexed",
+      "kind": "c",
+      "definition": "CHECK (((email IS NULL) OR (email_hash IS NOT NULL)))",
       "columns": [
-        "email"
+        "email",
+        "email_hash"
       ],
       "referenced_table": null,
       "referenced_columns": [],
@@ -4305,11 +4399,12 @@
     },
     {
       "table_name": "auth_user",
-      "name": "auth_user_mobile_key",
-      "kind": "u",
-      "definition": "UNIQUE (mobile)",
+      "name": "auth_user_mobile_indexed",
+      "kind": "c",
+      "definition": "CHECK (((mobile IS NULL) OR (mobile_hash IS NOT NULL)))",
       "columns": [
-        "mobile"
+        "mobile",
+        "mobile_hash"
       ],
       "referenced_table": null,
       "referenced_columns": [],
@@ -4320,11 +4415,12 @@
     },
     {
       "table_name": "auth_user",
-      "name": "auth_user_organization_id_key",
-      "kind": "u",
-      "definition": "UNIQUE (organization_id)",
+      "name": "auth_user_organization_id_indexed",
+      "kind": "c",
+      "definition": "CHECK (((organization_id IS NULL) OR (organization_id_hash IS NOT NULL)))",
       "columns": [
-        "organization_id"
+        "organization_id",
+        "organization_id_hash"
       ],
       "referenced_table": null,
       "referenced_columns": [],
@@ -4352,10 +4448,26 @@
       "table_name": "auth_user",
       "name": "auth_user_secondary_email_differs",
       "kind": "c",
-      "definition": "CHECK (((secondary_email IS NULL) OR (email IS NULL) OR (lower((secondary_email)::text) <> lower((email)::text))))",
+      "definition": "CHECK (((secondary_email_hash IS NULL) OR (email_hash IS NULL) OR (secondary_email_hash <> email_hash)))",
+      "columns": [
+        "secondary_email_hash",
+        "email_hash"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "auth_user",
+      "name": "auth_user_secondary_email_indexed",
+      "kind": "c",
+      "definition": "CHECK (((secondary_email IS NULL) OR (secondary_email_hash IS NOT NULL)))",
       "columns": [
         "secondary_email",
-        "email"
+        "secondary_email_hash"
       ],
       "referenced_table": null,
       "referenced_columns": [],
@@ -4382,11 +4494,12 @@
     },
     {
       "table_name": "auth_user",
-      "name": "auth_user_username_key",
-      "kind": "u",
-      "definition": "UNIQUE (username)",
+      "name": "auth_user_username_indexed",
+      "kind": "c",
+      "definition": "CHECK (((username IS NULL) OR (username_hash IS NOT NULL)))",
       "columns": [
-        "username"
+        "username",
+        "username_hash"
       ],
       "referenced_table": null,
       "referenced_columns": [],
@@ -4402,21 +4515,6 @@
       "definition": "UNIQUE (uuid)",
       "columns": [
         "uuid"
-      ],
-      "referenced_table": null,
-      "referenced_columns": [],
-      "delete_action": " ",
-      "update_action": " ",
-      "deferrable": false,
-      "initially_deferred": false
-    },
-    {
-      "table_name": "auth_user",
-      "name": "dob_is_plausible",
-      "kind": "c",
-      "definition": "CHECK (((dob IS NULL) OR ((dob > '1900-01-01'::date) AND (dob < CURRENT_DATE))))",
-      "columns": [
-        "dob"
       ],
       "referenced_table": null,
       "referenced_columns": [],
@@ -5495,6 +5593,22 @@
     },
     {
       "table_name": "nomination",
+      "name": "nomination_email_indexed",
+      "kind": "c",
+      "definition": "CHECK (((nominee_email IS NULL) OR (nominee_email_hash IS NOT NULL)))",
+      "columns": [
+        "nominee_email",
+        "nominee_email_hash"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "nomination",
       "name": "nomination_invoked_request_id_fkey",
       "kind": "f",
       "definition": "FOREIGN KEY (invoked_request_id) REFERENCES rights_request(request_id)",
@@ -5507,6 +5621,22 @@
       ],
       "delete_action": "a",
       "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "nomination",
+      "name": "nomination_mobile_indexed",
+      "kind": "c",
+      "definition": "CHECK (((nominee_mobile IS NULL) OR (nominee_mobile_hash IS NOT NULL)))",
+      "columns": [
+        "nominee_mobile",
+        "nominee_mobile_hash"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
       "deferrable": false,
       "initially_deferred": false
     },
@@ -6758,6 +6888,22 @@
     },
     {
       "table_name": "rights_request",
+      "name": "rights_request_contact_indexed",
+      "kind": "c",
+      "definition": "CHECK (((submitted_contact IS NULL) OR (submitted_contact_hash IS NOT NULL)))",
+      "columns": [
+        "submitted_contact",
+        "submitted_contact_hash"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request",
       "name": "rights_request_created_by_fkey",
       "kind": "f",
       "definition": "FOREIGN KEY (created_by) REFERENCES auth_user(id)",
@@ -7439,8 +7585,8 @@
   "indexes": [
     {
       "table_name": "alembic_version",
-      "name": "alembic_version_pkey",
-      "definition": "CREATE UNIQUE INDEX alembic_version_pkey ON public.alembic_version USING btree (version_num)"
+      "name": "alembic_version_pkc",
+      "definition": "CREATE UNIQUE INDEX alembic_version_pkc ON public.alembic_version USING btree (version_num)"
     },
     {
       "table_name": "asset_consent",
@@ -7489,18 +7635,18 @@
     },
     {
       "table_name": "auth_user",
-      "name": "auth_user_email_key",
-      "definition": "CREATE UNIQUE INDEX auth_user_email_key ON public.auth_user USING btree (email)"
+      "name": "auth_user_email_hash_key",
+      "definition": "CREATE UNIQUE INDEX auth_user_email_hash_key ON public.auth_user USING btree (email_hash)"
     },
     {
       "table_name": "auth_user",
-      "name": "auth_user_mobile_key",
-      "definition": "CREATE UNIQUE INDEX auth_user_mobile_key ON public.auth_user USING btree (mobile)"
+      "name": "auth_user_mobile_hash_key",
+      "definition": "CREATE UNIQUE INDEX auth_user_mobile_hash_key ON public.auth_user USING btree (mobile_hash)"
     },
     {
       "table_name": "auth_user",
-      "name": "auth_user_organization_id_key",
-      "definition": "CREATE UNIQUE INDEX auth_user_organization_id_key ON public.auth_user USING btree (organization_id)"
+      "name": "auth_user_organization_id_hash_key",
+      "definition": "CREATE UNIQUE INDEX auth_user_organization_id_hash_key ON public.auth_user USING btree (organization_id_hash)"
     },
     {
       "table_name": "auth_user",
@@ -7509,23 +7655,18 @@
     },
     {
       "table_name": "auth_user",
-      "name": "auth_user_secondary_email_lower_key",
-      "definition": "CREATE UNIQUE INDEX auth_user_secondary_email_lower_key ON public.auth_user USING btree (lower((secondary_email)::text))"
+      "name": "auth_user_secondary_email_hash_key",
+      "definition": "CREATE UNIQUE INDEX auth_user_secondary_email_hash_key ON public.auth_user USING btree (secondary_email_hash)"
     },
     {
       "table_name": "auth_user",
-      "name": "auth_user_username_key",
-      "definition": "CREATE UNIQUE INDEX auth_user_username_key ON public.auth_user USING btree (username)"
+      "name": "auth_user_username_hash_key",
+      "definition": "CREATE UNIQUE INDEX auth_user_username_hash_key ON public.auth_user USING btree (username_hash)"
     },
     {
       "table_name": "auth_user",
       "name": "auth_user_uuid_key",
       "definition": "CREATE UNIQUE INDEX auth_user_uuid_key ON public.auth_user USING btree (uuid)"
-    },
-    {
-      "table_name": "auth_user",
-      "name": "idx_user_email_lower",
-      "definition": "CREATE INDEX idx_user_email_lower ON public.auth_user USING btree (lower((email)::text))"
     },
     {
       "table_name": "auth_user",
@@ -7766,6 +7907,16 @@
       "table_name": "message_template",
       "name": "message_template_pkey",
       "definition": "CREATE UNIQUE INDEX message_template_pkey ON public.message_template USING btree (template_id)"
+    },
+    {
+      "table_name": "nomination",
+      "name": "idx_nomination_nominee_email_hash",
+      "definition": "CREATE INDEX idx_nomination_nominee_email_hash ON public.nomination USING btree (nominee_email_hash)"
+    },
+    {
+      "table_name": "nomination",
+      "name": "idx_nomination_nominee_mobile_hash",
+      "definition": "CREATE INDEX idx_nomination_nominee_mobile_hash ON public.nomination USING btree (nominee_mobile_hash)"
     },
     {
       "table_name": "nomination",
@@ -8011,6 +8162,11 @@
       "table_name": "purpose",
       "name": "purpose_purpose_uuid_key",
       "definition": "CREATE UNIQUE INDEX purpose_purpose_uuid_key ON public.purpose USING btree (purpose_uuid)"
+    },
+    {
+      "table_name": "rights_request",
+      "name": "idx_rights_request_contact_hash",
+      "definition": "CREATE INDEX idx_rights_request_contact_hash ON public.rights_request USING btree (submitted_contact_hash)"
     },
     {
       "table_name": "rights_request",
@@ -8497,7 +8653,7 @@
     {
       "table_name": "auth_user",
       "name": "trg_contact_belongs_to_one_person",
-      "definition": "CREATE TRIGGER trg_contact_belongs_to_one_person BEFORE INSERT OR UPDATE OF email, secondary_email ON public.auth_user FOR EACH ROW EXECUTE FUNCTION cmp_contact_belongs_to_one_person()"
+      "definition": "CREATE TRIGGER trg_contact_belongs_to_one_person BEFORE INSERT OR UPDATE OF email_hash, secondary_email_hash ON public.auth_user FOR EACH ROW EXECUTE FUNCTION cmp_contact_belongs_to_one_person()"
     },
     {
       "table_name": "auth_user",
@@ -8623,419 +8779,186 @@
   ],
   "view_dependencies": [
     {
-      "view_name": "v_current_consent",
-      "table_name": "consent_artefact"
+      "view": "v_current_consent",
+      "depends_on": [
+        "auth_user",
+        "consent_artefact",
+        "notice",
+        "notice_language"
+      ]
     }
   ],
   "sequences": [
     {
-      "name": "asset_consent_asset_consent_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "asset_consent_asset_consent_id_seq"
     },
     {
-      "name": "audit_log_log_id_seq",
-      "data_type": "bigint",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 9223372036854775807,
-      "cycle": false
+      "name": "audit_log_log_id_seq"
     },
     {
-      "name": "auth_user_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "auth_user_id_seq"
     },
     {
-      "name": "collection_collection_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "collection_collection_id_seq"
     },
     {
-      "name": "consent_artefact_consent_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "consent_artefact_consent_id_seq"
     },
     {
-      "name": "consent_link_link_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "consent_link_link_id_seq"
     },
     {
-      "name": "consent_purpose_grant_grant_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "consent_purpose_grant_grant_id_seq"
     },
     {
-      "name": "data_asset_asset_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "data_asset_asset_id_seq"
     },
     {
-      "name": "data_source_source_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "data_source_source_id_seq"
     },
     {
-      "name": "delegation_delegation_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "delegation_delegation_id_seq"
     },
     {
-      "name": "export_line_line_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "export_line_line_id_seq"
     },
     {
-      "name": "export_log_export_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "export_log_export_id_seq"
     },
     {
-      "name": "import_batch_batch_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "import_batch_batch_id_seq"
     },
     {
-      "name": "message_template_template_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "message_template_template_id_seq"
     },
     {
-      "name": "nomination_nomination_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "nomination_nomination_id_seq"
     },
     {
-      "name": "notice_language_notice_language_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "notice_language_notice_language_id_seq"
     },
     {
-      "name": "notice_notice_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "notice_notice_id_seq"
     },
     {
-      "name": "notice_purpose_notice_purpose_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "notice_purpose_notice_purpose_id_seq"
     },
     {
-      "name": "person_type_history_history_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "person_type_history_history_id_seq"
     },
     {
-      "name": "processor_processor_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "processor_processor_id_seq"
     },
     {
-      "name": "processor_respondent_respondent_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "processor_respondent_respondent_id_seq"
     },
     {
-      "name": "project_approval_approval_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "project_approval_approval_id_seq"
     },
     {
-      "name": "project_processor_project_processor_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "project_processor_project_processor_id_seq"
     },
     {
-      "name": "project_project_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "project_project_id_seq"
     },
     {
-      "name": "project_site_site_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "project_site_site_id_seq"
     },
     {
-      "name": "project_status_history_history_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "project_status_history_history_id_seq"
     },
     {
-      "name": "purpose_purpose_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "purpose_purpose_id_seq"
     },
     {
-      "name": "rights_request_holder_holder_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "rights_request_holder_holder_id_seq"
     },
     {
-      "name": "rights_request_item_item_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "rights_request_item_item_id_seq"
     },
     {
-      "name": "rights_request_ref_seq",
-      "data_type": "bigint",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 9223372036854775807,
-      "cycle": false
+      "name": "rights_request_ref_seq"
     },
     {
-      "name": "rights_request_request_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "rights_request_request_id_seq"
     },
     {
-      "name": "rights_response_file_file_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "rights_response_file_file_id_seq"
     },
     {
-      "name": "rights_ticket_message_message_id_seq",
-      "data_type": "integer",
-      "start_value": 1,
-      "increment_by": 1,
-      "min_value": 1,
-      "max_value": 2147483647,
-      "cycle": false
+      "name": "rights_ticket_message_message_id_seq"
     }
   ],
   "functions": [
     {
-      "name": "cmp_append_only",
-      "arguments": "",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_append_only()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n  RAISE EXCEPTION\n    USING MESSAGE = format('%s is append-only: %s is refused', TG_TABLE_NAME, TG_OP),\n          ERRCODE = '42501',\n          HINT    = 'Record a new row that supersedes the old one.';\nEND;\n$function$\n"
+      "name": "cmp_append_only"
     },
     {
-      "name": "cmp_audit_chain",
-      "arguments": "",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_audit_chain()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nDECLARE\n  prev_hash text;\n  payload   text;\nBEGIN\n  -- Serialise chain construction. Two concurrent inserts that both read the same\n  -- predecessor would produce two rows claiming the same position, and the chain\n  -- would verify against neither.\n  PERFORM pg_advisory_xact_lock(hashtext('cmp_audit_chain'));\n\n  -- The position is drawn here, inside the lock - not by a column default, which\n  -- would draw it before the wait. Rows are chained in the order the lock was\n  -- granted, so that is the order their ids must have. Whatever the statement\n  -- supplied for log_id is discarded.\n  NEW.log_id := nextval(pg_get_serial_sequence('audit_log', 'log_id'));\n\n  SELECT detail_json ->> '_hash' INTO prev_hash\n  FROM audit_log ORDER BY log_id DESC LIMIT 1;\n\n  payload := concat_ws('|',\n    NEW.event_type,\n    coalesce(NEW.actor_user_id::text, ''),\n    coalesce(NEW.subject_user_id::text, ''),\n    NEW.entity_type,\n    NEW.entity_id::text,\n    to_char(NEW.occurred_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.USOF'),\n    coalesce(NEW.detail_json - '_hash' - '_prev', '{}'::jsonb)::text\n  );\n\n  NEW.detail_json := coalesce(NEW.detail_json, '{}'::jsonb)\n    || jsonb_build_object(\n         '_prev', prev_hash,\n         '_hash', encode(digest(concat_ws('|', coalesce(prev_hash, ''), payload), 'sha256'), 'hex')\n       );\n  RETURN NEW;\nEND;\n$function$\n"
+      "name": "cmp_audit_chain"
     },
     {
-      "name": "cmp_audit_verify",
-      "arguments": "from_log_id bigint",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_audit_verify(from_log_id bigint DEFAULT 0)\n RETURNS TABLE(log_id bigint, log_uuid uuid, occurred_at timestamp with time zone, reason text)\n LANGUAGE plpgsql\n STABLE\nAS $function$\nDECLARE\n  r          record;\n  prev_hash  text;\n  payload    text;\n  expected   text;\n  seeded     boolean := false;\nBEGIN\n  FOR r IN\n    SELECT * FROM audit_log a WHERE a.log_id >= from_log_id ORDER BY a.log_id\n  LOOP\n    IF NOT seeded THEN\n      prev_hash := r.detail_json ->> '_prev';\n      seeded := true;\n    END IF;\n\n    IF (r.detail_json ->> '_prev') IS DISTINCT FROM prev_hash THEN\n      log_id := r.log_id; log_uuid := r.log_uuid; occurred_at := r.occurred_at;\n      reason := 'predecessor hash does not match the previous row';\n      RETURN NEXT;\n      RETURN;\n    END IF;\n\n    payload := concat_ws('|',\n      r.event_type,\n      coalesce(r.actor_user_id::text, ''),\n      coalesce(r.subject_user_id::text, ''),\n      r.entity_type,\n      r.entity_id::text,\n      to_char(r.occurred_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.USOF'),\n      coalesce(r.detail_json - '_hash' - '_prev', '{}'::jsonb)::text\n    );\n    expected := encode(\n      digest(concat_ws('|', coalesce(prev_hash, ''), payload), 'sha256'), 'hex');\n\n    IF (r.detail_json ->> '_hash') IS DISTINCT FROM expected THEN\n      log_id := r.log_id; log_uuid := r.log_uuid; occurred_at := r.occurred_at;\n      reason := 'row content does not match its recorded hash';\n      RETURN NEXT;\n      RETURN;\n    END IF;\n\n    prev_hash := expected;\n  END LOOP;\nEND;\n$function$\n"
+      "name": "cmp_audit_verify"
     },
     {
-      "name": "cmp_consent_coherent",
-      "arguments": "",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_consent_coherent()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nDECLARE\n  lang_notice int;\n  lang_hash   text;\n  lnk_notice  int;\n  n_status    notice_status;\nBEGIN\n  SELECT nl.notice_id, nl.content_hash INTO lang_notice, lang_hash\n  FROM notice_language nl WHERE nl.notice_language_id = NEW.notice_language_id;\n\n  IF lang_notice IS DISTINCT FROM NEW.notice_id THEN\n    RAISE EXCEPTION USING\n      MESSAGE = 'notice_language belongs to a different notice', ERRCODE = '23514';\n  END IF;\n\n  IF NEW.notice_content_hash IS DISTINCT FROM lang_hash THEN\n    RAISE EXCEPTION USING\n      MESSAGE = 'notice_content_hash must be the hash of the text served (INV-4)',\n      ERRCODE = '23514';\n  END IF;\n\n  SELECT cl.notice_id INTO lnk_notice FROM consent_link cl WHERE cl.link_id = NEW.link_id;\n  IF lnk_notice IS DISTINCT FROM NEW.notice_id THEN\n    RAISE EXCEPTION USING\n      MESSAGE = 'consent link belongs to a different notice', ERRCODE = '23514';\n  END IF;\n\n  SELECT status INTO n_status FROM notice WHERE notice_id = NEW.notice_id;\n  IF n_status NOT IN ('published', 'superseded') THEN\n    RAISE EXCEPTION USING\n      MESSAGE = 'Consent cannot be recorded against an unpublished notice (s.5(1))',\n      ERRCODE = '23514';\n  END IF;\n\n  RETURN NEW;\nEND;\n$function$\n"
+      "name": "cmp_consent_coherent"
     },
     {
-      "name": "cmp_contact_belongs_to_one_person",
-      "arguments": "",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_contact_belongs_to_one_person()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n  IF NEW.secondary_email IS NOT NULL AND EXISTS (\n       SELECT 1 FROM auth_user u\n        WHERE u.id <> NEW.id AND lower(u.email) = lower(NEW.secondary_email)) THEN\n    RAISE EXCEPTION 'that address belongs to another account'\n      USING ERRCODE = 'unique_violation';\n  END IF;\n  IF NEW.email IS NOT NULL AND EXISTS (\n       SELECT 1 FROM auth_user u\n        WHERE u.id <> NEW.id AND lower(u.secondary_email) = lower(NEW.email)) THEN\n    RAISE EXCEPTION 'that address belongs to another account'\n      USING ERRCODE = 'unique_violation';\n  END IF;\n  RETURN NEW;\nEND $function$\n"
+      "name": "cmp_contact_belongs_to_one_person"
     },
     {
-      "name": "cmp_delegators_of",
-      "arguments": "p_user_id integer",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_delegators_of(p_user_id integer)\n RETURNS TABLE(delegator_user_id integer)\n LANGUAGE sql\n STABLE\nAS $function$\n  SELECT d.delegator_user_id\n    FROM delegation d\n   WHERE d.delegate_user_id = p_user_id\n     AND d.revoked_at IS NULL\n     AND d.starts_at <= now()\n     AND (d.ends_at IS NULL OR d.ends_at > now());\n$function$\n"
+      "name": "cmp_delegators_of"
     },
     {
-      "name": "cmp_grant_in_notice",
-      "arguments": "",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_grant_in_notice()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nDECLARE\n  ok boolean;\nBEGIN\n  SELECT EXISTS (\n    SELECT 1\n    FROM consent_artefact ca\n    JOIN notice_purpose np ON np.notice_id = ca.notice_id\n    WHERE ca.consent_id = NEW.consent_id AND np.purpose_id = NEW.purpose_id\n  ) INTO ok;\n  IF NOT ok THEN\n    RAISE EXCEPTION USING\n      MESSAGE = 'Purpose is not part of the notice this consent was given against',\n      ERRCODE = '23514';\n  END IF;\n  RETURN NEW;\nEND;\n$function$\n"
+      "name": "cmp_grant_in_notice"
     },
     {
-      "name": "cmp_is_minor",
-      "arguments": "birth date",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_is_minor(birth date)\n RETURNS boolean\n LANGUAGE sql\n STABLE\nAS $function$\n  SELECT CASE\n    WHEN birth IS NULL THEN NULL\n    ELSE birth > (CURRENT_DATE - INTERVAL '18 years')\n  END;\n$function$\n"
+      "name": "cmp_is_minor"
     },
     {
-      "name": "cmp_link_coherent",
-      "arguments": "",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_link_coherent()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nDECLARE\n  notice_project int;\n  site_project   int;\n  proj_status    project_status;\nBEGIN\n  SELECT project_id INTO notice_project FROM notice      WHERE notice_id = NEW.notice_id;\n  SELECT project_id INTO site_project   FROM project_site WHERE site_id  = NEW.site_id;\n\n  IF notice_project IS DISTINCT FROM site_project THEN\n    RAISE EXCEPTION USING\n      MESSAGE = 'Consent link site and notice belong to different projects',\n      ERRCODE = '23514';\n  END IF;\n\n  SELECT project_status INTO proj_status FROM project WHERE project_id = notice_project;\n  IF proj_status <> 'approved' THEN\n    RAISE EXCEPTION USING\n      MESSAGE = 'A consent link may only exist for a project in approved',\n      ERRCODE = '23514';\n  END IF;\n\n  RETURN NEW;\nEND;\n$function$\n"
+      "name": "cmp_link_coherent"
     },
     {
-      "name": "cmp_link_use_count_guard",
-      "arguments": "",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_link_use_count_guard()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n  IF NEW.max_uses IS NOT NULL AND NEW.use_count > NEW.max_uses THEN\n    RAISE EXCEPTION USING\n      MESSAGE = 'Consent link use cap exceeded', ERRCODE = '23514';\n  END IF;\n  RETURN NEW;\nEND;\n$function$\n"
+      "name": "cmp_link_use_count_guard"
     },
     {
-      "name": "cmp_nominee_needs_mobile",
-      "arguments": "",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_nominee_needs_mobile()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n  IF NEW.nominee_mobile IS NULL THEN\n    RAISE EXCEPTION 'a nominee needs a mobile'\n      USING ERRCODE = 'check_violation', CONSTRAINT = 'nomination_mobile_required';\n  END IF;\n  RETURN NEW;\nEND;\n$function$\n"
+      "name": "cmp_nominee_needs_mobile"
     },
     {
-      "name": "cmp_notice_freeze",
-      "arguments": "",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_notice_freeze()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n  IF OLD.status = 'published' THEN\n    -- superseded is the one permitted transition out of published: a new version\n    -- replaces this one, and this row records that it was replaced.\n    IF NEW.status = 'superseded'\n       AND NEW.notice_code       = OLD.notice_code\n       AND NEW.version           = OLD.version\n       AND NEW.withdraw_url      = OLD.withdraw_url\n       AND NEW.exercise_rights_url = OLD.exercise_rights_url\n       AND NEW.board_complaint_url = OLD.board_complaint_url\n       AND NEW.dpo_contact       = OLD.dpo_contact\n       AND NEW.recipients_text   IS NOT DISTINCT FROM OLD.recipients_text\n       AND NEW.published_at      IS NOT DISTINCT FROM OLD.published_at THEN\n      RETURN NEW;\n    END IF;\n    RAISE EXCEPTION\n      USING MESSAGE = 'A published notice is immutable; publish a new version instead',\n            ERRCODE = '42501';\n  END IF;\n  RETURN NEW;\nEND;\n$function$\n"
+      "name": "cmp_notice_freeze"
     },
     {
-      "name": "cmp_notice_language_freeze",
-      "arguments": "",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_notice_language_freeze()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nDECLARE\n  parent_status notice_status;\nBEGIN\n  SELECT status INTO parent_status FROM notice WHERE notice_id = OLD.notice_id;\n  IF parent_status IN ('published', 'superseded')\n     AND (NEW.rendered_text <> OLD.rendered_text\n          OR NEW.content_hash <> OLD.content_hash) THEN\n    RAISE EXCEPTION\n      USING MESSAGE = 'The text a data subject was shown cannot be edited (INV-4)',\n            ERRCODE = '42501';\n  END IF;\n  RETURN NEW;\nEND;\n$function$\n"
+      "name": "cmp_notice_language_freeze"
     },
     {
-      "name": "cmp_notice_purpose_freeze",
-      "arguments": "",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_notice_purpose_freeze()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nDECLARE\n  target_notice int;\n  parent_status notice_status;\nBEGIN\n  target_notice := CASE TG_OP WHEN 'DELETE' THEN OLD.notice_id ELSE NEW.notice_id END;\n  SELECT status INTO parent_status FROM notice WHERE notice_id = target_notice;\n  IF parent_status IN ('published', 'superseded') THEN\n    RAISE EXCEPTION\n      USING MESSAGE = 'Purposes cannot change on a published notice; publish a new version',\n            ERRCODE = '42501';\n  END IF;\n  RETURN CASE TG_OP WHEN 'DELETE' THEN OLD ELSE NEW END;\nEND;\n$function$\n"
+      "name": "cmp_notice_purpose_freeze"
     },
     {
-      "name": "cmp_primary_site_dco",
-      "arguments": "p_project_id integer",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_primary_site_dco(p_project_id integer)\n RETURNS integer\n LANGUAGE sql\n STABLE\nAS $function$\n  SELECT coalesce(s.dco_override_user_id, d.owner_user_id)\n    FROM project_site s\n    LEFT JOIN data_source d ON d.source_id = s.source_id\n   WHERE s.site_id = cmp_primary_site_id(p_project_id);\n$function$\n"
+      "name": "cmp_primary_site_dco"
     },
     {
-      "name": "cmp_primary_site_id",
-      "arguments": "p_project_id integer",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_primary_site_id(p_project_id integer)\n RETURNS integer\n LANGUAGE sql\n STABLE\nAS $function$\n  SELECT s.site_id\n    FROM project_site s\n    LEFT JOIN data_source d ON d.source_id = s.source_id\n   WHERE s.project_id = p_project_id\n     AND s.status = 'active'\n     AND coalesce(s.dco_override_user_id, d.owner_user_id) IS NOT NULL\n   ORDER BY s.site_id\n   LIMIT 1;\n$function$\n"
+      "name": "cmp_primary_site_id"
     },
     {
-      "name": "cmp_site_owner_changed",
-      "arguments": "",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_site_owner_changed()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nDECLARE\n  affected int;\n  owner    int;\nBEGIN\n  affected := COALESCE(NEW.project_id, OLD.project_id);\n  owner := cmp_primary_site_dco(affected);\n\n  -- Sites decide only when they have an opinion.\n  --\n  -- A NULL here means no active site has an owner yet, and that is not the same\n  -- as \"nobody owns this project\". A project can be assigned before any site\n  -- exists, and adding an unowned site to it must not quietly orphan it - an\n  -- orphaned project is invisible to every DCO, which is a worse failure than a\n  -- slightly stale owner and a much quieter one.\n  --\n  -- The consequence, stated so it is a decision rather than an oversight:\n  -- un-assigning the last owned site leaves the project where it was. The\n  -- person stays accountable until somebody else takes a site on it.\n  IF owner IS NULL THEN\n    RETURN COALESCE(NEW, OLD);\n  END IF;\n\n  UPDATE project\n     SET dco_user_id = owner,\n         updated_at  = now()\n   WHERE project_id = affected\n     AND dco_user_id IS DISTINCT FROM owner;\n\n  RETURN COALESCE(NEW, OLD);\nEND;\n$function$\n"
+      "name": "cmp_site_owner_changed"
     },
     {
-      "name": "cmp_source_owner_changed",
-      "arguments": "",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_source_owner_changed()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nDECLARE\n  affected int;\n  owner    int;\nBEGIN\n  FOR affected IN\n    SELECT DISTINCT s.project_id FROM project_site s WHERE s.source_id = NEW.source_id\n  LOOP\n    owner := cmp_primary_site_dco(affected);\n\n    IF owner IS NOT NULL THEN\n      UPDATE project\n         SET dco_user_id = owner, updated_at = now()\n       WHERE project_id = affected\n         AND dco_user_id IS DISTINCT FROM owner;\n\n    ELSIF OLD.owner_user_id IS NOT NULL THEN\n      -- Somebody has just stopped being accountable for this source, and no\n      -- other source deployed on the project has an owner either.\n      --\n      -- The site trigger treats a NULL owner as \"no opinion\" and leaves the\n      -- project where it was, because adding a site nobody runs yet must not\n      -- orphan a project. This is a different thing wearing the same NULL: an\n      -- explicit relinquishment. Leaving the name on the project would read as\n      -- current, and an answer that reads as current is worse than none.\n      --\n      -- Only where they were the one holding it. A project assigned directly to\n      -- somebody else is not theirs to vacate.\n      UPDATE project\n         SET dco_user_id = NULL, updated_at = now()\n       WHERE project_id = affected\n         AND dco_user_id = OLD.owner_user_id;\n    END IF;\n  END LOOP;\n  RETURN NEW;\nEND;\n$function$\n"
+      "name": "cmp_source_owner_changed"
     },
     {
-      "name": "cmp_subject_needs_mobile",
-      "arguments": "",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_subject_needs_mobile()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n  IF NEW.role = 'data_subject' AND NEW.mobile IS NULL THEN\n    RAISE EXCEPTION 'a data principal needs a mobile'\n      USING ERRCODE = 'check_violation', CONSTRAINT = 'auth_user_subject_mobile_required';\n  END IF;\n  RETURN NEW;\nEND;\n$function$\n"
+      "name": "cmp_subject_needs_mobile"
     },
     {
-      "name": "cmp_touch_updated_at",
-      "arguments": "",
-      "definition": "CREATE OR REPLACE FUNCTION public.cmp_touch_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n  NEW.updated_at := now();\n  RETURN NEW;\nEND;\n$function$\n"
+      "name": "cmp_touch_updated_at"
     }
   ],
   "counts": {
     "application_tables": 32,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 414,
+    "table_columns": 423,
     "foreign_keys": 93,
     "enums": 39,
     "triggers": 27,
-    "checks": 35
+    "checks": 42
   }
 }

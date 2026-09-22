@@ -29,7 +29,7 @@ from cmp.db.repositories import rights as repo
 from cmp.db.repositories import users as user_repo
 from cmp.domain.consent import service as consent_service
 from cmp.domain.rights import service
-from tests.conftest import idx, plain
+from tests.conftest import hashed, plain
 
 pytestmark = pytest.mark.integration
 
@@ -780,7 +780,7 @@ class TestNomination:
         # belongs to nobody the nomination names.
         stranger = seeded["users"]["dpo"]["id"]
         by_mobile = await repo.nominations_naming(
-            conn, user_id=stranger, mobile_idx=idx("mobile", "+915550000091"), email_idx=None
+            conn, user_id=stranger, mobile_hash=hashed("mobile", "+915550000091"), email_hash=None
         )
         assert [str(r["nomination_uuid"]) for r in by_mobile] == [ref]
         assert by_mobile[0]["status"] == "pending"
@@ -789,16 +789,16 @@ class TestNomination:
         by_email = await repo.nominations_naming(
             conn,
             user_id=stranger,
-            mobile_idx=None,
-            email_idx=idx("email", "meera.nominee@example.org"),
+            mobile_hash=None,
+            email_hash=hashed("email", "meera.nominee@example.org"),
         )
         assert [str(r["nomination_uuid"]) for r in by_email] == [ref]
 
         nobody = await repo.nominations_naming(
             conn,
             user_id=stranger,
-            mobile_idx=idx("mobile", "+915559999999"),
-            email_idx=idx("email", "nobody@example.org"),
+            mobile_hash=hashed("mobile", "+915559999999"),
+            email_hash=hashed("email", "nobody@example.org"),
         )
         assert nobody == []
 
@@ -807,7 +807,10 @@ class TestNomination:
         await service.revoke_nomination(conn, nomination_uuid=ref, principal_user_id=principal)
         assert (
             await repo.nominations_naming(
-                conn, user_id=stranger, mobile_idx=idx("mobile", "+915550000091"), email_idx=None
+                conn,
+                user_id=stranger,
+                mobile_hash=hashed("mobile", "+915550000091"),
+                email_hash=None,
             )
             == []
         )

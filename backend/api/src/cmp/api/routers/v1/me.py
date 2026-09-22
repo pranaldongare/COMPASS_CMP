@@ -161,7 +161,7 @@ async def update_me(body: UpdateMe, principal: CurrentUser) -> dict[str, Any]:
         # a contact that has already proved itself.
         if body.mobile is not None and updated.get("mobile_verified_at") is None:
             if index_of("mobile", normalise_mobile(body.mobile)) != (
-                before.get("mobile_idx") or None
+                before.get("mobile_hash") or None
             ):
                 await audit.record(
                     conn,

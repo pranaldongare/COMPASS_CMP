@@ -64,8 +64,8 @@ class TestPublicRegistrationAndCodeSignIn:
 
         row = await fetch_one(
             committed,
-            "SELECT full_name, email, mobile, dob, minor_until, email_idx FROM auth_user "
-            "WHERE email_idx = %s",
+            "SELECT full_name, email, mobile, dob, minor_until, email_hash FROM auth_user "
+            "WHERE email_hash = %s",
             (
                 __import__("cmp.infrastructure.dkms.blind", fromlist=["index_of"]).index_of(
                     "email", email

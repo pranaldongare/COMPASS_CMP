@@ -1,6 +1,6 @@
 # COMPASS complete database schema
 
-Snapshot from commit `0b9ee4185034c44ee9b0d53484cb2c3fc317656e`, migrations **0001 → 0026**, reviewed 2026-09-17.
+Generated from the catalogue of a scratch database built by replaying migrations **0001 → 0029**, on 2026-09-22. Rebuild it with `python3 docs/tools/generate-schema-docs.py --database <db>`; nothing here is maintained by hand.
 
 ## Open the diagrams
 
@@ -34,11 +34,11 @@ Module diagrams include full local tables and their outgoing foreign keys. Refer
 | Application Tables | 32 |
 | Metadata Tables | 1 |
 | Views | 1 |
-| Table Columns | 414 |
+| Table Columns | 423 |
 | Foreign Keys | 93 |
 | Enums | 39 |
 | Triggers | 27 |
-| Checks | 35 |
+| Checks | 42 |
 
 The Alembic `alembic_version` table is included separately as migration metadata. Its one column and the view’s 14 derived columns are additional to the 414 application-table columns. The three older documentation counts for tables/triggers/CHECKs were not used as the source: the inventory above comes from PostgreSQL catalogs after replaying the full migration chain.
 
@@ -54,8 +54,8 @@ The Alembic `alembic_version` table is included separately as migration metadata
 
 - [Catalog inventory JSON](schema_inventory.json) includes tables, columns, constraints, indexes, enum values, views, dependencies, triggers, sequences and application functions.
 - [Schema-only SQL](schema.sql) is PostgreSQL’s schema dump after replaying the migrations, including functions and triggers. It contains no application data or passwords. Owner and privilege statements are omitted; use the original migration grant rules for deployment permissions.
-- The [Graphviz sources](source/complete_schema.dot) are editable. Render with `dot -Tsvg source/complete_schema.dot -o complete_schema.svg`; render other `.dot` files similarly. SVGs were rendered with Graphviz via `@viz-js/viz`.
+- The [Graphviz sources](source/complete_schema.dot) are written by the generator, not by hand. Render with `dot -Tsvg source/complete_schema.dot -o complete_schema.svg`, or with `@viz-js/viz` where Graphviz is not installed; `generate-schema-docs.py` renders them itself when `dot` is on the path.
 
-The schema was reconstructed in an isolated, disposable PostgreSQL 16 container from all 26 repository `upgrade()` functions. No existing application database was migrated or queried for user data. This is the repository’s migration-head schema, not a claim that every deployment has applied that revision. Empty-data replay validates DDL shape; it does not exercise migrations’ data-dependent backfill/guard branches on production data.
+The schema was reconstructed in an isolated, disposable PostgreSQL 16 database from all 29 repository `upgrade()` functions. No existing application database was migrated or queried for user data. This is the repository’s migration-head schema, not a claim that every deployment has applied that revision. Empty-data replay validates DDL shape; it does not exercise migrations’ data-dependent backfill/guard branches on production data.
 
 Redis stores sessions, OTP/MFA codes, rate counters, caches and Celery queues/results; those are not relational PostgreSQL tables. Uploaded documents/media are stored outside PostgreSQL, with references/hashes held in the tables. Generic audit entity IDs, array membership and JSON references are not invented as foreign-key constraints in this diagram.

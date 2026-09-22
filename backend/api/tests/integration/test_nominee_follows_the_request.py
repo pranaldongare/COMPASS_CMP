@@ -171,8 +171,8 @@ class TestAcceptanceRecordsTheAccount:
         listed = await repo.nominations_naming(
             conn,
             user_id=int(him["id"]),
-            mobile_idx=moved.get("mobile_idx"),
-            email_idx=moved.get("email_idx"),
+            mobile_hash=moved.get("mobile_hash"),
+            email_hash=moved.get("email_hash"),
         )
         assert [str(r["nomination_uuid"]) for r in listed] == [str(accepted["nomination_uuid"])], (
             "his own nomination went missing when he changed his number"
@@ -192,8 +192,8 @@ class TestWhatHeCanSee:
         listed = await repo.nominations_naming(
             conn,
             user_id=int(him["id"]),
-            mobile_idx=him.get("mobile_idx"),
-            email_idx=him.get("email_idx"),
+            mobile_hash=him.get("mobile_hash"),
+            email_hash=him.get("email_hash"),
         )
         assert len(listed) == 1
         one = listed[0]
@@ -215,8 +215,8 @@ class TestWhatHeCanSee:
             conn,
             str(row["request_uuid"]),
             user_id=int(him["id"]),
-            mobile_idx=him.get("mobile_idx"),
-            email_idx=him.get("email_idx"),
+            mobile_hash=him.get("mobile_hash"),
+            email_hash=him.get("email_hash"),
         )
         hers = await repo.subject_request(conn, str(row["request_uuid"]), seeded["subject"]["id"])
         assert his is not None and hers is not None
@@ -238,8 +238,8 @@ class TestWhatHeCanSee:
                 conn,
                 str(row["request_uuid"]),
                 user_id=int(stranger["id"]),
-                mobile_idx=stranger.get("mobile_idx"),
-                email_idx=stranger.get("email_idx"),
+                mobile_hash=stranger.get("mobile_hash"),
+                email_hash=stranger.get("email_hash"),
             )
             is None
         )
@@ -268,8 +268,8 @@ class TestWhatHeCanSee:
                 conn,
                 str(hers["request_uuid"]),
                 user_id=int(him["id"]),
-                mobile_idx=him.get("mobile_idx"),
-                email_idx=him.get("email_idx"),
+                mobile_hash=him.get("mobile_hash"),
+                email_hash=him.get("email_hash"),
             )
             is None
         ), "a request she made herself is not his, whoever else he acts for"
@@ -292,8 +292,8 @@ class TestRevocation:
         listed = await repo.nominations_naming(
             conn,
             user_id=int(him["id"]),
-            mobile_idx=him.get("mobile_idx"),
-            email_idx=him.get("email_idx"),
+            mobile_hash=him.get("mobile_hash"),
+            email_hash=him.get("email_hash"),
         )
         assert [r["invoked_reference"] for r in listed] == [row["reference"]]
         assert listed[0]["status"] == "revoked", "and it says plainly that it is over"
@@ -302,8 +302,8 @@ class TestRevocation:
                 conn,
                 str(row["request_uuid"]),
                 user_id=int(him["id"]),
-                mobile_idx=him.get("mobile_idx"),
-                email_idx=him.get("email_idx"),
+                mobile_hash=him.get("mobile_hash"),
+                email_hash=him.get("email_hash"),
             )
             is not None
         )
@@ -322,8 +322,8 @@ class TestRevocation:
             await repo.nominations_naming(
                 conn,
                 user_id=int(him["id"]),
-                mobile_idx=him.get("mobile_idx"),
-                email_idx=him.get("email_idx"),
+                mobile_hash=him.get("mobile_hash"),
+                email_hash=him.get("email_hash"),
             )
             == []
         )

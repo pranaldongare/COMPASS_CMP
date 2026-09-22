@@ -31,7 +31,7 @@ from cmp.db.repositories import consent as consent_repo
 from cmp.db.repositories import projects as project_repo
 from cmp.db.sql import fetch_one
 from cmp.domain.consent import service as consent_service
-from tests.conftest import idx
+from tests.conftest import hashed
 
 pytestmark = pytest.mark.asyncio
 
@@ -39,9 +39,9 @@ pytestmark = pytest.mark.asyncio
 async def _owner(conn: Any, role: str, email: str) -> int:
     row = await fetch_one(
         conn,
-        """INSERT INTO auth_user (full_name, email, email_idx, role, status)
+        """INSERT INTO auth_user (full_name, email, email_hash, role, status)
            VALUES (%s, %s, %s, %s::user_role, 'active') RETURNING id""",
-        (email.split("@")[0], email, idx("email", email), role),
+        (email.split("@")[0], email, hashed("email", email), role),
     )
     assert row is not None
     return int(row["id"])

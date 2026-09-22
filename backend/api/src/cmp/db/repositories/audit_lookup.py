@@ -101,7 +101,7 @@ _LOOKUPS: Final[dict[str, tuple[str, str]]] = {
                   coalesce(email, mobile, '') AS hint
            FROM auth_user
            WHERE role = 'data_subject'
-             AND (email_idx = %(e)s OR secondary_email_idx = %(e)s OR mobile_idx = %(m)s
+             AND (email_hash = %(e)s OR secondary_email_hash = %(e)s OR mobile_hash = %(m)s
                   OR uuid::text = %(t)s)
            ORDER BY created_at DESC LIMIT %(n)s""",
     ),
@@ -110,7 +110,7 @@ _LOOKUPS: Final[dict[str, tuple[str, str]]] = {
         """SELECT uuid::text AS uuid, full_name AS label, role::text AS hint
            FROM auth_user
            WHERE role <> 'data_subject'
-             AND (email_idx = %(e)s OR username_idx = %(u)s OR uuid::text = %(t)s)
+             AND (email_hash = %(e)s OR username_hash = %(u)s OR uuid::text = %(t)s)
            ORDER BY created_at DESC LIMIT %(n)s""",
     ),
     "consent": (
@@ -124,7 +124,7 @@ _LOOKUPS: Final[dict[str, tuple[str, str]]] = {
            JOIN notice n    ON n.notice_id = ca.notice_id
            JOIN project p   ON p.project_id = n.project_id
            WHERE p.project_name ILIKE %(p)s OR ca.consent_uuid::text ILIKE %(p)s
-              OR u.email_idx = %(e)s OR u.mobile_idx = %(m)s
+              OR u.email_hash = %(e)s OR u.mobile_hash = %(m)s
            ORDER BY ca.affirmative_action_at DESC LIMIT %(n)s""",
     ),
     "processor": (
@@ -171,8 +171,8 @@ _LOOKUPS: Final[dict[str, tuple[str, str]]] = {
                   r.reference || ' — ' || r.request_type::text AS label,
                   coalesce(s.full_name, r.submitted_name, '') AS hint
            FROM rights_request r LEFT JOIN auth_user s ON s.id = r.subject_user_id
-           WHERE r.reference ILIKE %(p)s OR r.submitted_contact_idx = %(c)s
-              OR s.email_idx = %(e)s OR s.mobile_idx = %(m)s
+           WHERE r.reference ILIKE %(p)s OR r.submitted_contact_hash = %(c)s
+              OR s.email_hash = %(e)s OR s.mobile_hash = %(m)s
            ORDER BY r.received_at DESC LIMIT %(n)s""",
     ),
 }

@@ -32,9 +32,9 @@ that up; the sealed value beside it is opened only to send the code.
 
 | Table | Sealed | New index column |
 |---|---|---|
-| `auth_user` | `email`, `secondary_email`, `mobile`, `username` | `email_idx`, `secondary_email_idx`, `mobile_idx`, `username_idx` |
-| `nomination` | `nominee_email`, `nominee_mobile` | `nominee_email_idx`, `nominee_mobile_idx` |
-| `rights_request` | `submitted_contact` | `submitted_contact_idx` |
+| `auth_user` | `email`, `secondary_email`, `mobile`, `username` | `email_hash`, `secondary_email_hash`, `mobile_hash`, `username_hash` |
+| `nomination` | `nominee_email`, `nominee_mobile` | `nominee_email_hash`, `nominee_mobile_hash` |
+| `rights_request` | `submitted_contact` | `submitted_contact_hash` |
 
 **Date of birth** has a different problem: `cmp_is_minor(dob)` is a SQL
 comparison that decides the section 9 case. It becomes `minor_until`, a date
