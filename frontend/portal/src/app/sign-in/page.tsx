@@ -22,6 +22,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { AuthLayout } from "@/components/layout/auth-layout";
+import { AuthPageGate } from "@/components/security";
 import { Alert, Button, Field, Input } from "@/components/ui/primitives";
 import { requestOtp, verifyOtp } from "@/features/auth";
 import { config } from "@/lib/config";
@@ -50,14 +51,20 @@ export default function SignInPage() {
             </Link>
           </p>
           <p className="text-center text-xs text-text-subtle">
-            <Link href="/rights" className="underline underline-offset-2 hover:text-text-muted">
+            <Link
+              href="/rights"
+              className="underline underline-offset-2 hover:text-text-muted"
+            >
               Your rights and how to exercise them
             </Link>
           </p>
           <p className="text-center text-xs text-text-subtle">
             Nominated by someone? Once you have accepted, sign in here with the contact you
             accepted from - or{" "}
-            <Link href="/rights/nominee" className="underline underline-offset-2 hover:text-text-muted">
+            <Link
+              href="/rights/nominee"
+              className="underline underline-offset-2 hover:text-text-muted"
+            >
               Act on their behalf here
             </Link>
           </p>
@@ -77,7 +84,9 @@ export default function SignInPage() {
           suspense boundary around anything that reads it. Without this the
           whole page bails out of prerendering. */}
       <React.Suspense fallback={<FormSkeleton />}>
-        <SubjectForm />
+        <AuthPageGate>
+          <SubjectForm />
+        </AuthPageGate>
       </React.Suspense>
     </AuthLayout>
   );
@@ -132,8 +141,8 @@ function SubjectForm() {
     return (
       <div className="space-y-4">
         <Alert tone="info" title="Check your messages">
-          If <strong>{contact}</strong> is registered with us, a six-digit code is
-          on its way. It expires in ten minutes.
+          If <strong>{contact}</strong> is registered with us, a six-digit code is on its
+          way. It expires in ten minutes.
         </Alert>
         <SubjectVerifyForm contact={contact} next={params.get("next")} />
         <Button variant="ghost" className="w-full" onClick={() => setSent(false)}>
@@ -241,7 +250,7 @@ function SubjectVerifyForm({ contact, next }: { contact: string; next: string | 
             inputMode="numeric"
             autoComplete="one-time-code"
             placeholder="000000"
-            className="h-14 text-center font-mono text-2xl tracking-[0.5em] indent-[0.5em]"
+            className="h-14 text-center indent-[0.5em] font-mono text-2xl tracking-[0.5em]"
             autoFocus
           />
         )}

@@ -64,8 +64,8 @@ export function RequireSection({ children }: { children: React.ReactNode }) {
     <div className="mx-auto max-w-lg py-16">
       <Alert tone="info" title="Not part of your account">
         <p>
-          This section is not available to your account, so there is nothing here
-          for you. Nothing has gone wrong.
+          This section is not available to your account, so there is nothing here for you.
+          Nothing has gone wrong.
         </p>
         <div className="mt-4 flex gap-2">
           <Button asChild variant="primary" size="sm">

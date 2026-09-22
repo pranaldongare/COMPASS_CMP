@@ -122,38 +122,38 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         role="region"
         aria-label="Notifications"
         aria-live="polite"
-        className="fixed bottom-4 right-4 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2 no-print"
+        className="no-print fixed right-4 bottom-4 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2"
       >
         {toasts.map((toast) => {
           const Icon = TONE_ICONS[toast.tone];
           return (
-          <div
-            key={toast.id}
-            className={cn(
-              "toast-in rounded-xl border px-4 py-3 shadow-[var(--shadow-pop)]",
-              TONE_STYLES[toast.tone],
-            )}
-          >
-            <div className="flex items-start gap-3">
-              <Icon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">{toast.title}</p>
-                {toast.description && (
-                  <p className="mt-0.5 text-xs leading-relaxed opacity-90 break-words">
-                    {toast.description}
-                  </p>
-                )}
+            <div
+              key={toast.id}
+              className={cn(
+                "toast-in rounded-xl border px-4 py-3 shadow-[var(--shadow-pop)]",
+                TONE_STYLES[toast.tone],
+              )}
+            >
+              <div className="flex items-start gap-3">
+                <Icon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">{toast.title}</p>
+                  {toast.description && (
+                    <p className="mt-0.5 text-xs leading-relaxed break-words opacity-90">
+                      {toast.description}
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => dismiss(toast.id)}
+                  className="shrink-0 rounded-md p-0.5 opacity-60 transition-opacity hover:opacity-100"
+                  aria-label={`Dismiss: ${toast.title}`}
+                >
+                  <X className="size-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => dismiss(toast.id)}
-                className="shrink-0 rounded-md p-0.5 opacity-60 transition-opacity hover:opacity-100"
-                aria-label={`Dismiss: ${toast.title}`}
-              >
-                <X className="size-4" />
-              </button>
             </div>
-          </div>
           );
         })}
       </div>

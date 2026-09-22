@@ -49,8 +49,13 @@ for (const { path, name } of PAGES) {
     await settle(page);
 
     await expect(page.locator("h1")).toBeVisible();
-    const text = await page.locator("body").innerText();
-    expect(text, `ciphertext rendered on ${path}`).not.toContain("SE::");
+    // Polled: a page with two queries opens the second's values a moment
+    // after the first's, and a single read could land between them.
+    await expect
+      .poll(() => page.locator("body").innerText(), {
+        message: `ciphertext rendered on ${path}`,
+      })
+      .not.toContain("SE::");
 
     if (!watch.sawSealed()) {
       test.info().annotations.push({
@@ -65,7 +70,9 @@ test.describe("editing an account", () => {
   // Only an administrator has the Edit control on the accounts list.
   test.use({ storageState: statePath("admin") });
 
-  test("the edit form is filled with the person, opened from the sealed row", async ({ page }) => {
+  test("the edit form is filled with the person, opened from the sealed row", async ({
+    page,
+  }) => {
     const watch = watchSealed(page);
     await page.goto("/users");
     await settle(page);
@@ -76,11 +83,16 @@ test.describe("editing an account", () => {
     const email = page.getByLabel("Email");
     await expect(email).toBeVisible();
     expect(watch.sawSealed(), "the API served the accounts sealed").toBe(true);
+    // The form is filled once the row's values are opened. A person has an
+    // email or a mobile or both; whichever they have is in the clear here.
+    await expect(page.getByLabel("Full name")).not.toHaveValue("");
     const name = await page.getByLabel("Full name").inputValue();
     const address = await email.inputValue();
-    expect(name).not.toContain("SE::");
-    expect(address).not.toContain("SE::");
-    expect(address).toMatch(/[^\s@]+@[^\s@]+\.[^\s@]+/);
-    expect(name.trim().length).toBeGreaterThan(0);
+    const mobile = await page.getByLabel("Mobile").inputValue();
+    for (const value of [name, address, mobile]) expect(value).not.toContain("SE::");
+    expect(
+      /[^\s@]+@[^\s@]+\.[^\s@]+/.test(address) || /^\+?\d[\d ]{8,}$/.test(mobile),
+      "a contact is shown in the clear",
+    ).toBe(true);
   });
 });

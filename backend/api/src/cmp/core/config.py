@@ -94,9 +94,12 @@ class Settings(BaseSettings):
     mfa_ttl_s: int = 60 * 5
     mfa_max_verify_attempts: int = 5
 
-    # Where the console is reached from outside: the base of every link the
-    # platform puts in an email, such as a nomination's acceptance link.
-    public_base_url: str = "http://localhost:3000"
+    #: The data principal's portal, as reached from outside: the base of every
+    #: link the platform puts in a message to a person - a nomination's
+    #: acceptance link, "withdraw here", "sign in to see your request". Port
+    #: 3001 in development; the console is 3000 and has none of those pages,
+    #: so a link built on the wrong one is a 404 in somebody's inbox.
+    public_base_url: str = "http://localhost:3001"
     #: The staff console's public origin: the base of a link that sends a
     #: member of staff to a ticket or a request. Distinct from the portal above,
     #: which is where data principals and nominees go.

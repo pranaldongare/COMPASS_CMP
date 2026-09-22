@@ -16,6 +16,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 
 import { AuthLayout } from "@/components/layout/auth-layout";
+import { AuthPageGate } from "@/components/security";
 import { Alert, Button, Field, Input } from "@/components/ui/primitives";
 import { resendMfa, verifyMfa } from "@/features/auth";
 import { ApiError } from "@/lib/errors";
@@ -44,7 +45,9 @@ export default function VerifyPage() {
           suspense boundary around anything that reads it. Without this the
           whole page bails out of prerendering. */}
       <React.Suspense fallback={<FormSkeleton />}>
-        <VerifyForm />
+        <AuthPageGate step="code">
+          <VerifyForm />
+        </AuthPageGate>
       </React.Suspense>
     </AuthLayout>
   );

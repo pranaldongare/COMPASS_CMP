@@ -7,6 +7,12 @@
  * without warning.
  */
 
-export { Can, RequireRole, RequireFullSession, usePermissions } from "@/components/security/can";
+export {
+  Can,
+  RequireRole,
+  RequireFullSession,
+  usePermissions,
+} from "@/components/security/can";
 export { SessionWarning } from "@/components/security/session-warning";
 export { RequireSection } from "@/components/security/require-section";
+export { AuthPageGate } from "@/components/security/auth-page-gate";

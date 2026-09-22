@@ -793,17 +793,53 @@ async def notifications(
         if principal.role is Role.DATA_SUBJECT:
             rows = await audit_repo.for_subject(conn, principal.user_id, limit=limit)
         else:
+            # Only what the reader can open. The feed used to be every event
+            # on the platform for every member of staff, and for anyone whose
+            # scope is narrower than the DPO's - an R&D user, a DCO - most of
+            # its links led to a project or notice their role answers 404 for.
+            # The same predicate the project register uses decides here: an
+            # event about a project, or about a notice on one, is shown to the
+            # people who could see that project in the register. Events with
+            # no project - a lockout, a withdrawal - stay with the roles whose
+            # section they belong to.
+            scope, scope_params = project_repo.scope_predicate(principal.role, principal.user_id)
             rows = await fetch_all(
                 conn,
-                """SELECT l.log_uuid, l.event_type, l.entity_type, l.entity_id,
+                f"""SELECT l.log_uuid, l.event_type, l.entity_type, l.entity_id,
                           l.occurred_at, l.detail_json - '_hash' - '_prev' AS detail,
                           a.full_name AS actor_name
                    FROM audit_log l LEFT JOIN auth_user a ON a.id = l.actor_user_id
                    WHERE l.event_type IN (
                      'project.transitioned','notice.published','import.rejected',
                      'export.generated','consent.withdrawn','auth.login_locked_out')
+                     AND (
+                       CASE l.entity_type
+                         WHEN 'project' THEN EXISTS (
+                           SELECT 1 FROM project p
+                            WHERE p.project_id = l.entity_id AND {scope})
+                         WHEN 'notice' THEN EXISTS (
+                           SELECT 1 FROM notice n
+                             JOIN project p ON p.project_id = n.project_id
+                            WHERE n.notice_id = l.entity_id AND {scope})
+                         WHEN 'import_batch' THEN EXISTS (
+                           SELECT 1 FROM import_batch b
+                             JOIN project p ON p.project_id = b.project_id
+                            WHERE b.batch_id = l.entity_id AND {scope})
+                         WHEN 'export_log' THEN EXISTS (
+                           SELECT 1 FROM export_log e
+                             JOIN project p ON p.project_id = e.project_id
+                            WHERE e.export_id = l.entity_id AND {scope})
+                         ELSE %s
+                       END)
                    ORDER BY l.occurred_at DESC LIMIT %s""",
-                (limit,),
+                (
+                    *scope_params,
+                    *scope_params,
+                    *scope_params,
+                    *scope_params,
+                    principal.role in (Role.DPO, Role.ADMIN),
+                    limit,
+                ),
             )
             # What happened on the tickets addressed to this person, and -
             # for the office - what holders did on theirs. Without these the

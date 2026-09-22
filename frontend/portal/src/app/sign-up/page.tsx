@@ -21,6 +21,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { AuthLayout } from "@/components/layout/auth-layout";
+import { AuthPageGate } from "@/components/security";
 import { Alert, Button, Field, Input } from "@/components/ui/primitives";
 import { register as registerAccount, registerVerify } from "@/features/auth";
 import { ApiError } from "@/lib/errors";
@@ -46,6 +47,14 @@ const schema = z.object({
 type Values = z.infer<typeof schema>;
 
 export default function SignUpPage() {
+  return (
+    <AuthPageGate>
+      <SignUpFlow />
+    </AuthPageGate>
+  );
+}
+
+function SignUpFlow() {
   const [given, setGiven] = React.useState<{ mobile: string; email: string | null } | null>(
     null,
   );

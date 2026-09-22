@@ -53,6 +53,40 @@ export const ME_QUERY_KEY = ["auth", "me"] as const;
 // to sign in by the 401 their own "who am I" request produced.
 const isPublic = isPublicPath;
 
+/**
+ * What the session is, asked directly - for the auth pages.
+ *
+ * `AuthProvider` does not ask "who am I" on a public path, because on a
+ * sign-in form there is usually nobody to identify and the 401 would sit in
+ * the console on every visit. But the auth pages themselves need the answer
+ * for the other visitors: the person who is already signed in and bookmarked
+ * `/sign-in`, or the one halfway through the second factor who opened the
+ * password form again. This asks, under the same key, so the provider's copy
+ * and this one can never disagree, and names the three states that matter:
+ *
+ * - `none`: no session; the form is the right thing to show.
+ * - `partial`: the password was accepted and the code is outstanding.
+ * - `full`: signed in, with the account.
+ */
+export type SessionState =
+  | { status: "loading" }
+  | { status: "none" }
+  | { status: "partial" }
+  | { status: "full"; me: Me };
+
+export function useSessionState(): SessionState {
+  const query = useQuery<Me, ApiError>({
+    queryKey: ME_QUERY_KEY,
+    queryFn: () => apiGet<Me>("/auth/me"),
+    retry: false,
+    staleTime: 0,
+  });
+  if (query.isLoading) return { status: "loading" };
+  if (query.data) return { status: "full", me: query.data };
+  if (query.error instanceof ApiError && query.error.needsMfa) return { status: "partial" };
+  return { status: "none" };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -174,8 +208,8 @@ export function RequireAuth({
       <div className="mx-auto max-w-lg px-6 py-16 text-center">
         <h1 className="text-lg font-semibold">This portal is for data principals</h1>
         <p className="mt-2 text-sm text-text-muted">
-          You are signed in as {me.full_name}, a staff account. Your console is a
-          separate site.
+          You are signed in as {me.full_name}, a staff account. Your console is a separate
+          site.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <a
@@ -201,8 +235,8 @@ export function RequireAuth({
       <div className="mx-auto max-w-lg px-6 py-16 text-center">
         <h1 className="text-lg font-semibold">Not available to your role</h1>
         <p className="mt-2 text-sm text-text-muted">
-          You are signed in as {me.full_name}. This area is restricted, and the
-          attempt has been recorded in the audit trail.
+          You are signed in as {me.full_name}. This area is restricted, and the attempt has
+          been recorded in the audit trail.
         </p>
       </div>
     );

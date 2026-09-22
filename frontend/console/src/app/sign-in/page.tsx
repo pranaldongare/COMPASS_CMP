@@ -24,6 +24,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { AuthLayout } from "@/components/layout/auth-layout";
+import { AuthPageGate } from "@/components/security";
 import { Alert, Button, Field, Input } from "@/components/ui/primitives";
 import { signInWithPassword } from "@/features/auth";
 import { config } from "@/lib/config";
@@ -59,7 +60,9 @@ export default function SignInPage() {
           suspense boundary around anything that reads it. Without this the
           whole page bails out of prerendering. */}
       <React.Suspense fallback={<FormSkeleton />}>
-        <StaffForm />
+        <AuthPageGate step="password">
+          <StaffForm />
+        </AuthPageGate>
       </React.Suspense>
     </AuthLayout>
   );

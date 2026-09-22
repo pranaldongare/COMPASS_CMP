@@ -33,6 +33,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 }
 
-export { useAuth, RequireAuth } from "./auth-provider";
+export { useAuth, RequireAuth, useSessionState } from "./auth-provider";
+export type { SessionState } from "./auth-provider";
 export { useToast } from "./toast-provider";
 export { useTheme } from "./theme-provider";

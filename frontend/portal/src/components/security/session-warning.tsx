@@ -68,8 +68,8 @@ export function SessionWarning() {
             Your session ends in {formatCountdown(state.secondsLeft)}
           </p>
           <p className="mt-0.5 text-sm text-warning-text/85">
-            Anything unsaved will be lost. Staying signed in does not extend the
-            overall session limit.
+            Anything unsaved will be lost. Staying signed in does not extend the overall
+            session limit.
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
