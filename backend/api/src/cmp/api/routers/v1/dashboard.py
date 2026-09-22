@@ -829,7 +829,10 @@ async def notifications(
                            SELECT 1 FROM export_log e
                              JOIN project p ON p.project_id = e.project_id
                             WHERE e.export_id = l.entity_id AND {scope})
-                         ELSE %s
+                         -- No project: a lockout is the administrator's and
+                         -- the DPO's; a withdrawal opens a consent record,
+                         -- which only the DPO's role reads.
+                         ELSE (l.event_type <> 'consent.withdrawn' AND %s) OR %s
                        END)
                    ORDER BY l.occurred_at DESC LIMIT %s""",
                 (
@@ -838,6 +841,7 @@ async def notifications(
                     *scope_params,
                     *scope_params,
                     principal.role in (Role.DPO, Role.ADMIN),
+                    principal.role is Role.DPO,
                     limit,
                 ),
             )
