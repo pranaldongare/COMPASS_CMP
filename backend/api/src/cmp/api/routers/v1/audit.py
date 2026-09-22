@@ -80,6 +80,9 @@ class AuditEntry(Out):
     # what it describes, and that is the point of it.
     entity_uuid: str | None = None
     entity_label: str | None = None
+    #: Where the label names a person: the pieces, the name among them sealed,
+    #: for the reader to open and join. `entity_label` is then the plain part.
+    entity_label_parts: list[str] | None = None
     entity_noun: str | None = None
     entity_href: str | None = None
 

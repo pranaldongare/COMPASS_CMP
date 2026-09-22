@@ -31,7 +31,14 @@ from cmp.db.sql import Conn, fetch_all
 class _Spec:
     """How to turn one table's ids into labels.
 
-    `sql` must select `id`, `uuid` and `label`. `href` is a template over `uuid`,
+    `sql` must select `id`, `uuid` and `label`, and may select `label_parts`: a
+    text array whose elements the reader joins with spaces. A label that names
+    a person is built this way rather than concatenated in SQL - the name is a
+    sealed column, and `SE::...` glued to plaintext is a value the portal can
+    neither open nor show, and the key service refuses the whole batch it is
+    in. Kept apart, the portal opens the name and joins the parts itself.
+    `label` then carries the plaintext part alone, for a reader that ignores
+    the parts. `href` is a template over `uuid`,
     or None where the product has no page for that thing - a link to nowhere is
     worse than no link.
     """
@@ -141,7 +148,8 @@ _SPECS: dict[str, _Spec] = {
     ),
     "consent_artefact": _Spec(
         sql="""SELECT ca.consent_id AS id, ca.consent_uuid::text AS uuid,
-                      u.full_name || ' — ' || p.project_name AS label
+                      p.project_name AS label,
+                      ARRAY[u.full_name, '—', p.project_name] AS label_parts
                FROM consent_artefact ca
                JOIN auth_user u ON u.id = ca.auth_user_id
                JOIN notice n    ON n.notice_id = ca.notice_id
@@ -187,8 +195,10 @@ _SPECS: dict[str, _Spec] = {
     ),
     "person_type_history": _Spec(
         sql="""SELECT h.history_id AS id, u.uuid::text AS uuid,
-                      u.full_name || ': ' || coalesce(h.from_type::text, 'none')
-                        || ' → ' || h.to_type::text AS label
+                      coalesce(h.from_type::text, 'none') || ' → ' || h.to_type::text AS label,
+                      ARRAY[u.full_name, ':',
+                            coalesce(h.from_type::text, 'none') || ' → ' || h.to_type::text]
+                        AS label_parts
                FROM person_type_history h JOIN auth_user u ON u.id = h.auth_user_id
                WHERE h.history_id = ANY(%s)""",
         href="/users",
@@ -196,7 +206,8 @@ _SPECS: dict[str, _Spec] = {
     ),
     "delegation": _Spec(
         sql="""SELECT d.delegation_id AS id, d.delegation_uuid::text AS uuid,
-                      de.full_name || ' covering for ' || dr.full_name AS label
+                      'cover arrangement' AS label,
+                      ARRAY[de.full_name, 'covering for', dr.full_name] AS label_parts
                FROM delegation d
                JOIN auth_user dr ON dr.id = d.delegator_user_id
                JOIN auth_user de ON de.id = d.delegate_user_id
@@ -206,8 +217,11 @@ _SPECS: dict[str, _Spec] = {
     ),
     "rights_request": _Spec(
         sql="""SELECT r.request_id AS id, r.request_uuid::text AS uuid,
-                      r.reference || ' — ' || r.request_type::text
-                        || coalesce(' — ' || s.full_name, '') AS label
+                      r.reference || ' — ' || r.request_type::text AS label,
+                      CASE WHEN s.full_name IS NULL THEN NULL
+                           ELSE ARRAY[r.reference || ' — ' || r.request_type::text,
+                                      '—', s.full_name]
+                      END AS label_parts
                FROM rights_request r LEFT JOIN auth_user s ON s.id = r.subject_user_id
                WHERE r.request_id = ANY(%s)""",
         href="/requests/{uuid}",
@@ -238,7 +252,8 @@ _SPECS: dict[str, _Spec] = {
     ),
     "nomination": _Spec(
         sql="""SELECT n.nomination_id AS id, n.nomination_uuid::text AS uuid,
-                      n.nominee_name || ' for ' || p.full_name AS label
+                      'nomination' AS label,
+                      ARRAY[n.nominee_name, 'for', p.full_name] AS label_parts
                FROM nomination n JOIN auth_user p ON p.id = n.principal_user_id
                WHERE n.nomination_id = ANY(%s)""",
         href=None,
@@ -277,6 +292,7 @@ async def resolve(
             resolved[(entity_type, int(row["id"]))] = {
                 "entity_uuid": uuid,
                 "entity_label": row["label"],
+                "entity_label_parts": list(row["label_parts"]) if row.get("label_parts") else None,
                 "entity_noun": spec.noun,
                 "entity_href": template.format(uuid=uuid) if template else None,
             }
@@ -302,6 +318,7 @@ async def attach(
                 {
                     "entity_uuid": None,
                     "entity_label": None,
+                    "entity_label_parts": None,
                     "entity_noun": "",
                     "entity_href": None,
                 },

@@ -120,12 +120,19 @@ export async function decryptDeep<T>(body: T): Promise<T> {
   try {
     opened = await decryptRecords(records, key);
   } catch (cause) {
-    // The service was unreachable or refused the batch. The page still
-    // renders - with `SE::...` where the values are, which is visibly wrong
-    // and therefore reported - rather than failing on every screen at once.
-    // One line, the reason and never a value.
-    console.error(`[dkms] ${found.length} value(s) left sealed: ${describe(cause)}`);
-    return body;
+    if (isUnreachable(cause)) {
+      // Nothing to retry against. The page still renders - with `SE::...`
+      // where the values are, which is visibly wrong and therefore reported -
+      // rather than failing on every screen at once. One line, never a value.
+      console.error(`[dkms] ${found.length} value(s) left sealed: ${describe(cause)}`);
+      return body;
+    }
+    // The service refused the batch: one value in it is not something it can
+    // open - a blob that was cut short, glued to other text, or sealed under
+    // a key it does not hold. The other values are fine, and a page should
+    // not lose two hundred names to one bad one. Each is asked for alone;
+    // the bad ones stay as they arrived and are counted, not quoted.
+    opened = await oneByOne(records, key);
   }
 
   found.forEach((f, i) => {
@@ -137,4 +144,29 @@ export async function decryptDeep<T>(body: T): Promise<T> {
 
 function describe(cause: unknown): string {
   return cause instanceof Error ? cause.message : "unknown error";
+}
+
+function isUnreachable(cause: unknown): boolean {
+  return cause instanceof Error && /could not reach|session has ended/i.test(cause.message);
+}
+
+async function oneByOne(
+  records: Record<string, string>[],
+  key: Record<string, DataType>,
+): Promise<Record<string, string>[]> {
+  const out = await Promise.all(
+    records.map(async (record) => {
+      const [type] = Object.keys(record) as DataType[];
+      try {
+        const [one] = await decryptRecords([record], { [type]: key[type] });
+        return one ?? record;
+      } catch {
+        return record; // as it arrived; setAt keeps the sealed value in place
+      }
+    }),
+  );
+  const refused = out.filter((r, i) => r === records[i]).length;
+  if (refused > 0)
+    console.error(`[dkms] ${refused} of ${records.length} value(s) could not be opened`);
+  return out;
 }

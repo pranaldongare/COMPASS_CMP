@@ -31,6 +31,8 @@ export interface AuditEntry {
    * outlives what it records, which is the whole point of it. */
   entity_uuid: Uuid | null;
   entity_label: string | null;
+  /** Where the label names a person: the pieces, opened by the client, to join with spaces. */
+  entity_label_parts?: string[] | null;
   /** "Notice", "Consent record", "Project" — what kind of thing this is. */
   entity_noun: string | null;
   /** In-app path, or null where the product has no page for that thing. */

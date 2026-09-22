@@ -36,11 +36,14 @@ import { formatDateTime, humanise } from "@/lib/format";
  * not know would be a lie in an evidence log.
  */
 const EVENT_SENTENCES: Record<string, string> = {
-  "rights.ticket_issued": "A ticket was issued: an instruction, a date, and what the platform already holds.",
+  "rights.ticket_issued":
+    "A ticket was issued: an instruction, a date, and what the platform already holds.",
   "rights.ticket_message": "Somebody wrote on a ticket's thread.",
   "rights.ticket_returned": "A holder returned its ticket with what they found.",
-  "rights.ticket_sent_back": "The Privacy Office was not satisfied with a return and sent the ticket back with a reason.",
-  "rights.ticket_withdrawn": "A ticket was withdrawn; nothing further is needed from the holder.",
+  "rights.ticket_sent_back":
+    "The Privacy Office was not satisfied with a return and sent the ticket back with a reason.",
+  "rights.ticket_withdrawn":
+    "A ticket was withdrawn; nothing further is needed from the holder.",
   "rights.ticket_reassigned": "A ticket was sent to a different respondent.",
   "rights.ticket_reminded": "A reminder went out on a ticket that is due or overdue.",
   "rights.ticket_escalated": "A ticket missed its date and was escalated once.",
@@ -73,7 +76,9 @@ const EVENT_SENTENCES: Record<string, string> = {
 };
 
 export function eventSentence(entry: AuditEntry): string {
-  return EVENT_SENTENCES[entry.event_type] ?? humanise(entry.event_type.replace(/\./g, " "));
+  return (
+    EVENT_SENTENCES[entry.event_type] ?? humanise(entry.event_type.replace(/\./g, " "))
+  );
 }
 
 /**
@@ -107,10 +112,8 @@ export function EntityRef({ entry }: { entry: AuditEntry }) {
 
   const body = (
     <>
-      {entry.entity_noun && (
-        <span className="text-text-subtle">{entry.entity_noun}:</span>
-      )}
-      <span className="truncate">{entry.entity_label}</span>
+      {entry.entity_noun && <span className="text-text-subtle">{entry.entity_noun}:</span>}
+      <span className="truncate">{entityLabel(entry)}</span>
       {entry.entity_href && (
         <ArrowUpRight
           className="size-3.5 shrink-0 opacity-60 transition-opacity group-hover:opacity-100"
@@ -165,7 +168,9 @@ function DetailDialogBody({ entry, onClose }: { entry: AuditEntry; onClose: () =
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent title={humanise(entry.event_type.replace(/\./g, " "))} size="md">
         {distinctSentence(entry) && (
-          <p className="text-sm leading-relaxed text-text-muted">{distinctSentence(entry)}</p>
+          <p className="text-sm leading-relaxed text-text-muted">
+            {distinctSentence(entry)}
+          </p>
         )}
 
         <div className={distinctSentence(entry) ? "mt-5" : ""}>
@@ -174,7 +179,9 @@ function DetailDialogBody({ entry, onClose }: { entry: AuditEntry; onClose: () =
               <EntityRef entry={entry} />
             </DescriptionItem>
 
-            <DescriptionItem term="When">{formatDateTime(entry.occurred_at)}</DescriptionItem>
+            <DescriptionItem term="When">
+              {formatDateTime(entry.occurred_at)}
+            </DescriptionItem>
 
             <DescriptionItem term="Who">
               {entry.actor_name ? (
@@ -185,9 +192,7 @@ function DetailDialogBody({ entry, onClose }: { entry: AuditEntry; onClose: () =
                   )}
                 </span>
               ) : (
-                <span className="text-text-subtle">
-                  the system — no signed-in user
-                </span>
+                <span className="text-text-subtle">the system — no signed-in user</span>
               )}
             </DescriptionItem>
 
@@ -213,7 +218,7 @@ function DetailDialogBody({ entry, onClose }: { entry: AuditEntry; onClose: () =
         {pairs.length > 0 && (
           <div className="mt-6">
             <div className="flex items-baseline justify-between gap-3">
-              <h3 className="text-2xs font-semibold uppercase tracking-wider text-text-subtle">
+              <h3 className="text-2xs font-semibold tracking-wider text-text-subtle uppercase">
                 Recorded details
               </h3>
               <button
@@ -237,7 +242,7 @@ function DetailDialogBody({ entry, onClose }: { entry: AuditEntry; onClose: () =
                     className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 px-3 py-2"
                   >
                     <dt className="min-w-40 text-sm text-text-muted">{humanise(key)}</dt>
-                    <dd className="min-w-0 flex-1 break-words text-sm text-text">
+                    <dd className="min-w-0 flex-1 text-sm break-words text-text">
                       <DetailValue value={value} />
                     </dd>
                   </div>
@@ -248,15 +253,16 @@ function DetailDialogBody({ entry, onClose }: { entry: AuditEntry; onClose: () =
         )}
 
         <p className="mt-6 text-xs leading-relaxed text-text-subtle">
-          This entry is append-only and part of a hash chain. Nobody — including
-          the Privacy Office — can edit or delete it; the database refuses the
-          statement.
+          This entry is append-only and part of a hash chain. Nobody — including the Privacy
+          Office — can edit or delete it; the database refuses the statement.
         </p>
 
         <div className="mt-5 flex justify-end gap-2">
           {entry.entity_href && (
             <Button variant="secondary" asChild>
-              <Link href={entry.entity_href}>Open {entry.entity_noun?.toLowerCase() ?? "record"}</Link>
+              <Link href={entry.entity_href}>
+                Open {entry.entity_noun?.toLowerCase() ?? "record"}
+              </Link>
             </Button>
           )}
           <Button variant="primary" onClick={onClose}>
@@ -297,4 +303,17 @@ function DetailValue({ value }: { value: unknown }) {
   // monospace face; a sentence does not.
   const isToken = /^[0-9a-f-]{16,}$/i.test(text);
   return isToken ? <Mono className="text-text">{text}</Mono> : <span>{text}</span>;
+}
+
+/**
+ * The label as the reader sees it. A label that names a person arrives in
+ * parts - the name sealed among them, opened by the API client before this
+ * renders - because a name concatenated with plaintext in SQL is a value
+ * nobody can open. Joined here, once opened.
+ */
+export function entityLabel(
+  entry: Pick<AuditEntry, "entity_label" | "entity_label_parts">,
+): string {
+  const parts = entry.entity_label_parts?.filter(Boolean);
+  return parts && parts.length > 0 ? parts.join(" ") : (entry.entity_label ?? "");
 }

@@ -13329,6 +13329,20 @@
             ],
             "title": "Entity Label"
           },
+          "entity_label_parts": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Label Parts"
+          },
           "entity_noun": {
             "anyOf": [
               {
