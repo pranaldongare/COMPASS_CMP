@@ -105,3 +105,27 @@ describe("decryptDeep", () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe("decryptDeep when the service cannot be reached", () => {
+  it("leaves every value as it arrived and says why once, rather than failing the page", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        json: async () => ({ error: "unreachable", service: "10.0.0.5:32688" }),
+      } as unknown as Response),
+    );
+    const body = { items: [{ full_name: NAME, email: EMAIL }], total: 1 };
+    const out = await decryptDeep(body);
+    expect(out.items[0]?.full_name).toBe(NAME);
+    expect(out.items[0]?.email).toBe(EMAIL);
+    expect(out.total).toBe(1);
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(String(error.mock.calls[0]?.[0])).toContain("10.0.0.5:32688");
+    expect(String(error.mock.calls[0]?.[0])).not.toContain(NAME);
+    error.mockRestore();
+    vi.unstubAllGlobals();
+  });
+});

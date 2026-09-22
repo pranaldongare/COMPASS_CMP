@@ -35,6 +35,19 @@ import type { NextRequest } from "next/server";
 const DKMS_URL = (process.env.DKMS_URL ?? "http://localhost:32688").replace(/\/+$/, "");
 const SESSION_COOKIE = process.env.NEXT_PUBLIC_SESSION_COOKIE ?? "cmp_session";
 
+/** The host alone, for a diagnostic: never the path, never a value. */
+const HOST = (() => {
+  try {
+    return new URL(DKMS_URL).host;
+  } catch {
+    return "invalid DKMS_URL";
+  }
+})();
+
+/** A key service on another machine answers in milliseconds; a hung one
+ *  must not hold a page for the fetch default of forever. */
+const TIMEOUT_MS = 10_000;
+
 /** Matches the service's own ceiling, so a refusal happens here rather than there. */
 const MAX_RECORDS = 5000;
 
@@ -75,15 +88,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     answer = await fetch(`${DKMS_URL}/bulk_decrypt`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      // `skip`, not `fail`: a page rendering rows written before the rollout
-      // would otherwise refuse to render at all because one value is still
-      // plaintext. Those come back as they are.
-      body: JSON.stringify({ data, key, method, on_error: "skip" }),
+      // The contract and nothing beyond it - `{data, key, method}` - so any
+      // key service that speaks it can stand behind this route, not only the
+      // one in this repository. Only sealed values are ever sent (the walker
+      // collects `SE::` strings and nothing else), so there is no plaintext
+      // for a strict service to refuse.
+      body: JSON.stringify({ data, key, method }),
       cache: "no-store",
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-  } catch {
+  } catch (cause) {
+    // One line, naming the host and the failure and never a value, so the
+    // person who pointed DKMS_URL somewhere can see whether it was reached.
+    console.error(
+      `[dkms] ${DKMS_URL}/bulk_decrypt unreachable: ${cause instanceof Error ? cause.message : "error"}`,
+    );
     return NextResponse.json(
-      { error: "the encryption service is unreachable" },
+      { error: "the encryption service is unreachable", service: HOST },
       { status: 503 },
     );
   }
@@ -91,7 +112,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!answer.ok) {
     // The service's error names a record index and a field and never quotes a
     // value, but it is not this page's job to relay it: say what happened.
-    return NextResponse.json({ error: "decryption failed" }, { status: 502 });
+    console.error(`[dkms] ${DKMS_URL}/bulk_decrypt answered ${answer.status}`);
+    return NextResponse.json(
+      { error: "decryption failed", service: HOST, status: answer.status },
+      { status: 502 },
+    );
   }
 
   const result = (await answer.json()) as { data: unknown[] };

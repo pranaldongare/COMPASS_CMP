@@ -56,10 +56,19 @@ export async function decryptRecords<T extends Record<string, unknown>>(
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("Your session has ended — sign in again to read these.");
+    }
+    const detail = (await response.json().catch(() => ({}))) as {
+      service?: string;
+      status?: number;
+    };
+    const where = detail.service ? ` (${detail.service}` : "";
+    const upstream = detail.status ? `, answered ${detail.status})` : where ? ")" : "";
     throw new Error(
-      response.status === 401
-        ? "Your session has ended — sign in again to read these."
-        : "Could not decrypt these values.",
+      response.status === 503
+        ? `Could not reach the encryption service${where}${upstream}.`
+        : `Could not decrypt these values${where}${upstream}.`,
     );
   }
 

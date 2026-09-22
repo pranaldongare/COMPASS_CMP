@@ -84,8 +84,17 @@ describe("decryptRecords", () => {
     vi.unstubAllGlobals();
   });
 
-  it("says it could not decrypt, rather than showing a blank", async () => {
+  it("says the service could not be reached, rather than showing a blank", async () => {
     vi.stubGlobal("fetch", answerWith([], 503));
+
+    await expect(
+      decryptRecords([{ fullName: "SE::a" }], { fullName: "NAME" }),
+    ).rejects.toThrow(/could not reach the encryption service/i);
+    vi.unstubAllGlobals();
+  });
+
+  it("says it could not decrypt, rather than showing a blank", async () => {
+    vi.stubGlobal("fetch", answerWith([], 502));
 
     await expect(
       decryptRecords([{ fullName: "SE::a" }], { fullName: "NAME" }),
@@ -99,6 +108,42 @@ describe("decryptRecords", () => {
 
     expect(await decryptRecords([], { fullName: "NAME" })).toEqual([]);
     expect(fetchMock).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+});
+
+const NAME = "SE::REsBAQNY0o7rJCgfEWj-d0FITi5nT2bKzXhQ3pOGL9Hk8w1YtmJY";
+
+describe("decryptRecords sends the contract and nothing beyond it", () => {
+  it("posts exactly {data, key, method}, so any conforming key service can answer", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ data: [{ NAME: "Amruta" }] }),
+    } as unknown as Response);
+    vi.stubGlobal("fetch", fetchMock);
+    await decryptRecords([{ NAME }], { NAME: "NAME" });
+    const sent = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect(Object.keys(sent).sort()).toEqual(["data", "key", "method"]);
+    vi.unstubAllGlobals();
+  });
+
+  it("names the service and its answer when decryption fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 502,
+        json: async () => ({
+          error: "decryption failed",
+          service: "10.0.0.5:32688",
+          status: 422,
+        }),
+      } as unknown as Response),
+    );
+    await expect(decryptRecords([{ NAME }], { NAME: "NAME" })).rejects.toThrow(
+      "Could not decrypt these values (10.0.0.5:32688, answered 422).",
+    );
     vi.unstubAllGlobals();
   });
 });

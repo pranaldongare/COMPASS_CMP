@@ -116,11 +116,25 @@ export async function decryptDeep<T>(body: T): Promise<T> {
     string,
     DataType
   >;
-  const opened = await decryptRecords(records, key);
+  let opened: Record<string, string>[];
+  try {
+    opened = await decryptRecords(records, key);
+  } catch (cause) {
+    // The service was unreachable or refused the batch. The page still
+    // renders - with `SE::...` where the values are, which is visibly wrong
+    // and therefore reported - rather than failing on every screen at once.
+    // One line, the reason and never a value.
+    console.error(`[dkms] ${found.length} value(s) left sealed: ${describe(cause)}`);
+    return body;
+  }
 
   found.forEach((f, i) => {
     const value = opened[i]?.[f.type];
     if (typeof value === "string") setAt(body, f.path, value);
   });
   return body;
+}
+
+function describe(cause: unknown): string {
+  return cause instanceof Error ? cause.message : "unknown error";
 }
