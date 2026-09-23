@@ -25,7 +25,7 @@ import httpx
 from cmp.core.config import settings
 from cmp.core.errors import ServiceUnavailable
 from cmp.core.logging import get_logger
-from cmp.infrastructure.dkms.fields import DataType
+from cmp.infrastructure.dkms.fields import PREFIX, DataType
 
 log = get_logger("cmp.dkms")
 
@@ -228,16 +228,43 @@ def unseal_values_sync(values: list[str]) -> list[str]:
     """
     from cmp.infrastructure.dkms.fields import type_of
 
+    sealed_at = [i for i, v in enumerate(values) if isinstance(v, str) and v.startswith(PREFIX)]
+
     if not settings.dkms_enabled:
+        # Nothing to open *and* nothing sealed is the ordinary case - a
+        # plaintext name, an address typed into a form - and it passes
+        # through. A sealed value with the service switched off is not: it
+        # would be returned as `SE::...` and used as if it were a name or an
+        # address, which downstream becomes a nonsense error a long way from
+        # the cause. This is that cause, said once.
+        if sealed_at:
+            raise DkmsUnavailable(
+                f"{len(sealed_at)} value(s) are sealed but DKMS_ENABLED is false, so "
+                "nothing can open them. Set DKMS_ENABLED=true in the environment of "
+                "every process that reads personal data - the API *and* the worker."
+            )
         return list(values)
 
     positions: list[tuple[int, DataType]] = []
     records: list[Record] = []
+    unreadable: list[int] = []
     for i, v in enumerate(values):
         t = type_of(v) if isinstance(v, str) else None
         if t is not None:
             positions.append((i, t))
             records.append({t.value: v})
+        elif i in sealed_at:
+            # It carries the prefix, so it was meant to be ciphertext, but
+            # the envelope does not parse or names a type this build does not
+            # know. Skipping it would hand `SE::...` onward as if it were a
+            # value.
+            unreadable.append(i)
+    if unreadable:
+        raise DkmsUnavailable(
+            f"{len(unreadable)} value(s) begin with {PREFIX} but carry no readable "
+            "envelope: written by a different key service, truncated by a column that "
+            "was too narrow, or glued to other text."
+        )
     if not records:
         return list(values)
 
@@ -263,7 +290,7 @@ def unseal_values_sync(values: list[str]) -> list[str]:
 
 def unseal_variables_sync(variables: dict[str, Any]) -> dict[str, Any]:
     """The template variables of a message, with every sealed string opened."""
-    keys = [k for k, v in variables.items() if isinstance(v, str) and v.startswith("SE::")]
+    keys = [k for k, v in variables.items() if isinstance(v, str) and v.startswith(PREFIX)]
     if not keys:
         return variables
     opened = unseal_values_sync([variables[k] for k in keys])

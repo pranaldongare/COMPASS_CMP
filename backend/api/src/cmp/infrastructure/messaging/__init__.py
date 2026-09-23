@@ -134,10 +134,11 @@ def deliver(key: Message, *, to: str, **variables: Any) -> dict[str, Any]:
     # that might have read it from a row.
     from cmp.infrastructure.dkms import unseal_values_sync, unseal_variables_sync
     from cmp.infrastructure.dkms.client import DkmsUnavailable
+    from cmp.infrastructure.dkms.fields import PREFIX
 
     try:
         variables = unseal_variables_sync(variables)
-        if to.startswith("SE::"):
+        if to.startswith(PREFIX):
             to = unseal_values_sync([to])[0]
     except DkmsUnavailable as exc:
         # The one failure that is invisible from the outside: the request that
@@ -152,6 +153,17 @@ def deliver(key: Message, *, to: str, **variables: Any) -> dict[str, Any]:
             error=str(exc),
         )
         raise
+
+    if to.startswith(PREFIX):
+        # Belt to the brace above. Nothing should reach here sealed, and if
+        # something does, the next line would read it as a number - there is
+        # no `@` in ciphertext - and refuse the message for the wrong reason.
+        # This says the real one.
+        raise DkmsUnavailable(
+            f"the recipient of '{getattr(key, 'value', key)}' is still sealed after "
+            "opening, so there is nothing to address it to. Check DKMS_ENABLED and "
+            "DKMS_URL in this process's environment."
+        )
 
     j: Junction = junction(key)
     ch = channel_for(to)

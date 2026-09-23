@@ -30,8 +30,10 @@ works.**
    the reason - `unreachable`, `answered 404`, or the wrong host entirely.
    That is the whole diagnosis in one line.
 2. The worker has its own environment. It is the process that opens the
-   recipient, so **its** `DKMS_URL` is the one that matters for messages;
-   `grep message.not_sent` in its log names the service it tried.
+   recipient, so **its** `DKMS_URL` and **its** `DKMS_ENABLED` are the ones
+   that matter for messages; `grep message.not_sent` in its log names the
+   service it tried. `DKMS_ENABLED` defaults to *false*: unset there, the
+   worker hands the sealed address onward and no message is ever sent.
 3. The service must also hold the key the data was sealed with - the API's
    own `DKMS_URL`. A reachable service with a different key answers 4xx and
    opens nothing.

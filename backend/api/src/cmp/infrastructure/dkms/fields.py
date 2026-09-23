@@ -66,6 +66,11 @@ TYPE_IDS: dict[int, DataType] = {
 }
 
 
+#: What every sealed value begins with. One constant, so "is this
+#: ciphertext" is the same question everywhere it is asked.
+PREFIX = "SE::"
+
+
 def type_of(sealed: str) -> DataType | None:
     """The data type a sealed value was written as, read off its envelope.
 
@@ -74,7 +79,7 @@ def type_of(sealed: str) -> DataType | None:
     """
     import base64
 
-    if not sealed.startswith("SE::"):
+    if not sealed.startswith(PREFIX):
         return None
     try:
         head = base64.urlsafe_b64decode(sealed[4:12] + "==")[:4]

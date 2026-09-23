@@ -25,7 +25,7 @@ from __future__ import annotations
 from typing import Any
 
 from cmp.infrastructure.dkms.client import decrypt_records, encrypt_records
-from cmp.infrastructure.dkms.fields import ENCRYPTED_FIELDS
+from cmp.infrastructure.dkms.fields import ENCRYPTED_FIELDS, PREFIX
 
 Row = dict[str, Any]
 
@@ -75,7 +75,7 @@ async def unseal_value(table: str, column: str, value: Any) -> Any:
     goes into a greeting, the contact a ticket is sent to. Anything that is not
     a sealed string comes back as it went in.
     """
-    if not isinstance(value, str) or not value.startswith("SE::"):
+    if not isinstance(value, str) or not value.startswith(PREFIX):
         return value
     # The type comes off the envelope, not the column: a value copied from
     # another column - an account's email becoming a request's contact - was
