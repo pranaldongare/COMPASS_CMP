@@ -81,18 +81,45 @@ class DkmsClient:
         # everything the key service has no business seeing - stays here, and
         # is put back around the answer. This is also what lets a row carry a
         # UUID or a datetime, which JSON would otherwise refuse to carry.
-        travelling = [{f: r[f] for f in key if isinstance(r.get(f), str)} for r in records]
+        # Only values that need the work travel, and deciding that here is
+        # what lets any key service holding to the contract stand behind
+        # this client. `skip_encrypted` and `on_error` are this repository's
+        # own service's extensions; a service without them would double-seal
+        # a sealed value, or refuse a whole batch because one row was written
+        # before sealing was switched on. Both are arranged on this side:
+        #
+        # * encrypting - a value already sealed is held back. Encrypting
+        #   twice is not undone by decrypting once.
+        # * decrypting - only sealed values are sent. A row still in the
+        #   clear has nothing to open and is left exactly as it is, which is
+        #   what `on_error="skip"` asked the service for.
+        encrypting = path.endswith("encrypt")
+        travelling = [
+            {
+                f: r[f]
+                for f in key
+                if isinstance(r.get(f), str) and r[f] and r[f].startswith(PREFIX) is not encrypting
+            }
+            for r in records
+        ]
 
         out: list[Record] = []
         # Chunked here as well as inside the service: one enormous body is a
         # timeout waiting to happen, and the service refuses past its own limit.
         for start in range(0, len(records), self._batch_size):
             chunk = travelling[start : start + self._batch_size]
+            # The contract and nothing beyond it. `on_error` and
+            # `skip_encrypted` are this repository's own service's
+            # extensions, and a key service holding to the contract as
+            # written refuses a body carrying them - so the behaviour they
+            # asked for is arranged on this side instead: values already
+            # sealed are held back from an encrypt (below), and a decrypt
+            # that comes back unchanged is judged against `on_error` when
+            # the answer is read.
             body = {
                 "data": chunk,
                 "key": {field: t.value for field, t in key.items()},
                 "method": method,
-                "on_error": on_error,
             }
             try:
                 response = await self._client.post(path, json=body)
@@ -116,7 +143,26 @@ class DkmsClient:
                 raise DkmsUnavailable(f"{self._base_url}{path} answered {response.status_code}")
 
             out.extend(response.json()["data"])
-        return [{**original, **answered} for original, answered in zip(records, out, strict=True)]
+
+        answer = [{**original, **answered} for original, answered in zip(records, out, strict=True)]
+        if on_error == "fail":
+            # What "fail" meant when the service was asked to enforce it: a
+            # value that travelled and came back as it went is work the
+            # service did not do. Values held back above never travelled and
+            # are not judged here.
+            unchanged = [
+                field
+                for row, was, sent in zip(answer, records, travelling, strict=True)
+                for field in sent
+                if row.get(field) == was.get(field)
+            ]
+            if unchanged:
+                raise DkmsUnavailable(
+                    f"{self._base_url}{path} returned {len(unchanged)} value(s) unchanged: "
+                    f"{sorted(set(unchanged))}. A key service that cannot do the work must "
+                    "say so rather than answering with what it was given."
+                )
+        return answer
 
     async def encrypt_records(
         self,

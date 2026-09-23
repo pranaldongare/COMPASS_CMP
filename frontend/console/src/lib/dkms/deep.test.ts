@@ -129,3 +129,45 @@ describe("decryptDeep when the service cannot be reached", () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe("a key service that writes a different envelope", () => {
+  /**
+   * The case this exists for: another DKMS, holding to the same contract,
+   * whose ciphertext this portal cannot label by reading it. Before the
+   * fallback these values were skipped without a word and the page showed
+   * `SE::…` where a name should be.
+   */
+  const FOREIGN = "SE::bm90LW91ci1lbnZlbG9wZS1hdC1hbGw=";
+
+  it("labels the value by its field name and asks for it anyway", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ data: [{ NAME: "Amruta Shukla" }, { EMAIL: "a@x.org" }] }),
+    } as unknown as Response);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const out = await decryptDeep({
+      items: [{ full_name: FOREIGN, email: FOREIGN }],
+    });
+
+    const sent = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect(sent.key).toEqual({ NAME: "NAME", EMAIL: "EMAIL" });
+    expect(out.items[0]?.full_name).toBe("Amruta Shukla");
+    expect(out.items[0]?.email).toBe("a@x.org");
+    vi.unstubAllGlobals();
+  });
+
+  it("says which fields it could not label, rather than going quiet", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.stubGlobal("fetch", vi.fn());
+
+    await decryptDeep({ mystery_column: FOREIGN });
+
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(String(error.mock.calls[0]?.[0])).toContain("mystery_column");
+    expect(String(error.mock.calls[0]?.[0])).not.toContain(FOREIGN);
+    error.mockRestore();
+    vi.unstubAllGlobals();
+  });
+});

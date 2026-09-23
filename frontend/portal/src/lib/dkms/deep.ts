@@ -23,6 +23,7 @@
  */
 
 import { decryptRecords, isEncrypted, type DataType } from "@/lib/dkms/api";
+import { TYPE_BY_FIELD } from "@/lib/dkms/field-types";
 
 /** Byte 3 of the envelope, mirroring TYPE_IDS in the key service. */
 const TYPE_BY_ID: Record<number, DataType> = {
@@ -66,22 +67,37 @@ interface Found {
   type: DataType;
 }
 
-function collect(node: unknown, path: Path, out: Found[]): void {
+function collect(node: unknown, path: Path, out: Found[], field?: string): void {
   if (typeof node === "string") {
     if (isEncrypted(node)) {
-      const type = typeOf(node);
+      // The envelope says which type it is, when the key service that wrote
+      // it writes this envelope. When it does not - another service, sealing
+      // the same data under the same contract - the field's own name says
+      // it instead. Without that fallback such a value was skipped in
+      // silence and the page showed `SE::…` where a name should be.
+      const type = typeOf(node) ?? (field ? TYPE_BY_FIELD[field] : undefined);
       if (type) out.push({ path, value: node, type });
+      else if (field) unlabelled.add(field);
     }
     return;
   }
   if (Array.isArray(node)) {
-    node.forEach((item, i) => collect(item, [...path, i], out));
+    node.forEach((item, i) => collect(item, [...path, i], out, field));
     return;
   }
   if (node && typeof node === "object") {
-    for (const [k, v] of Object.entries(node)) collect(v, [...path, k], out);
+    for (const [k, v] of Object.entries(node)) collect(v, [...path, k], out, k);
   }
 }
+
+/**
+ * Fields seen sealed that nothing could label, reported once each.
+ *
+ * Silence here is the failure that looks like a rendering bug: the value
+ * stays `SE::…` on the page and no request is ever made for it. One line
+ * per field name, never a value, and only the first time.
+ */
+const unlabelled = new Set<string>();
 
 function setAt(root: unknown, path: Path, value: unknown): void {
   let node = root as Record<string | number, unknown>;
@@ -108,7 +124,15 @@ export function hasSealed(body: unknown): boolean {
  */
 export async function decryptDeep<T>(body: T): Promise<T> {
   const found: Found[] = [];
+  const before = unlabelled.size;
   collect(body, [], found);
+  if (unlabelled.size > before) {
+    console.error(
+      `[dkms] sealed value(s) no type could be read for, left as they arrived: ` +
+        `${[...unlabelled].join(", ")}. Either the key service writes a different ` +
+        `envelope, or these fields are missing from lib/dkms/field-types.ts.`,
+    );
+  }
   if (found.length === 0) return body;
 
   const records = found.map((f) => ({ [f.type]: f.value }));

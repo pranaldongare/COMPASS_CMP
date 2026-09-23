@@ -66,6 +66,40 @@ Optional on the bulk calls, defaults behaving as the plain contract does:
 `/decrypt/bulk` answer the same. `GET /health` and `GET /types` are the
 operational surface.
 
+## Standing behind this with another key service
+
+`backend/dkms` is a working implementation, not a requirement. Another
+service can take its place, and what it has to provide is smaller than what
+this one offers:
+
+| Needed | Why |
+|---|---|
+| `POST /bulk_encrypt` | every write of a personal column |
+| `POST /bulk_decrypt` | the portals' `/dkms/decrypt` route, the worker addressing a message, the export |
+| `{data, key, method}` accepted, `{data}` returned | the contract, and the only body either side sends — the platform sends nothing else, so a service that forbids unknown fields is fine |
+
+`/bulk_hash`, `/search` and `/search_ngram` are **not** called by the
+platform: it computes the same hashes locally from `BLIND_INDEX_KEY`, so
+that a sign-in and a search still work when the service is unreachable.
+They are there for anything else that stores its own index.
+
+Neither `on_error` nor `skip_encrypted` is sent. Both are this
+implementation's extensions, and what they arranged is arranged on the
+client side instead: only values that need the work travel — an already
+sealed value is held back from an encrypt, and only sealed values are sent
+to a decrypt, so a row written before sealing was switched on passes
+through untouched rather than failing a batch.
+
+**The one thing to know about the ciphertext.** The platform prefers to read
+a value's data type off the envelope this implementation writes — `'D' 'K'
+version type_id …` — because that lets a portal open a value knowing nothing
+about the field it came from. A service writing a different envelope is
+supported: both portals fall back to the field's own name
+(`lib/dkms/field-types.ts`), and the backend falls back to
+`ENCRYPTED_FIELDS`. A field in neither is reported by name in the log
+— `[dkms] sealed value(s) no type could be read for` — rather than left
+silently sealed on the page.
+
 **Two keys.** `DKMS_MASTER_KEY` encrypts; `DKMS_HASH_KEY` hashes. Separate,
 so a hash says nothing about an encryption key and either can be rotated
 alone. The hash key is shared with the platform - `BLIND_INDEX_KEY` is the
