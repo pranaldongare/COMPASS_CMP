@@ -1,8 +1,9 @@
 # DKMS — the frontend layer
 
-How the two portals open the personal values the API serves sealed, which
-APIs that covers, the three files that do it, the one setting, and how it
-was checked end to end. Companion to
+How the two portals open the personal values the API serves sealed, how a
+person is searched for when the column holding their name is ciphertext,
+which APIs that covers, the three files that do it, the one setting, and how
+it was checked end to end. Companion to
 [the field list](pii-tables-and-fields.md) and
 [the backend document](backend-api.md); the narrative on what is sealed and
 why is [personal-data.md](../domain/personal-data.md). Verified against the
@@ -62,6 +63,47 @@ The remaining documented PII endpoints are writes whose responses were
 checked by the backend's HTTP suite (`tests/http`, every one of the 159) and
 pass through the same interceptor when a page calls them.
 
+## Searching for somebody whose name is encrypted
+
+The portals do the decryption. They do **not** do the searching, and the
+distinction is worth being precise about because it is easy to assume
+otherwise: a search box sends the term to the API exactly as the person
+typed it, and the API turns it into hashes and runs the query. The browser
+never holds a hash, never holds the key, and never sees a row it was not
+allowed to see.
+
+```
+"priya"  ─►  GET /api/users?q=priya          the term, as typed
+                    │
+                    │  the API hashes it: index_of() for a whole contact,
+                    │  search_ngrams() for part of a name
+                    ▼
+             WHERE email_hash = … OR full_name_ngrams @> …
+                    │
+                    ▼
+             rows, names still SE::…  ─►  the interceptor opens them  ─►  the table
+```
+
+**What a person can search by**, and what the fields say:
+
+| Typed | Matched against | Field |
+|---|---|---|
+| Part of a name, three characters up | the hashed runs beside the name | `Name, or a whole email, mobile or id` (users), `Name, email or mobile` (the audit About picker) |
+| A whole email, mobile, username or employee id | that value's own hash | the same boxes |
+| A reference, a uuid, a project | the plaintext column, as before | the requests list |
+
+Half an address matches nothing, deliberately: a contact carries no runs, so
+all its hash ever leaks is equality. A term under three characters produces
+no runs and falls back to the exact comparisons, rather than matching every
+row — an empty set is contained in every set, and a search box that answered
+"everyone" to two characters would be worse than one that answered nothing.
+
+**Nothing in the portals changed to make this work.** The search boxes
+already sent `q`; what changed is what the API does with it. That is the
+property worth keeping: a portal knows which values are personal only
+because they arrive with a prefix, and it knows nothing at all about how
+they are found.
+
 ## The three files
 
 | File (same in both portals) | Role |
@@ -92,6 +134,8 @@ name should be - so the portal's log says which: `[dkms] … unreachable`,
 | Service **unreachable** / not configured | 503 from the route | The page still renders with the ciphertext showing; both logs name the host |
 | Browser reaching the key service directly | Not possible: `DKMS_URL` is server-only, not `NEXT_PUBLIC_`; the service has no CORS | By construction |
 | A **type id** the walker does not know | Value skipped, stays sealed | `TYPE_BY_ID` in `deep.ts` mirrors the service's `TYPE_IDS` (13 types); `deep.test.ts` reads real envelopes |
+| A search finding **nobody** when somebody exists | The row's runs are missing or were written under a different key | The runs are written with the row, in the repository; `BLIND_INDEX_KEY` and the key service's `DKMS_HASH_KEY` must match. `tests/integration/test_search_over_sealed_names.py` covers the write, the rename and the miss |
+| A search finding **everybody** | A term too short to have runs, with the clause still applied | The clause is added only when the term yields runs; pinned by a test that searches for two characters and expects nothing |
 
 ## How it was checked end to end
 
@@ -113,9 +157,21 @@ showed ciphertext. The first run of the same walk found the SQL
 concatenation above (1 failed batch, 3 pages showing `SE::`), which is what
 this document's guards close.
 
+**The search, walked the same way** on 2026-09-22, against the same sealed
+rows: typing `priya`, `men` and `Anjali` into the console's users list each
+returned the one person whose encrypted name contains it, and `zzz-nobody`
+returned none; the audit About picker found the same person by six letters;
+a fragment of the domain every test address shares found nobody, which is
+the boundary - contacts are matched whole.
+
 The standing tests: `src/lib/api/client.test.ts` (both portals) runs the
 real client against MSW - a sealed body comes out opened in one call, nothing
 else changed; `e2e/sealed-never-shown.spec.ts` (both portals) checks the
 pages that always show a person: the API answered sealed, the page shows the
-person; and the backend's `tests/http` asserts every one of the 159 PII
-endpoints serves `SE::…` or null and never plaintext.
+person; `e2e/audit.spec.ts` finds a data principal by part of her name in a
+real browser; the backend's `tests/http` asserts every one of the 159 PII
+endpoints serves `SE::…` or null and never plaintext; and
+`tests/integration/test_search_over_sealed_names.py` covers the searches
+themselves - a fragment finds, a rename is findable under the new name, a
+short term finds nobody rather than everybody, and the column holds hashes
+and never a name.

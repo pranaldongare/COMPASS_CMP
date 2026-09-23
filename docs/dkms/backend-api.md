@@ -85,15 +85,55 @@ nothing about which column it came from.
 
 | Module | Role |
 |---|---|
-| [`infrastructure/dkms/fields.py`](../../backend/api/src/cmp/infrastructure/dkms/fields.py) | The map: `ENCRYPTED_FIELDS` (table → column → type), `BLIND_INDEXED`, `LOOKUP_FIELDS`, `TYPE_IDS` |
+| [`infrastructure/dkms/fields.py`](../../backend/api/src/cmp/infrastructure/dkms/fields.py) | The map: `ENCRYPTED_FIELDS` (table → column → type), `BLIND_INDEXED` (the eight `*_hash` columns), `NGRAM_INDEXED` (the three `*_ngrams` columns, with the reason each earns one), `LOOKUP_FIELDS`, `TYPE_IDS` |
 | [`infrastructure/dkms/client.py`](../../backend/api/src/cmp/infrastructure/dkms/client.py) | The HTTP client. Fails closed: `DkmsUnavailable` (503) rather than writing plaintext. `unseal_values_sync` for the worker, which has no event loop |
 | [`infrastructure/dkms/rows.py`](../../backend/api/src/cmp/infrastructure/dkms/rows.py) | `seal` / `seal_many` / `unseal` / `unseal_value` / `opened` — one call per row however many columns |
-| [`infrastructure/dkms/blind.py`](../../backend/api/src/cmp/infrastructure/dkms/blind.py) | `index_of(kind, value)` and the normalisation each kind uses |
+| [`infrastructure/dkms/blind.py`](../../backend/api/src/cmp/infrastructure/dkms/blind.py) | Both hashes, computed locally: `index_of(kind, value)` for the whole-value lookup, `ngrams_of(value)` and `search_ngrams(term)` for the substring one, and the normalisation each uses. The key service computes the same values from the same key; this exists so a sign-in and a search still work when it is unreachable |
 | Repositories | The only callers of `seal()`. A write that bypassed one would store plaintext, which is why the seal is here and not in a service |
 
 Settings: `DKMS_URL` (default `http://localhost:32688`), `DKMS_ENABLED`,
 `DKMS_TIMEOUT_S`, `BLIND_INDEX_KEY`. Both keys are refused at startup in
-production if left at their development values.
+production if left at their development values, and `BLIND_INDEX_KEY` must
+equal the key service's `DKMS_HASH_KEY`.
+
+## Writing a row: three things at once
+
+A write of a personal column produces up to three values, and all of them
+come from the plaintext, in the repository, at the one moment it exists:
+
+```
+full_name = "Amruta Shukla"
+   │
+   ├─ seal()        → full_name        = "SE::REsBAQNY0o7r…"   the value at rest
+   ├─ index_of()    → <column>_hash    = "9f3c…"  (64 hex)     found whole
+   └─ ngrams_of()   → <column>_ngrams  = {"a1b2…", "c3d4…", …} found by part
+```
+
+Which columns get which is `BLIND_INDEXED` and `NGRAM_INDEXED`; a column in
+neither is sealed and never searched. A repository that writes a name
+without its runs produces a row nobody can find, so the write and the
+hashing are one statement, never two.
+
+The key service does the same arithmetic — `/bulk_encrypt` with `with_hash`
+and `with_ngrams` returns all three in one call — which is what a backfill
+uses (migration 0030) and what any other system storing its own copy would
+use.
+
+## Finding a row: which lookup answers which question
+
+| The question | The clause | Where |
+|---|---|---|
+| "Sign this person in" / "is this address taken" | `email_hash = %s` | `users.credentials_by_login`, `by_contact` |
+| "Which request did this contact send" | `submitted_contact_hash = %s` | `rights.search` |
+| "Find the nomination naming this person" | `nominee_email_hash = %s` | `rights.nominations_naming` |
+| "Who is this, I have part of the name" | `full_name_ngrams @> %s` | `users.list_users`, `audit_lookup.lookup` |
+| "Which request is this, I have part of the name" | `submitted_name_ngrams @> %s` | `rights.search` |
+
+The first three are exact and leak only equality. The last two are
+candidates — a row holding the runs of "ana" might be "banana" — and leak
+letter statistics, which is why only three columns have them. Both are
+computed the same way on the way in and on the way out, so a search never
+needs to decrypt anything to decide what to compare.
 
 ## The endpoints that carry personal data — 159
 
