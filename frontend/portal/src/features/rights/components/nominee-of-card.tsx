@@ -40,8 +40,15 @@ import { REQUEST_TYPE_COPY, RequestStatusBadge } from "@/features/rights/compone
 import { RequestCard } from "@/features/rights/components/request-card";
 import { useMyRequest, useNominationsNamingMe } from "@/features/rights/queries";
 import { formatDate } from "@/lib/format";
-import type { NomineeOf } from "@/types";
+import type { NominationStatus, NomineeOf } from "@/types";
 import { copyText } from "@/lib/browser";
+
+const NOMINATION_BADGE: Record<NominationStatus, { label: string; tone: "success" | "warning" | "neutral" }> = {
+  active: { label: "In place", tone: "success" },
+  pending: { label: "Awaiting your acceptance", tone: "warning" },
+  declined: { label: "Declined", tone: "neutral" },
+  revoked: { label: "Revoked", tone: "neutral" },
+};
 
 export function NomineeOfCard() {
   const naming = useNominationsNamingMe();
@@ -92,9 +99,9 @@ function NomineeOfRow({ n }: { n: NomineeOf }) {
             Recorded you as {n.contact}. May ask for: {rights}.
           </p>
         </div>
-        <Badge tone={n.status === "active" ? "success" : "warning"}>
-          {n.status === "active" ? "In place" : "Awaiting your acceptance"}
-        </Badge>
+        {/* Four states, four words. Revoked and declined said "Awaiting your
+            acceptance", which asks for an act that is no longer possible. */}
+        <Badge tone={NOMINATION_BADGE[n.status].tone}>{NOMINATION_BADGE[n.status].label}</Badge>
       </div>
 
       {n.invoked_at && (

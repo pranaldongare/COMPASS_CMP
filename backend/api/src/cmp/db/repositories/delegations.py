@@ -138,3 +138,22 @@ async def live_between(conn: Conn, *, delegator_user_id: int, delegate_user_id: 
         """,
         (delegator_user_id, delegate_user_id),
     )
+
+
+async def cover_candidates(conn: Conn, *, role: str, user_id: int) -> list[Row]:
+    """Who this person may hand their work to: the active accounts in their role.
+
+    Answered here rather than from the users register, which only the DPO and
+    the administrator may read - a DCO arranging cover has to be able to see the
+    other DCOs and nothing else. Name and email come back sealed; the console
+    opens them. Ordered by when the account was made, because a name is sealed
+    and cannot be sorted by.
+    """
+    return await fetch_all(
+        conn,
+        """SELECT u.uuid, u.full_name, u.email
+             FROM auth_user u
+            WHERE u.role = %s::user_role AND u.status = 'active' AND u.id <> %s
+            ORDER BY u.created_at, u.id""",
+        (role, user_id),
+    )

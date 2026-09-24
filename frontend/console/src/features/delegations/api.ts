@@ -47,6 +47,17 @@ export function listHeldDelegations(): Promise<Delegation[]> {
 }
 
 /** Every live arrangement. DPO and administrator only — this is oversight. */
+/** Who I can hand my work to: the active accounts in my role, not me. */
+export interface CoverCandidate {
+  uuid: Uuid;
+  full_name: string;
+  email: string | null;
+}
+
+export function listCoverCandidates(): Promise<CoverCandidate[]> {
+  return apiGet<CoverCandidate[]>("/delegations/candidates");
+}
+
 export function listAllDelegations(): Promise<Delegation[]> {
   return apiGet<Delegation[]>("/delegations");
 }

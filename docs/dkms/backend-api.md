@@ -251,6 +251,7 @@ handed to a session-bearing response.
 | `rights/service._ticket_address()` | A holder's contact | The ticket's mail goes to a person |
 | `rights/service._tell_holder()`, `_tell_office()`; `opened_brief()` in `issue_tickets` and `reassign_holder` | The author's name on a ticket message; the subject's name and contacts in a brief | The prose of the mail |
 | `exchange/service` — `_project_export`, `render` | The people in the export CSV | The file is read outside the platform |
+| `api/routers/v1/audit.export_csv()` | Actor and subject names, and an entity label that names a person, in the audit CSV - one `unseal_strings` call for the file | As above: the DPO's copy of the trail is read outside the platform |
 | `rights/package.build_response()` | What is released to the data principal | As above |
 | `rights/service.nomination_from_token()` → `GET /rights/nominations/{token}` | `principal_name`, `nominee_name` | **The one response.** The nominee has no session, and a portal's `/dkms/decrypt` refuses a request without one. The token is single-purpose, expiring and hashed at rest; the contacts are served masked |
 | `auth/authentication/service.invite_staff()` | The invited address | It goes into the invitation's URL, which `deliver()` never sees |

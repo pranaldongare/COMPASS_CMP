@@ -107,8 +107,12 @@ with:
   recording.
 
 Consent is **per purpose, never in aggregate**. The artefact has no status
-column: `consented`, `partial`, `declined` are derived from its grants on
-every read.
+column: `consented`, `partial`, `declined` and `withdrawn` are derived from
+its grants on every read. **Withdrawn means a withdrawal left nothing
+granted.** An artefact written by withdrawing one purpose of several is marked
+`is_withdrawal` - that records the act - but reads `partial`, is exported with
+the purposes still granted, and its remaining purposes can be withdrawn in
+turn from the portal.
 
 ## 6. Withdrawal
 

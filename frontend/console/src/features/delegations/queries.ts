@@ -7,8 +7,10 @@ import { useQuery } from "@tanstack/react-query";
 
 import {
   listAllDelegations,
+  listCoverCandidates,
   listHeldDelegations,
   listMyDelegations,
+  type CoverCandidate,
 } from "@/features/delegations/api";
 import type { ApiError } from "@/lib/errors";
 import { keys } from "@/lib/query";
@@ -35,5 +37,14 @@ export function useAllDelegations(enabled = true) {
     queryKey: keys.delegations.all,
     queryFn: listAllDelegations,
     enabled,
+  });
+}
+
+/** The colleagues the cover form may offer. Asked of the delegations API, not
+ *  the users register, which only the DPO and the administrator may read. */
+export function useCoverCandidates() {
+  return useQuery<CoverCandidate[], ApiError>({
+    queryKey: keys.delegations.candidates,
+    queryFn: listCoverCandidates,
   });
 }

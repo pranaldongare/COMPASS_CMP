@@ -78,4 +78,20 @@ describe("ScopeCard execution", () => {
     expect(screen.queryByRole("button", { name: /try again now/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /legal hold/i })).not.toBeInTheDocument();
   });
+
+  it("stops showing a hold once it is released", () => {
+    card(
+      item({
+        disposition: "erased",
+        executed_at: at,
+        execution: [
+          { store: "legal_hold", status: "done", detail: { released: "dddddddd-dddd-4ddd-8ddd-dddddddddddd" }, attempted_at: at },
+          { ...waiting, status: "done", detail: {} },
+        ],
+      }),
+    );
+    expect(screen.getByText(/legal hold: released/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /release hold/i })).not.toBeInTheDocument();
+    expect(screen.getByText("erased")).toBeInTheDocument();
+  });
 });

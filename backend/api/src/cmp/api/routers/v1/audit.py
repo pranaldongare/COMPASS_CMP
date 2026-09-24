@@ -38,6 +38,7 @@ from cmp.db.repositories import entities as entity_repo
 from cmp.domain.audit import service as audit_service
 from cmp.domain.audit import vocabulary as vocab
 from cmp.domain.audit.service import Event
+from cmp.infrastructure.dkms import unseal_strings
 from cmp.schemas.common import Out, Page
 from cmp.validation import choice
 
@@ -254,7 +255,7 @@ async def search(
         )
         items, cursor, total = await repo.search(conn, page, filters)
         # One query per entity type on the page, not one per row.
-        items = await entity_repo.attach(conn, items)
+        items = await entity_repo.attach(conn, items, reader_role=principal.role)
     return {"items": items, "next_cursor": cursor, "total": total}
 
 
@@ -379,7 +380,7 @@ async def export_csv(
             q=q,
         )
         rows = await repo.export_rows(conn, filters)
-        rows = await entity_repo.attach(conn, rows)
+        rows = await entity_repo.attach(conn, rows, reader_role=principal.role)
         await audit_service.record(
             conn,
             event=Event.AUDIT_EXPORTED,
@@ -392,6 +393,25 @@ async def export_csv(
             },
         )
 
+    # The file is for a person to read, like the data export: the names in it
+    # are opened on the way in - one call for the whole file - and a label that
+    # names someone is joined from its parts. The rows stay sealed.
+    opened_names = await unseal_strings(
+        [
+            v
+            for r in rows
+            for v in (r.get("actor_name"), r.get("subject_name"), r.get("entity_label"))
+        ]
+        + [p for r in rows for p in (r.get("entity_label_parts") or [])]
+    )
+
+    def plain(value: Any) -> Any:
+        return opened_names.get(value, value) if isinstance(value, str) else value
+
+    def label(r: dict[str, Any]) -> Any:
+        parts = r.get("entity_label_parts")
+        return " ".join(str(plain(p)) for p in parts) if parts else plain(r.get("entity_label"))
+
     buf = io.StringIO()
     writer = csv.writer(buf, lineterminator="\n")
     writer.writerow(EXPORT_COLUMNS)
@@ -400,12 +420,12 @@ async def export_csv(
             [
                 r["occurred_at"].isoformat(),
                 r["event_type"],
-                text_cell(r.get("actor_name")),
+                text_cell(plain(r.get("actor_name"))),
                 r.get("actor_role") or "",
-                text_cell(r.get("subject_name")),
+                text_cell(plain(r.get("subject_name"))),
                 r["entity_type"],
                 r["entity_id"],
-                text_cell(r.get("entity_label")),
+                text_cell(label(r)),
                 text_cell(audit_service.canonical_detail(r.get("detail") or {})),
                 str(r["log_uuid"]),
             ]
@@ -454,5 +474,5 @@ async def get_entry(log_uuid: UUID, principal: RequireDPOorAdmin) -> dict[str, A
         entry = await repo.by_uuid(conn, str(log_uuid))
         if not entry:
             raise NotFound("Audit entry")
-        (enriched,) = await entity_repo.attach(conn, [entry])
+        (enriched,) = await entity_repo.attach(conn, [entry], reader_role=principal.role)
         return enriched

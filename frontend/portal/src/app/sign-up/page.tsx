@@ -85,6 +85,14 @@ function SignUpFlow() {
         form.setFocus(field);
         return;
       }
+      // Section 9 (S2-01): a date of birth under eighteen creates no account.
+      // The server's sentence goes on the field it is about - it offers no
+      // guardian route, because there is none to offer yet.
+      if (caught instanceof ApiError && caught.code === "minor_not_permitted") {
+        form.setError("dob", { message: caught.userMessage() });
+        form.setFocus("dob");
+        return;
+      }
       setError(
         caught instanceof ApiError && caught.status === 429
           ? caught.userMessage()

@@ -78,7 +78,7 @@ function TypeBlurb({ type }: { type: RightsRequestType }) {
 
 /** One consent, the way the picker and the fixed box name it. */
 export function consentLabel(c: MyConsent): string {
-  return `${c.project_name} · ${c.notice_code} v${c.version} · ${formatDate(c.affirmative_action_at)}${c.is_withdrawal ? " (withdrawn)" : ""}`;
+  return `${c.project_name} · ${c.notice_code} v${c.version} · ${formatDate(c.affirmative_action_at)}${c.is_withdrawal && c.granted_count === 0 ? " (withdrawn)" : ""}`;
 }
 
 function ConsentPicker({

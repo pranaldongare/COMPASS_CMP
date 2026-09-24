@@ -339,7 +339,9 @@ async def dashboard(principal: CurrentUser) -> dict[str, Any]:
         return data
 
 
-async def _recent_activity(conn: Any, *, project_ids: list[int], actor_id: int) -> list[Any]:
+async def _recent_activity(
+    conn: Any, *, project_ids: list[int], actor_id: int, role: Role
+) -> list[Any]:
     """Recent activity, in the shape the audit trail uses.
 
     This replaced two queries that read the wrong thing. The R&D User's read
@@ -367,7 +369,7 @@ async def _recent_activity(conn: Any, *, project_ids: list[int], actor_id: int) 
 
     # The same resolver the audit trail uses, so "Notice published" carries the
     # notice it was about rather than `notice#42`.
-    return await entity_repo.attach(conn, merged[:15])
+    return await entity_repo.attach(conn, merged[:15], reader_role=role)
 
 
 async def _rnd(conn: Any, user_id: int) -> dict[str, Any]:
@@ -405,7 +407,10 @@ async def _rnd(conn: Any, user_id: int) -> dict[str, Any]:
         conn, "SELECT project_id FROM project WHERE created_by = %s", (user_id,)
     )
     recent = await _recent_activity(
-        conn, project_ids=[r["project_id"] for r in own_projects], actor_id=user_id
+        conn,
+        project_ids=[r["project_id"] for r in own_projects],
+        actor_id=user_id,
+        role=Role.RND_USER,
     )
     return {
         "role": "rnd_user",
@@ -428,7 +433,10 @@ async def _dpo(conn: Any) -> dict[str, Any]:
              (SELECT count(*) FROM notice WHERE status = 'draft')      AS draft_notices,
              (SELECT count(*) FROM purpose WHERE status = 'draft')     AS draft_purposes,
              (SELECT count(*) FROM v_current_consent)                  AS total_consents,
-             (SELECT count(*) FROM v_current_consent WHERE is_withdrawal)
+             (SELECT count(*) FROM v_current_consent vc
+               WHERE vc.is_withdrawal AND NOT EXISTS (
+                 SELECT 1 FROM consent_purpose_grant g
+                  WHERE g.consent_id = vc.consent_id AND g.granted))
                AS withdrawals,
              (SELECT count(*) FROM notice_language WHERE approved_at IS NULL)
                AS unapproved_languages""",
@@ -526,6 +534,7 @@ async def _dpo(conn: Any) -> dict[str, Any]:
             for e in await audit_repo.recent(conn, limit=60)
             if not str(e["event_type"]).startswith("auth.")
         ][:8],
+        reader_role=Role.DPO,
     )
     return {
         "role": "dpo",
@@ -595,7 +604,7 @@ async def _dco(conn: Any, user_id: int, *, role: Role = Role.DCO) -> dict[str, A
         conn, f"SELECT p.project_id FROM project p WHERE {pred}", pred_params
     )
     recent = await _recent_activity(
-        conn, project_ids=[r["project_id"] for r in in_scope], actor_id=user_id
+        conn, project_ids=[r["project_id"] for r in in_scope], actor_id=user_id, role=role
     )
     return {
         "role": str(role),
@@ -676,7 +685,10 @@ async def _dco_admin(conn: Any, user_id: int) -> dict[str, Any]:
         conn, f"SELECT p.project_id FROM project p WHERE {pred}", pred_params
     )
     recent = await _recent_activity(
-        conn, project_ids=[r["project_id"] for r in in_scope], actor_id=user_id
+        conn,
+        project_ids=[r["project_id"] for r in in_scope],
+        actor_id=user_id,
+        role=Role.DCO_ADMIN,
     )
     return {
         "role": "dco_admin",
@@ -709,7 +721,9 @@ async def _admin(conn: Any) -> dict[str, Any]:
     # accounts rather than run collections, and a denial is the signal they act
     # on. Same shape as every other role's, so one renderer serves all five.
     denials = await entity_repo.attach(
-        conn, await audit_repo.recent(conn, limit=25, event_type="auth.access_denied")
+        conn,
+        await audit_repo.recent(conn, limit=25, event_type="auth.access_denied"),
+        reader_role=Role.ADMIN,
     )
     lockouts = await fetch_all(
         conn,
@@ -751,8 +765,8 @@ async def _subject(conn: Any, user_id: int) -> dict[str, Any]:
              WHERE vc.auth_user_id = %(u)s
              GROUP BY vc.consent_id, vc.is_withdrawal)
            SELECT count(*) AS total,
-                  count(*) FILTER (WHERE NOT is_withdrawal AND granted > 0) AS active,
-                  count(*) FILTER (WHERE is_withdrawal)                     AS withdrawn,
+                  count(*) FILTER (WHERE granted > 0)                       AS active,
+                  count(*) FILTER (WHERE is_withdrawal AND granted = 0)     AS withdrawn,
                   count(*) FILTER (WHERE NOT is_withdrawal AND granted = 0) AS declined,
                   (SELECT count(*) FROM export_line WHERE auth_user_id = %(u)s)
                     AS times_shared
@@ -873,7 +887,12 @@ async def notifications(
         # events about herself, and every one of them used to link into a staff
         # console - `auth_user` to the administrator's account register, which
         # is where following her own registration notification took her.
-        rows = await entity_repo.attach(conn, rows, for_subject=principal.role is Role.DATA_SUBJECT)
+        rows = await entity_repo.attach(
+            conn,
+            rows,
+            for_subject=principal.role is Role.DATA_SUBJECT,
+            reader_role=principal.role,
+        )
         # A respondent opens the ticket, not the request page - which their
         # role may not reach. The DPO keeps the request page.
         if principal.role is not Role.DPO:

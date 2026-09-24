@@ -47,7 +47,10 @@ _SELECT = """
   r.download_expires_at, r.closed_at, r.created_at, r.updated_at,
   r.subject_user_id,
   r.consent_id, c.consent_uuid, c.affirmative_action_at AS consent_at,
-  c.is_withdrawal AS consent_withdrawn, cn.notice_code AS consent_notice_code,
+  (c.is_withdrawal AND NOT EXISTS (
+     SELECT 1 FROM consent_purpose_grant wg WHERE wg.consent_id = c.consent_id AND wg.granted))
+    AS consent_withdrawn,
+  cn.notice_code AS consent_notice_code,
   cn.version AS consent_notice_version, cp.project_name AS consent_project,
   cp.project_uuid AS consent_project_uuid,
   (SELECT array_remove(array_agg(pu.name ORDER BY pu.name), NULL)

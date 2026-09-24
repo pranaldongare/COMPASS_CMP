@@ -1375,6 +1375,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/delegations/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Who I can hand my work to: the active accounts in my role
+         * @description The cover form's one question, answered for whoever may arrange cover.
+         *
+         *     It used to read the users register, which only the DPO and the
+         *     administrator may - so everyone else was told there was nobody to delegate
+         *     to. Same role, active, not the caller: the rules `grant` enforces.
+         */
+        get: operations["candidates_delegations_candidates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/delegations": {
         parameters: {
             query?: never;
@@ -5369,6 +5393,18 @@ export interface components {
             key: string;
             /** Count */
             count: number;
+        };
+        /** CoverCandidateOut */
+        CoverCandidateOut: {
+            /**
+             * Uuid
+             * Format: uuid
+             */
+            uuid: string;
+            /** Full Name */
+            full_name: string;
+            /** Email */
+            email: string | null;
         };
         /** CreateUser */
         CreateUser: {
@@ -10738,6 +10774,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    candidates_delegations_candidates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CoverCandidateOut"][];
                 };
             };
         };

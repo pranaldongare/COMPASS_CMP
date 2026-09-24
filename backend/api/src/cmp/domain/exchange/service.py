@@ -194,7 +194,9 @@ def _consent_status(row: dict[str, Any]) -> str:
     agent who reads "consented" and collects everything has collected something
     that was refused - and the granted_purposes column is the detail behind it.
     """
-    if row["is_withdrawal"]:
+    # Withdrawn only when the withdrawal left nothing granted: a person who
+    # withdrew one purpose of two is still collected from for the other.
+    if row["is_withdrawal"] and not row["granted_count"]:
         return "withdrawn"
     return "consented" if not row["refused_count"] else "partial"
 

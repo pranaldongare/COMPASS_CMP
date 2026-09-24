@@ -19,6 +19,10 @@ from typing import Final
 #: one string and an operator can find the request.
 REQUEST_ID_HEADER: Final = "X-Request-ID"
 RESPONSE_TIME_HEADER: Final = "X-Response-Time-ms"
+#: Sent by a page polling in the background (a count refreshed every minute).
+#: The request is authenticated as usual but does not count as activity, so an
+#: open tab can still reach the idle timeout.
+BACKGROUND_HEADER: Final = "X-CMP-Background"
 
 #: On a download: the digest recorded at upload, and the digest of the bytes
 #: actually served. A recipient compares them to check that what they received is

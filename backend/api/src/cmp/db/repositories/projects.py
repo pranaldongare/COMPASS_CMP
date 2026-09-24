@@ -796,11 +796,11 @@ async def consent_counts(conn: Conn, project_id: int) -> dict[str, int]:
         )
         SELECT
           count(*)                                                          AS total,
-          count(*) FILTER (WHERE is_withdrawal)                             AS withdrawn,
-          count(*) FILTER (WHERE NOT is_withdrawal AND granted_count > 0
-                                 AND refused_count = 0)                     AS consented,
-          count(*) FILTER (WHERE NOT is_withdrawal AND granted_count > 0
-                                 AND refused_count > 0)                     AS partial,
+          -- Withdrawn: a withdrawal that left nothing granted. One purpose of
+          -- several withdrawn is partial, not withdrawn.
+          count(*) FILTER (WHERE is_withdrawal AND granted_count = 0)       AS withdrawn,
+          count(*) FILTER (WHERE granted_count > 0 AND refused_count = 0)   AS consented,
+          count(*) FILTER (WHERE granted_count > 0 AND refused_count > 0)   AS partial,
           count(*) FILTER (WHERE NOT is_withdrawal AND granted_count = 0)   AS declined
         FROM graded
         """,

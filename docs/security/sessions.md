@@ -41,6 +41,13 @@ cookie stays first-party.
 
 Both, because either alone leaves a gap.
 
+**A page polling itself is not activity.** A request carrying
+`X-CMP-Background: 1` is authenticated and refused past either limit like any
+other, but does not slide the idle window. The console sends it on the counts
+it refreshes on a timer and on a list's or thread's timed refresh (never its
+first load), so a console tab left open reaches the idle timeout instead of
+keeping itself awake.
+
 ## Partial sessions
 
 Between password and second factor. Authorises exactly one route. Promoted on

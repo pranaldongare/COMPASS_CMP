@@ -175,6 +175,13 @@ function requestId(): string {
 }
 
 /* -------------------------------------------------------------------- verbs */
+/**
+ * For a request the page makes by itself - a count refreshed on a timer. The
+ * API authenticates it as usual but does not count it as activity, so a tab
+ * left open still reaches the idle timeout instead of polling itself awake.
+ */
+export const BACKGROUND: AxiosRequestConfig = { headers: { "X-CMP-Background": "1" } };
+
 export async function apiGet<T>(url: string, cfg?: AxiosRequestConfig): Promise<T> {
   const { data } = await http.get<T>(url, cfg);
   return data;

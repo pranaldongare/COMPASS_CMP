@@ -3100,6 +3100,32 @@
         }
       }
     },
+    "/delegations/candidates": {
+      "get": {
+        "tags": [
+          "delegations"
+        ],
+        "summary": "Who I can hand my work to: the active accounts in my role",
+        "description": "The cover form's one question, answered for whoever may arrange cover.\n\nIt used to read the users register, which only the DPO and the\nadministrator may - so everyone else was told there was nobody to delegate\nto. Same role, active, not the caller: the rules `grant` enforces.",
+        "operationId": "candidates_delegations_candidates_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CoverCandidateOut"
+                  },
+                  "type": "array",
+                  "title": "Response Candidates Delegations Candidates Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/delegations": {
       "get": {
         "tags": [
@@ -15352,6 +15378,37 @@
           "count"
         ],
         "title": "Count"
+      },
+      "CoverCandidateOut": {
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uuid"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uuid",
+          "full_name",
+          "email"
+        ],
+        "title": "CoverCandidateOut"
       },
       "CreateUser": {
         "properties": {

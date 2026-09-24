@@ -24,6 +24,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from cmp.core.permissions import Role, nav_for
 from cmp.db.sql import Conn, fetch_all
 
 
@@ -190,7 +191,9 @@ _SPECS: dict[str, _Spec] = {
         # this they resolved to `/users` - the administrator's account register -
         # for every reader, which is how a data principal following a
         # notification about herself arrived at an admin screen.
-        subject_href="/profile",
+        # `/account` - her own page. It pointed at `/profile`, which the
+        # portal has never had.
+        subject_href="/account",
         noun="Account",
     ),
     "person_type_history": _Spec(
@@ -212,7 +215,8 @@ _SPECS: dict[str, _Spec] = {
                JOIN auth_user dr ON dr.id = d.delegator_user_id
                JOIN auth_user de ON de.id = d.delegate_user_id
                WHERE d.delegation_id = ANY(%s)""",
-        href="/cover",
+        # `/delegate` - the console's cover page. `/cover` never existed.
+        href="/delegate",
         noun="Cover arrangement",
     ),
     "rights_request": _Spec(
@@ -279,8 +283,33 @@ _SPECS: dict[str, _Spec] = {
 }
 
 
+#: Every console section a link can land in - the first segment of its path,
+#: the same key the console's section guard and `nav_for` use.
+_SECTIONS = frozenset(section for role in Role for section in nav_for(role))
+
+
+def _openable(href: str | None, reader_role: Role | str | None) -> str | None:
+    """The link, if the reader's own menu has the section it lands in.
+
+    A staff link used to be the same for every reader, so a DCO's bell linked a
+    notice page (no Notices section) and an R&D User's the exports register,
+    and both landed on "Not part of your account". The entry still reads the
+    same; only the link a reader cannot follow is dropped.
+    """
+    if href is None or reader_role is None:
+        return href
+    section = href.strip("/").split("/")[0]
+    if section in _SECTIONS and section not in nav_for(reader_role):
+        return None
+    return href
+
+
 async def resolve(
-    conn: Conn, refs: list[tuple[str, int]], *, for_subject: bool = False
+    conn: Conn,
+    refs: list[tuple[str, int]],
+    *,
+    for_subject: bool = False,
+    reader_role: Role | str | None = None,
 ) -> dict[tuple[str, int], dict[str, Any]]:
     """Label a batch of `(entity_type, entity_id)` pairs.
 
@@ -310,13 +339,20 @@ async def resolve(
                 "entity_label": row["label"],
                 "entity_label_parts": list(row["label_parts"]) if row.get("label_parts") else None,
                 "entity_noun": spec.noun,
-                "entity_href": template.format(uuid=uuid) if template else None,
+                "entity_href": _openable(
+                    template.format(uuid=uuid) if template else None,
+                    None if for_subject else reader_role,
+                ),
             }
     return resolved
 
 
 async def attach(
-    conn: Conn, rows: list[dict[str, Any]], *, for_subject: bool = False
+    conn: Conn,
+    rows: list[dict[str, Any]],
+    *,
+    for_subject: bool = False,
+    reader_role: Role | str | None = None,
 ) -> list[dict[str, Any]]:
     """Enrich audit rows in place with their resolved entity, and return them.
 
@@ -326,7 +362,7 @@ async def attach(
     want - and the two endpoints she can reach say so explicitly.
     """
     refs = [(str(r.get("entity_type") or ""), int(r.get("entity_id") or 0)) for r in rows]
-    resolved = await resolve(conn, refs, for_subject=for_subject)
+    resolved = await resolve(conn, refs, for_subject=for_subject, reader_role=reader_role)
     for row, ref in zip(rows, refs, strict=True):
         row.update(
             resolved.get(

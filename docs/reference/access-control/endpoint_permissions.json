@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 252,
-  "registered_business_and_system_operations": 255,
+  "documented_operations": 253,
+  "registered_business_and_system_operations": 256,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -9545,6 +9545,46 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/exchange/transfer.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
       ]
+    },
+    {
+      "module": "delegations",
+      "method": "GET",
+      "path": "/delegations/candidates",
+      "summary": "Who I can hand my work to: the active accounts in my role",
+      "function": "candidates",
+      "operation_id": "candidates_delegations_candidates_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireStaff",
+      "resolved_gate": "RequireStaff",
+      "route_roles": [
+        "admin",
+        "dco",
+        "dco_admin",
+        "dpo",
+        "rco",
+        "rnd_user"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "OWN",
+        "admin": "OWN",
+        "dco": "OWN",
+        "dco_admin": "OWN",
+        "rco": "OWN",
+        "rnd_user": "OWN",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The active accounts in the caller's own role, not the caller: who they may hand their work to. Answered here because the users register is the DPO's and the administrator's alone (fix for the cover form offering nobody)."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/delegations.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/delegations.py"
+      ]
     }
   ],
   "amended": [
@@ -9567,6 +9607,11 @@
       "on": "2026-09-24",
       "commit": "S2-04",
       "note": "Three operations added with S2-04: GET/POST /restricted-countries and POST /restricted-countries/{country_uuid}/lift (resource restricted_country: DPO writes, Admin reads). The project export gains the s.16 check. Evidence links for these point at HEAD."
+    },
+    {
+      "on": "2026-09-24",
+      "commit": "UAT defect fixes",
+      "note": "GET /delegations/candidates added (the cover form's colleague list). Staff notification and audit links now drop a link into a section the reader's own menu lacks."
     }
   ]
 }

@@ -92,6 +92,29 @@ async def unseal_value(table: str, column: str, value: Any) -> Any:
     ]
 
 
+async def unseal_strings(values: list[Any]) -> dict[str, Any]:
+    """Many sealed strings opened in one call, each under its envelope's type.
+
+    For values that are not a table's own columns - a joined actor's name, the
+    pieces of a label naming a person - where there is no column to key by. The
+    answer maps each sealed string to its plaintext; anything unsealed, or with
+    an envelope this code cannot read, is left out and the caller keeps it.
+    """
+    from cmp.infrastructure.dkms.fields import type_of
+
+    typed = []
+    for value in dict.fromkeys(v for v in values if isinstance(v, str) and v.startswith(PREFIX)):
+        data_type = type_of(value)
+        if data_type is not None:
+            typed.append((value, data_type))
+    if not typed:
+        return {}
+    records = [{str(t): v} for v, t in typed]
+    key = {str(t): t for _, t in typed}
+    out = await decrypt_records(records, key, on_error="skip")
+    return {v: rec.get(str(t), v) for (v, t), rec in zip(typed, out, strict=True)}
+
+
 async def opened(table: str, row: Row | None) -> Row:
     """A row with its sealed columns opened, for the backend's own use.
 

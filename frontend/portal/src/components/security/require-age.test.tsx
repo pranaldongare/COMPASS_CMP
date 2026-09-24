@@ -54,6 +54,8 @@ describe("RequireAge", () => {
       );
       expect(screen.getByText("The page")).toBeInTheDocument();
       expect(screen.getByText(/we need your date of birth/i)).toBeInTheDocument();
+      // To a page that asks. The home page only redirects to My consents.
+      expect(screen.getByRole("link", { name: /add it now/i })).toHaveAttribute("href", "/account");
     },
   );
 

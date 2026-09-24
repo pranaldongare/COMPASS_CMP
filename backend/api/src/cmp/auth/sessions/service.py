@@ -166,8 +166,13 @@ def _from_mapping(m: dict[str, str]) -> Session:
     )
 
 
-async def load(token: str) -> Session | None:
-    """Resolve a cookie token to a live session, sliding the idle window."""
+async def load(token: str, *, touch: bool = True) -> Session | None:
+    """Resolve a cookie token to a live session, sliding the idle window.
+
+    `touch=False` for a request a page made by itself - a count polled every
+    minute. It is refused past either limit like any other, but it does not
+    slide the idle window: otherwise an open console tab is never idle.
+    """
     fp = token_fingerprint(token)
     r = get_redis()
     m = await r.hgetall(_skey(fp))
@@ -183,7 +188,7 @@ async def load(token: str) -> Session | None:
     # Slide the idle window. Writing on every request is one cheap HSET; the
     # alternative is a session that expires while someone is actively using it.
     now = time.time()
-    if now - session.last_seen_at > 5:  # coalesce chatty clients
+    if touch and now - session.last_seen_at > 5:  # coalesce chatty clients
         pipe = r.pipeline()
         pipe.hset(_skey(fp), "last_seen_at", str(now))
         pipe.expire(_skey(fp), max(1, int(session.expires_at - now)))

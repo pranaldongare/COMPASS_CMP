@@ -87,6 +87,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | Method | Endpoint | Anonymous | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | GET | `/delegations` | NO | ALL | ALL | NO | NO | NO | NO | NO |
+| GET | `/delegations/candidates` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO |
 | POST | `/delegations` | NO | COND | COND | COND | NO | NO | NO | NO |
 | GET | `/delegations/held` | NO | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
 | GET | `/delegations/mine` | NO | OWN | OWN | OWN | OWN | OWN | OWN | OWN |

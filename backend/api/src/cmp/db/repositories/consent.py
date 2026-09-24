@@ -428,9 +428,12 @@ async def list_for_project(
         params.append(date_to)
 
     status_sql = {
-        "withdrawn": "ca.is_withdrawal",
-        "consented": "NOT ca.is_withdrawal AND gr.granted_count > 0 AND gr.refused_count = 0",
-        "partial": "NOT ca.is_withdrawal AND gr.granted_count > 0 AND gr.refused_count > 0",
+        # Withdrawn is a withdrawal that left nothing granted. One purpose of
+        # several withdrawn is still partial: the rest go on, and can still be
+        # withdrawn themselves. `is_withdrawal` records the act, not the state.
+        "withdrawn": "ca.is_withdrawal AND gr.granted_count = 0",
+        "consented": "gr.granted_count > 0 AND gr.refused_count = 0",
+        "partial": "gr.granted_count > 0 AND gr.refused_count > 0",
         "declined": "NOT ca.is_withdrawal AND gr.granted_count = 0",
     }
     if status:
@@ -469,7 +472,7 @@ async def list_for_project(
                u.email AS subject_email, u.mobile AS subject_mobile,
                s.site_uuid, s.site_label,
                gr.granted_count, gr.refused_count,
-               CASE WHEN ca.is_withdrawal THEN 'withdrawn'
+               CASE WHEN ca.is_withdrawal AND gr.granted_count = 0 THEN 'withdrawn'
                     WHEN gr.granted_count = 0 THEN 'declined'
                     WHEN gr.refused_count > 0 THEN 'partial'
                     ELSE 'consented' END AS consent_status
@@ -626,9 +629,12 @@ async def list_all_consents(
         params.append(project_uuid)
 
     status_sql = {
-        "withdrawn": "ca.is_withdrawal",
-        "consented": "NOT ca.is_withdrawal AND gr.granted_count > 0 AND gr.refused_count = 0",
-        "partial": "NOT ca.is_withdrawal AND gr.granted_count > 0 AND gr.refused_count > 0",
+        # Withdrawn is a withdrawal that left nothing granted. One purpose of
+        # several withdrawn is still partial: the rest go on, and can still be
+        # withdrawn themselves. `is_withdrawal` records the act, not the state.
+        "withdrawn": "ca.is_withdrawal AND gr.granted_count = 0",
+        "consented": "gr.granted_count > 0 AND gr.refused_count = 0",
+        "partial": "gr.granted_count > 0 AND gr.refused_count > 0",
         "declined": "NOT ca.is_withdrawal AND gr.granted_count = 0",
     }
     if status:
@@ -665,7 +671,7 @@ async def list_all_consents(
             u.email AS subject_email, u.mobile AS subject_mobile,
             p.project_uuid, p.project_name, s.site_uuid, s.site_label,
             gr.granted_count, gr.refused_count,
-            CASE WHEN ca.is_withdrawal THEN 'withdrawn'
+            CASE WHEN ca.is_withdrawal AND gr.granted_count = 0 THEN 'withdrawn'
                  WHEN gr.granted_count = 0 THEN 'declined'
                  WHEN gr.refused_count > 0 THEN 'partial'
                  ELSE 'consented' END AS consent_status

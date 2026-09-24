@@ -91,9 +91,10 @@ export default function ConsentDetailPage() {
   const granted = (grants.data ?? []).filter((g) => g.granted).length;
   const refused = (grants.data ?? []).length - granted;
 
-  // The derived status, computed the same way the register computes it. A
-  // withdrawal supersedes; otherwise it is what she actually agreed to.
-  const status = record.is_withdrawal
+  // The derived status, computed the same way the register computes it:
+  // withdrawn only when a withdrawal left nothing granted. One purpose of
+  // several withdrawn is partial - the rest go on.
+  const status = record.is_withdrawal && granted === 0
     ? "withdrawn"
     : granted === 0
       ? "declined"

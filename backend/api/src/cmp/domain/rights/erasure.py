@@ -105,6 +105,14 @@ async def execute(conn: Conn, request: Row, item: Row, *, actor_id: int | None) 
         )
         return item
 
+    # A hold that stopped this item has since been released: say so on the
+    # hold's own line, so nothing reading the latest attempt at each store goes
+    # on showing it held.
+    stopped = latest.get(LEGAL_HOLD)
+    if stopped and stopped.get("status") == "held":
+        released = dict(stopped.get("detail") or {}).get("hold")
+        await _note(conn, latest, item_id, LEGAL_HOLD, "done", {"released": released}, actor_id)
+
     decision = str(item["decision"])
     for store in STORES[decision]:
         if latest.get(store, {}).get("status") == "done":

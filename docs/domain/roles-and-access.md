@@ -209,7 +209,13 @@ open.
   not reach.
 
 The rule the bell keeps is the dashboard's: no link in it leads to a page
-that answers 403 or 404 for the person reading it.
+that answers 403 or 404 for the person reading it. It is held where the link
+is made: a staff link is kept only when the reader's own menu (`nav_for`) has
+the section it lands in, so a DCO's "Notice published" and an R&D user's
+"Export generated" read the same but carry no link to a section the role does
+not have. The same holds on the dashboard and in the audit trail, and a test
+checks every link template against the pages the console and portal actually
+have.
 
 ## Finding a person in the register
 
@@ -240,7 +246,10 @@ The console calls it **Delegate**. A member of staff arranges cover for a period
 acts on the delegator's rows for that period only, in their own name, with
 every action audited as theirs. Cover ends at the end of the period or when
 either party ends it. The administrator can arrange it for anyone; nobody can
-arrange cover that widens what the delegator themselves could do.
+arrange cover that widens what the delegator themselves could do. The form
+offers the colleagues `GET /delegations/candidates` names - the active
+accounts in the caller's role - because the users register it once read is
+the DPO's and the administrator's alone, and everyone else was offered nobody.
 
 ## How the matrix is kept honest
 

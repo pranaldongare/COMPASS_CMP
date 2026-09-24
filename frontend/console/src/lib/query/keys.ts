@@ -142,6 +142,7 @@ export const keys = {
     mine: ["delegations", "mine"] as const,
     held: ["delegations", "held"] as const,
     all: ["delegations", "all"] as const,
+    candidates: ["delegations", "candidates"] as const,
   },
 
   /** The words of every message the platform sends. One list; every edit

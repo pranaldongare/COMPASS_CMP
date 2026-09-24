@@ -22,6 +22,7 @@ from cmp.api.dependencies.csrf import UNSAFE_METHODS
 from cmp.auth.sessions import service as sessions
 from cmp.auth.sessions.service import Session
 from cmp.core.config import settings
+from cmp.core.constants import BACKGROUND_HEADER
 from cmp.core.errors import Forbidden, Unauthenticated
 from cmp.core.security import csrf_matches
 
@@ -31,7 +32,9 @@ async def session_from_request(request: Request) -> Session:
     if not token:
         raise Unauthenticated("Sign in to continue")
 
-    session = await sessions.load(token)
+    # A page's own background poll is authenticated but is not activity.
+    background = request.headers.get(BACKGROUND_HEADER) == "1"
+    session = await sessions.load(token, touch=not background)
     if session is None:
         raise Unauthenticated("Your session has expired")
 

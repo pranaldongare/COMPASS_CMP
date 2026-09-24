@@ -334,7 +334,6 @@ async def consented_subjects(conn: Conn, *, project_id: int, site_id: int) -> li
         JOIN purpose p       ON p.purpose_id = g.purpose_id
         WHERE n.project_id = %s
           AND cl.site_id = %s
-          AND NOT ca.is_withdrawal
         GROUP BY u.id, u.uuid, u.full_name, u.email, u.mobile, u.organization_id,
                  u.person_type, ca.consent_id, ca.consent_uuid, ca.affirmative_action_at,
                  ca.notice_content_hash, n.notice_uuid, n.notice_code, n.version

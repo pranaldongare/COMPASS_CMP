@@ -1,7 +1,7 @@
 # CMP backend
 
 The API of the consent management platform: FastAPI 0.141 on Python 3.12,
-PostgreSQL 16, Redis 7, Celery 5. 252 endpoints over 35 tables, every query
+PostgreSQL 16, Redis 7, Celery 5. 253 endpoints over 35 tables, every query
 hand-written SQL over psycopg 3, every migration raw DDL. Personal fields are
 sealed through the key service in [`../dkms`](../dkms) before they reach a
 table. The repository-wide documentation is under

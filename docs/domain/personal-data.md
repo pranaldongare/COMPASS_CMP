@@ -5,7 +5,7 @@ that accepts or returns it. Written for the questions that have to be answered
 quickly and exactly: what do we hold, where does it go, who can see it, and
 which call would expose it.
 
-The counts here are measured, not remembered. **166 of the API's 252
+The counts here are measured, not remembered. **167 of the API's 253
 operations** carry personal data; **20 of those need no session**. They come
 from joining three artefacts the repository already keeps current, and the
 last section says how to redo the join after a change.
@@ -291,7 +291,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-166 of 252 operations accept or return personal data. Each table gives the
+167 of 253 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -511,12 +511,13 @@ selected.
 
 ### Delegation — `/delegations/*`
 
-4 operations carry personal data.
+5 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
 | GET | `/delegations` | DPO every row, Admin every row | — | `delegate_email`, `delegate_name`, `delegate_role`, `delegate_uuid`, `delegator_email`, `delegator_name`, `delegator_role`, `delegator_uuid`, `reason` |
 | POST | `/delegations` | DPO conditional, Admin conditional, DCO conditional | `delegate_user_uuid`, `delegator_user_uuid`, `reason` | — |
+| GET | `/delegations/candidates` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows | — | `email`, `full_name` |
 | GET | `/delegations/held` | any signed-in session, own record | — | `delegate_email`, `delegate_name`, `delegate_role`, `delegate_uuid`, `delegator_email`, `delegator_name`, `delegator_role`, `delegator_uuid`, `reason` |
 | GET | `/delegations/mine` | any signed-in session, own record | — | `delegate_email`, `delegate_name`, `delegate_role`, `delegate_uuid`, `delegator_email`, `delegator_name`, `delegator_role`, `delegator_uuid`, `reason` |
 

@@ -121,7 +121,10 @@ function ConsentCard({
   const [trailOpen, setTrailOpen] = React.useState(false);
   const trail = useMyConsentTrail(trailOpen ? consent.consent_uuid : undefined);
 
-  const active = !consent.is_withdrawal && consent.granted_count > 0;
+  // Anything still granted can still be withdrawn - including what remains
+  // after she withdrew one purpose of several. `is_withdrawal` records that
+  // act; it does not mean nothing is left.
+  const active = consent.granted_count > 0;
 
   async function doWithdraw(purposes: string[] | "all") {
     try {
@@ -157,7 +160,7 @@ function ConsentCard({
         <StatusBadge
           kind="consent"
           value={
-            consent.is_withdrawal
+            consent.is_withdrawal && consent.granted_count === 0
               ? "withdrawn"
               : consent.granted_count === 0
                 ? "declined"

@@ -460,6 +460,40 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **Defects found preparing the first user acceptance cycle (13).**
+  - *Withdrawing one purpose is not withdrawing the consent.* Every place that
+    turned an artefact into a status read `is_withdrawal` alone, so a person
+    who withdrew one of two purposes was shown, counted and exported as
+    withdrawn, the purpose she still agreed to dropped out of exports, and the
+    portal hid the control to withdraw the rest. Withdrawn now means a
+    withdrawal left nothing granted - in the register, the project counts, the
+    dashboards, exports and the rights brief, and on both frontends.
+  - *A released legal hold lets the erasure finish.* The hold item stayed
+    `held` after release, so the scope never completed; the next run records
+    it done with the hold it waited for, and releasing a hold re-runs the
+    erasures it had stopped. The console reads a done hold as "released".
+  - *Cover can be arranged by the people who arrange it.* The grant-cover form
+    listed colleagues from the users register, which only the DPO and the
+    administrator can read, so a DCO or RCO was offered nobody.
+    `GET /delegations/candidates` names the active accounts in the caller's own
+    role.
+  - *The audit CSV opens names.* Actor, subject and a label naming someone
+    were written sealed (`SE::...`) into a file read outside the platform; they
+    are opened in one key-service call for the file (`unseal_strings`).
+  - *No link to a page the reader cannot open.* The bell, the dashboards and
+    the audit trail linked every role to the same page for an event; a link now
+    survives only when the reader's menu has its section. A subject's own
+    account events link to `/account`, and a cover arrangement to `/delegate`.
+  - *A polling tab no longer keeps a session awake.* The console's timed
+    refreshes send `X-CMP-Background: 1`, which authenticates without sliding
+    the idle window.
+  - *Every role can be chosen.* The role list the console builds its forms
+    from lacked DCO Admin and RCO.
+  - *The portal says why a minor cannot sign up* on the date-of-birth field
+    instead of a generic failure, the age prompt's "Add it now" goes to the
+    account page, an under-18 account reads "we cannot record consent from
+    you", and a nomination she is named in shows its real state rather than
+    "In place" for every one.
 - **Exports derive the holders of a person's data again.** Holder derivation
   for a rights request read the processor from the export's site, and since
   exports became one per project (0010) they name no site - so no export had

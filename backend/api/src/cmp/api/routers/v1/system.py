@@ -201,7 +201,9 @@ async def version() -> dict[str, Any]:
 # Mirrors the enums in DATA-MODEL.md. Kept in one place so a new status is one
 # edit here rather than a hunt through the frontend.
 _ENUMS: dict[str, list[str]] = {
-    "user_role": ["dpo", "dco", "rnd_user", "admin", "data_subject"],
+    # Every role, as `Role` has them - a test holds the two together. DCO Admin
+    # and RCO were missing, so the console could not provision either.
+    "user_role": ["dpo", "dco", "dco_admin", "rco", "rnd_user", "admin", "data_subject"],
     "person_type": ["external", "employee", "ex_employee", "vendor"],
     "user_status": ["pending", "active", "suspended", "deactivated"],
     # Reachable, not every value the type carries. `under_process` survives in
@@ -276,6 +278,8 @@ _ENUMS: dict[str, list[str]] = {
 _LABELS: dict[str, str] = {
     "dpo": "Data Protection Officer",
     "dco": "Data Collection Owner",
+    "dco_admin": "DCO Admin",
+    "rco": "R&D Collection Owner",
     "rnd_user": "R&D User",
     "admin": "Administrator",
     "data_subject": "Data Subject",

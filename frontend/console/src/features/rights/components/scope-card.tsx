@@ -83,6 +83,7 @@ function executionText(e: RightsItemExecution): string {
   const reason = typeof e.detail.reason === "string" ? e.detail.reason : "";
   switch (e.status) {
     case "done":
+      if (e.store === "legal_hold") return "released";
       return e.store === "holder_copy" ? "confirmed gone by the holder" : "cleared";
     case "waiting":
       return WAITING_COPY[reason] ?? "waiting";

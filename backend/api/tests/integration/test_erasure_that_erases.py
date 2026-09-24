@@ -241,6 +241,27 @@ async def test_a_held_asset_is_left_alone_until_the_hold_is_released(
     await holds.release(conn, hold_uuid=str(hold["hold_uuid"]), actor_id=dpo)
     done = await _item(conn, row, item)
     assert done["executed_at"] is not None and await _pointer(conn, ac) is None
+    # The hold's own line moves on too: a card reading the latest attempt at
+    # each store must not go on saying "held" about an erased item.
+    latest = await repo.latest_executions(conn, int(item["item_id"]))
+    assert latest["legal_hold"]["status"] == "done"
+    assert latest["legal_hold"]["detail"] == {"released": str(hold["hold_uuid"])}
+
+
+async def test_a_hold_placed_after_apply_stops_the_item_at_once(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    """Applied before the hold: the item is already waiting on its holder, and
+    the hold is recorded against it the moment it is placed, not at the next
+    sweep."""
+    dpo = seeded["users"]["dpo"]["id"]
+    row, _holder, item, _ac = await _started(conn, seeded, ref="XD")
+    await _decide_and_apply(conn, seeded, row, item, "erase")
+    await holds.place(
+        conn, asset_uuid=str(item["asset_uuid"]), subject_uuid=None, reason="Matter", actor_id=dpo
+    )
+    latest = await repo.latest_executions(conn, int(item["item_id"]))
+    assert latest["legal_hold"]["status"] == "held"
 
 
 async def test_a_hold_on_the_person_covers_every_item_of_hers(

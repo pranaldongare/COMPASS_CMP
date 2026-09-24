@@ -124,15 +124,16 @@ export default function AccountPage() {
               <DescriptionItem term="Status">
                 <StatusBadge kind="user" value={me.status} />
               </DescriptionItem>
-              {/* The input to whether consent for her has to come from a
-                  parent (s.9). */}
+              {/* The input to s.9. Until a guardian route exists no consent
+                  is recorded from a child, and the badge says so without
+                  suggesting a route that is not there (S2-01). */}
               <DescriptionItem term="Date of birth">
                 {me.dob ? (
                   <span className="flex flex-wrap items-center gap-2">
                     {formatDate(me.dob)}
                     {me.is_minor && (
                       <Badge tone="warning">
-                        Under 18 — consent must come from a parent or guardian
+                        Under 18 — we cannot record consent from you
                       </Badge>
                     )}
                   </span>

@@ -56,7 +56,9 @@ export function RequireAge({ children }: { children: React.ReactNode }) {
         <Alert tone="info" className="mb-4" title="We need your date of birth">
           You can withdraw a consent or make a request without it, but we need it before you
           give a new consent.{" "}
-          <Link href="/" className="underline underline-offset-2">
+          {/* The account page is held for the answer, so it asks there. The
+              home page only redirects to My consents, which does not. */}
+          <Link href="/account" className="underline underline-offset-2">
             Add it now
           </Link>
           .

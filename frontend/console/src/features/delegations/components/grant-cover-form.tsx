@@ -20,8 +20,8 @@ import { FormError } from "@/components/forms";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Alert, Button, Field, Input, Select, Textarea } from "@/components/ui/primitives";
 import { useGrantDelegation } from "@/features/delegations/mutations";
-import { useUsers } from "@/features/users";
-import { useAuth, useToast } from "@/providers";
+import { useCoverCandidates } from "@/features/delegations/queries";
+import { useToast } from "@/providers";
 
 /**
  * The earliest end date worth offering: tomorrow.
@@ -35,7 +35,6 @@ function tomorrow(): string {
 }
 
 export function GrantCoverForm({ onDone }: { onDone: () => void }) {
-  const { me } = useAuth();
   const toast = useToast();
   const grant = useGrantDelegation();
 
@@ -45,10 +44,11 @@ export function GrantCoverForm({ onDone }: { onDone: () => void }) {
   const [error, setError] = React.useState<string | null>(null);
   const [minEnd] = React.useState(tomorrow);
 
-  // Same role, active, and not the caller. The API enforces all three; this
-  // only avoids offering a choice that would be refused.
-  const users = useUsers({ role: me?.role, status: "active", limit: 100 });
-  const candidates = (users.data?.items ?? []).filter((u) => u.uuid !== me?.uuid);
+  // Same role, active, and not the caller - the server's own list, asked of
+  // the delegations API. The users register it used to read is the DPO's and
+  // the administrator's alone, so everyone else was offered nobody.
+  const users = useCoverCandidates();
+  const candidates = users.data ?? [];
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();

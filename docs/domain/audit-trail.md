@@ -84,7 +84,10 @@ data principal whose events are all withdrawals.
 up to 10,000 of them, with the recorded details as JSON in one column and
 every free-text cell neutralised against spreadsheet formulas. The download
 is itself recorded in the trail, as `audit.exported`, with the filters used:
-taking a copy of the evidence is an act on it.
+taking a copy of the evidence is an act on it. The file is read outside the
+platform, so the names in it - actor, subject, and a label that names someone
+- are opened on the way in, in one call for the whole file, as the data
+export's are; contacts were never in it.
 
 ## Verify chain
 

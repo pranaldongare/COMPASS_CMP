@@ -3,7 +3,7 @@
  */
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   getRequest,
@@ -74,9 +74,12 @@ export function useRequestsAttention() {
 /* --------------------------------------------------- the respondent's side */
 
 export function useMyTickets() {
+  const qc = useQueryClient();
   return useQuery<MyTicket[], ApiError>({
     queryKey: keys.tickets.mine,
-    queryFn: listMyTickets,
+    // The first load is somebody opening the page; the timed refreshes after
+    // it are the page on its own, and must not keep the session awake.
+    queryFn: () => listMyTickets(qc.getQueryData(keys.tickets.mine) !== undefined),
     // Unread counts and dates change while the page is open.
     refetchInterval: 60_000,
     refetchOnWindowFocus: true,
@@ -92,9 +95,11 @@ const THREAD_REFRESH_MS = 20_000;
 
 /** Enabled only while the thread is open on screen. */
 export function useHolderThread(uuid: Uuid, holderUuid: Uuid | undefined) {
+  const qc = useQueryClient();
+  const key = keys.rights.thread(uuid, holderUuid ?? "");
   return useQuery<HolderThread, ApiError>({
-    queryKey: keys.rights.thread(uuid, holderUuid ?? ""),
-    queryFn: () => holderThread(uuid, holderUuid!),
+    queryKey: key,
+    queryFn: () => holderThread(uuid, holderUuid!, qc.getQueryData(key) !== undefined),
     enabled: Boolean(holderUuid),
     staleTime: 0,
     refetchInterval: THREAD_REFRESH_MS,
@@ -103,9 +108,11 @@ export function useHolderThread(uuid: Uuid, holderUuid: Uuid | undefined) {
 }
 
 export function useMyTicket(holderUuid: Uuid | undefined) {
+  const qc = useQueryClient();
+  const key = keys.tickets.detail(holderUuid ?? "");
   return useQuery<TicketDetail, ApiError>({
-    queryKey: keys.tickets.detail(holderUuid ?? ""),
-    queryFn: () => myTicket(holderUuid!),
+    queryKey: key,
+    queryFn: () => myTicket(holderUuid!, qc.getQueryData(key) !== undefined),
     enabled: Boolean(holderUuid),
     staleTime: 0,
     refetchInterval: THREAD_REFRESH_MS,

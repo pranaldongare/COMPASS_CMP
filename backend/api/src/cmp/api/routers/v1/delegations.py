@@ -75,6 +75,29 @@ class DelegationGranted(Out):
     message: str
 
 
+class CoverCandidateOut(Out):
+    uuid: UUID
+    #: Sealed, opened by the console.
+    full_name: str
+    email: str | None
+
+
+@router.get(
+    "/candidates",
+    response_model=list[CoverCandidateOut],
+    summary="Who I can hand my work to: the active accounts in my role",
+)
+async def candidates(principal: RequireStaff) -> list[dict[str, Any]]:
+    """The cover form's one question, answered for whoever may arrange cover.
+
+    It used to read the users register, which only the DPO and the
+    administrator may - so everyone else was told there was nobody to delegate
+    to. Same role, active, not the caller: the rules `grant` enforces.
+    """
+    async with connection() as conn:
+        return await repo.cover_candidates(conn, role=principal.role, user_id=principal.user_id)
+
+
 @router.post("", response_model=DelegationGranted, status_code=201, summary="Arrange cover")
 async def grant(body: DelegationIn, principal: RequireStaff) -> dict[str, Any]:
     """Arrange for somebody to cover your work, in the same role.

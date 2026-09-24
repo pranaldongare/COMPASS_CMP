@@ -8,7 +8,7 @@
  * the answer back.
  */
 
-import { apiDownload, apiGet, apiPost, apiPut, queryString } from "@/lib/api";
+import { BACKGROUND, apiDownload, apiGet, apiPost, apiPut, queryString } from "@/lib/api";
 import { config } from "@/lib/config";
 import type { ListFilters } from "@/lib/query";
 import type {
@@ -55,8 +55,9 @@ export function getRequestTransitions(
 }
 
 /** The number on the office's bell: open tickets a team has written on and nobody has read. */
+/** A standing count, polled: never activity. */
 export function requestsAttention(): Promise<{ threads_unread: number }> {
-  return apiGet<{ threads_unread: number }>("/requests/attention");
+  return apiGet<{ threads_unread: number }>("/requests/attention", BACKGROUND);
 }
 
 export function getRequestTrail(uuid: Uuid): Promise<AuditEntry[]> {
@@ -138,8 +139,11 @@ export const logContact = (uuid: Uuid, holderUuid: Uuid, body: ContactInput) =>
   apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/contact`), body);
 
 /** The ticket's thread as the office reads it. Reading marks it read. */
-export const holderThread = (uuid: Uuid, holderUuid: Uuid) =>
-  apiGet<HolderThread>(action(uuid, `holders/${holderUuid}/thread`));
+export const holderThread = (uuid: Uuid, holderUuid: Uuid, background = false) =>
+  apiGet<HolderThread>(
+    action(uuid, `holders/${holderUuid}/thread`),
+    background ? BACKGROUND : undefined,
+  );
 export interface MessageInput {
   body: string;
   evidence: File | null;
@@ -243,8 +247,8 @@ export function downloadResponse(uuid: Uuid) {
    The respondent's side - tickets addressed to me
    =========================================================================== */
 
-export function listMyTickets(): Promise<MyTicket[]> {
-  return apiGet<MyTicket[]>("/tickets");
+export function listMyTickets(background = false): Promise<MyTicket[]> {
+  return apiGet<MyTicket[]>("/tickets", background ? BACKGROUND : undefined);
 }
 
 export function returnMyTicket(
@@ -258,8 +262,8 @@ export function returnMyTicket(
 }
 
 /** One ticket with its brief and thread. Reading marks the office's messages read. */
-export function myTicket(holderUuid: Uuid): Promise<TicketDetail> {
-  return apiGet<TicketDetail>(`/tickets/${holderUuid}`);
+export function myTicket(holderUuid: Uuid, background = false): Promise<TicketDetail> {
+  return apiGet<TicketDetail>(`/tickets/${holderUuid}`, background ? BACKGROUND : undefined);
 }
 
 export function messageOffice(holderUuid: Uuid, input: MessageInput): Promise<TicketDetail> {

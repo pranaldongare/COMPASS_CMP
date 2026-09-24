@@ -61,7 +61,7 @@ hash and no email is written
 rows from before that change stand as written, because the trail is
 hash-chained and cannot be rewritten.
 
-## 2. API endpoints that carry PII — 166 endpoints in 18 modules
+## 2. API endpoints that carry PII — 167 endpoints in 18 modules
 
 Every GET, POST, PUT, PATCH and DELETE whose request or response includes a
 personal field. *In* is what the caller sends (body, path and query); *out* is
@@ -248,12 +248,13 @@ these need no session; they are marked **public**.
 | POST | `/users/{user_uuid}/role` | `reason`, `role`, `user_uuid` | — |
 | DELETE | `/users/{user_uuid}/sessions` | `user_uuid` | — |
 
-### Delegations (`/delegations`) — 4 endpoints
+### Delegations (`/delegations`) — 5 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
 | GET | `/delegations` | — | `delegate_email`, `delegate_name`, `delegate_role`, `delegate_uuid`, `delegator_email`, `delegator_name`, `delegator_role`, `delegator_uuid`, `reason` |
 | POST | `/delegations` | `delegate_user_uuid`, `delegator_user_uuid`, `reason` | — |
+| GET | `/delegations/candidates` | — | `email`, `full_name` |
 | GET | `/delegations/held` | — | `delegate_email`, `delegate_name`, `delegate_role`, `delegate_uuid`, `delegator_email`, `delegator_name`, `delegator_role`, `delegator_uuid`, `reason` |
 | GET | `/delegations/mine` | — | `delegate_email`, `delegate_name`, `delegate_role`, `delegate_uuid`, `delegator_email`, `delegator_name`, `delegator_role`, `delegator_uuid`, `reason` |
 

@@ -151,6 +151,11 @@ class TestTheAuditTrail:
         assert world.principal_mobile not in text
         assert plain(world.dpo.user["email"]) not in text
         assert "127.0.0.1" not in text, "addresses travel as their index"
+        # The file leaves the platform for a person to read: the names in it -
+        # actor, subject, a label naming someone - are opened on the way in, as
+        # the data export's are. Contacts were never in it and still are not.
+        assert "SE::" not in text, "a sealed name reached the audit file"
+        assert any(r["subject_name"].startswith("Principal ") for r in rows)
 
 
 class TestTheMessageWords:

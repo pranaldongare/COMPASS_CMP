@@ -1,19 +1,60 @@
 # Delegations API
 
-Generated from `backend/api/openapi.json`. **5 operations.**
+Generated from `backend/api/openapi.json`. **6 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
 ## Contents
 
-1. [`GET /delegations`](#1_get_delegations)
-2. [`POST /delegations`](#2_post_delegations)
-3. [`DELETE /delegations/{delegation_uuid}`](#3_delete_delegations_delegation_uuid)
-4. [`GET /delegations/mine`](#4_get_delegations_mine)
-5. [`GET /delegations/held`](#5_get_delegations_held)
+1. [`GET /delegations/candidates`](#1_get_delegations_candidates)
+2. [`GET /delegations`](#2_get_delegations)
+3. [`POST /delegations`](#3_post_delegations)
+4. [`DELETE /delegations/{delegation_uuid}`](#4_delete_delegations_delegation_uuid)
+5. [`GET /delegations/mine`](#5_get_delegations_mine)
+6. [`GET /delegations/held`](#6_get_delegations_held)
 
-<a id="1_get_delegations"></a>
-## 1. `GET /delegations` — Every live arrangement
+<a id="1_get_delegations_candidates"></a>
+## 1. `GET /delegations/candidates` — Who I can hand my work to: the active accounts in my role
+
+### API
+
+- **Operation ID:** `candidates_delegations_candidates_get`
+- **Access:** Role-controlled `delegations` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+The cover form's one question, answered for whoever may arrange cover.
+
+It used to read the users register, which only the DPO and the
+administrator may - so everyone else was told there was nobody to delegate
+to. Same role, active, not the caller: the rules `grant` enforces.
+
+### Validation
+
+No path, query, header, or cookie parameters are declared for this operation.
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | array of [`CoverCandidateOut`](#schema-covercandidateout) |
+
+**Example `200` `application/json` response:**
+
+```json
+[
+  {
+    "uuid": "00000000-0000-4000-8000-000000000000",
+    "full_name": "string",
+    "email": "string"
+  }
+]
+```
+
+<a id="2_get_delegations"></a>
+## 2. `GET /delegations` — Every live arrangement
 
 ### API
 
@@ -63,8 +104,8 @@ No request body.
 ]
 ```
 
-<a id="2_post_delegations"></a>
-## 2. `POST /delegations` — Arrange cover
+<a id="3_post_delegations"></a>
+## 3. `POST /delegations` — Arrange cover
 
 ### API
 
@@ -134,8 +175,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="3_delete_delegations_delegation_uuid"></a>
-## 3. `DELETE /delegations/{delegation_uuid}` — End cover now
+<a id="4_delete_delegations_delegation_uuid"></a>
+## 4. `DELETE /delegations/{delegation_uuid}` — End cover now
 
 ### API
 
@@ -191,8 +232,8 @@ No request body.
 }
 ```
 
-<a id="4_get_delegations_mine"></a>
-## 4. `GET /delegations/mine` — Cover I have arranged
+<a id="5_get_delegations_mine"></a>
+## 5. `GET /delegations/mine` — Cover I have arranged
 
 ### API
 
@@ -239,8 +280,8 @@ No request body.
 ]
 ```
 
-<a id="5_get_delegations_held"></a>
-## 5. `GET /delegations/held` — Cover I am providing
+<a id="6_get_delegations_held"></a>
+## 6. `GET /delegations/held` — Cover I am providing
 
 ### API
 

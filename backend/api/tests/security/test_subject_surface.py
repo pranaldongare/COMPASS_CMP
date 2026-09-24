@@ -28,7 +28,7 @@ from cmp.db.sql import fetch_one
 
 #: What a data principal's console actually consists of. Everything else in the
 #: product is staff-facing, and a link to any of it is the bug.
-HER_PAGES = ("/my-consents", "/my-requests", "/profile", "/rights", "/dashboard")
+HER_PAGES = ("/my-consents", "/my-requests", "/account", "/notifications", "/rights")
 
 
 def test_no_entity_can_send_her_to_a_staff_console() -> None:
@@ -48,7 +48,7 @@ def test_no_entity_can_send_her_to_a_staff_console() -> None:
 def test_her_own_account_does_not_resolve_to_the_account_register() -> None:
     """The exact route reported. `/users` is the administrator's screen."""
     assert _SPECS["auth_user"].href == "/users", "staff still go to the register"
-    assert _SPECS["auth_user"].subject_href == "/profile"
+    assert _SPECS["auth_user"].subject_href == "/account"
 
 
 def test_an_unmapped_entity_gives_her_no_link_at_all() -> None:
@@ -81,7 +81,7 @@ class TestTheResolverPicksByReader:
         rows = await entity_repo.attach(
             conn, await self._subject_event(conn, seeded), for_subject=True
         )
-        assert rows[0]["entity_href"] == "/profile"
+        assert rows[0]["entity_href"] == "/account"
 
     async def test_staff_get_the_register(self, conn: Any, seeded: dict[str, Any]) -> None:
         """The same row, the same label, a different link. Staff have business

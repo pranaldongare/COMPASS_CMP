@@ -275,6 +275,10 @@ class TestDelegationAndDashboard:
     ) -> None:
         dco = await session_for("dco")
         cover = await session_for("dco")
+        # The form's list: a DCO sees the other DCO, sealed, and not herself.
+        offered = await call(http, "GET", "/delegations/candidates", session=dco)
+        uuids = [c["uuid"] for c in offered.json()]
+        assert cover.uuid in uuids and dco.uuid not in uuids
         made = await call(
             http,
             "POST",
