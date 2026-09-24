@@ -36,7 +36,7 @@ import {
   type ResetConfirmValues,
   type ResetRequestValues,
 } from "@/features/auth";
-import { ApiError } from "@/lib/errors";
+import { ApiError, unexpectedErrorMessage } from "@/lib/errors";
 import { useHydrated } from "@/lib/security";
 
 export default function ResetPage() {
@@ -153,7 +153,7 @@ function RequestStep({ onSent }: { onSent: (email: string) => void }) {
       setError(
         err instanceof ApiError
           ? err.userMessage()
-          : "Could not reach the server. Check your connection and try again.",
+          : unexpectedErrorMessage(err, "sign-in/reset"),
       );
     }
   });
@@ -226,7 +226,7 @@ function ConfirmStep({ email, onStartOver }: { email: string; onStartOver: () =>
         }
         if (Object.keys(fields).length === 0) setError(err.userMessage());
       } else {
-        setError("Could not reach the server. Check your connection and try again.");
+        setError(unexpectedErrorMessage(err, "sign-in/reset"));
       }
     }
   });

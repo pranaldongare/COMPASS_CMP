@@ -129,3 +129,23 @@ export function networkError(message = "Network request failed"): ApiError {
 export function isApiError(value: unknown): value is ApiError {
   return value instanceof ApiError;
 }
+
+/**
+ * What to say about an error that is *not* an `ApiError`.
+ *
+ * Every failure to reach the server - no answer, a timeout, a refused
+ * connection, a CORS block - is turned into an `ApiError` (status 0) by the
+ * API client before any page sees it. So anything else a form catches is a
+ * fault in the page's own code, usually *after* the server answered: a
+ * response shaped differently than the page expected, a value it did not
+ * guard. Reporting that as "Could not reach the server" sent people to check
+ * their network and connection settings while the request had in fact
+ * succeeded - and threw the one clue away.
+ *
+ * So the error is logged whole, for whoever opens DevTools, and the person is
+ * told what actually happened.
+ */
+export function unexpectedErrorMessage(error: unknown, where: string): string {
+  console.error(`[${where}] the page failed after the server answered:`, error);
+  return "Something went wrong on this page. Reload and try again; if it keeps happening, the browser console has the details.";
+}

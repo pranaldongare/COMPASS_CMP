@@ -28,7 +28,7 @@ import { AuthPageGate } from "@/components/security";
 import { Alert, Button, Field, Input } from "@/components/ui/primitives";
 import { signInWithPassword } from "@/features/auth";
 import { config } from "@/lib/config";
-import { ApiError } from "@/lib/errors";
+import { ApiError, unexpectedErrorMessage } from "@/lib/errors";
 import { safeRedirectPath, useHydrated } from "@/lib/security";
 import { useAuth } from "@/providers";
 
@@ -131,7 +131,7 @@ function StaffForm() {
           );
         }
       } else {
-        setFormError("Could not reach the server. Check your connection.");
+        setFormError(unexpectedErrorMessage(error, "sign-in"));
       }
     }
   });

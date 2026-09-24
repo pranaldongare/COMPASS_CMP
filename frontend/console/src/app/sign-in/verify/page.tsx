@@ -19,7 +19,7 @@ import { AuthLayout } from "@/components/layout/auth-layout";
 import { AuthPageGate } from "@/components/security";
 import { Alert, Button, Field, Input } from "@/components/ui/primitives";
 import { resendMfa, verifyMfa } from "@/features/auth";
-import { ApiError } from "@/lib/errors";
+import { ApiError, unexpectedErrorMessage } from "@/lib/errors";
 import { safeRedirectPath, useHydrated } from "@/lib/security";
 import { useAuth } from "@/providers";
 
@@ -105,7 +105,7 @@ function VerifyForm() {
           router.replace(signInHref);
         }
       } else {
-        setError("Could not reach the server.");
+        setError(unexpectedErrorMessage(err, "sign-in/verify"));
       }
     } finally {
       setBusy(false);

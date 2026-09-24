@@ -29,11 +29,13 @@ import {
 import type { ZodType, ZodTypeDef } from "zod";
 
 import { Alert } from "@/components/ui/primitives";
-import { ApiError } from "@/lib/errors";
+import { ApiError, unexpectedErrorMessage } from "@/lib/errors";
 import { formatBytes } from "@/lib/format";
 
-export interface ApiFormResult<TOut extends FieldValues, TIn extends FieldValues = TOut>
-  extends UseFormReturn<TIn, unknown, TOut> {
+export interface ApiFormResult<
+  TOut extends FieldValues,
+  TIn extends FieldValues = TOut,
+> extends UseFormReturn<TIn, unknown, TOut> {
   /** Error that belongs to the form as a whole, not to one field. */
   formError: string | null;
   setFormError: (message: string | null) => void;
@@ -74,7 +76,7 @@ export function useApiForm<TOut extends FieldValues, TIn extends FieldValues>(
           await handler(values);
         } catch (error) {
           if (!(error instanceof ApiError)) {
-            setFormError("Could not reach the server. Check your connection and try again.");
+            setFormError(unexpectedErrorMessage(error, "form"));
             return;
           }
 
@@ -167,7 +169,7 @@ export function CheckboxGroup({
         {grouped.map(([group, items]) => (
           <div key={group}>
             {group && (
-              <p className="mb-1.5 text-2xs font-semibold uppercase tracking-wide text-text-subtle">
+              <p className="mb-1.5 text-2xs font-semibold tracking-wide text-text-subtle uppercase">
                 {group}
               </p>
             )}

@@ -5,11 +5,14 @@
  * up as the wrong message on every screen at once - or, worse, as a retry loop
  * against an endpoint that is refusing on purpose.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { ApiError, isApiError, networkError } from "./api-error";
+import { ApiError, isApiError, networkError, unexpectedErrorMessage } from "./api-error";
 
-function make(status: number, body: Partial<ConstructorParameters<typeof ApiError>[1]> = {}) {
+function make(
+  status: number,
+  body: Partial<ConstructorParameters<typeof ApiError>[1]> = {},
+) {
   return new ApiError(status, {
     code: "test_error",
     message: "Something went wrong",
@@ -62,7 +65,11 @@ describe("field errors", () => {
       message: "Validation failed",
       errors: [
         { field: "email", message: "Not a valid email", type: "value_error" },
-        { field: "data_categories", message: "At least one is required", type: "too_short" },
+        {
+          field: "data_categories",
+          message: "At least one is required",
+          type: "too_short",
+        },
       ],
     });
     expect(error.fieldErrors()).toEqual({
@@ -97,7 +104,9 @@ describe("user-facing message", () => {
   });
 
   it("replaces a 5xx with a generic sentence plus the request id", () => {
-    const message = make(500, { message: "psycopg.OperationalError at line 44" }).userMessage();
+    const message = make(500, {
+      message: "psycopg.OperationalError at line 44",
+    }).userMessage();
     expect(message).not.toContain("psycopg");
     expect(message).toContain("01J8F7K2");
   });
@@ -113,5 +122,28 @@ describe("isApiError", () => {
     expect(isApiError(new Error("plain"))).toBe(false);
     expect(isApiError(null)).toBe(false);
     expect(isApiError({ status: 400 })).toBe(false);
+  });
+});
+
+describe("an error that is not the server's", () => {
+  it("is never reported as the network, and is logged whole", () => {
+    // A form that caught a TypeError thrown by the page *after* the server
+    // answered used to say "Could not reach the server" - sending people to
+    // check a connection that was working, with the real error thrown away.
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const cause = new TypeError("Cannot read properties of undefined (reading 'uuid')");
+
+    const said = unexpectedErrorMessage(cause, "form");
+
+    expect(said).not.toMatch(/reach the server|connection/i);
+    expect(said).toMatch(/something went wrong on this page/i);
+    expect(error).toHaveBeenCalledWith(expect.stringContaining("[form]"), cause);
+    error.mockRestore();
+  });
+
+  it("leaves the real network failure its own words", () => {
+    expect(networkError("Could not reach the server.").userMessage()).toMatch(
+      /reach the server/i,
+    );
   });
 });
