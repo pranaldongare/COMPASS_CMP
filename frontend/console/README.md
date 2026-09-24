@@ -17,13 +17,24 @@ subject who signs in here is pointed at that portal
 ```bash
 npm install
 cp .env.example .env.local     # leave NEXT_PUBLIC_API_URL unset: /api is proxied to the API
-npm run dev
+                               # set DKMS_URL=http://localhost:32688 - the template has a placeholder
+npm run dev                    # http://localhost:3000
 ```
 
-The API must be running (see the backend README, or
+The API and the key service must be running (see the backend README, or
 [docs/operations/local-development.md](../../docs/operations/local-development.md)
 for the whole stack). Node 22. `npm run verify` runs the type check, the linter
 and the unit tests together.
+
+**`DKMS_URL` is required.** The API serves personal fields sealed (`SE::…`);
+the client sends every sealed value in a response to `/dkms/decrypt` on this
+origin, and that route - server-side, never in the browser - posts them to
+`${DKMS_URL}/bulk_decrypt`. It is not `NEXT_PUBLIC_`: the browser never
+learns where the key service is. Unset, wrong, or unreachable from this
+server, and every name and contact on the page shows as `SE::…`; the dev
+server's terminal says `[dkms] … unreachable` or `answered <status>`. It is
+read at startup, so restart after changing it. Every variable is in
+[configuration.md](../../docs/operations/configuration.md#the-portals).
 
 > If every button appears to do nothing in development, check the browser console
 > for `403` on `/_next/static/chunks/*`. Next 15.2+ refuses dev assets from an
@@ -39,6 +50,7 @@ and the unit tests together.
 | `npm test` | Vitest |
 | `npm run e2e` | Playwright, against a real browser and a real API |
 | `npm run api:types` | Regenerate types from the live OpenAPI document |
+| `npm run api:check` | `api:types`, then the type check: fails when the curated types disagree with the API |
 
 ---
 
@@ -49,13 +61,16 @@ src/
   proxy.ts                the first thing that touches a request: CSP nonce,
                           cookie-presence redirect (Next 16's middleware.ts)
   app/                    routes
+    dkms/decrypt/         route handler: opens sealed values through the key
+                          service, for a request carrying a session cookie
     (app)/                authenticated — RequireAuth, AppShell, RequireSection
                           dashboard, projects, approvals, notices, purposes,
                           processors, sources, sites, links, consents, exports,
                           imports, collections, requests (the rights queue),
                           tickets (a respondent's own), users, audit, cover,
                           notifications, profile
-    sign-in/              staff password + MFA step-up, reset
+    sign-in/              staff password + MFA step-up, reset; each page
+                          behind AuthPageGate
   features/<name>/        one folder per business area:
     api.ts                thin endpoint functions - no React
     queries.ts            useQuery hooks, keyed from lib/query/keys
@@ -68,8 +83,10 @@ src/
     data-display/         resource list, activity feed, audit detail
     forms/                useApiForm, file input, checkbox group
     layout/               the app shell and the auth layout
-    security/             Can, RequireSection, SessionWarning - courtesies,
-                          never a boundary
+    security/             Can, RequireSection, SessionWarning, AuthPageGate
+                          (sends a visitor who is already signed in, or
+                          halfway through the code step, to where they
+                          belong) - courtesies, never a boundary
     feedback/             the error boundary
   lib/
     api/                  axios: credentials, CSRF, request id, error normalisation
@@ -137,19 +154,32 @@ rather than red — it is a right being exercised, not an error.
 
 ```bash
 npm test                                    # unit
-npx playwright test --workers=1             # end-to-end, serially
+E2E_API_URL=http://127.0.0.1:8000 E2E_STAFF_LOGIN=dpo@cmp.local E2E_STAFF_PASSWORD='SeedPassw0rd!2026' \
+  npx playwright test --workers=1           # end-to-end, serially
 ```
+
+The suite builds the console and serves it on `127.0.0.1:3100` itself; the
+API, the worker and the key service must be running, and `.env.local` must
+carry a working `DKMS_URL`. Without `E2E_STAFF_LOGIN` and
+`E2E_STAFF_PASSWORD` the session-cookie tests in `auth.spec.ts` skip; without
+`E2E_API_URL` on `127.0.0.1`, a `controls.spec.ts` test fails on the cookie's
+origin. The rest of the variables are in
+[docs/operations/testing.md](../../docs/operations/testing.md#browser-tests).
 
 The browser suite has five Playwright projects: `setup` signs in every role
 once and saves the sessions, then `chromium`, `mobile`, `localhost-cookies` and
-`visual` run the specs (auth, controls, detail pages, forms, links, navigation
-coverage, notice upload, routing, visual). Run it serially and never alongside
-pytest; the why is in
+`visual` run the specs (account contacts, audit, auth, controls, detail pages,
+forms, links, messages, navigation coverage, notice review, notice upload,
+routing, sealed values never shown, visual). Run it serially and never
+alongside pytest; the why is in
 [docs/operations/testing.md](../../docs/operations/testing.md).
 
 Unit tests cover the pieces where a mistake is invisible in review: error
 classification, and the formatting of values a data subject reads (a retention
 period rendered as `P3Y` instead of "3 years" is a notice nobody understands).
+`src/lib/api/client.test.ts` proves a response's sealed values come out of the
+client opened, in one call to `/dkms/decrypt`, and that a response with
+nothing sealed makes no call.
 
 End-to-end tests run in a real browser because that is the only place the things
 being tested exist: the HttpOnly cookie and the CSRF header. They assert the security properties too — that an unauthenticated

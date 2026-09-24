@@ -6,11 +6,12 @@ consent, the collection that follows, and the rights a data principal can
 exercise afterwards, all recorded so that what happened can be proved years
 later.
 
-Three deployable projects in one repository, one API:
+Four deployable projects in one repository, one API:
 
 | Path | Stack | What it is |
 |---|---|---|
-| [`backend/api/`](backend/api) | FastAPI 0.141, PostgreSQL 16, Redis 7, Celery 5, Python 3.12 | The API: 245 endpoints, 32 tables, raw SQL over psycopg 3, no ORM, 26 raw-SQL migrations |
+| [`backend/api/`](backend/api) | FastAPI 0.141, PostgreSQL 16, Redis 7, Celery 5, Python 3.12 | The API: 245 endpoints, 32 tables, raw SQL over psycopg 3, no ORM, 30 migrations |
+| [`backend/dkms/`](backend/dkms) | FastAPI, `cryptography`, Python 3.12 | The key service on port 32688: seals personal fields on the way into the database and opens them for the portals' servers; computes the keyed hashes that let a sealed column be looked up |
 | [`frontend/console/`](frontend/console) | Next.js 16, React 19, Tailwind 4, TanStack Query | The staff console on port 3000: password and emailed code sign-in, the registers, the DPO's rights queue, a respondent's tickets |
 | [`frontend/portal/`](frontend/portal) | the same | The data principal's portal on port 3001: the consent link, sign-up, code sign-in, the rights pages, her own consents and requests |
 
@@ -59,43 +60,53 @@ Five decisions carry most of the weight, each recorded under
 The full walkthrough, with what to do when a sign-in looks broken, is
 [docs/operations/local-development.md](docs/operations/local-development.md).
 The short form, with Python 3.12, Node 22, and PostgreSQL 16 + Redis 7 - which
-the one Docker file in the repository provides if you have them no other way:
+the one Docker file in the repository provides if you have them no other way.
+The order matters: the key service before the seed, because the seed's
+personal data is sealed through it on the way in.
 
 ```bash
+# each block from the repository root, in its own terminal
+
 # datastores - skip if you have PostgreSQL and Redis already; point .env at them
 cd backend/api && docker compose -f dev-services.yml up -d
 
+# the key service, its own venv
+cd backend/dkms && python3.12 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+cp .env.example .env && .venv/bin/python -m app.main                                  # http://127.0.0.1:32688
+
 # API, migrations, seed
+cd backend/api
 python3.12 -m venv .venv && . .venv/bin/activate
 pip install -r requirements-dev.txt
-cp .env.example .env                      # PUBLIC_BASE_URL=http://localhost:3001, CONSOLE_BASE_URL=http://localhost:3000
-alembic upgrade head
+cp .env.example .env                      # DKMS_URL=http://localhost:32688, PUBLIC_BASE_URL=http://localhost:3001, CONSOLE_BASE_URL=http://localhost:3000
+alembic upgrade head                      # 30 migrations
 python scripts/seed.py                    # refuses outside local/test
 python -m cmp --port 8000
 
-# workers, two terminals (activate the venv in each)
+# workers, two terminals (cd backend/api and activate the venv in each)
 celery -A cmp.tasks.app worker -Q high_priority,email,documents,reports,notifications,default -l info --pool=solo
 celery -A cmp.tasks.app beat -l info
 
 # what the workers are doing, optional
 celery -A cmp.tasks.app:celery_app flower --address=127.0.0.1 --port=5555 --basic-auth=you:a-password
 
-# the key service, its own venv
-cd ../dkms && python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
-cp .env.example .env && .venv/bin/python -m app.main                                  # http://127.0.0.1:8100
-
-# the two portals
-cd ../../frontend/console && cp .env.example .env.local && npm install && npm run dev  # http://localhost:3000
-cd ../portal            && cp .env.example .env.local && npm install && npm run dev  # http://localhost:3001
+# the two portals - set DKMS_URL=http://localhost:32688 in each .env.local first
+cd frontend/console && cp .env.example .env.local && npm install && npm run dev  # http://localhost:3000
+cd frontend/portal  && cp .env.example .env.local && npm install && npm run dev  # http://localhost:3001
 ```
 
 Leave `NEXT_PUBLIC_API_URL` unset in both portals: each proxies `/api` so
-the session cookie stays first-party. The API reference is at
-`http://127.0.0.1:8000/docs`.
+the session cookie stays first-party. Set `DKMS_URL` in each portal's
+`.env.local`: the template holds the placeholder `http://<ip>:32688`, and
+with it every name on the page shows as `SE::…`. The API reference is at
+`http://127.0.0.1:8000/docs`; `http://127.0.0.1:8000/ready` checks the
+database, Redis, the migrations and the key service in one call.
 
 Everything runs as a process on your machine. There are no images to build and
-no proxy to configure; how the platform was once meant to be containerised is
-kept in [docs/history/](docs/history/README.md) for the record.
+no proxy to configure
+([ADR 0018](docs/decisions/0018-pip-and-a-virtualenv-no-containers.md)); how
+the platform was once meant to be containerised is kept in
+[docs/history/](docs/history/README.md) for the record.
 
 ## Seeded accounts
 
@@ -117,10 +128,12 @@ every staff sign-in then asks for a code, which a local deployment writes to
 ## Tests
 
 ```bash
-cd backend/api && . .venv/bin/activate && pytest     # unit, integration, security; needs PostgreSQL and Redis
-cd frontend/console && npm run verify                  # typecheck, lint, vitest
+cd backend/api && . .venv/bin/activate && pytest --ignore=tests/http   # unit, integration, security; PostgreSQL, Redis, the key service
+cd backend/api && POSTGRES_DB=cmp_http .venv/bin/pytest tests/http      # commits rows: a scratch database, see testing.md
+cd backend/dkms && .venv/bin/python -m pytest tests                     # the key service; nothing running needed
+cd frontend/console && npm run verify                                   # typecheck, lint, vitest
 cd frontend/portal && npm run verify
-cd frontend/console && npx playwright test --workers=1 # browser, against the running stack
+cd frontend/console && npx playwright test --workers=1                  # browser, against the running stack
 cd frontend/portal && npx playwright test --workers=1
 ```
 
@@ -131,6 +144,7 @@ are in [docs/operations/testing.md](docs/operations/testing.md).
 
 ```
 backend/api/       the API, migrations, Celery tasks, operator scripts, dev-services.yml
+backend/dkms/      the key service
 frontend/console/   the staff console
 frontend/portal/     the data principal's portal
 docs/              architecture, domain workflows, operations, decisions, glossary, history
@@ -142,8 +156,12 @@ Package by package: [docs/architecture/repository-layout.md](docs/architecture/r
 
 ## Configuration
 
-Every setting is documented in `backend/api/.env.example` and explained in
+Each process has its own template: `backend/api/.env.example`,
+`backend/dkms/.env.example`, and `.env.example` in each portal. Every setting,
+including the API's few that have no line in its template, is explained in
 [configuration.md](docs/operations/configuration.md). Production
 refuses to start on a development `SECRET_KEY`, a default database password,
-`COOKIE_SECURE=false`, `DEBUG=true` or a wildcard CORS origin. Secrets belong
-in a secret manager; `.env` is ignored in every directory of the tree.
+`COOKIE_SECURE=false`, `DEBUG=true`, a wildcard CORS origin, `DKMS_ENABLED=false`
+or a development `BLIND_INDEX_KEY`; the key service refuses its development
+keys outside `local` and `test`. Secrets belong in a secret manager; `.env` is
+ignored in every directory of the tree.

@@ -1,7 +1,11 @@
 # Local development
 
 Everything needed to run the platform on one machine, sign in as every role,
-and read the codes it sends. Windows is the primary development platform; the
+and read the codes it sends. Five processes and two datastores, started in
+this order: PostgreSQL and Redis, the key service, the API and its worker,
+then the two portals. The key service comes before the seed, because the
+seed writes personal data and personal data is sealed through it on the way
+in. Windows is the primary development platform; the
 commands are the same on macOS and Linux unless noted.
 
 ## Prerequisites
@@ -33,7 +37,24 @@ file in the repository, and it exists for exactly this case. The compose
 project is named `compass`; its volumes are `compass_pgdata` and
 `compass_redisdata`, and `down` without `-v` keeps them.
 
-## 2. Backend
+## 2. Key service
+
+```bash
+cd backend/dkms
+python3.12 -m venv .venv
+. .venv/bin/activate            # Windows: .venv\Scripts\activate
+pip install -r requirements-dev.txt
+cp .env.example .env            # development keys; refused outside local/test
+python -m app.main              # http://127.0.0.1:32688
+```
+
+Its own virtualenv and its own terminal. `curl http://127.0.0.1:32688/health`
+answers `{"status": "ok", ...}` when it is up. The development `DKMS_HASH_KEY`
+in its `.env.example` is the same string as `BLIND_INDEX_KEY` in the API's;
+keep them equal if you change either
+([configuration.md](configuration.md#the-key-service)).
+
+## 3. Backend
 
 ```bash
 cd backend/api
@@ -41,7 +62,7 @@ python3.12 -m venv .venv
 . .venv/bin/activate            # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
 cp .env.example .env            # PUBLIC_BASE_URL, CONSOLE_BASE_URL - see below
-alembic upgrade head            # 26 migrations
+alembic upgrade head            # 30 migrations; 0028 and 0030 call the key service
 python scripts/seed.py          # one coherent world; refuses outside local/test
 python -m cmp --port 8000
 ```
@@ -60,15 +81,21 @@ Settings worth checking in `.env` for local work:
 | Key | Local value | Why |
 |---|---|---|
 | `ENVIRONMENT` | `local` | enables `/docs`, the outbox, the seed and reset scripts |
-| `POSTGRES_DB` | `cmp_dev` | see above |
+| `POSTGRES_DB` | `cmp` | the database `dev-services.yml` creates |
 | `PUBLIC_BASE_URL` | `http://localhost:3001` | where the links in emails land: consent links, nomination acceptance |
 | `CONSOLE_BASE_URL` | `http://localhost:3000` | where staff links land: tickets, requests |
 | `MFA_REQUIRED_ROLES` | every staff role | the default; leave it |
 | `EMAIL_TRANSPORT`, `SMS_TRANSPORT` | `console` | nothing is sent; see the outbox |
+| `DKMS_ENABLED` | `true` | personal fields are sealed; the key service must be up for any write |
+| `DKMS_URL` | `http://localhost:32688` | the key service from step 2 |
+| `BLIND_INDEX_KEY` | the `.env.example` value | must equal the key service's `DKMS_HASH_KEY` |
+
+`curl http://127.0.0.1:8000/ready` checks PostgreSQL, Redis, the migration
+head and the key service (`encryption`) in one call.
 
 The interactive API reference is at `http://127.0.0.1:8000/docs`.
 
-## 3. Workers
+## 4. Workers
 
 Two processes, in two terminals:
 
@@ -80,9 +107,11 @@ celery -A cmp.tasks.app beat -l info
 
 `--pool=solo` is for Windows. Run exactly one beat. Without the worker,
 one-time codes are never delivered, so sign-in appears to hang at the code
-step.
+step. The worker reads the same `.env` but is its own process: it opens the
+sealed address of every message, so it needs `DKMS_ENABLED=true` and a
+reachable `DKMS_URL` as much as the API does.
 
-## 4. The two portals
+## 5. The two portals
 
 ```bash
 cd frontend/console && cp .env.example .env.local && npm install && npm run dev   # http://localhost:3000
@@ -94,6 +123,13 @@ backend so the session cookie is first-party; pointing the browser at the API
 directly makes every sign-in look broken. Each portal's `.env.local` names the
 other (`NEXT_PUBLIC_SUBJECT_PORTAL_URL`, `NEXT_PUBLIC_STAFF_PORTAL_URL`) so
 the wrong kind of account is redirected rather than refused.
+
+**Set `DKMS_URL` in both `.env.local` files** before starting them. The
+template carries the placeholder `http://<ip>:32688`; locally it is
+`http://localhost:32688`. It is server-only - each portal's
+`/dkms/decrypt` route calls the key service, the browser never does - and
+is read at startup, so restart the portal after changing it. Wrong or
+unset, every name and contact on the page shows as `SE::…`.
 
 ## Signing in
 
@@ -153,12 +189,15 @@ It asks for confirmation and refuses outside `local` and `test`. It has no
 
 ```bash
 cd backend/api && . .venv/bin/activate && ruff check . && ruff format --check . && mypy src && pytest
+cd backend/dkms && . .venv/bin/activate && ruff check app tests && mypy app && pytest tests
 cd frontend/console && npm run verify
 cd frontend/portal && npm run verify
 ```
 
-All four are clean on the integration branch as of 2026-09-17, `mypy
---strict` included. Anything reported is new.
+The backend `pytest` needs the key service running, and it includes
+`tests/http`, which commits rows to the database it runs against; see
+[testing.md](testing.md#backend) for running that suite on a scratch
+database.
 
 ## Things that bite
 
@@ -178,6 +217,12 @@ All four are clean on the integration branch as of 2026-09-17, `mypy
   context*, so the browser ignores `Cross-Origin-Opener-Policy` and says so in
   the console. That warning is expected over plain HTTP and changes nothing;
   only HTTPS, or `localhost`, silences it.
+- **`SE::…` where a name should be** in either portal: that portal's
+  `DKMS_URL` is unset, wrong, or unreachable from its server. The portal's
+  own terminal says `[dkms] ... unreachable` or `answered <status>`. See the
+  [runbook](runbook.md#a-portal-shows-se-where-a-name-should-be).
+- **A write answers 503 "The encryption service is unavailable"**, and
+  `/ready` says `encryption` is not ok: the key service is not running.
 - **Playwright and pytest must not run at the same time** against one
   database. Both write audit rows, and the chain's advisory lock serialises
   them into timeouts.

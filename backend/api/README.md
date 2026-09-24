@@ -1,10 +1,11 @@
 # CMP backend
 
 The API of the consent management platform: FastAPI 0.141 on Python 3.12,
-PostgreSQL 16, Redis 7, Celery 5. 241 endpoints over 32 tables, every query
-hand-written SQL over psycopg 3, every migration raw DDL. The repository-wide
-documentation is under [../docs/](../../docs/README.md); this README is the
-backend's own front door.
+PostgreSQL 16, Redis 7, Celery 5. 245 endpoints over 32 tables, every query
+hand-written SQL over psycopg 3, every migration raw DDL. Personal fields are
+sealed through the key service in [`../dkms`](../dkms) before they reach a
+table. The repository-wide documentation is under
+[docs/](../../docs/README.md); this README is the backend's own front door.
 
 ## Running it
 
@@ -16,6 +17,11 @@ and nothing else:
 docker compose -f dev-services.yml up -d        # PostgreSQL + Redis, and only those
 ```
 
+The key service next, because with `DKMS_ENABLED=true` (as in
+`.env.example`) every personal field the seed writes is sealed through it.
+Start it as [its README](../dkms/README.md) says; it listens on
+`http://127.0.0.1:32688`, which is the `DKMS_URL` in `.env.example`.
+
 Then a virtualenv, with pip:
 
 ```bash
@@ -23,14 +29,20 @@ python3.12 -m venv .venv
 . .venv/bin/activate                # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt # the runtime, the tools, and this package (editable)
 
-cp .env.example .env                # PUBLIC_BASE_URL and CONSOLE_BASE_URL to the two portals
-alembic upgrade head                # 26 migrations: 32 tables, 39 enums, triggers, grants
+cp .env.example .env                # PUBLIC_BASE_URL and CONSOLE_BASE_URL to the two portals; DKMS_URL to the key service
+alembic upgrade head                # 30 migrations: 32 tables, triggers, grants, the lookup hashes
 python scripts/seed.py              # one coherent world: a user per role, processors, sources, sites, a project through to approved, a live link
 
 python -m cmp --port 8000
 celery -A cmp.tasks.app worker -Q high_priority,email,documents,reports,notifications,default -l info --pool=solo
 celery -A cmp.tasks.app beat -l info
 ```
+
+The worker is a separate process with its own environment. It opens the
+sealed address of every message it sends, so `DKMS_ENABLED` and `DKMS_URL`
+must be right for it as well as for the API. `BLIND_INDEX_KEY` must equal the
+key service's `DKMS_HASH_KEY`
+([configuration.md](../../docs/operations/configuration.md#the-key-service)).
 
 Every command after `activate` assumes the virtualenv is active. `requirements.txt`
 is the runtime alone, pinned to exact versions; `requirements-dev.txt` adds the
@@ -123,12 +135,19 @@ purpose.
 ## Testing
 
 ```bash
-pytest                               # everything; integration and security need PostgreSQL and Redis
+pytest                               # everything, tests/http included; all but unit need PostgreSQL, Redis and the key service
 pytest tests/unit                    # pure functions, no I/O
 pytest tests/integration             # real datastores; rolls back per test
 pytest tests/security                # BOLA, BFLA, mass assignment, CSRF, rate limits, the matrix
+POSTGRES_DB=cmp_http pytest tests/http   # every personal-data endpoint over HTTP; COMMITS, so a scratch database
 ruff check . && ruff format --check . && mypy src
 ```
+
+`tests/http` drives the application over HTTP and asserts that every
+personal field leaves it sealed. It commits what it writes, so run it on a
+scratch database (`createdb -h 127.0.0.1 -U cmp cmp_http`, then
+`POSTGRES_DB=cmp_http alembic upgrade head`) and the rest with
+`pytest --ignore=tests/http`.
 
 The project state machine is asserted over every (from, to, role)
 combination, not only the legal ones; the rights state machine likewise. Do
@@ -141,7 +160,7 @@ both write audit rows, and the chain's lock turns them into timeouts. More in
 | Endpoint | Purpose |
 |---|---|
 | `GET /health` | liveness; touches nothing |
-| `GET /ready` | readiness: database, Redis, migrations current; 503 when not |
+| `GET /ready` | readiness: database, Redis, migrations current, key service reachable (`encryption`); 503 when not |
 | `GET /metrics` | Prometheus; never templated by consent token |
 | `GET /audit/verify` | walks the hash chain and names the first row that does not verify |
 
@@ -167,7 +186,12 @@ python scripts/create_admin.py         # the bootstrap administrator; refuses if
 python scripts/reset_dev.py            # drop and rebuild the configured database; local/test only, asks first
 python scripts/healthcheck.py          # checks a running instance; read-only
 python scripts/db.py [table|SQL]        # read the database; every statement rolled back
+python scripts/reseal.py [--check] [--table T]   # seal plaintext left in sealed columns; --check only reports
 ```
+
+`reseal.py` needs the key service and the table owner's role, and is
+idempotent; when and how to run it is in the
+[runbook](../../docs/operations/runbook.md#plaintext-in-a-sealed-column-scriptsresealpy).
 
 ## Layout
 
@@ -189,14 +213,15 @@ src/cmp/
                      messaging, audit, shared
   validation/        constrained types, choice(), contact normalisation
   db/                pool, SQL helpers, one repository per table cluster
-  infrastructure/    email, sms, storage; messaging (the one path to a transport)
+  infrastructure/    email, sms, storage; messaging (the one path to a transport);
+                     dkms (the key service client, the sealed-field map, the lookup hashes)
   core/              config, enums, constants, permissions, security, errors, pagination,
                      messages (every junction and its default words)
   tasks/             Celery: authentication, notifications, maintenance, exchange, rights
 
-migrations/          26 raw-SQL Alembic revisions (docs/database/migrations.md)
-tests/               unit/, integration/ (with enforcement/, database/, auth/), security/
-scripts/             seed, create_admin, reset_dev, healthcheck, db
+migrations/          30 Alembic revisions, raw SQL; 0028 and 0030 also backfill hashes in Python
+tests/               unit/, integration/ (with enforcement/, database/, auth/), security/, http/
+scripts/             seed, create_admin, reset_dev, healthcheck, db, reseal
 dev-services.yml     PostgreSQL and Redis for development; the one Docker file
 requirements*.txt    the runtime, pinned; and the tools on top of it
 openapi.json         the generated API document; regenerate after a route change
@@ -210,6 +235,7 @@ openapi.json         the generated API document; regenerate after a route change
 | What happens to a request? | [docs/architecture/request-lifecycle.md](../../docs/architecture/request-lifecycle.md) |
 | Who may do what? | `core/permissions.py`, then [../docs/domain/roles-and-access.md](../../docs/domain/roles-and-access.md) |
 | How does a project move state? | `domain/projects/state_machine.py` |
-| How does a rights request work? | [docs/architecture/rights.md](../../docs/architecture/rights-module.md) |
+| How does a rights request work? | [docs/architecture/rights-module.md](../../docs/architecture/rights-module.md) |
 | What makes the audit trail evidence? | [docs/security/audit.md](../../docs/security/audit.md) |
-| Why no ORM? | [docs/architecture/overview.md](../../docs/architecture/api-internals.md) |
+| Why no ORM? | [docs/architecture/api-internals.md](../../docs/architecture/api-internals.md) |
+| How is personal data sealed? | `infrastructure/dkms/`, then [docs/dkms/README.md](../../docs/dkms/README.md) |

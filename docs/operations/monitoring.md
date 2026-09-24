@@ -25,9 +25,25 @@ reaches a log line.
 | Redis `used_memory` near `maxmemory` | Redis runs `noeviction`; at the limit it refuses writes and sign-in fails with 503 rather than silently evicting sessions |
 | `cmp.maintenance.sweep_rights_requests` failing | Unverified requests are not being closed and ticket due dates are not being marked; a clock is running unwatched |
 | Rights requests past a checkpoint on the dashboard | The office is late; the response period is published and binding |
+| `/ready` answering 503 with `encryption` not ok | The API cannot reach the key service: writes of personal data answer 503, and no message can be addressed |
+| `message.not_sent` | The worker could not open a message's sealed recipient. The task retries five times, then the message is dropped; see the [runbook](runbook.md#no-message-of-any-kind-is-sent-and-the-request-said-one-was) |
+| `dkms.unreachable` or `dkms.error` (API or worker) | The key service did not answer, or answered non-2xx. The line names the URL, never a value |
+| `dkms.refused` | The key service refused a batch (422): a wrong data type for a value, or ciphertext it cannot open. Not transient |
+| `[dkms] … unreachable` or `answered <status>` in a portal's server log | That portal cannot open what it is served; people see `SE::…` |
+| The key service's `GET /health` failing | Everything above, at once |
+| `python scripts/reseal.py --check` exiting 1 | Plaintext in a sealed column. Run it after any change to sealing and on a schedule; it only reads |
 
 The audit chain alert is the one that matters most and fires least. Treat it as a
 page, not a ticket.
+
+## The key service
+
+`GET /health` on port 32688 answers `{"status": "ok", "provider": …,
+"workers": …, "max_records": …}`. It checks nothing beyond the process
+being up; the API's `/ready` is what proves the API can reach it.
+
+It logs `dkms.ready` at startup with the provider and pool size, and never
+logs a value, plaintext or sealed.
 
 ## Metrics
 
