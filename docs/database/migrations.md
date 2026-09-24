@@ -76,6 +76,7 @@ the [runbook](../operations/runbook.md).
 | `0028` | The blind index: a keyed hash beside each of the eight lookup columns, backfilled **in Python**; every uniqueness rule moves from the value to the hash; `*_indexed` CHECKs require the hash wherever the value is present; the contact trigger compares hashes; `minor_until` added and `cmp_is_minor()` reads it; `dob` becomes sealed `text` and `dob_is_plausible` is dropped ([ADR 0017](../decisions/0017-lookup-by-keyed-hash-and-name-ngrams.md)) |
 | `0029` | The hash columns are renamed `*_idx` → `*_hash`, with the indexes that quote the name and the one trigger function whose body does. No data changes |
 | `0030` | `*_ngrams text[]` with a GIN index on `auth_user.full_name`, `rights_request.submitted_name` and `nomination.nominee_name`: hashed three-character runs, so a name can be searched by part. Backfilled **in Python**, opening each sealed name through the key service |
+| `0031` | Erasure that erases (S2-03): `rights_item_execution`, append-only, one row per attempt at each store that holds a scope item; `rights_request_item.executed_at`; `legal_hold`, placed once and released once by trigger (`cmp_legal_hold_release_only`), its reason sealed. Raw SQL; nothing to backfill |
 
 ## What 0004 fixed
 

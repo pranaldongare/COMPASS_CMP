@@ -34,10 +34,10 @@ you need. **Every document is in this tree.** The one exception is a
 
 **Understanding why**
 
-- [Decisions](decisions/README.md): the architecture decision records, one per choice that would otherwise be re-litigated. The latest: [0016](decisions/0016-personal-data-sealed-by-a-separate-key-service.md), personal data sealed by a separate key service; [0017](decisions/0017-lookup-by-keyed-hash-and-name-ngrams.md), lookup by keyed hash and name n-grams; [0018](decisions/0018-pip-and-a-virtualenv-no-containers.md), pip and a virtualenv, no containers
+- [Decisions](decisions/README.md): the architecture decision records, one per choice that would otherwise be re-litigated. The latest: [0016](decisions/0016-personal-data-sealed-by-a-separate-key-service.md), personal data sealed by a separate key service; [0017](decisions/0017-lookup-by-keyed-hash-and-name-ngrams.md), lookup by keyed hash and name n-grams; [0018](decisions/0018-pip-and-a-virtualenv-no-containers.md), pip and a virtualenv, no containers; [0019](decisions/0019-erasure-reaches-every-store-but-the-record.md), erasure reaches every store that holds an item, and never the record of what happened
 - [Reviews](reviews/2026-09-10-implementation-review.md): what an external review found, what was done about each finding, and why the suites had not caught it
 - [DPDP Act gap assessment](reviews/2026-09-17-dpdp-act-gap-assessment.md): statutory requirement map, implemented capabilities, prioritised gaps and remediation sequence
-- [Personal data inventory](domain/personal-data.md): what the platform holds about people, where, and which of the 245 operations touch it
+- [Personal data inventory](domain/personal-data.md): what the platform holds about people, where, and which of the 249 operations touch it
 - [Changelog](../CHANGELOG.md): what changed, by area and date
 
 ## Reference

@@ -116,18 +116,47 @@ or **withdrawn**. The last ticket to come back moves the request off
 
 For an erasure, the office builds the **scope**: one item per appearance of
 her in an asset, each proposed and then decided by the DPO as `erase`,
-`redact`, `retain` or `quarantine`, with a reason. Items are instructed to the
-holder with the ticket and marked applied when confirmed. Applying an item
-changes the person's disposition on the `asset_consent` row and never the
-asset, because an asset holding three people is not deleted when one of them
-asks. A retained item names the legal ground.
+`redact`, `retain` or `quarantine`, with a reason. A retained item names the
+legal ground. An asset holding other people is never erased (decision D-09): it
+is redacted, or quarantined if removal cannot be assured.
 
-**Applied is not done.** Changing a disposition deletes nothing; until the
-executor erases from every store (S2-03), an erase or redaction that has been
-applied is still work outstanding. An item counts as **done** only with
-evidence it was carried out: a quarantine applied is its own evidence (the flag
-is the act), and an erase or redaction needs the execution record. A retained
-item is not done - it was kept, lawfully, not erased.
+**Applying quarantines; the executor erases** (S2-03). Applying an item
+quarantines her appearance at once - out of any use or release, and
+recoverable if the decision was a mistake. For a quarantine that is the whole of
+it. An erase, a redaction, or a retention whose floor has passed then goes to
+the **executor**, which reaches each store that holds the item. The platform
+never holds an asset's bytes - a recording lives at the source that collected
+it - so the stores are:
+
+| Store | Done when |
+|---|---|
+| The holder's copy | the holder of the asset's source returns its ticket - the return, with its evidence, is the confirmation the copy is gone. Until then it is *waiting*, and says for what: no holder asked yet, the ticket not issued, withdrawn, or not returned |
+| The platform's pointer | for an erasure (nobody else in the asset), `data_asset.storage_ref` is cleared. A redaction keeps it for the others |
+
+Every attempt at every store is a row, append-only: done, waiting, failed or
+held, and why. When every store is done the item is **executed** - it gets
+`executed_at`, and only then does her disposition read erased or redacted.
+Anything waiting or failed is tried again by the daily sweep, on each holder's
+return, and on demand by the DPO ("Try again now"), and stays on the request,
+visible, until it succeeds. An item counts as **done** for the response (S2-02)
+only when it is executed, or when it was a quarantine.
+
+**What an erasure never touches.** Consent artefacts and the audit trail - they
+prove the processing was lawful at the time. The export files a processor was
+sent and the response packages she was given are records of what happened, and
+are not rewritten either (decided with the product owner, 2026-09-24); the
+response says so. Her `asset_consent` row stays as the record of what was done
+to her appearance.
+
+**A legal hold stops it.** The DPO may place a hold on an asset or on a person,
+with a reason (sealed). Every item it covers records `held` and goes no
+further; releasing the hold lets the executor carry on at once. A hold is
+placed once and released once - nothing else about it can change.
+
+**Backups are not covered yet.** There are no database backups today (parked,
+P-03), and whether a backup holding an erased item is scrubbed or left to
+expire is a decision for Legal. Until it is made, an erasure says nothing about
+backups.
 
 ## The response
 

@@ -38,6 +38,13 @@ from cmp.core.enums import RightsTicketStatus as Ticket
 Row = dict[str, Any]
 
 
+KEPT_AS_EVIDENCE = (
+    "Kept, because they are the record of what happened and are never rewritten: "
+    "your consent records, the audit trail, the files of data sent to processors "
+    "before your request, and earlier responses given to you."
+)
+
+
 def label(item: Row) -> str:
     """How an asset is named to the office and to her: its own reference."""
     return str(item.get("source_asset_ref") or item.get("asset_uuid"))
@@ -68,13 +75,16 @@ def describe(item: Row) -> str:
             f"Retained until {item.get('retain_until')} under a legal obligation the "
             "Privacy Office has stated; not erased."
         )
+    # Applying an erasure or redaction quarantines first (S2-03); the executor
+    # moves it on only when every store that holds it is confirmed.
+    held_back = " and kept out of use" if item.get("state") == ItemState.APPLIED else ""
     if decision == Decision.REDACT:
         return (
             "Redacted: your part removed; the material holds other people and was kept."
             if done
-            else "Decided for redaction; not yet carried out."
+            else f"Decided for redaction{held_back}; not yet carried out."
         )
-    return "Erased." if done else "Decided for erasure; not yet carried out."
+    return "Erased." if done else f"Decided for erasure{held_back}; not yet carried out."
 
 
 def account(kind: str, items: list[Row], holders: list[Row]) -> dict[str, Any] | None:
@@ -93,6 +103,9 @@ def account(kind: str, items: list[Row], holders: list[Row]) -> dict[str, Any] |
     return {
         "items": entries,
         "not_done": [e["asset"] for e in entries if not e["done"]],
+        # Decided with the user for S2-03: records of what happened are not
+        # rewritten by an erasure, and the response says so rather than hiding it.
+        "kept_as_evidence": KEPT_AS_EVIDENCE if kind == Kind.ERASURE else None,
         "holders_confirmed": [
             str(h["label"]) for h in holders if h.get("ticket_status") == Ticket.RETURNED
         ],

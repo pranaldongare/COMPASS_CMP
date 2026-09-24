@@ -23,7 +23,8 @@ reaches a log line.
 | `after_commit.hook_failed` or `task.dispatch_failed` | A notification was due after a commit and the broker did not take it; the row exists, the message did not go |
 | `sms.gateway_refused` | The SMS gateway answered non-2xx; codes to mobiles are not arriving |
 | Redis `used_memory` near `maxmemory` | Redis runs `noeviction`; at the limit it refuses writes and sign-in fails with 503 rather than silently evicting sessions |
-| `cmp.maintenance.sweep_rights_requests` failing | Unverified requests are not being closed and ticket due dates are not being marked; a clock is running unwatched |
+| `cmp.maintenance.sweep_rights_requests` failing | Unverified requests are not being closed, ticket due dates are not being marked, and erasures waiting on a store are not being retried; a clock is running unwatched |
+| `rights.erasure_failed` in the logs, or `erasures_attempted` on `maintenance.rights_swept` staying high while `erasures_finished` stays at zero | An erasure store fails every time it is tried - a defect, not a holder being slow ([runbook](runbook.md#an-erasure-is-not-finishing)) |
 | Rights requests past a checkpoint on the dashboard | The office is late; the response period is published and binding |
 | `/ready` answering 503 with `encryption` not ok | The API cannot reach the key service: writes of personal data answer 503, and no message can be addressed |
 | `message.not_sent` | The worker could not open a message's sealed recipient. The task retries five times, then the message is dropped; see the [runbook](runbook.md#no-message-of-any-kind-is-sent-and-the-request-said-one-was) |

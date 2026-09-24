@@ -44,7 +44,8 @@ IDENTITY = {
     "responder_user_name", "actor_name", "author_name", "changed_by_name",
     "confirmed_by_name", "created_by_name", "dco_name", "decided_by_name",
     "delegate_name", "delegator_name", "exported_by_name", "imported_by_name",
-    "overridden_by_name", "owner_name", "principal_name", "reviewer_name",
+    "overridden_by_name", "owner_name", "placed_by_name", "principal_name",
+    "released_by_name", "reviewer_name",
     "subject_name", "updated_by_name", "uploaded_by_name", "verified_by_name",
     "username",
 }
@@ -245,7 +246,7 @@ SHORT = {"dpo": "DPO", "admin": "Admin", "dco": "DCO", "dco_admin": "DCO Admin",
          "rco": "RCO", "rnd_user": "R&D", "data_subject": "Principal"}
 VALUE = {"ALL": "every row", "SCOPED": "rows in scope", "OWN": "own rows",
          "COND": "conditional"}
-ORDER = ["auth", "me", "public consent", "public information", "rights", "tickets",
+ORDER = ["auth", "me", "public consent", "public information", "rights", "legal holds", "tickets",
          "consent", "exchange", "users", "delegations", "projects", "notices",
          "registry", "messages", "audit", "dashboard"]
 TITLE = {
@@ -254,6 +255,7 @@ TITLE = {
     "public consent": "The consent link — `/c/{token}/*`",
     "public information": "The public rights surface — `/rights/*`",
     "rights": "Rights requests, the office's side — `/requests/*`",
+    "legal holds": "Legal holds — `/legal-holds/*`",
     "tickets": "Tickets a holder answers — `/tickets/*`",
     "consent": "Consents and links, the office's side",
     "exchange": "Exports, imports, collections and assets",
@@ -288,10 +290,12 @@ def tables(found: list[dict]) -> str:
     for row in found:
         grouped[row["module"]].append(row)
     lines = []
-    for module in ORDER:
+    # A module this file has not been told about is still listed, under its own
+    # name - a new router must not drop out of the inventory in silence.
+    for module in ORDER + sorted(set(grouped) - set(ORDER)):
         group = sorted(grouped[module], key=lambda r: (r["path"], r["method"]))
         plural = "s" if len(group) != 1 else ""
-        lines += [f"\n### {TITLE[module]}\n",
+        lines += [f"\n### {TITLE.get(module, module.capitalize())}\n",
                   f"{len(group)} operation{plural} carry personal data.\n",
                   "| Method | Endpoint | Who may call it | Personal data in | Personal data out |",
                   "|---|---|---|---|---|"]

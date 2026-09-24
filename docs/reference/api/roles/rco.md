@@ -16,6 +16,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `sites`, `sources`, 
 | `data_source` | Yes | Yes | `all` | All rows |
 | `export` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `import` | Yes | Yes | `scoped` | Assigned project/organisational rows |
+| `legal_hold` | No | No | `none` | Denied |
 | `link` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `me` | No | No | `none` | Denied |
 | `message_template` | No | No | `none` | Denied |

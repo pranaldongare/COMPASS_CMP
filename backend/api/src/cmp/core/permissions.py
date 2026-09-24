@@ -289,6 +289,12 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.DPO: Grant(Scope.ALL, write=True),
         Role.ADMIN: Grant(Scope.SCOPED, write=True),
     },
+    # What stops an erasure until it is released (S2-03). The DPO's alone: a
+    # hold is a legal judgement about evidence, and whoever may place one may
+    # stop the platform honouring a data principal's request.
+    "legal_hold": {
+        Role.DPO: Grant(Scope.ALL, write=True),
+    },
     # A ticket on a rights request, addressed to a member of staff because the
     # holder is one of our own teams. Every staff role: which team holds the
     # data is not a function of role. OWN: the tickets addressed to *you*, and

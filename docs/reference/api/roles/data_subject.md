@@ -16,6 +16,7 @@ Navigation returned after sign-in: `consents`, `requests`, `notifications`, `pro
 | `data_source` | No | No | `none` | Denied |
 | `export` | No | No | `none` | Denied |
 | `import` | No | No | `none` | Denied |
+| `legal_hold` | No | No | `none` | Denied |
 | `link` | No | No | `none` | Denied |
 | `me` | Yes | Yes | `own` | Own or addressed rows |
 | `message_template` | No | No | `none` | Denied |

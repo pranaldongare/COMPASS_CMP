@@ -69,6 +69,8 @@ ENTITY_TYPES: Final[frozenset[str]] = frozenset(
         "rights_request_holder",
         "rights_request_item",
         "nomination",
+        # What stops an erasure until it is released (S2-03).
+        "legal_hold",
         # The office's replacement words for a message junction.
         "message_template",
     }
@@ -225,6 +227,10 @@ class Event:
     RIGHTS_SCOPE_DECIDED = "rights.scope_decided"
     RIGHTS_SCOPE_APPLIED = "rights.scope_applied"
     RIGHTS_FLOOR_PASSED = "rights.retention_floor_passed"
+    #: Every store holding an item confirmed erased (S2-03).
+    RIGHTS_ITEM_EXECUTED = "rights.item_executed"
+    LEGAL_HOLD_PLACED = "legal_hold.placed"
+    LEGAL_HOLD_RELEASED = "legal_hold.released"
     RIGHTS_RESPONDED = "rights.responded"
     RIGHTS_RESPONSE_DOWNLOADED = "rights.response_downloaded"
     RIGHTS_CLOSED = "rights.closed"

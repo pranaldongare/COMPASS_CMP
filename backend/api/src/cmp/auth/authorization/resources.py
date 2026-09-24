@@ -50,6 +50,8 @@ RIGHTS_REQUEST: Final = "rights_request"
 #: A ticket on a rights request, addressed to a member of staff: the portal
 #: channel for a holder that is one of our own teams.
 TICKET: Final = "ticket"
+#: What stops an erasure until it is released: a hold on an asset or a person.
+LEGAL_HOLD: Final = "legal_hold"
 
 #: The words of a message the platform sends, per junction and channel.
 MESSAGE_TEMPLATE: Final = "message_template"
@@ -78,5 +80,6 @@ ALL: Final[frozenset[str]] = frozenset(
         RIGHTS_REQUEST,
         MESSAGE_TEMPLATE,
         TICKET,
+        LEGAL_HOLD,
     }
 )

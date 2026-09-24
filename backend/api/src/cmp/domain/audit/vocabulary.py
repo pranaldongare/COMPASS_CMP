@@ -39,6 +39,7 @@ GROUP_LABELS: Final[dict[str, str]] = {
     "delegation": "Delegation",
     "rights": "Rights requests",
     "nomination": "Nominations",
+    "legal_hold": "Legal holds",
     "message_template": "Messages",
     "audit": "Audit trail",
 }

@@ -1,7 +1,7 @@
 # Schema
 
-32 tables, 39 enums, 1 view, 27 triggers, 42 named CHECK constraints and 93
-foreign keys, as of migration 0030. Those counts are read from the PostgreSQL
+34 tables, 39 enums, 1 view, 29 triggers, 46 named CHECK constraints and 99
+foreign keys, as of migration 0031. Those counts are read from the PostgreSQL
 catalogs after replaying every migration, not maintained by hand.
 
 The migrations are the source of truth: 0001 transcribed the original
@@ -23,7 +23,7 @@ its stated commit before trusting it against a later change.
 | Notices | `notice`, `notice_purpose`, `notice_language` |
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant` |
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` |
-| Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_ticket_message`, `rights_response_file`, `nomination` |
+| Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_item_execution`, `rights_ticket_message`, `rights_response_file`, `nomination`, `legal_hold` |
 | Audit | `audit_log` |
 
 ## The view
@@ -77,6 +77,18 @@ and their `file_hash` says whether the result still matches.
 
 **`asset_consent.disposition`** is where an erasure lands: the person's junction
 row, never the asset, because an asset may hold several people.
+
+**An erasure is carried out, not just decided, since 0031.** Applying a scope
+item quarantines her row; `rights_item_execution` then records every attempt
+at each store that holds the item - `holder_copy` (the holder's returned ticket
+is the evidence), `platform_pointer` (`data_asset.storage_ref` cleared, for an
+erasure where nobody else is in the asset) and `legal_hold` when a hold stops
+it - as `done`, `waiting`, `failed` or `held`, append-only by
+`trg_item_execution_append_only`. `rights_request_item.executed_at` is set when
+every store is done, and only then does the disposition move to erased or
+redacted. `legal_hold` covers one asset or one person
+(`legal_hold_covers_one`); `trg_legal_hold_release_only` allows exactly one
+change to a hold after it is placed - its release.
 
 ## Sealed columns, and how they are still found
 

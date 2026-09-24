@@ -117,12 +117,26 @@ The scope is one row per active appearance of her in a collected asset
 * **quarantine** - removal cannot be assured, so the asset is held back from
   release while the DPO decides.
 
-Applying a decision sets **her junction row's disposition** and never touches
-`data_asset`. Erasure and redaction wait for the holder's returned ticket:
-the platform records erasure, it does not perform it. Consent artefacts are
-never erased - s.6(4) depends on their surviving.
+Applying a decision **quarantines her junction row** at once - the first step
+whatever the decision. An erase, a redaction, or a retention past its floor then
+goes to the **executor** (`cmp.domain.rights.erasure`, S2-03), which reaches
+each store that holds the item: the holder's copy, done when the holder of the
+asset's source returns its ticket; and, for an erasure, the platform's own
+pointer, `data_asset.storage_ref`, cleared - the one write erasure makes to an
+asset, and only where nobody else is in it. Every attempt is a row in
+`rights_item_execution` (append-only; a repeat of the last state is not
+written again), a store that raises is recorded `failed` by class name inside a
+savepoint, and the item gets `executed_at` - and her disposition erased or
+redacted - only when every store is done. The executor runs on apply, on every
+ticket return, in the daily `sweep`, and on `POST /requests/{uuid}/scope/{item}/execute`.
+A **legal hold** (`legal_hold`, `/legal-holds`, DPO only) on the asset or on
+her stops it with a `held` row until released; release carries on at once.
+Consent artefacts, the audit trail, export files and response packages are
+never touched - they are the record of what happened ([ADR 0019](../decisions/0019-erasure-reaches-every-store-but-the-record.md)).
+A holder's return can only be recorded while the request is open, so an item
+whose holder answers after the response waits, visibly, until the office acts.
 
-Because applying performs nothing, **a response may not call a correction or
+Because applying used to perform nothing, **a response may not call a correction or
 erasure `complete` until the work is evidenced** (S2-02,
 `cmp.domain.rights.execution`). An item is done when applied with evidence -
 a quarantine is its own; an erase or redaction needs the `executed_at` the
@@ -153,7 +167,8 @@ She names a nominee while well: name, mobile, an optional email, and which of he
 | Public | `POST /rights/requests`, `POST /rights/requests/verify`, `GET /rights/nominations/{token}`, `POST /rights/nominations/{token}[/code|/accept|/decline]`, `POST /rights/nominee/start`, `POST /rights/nominee/requests` |
 | Data principal | `GET/POST /me/requests`, `GET /me/requests/{uuid}[/trail|/download|/files/{uuid}]`, `POST /me/requests/{uuid}/dispute`, `POST /me/consents/{uuid}/erasure-request` (0019), `GET/POST/DELETE /me/nominations` |
 | Respondent (any staff role) | `GET /tickets`, `GET /tickets/{uuid}`, `POST /tickets/{uuid}/messages`, `POST /tickets/{uuid}/respond`, files on messages |
-| DPO (administrator: escalated grievances only) | `GET/POST /requests`, `GET /requests/attention`, `GET /requests/{uuid}[/transitions|/trail|/download]`, one action route per step on the path, the ticket routes (issue, message, send back, withdraw, reassign, remind, escalate), and `POST /requests/{uuid}/files` for what is released with the response (0021) |
+| DPO (administrator: escalated grievances only) | `GET/POST /requests`, `GET /requests/attention`, `GET /requests/{uuid}[/transitions|/trail|/download]`, one action route per step on the path, the ticket routes (issue, message, send back, withdraw, reassign, remind, escalate), and `POST /requests/{uuid}/files` for what is released with the response (0021); `POST /requests/{uuid}/scope/{item}/execute` to try an item's stores again (S2-03) |
+| DPO only | `GET/POST /legal-holds`, `POST /legal-holds/{uuid}/release` - what stops an erasure (S2-03) |
 
 Every write is audited with the request reference in its detail, so
 `GET /requests/{uuid}/trail` reads one request's story across the four tables

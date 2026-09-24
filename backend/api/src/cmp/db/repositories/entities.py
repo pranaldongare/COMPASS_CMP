@@ -250,6 +250,15 @@ _SPECS: dict[str, _Spec] = {
         subject_href="/my-requests",
         noun="Erasure scope item",
     ),
+    "legal_hold": _Spec(
+        sql="""SELECT h.hold_id AS id, h.hold_uuid::text AS uuid,
+                      CASE WHEN h.asset_id IS NULL THEN 'Legal hold on a person'
+                           ELSE 'Legal hold on ' || da.source_asset_ref END AS label
+               FROM legal_hold h LEFT JOIN data_asset da ON da.asset_id = h.asset_id
+               WHERE h.hold_id = ANY(%s)""",
+        href=None,
+        noun="Legal hold",
+    ),
     "nomination": _Spec(
         sql="""SELECT n.nomination_id AS id, n.nomination_uuid::text AS uuid,
                       'nomination' AS label,

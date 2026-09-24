@@ -49,6 +49,8 @@ SEALED: frozenset[str] = frozenset(
         "changed_by_name",
         "confirmed_by_name",
         "decided_by_name",
+        "placed_by_name",
+        "released_by_name",
         "delegate_name",
         "delegator_name",
         "exported_by_name",

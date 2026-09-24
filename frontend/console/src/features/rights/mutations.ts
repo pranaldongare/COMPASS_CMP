@@ -16,6 +16,7 @@ import { keys, prefixes, type Result } from "@/lib/query";
 import type {
   GrievanceDecisionResult,
   HolderThread,
+  LegalHold,
   MyTicket,
   RightsHolder,
   RightsRequest,
@@ -150,6 +151,13 @@ export const useDecideItem = (uuid: Uuid) =>
   );
 export const useApplyItem = (uuid: Uuid) =>
   useRequestAction<RightsScopeItem, Uuid>(uuid, (itemUuid) => api.applyItem(uuid, itemUuid));
+export const useExecuteItem = (uuid: Uuid) =>
+  useRequestAction<RightsScopeItem, Uuid>(uuid, (itemUuid) => api.executeItem(uuid, itemUuid));
+/** A hold changes what the request's items can do, so the request is re-read. */
+export const usePlaceHold = (uuid: Uuid) =>
+  useRequestAction<LegalHold, { asset_uuid: Uuid; reason: string }>(uuid, (body) => api.placeHold(body));
+export const useReleaseHold = (uuid: Uuid) =>
+  useRequestAction<LegalHold, Uuid>(uuid, (holdUuid) => api.releaseHold(holdUuid));
 
 export const useRespond = (uuid: Uuid) =>
   useRequestAction<RightsRequest, Parameters<typeof api.respond>[1]>(uuid, (body) =>

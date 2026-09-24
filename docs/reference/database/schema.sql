@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict unFgVPf0byVBjujp72hF1EEPO4qjyTYMEFlLYfipX5CiEBNddX1VrRJpaAZ6h2Y
+\restrict F5C0mXsBjF0Lv6lldE8dQBlRp2TXs4VwII2CZjOeQtXDGwwWRRmYfyNcFJJFgwi
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -766,6 +766,34 @@ CREATE FUNCTION public.cmp_is_minor(until date) RETURNS boolean
     LANGUAGE sql STABLE
     AS $$
   SELECT CASE WHEN until IS NULL THEN NULL ELSE until > CURRENT_DATE END;
+$$;
+
+
+--
+-- Name: cmp_legal_hold_release_only(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_legal_hold_release_only() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    RAISE EXCEPTION 'legal_hold rows are never deleted' USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF OLD.released_at IS NOT NULL THEN
+    RAISE EXCEPTION 'a released hold does not change' USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF NEW.hold_id IS DISTINCT FROM OLD.hold_id
+     OR NEW.hold_uuid IS DISTINCT FROM OLD.hold_uuid
+     OR NEW.asset_id IS DISTINCT FROM OLD.asset_id
+     OR NEW.subject_user_id IS DISTINCT FROM OLD.subject_user_id
+     OR NEW.reason IS DISTINCT FROM OLD.reason
+     OR NEW.placed_by IS DISTINCT FROM OLD.placed_by
+     OR NEW.placed_at IS DISTINCT FROM OLD.placed_at THEN
+    RAISE EXCEPTION 'only the release of a hold may be recorded' USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
+END;
 $$;
 
 
@@ -1707,6 +1735,52 @@ ALTER SEQUENCE public.import_batch_batch_id_seq OWNED BY public.import_batch.bat
 
 
 --
+-- Name: legal_hold; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.legal_hold (
+    hold_id integer NOT NULL,
+    hold_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    asset_id integer,
+    subject_user_id integer,
+    reason text NOT NULL,
+    placed_by integer NOT NULL,
+    placed_at timestamp with time zone DEFAULT now() NOT NULL,
+    released_by integer,
+    released_at timestamp with time zone,
+    CONSTRAINT legal_hold_covers_one CHECK (((asset_id IS NULL) <> (subject_user_id IS NULL))),
+    CONSTRAINT legal_hold_release_attributed CHECK (((released_at IS NULL) = (released_by IS NULL)))
+);
+
+
+--
+-- Name: TABLE legal_hold; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.legal_hold IS 'Stops erasure of an asset, or of everything about a person, until released (S2-03)';
+
+
+--
+-- Name: legal_hold_hold_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.legal_hold_hold_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: legal_hold_hold_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.legal_hold_hold_id_seq OWNED BY public.legal_hold.hold_id;
+
+
+--
 -- Name: message_template; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2368,6 +2442,44 @@ ALTER SEQUENCE public.purpose_purpose_id_seq OWNED BY public.purpose.purpose_id;
 
 
 --
+-- Name: rights_item_execution; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.rights_item_execution (
+    execution_id integer NOT NULL,
+    execution_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    item_id integer NOT NULL,
+    store character varying(20) NOT NULL,
+    status character varying(10) NOT NULL,
+    detail jsonb DEFAULT '{}'::jsonb NOT NULL,
+    attempted_by integer,
+    attempted_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT item_execution_status CHECK (((status)::text = ANY ((ARRAY['done'::character varying, 'waiting'::character varying, 'failed'::character varying, 'held'::character varying])::text[]))),
+    CONSTRAINT item_execution_store CHECK (((store)::text = ANY ((ARRAY['holder_copy'::character varying, 'platform_pointer'::character varying, 'legal_hold'::character varying])::text[])))
+);
+
+
+--
+-- Name: rights_item_execution_execution_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.rights_item_execution_execution_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: rights_item_execution_execution_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.rights_item_execution_execution_id_seq OWNED BY public.rights_item_execution.execution_id;
+
+
+--
 -- Name: rights_request; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2529,6 +2641,7 @@ CREATE TABLE public.rights_request_item (
     decided_by integer,
     applied_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
+    executed_at timestamp with time zone,
     CONSTRAINT item_decided_is_attributed CHECK (((decision IS NULL) OR (decided_at IS NOT NULL))),
     CONSTRAINT item_decision_has_basis CHECK (((decision IS NULL) OR (basis IS NOT NULL))),
     CONSTRAINT item_retain_has_until CHECK (((decision IS DISTINCT FROM 'retain'::public.rights_scope_decision) OR (retain_until IS NOT NULL)))
@@ -2540,6 +2653,13 @@ CREATE TABLE public.rights_request_item (
 --
 
 COMMENT ON TABLE public.rights_request_item IS 'The erasure scope: one row per appearance of the principal in a collected asset. Disposition is applied to asset_consent, never to data_asset.';
+
+
+--
+-- Name: COLUMN rights_request_item.executed_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.rights_request_item.executed_at IS 'When every store holding the item was confirmed erased (S2-03). NULL until then, whatever the disposition says';
 
 
 --
@@ -2783,6 +2903,13 @@ ALTER TABLE ONLY public.import_batch ALTER COLUMN batch_id SET DEFAULT nextval('
 
 
 --
+-- Name: legal_hold hold_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.legal_hold ALTER COLUMN hold_id SET DEFAULT nextval('public.legal_hold_hold_id_seq'::regclass);
+
+
+--
 -- Name: message_template template_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2878,6 +3005,13 @@ ALTER TABLE ONLY public.project_status_history ALTER COLUMN history_id SET DEFAU
 --
 
 ALTER TABLE ONLY public.purpose ALTER COLUMN purpose_id SET DEFAULT nextval('public.purpose_purpose_id_seq'::regclass);
+
+
+--
+-- Name: rights_item_execution execution_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rights_item_execution ALTER COLUMN execution_id SET DEFAULT nextval('public.rights_item_execution_execution_id_seq'::regclass);
 
 
 --
@@ -3148,6 +3282,22 @@ ALTER TABLE ONLY public.import_batch
 
 
 --
+-- Name: legal_hold legal_hold_hold_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.legal_hold
+    ADD CONSTRAINT legal_hold_hold_uuid_key UNIQUE (hold_uuid);
+
+
+--
+-- Name: legal_hold legal_hold_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.legal_hold
+    ADD CONSTRAINT legal_hold_pkey PRIMARY KEY (hold_id);
+
+
+--
 -- Name: message_template message_template_one_per_channel; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3393,6 +3543,22 @@ ALTER TABLE ONLY public.purpose
 
 ALTER TABLE ONLY public.purpose
     ADD CONSTRAINT purpose_purpose_uuid_key UNIQUE (purpose_uuid);
+
+
+--
+-- Name: rights_item_execution rights_item_execution_execution_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rights_item_execution
+    ADD CONSTRAINT rights_item_execution_execution_uuid_key UNIQUE (execution_uuid);
+
+
+--
+-- Name: rights_item_execution rights_item_execution_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rights_item_execution
+    ADD CONSTRAINT rights_item_execution_pkey PRIMARY KEY (execution_id);
 
 
 --
@@ -3685,6 +3851,27 @@ CREATE INDEX idx_grant_consent ON public.consent_purpose_grant USING btree (cons
 --
 
 CREATE INDEX idx_grant_purpose ON public.consent_purpose_grant USING btree (purpose_id) WHERE granted;
+
+
+--
+-- Name: idx_item_execution_item; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_item_execution_item ON public.rights_item_execution USING btree (item_id, store, execution_id);
+
+
+--
+-- Name: idx_legal_hold_asset; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_legal_hold_asset ON public.legal_hold USING btree (asset_id) WHERE (released_at IS NULL);
+
+
+--
+-- Name: idx_legal_hold_subject; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_legal_hold_subject ON public.legal_hold USING btree (subject_user_id) WHERE (released_at IS NULL);
 
 
 --
@@ -4063,6 +4250,20 @@ CREATE TRIGGER trg_grant_append_only BEFORE DELETE OR UPDATE ON public.consent_p
 --
 
 CREATE TRIGGER trg_grant_in_notice BEFORE INSERT ON public.consent_purpose_grant FOR EACH ROW EXECUTE FUNCTION public.cmp_grant_in_notice();
+
+
+--
+-- Name: rights_item_execution trg_item_execution_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_item_execution_append_only BEFORE DELETE OR UPDATE ON public.rights_item_execution FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: legal_hold trg_legal_hold_release_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_legal_hold_release_only BEFORE DELETE OR UPDATE ON public.legal_hold FOR EACH ROW EXECUTE FUNCTION public.cmp_legal_hold_release_only();
 
 
 --
@@ -4490,6 +4691,38 @@ ALTER TABLE ONLY public.import_batch
 
 
 --
+-- Name: legal_hold legal_hold_asset_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.legal_hold
+    ADD CONSTRAINT legal_hold_asset_id_fkey FOREIGN KEY (asset_id) REFERENCES public.data_asset(asset_id);
+
+
+--
+-- Name: legal_hold legal_hold_placed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.legal_hold
+    ADD CONSTRAINT legal_hold_placed_by_fkey FOREIGN KEY (placed_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: legal_hold legal_hold_released_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.legal_hold
+    ADD CONSTRAINT legal_hold_released_by_fkey FOREIGN KEY (released_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: legal_hold legal_hold_subject_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.legal_hold
+    ADD CONSTRAINT legal_hold_subject_user_id_fkey FOREIGN KEY (subject_user_id) REFERENCES public.auth_user(id);
+
+
+--
 -- Name: message_template message_template_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4746,6 +4979,22 @@ ALTER TABLE ONLY public.purpose
 
 
 --
+-- Name: rights_item_execution rights_item_execution_attempted_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rights_item_execution
+    ADD CONSTRAINT rights_item_execution_attempted_by_fkey FOREIGN KEY (attempted_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: rights_item_execution rights_item_execution_item_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rights_item_execution
+    ADD CONSTRAINT rights_item_execution_item_id_fkey FOREIGN KEY (item_id) REFERENCES public.rights_request_item(item_id);
+
+
+--
 -- Name: rights_request rights_request_classified_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4925,5 +5174,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict unFgVPf0byVBjujp72hF1EEPO4qjyTYMEFlLYfipX5CiEBNddX1VrRJpaAZ6h2Y
+\unrestrict F5C0mXsBjF0Lv6lldE8dQBlRp2TXs4VwII2CZjOeQtXDGwwWRRmYfyNcFJJFgwi
 

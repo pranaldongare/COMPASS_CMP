@@ -268,6 +268,13 @@ class TicketDetailOut(Out):
     messages: list[MessageOut]
 
 
+class ExecutionOut(Out):
+    store: str
+    status: str
+    detail: dict[str, Any]
+    attempted_at: datetime
+
+
 class ItemOut(Out):
     item_uuid: UUID
     other_subjects: int
@@ -294,6 +301,12 @@ class ItemOut(Out):
     holder_uuid: UUID | None
     holder_label: str | None
     holder_ticket_status: str | None
+    #: When every store holding the item was confirmed erased (S2-03). Null
+    #: while any is waiting, failed or held - whatever the disposition says.
+    executed_at: datetime | None = None
+    #: Where each store stands: the latest attempt at the holder's copy, the
+    #: platform's pointer, or the legal hold that stopped it.
+    execution: list[ExecutionOut] = Field(default_factory=list)
 
 
 class LinkedRefOut(Out):
@@ -574,6 +587,8 @@ async def _detail(conn: Any, row: dict[str, Any], principal: Any) -> dict[str, A
     request_id = int(row["request_id"])
     holders = await repo.holders_of(conn, request_id)
     items = await repo.items_of(conn, request_id)
+    executions = await repo.executions_of(conn, request_id)
+    items = [{**i, "execution": executions.get(int(i["item_id"]), [])} for i in items]
     return {
         **_with_clock(row),
         "holders": holders,
@@ -1369,16 +1384,38 @@ async def decide_item(
 @router.post(
     "/{request_uuid}/scope/{item_uuid}/apply",
     response_model=ItemOut,
-    summary="Set her junction row - the asset survives",
+    summary="Quarantine her appearance, then carry the decision out",
 )
 async def apply_item(
     request_uuid: UUID, item_uuid: UUID, principal: RightsWriter
 ) -> dict[str, Any]:
     async with transaction() as conn:
         row = await _load(conn, request_uuid, principal)
-        return await service.apply_item(
+        item = await service.apply_item(
             conn, row, item_uuid=str(item_uuid), role=principal.role, actor_id=principal.user_id
         )
+        executions = await repo.executions_of(conn, int(row["request_id"]))
+        return {**item, "execution": executions.get(int(item["item_id"]), [])}
+
+
+@router.post(
+    "/{request_uuid}/scope/{item_uuid}/execute",
+    response_model=ItemOut,
+    summary="Try an applied item's stores again now",
+)
+async def execute_item(
+    request_uuid: UUID, item_uuid: UUID, principal: RightsWriter
+) -> dict[str, Any]:
+    """The daily sweep retries anything waiting or failed; this is the same
+    attempt, now - after a holder answers outside the platform, or a failure
+    has been fixed."""
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        item = await service.execute_item(
+            conn, row, item_uuid=str(item_uuid), role=principal.role, actor_id=principal.user_id
+        )
+        executions = await repo.executions_of(conn, int(row["request_id"]))
+        return {**item, "execution": executions.get(int(item["item_id"]), [])}
 
 
 # ----------------------------------------------------------- staff: closure

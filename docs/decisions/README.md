@@ -25,6 +25,7 @@ one stays and points forward.
 | [0016](0016-personal-data-sealed-by-a-separate-key-service.md) | Personal data is sealed by a separate key service, and opened only where a person reads it | accepted |
 | [0017](0017-lookup-by-keyed-hash-and-name-ngrams.md) | Sealed values are found by keyed hash, and names by hashed runs | accepted |
 | [0018](0018-pip-and-a-virtualenv-no-containers.md) | pip and a virtualenv; nothing ships as a container | accepted |
+| [0019](0019-erasure-reaches-every-store-but-the-record.md) | Erasure reaches every store that holds an item, and never the record of what happened | accepted |
 
 ## Writing one
 

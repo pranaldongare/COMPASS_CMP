@@ -374,6 +374,35 @@ class TestErasureRefusedAndTheGrievance:
                 session=dpo,
                 expect=(200, 204, 409),
             )
+            # S2-03: a legal hold on the asset, the holds register, a retry of
+            # the item's stores (refused: a retained item under its floor has
+            # nothing to carry out), and the hold released.
+            held = await call(
+                http,
+                "POST",
+                "/legal-holds",
+                template="/legal-holds",
+                session=dpo,
+                expect=(201,),
+                json={"asset_uuid": items[0]["asset_uuid"], "reason": "Evidence in a live matter."},
+            )
+            assert held.json()["reason"].startswith("SE::")
+            await call(http, "GET", "/legal-holds", template="/legal-holds", session=dpo)
+            await call(
+                http,
+                "POST",
+                f"/requests/{ruuid}/scope/{iuuid}/execute",
+                template=RIGHTS + "/scope/{item_uuid}/execute",
+                session=dpo,
+                expect=(200, 409),
+            )
+            await call(
+                http,
+                "POST",
+                f"/legal-holds/{held.json()['hold_uuid']}/release",
+                template="/legal-holds/{hold_uuid}/release",
+                session=dpo,
+            )
         await call(
             http,
             "POST",

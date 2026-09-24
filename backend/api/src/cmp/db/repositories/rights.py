@@ -1016,10 +1016,10 @@ async def mark_unreturned(conn: Conn, request_id: int) -> int:
 _ITEM_SELECT = """
   i.item_id, i.item_uuid, i.request_id, i.asset_consent_id, i.holder_id, i.other_subjects,
   i.state, i.decision, i.basis, i.retain_until, i.floor_passed_at, i.decided_at,
-  i.applied_at, i.created_at,
+  i.applied_at, i.executed_at, i.created_at,
   ac.disposition, ac.disposition_at, ac.subject_role,
-  da.asset_uuid, da.asset_type, da.source_asset_ref, da.storage_ref,
-  ds.source_code, ds.name AS source_name,
+  da.asset_id, da.asset_uuid, da.asset_type, da.source_asset_ref, da.storage_ref,
+  ds.source_code, ds.name AS source_name, ds.processor_id AS source_processor_id,
   pr.legal_name AS processor_name,
   p.project_uuid, p.project_name, c.collected_on,
   h.holder_uuid, h.label AS holder_label, h.ticket_status AS holder_ticket_status,
@@ -1049,6 +1049,108 @@ async def item_by_uuid(conn: Conn, request_id: int, item_uuid: str) -> Row | Non
         conn,
         f"SELECT {_ITEM_SELECT} WHERE i.request_id = %s AND i.item_uuid = %s",
         (request_id, item_uuid),
+    )
+
+
+# ------------------------------------------------------------ execution (S2-03)
+async def add_execution(
+    conn: Conn,
+    item_id: int,
+    *,
+    store: str,
+    status: str,
+    detail: dict[str, Any],
+    attempted_by: int | None,
+) -> Row:
+    """One attempt at one store. Append-only; a retry is a new row."""
+    row = await fetch_one(
+        conn,
+        """INSERT INTO rights_item_execution (item_id, store, status, detail, attempted_by,
+                                             attempted_at)
+           VALUES (%s, %s, %s, %s, %s, clock_timestamp())
+           RETURNING execution_id, execution_uuid, item_id, store, status, detail,
+                     attempted_at""",
+        (item_id, store, status, Jsonb(detail), attempted_by),
+    )
+    assert row is not None
+    return row
+
+
+async def latest_executions(conn: Conn, item_id: int) -> dict[str, Row]:
+    """Where each store stands for an item: its most recent attempt."""
+    rows = await fetch_all(
+        conn,
+        """SELECT DISTINCT ON (store) store, status, detail, attempted_at
+             FROM rights_item_execution WHERE item_id = %s
+            ORDER BY store, execution_id DESC""",
+        (item_id,),
+    )
+    return {str(r["store"]): r for r in rows}
+
+
+async def executions_of(conn: Conn, request_id: int) -> dict[int, list[Row]]:
+    """The latest attempt at each store, for every item of a request."""
+    rows = await fetch_all(
+        conn,
+        """SELECT DISTINCT ON (e.item_id, e.store) e.item_id, e.store, e.status, e.detail,
+                  e.attempted_at
+             FROM rights_item_execution e
+             JOIN rights_request_item i ON i.item_id = e.item_id
+            WHERE i.request_id = %s
+            ORDER BY e.item_id, e.store, e.execution_id DESC""",
+        (request_id,),
+    )
+    out: dict[int, list[Row]] = {}
+    for r in rows:
+        out.setdefault(int(r["item_id"]), []).append(r)
+    return out
+
+
+async def clear_asset_pointer(conn: Conn, asset_id: int) -> bool:
+    """Forget where the asset lived. True when there was a pointer to forget."""
+    row = await fetch_one(
+        conn,
+        """UPDATE data_asset SET storage_ref = NULL
+            WHERE asset_id = %s AND storage_ref IS NOT NULL
+        RETURNING asset_id""",
+        (asset_id,),
+    )
+    return row is not None
+
+
+async def holder_for_processor(conn: Conn, request_id: int, processor_id: int) -> Row | None:
+    """The request's holder for the processor whose source holds an asset."""
+    return await fetch_one(
+        conn,
+        """SELECT holder_id, holder_uuid, label, ticket_status, returned_at,
+                  return_evidence_hash
+             FROM rights_request_holder
+            WHERE request_id = %s AND processor_id = %s
+            ORDER BY holder_id LIMIT 1""",
+        (request_id, processor_id),
+    )
+
+
+async def holder_by_id(conn: Conn, holder_id: int) -> Row | None:
+    return await fetch_one(
+        conn,
+        """SELECT holder_id, holder_uuid, label, ticket_status, returned_at,
+                  return_evidence_hash
+             FROM rights_request_holder WHERE holder_id = %s""",
+        (holder_id,),
+    )
+
+
+async def items_awaiting_execution(conn: Conn, *, limit: int = 500) -> list[Row]:
+    """Applied erase, redact and retain items not yet carried out, oldest first."""
+    return await fetch_all(
+        conn,
+        f"""SELECT {_ITEM_SELECT}
+            WHERE i.state = 'applied' AND i.executed_at IS NULL
+              AND i.decision IN ('erase', 'redact', 'retain')
+            ORDER BY i.applied_at, i.item_id
+            LIMIT %s""",
+        (limit,),
     )
 
 
@@ -1113,6 +1215,7 @@ _ITEM_MUTABLE = frozenset(
         "decision",
         "basis",
         "retain_until",
+        "executed_at",
         "floor_passed_at",
         "decided_at",
         "decided_by",
@@ -1141,9 +1244,12 @@ async def update_item(conn: Conn, item_id: int, **cols: Any) -> None:
 
 
 async def set_disposition(conn: Conn, asset_consent_id: int, disposition: str) -> Row | None:
-    """The one write erasure makes to the collection model: her junction row.
+    """Her junction row: what was decided and, once carried out, what was done.
 
-    Never `data_asset`. See decision D-09 in the migration docstring.
+    Never `data_asset` here. The one write erasure makes to an asset is the
+    executor forgetting its pointer, for an erasure where nobody else is in it
+    (`clear_asset_pointer`, S2-03); decision D-09 keeps an asset holding other
+    people exactly where it is.
     """
     return await fetch_one(
         conn,

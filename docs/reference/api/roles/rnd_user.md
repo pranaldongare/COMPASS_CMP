@@ -16,6 +16,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `notices`, `processo
 | `data_source` | Yes | No | `all` | All rows |
 | `export` | No | No | `none` | Denied |
 | `import` | Yes | No | `own` | Own or addressed rows |
+| `legal_hold` | No | No | `none` | Denied |
 | `link` | No | No | `none` | Denied |
 | `me` | No | No | `none` | Denied |
 | `message_template` | No | No | `none` | Denied |

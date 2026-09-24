@@ -121,7 +121,18 @@ in which asset. A **bystander** is a row with no consent: somebody in frame
 who never agreed, kept visible precisely so they can be dealt with.
 
 **Disposition.** What has been decided about a person's appearance in an
-asset: active, erased, redacted, retained, quarantined.
+asset: active, erased, redacted, retained, quarantined. Since S2-03 it reads
+erased or redacted only once the item is **executed**; until then an applied
+erasure reads quarantined.
+
+**Executed (erasure).** A scope item whose every store has been confirmed:
+the holder's copy by its returned ticket, and for an erasure the platform's
+pointer to the asset cleared. Recorded as `executed_at`, from the append-only
+attempts in `rights_item_execution`. Applied is not executed.
+
+**Legal hold.** A record that stops erasure of one asset, or of everything
+about one person, until the DPO releases it. Placed once, released once, with
+a sealed reason; an item it covers records `held` and goes no further.
 
 ## Rights
 

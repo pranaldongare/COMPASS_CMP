@@ -33,7 +33,7 @@ The 13 types and their ids (byte 3 of every envelope):
 
 ---
 
-## 1. Sealed columns — 33 across 13 tables
+## 1. Sealed columns — 34 across 14 tables
 
 ### `auth_user` — the person
 
@@ -98,6 +98,7 @@ carry ciphertext their reader opens like any other value.
 | `person_type_history` | `reason` | FREE_TEXT | Why a person's type changed |
 | `project_processor` | `decision_reason` | FREE_TEXT | Why a processor was accepted or refused |
 | `project_status_history` | `reason` | FREE_TEXT | Why a project moved state |
+| `legal_hold` | `reason` | FREE_TEXT | Why the office stopped an erasure (S2-03) |
 
 ---
 
@@ -180,14 +181,14 @@ sealed column after everything it writes.
 
 | | |
 |---|---|
-| Tables holding personal data | 20 |
-| Personal columns | 54 |
-| **Sealed columns** | **33** in 13 tables |
+| Tables holding personal data | 21 |
+| Personal columns | 56 |
+| **Sealed columns** | **34** in 14 tables |
 | With a `*_hash` lookup column | 8 |
 | With a `*_ngrams` search column | 3 |
-| Plaintext by nature (ids, flags, hashes, tokens, storage paths, jsonb) | 21 - the other 54 − 33 |
-| Plaintext by decision | 1 (`minor_until`, derived from `dob` and not counted in the 54) |
-| API endpoints carrying any of it | 159 |
+| Plaintext by nature (ids, flags, hashes, tokens, storage paths, jsonb) | 22 - the other 56 − 34 |
+| Plaintext by decision | 1 (`minor_until`, derived from `dob` and not counted in the 56) |
+| API endpoints carrying any of it | 163 |
 
 The full 54-column listing with the endpoints that carry each is in
 [pii-fields-and-endpoints.md](../domain/pii-fields-and-endpoints.md),

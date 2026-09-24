@@ -466,13 +466,13 @@ class TestErasureRequest:
             actor_id=dpo,
         )
 
-        # The platform records erasure; the lab performs it. Nothing applies
-        # until the holder has confirmed what was removed.
-        with pytest.raises(Conflict) as early:
-            await service.apply_item(
-                conn, row, item_uuid=str(by_ac[shared]["item_uuid"]), role=DPO, actor_id=dpo
-            )
-        assert early.value.code == "holder_not_confirmed"
+        # The platform records erasure; the lab performs it. Applying before the
+        # holder has confirmed quarantines her appearance and goes no further:
+        # the executor is waiting on the holder's copy (S2-03).
+        early = await service.apply_item(
+            conn, row, item_uuid=str(by_ac[shared]["item_uuid"]), role=DPO, actor_id=dpo
+        )
+        assert early["disposition"] == "quarantined" and early["executed_at"] is None
 
         await service.confirm_holder(
             conn,
@@ -498,13 +498,17 @@ class TestErasureRequest:
             actor_id=dpo,
         )
 
-        redacted = await service.apply_item(
-            conn, row, item_uuid=str(by_ac[shared]["item_uuid"]), role=DPO, actor_id=dpo
+        # The return is the evidence: the item applied early is carried out by
+        # it, and the one applied now goes straight through.
+        redacted = await repo.item_by_uuid(
+            conn, int(row["request_id"]), str(by_ac[shared]["item_uuid"])
         )
         erased = await service.apply_item(
             conn, row, item_uuid=str(by_ac[alone]["item_uuid"]), role=DPO, actor_id=dpo
         )
+        assert redacted is not None
         assert redacted["disposition"] == "redacted" and erased["disposition"] == "erased"
+        assert redacted["executed_at"] is not None and erased["executed_at"] is not None
 
         others = await conn.execute(
             """SELECT disposition FROM asset_consent
@@ -558,7 +562,8 @@ class TestErasureRequest:
             )
         assert held.value.code == "retention_floor"
 
-        # The floor passes; the sweep notes it; applying now erases.
+        # The floor passes; the sweep notes it; applying now starts the erasure -
+        # quarantined at once, erased when the source's holder confirms (S2-03).
         await conn.execute(
             "UPDATE rights_request_item SET retain_until = current_date - 1 WHERE item_uuid = %s",
             (str(item["item_uuid"]),),
@@ -568,7 +573,7 @@ class TestErasureRequest:
         applied = await service.apply_item(
             conn, row, item_uuid=str(item["item_uuid"]), role=DPO, actor_id=None
         )
-        assert applied["disposition"] == "erased"
+        assert applied["disposition"] == "quarantined" and applied["executed_at"] is None
 
 
 # ------------------------------------------------------------------- grievance

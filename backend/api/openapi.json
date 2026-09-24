@@ -11269,8 +11269,62 @@
         "tags": [
           "rights"
         ],
-        "summary": "Set her junction row - the asset survives",
+        "summary": "Quarantine her appearance, then carry the decision out",
         "operationId": "apply_item_requests__request_uuid__scope__item_uuid__apply_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "item_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/scope/{item_uuid}/execute": {
+      "post": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "Try an applied item's stores again now",
+        "description": "The daily sweep retries anything waiting or failed; this is the same\nattempt, now - after a holder answers outside the platform, or a failure\nhas been fixed.",
+        "operationId": "execute_item_requests__request_uuid__scope__item_uuid__execute_post",
         "parameters": [
           {
             "name": "request_uuid",
@@ -11502,6 +11556,137 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/legal-holds": {
+      "get": {
+        "tags": [
+          "legal holds"
+        ],
+        "summary": "Holds, active first",
+        "operationId": "list_holds_legal_holds_get",
+        "parameters": [
+          {
+            "name": "active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only holds not yet released",
+              "default": true,
+              "title": "Active"
+            },
+            "description": "Only holds not yet released"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LegalHoldOut"
+                  },
+                  "title": "Response List Holds Legal Holds Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "legal holds"
+        ],
+        "summary": "Stop erasure of an asset or a person",
+        "operationId": "place_hold_legal_holds_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegalHoldIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalHoldOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/legal-holds/{hold_uuid}/release": {
+      "post": {
+        "tags": [
+          "legal holds"
+        ],
+        "summary": "Release a hold; what it stopped carries on",
+        "operationId": "release_hold_legal_holds__hold_uuid__release_post",
+        "parameters": [
+          {
+            "name": "hold_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hold Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalHoldOut"
+                }
               }
             }
           },
@@ -15477,6 +15662,36 @@
         ],
         "title": "EvidenceIn"
       },
+      "ExecutionOut": {
+        "properties": {
+          "store": {
+            "type": "string",
+            "title": "Store"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "detail": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Detail"
+          },
+          "attempted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Attempted At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "store",
+          "status",
+          "detail",
+          "attempted_at"
+        ],
+        "title": "ExecutionOut"
+      },
       "ExportListRow": {
         "properties": {
           "export_uuid": {
@@ -16525,6 +16740,25 @@
               }
             ],
             "title": "Holder Ticket Status"
+          },
+          "executed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Executed At"
+          },
+          "execution": {
+            "items": {
+              "$ref": "#/components/schemas/ExecutionOut"
+            },
+            "type": "array",
+            "title": "Execution"
           }
         },
         "type": "object",
@@ -16571,6 +16805,158 @@
           "rendered_text"
         ],
         "title": "LanguageIn"
+      },
+      "LegalHoldIn": {
+        "properties": {
+          "asset_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asset Uuid"
+          },
+          "subject_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Uuid"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "LegalHoldIn"
+      },
+      "LegalHoldOut": {
+        "properties": {
+          "hold_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Hold Uuid"
+          },
+          "asset_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asset Uuid"
+          },
+          "source_asset_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Asset Ref"
+          },
+          "subject_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Uuid"
+          },
+          "subject_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Name"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "placed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Placed At"
+          },
+          "placed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placed By Name"
+          },
+          "released_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Released At"
+          },
+          "released_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Released By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hold_uuid",
+          "asset_uuid",
+          "source_asset_ref",
+          "subject_uuid",
+          "subject_name",
+          "reason",
+          "placed_at",
+          "placed_by_name",
+          "released_at",
+          "released_by_name"
+        ],
+        "title": "LegalHoldOut"
       },
       "LinkListRow": {
         "properties": {

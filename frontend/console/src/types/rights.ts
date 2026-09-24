@@ -303,6 +303,34 @@ export interface RightsScopeItem {
   holder_uuid: Uuid | null;
   holder_label: string | null;
   holder_ticket_status: RightsTicketStatus | null;
+  /** When every store holding it was confirmed erased (S2-03). Null while any
+   *  is waiting, failed or held - whatever the disposition says. */
+  executed_at?: Timestamp | null;
+  /** The latest attempt at each store. */
+  execution?: RightsItemExecution[];
+}
+
+/** One store's latest attempt at carrying an item out (S2-03). */
+export interface RightsItemExecution {
+  store: "holder_copy" | "platform_pointer" | "legal_hold";
+  status: "done" | "waiting" | "failed" | "held";
+  /** Why, in the platform's words: a holder uuid and reason, a hold uuid, an error class. */
+  detail: Record<string, unknown>;
+  attempted_at: Timestamp;
+}
+
+/** What stops an erasure until it is released: a hold on an asset or a person. */
+export interface LegalHold {
+  hold_uuid: Uuid;
+  asset_uuid: Uuid | null;
+  source_asset_ref: string | null;
+  subject_uuid: Uuid | null;
+  subject_name: string | null;
+  reason: string;
+  placed_at: Timestamp;
+  placed_by_name: string | null;
+  released_at: Timestamp | null;
+  released_by_name: string | null;
 }
 
 /** What this user may do next, and why anything else is blocked. */

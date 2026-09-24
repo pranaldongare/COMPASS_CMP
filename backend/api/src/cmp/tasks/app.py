@@ -108,8 +108,9 @@ celery_app.conf.update(
             "task": "cmp.maintenance.flag_unmapped_assets",
             "schedule": crontab(hour="*/6", minute="30"),
         },
-        # Rights requests: close what never verified, and note retention floors
-        # that have passed so the erasure they deferred reaches the DPO's queue.
+        # Rights requests: close what never verified, note retention floors
+        # that have passed so the erasure they deferred reaches the DPO's queue,
+        # and try again every erasure still waiting on a store (S2-03).
         "sweep-rights-requests": {
             "task": "cmp.maintenance.sweep_rights_requests",
             "schedule": crontab(hour="2", minute="30"),

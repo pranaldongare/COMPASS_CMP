@@ -51,6 +51,7 @@ PRIMARY_KEY = {
     "project_processor": "project_processor_id",
     "project_status_history": "history_id",
     "import_batch": "batch_id",
+    "legal_hold": "hold_id",
 }
 
 #: What kind of blind index each indexed column takes.
@@ -87,6 +88,9 @@ APPEND_ONLY = {
     "consent_artefact": "trg_consent_append_only",
     "project_status_history": "trg_project_history_append_only",
     "person_type_history": "trg_person_type_history_append_only",
+    # Not append-only, but its reason is fixed once placed (0031); a value
+    # written before sealing was on can only be sealed with the trigger off.
+    "legal_hold": "trg_legal_hold_release_only",
 }
 
 

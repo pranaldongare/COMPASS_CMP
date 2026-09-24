@@ -134,6 +134,11 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
     "rights_response_file": {
         "file_name": DataType.FILE_NAME,
     },
+    # Why the office stopped an erasure: a matter, a regulator, a court. Sealed
+    # like every other reason the office writes (S2-03).
+    "legal_hold": {
+        "reason": DataType.FREE_TEXT,
+    },
     "consent_artefact": {
         "ip_address": DataType.IP,
     },

@@ -296,6 +296,8 @@ def digest_text(package: dict[str, Any]) -> str:
     if done.get("items"):
         lines += ["", "WHAT WAS DONE WITH EACH ITEM"]
         lines += [f"- {e['asset']}: {e['outcome']}" for e in done["items"]]
+    if done.get("kept_as_evidence"):
+        lines += ["", str(done["kept_as_evidence"])]
     if done.get("not_done"):
         lines += [
             "",

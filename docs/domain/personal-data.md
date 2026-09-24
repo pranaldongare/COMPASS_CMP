@@ -5,7 +5,7 @@ that accepts or returns it. Written for the questions that have to be answered
 quickly and exactly: what do we hold, where does it go, who can see it, and
 which call would expose it.
 
-The counts here are measured, not remembered. **159 of the API's 245
+The counts here are measured, not remembered. **163 of the API's 249
 operations** carry personal data; **20 of those need no session**. They come
 from joining three artefacts the repository already keeps current, and the
 last section says how to redo the join after a change.
@@ -146,6 +146,15 @@ directions), `evidence_ref`, `evidence_hash`, `evidence_name`.
 **`rights_request_item`** — `asset_consent_id`, `other_subjects` (how many other
 people appear in the same asset), `decision`, `basis`, `retain_until`.
 
+**`rights_item_execution`** (0031) — no personal data by design: one row per
+attempt at erasing a scope item from each store that holds it, with a status
+and a reason in the platform's words (a holder's uuid, a hold's uuid, an error
+class), never a value about her. `rights_request_item.executed_at` is when every
+store was done.
+
+**`legal_hold`** (0031) — `asset_id` or `subject_user_id`, and `reason`
+(sealed): what stops an erasure, and why.
+
 **`rights_response_file`** — `file_ref`, `file_hash`, `file_name`,
 `content_type`, `size_bytes`, `uploaded_by`.
 
@@ -278,7 +287,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-159 of 245 operations accept or return personal data. Each table gives the
+163 of 249 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -371,7 +380,7 @@ selected.
 
 ### Rights requests, the office's side — `/requests/*`
 
-35 operations carry personal data.
+36 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
@@ -403,6 +412,7 @@ selected.
 | POST | `/requests/{request_uuid}/scope/derive` | DPO every row, Admin rows in scope | — | `decided_by_name`, `disposition`, `other_subjects`, `subject_role` |
 | PUT | `/requests/{request_uuid}/scope/{item_uuid}` | DPO every row, Admin rows in scope | — | `decided_by_name`, `disposition`, `other_subjects`, `subject_role` |
 | POST | `/requests/{request_uuid}/scope/{item_uuid}/apply` | DPO every row, Admin rows in scope | — | `decided_by_name`, `disposition`, `other_subjects`, `subject_role` |
+| POST | `/requests/{request_uuid}/scope/{item_uuid}/execute` | DPO every row, Admin rows in scope | — | `decided_by_name`, `disposition`, `other_subjects`, `subject_role` |
 | POST | `/requests/{request_uuid}/tickets` | DPO every row, Admin rows in scope | `instruction` | `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/transition` | DPO every row, Admin rows in scope | `reason` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/verification/code` | DPO every row, Admin rows in scope | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
@@ -410,6 +420,16 @@ selected.
 | POST | `/requests/{request_uuid}/verification/fail` | DPO every row, Admin rows in scope | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/verification/manual` | DPO every row, Admin rows in scope | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/withdrawal` | DPO every row, Admin rows in scope | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+
+### Legal holds — `/legal-holds/*`
+
+3 operations carry personal data.
+
+| Method | Endpoint | Who may call it | Personal data in | Personal data out |
+|---|---|---|---|---|
+| GET | `/legal-holds` | DPO every row | — | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
+| POST | `/legal-holds` | DPO every row | `reason`, `subject_uuid` | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
+| POST | `/legal-holds/{hold_uuid}/release` | DPO every row | — | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
 
 ### Tickets a holder answers — `/tickets/*`
 
@@ -566,7 +586,6 @@ selected.
 |---|---|---|---|---|
 | GET | `/dashboard` | any signed-in session, conditionally | — | `role` |
 
-
 ## The public surface
 
 20 operations answer without a session. They are the ones worth re-reading
@@ -602,7 +621,7 @@ rediscover them.
 
 | Control | Where |
 |---|---|
-| 33 personal columns - people's names and contacts, date of birth, free text, file names, the consent IP - are ciphertext at rest, and the API serves them that way | [docs/dkms/](../dkms/README.md), [encryption at rest](../security/encryption-at-rest.md) |
+| 34 personal columns - people's names and contacts, date of birth, free text, file names, the consent IP - are ciphertext at rest, and the API serves them that way | [docs/dkms/](../dkms/README.md), [encryption at rest](../security/encryption-at-rest.md) |
 | A password is Argon2, and `password_hash` appears in **no** response schema | `auth_user`, and the absence is the point |
 | A one-time code is never stored — Redis holds a keyed digest, and the check, the consumption and the attempt count are one atomic script | `cmp/auth/authentication/otp.py` |
 | A session token is never stored; Redis is keyed by its fingerprint | `cmp/auth/sessions/service.py` |

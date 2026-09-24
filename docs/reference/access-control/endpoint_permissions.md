@@ -108,6 +108,16 @@ Roles refer to the **effective session role**. A staff account signed in through
 | GET | `/projects/{project_uuid}/exports` | NO | ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
 | POST | `/projects/{project_uuid}/exports` | NO | ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
 
+## Legal holds
+
+[Conditions and source evidence](modules/legal_holds.md)
+
+| Method | Endpoint | Anonymous | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GET | `/legal-holds` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/legal-holds` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/legal-holds/{hold_uuid}/release` | NO | ALL | NO | NO | NO | NO | NO | NO |
+
 ## Me
 
 [Conditions and source evidence](modules/me.md)
@@ -316,6 +326,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/requests/{request_uuid}/scope/derive` | NO | ALL | SCOPED | NO | NO | NO | NO | NO |
 | PUT | `/requests/{request_uuid}/scope/{item_uuid}` | NO | ALL | SCOPED | NO | NO | NO | NO | NO |
 | POST | `/requests/{request_uuid}/scope/{item_uuid}/apply` | NO | ALL | SCOPED | NO | NO | NO | NO | NO |
+| POST | `/requests/{request_uuid}/scope/{item_uuid}/execute` | NO | ALL | SCOPED | NO | NO | NO | NO | NO |
 | POST | `/requests/{request_uuid}/tickets` | NO | ALL | SCOPED | NO | NO | NO | NO | NO |
 | GET | `/requests/{request_uuid}/trail` | NO | ALL | SCOPED | NO | NO | NO | NO | NO |
 | POST | `/requests/{request_uuid}/transition` | NO | ALL | SCOPED | NO | NO | NO | NO | NO |

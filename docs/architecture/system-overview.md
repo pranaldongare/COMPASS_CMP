@@ -59,7 +59,7 @@ flowchart LR
 | Key service | `backend/dkms/` | `python3 -m app.main` in its own virtualenv, port 32688 | nothing; it is called |
 | Staff console | `frontend/console/` | Next.js on port 3000 | the API, through its own `/api` proxy; the key service, from its server |
 | Data-principal portal | `frontend/portal/` | Next.js on port 3001 | the API, through its own `/api` proxy; the key service, from its server |
-| PostgreSQL | native, or `dev-services.yml` | 32 tables, 39 enums, 27 triggers, one view | |
+| PostgreSQL | native, or `dev-services.yml` | 34 tables, 39 enums, 29 triggers, one view | |
 | Redis | native, or `dev-services.yml` | three logical databases: sessions and limits, broker, results | |
 
 ## Two audiences, two portals

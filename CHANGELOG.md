@@ -31,6 +31,34 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **Erasure that erases (S2-03).** An erasure decision used to change her
+  disposition on `asset_consent` and nothing else; the recording stayed at the
+  lab and the platform kept its pointer to it. Applying a decision now
+  quarantines at once - out of use, recoverable if the decision was a mistake -
+  and an executor (`cmp.domain.rights.erasure`) carries an erase, a redaction
+  or a retention past its floor out store by store. The platform never holds
+  an asset's bytes, so the stores are the holder's copy, done when the holder
+  of the asset's source returns its ticket, and, for an erasure, the
+  platform's pointer, `data_asset.storage_ref`, cleared - a redaction keeps
+  the asset for the others in it. Every attempt is a row in
+  `rights_item_execution`, append-only: done, waiting, failed or held, and
+  why, never a value about her. Only when every store is done does the item
+  get `executed_at` and her disposition read erased or redacted, which is what
+  S2-02's guard reads before a response may be complete. Anything waiting or
+  failed is retried by the daily sweep, on every ticket return, and on
+  `POST /requests/{uuid}/scope/{item}/execute`, and stays on the request until
+  it succeeds. **Legal holds** (`/legal-holds`, DPO only, resource
+  `legal_hold`) stop erasure of an asset or a person, with a sealed reason;
+  placed once and released once, by trigger, and release carries on at once.
+  Consent artefacts, the audit trail, the export files processors were sent
+  and the response packages she was given are never touched - the record of
+  what happened ([ADR 0019](docs/decisions/0019-erasure-reaches-every-store-but-the-record.md)) -
+  and the response says so. Migration 0031. The console's scope card shows
+  each store as it stands, with "Try again now" and placing or releasing a hold.
+  Backups are not covered: there are none yet (P-03), and whether one holding
+  an erased item is scrubbed or left to expire is waiting on Legal.
+  `docs/tools/personal-data-scan.py` and `pii-fields-and-endpoints.py` no
+  longer drop a module they were not told about.
 - **Part of a name finds a person again, without the name leaving its seal.**
   Sealing the names had narrowed the users list, the requests search and the
   audit trail's About picker to whole contacts. Migration 0030 adds

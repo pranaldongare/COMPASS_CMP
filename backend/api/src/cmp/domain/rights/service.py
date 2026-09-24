@@ -41,7 +41,7 @@ from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn, fetch_one
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
-from cmp.domain.rights import clock, execution
+from cmp.domain.rights import clock, erasure, execution
 from cmp.domain.rights import state_machine as sm
 from cmp.domain.rights.scope import consent_scope, scope_text
 from cmp.domain.rights.state_machine import RequestFacts
@@ -1117,6 +1117,8 @@ async def return_ticket(
         detail={"label": holder["label"], "evidence_sha256": evidence_hash},
     )
     await _settle(conn, row, actor_id=actor_id)
+    # A returned ticket is the evidence the holder's copy is gone.
+    await erasure.execute_request(conn, row, actor_id=actor_id)
     fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
     assert fresh is not None
     return fresh
@@ -2101,6 +2103,7 @@ async def return_own_ticket(
         detail={"label": holder["label"], "evidence_sha256": evidence_hash, "channel": "portal"},
     )
     await _settle(conn, row, actor_id=user_id)
+    await erasure.execute_request(conn, row, actor_id=user_id)
     fresh = await repo.ticket_for_user(conn, user_id, holder_uuid)
     assert fresh is not None
     return fresh
@@ -2225,24 +2228,18 @@ async def decide_item(
     return fresh
 
 
-_DISPOSITION_FOR = {
-    Decision.ERASE: Disposition.ERASED,
-    Decision.REDACT: Disposition.REDACTED,
-    Decision.QUARANTINE: Disposition.QUARANTINED,
-    # A retained item is erased when its floor passes; applying it is that.
-    Decision.RETAIN: Disposition.ERASED,
-}
-
-
 async def apply_item(
     conn: Conn, row: Row, *, item_uuid: str, role: Role | str, actor_id: int | None
 ) -> Row:
-    """Set her junction row. The asset survives; her contribution is recorded gone.
+    """Quarantine her appearance, then carry the decision out as far as it goes.
 
-    Erasure and redaction wait for the holder's confirmation where a holder is
-    named - the platform records what happened, it does not delete files a lab
-    holds. Quarantine is immediate: it is the platform's own flag, and it is
-    what stops an asset being released while the DPO decides.
+    Quarantine is always the first step: it is the platform's own flag, it
+    stops the asset being used or released at once, and it can be undone if
+    the decision was a mistake. For a quarantine decision it is also the last.
+    An erasure, a redaction, or a retention whose floor has passed then goes to
+    the executor (`erasure`), which confirms each store that holds it - the
+    holder's copy through its returned ticket, the platform's own pointer - and
+    only then records her disposition as erased or redacted (S2-03).
     """
     if actor_id is not None:
         _may_act(row, role)
@@ -2262,17 +2259,8 @@ async def apply_item(
             "it is applied when it passes.",
             code="retention_floor",
         )
-    if (
-        choice in (Decision.ERASE, Decision.REDACT)
-        and item["holder_id"] is not None
-        and item["holder_ticket_status"] != Ticket.RETURNED
-    ):
-        raise Conflict(
-            f"{item['holder_label']} has not confirmed what was removed. Record the "
-            "holder's return first - the platform records erasure, it does not perform it.",
-            code="holder_not_confirmed",
-        )
-    disposition = _DISPOSITION_FOR[choice]
+    # Quarantined first, whatever the decision; the executor moves it on.
+    disposition = Disposition.QUARANTINED
     changed = await repo.set_disposition(conn, int(item["asset_consent_id"]), disposition.value)
     await repo.update_item(
         conn,
@@ -2306,7 +2294,23 @@ async def apply_item(
         )
     fresh = await repo.item_by_uuid(conn, int(row["request_id"]), item_uuid)
     assert fresh is not None
-    return fresh
+    return await erasure.execute(conn, row, fresh, actor_id=actor_id)
+
+
+async def execute_item(
+    conn: Conn, row: Row, *, item_uuid: str, role: Role | str, actor_id: int
+) -> Row:
+    """Try an applied item's stores again now, rather than at the next sweep."""
+    _may_act(row, role)
+    item = await repo.item_by_uuid(conn, int(row["request_id"]), item_uuid)
+    if not item:
+        raise NotFound("Scope item")
+    if not erasure.needs_execution(item):
+        raise Conflict(
+            "Only an applied erasure or redaction that is not yet carried out can be retried",
+            code="item_not_executable",
+        )
+    return await erasure.execute(conn, row, item, actor_id=actor_id)
 
 
 # ------------------------------------------------------------------ response
@@ -3100,7 +3104,20 @@ async def sweep(conn: Conn, *, today: date | None = None) -> dict[str, int]:
             )
         floors += 1
     reminded = await sweep_tickets(conn, today=day)
+    # Erasures still waiting on a store, or that failed: tried again (S2-03).
+    executed = await erasure.execute_pending(conn)
     log.info(
-        "rights.sweep", closed_unverified=closed, floors_passed=floors, tickets_reminded=reminded
+        "rights.sweep",
+        closed_unverified=closed,
+        floors_passed=floors,
+        tickets_reminded=reminded,
+        erasures_attempted=executed["attempted"],
+        erasures_finished=executed["finished"],
     )
-    return {"closed_unverified": closed, "floors_passed": floors, "tickets_reminded": reminded}
+    return {
+        "closed_unverified": closed,
+        "floors_passed": floors,
+        "tickets_reminded": reminded,
+        "erasures_attempted": executed["attempted"],
+        "erasures_finished": executed["finished"],
+    }

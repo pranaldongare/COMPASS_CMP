@@ -14,6 +14,7 @@ import type { ListFilters } from "@/lib/query";
 import type {
   AuditEntry,
   GrievanceDecisionResult,
+  LegalHold,
   Page,
   RightsHolder,
   RightsRequest,
@@ -199,6 +200,15 @@ export const decideItem = (uuid: Uuid, itemUuid: Uuid, body: DecideItemInput) =>
   apiPut<RightsScopeItem>(action(uuid, `scope/${itemUuid}`), body);
 export const applyItem = (uuid: Uuid, itemUuid: Uuid) =>
   apiPost<RightsScopeItem>(action(uuid, `scope/${itemUuid}/apply`), {});
+/** Try an applied item's stores again now, rather than at the daily sweep. */
+export const executeItem = (uuid: Uuid, itemUuid: Uuid) =>
+  apiPost<RightsScopeItem>(action(uuid, `scope/${itemUuid}/execute`), {});
+
+/* ------------------------------------------------------------ legal holds */
+export const placeHold = (body: { asset_uuid?: Uuid; subject_uuid?: Uuid; reason: string }) =>
+  apiPost<LegalHold>("/legal-holds", body);
+export const releaseHold = (holdUuid: Uuid) =>
+  apiPost<LegalHold>(`/legal-holds/${holdUuid}/release`, {});
 
 export interface RespondInput {
   outcome: string;

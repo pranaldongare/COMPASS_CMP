@@ -16,6 +16,7 @@ Navigation returned after sign-in: `dashboard`, `users`, `messages`, `processors
 | `data_source` | Yes | Yes | `all` | All rows |
 | `export` | No | No | `none` | Denied |
 | `import` | No | No | `none` | Denied |
+| `legal_hold` | No | No | `none` | Denied |
 | `link` | No | No | `none` | Denied |
 | `me` | No | No | `none` | Denied |
 | `message_template` | Yes | Yes | `all` | All rows |

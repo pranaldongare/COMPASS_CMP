@@ -10,7 +10,7 @@
 <title>Schema</title>
 <polygon fill="#f7fafc" stroke="none" points="-36,36 -36,-765 662.45,-765 662.45,36 -36,36"/>
 <text xml:space="preserve" text-anchor="start" x="8" y="-699" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="30.00" fill="#142c44">COMPASS / PLATFORM</text>
-<text xml:space="preserve" text-anchor="start" x="8" y="-683.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0030 / full module tables with outgoing references / source cddde41</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-683.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0031 / full module tables with outgoing references / source 416f0de</text>
 <text xml:space="preserve" text-anchor="start" x="8" y="-657.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">FK arrow: child column to referenced key &#160;&#160;| &#160;&#160;Solid = required FK; dashed = nullable FK; dotted = view dependency</text>
 <text xml:space="preserve" text-anchor="start" x="13.43" y="-645.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">PK = primary key; FK = foreign key; UQ = member of unique constraint (possibly composite); ? = nullable column</text>
 <g id="clust1" class="cluster">
@@ -37,9 +37,9 @@
 </g>
 </g>
 <!-- message_template&#45;&gt;auth_user -->
-<g id="FK040" class="edge">
+<g id="FK044" class="edge">
 <title>message_template:e&#45;&gt;auth_user:w</title>
-<g id="a_FK040"><a xlink:title="FK040 / message_template_updated_by_fkey / message_template(updated_by) to auth_user(id) / FOREIGN KEY (updated_by) REFERENCES auth_user(id)">
+<g id="a_FK044"><a xlink:title="FK044 / message_template_updated_by_fkey / message_template(updated_by) to auth_user(id) / FOREIGN KEY (updated_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M212.01,-385C212.01,-385 309.89,-331 309.89,-331 309.89,-331 381.66,-208.96 399.6,-178.45"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="401.45,-179.79 402.78,-173.04 397.53,-177.49 401.45,-179.79"/>
 </a>

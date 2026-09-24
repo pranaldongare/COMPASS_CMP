@@ -3932,8 +3932,30 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Set her junction row - the asset survives */
+        /** Quarantine her appearance, then carry the decision out */
         post: operations["apply_item_requests__request_uuid__scope__item_uuid__apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/scope/{item_uuid}/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Try an applied item's stores again now
+         * @description The daily sweep retries anything waiting or failed; this is the same
+         *     attempt, now - after a holder answers outside the platform, or a failure
+         *     has been fixed.
+         */
+        post: operations["execute_item_requests__request_uuid__scope__item_uuid__execute_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4006,6 +4028,41 @@ export interface paths {
         get: operations["download_response_requests__request_uuid__download_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/legal-holds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Holds, active first */
+        get: operations["list_holds_legal_holds_get"];
+        put?: never;
+        /** Stop erasure of an asset or a person */
+        post: operations["place_hold_legal_holds_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/legal-holds/{hold_uuid}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Release a hold; what it stopped carries on */
+        post: operations["release_hold_legal_holds__hold_uuid__release_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5433,6 +5490,22 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /** ExecutionOut */
+        ExecutionOut: {
+            /** Store */
+            store: string;
+            /** Status */
+            status: string;
+            /** Detail */
+            detail: {
+                [key: string]: unknown;
+            };
+            /**
+             * Attempted At
+             * Format: date-time
+             */
+            attempted_at: string;
+        };
         /** ExportListRow */
         ExportListRow: {
             /**
@@ -5776,11 +5849,53 @@ export interface components {
             holder_label: string | null;
             /** Holder Ticket Status */
             holder_ticket_status: string | null;
+            /** Executed At */
+            executed_at?: string | null;
+            /** Execution */
+            execution?: components["schemas"]["ExecutionOut"][];
         };
         /** LanguageIn */
         LanguageIn: {
             /** Rendered Text */
             rendered_text: string;
+        };
+        /** LegalHoldIn */
+        LegalHoldIn: {
+            /** Asset Uuid */
+            asset_uuid?: string | null;
+            /** Subject Uuid */
+            subject_uuid?: string | null;
+            /** Reason */
+            reason: string;
+        };
+        /** LegalHoldOut */
+        LegalHoldOut: {
+            /**
+             * Hold Uuid
+             * Format: uuid
+             */
+            hold_uuid: string;
+            /** Asset Uuid */
+            asset_uuid: string | null;
+            /** Source Asset Ref */
+            source_asset_ref: string | null;
+            /** Subject Uuid */
+            subject_uuid: string | null;
+            /** Subject Name */
+            subject_name: string | null;
+            /** Reason */
+            reason: string;
+            /**
+             * Placed At
+             * Format: date-time
+             */
+            placed_at: string;
+            /** Placed By Name */
+            placed_by_name: string | null;
+            /** Released At */
+            released_at: string | null;
+            /** Released By Name */
+            released_by_name: string | null;
         };
         /** LinkListRow */
         LinkListRow: {
@@ -15402,6 +15517,38 @@ export interface operations {
             };
         };
     };
+    execute_item_requests__request_uuid__scope__item_uuid__execute_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                item_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     respond_requests__request_uuid__respond_post: {
         parameters: {
             query?: never;
@@ -15524,6 +15671,102 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_holds_legal_holds_get: {
+        parameters: {
+            query?: {
+                /** @description Only holds not yet released */
+                active?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalHoldOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    place_hold_legal_holds_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegalHoldIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalHoldOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    release_hold_legal_holds__hold_uuid__release_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hold_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalHoldOut"];
                 };
             };
             /** @description Validation Error */

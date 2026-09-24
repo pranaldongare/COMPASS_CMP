@@ -16,6 +16,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `approvals`, `notice
 | `data_source` | Yes | Yes | `all` | All rows |
 | `export` | Yes | Yes | `all` | All rows |
 | `import` | Yes | Yes | `all` | All rows |
+| `legal_hold` | Yes | Yes | `all` | All rows |
 | `link` | Yes | Yes | `all` | All rows |
 | `me` | No | No | `none` | Denied |
 | `message_template` | Yes | Yes | `all` | All rows |

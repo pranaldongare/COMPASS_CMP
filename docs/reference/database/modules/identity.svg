@@ -10,7 +10,7 @@
 <title>Schema</title>
 <polygon fill="#f7fafc" stroke="none" points="-36,36 -36,-995.8 888.75,-995.8 888.75,36 -36,36"/>
 <text xml:space="preserve" text-anchor="start" x="8" y="-929.8" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="30.00" fill="#142c44">COMPASS / IDENTITY</text>
-<text xml:space="preserve" text-anchor="start" x="8" y="-914.2" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0030 / full module tables with outgoing references / source cddde41</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-914.2" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0031 / full module tables with outgoing references / source 416f0de</text>
 <text xml:space="preserve" text-anchor="start" x="8" y="-888" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">FK arrow: child column to referenced key &#160;&#160;| &#160;&#160;Solid = required FK; dashed = nullable FK; dotted = view dependency</text>
 <text xml:space="preserve" text-anchor="start" x="13.43" y="-876" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">PK = primary key; FK = foreign key; UQ = member of unique constraint (possibly composite); ? = nullable column</text>
 <g id="clust1" class="cluster">
@@ -28,18 +28,18 @@
 </g>
 </g>
 <!-- person_type_history&#45;&gt;auth_user -->
-<g id="FK052" class="edge">
+<g id="FK056" class="edge">
 <title>person_type_history:e&#45;&gt;auth_user:w</title>
-<g id="a_FK052"><a xlink:title="FK052 / person_type_history_auth_user_id_fkey / person_type_history(auth_user_id) to auth_user(id) / FOREIGN KEY (auth_user_id) REFERENCES auth_user(id)">
+<g id="a_FK056"><a xlink:title="FK056 / person_type_history_auth_user_id_fkey / person_type_history(auth_user_id) to auth_user(id) / FOREIGN KEY (auth_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M149.08,-260.2C149.08,-260.2 225.47,-395 225.47,-395 225.47,-395 319.51,-623.31 337.88,-667.9"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="335.75,-668.72 340.33,-673.86 339.96,-666.98 335.75,-668.72"/>
 </a>
 </g>
 </g>
 <!-- person_type_history&#45;&gt;auth_user -->
-<g id="FK053" class="edge">
+<g id="FK057" class="edge">
 <title>person_type_history:e&#45;&gt;auth_user:w</title>
-<g id="a_FK053"><a xlink:title="FK053 / person_type_history_changed_by_fkey / person_type_history(changed_by) to auth_user(id) / FOREIGN KEY (changed_by) REFERENCES auth_user(id)">
+<g id="a_FK057"><a xlink:title="FK057 / person_type_history_changed_by_fkey / person_type_history(changed_by) to auth_user(id) / FOREIGN KEY (changed_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M149.08,-159.4C149.08,-159.4 314.93,-605.39 338.25,-668.11"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="335.99,-668.54 340.39,-673.84 340.25,-666.95 335.99,-668.54"/>
 </a>

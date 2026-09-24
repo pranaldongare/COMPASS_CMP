@@ -21,7 +21,7 @@ scan = importlib.util.module_from_spec(spec)
 assert spec.loader
 spec.loader.exec_module(scan)
 
-#: The 55 columns, table by table. Hand-kept: the database has no flag that
+#: The personal columns, table by table. Hand-kept: the database has no flag that
 #: says "personal", so this list is the decision, and the value scan in
 #: personal-data.md is how it was checked.
 COLUMNS: list[tuple[str, list[str]]] = [
@@ -35,6 +35,7 @@ COLUMNS: list[tuple[str, list[str]]] = [
                                "return_summary", "sent_back_reason", "contact_log", "brief"]),
     ("rights_ticket_message", ["body", "evidence_name", "evidence_ref"]),
     ("rights_response_file", ["file_name", "file_ref"]),
+    ("legal_hold", ["reason", "subject_user_id"]),
     ("consent_artefact", ["ip_address", "auth_user_id"]),
     ("consent_purpose_grant", ["granted"]),
     ("consent_link", ["token", "token_sealed"]),
@@ -51,13 +52,14 @@ COLUMNS: list[tuple[str, list[str]]] = [
     ("audit_log", ["actor_user_id", "subject_user_id", "detail_json (holds ip, email)"]),
 ]
 
-ORDER = ["auth", "me", "public consent", "public information", "rights", "tickets",
-         "consent", "exchange", "users", "delegations", "projects", "notices",
+ORDER = ["auth", "me", "public consent", "public information", "rights", "legal holds",
+         "tickets", "consent", "exchange", "users", "delegations", "projects", "notices",
          "registry", "messages", "audit", "dashboard"]
 TITLE = {
     "auth": "Authentication (`/auth`)", "me": "My own records (`/me`)",
     "public consent": "Consent link (`/c/{token}`)", "public information": "Public rights pages (`/rights`)",
-    "rights": "Rights requests — Privacy Office (`/requests`)", "tickets": "Tickets (`/tickets`)",
+    "rights": "Rights requests — Privacy Office (`/requests`)",
+    "legal holds": "Legal holds (`/legal-holds`)", "tickets": "Tickets (`/tickets`)",
     "consent": "Consents and links", "exchange": "Exports, imports, collections, assets",
     "users": "Users (`/users`)", "delegations": "Delegations (`/delegations`)",
     "projects": "Projects, approvals, sites", "notices": "Notices",
@@ -92,7 +94,7 @@ def main() -> None:
                "`response_text`, `responder_name`, `responder_contact`, `instruction`,\n"
                "`return_summary`, `sent_back_reason`, `body`, `evidence_name`, `file_name` (both\n"
                "tables), `ip_address`, `name` and `contact` on `processor_respondent`, every\n"
-               "`reason`, `decision_reason` — 33 columns in 13 tables. The eight the platform\n"
+               "`reason`, `decision_reason` — 34 columns in 14 tables. The eight the platform\n"
                "looks rows up by whole (`email`, `secondary_email`, `mobile`, `username`,\n"
                "`organization_id`, `nominee_email`, `nominee_mobile`, `submitted_contact`) carry\n"
                "a keyed hash beside them - `*_hash`, an HMAC of the normalised value - and three\n"
@@ -123,11 +125,13 @@ def main() -> None:
                f"sealed column comes back as `SE::…` and the portal decrypts it. {public} of\n"
                "these need no session; they are marked **public**.\n")
 
-    for module in ORDER:
+    # An unlisted module still appears, under its own name: a new router must
+    # not drop out of this list in silence.
+    for module in ORDER + sorted({r["module"] for r in rows} - set(ORDER)):
         group = sorted(by.get(module, []), key=lambda r: (r["path"], METHOD_ORDER.get(r["method"], 9)))
         if not group:
             continue
-        out.append(f"### {TITLE[module]} — {len(group)} endpoint{'s' if len(group) != 1 else ''}\n")
+        out.append(f"### {TITLE.get(module, module.capitalize())} — {len(group)} endpoint{'s' if len(group) != 1 else ''}\n")
         out.append("| Method | Endpoint | PII in (request) | PII out (response) |\n|---|---|---|---|")
         for r in group:
             path = f"`{r['path']}`" + (" **public**" if r["anonymous"] != "NO" else "")

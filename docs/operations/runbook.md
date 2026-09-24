@@ -159,6 +159,35 @@ column, and whenever you want proof that nothing is in the clear.
   closes requests past `RIGHTS_UNVERIFIED_CLOSE_DAYS`. Check beat is running
   and there is exactly one of it.
 
+## An erasure is not finishing
+
+An applied erasure or redaction is quarantined at once and erased only when
+every store holding it is confirmed (S2-03). The request's scope card shows
+each store as it stands; the same rows are `rights_item_execution`.
+
+- **"Waiting - no holder has been asked for this asset's copy."** The asset's
+  source belongs to a processor with no holder on this request. Derive the
+  holders, confirm the one for that processor, and issue its ticket.
+- **"Waiting for the holder's ticket to come back."** The holder has not
+  returned. Chase or escalate it as for any ticket; the return carries the
+  item on by itself. A return can only be recorded while the request is open:
+  if the holder answers after the response went out, the item stays waiting -
+  record what happened on the request and escalate to the DPO.
+- **"Failed (…)".** A store raised; the class name is recorded, never the
+  message. It is retried by the 02:30 sweep and on every ticket return, or
+  press **Try again now** (`POST /requests/{uuid}/scope/{item}/execute`).
+  Something that fails every time is a defect: the worker and API logs carry
+  `rights.erasure_failed` with the item.
+- **"Stopped until the hold is released."** A legal hold covers the asset or
+  the person. Nothing is erased while it stands. Only the DPO places and
+  releases one (`/legal-holds`); releasing it carries the item on at once.
+
+What is never erased, by design: consent artefacts, the audit trail, the
+export files processors were sent and the response packages she was given
+([ADR 0019](../decisions/0019-erasure-reaches-every-store-but-the-record.md)).
+Backups are not covered yet: there are none (P-03), and whether one holding an
+erased item is scrubbed or left to expire is waiting on Legal.
+
 ## Somebody asks what happened to a record
 
 Open the record on the console and press **Audit trail**, or on the Audit

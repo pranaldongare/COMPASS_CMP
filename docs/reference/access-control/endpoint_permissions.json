@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 245,
-  "registered_business_and_system_operations": 248,
+  "documented_operations": 249,
+  "registered_business_and_system_operations": 252,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -7869,7 +7869,7 @@
       "module": "rights",
       "method": "POST",
       "path": "/requests/{request_uuid}/scope/{item_uuid}/apply",
-      "summary": "Set her junction row - the asset survives",
+      "summary": "Quarantine her appearance, then carry the decision out",
       "function": "apply_item",
       "operation_id": "apply_item_requests__request_uuid__scope__item_uuid__apply_post",
       "in_openapi": true,
@@ -9291,6 +9291,150 @@
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/c7d3f6ba15a5cfdc6f9df6632c9c7e336c9936fa/backend/api/src/cmp/api/routers/v1/audit.py#L343"
       ]
+    },
+    {
+      "module": "legal holds",
+      "method": "GET",
+      "path": "/legal-holds",
+      "summary": "Holds, active first",
+      "function": "list_holds",
+      "operation_id": "list_holds_legal_holds_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "LegalHoldReader",
+      "resolved_gate": "RequireResource(legal_hold)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "legal_hold",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource legal_hold, S2-03). A hold covers one asset or one person, stops the erasure executor on every item it covers, and is placed once and released once; the reason is sealed."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/legal_holds.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/holds.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "legal holds",
+      "method": "POST",
+      "path": "/legal-holds",
+      "summary": "Stop erasure of an asset or a person",
+      "function": "place_hold",
+      "operation_id": "place_hold_legal_holds_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "LegalHoldWriter",
+      "resolved_gate": "RequireResource(legal_hold, write=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "legal_hold",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource legal_hold, S2-03). A hold covers one asset or one person, stops the erasure executor on every item it covers, and is placed once and released once; the reason is sealed."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/legal_holds.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/holds.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "legal holds",
+      "method": "POST",
+      "path": "/legal-holds/{hold_uuid}/release",
+      "summary": "Release a hold; what it stopped carries on",
+      "function": "release_hold",
+      "operation_id": "release_hold_legal_holds__hold_uuid__release_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "LegalHoldWriter",
+      "resolved_gate": "RequireResource(legal_hold, write=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "legal_hold",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource legal_hold, S2-03). A hold covers one asset or one person, stops the erasure executor on every item it covers, and is placed once and released once; the reason is sealed."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/legal_holds.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/holds.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "rights",
+      "method": "POST",
+      "path": "/requests/{request_uuid}/scope/{item_uuid}/execute",
+      "summary": "Try an applied item's stores again now",
+      "function": "execute_item",
+      "operation_id": "execute_item_requests__request_uuid__scope__item_uuid__execute_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RightsWriter",
+      "resolved_gate": "RequireResource(rights_request, write=True)",
+      "route_roles": [
+        "admin",
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "rights_request",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "SCOPED",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "As for the rest of the request: DPO all, Admin where about_dpo. Retries an applied erasure or redaction's stores now (S2-03); anything else is item_not_executable."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/erasure.py"
+      ]
     }
   ],
   "amended": [
@@ -9303,6 +9447,11 @@
       "on": "2026-09-24",
       "commit": "daca825864313166693c3f2973d50ec5c05d4170",
       "note": "Re-reviewed at daca825: no route, guard or matrix change since 1757d50. GET /notifications is now scoped by the project predicate (79b7fac); GET /audit/lookup matches sealed people by hash and name runs; GET /ready checks the key service. Other evidence links remain pinned to 1757d50."
+    },
+    {
+      "on": "2026-09-24",
+      "commit": "S2-03",
+      "note": "Four operations added with S2-03: GET/POST /legal-holds, POST /legal-holds/{hold_uuid}/release (resource legal_hold, DPO only) and POST /requests/{request_uuid}/scope/{item_uuid}/execute. Evidence links for these point at HEAD."
     }
   ]
 }

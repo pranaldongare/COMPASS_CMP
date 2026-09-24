@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-43 operations; 43 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+44 operations; 44 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
@@ -40,6 +40,7 @@
 | POST | `/requests/{request_uuid}/scope/derive` | `dpo`, `admin` | Full session; anonymous NO |
 | PUT | `/requests/{request_uuid}/scope/{item_uuid}` | `dpo`, `admin` | Full session; anonymous NO |
 | POST | `/requests/{request_uuid}/scope/{item_uuid}/apply` | `dpo`, `admin` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/scope/{item_uuid}/execute` | `dpo`, `admin` | Full session; anonymous NO |
 | POST | `/requests/{request_uuid}/tickets` | `dpo`, `admin` | Full session; anonymous NO |
 | GET | `/requests/{request_uuid}/trail` | `dpo`, `admin` | Full session; anonymous NO |
 | POST | `/requests/{request_uuid}/transition` | `dpo`, `admin` | Full session; anonymous NO |
@@ -517,7 +518,7 @@ What can go, what must stay, and why.
 
 ## POST /requests/{request_uuid}/scope/{item_uuid}/apply
 
-Set her junction row - the asset survives.
+Quarantine her appearance, then carry the decision out.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -528,6 +529,20 @@ Set her junction row - the asset survives.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
 - **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1358), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
+
+## POST /requests/{request_uuid}/scope/{item_uuid}/execute
+
+Try an applied item's stores again now.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
+| --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`, `admin`.
+- **Route guard:** `RightsWriter`.
+- **Resolved gate:** `RequireResource(rights_request, write=True)`.
+- **Rules:** As for the rest of the request: DPO all, Admin where about_dpo. Retries an applied erasure or redaction's stores now (S2-03); anything else is 409 `item_not_executable`.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/erasure.py).
 
 ## POST /requests/{request_uuid}/tickets
 

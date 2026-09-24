@@ -10,7 +10,7 @@
 <title>Schema</title>
 <polygon fill="#f7fafc" stroke="none" points="-36,36 -36,-339.2 5628.48,-339.2 5628.48,36 -36,36"/>
 <text xml:space="preserve" text-anchor="start" x="8" y="-273.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="30.00" fill="#142c44">COMPASS / ENUMERATED TYPES</text>
-<text xml:space="preserve" text-anchor="start" x="8" y="-257.6" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0030 / 39 types / source cddde41</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-257.6" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0031 / 39 types / source 416f0de</text>
 <text xml:space="preserve" text-anchor="start" x="8" y="-231.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">FK arrow: child column to referenced key &#160;&#160;| &#160;&#160;Solid = required FK; dashed = nullable FK; dotted = view dependency</text>
 <text xml:space="preserve" text-anchor="start" x="13.43" y="-219.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">PK = primary key; FK = foreign key; UQ = member of unique constraint (possibly composite); ? = nullable column</text>
 <!-- action_type -->

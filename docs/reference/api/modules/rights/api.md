@@ -1,6 +1,6 @@
 # Rights API
 
-Generated from `backend/api/openapi.json`. **43 operations.**
+Generated from `backend/api/openapi.json`. **44 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -45,10 +45,11 @@ For each operation the information is deliberately ordered as **API → Validati
 37. [`POST /requests/{request_uuid}/scope/derive`](#37_post_requests_request_uuid_scope_derive)
 38. [`PUT /requests/{request_uuid}/scope/{item_uuid}`](#38_put_requests_request_uuid_scope_item_uuid)
 39. [`POST /requests/{request_uuid}/scope/{item_uuid}/apply`](#39_post_requests_request_uuid_scope_item_uuid_apply)
-40. [`POST /requests/{request_uuid}/respond`](#40_post_requests_request_uuid_respond)
-41. [`GET /requests/{request_uuid}/files/{file_uuid}`](#41_get_requests_request_uuid_files_file_uuid)
-42. [`POST /requests/{request_uuid}/decide`](#42_post_requests_request_uuid_decide)
-43. [`GET /requests/{request_uuid}/download`](#43_get_requests_request_uuid_download)
+40. [`POST /requests/{request_uuid}/scope/{item_uuid}/execute`](#40_post_requests_request_uuid_scope_item_uuid_execute)
+41. [`POST /requests/{request_uuid}/respond`](#41_post_requests_request_uuid_respond)
+42. [`GET /requests/{request_uuid}/files/{file_uuid}`](#42_get_requests_request_uuid_files_file_uuid)
+43. [`POST /requests/{request_uuid}/decide`](#43_post_requests_request_uuid_decide)
+44. [`GET /requests/{request_uuid}/download`](#44_get_requests_request_uuid_download)
 
 <a id="1_get_requests_attention"></a>
 ## 1. `GET /requests/attention` — What the office has not read
@@ -500,7 +501,11 @@ No request body.
       "collected_on": "2026-09-17",
       "holder_uuid": "…",
       "holder_label": "…",
-      "holder_ticket_status": "…"
+      "holder_ticket_status": "…",
+      "executed_at": "…",
+      "execution": [
+        "…"
+      ]
     }
   ],
   "transitions": [
@@ -4003,7 +4008,16 @@ No request body.
     "collected_on": "2026-09-17",
     "holder_uuid": "00000000-0000-4000-8000-000000000000",
     "holder_label": "string",
-    "holder_ticket_status": "string"
+    "holder_ticket_status": "string",
+    "executed_at": "2026-09-17T12:00:00Z",
+    "execution": [
+      {
+        "store": "…",
+        "status": "…",
+        "detail": "…",
+        "attempted_at": "…"
+      }
+    ]
   }
 ]
 ```
@@ -4092,7 +4106,16 @@ Request body required: **yes**.
   "collected_on": "2026-09-17",
   "holder_uuid": "00000000-0000-4000-8000-000000000000",
   "holder_label": "string",
-  "holder_ticket_status": "string"
+  "holder_ticket_status": "string",
+  "executed_at": "2026-09-17T12:00:00Z",
+  "execution": [
+    {
+      "store": "string",
+      "status": "string",
+      "detail": {},
+      "attempted_at": "2026-09-17T12:00:00Z"
+    }
+  ]
 }
 ```
 
@@ -4115,7 +4138,7 @@ Request body required: **yes**.
 ```
 
 <a id="39_post_requests_request_uuid_scope_item_uuid_apply"></a>
-## 39. `POST /requests/{request_uuid}/scope/{item_uuid}/apply` — Set her junction row - the asset survives
+## 39. `POST /requests/{request_uuid}/scope/{item_uuid}/apply` — Quarantine her appearance, then carry the decision out
 
 ### API
 
@@ -4168,7 +4191,16 @@ No request body.
   "collected_on": "2026-09-17",
   "holder_uuid": "00000000-0000-4000-8000-000000000000",
   "holder_label": "string",
-  "holder_ticket_status": "string"
+  "holder_ticket_status": "string",
+  "executed_at": "2026-09-17T12:00:00Z",
+  "execution": [
+    {
+      "store": "string",
+      "status": "string",
+      "detail": {},
+      "attempted_at": "2026-09-17T12:00:00Z"
+    }
+  ]
 }
 ```
 
@@ -4190,8 +4222,97 @@ No request body.
 }
 ```
 
-<a id="40_post_requests_request_uuid_respond"></a>
-## 40. `POST /requests/{request_uuid}/respond` — Release and close
+<a id="40_post_requests_request_uuid_scope_item_uuid_execute"></a>
+## 40. `POST /requests/{request_uuid}/scope/{item_uuid}/execute` — Try an applied item's stores again now
+
+### API
+
+- **Operation ID:** `execute_item_requests__request_uuid__scope__item_uuid__execute_post`
+- **Access:** Role-controlled `rights` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+The daily sweep retries anything waiting or failed; this is the same
+attempt, now - after a holder answers outside the platform, or a failure
+has been fixed.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `request_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `item_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`ItemOut`](#schema-itemout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "item_uuid": "00000000-0000-4000-8000-000000000000",
+  "other_subjects": 1,
+  "state": "string",
+  "decision": "string",
+  "basis": "string",
+  "retain_until": "2026-09-17",
+  "floor_passed_at": "2026-09-17T12:00:00Z",
+  "decided_at": "2026-09-17T12:00:00Z",
+  "decided_by_name": "string",
+  "applied_at": "2026-09-17T12:00:00Z",
+  "disposition": "string",
+  "disposition_at": "2026-09-17T12:00:00Z",
+  "subject_role": "string",
+  "asset_uuid": "00000000-0000-4000-8000-000000000000",
+  "asset_type": "string",
+  "source_asset_ref": "string",
+  "source_code": "string",
+  "source_name": "string",
+  "processor_name": "string",
+  "project_uuid": "00000000-0000-4000-8000-000000000000",
+  "project_name": "string",
+  "collected_on": "2026-09-17",
+  "holder_uuid": "00000000-0000-4000-8000-000000000000",
+  "holder_label": "string",
+  "holder_ticket_status": "string",
+  "executed_at": "2026-09-17T12:00:00Z",
+  "execution": [
+    {
+      "store": "string",
+      "status": "string",
+      "detail": {},
+      "attempted_at": "2026-09-17T12:00:00Z"
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="41_post_requests_request_uuid_respond"></a>
+## 41. `POST /requests/{request_uuid}/respond` — Release and close
 
 ### API
 
@@ -4335,8 +4456,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="41_get_requests_request_uuid_files_file_uuid"></a>
-## 41. `GET /requests/{request_uuid}/files/{file_uuid}` — A file released with the response
+<a id="42_get_requests_request_uuid_files_file_uuid"></a>
+## 42. `GET /requests/{request_uuid}/files/{file_uuid}` — A file released with the response
 
 ### API
 
@@ -4385,8 +4506,8 @@ No request body.
 }
 ```
 
-<a id="42_post_requests_request_uuid_decide"></a>
-## 42. `POST /requests/{request_uuid}/decide` — Decide a grievance
+<a id="43_post_requests_request_uuid_decide"></a>
+## 43. `POST /requests/{request_uuid}/decide` — Decide a grievance
 
 ### API
 
@@ -4446,8 +4567,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="43_get_requests_request_uuid_download"></a>
-## 43. `GET /requests/{request_uuid}/download` — The released response file
+<a id="44_get_requests_request_uuid_download"></a>
+## 44. `GET /requests/{request_uuid}/download` — The released response file
 
 ### API
 
@@ -4688,6 +4809,8 @@ One line on a holder's contact log, optionally sending the mail too.
 | `holder_uuid` | `string` or `null` | Yes | format: `uuid` | — |
 | `holder_label` | `string` or `null` | Yes | — | — |
 | `holder_ticket_status` | `string` or `null` | Yes | — | — |
+| `executed_at` | `string` or `null` | No | format: `date-time` | — |
+| `execution` | array of [`ExecutionOut`](#schema-executionout) | No | — | — |
 
 <a id="schema-logrequest"></a>
 #### `LogRequest`
@@ -4945,6 +5068,16 @@ A request that arrived by email, logged by the DPO. Same record as the others.
 | `type` | `string` | Yes | — | — |
 | `input` | `object` | No | — | — |
 | `ctx` | `object` | No | — | — |
+
+<a id="schema-executionout"></a>
+#### `ExecutionOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `store` | `string` | Yes | — | — |
+| `status` | `string` | Yes | — | — |
+| `detail` | `object` | Yes | — | — |
+| `attempted_at` | `string` | Yes | format: `date-time` | — |
 
 <a id="schema-requestrow"></a>
 #### `RequestRow`

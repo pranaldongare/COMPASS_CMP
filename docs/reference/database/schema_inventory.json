@@ -1,6 +1,6 @@
 {
-  "commit": "cddde4144d96af24c3d6a4941e7d5f1a1fa900fd",
-  "migration_head": "0030",
+  "commit": "416f0de8edca349b0d8ed6c8c8d63cd985c68113",
+  "migration_head": "0031",
   "migrations": [
     {
       "revision": "0001",
@@ -121,6 +121,10 @@
     {
       "revision": "0030",
       "source": "backend/api/migrations/versions/0030_ngram_search.py"
+    },
+    {
+      "revision": "0031",
+      "source": "backend/api/migrations/versions/0031_erasure_execution.py"
     }
   ],
   "postgres_version": "16.15",
@@ -201,6 +205,11 @@
       "comment": null
     },
     {
+      "name": "legal_hold",
+      "kind": "r",
+      "comment": "Stops erasure of an asset, or of everything about a person, until released (S2-03)"
+    },
+    {
       "name": "message_template",
       "kind": "r",
       "comment": "Subject and body an administrator or the DPO set for one message junction and channel; absent means the code default"
@@ -267,6 +276,11 @@
     },
     {
       "name": "purpose",
+      "kind": "r",
+      "comment": null
+    },
+    {
+      "name": "rights_item_execution",
       "kind": "r",
       "comment": null
     },
@@ -1609,6 +1623,87 @@
       "type": "timestamp with time zone",
       "not_null": true,
       "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "hold_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('legal_hold_hold_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "hold_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "asset_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "subject_user_id",
+      "position": 4,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "reason",
+      "position": 5,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "placed_by",
+      "position": 6,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "placed_at",
+      "position": 7,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "released_by",
+      "position": 8,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "released_at",
+      "position": 9,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
       "comment": null
     },
     {
@@ -3079,6 +3174,78 @@
       "comment": null
     },
     {
+      "table_name": "rights_item_execution",
+      "name": "execution_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('rights_item_execution_execution_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "rights_item_execution",
+      "name": "execution_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "rights_item_execution",
+      "name": "item_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "rights_item_execution",
+      "name": "store",
+      "position": 4,
+      "type": "character varying(20)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "rights_item_execution",
+      "name": "status",
+      "position": 5,
+      "type": "character varying(10)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "rights_item_execution",
+      "name": "detail",
+      "position": 6,
+      "type": "jsonb",
+      "not_null": true,
+      "default_value": "'{}'::jsonb",
+      "comment": null
+    },
+    {
+      "table_name": "rights_item_execution",
+      "name": "attempted_by",
+      "position": 7,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "rights_item_execution",
+      "name": "attempted_at",
+      "position": 8,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
       "table_name": "rights_request",
       "name": "request_id",
       "position": 1,
@@ -3950,6 +4117,15 @@
       "not_null": true,
       "default_value": "now()",
       "comment": null
+    },
+    {
+      "table_name": "rights_request_item",
+      "name": "executed_at",
+      "position": 16,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": "When every store holding the item was confirmed erased (S2-03). NULL until then, whatever the disposition says"
     },
     {
       "table_name": "rights_response_file",
@@ -5545,6 +5721,136 @@
       "initially_deferred": false
     },
     {
+      "table_name": "legal_hold",
+      "name": "legal_hold_asset_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (asset_id) REFERENCES data_asset(asset_id)",
+      "columns": [
+        "asset_id"
+      ],
+      "referenced_table": "data_asset",
+      "referenced_columns": [
+        "asset_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "legal_hold_covers_one",
+      "kind": "c",
+      "definition": "CHECK (((asset_id IS NULL) <> (subject_user_id IS NULL)))",
+      "columns": [
+        "asset_id",
+        "subject_user_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "legal_hold_hold_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (hold_uuid)",
+      "columns": [
+        "hold_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "legal_hold_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (hold_id)",
+      "columns": [
+        "hold_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "legal_hold_placed_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (placed_by) REFERENCES auth_user(id)",
+      "columns": [
+        "placed_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "legal_hold_release_attributed",
+      "kind": "c",
+      "definition": "CHECK (((released_at IS NULL) = (released_by IS NULL)))",
+      "columns": [
+        "released_at",
+        "released_by"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "legal_hold_released_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (released_by) REFERENCES auth_user(id)",
+      "columns": [
+        "released_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "legal_hold_subject_user_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (subject_user_id) REFERENCES auth_user(id)",
+      "columns": [
+        "subject_user_id"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "message_template",
       "name": "message_template_body_present",
       "kind": "c",
@@ -6820,6 +7126,100 @@
       "initially_deferred": false
     },
     {
+      "table_name": "rights_item_execution",
+      "name": "item_execution_status",
+      "kind": "c",
+      "definition": "CHECK (((status)::text = ANY ((ARRAY['done'::character varying, 'waiting'::character varying, 'failed'::character varying, 'held'::character varying])::text[])))",
+      "columns": [
+        "status"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_item_execution",
+      "name": "item_execution_store",
+      "kind": "c",
+      "definition": "CHECK (((store)::text = ANY ((ARRAY['holder_copy'::character varying, 'platform_pointer'::character varying, 'legal_hold'::character varying])::text[])))",
+      "columns": [
+        "store"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_item_execution",
+      "name": "rights_item_execution_attempted_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (attempted_by) REFERENCES auth_user(id)",
+      "columns": [
+        "attempted_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_item_execution",
+      "name": "rights_item_execution_execution_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (execution_uuid)",
+      "columns": [
+        "execution_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_item_execution",
+      "name": "rights_item_execution_item_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (item_id) REFERENCES rights_request_item(item_id)",
+      "columns": [
+        "item_id"
+      ],
+      "referenced_table": "rights_request_item",
+      "referenced_columns": [
+        "item_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_item_execution",
+      "name": "rights_item_execution_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (execution_id)",
+      "columns": [
+        "execution_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "rights_request",
       "name": "rights_closed_has_outcome",
       "kind": "c",
@@ -7935,6 +8335,26 @@
       "definition": "CREATE UNIQUE INDEX import_batch_pkey ON public.import_batch USING btree (batch_id)"
     },
     {
+      "table_name": "legal_hold",
+      "name": "idx_legal_hold_asset",
+      "definition": "CREATE INDEX idx_legal_hold_asset ON public.legal_hold USING btree (asset_id) WHERE (released_at IS NULL)"
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "idx_legal_hold_subject",
+      "definition": "CREATE INDEX idx_legal_hold_subject ON public.legal_hold USING btree (subject_user_id) WHERE (released_at IS NULL)"
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "legal_hold_hold_uuid_key",
+      "definition": "CREATE UNIQUE INDEX legal_hold_hold_uuid_key ON public.legal_hold USING btree (hold_uuid)"
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "legal_hold_pkey",
+      "definition": "CREATE UNIQUE INDEX legal_hold_pkey ON public.legal_hold USING btree (hold_id)"
+    },
+    {
       "table_name": "message_template",
       "name": "message_template_one_per_channel",
       "definition": "CREATE UNIQUE INDEX message_template_one_per_channel ON public.message_template USING btree (key, channel)"
@@ -8203,6 +8623,21 @@
       "table_name": "purpose",
       "name": "purpose_purpose_uuid_key",
       "definition": "CREATE UNIQUE INDEX purpose_purpose_uuid_key ON public.purpose USING btree (purpose_uuid)"
+    },
+    {
+      "table_name": "rights_item_execution",
+      "name": "idx_item_execution_item",
+      "definition": "CREATE INDEX idx_item_execution_item ON public.rights_item_execution USING btree (item_id, store, execution_id)"
+    },
+    {
+      "table_name": "rights_item_execution",
+      "name": "rights_item_execution_execution_uuid_key",
+      "definition": "CREATE UNIQUE INDEX rights_item_execution_execution_uuid_key ON public.rights_item_execution USING btree (execution_uuid)"
+    },
+    {
+      "table_name": "rights_item_execution",
+      "name": "rights_item_execution_pkey",
+      "definition": "CREATE UNIQUE INDEX rights_item_execution_pkey ON public.rights_item_execution USING btree (execution_id)"
     },
     {
       "table_name": "rights_request",
@@ -8752,6 +9187,11 @@
       "definition": "CREATE TRIGGER trg_export_log_append_only BEFORE DELETE OR UPDATE ON public.export_log FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
     },
     {
+      "table_name": "legal_hold",
+      "name": "trg_legal_hold_release_only",
+      "definition": "CREATE TRIGGER trg_legal_hold_release_only BEFORE DELETE OR UPDATE ON public.legal_hold FOR EACH ROW EXECUTE FUNCTION cmp_legal_hold_release_only()"
+    },
+    {
       "table_name": "nomination",
       "name": "trg_nominee_needs_mobile",
       "definition": "CREATE TRIGGER trg_nominee_needs_mobile BEFORE INSERT ON public.nomination FOR EACH ROW EXECUTE FUNCTION cmp_nominee_needs_mobile()"
@@ -8810,6 +9250,11 @@
       "table_name": "purpose",
       "name": "trg_purpose_touch",
       "definition": "CREATE TRIGGER trg_purpose_touch BEFORE UPDATE ON public.purpose FOR EACH ROW EXECUTE FUNCTION cmp_touch_updated_at()"
+    },
+    {
+      "table_name": "rights_item_execution",
+      "name": "trg_item_execution_append_only",
+      "definition": "CREATE TRIGGER trg_item_execution_append_only BEFORE DELETE OR UPDATE ON public.rights_item_execution FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
     },
     {
       "table_name": "rights_ticket_message",
@@ -8875,6 +9320,9 @@
       "name": "import_batch_batch_id_seq"
     },
     {
+      "name": "legal_hold_hold_id_seq"
+    },
+    {
       "name": "message_template_template_id_seq"
     },
     {
@@ -8915,6 +9363,9 @@
     },
     {
       "name": "purpose_purpose_id_seq"
+    },
+    {
+      "name": "rights_item_execution_execution_id_seq"
     },
     {
       "name": "rights_request_holder_holder_id_seq"
@@ -8961,6 +9412,9 @@
       "name": "cmp_is_minor"
     },
     {
+      "name": "cmp_legal_hold_release_only"
+    },
+    {
       "name": "cmp_link_coherent"
     },
     {
@@ -8998,13 +9452,13 @@
     }
   ],
   "counts": {
-    "application_tables": 32,
+    "application_tables": 34,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 426,
-    "foreign_keys": 93,
+    "table_columns": 444,
+    "foreign_keys": 99,
     "enums": 39,
-    "triggers": 27,
-    "checks": 42
+    "triggers": 29,
+    "checks": 46
   }
 }
