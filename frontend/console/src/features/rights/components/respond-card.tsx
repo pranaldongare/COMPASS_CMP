@@ -3,8 +3,11 @@
  *
  * Nothing releases automatically. The DPO writes the response and signs off,
  * and the server refuses to call an answer with a hole in it "complete": a
- * holder that never returned its ticket is named in the response, and the
- * outcome has to say partial. On time with the gap named beats late.
+ * holder that never returned its ticket, or an erasure or correction that has
+ * been decided but not carried out (S2-02), is named in the response, and the
+ * outcome has to say partial. On time with the gap named beats late. Whether
+ * `complete` is available, and why not, is the server's answer
+ * (`complete_blocked_by`); this card holds no copy of the rule.
  *
  * A grievance is decided here instead. Not upheld is a legitimate outcome, but
  * it has to be reasoned and in writing, and it carries the Board route.
@@ -34,9 +37,9 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
   const respond = useRespond(r.request_uuid);
   const decide = useDecideGrievance(r.request_uuid);
   const closure = r.transitions.find((t) => t.via === "respond");
-  const unreturned = r.holders.filter((h) => h.ticket_status === "issued" || h.ticket_status === "escalated");
+  const blocked = r.complete_blocked_by;
 
-  const [outcome, setOutcome] = React.useState(unreturned.length ? "partial" : "complete");
+  const [outcome, setOutcome] = React.useState(blocked ? "partial" : "complete");
   const [text, setText] = React.useState("");
   const [upheld, setUpheld] = React.useState(true);
   const [remedy, setRemedy] = React.useState("");
@@ -199,18 +202,15 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
             <p className="text-sm">{closure.blocked_by ?? "Not yet - finish the steps above."}</p>
           </Alert>
         )}
-        {unreturned.length > 0 && (
+        {blocked && (
           <Alert tone="warning">
-            <p className="text-sm">
-              {unreturned.map((h) => h.label).join(", ")} {unreturned.length === 1 ? "has" : "have"} not
-              returned. The response can go out on time, but it is partial and the gap is named.
-            </p>
+            <p className="text-sm">{blocked}</p>
           </Alert>
         )}
         <Field label="Outcome">
           {(p) => (
             <Select {...p} value={outcome} onChange={(e) => setOutcome(e.target.value)}>
-              <option value="complete" disabled={unreturned.length > 0}>Complete</option>
+              <option value="complete" disabled={Boolean(blocked)}>Complete</option>
               <option value="partial">Partial - a gap is named</option>
               <option value="no_records">No records held anywhere</option>
             </Select>
@@ -220,7 +220,7 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
           label="The response"
           hint={
             r.request_type === "erasure"
-              ? "What was erased, what was retained, and why each was decided."
+              ? "What was decided for each item, what has been carried out, and why. Say only what was done: the record lists each item as it stands."
               : "What she is being given, and what could not be provided."
           }
           required

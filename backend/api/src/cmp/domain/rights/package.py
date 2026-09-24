@@ -26,6 +26,7 @@ from cmp.db.repositories import exchange as exchange_repo
 from cmp.db.repositories import rights as rights_repo
 from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn
+from cmp.domain.rights import execution
 from cmp.domain.rights.scope import consent_scope, scope_text
 from cmp.infrastructure.dkms import unseal, unseal_many
 
@@ -80,6 +81,7 @@ async def build_response(
     response_text: str,
     generated_at: datetime,
     attachments: list[dict[str, Any]] | None = None,
+    items: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Assemble the response for one request. Read-only; the caller stores it.
 
@@ -178,6 +180,9 @@ async def build_response(
             for h in holders
             if h["ticket_status"] in ("issued", "escalated", "unreturned")
         ],
+        # What was carried out, item by item, for a correction or an erasure -
+        # never "erased" for what was only decided (S2-02).
+        "execution": execution.account(str(request["request_type"]), items or [], holders),
         "files": [
             {
                 "file_uuid": str(a["file_uuid"]),
@@ -286,6 +291,17 @@ def digest_text(package: dict[str, Any]) -> str:
             "STILL OUTSTANDING: "
             + ", ".join(map(str, gaps))
             + ". This response is partial; the gap is named rather than hidden.",
+        ]
+    done = package.get("execution") or {}
+    if done.get("items"):
+        lines += ["", "WHAT WAS DONE WITH EACH ITEM"]
+        lines += [f"- {e['asset']}: {e['outcome']}" for e in done["items"]]
+    if done.get("not_done"):
+        lines += [
+            "",
+            "NOT YET DONE: "
+            + ", ".join(map(str, done["not_done"]))
+            + ". This response is partial; what remains is named rather than claimed.",
         ]
     files = package.get("files", [])
     if files:

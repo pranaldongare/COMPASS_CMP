@@ -414,6 +414,22 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **A closed request never claims what did not happen (S2-02).** An erasure
+  decision changes her disposition on `asset_consent` and deletes nothing, yet
+  a request whose items were only applied could close as `complete` - which
+  reads to her as "erased". A correction or erasure now closes complete only
+  when what it asked for was carried out with evidence: every holder returned,
+  every item done - a quarantine applied is its own evidence, an erase or a
+  redaction needs the execution record S2-03 will write - and something done at
+  all, not an empty scope nobody acted on. Otherwise it is `partial`, and the
+  record she receives says what happened to each item ("quarantined: kept out
+  of any use or release, not erased", "decided for erasure, not yet carried
+  out") and names what is not yet done, in the file and in the mail. The
+  partial headline no longer blames holders alone. The rule is one module,
+  `cmp.domain.rights.execution`; the request detail serves its answer as
+  `complete_blocked_by`, and the console's respond card holds Complete back
+  with the server's reason instead of its own copy of the unreturned-holder
+  rule. Access and grievance are unchanged.
 - **An unknown age is no longer an adult, and a child is refused (S2-01).**
   `cmp_is_minor()` answers NULL when it does not know and says callers must not
   treat that as adult; the consent gate tested `is True`, so every account

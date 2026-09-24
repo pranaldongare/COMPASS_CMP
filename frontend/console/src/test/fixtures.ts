@@ -308,6 +308,7 @@ export function makeRequestDetail(overrides: Partial<RightsRequestDetail> = {}):
     holders: [],
     items: [],
     transitions: [],
+    complete_blocked_by: null,
     linked_request: null,
     linked_from: [],
     response_files: [],

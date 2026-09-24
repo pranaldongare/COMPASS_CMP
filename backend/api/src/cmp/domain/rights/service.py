@@ -41,7 +41,7 @@ from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn, fetch_one
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
-from cmp.domain.rights import clock
+from cmp.domain.rights import clock, execution
 from cmp.domain.rights import state_machine as sm
 from cmp.domain.rights.scope import consent_scope, scope_text
 from cmp.domain.rights.state_machine import RequestFacts
@@ -2310,6 +2310,13 @@ async def apply_item(
 
 
 # ------------------------------------------------------------------ response
+async def items_for_execution(conn: Conn, row: Row) -> list[Row]:
+    """The scope items whose execution a response accounts for: an erasure's."""
+    if row["request_type"] != Kind.ERASURE:
+        return []
+    return await repo.items_of(conn, int(row["request_id"]))
+
+
 async def respond(
     conn: Conn,
     row: Row,
@@ -2342,15 +2349,16 @@ async def respond(
         raise ValidationFailed("Write the response", field="response_text")
     sm.validate(current=row["status"], target=Status.CLOSED.value, role=role, facts=facts_of(row))
     holders = await repo.holders_of(conn, int(row["request_id"]))
-    unreturned = [h for h in holders if h["ticket_status"] in (Ticket.ISSUED, Ticket.ESCALATED)]
-    if unreturned and result is not Outcome.PARTIAL:
-        raise ValidationFailed(
-            "A holder has not returned its ticket: "
-            + ", ".join(str(h["label"]) for h in unreturned)
-            + ". The response can go out on time, but it is partial and the gap is named.",
-            field="outcome",
-            code="response_partial_required",
-        )
+    waiting = execution.unreturned_reason(holders)
+    if waiting and result is not Outcome.PARTIAL:
+        raise ValidationFailed(waiting, field="outcome", code="response_partial_required")
+    # S2-02: a correction or erasure is complete only when what it asked for
+    # was carried out, with evidence - not when it was decided (`execution`).
+    items = await items_for_execution(conn, row)
+    if result is Outcome.COMPLETE:
+        reason = execution.complete_blocked_by(row["request_type"], items, holders)
+        if reason:
+            raise ValidationFailed(reason, field="outcome", code="response_partial_required")
 
     now = datetime.now(UTC)
     file_ref: str | None = None
@@ -2386,6 +2394,7 @@ async def respond(
             conn,
             {**row, "outcome": result.value},
             holders=holders,
+            items=items,
             response_text=response_text.strip(),
             generated_at=now,
             attachments=attachments,

@@ -122,10 +122,32 @@ changes the person's disposition on the `asset_consent` row and never the
 asset, because an asset holding three people is not deleted when one of them
 asks. A retained item names the legal ground.
 
+**Applied is not done.** Changing a disposition deletes nothing; until the
+executor erases from every store (S2-03), an erase or redaction that has been
+applied is still work outstanding. An item counts as **done** only with
+evidence it was carried out: a quarantine applied is its own evidence (the flag
+is the act), and an erase or redaction needs the execution record. A retained
+item is not done - it was kept, lawfully, not erased.
+
 ## The response
 
-Responding closes the request with an outcome and a response text. The
-response is sent to her by email and appears on her portal page, together with
+Responding closes the request with an outcome and a response text.
+
+**`complete` has to be earned** (S2-02). A correction or an erasure closes as
+complete only when what it asked for was carried out: every holder returned its
+ticket, every erasure item is done, and something was actually done - a request
+with no item in scope and no holder's return is one nobody carried out, and
+`no_records` is the honest answer when nothing is held. Anything short of that
+closes `partial`, and the record she receives says, item by item, what happened
+to each appearance of her - "quarantined: kept out of any use or release, not
+erased", "decided for erasure, not yet carried out" - and lists what is not yet
+done, in the file and in the mail. Nothing in it says "erased" for what was
+not. The rule is `cmp.domain.rights.execution`; the request detail serves its
+answer as `complete_blocked_by`, which is how the console knows to hold
+Complete back and say why. Access and grievance are untouched: they ask for a
+copy and a decision, not a change.
+
+The response is sent to her by email and appears on her portal page, together with
 any **response files** the office released, each downloadable for a bounded
 period (`RIGHTS_DOWNLOAD_TTL_DAYS`, 30 by default) and hashed on the row.
 She can **dispute** a closed request from the portal, which opens a grievance

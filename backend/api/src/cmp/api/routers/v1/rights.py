@@ -36,7 +36,7 @@ from cmp.db.repositories import consent as consent_repo
 from cmp.db.repositories import entities as entity_repo
 from cmp.db.repositories import rights as repo
 from cmp.db.repositories import users as user_repo
-from cmp.domain.rights import service
+from cmp.domain.rights import execution, service
 from cmp.infrastructure.storage.service import storage
 from cmp.schemas.common import LongText, OtpCode, Out, Page, Schema, ShortText
 from cmp.validation import Email, Mobile
@@ -349,6 +349,10 @@ class RequestDetail(RequestOut):
     holders: list[HolderOut]
     items: list[ItemOut]
     transitions: list[dict[str, Any]]
+    #: Why the request may not close as `complete`, or null when it may. The
+    #: server's answer (`cmp.domain.rights.execution`), so the console can say
+    #: so before anybody presses the button, without a copy of the rule.
+    complete_blocked_by: str | None = None
     linked_request: LinkedRequestOut | None
     linked_from: list[LinkedRefOut]
     response_files: list[ResponseFileOut] = Field(default_factory=list)
@@ -568,11 +572,14 @@ async def _linked(conn: Any, row: dict[str, Any], principal: Any) -> dict[str, A
 
 async def _detail(conn: Any, row: dict[str, Any], principal: Any) -> dict[str, Any]:
     request_id = int(row["request_id"])
+    holders = await repo.holders_of(conn, request_id)
+    items = await repo.items_of(conn, request_id)
     return {
         **_with_clock(row),
-        "holders": await repo.holders_of(conn, request_id),
-        "items": await repo.items_of(conn, request_id),
+        "holders": holders,
+        "items": items,
         "transitions": service.transitions(row, role=principal.role),
+        "complete_blocked_by": execution.complete_blocked_by(row["request_type"], items, holders),
         "linked_request": await _linked(conn, row, principal),
         "linked_from": await repo.linked_from(conn, request_id),
         "response_files": await repo.response_files_of(conn, request_id),

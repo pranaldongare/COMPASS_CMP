@@ -21315,6 +21315,17 @@
             "type": "array",
             "title": "Transitions"
           },
+          "complete_blocked_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Complete Blocked By"
+          },
           "linked_request": {
             "anyOf": [
               {

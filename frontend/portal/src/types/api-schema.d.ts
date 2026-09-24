@@ -7307,6 +7307,8 @@ export interface components {
             transitions: {
                 [key: string]: unknown;
             }[];
+            /** Complete Blocked By */
+            complete_blocked_by?: string | null;
             linked_request: components["schemas"]["LinkedRequestOut"] | null;
             /** Linked From */
             linked_from: components["schemas"]["LinkedRefOut"][];

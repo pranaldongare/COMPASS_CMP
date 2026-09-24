@@ -409,6 +409,10 @@ export interface RightsRequestDetail extends RightsRequest {
   holders: RightsHolder[];
   items: RightsScopeItem[];
   transitions: RightsTransitionOption[];
+  /** Why the request may not close as `complete`, or null when it may. The
+   *  server's answer - an unreturned holder, or something asked for that has not
+   *  been carried out (S2-02) - so the page holds no copy of the rule. */
+  complete_blocked_by: string | null;
   linked_request: LinkedRequest | null;
   linked_from: LinkedRef[];
   response_files: ResponseFile[];

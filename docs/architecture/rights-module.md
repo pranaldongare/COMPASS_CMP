@@ -49,7 +49,7 @@ Five states, walked forward. Closure carries an outcome.
 | `in_progress` | `awaiting_holders` | DPO | a ticket issued |
 | `in_progress` | `collating` | DPO | no ticket outstanding |
 | `awaiting_holders` | `collating` | DPO | every outstanding ticket returned, or escalated once |
-| `collating` | `closed` | DPO, via `respond` | erasure: every scope item decided |
+| `collating` | `closed` | DPO, via `respond` | erasure: every scope item decided; `complete` only when `execution.complete_blocked_by` is empty (below) |
 
 The early exits on the diagrams - not verified, not a rights request, she
 meant withdrawal, the event not evidenced - are **actions** that close the
@@ -121,6 +121,18 @@ Applying a decision sets **her junction row's disposition** and never touches
 `data_asset`. Erasure and redaction wait for the holder's returned ticket:
 the platform records erasure, it does not perform it. Consent artefacts are
 never erased - s.6(4) depends on their surviving.
+
+Because applying performs nothing, **a response may not call a correction or
+erasure `complete` until the work is evidenced** (S2-02,
+`cmp.domain.rights.execution`). An item is done when applied with evidence -
+a quarantine is its own; an erase or redaction needs the `executed_at` the
+executor (S2-03) writes - and a request with nothing done at all is not
+complete either. `respond` refuses `complete` otherwise, with the same code as
+an unreturned ticket (`response_partial_required`) and a message naming what
+remains; the request detail serves the same answer as `complete_blocked_by`;
+and the response package carries an `execution` section and the digest a
+"NOT YET DONE" line, so her record says what happened to each item and claims
+nothing that did not.
 
 ## Grievance
 

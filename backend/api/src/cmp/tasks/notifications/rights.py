@@ -45,9 +45,11 @@ _RIGHT_NAMES = {
 
 _RESPONSE_HEADLINES = {
     "complete": "Our response to your request is complete.",
+    # Partial for either reason: a party has not returned what it holds, or
+    # something asked for has not been carried out yet (S2-02). Both are named.
     "partial": (
-        "Our response to your request is partial: one or more parties have not returned "
-        "what they hold, and the gap is named below."
+        "Our response to your request is partial: not everything you asked for has been "
+        "done or returned yet, and what remains is named below."
     ),
     "no_records": (
         "No party beyond the platform itself holds records about you. What the platform "

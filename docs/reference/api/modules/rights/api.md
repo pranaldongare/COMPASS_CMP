@@ -506,6 +506,7 @@ No request body.
   "transitions": [
     {}
   ],
+  "complete_blocked_by": "string",
   "linked_request": {
     "request_uuid": "00000000-0000-4000-8000-000000000000",
     "reference": "string",
@@ -4813,6 +4814,7 @@ A request that arrived by email, logged by the DPO. Same record as the others.
 | `holders` | array of [`HolderOut`](#schema-holderout) | Yes | — | — |
 | `items` | array of [`ItemOut`](#schema-itemout) | Yes | — | — |
 | `transitions` | array of `object` | Yes | — | — |
+| `complete_blocked_by` | `string` or `null` | No | — | — |
 | `linked_request` | [`LinkedRequestOut`](#schema-linkedrequestout) or `null` | Yes | — | — |
 | `linked_from` | array of [`LinkedRefOut`](#schema-linkedrefout) | Yes | — | — |
 | `response_files` | array of [`ResponseFileOut`](#schema-responsefileout) | No | — | — |
