@@ -352,7 +352,7 @@ selected.
 | GET | `/c/{token}/notice` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | — |
 | POST | `/c/{token}/otp` | **public** — the request carries its own credential (password, link token, one-time code) | `contact`, `token` | — |
 | POST | `/c/{token}/otp/verify` | **public** — the request carries its own credential (password, link token, one-time code) | `code`, `contact`, `token` | — |
-| POST | `/c/{token}/register` | **public** — the request carries its own credential (password, link token, one-time code) | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `token` | — |
+| POST | `/c/{token}/register` | **public** — the request carries its own credential (password, link token, one-time code) | `dob`, `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `token` | — |
 
 ### The public rights surface — `/rights/*`
 
@@ -587,7 +587,7 @@ token and are protected the same way.
 | `GET /c/{token}/notice` | Link token | the token | Returns the notice text; `note` is projected out, because it is an instruction to the collector |
 | `POST /c/{token}/otp` | Link token | `contact` | The token is presented, never stored in the clear; the reply is neutral |
 | `POST /c/{token}/otp/verify` | Link token + code | `contact`, `code` | Signs in an **existing** data principal; it does not create one |
-| `POST /c/{token}/register` | Link token | `full_name`, `email`, `mobile`, `organization_id`, `person_type` | Creates the account the link will then authenticate |
+| `POST /c/{token}/register` | Link token | `full_name`, `email`, `mobile`, `dob`, `organization_id`, `person_type` | Creates the account the link will then authenticate; a date of birth under eighteen creates nothing |
 | `POST /c/{token}/consent` | Link token, and a session it minted | `grants`, `action_type`, `served_at` | `served_at` in the body is **ignored**: the moment comes from the server's own record of showing her the notice |
 | `POST /rights/requests` | Carries a verification code | `contact`, `request_text` | Rate-limited; verification happens before anything is answered |
 | `POST /rights/requests/verify` | Carries the code | `code` | Five attempts, ten minutes |

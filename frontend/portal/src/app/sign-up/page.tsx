@@ -28,21 +28,13 @@ import { ApiError } from "@/lib/errors";
 import { safeRedirectPath } from "@/lib/security";
 import { useAuth } from "@/providers";
 import { email, mobile } from "@/schemas/contacts";
-
-const EARLIEST = "1900-01-01";
+import { EARLIEST_DOB, dateOfBirth, today } from "@/schemas/primitives";
 
 const schema = z.object({
   full_name: z.string().min(2, "Enter your full name").max(120),
   mobile,
   email: z.union([z.literal(""), email]),
-  dob: z
-    .string()
-    .min(1, "Enter your date of birth")
-    .refine((v) => v > EARLIEST, "Enter a valid date of birth")
-    .refine(
-      (v) => v < new Date().toISOString().slice(0, 10),
-      "Date of birth must be in the past",
-    ),
+  dob: dateOfBirth,
 });
 type Values = z.infer<typeof schema>;
 
@@ -170,7 +162,7 @@ function SignUpFlow() {
 
         <Field
           label="Date of birth"
-          hint="The law treats people under 18 differently: consent for a child has to come from a parent or guardian. We ask so we can apply the right rule to you."
+          hint="The law protects people under 18 differently, so we ask before an account is opened."
           error={form.formState.errors.dob?.message}
           required
         >
@@ -179,8 +171,8 @@ function SignUpFlow() {
               {...p}
               {...form.register("dob")}
               type="date"
-              max={new Date().toISOString().slice(0, 10)}
-              min={EARLIEST}
+              max={today()}
+              min={EARLIEST_DOB}
               autoComplete="bday"
             />
           )}

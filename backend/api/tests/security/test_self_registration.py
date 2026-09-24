@@ -34,6 +34,7 @@ from typing import Any
 import pytest
 
 from cmp.auth.authentication import service as auth_service
+from cmp.core.errors import ValidationFailed
 from cmp.db.redis import K_RATE
 from cmp.db.redis import key as rkey
 from cmp.db.repositories import users as user_repo
@@ -88,20 +89,28 @@ async def test_registration_creates_a_pending_data_subject(
     assert user["is_minor"] is False
 
 
-async def test_a_minor_is_identified_as_one(
+async def test_a_minor_is_refused_and_nothing_is_kept(
     conn: Any, seeded: dict[str, Any], redis_conn: Any
 ) -> None:
-    """Section 9 turns on this, so it is asserted rather than assumed."""
-    await auth_service.register_data_subject(
-        conn,
-        full_name="Child Account",
-        mobile="+915550000012",
-        email="child@example.org",
-        dob=_years_ago(12),
-    )
+    """Section 9. Until the guardian route exists there is no lawful way to hold
+    a child's account, so a date of birth under eighteen creates nothing - and
+    the refusal names the field without offering a route that does not exist."""
+    before = await _count(conn)
 
-    user = await user_repo.by_contact(conn, "child@example.org")
-    assert user["is_minor"] is True
+    with pytest.raises(ValidationFailed) as raised:
+        await auth_service.register_data_subject(
+            conn,
+            full_name="Child Account",
+            mobile="+915550000012",
+            email="child@example.org",
+            dob=_years_ago(12),
+        )
+
+    assert raised.value.code == "minor_not_permitted"
+    assert raised.value.field == "dob"
+    assert "guardian" not in raised.value.message.lower()
+    assert await _count(conn) == before
+    assert await user_repo.by_contact(conn, "child@example.org") is None
 
 
 async def test_someone_who_turns_eighteen_is_no_longer_a_minor(conn: Any) -> None:

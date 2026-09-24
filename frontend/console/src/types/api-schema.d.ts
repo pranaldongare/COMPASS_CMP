@@ -33,7 +33,7 @@ export interface paths {
         };
         /**
          * Readiness
-         * @description Database reachable, migrations current, Redis reachable.
+         * @description Database reachable, migrations current, Redis reachable, key service reachable.
          */
         get: operations["ready_ready_get"];
         put?: never;
@@ -4532,6 +4532,8 @@ export interface components {
             entity_uuid?: string | null;
             /** Entity Label */
             entity_label?: string | null;
+            /** Entity Label Parts */
+            entity_label_parts?: string[] | null;
             /** Entity Noun */
             entity_noun?: string | null;
             /** Entity Href */
@@ -4794,7 +4796,7 @@ export interface components {
             /** Asset Type */
             asset_type: string;
             /** Storage Ref */
-            storage_ref: string;
+            storage_ref?: string | null;
             /** Has Unmapped Subjects */
             has_unmapped_subjects: boolean;
             /**
@@ -5025,7 +5027,7 @@ export interface components {
             /** Source Asset Ref */
             source_asset_ref: string;
             /** Storage Ref */
-            storage_ref: string;
+            storage_ref?: string | null;
             /** Has Unmapped Subjects */
             has_unmapped_subjects: boolean;
             /**
@@ -8023,21 +8025,36 @@ export interface components {
             /** Reason */
             reason?: string | null;
         };
+        /**
+         * TransitionOptionOut
+         * @description One move out of this project's state, and why it cannot be made.
+         */
+        TransitionOptionOut: {
+            /** To */
+            to: string;
+            /** Allowed */
+            allowed: boolean;
+            /** Blocked By */
+            blocked_by?: string | null;
+            /** Blockers */
+            blockers?: string[];
+            /**
+             * Reason Required
+             * @default false
+             */
+            reason_required: boolean;
+            /**
+             * Publishes Notice
+             * @default false
+             */
+            publishes_notice: boolean;
+        };
         /** TransitionRequest */
         TransitionRequest: {
             /** To */
             to: string;
             /** Reason */
             reason?: string | null;
-        };
-        /** TransitionsOut */
-        TransitionsOut: {
-            /** Current */
-            current: string;
-            /** Available */
-            available: {
-                [key: string]: unknown;
-            }[];
         };
         /** UpdateMe */
         UpdateMe: {
@@ -8205,6 +8222,12 @@ export interface components {
             full_name: string;
             /** Mobile */
             mobile: string;
+            /**
+             * Dob
+             * Format: date
+             * @description Date of birth, YYYY-MM-DD
+             */
+            dob: string;
             /** Email */
             email?: string | null;
             /** Organization Id */
@@ -8248,6 +8271,18 @@ export interface components {
             /** Channels */
             channels: components["schemas"]["ChannelOut"][];
         };
+        /**
+         * TransitionsOut
+         * @description Declared rather than returned as a bare dict so the API reference says
+         *     what this endpoint sends. It is the one the console draws its only forward
+         *     control from, and it was documented as `{}`.
+         */
+        cmp__api__routers__v1__projects__TransitionsOut: {
+            /** Current */
+            current: string;
+            /** Available */
+            available: components["schemas"]["TransitionOptionOut"][];
+        };
         /** MessageOut */
         cmp__api__routers__v1__rights__MessageOut: {
             /**
@@ -8272,6 +8307,15 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** TransitionsOut */
+        cmp__api__routers__v1__rights__TransitionsOut: {
+            /** Current */
+            current: string;
+            /** Available */
+            available: {
+                [key: string]: unknown;
+            }[];
         };
     };
     responses: never;
@@ -11604,9 +11648,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["cmp__api__routers__v1__projects__TransitionsOut"];
                 };
             };
             /** @description Validation Error */
@@ -14228,7 +14270,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TransitionsOut"];
+                    "application/json": components["schemas"]["cmp__api__routers__v1__rights__TransitionsOut"];
                 };
             };
             /** @description Validation Error */

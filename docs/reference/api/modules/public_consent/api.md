@@ -100,6 +100,7 @@ Request body required: **yes**.
 {
   "full_name": "string",
   "mobile": "string",
+  "dob": "2026-09-17",
   "email": "string",
   "organization_id": "string",
   "person_type": "string"
@@ -465,6 +466,7 @@ For state changes whose only interesting output is that they happened.
 |---|---|---:|---|---|
 | `full_name` | `string` | Yes | min length: `1`; max length: `200` | — |
 | `mobile` | `string` | Yes | min length: `6`; max length: `20`; pattern: `^\+?[0-9 \-]+$` | — |
+| `dob` | `string` | Yes | format: `date` | Date of birth, YYYY-MM-DD |
 | `email` | `string` or `null` | No | format: `email` | — |
 | `organization_id` | `string` or `null` | No | max length: `60` | — |
 | `person_type` | `string` or `null` | No | — | — |

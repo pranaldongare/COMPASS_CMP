@@ -36,7 +36,7 @@ Give Consent.
 
 - **Who:** `data_subject`.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** Requires a loaded session whose effective role is data_subject, a valid link, and a matching server-side notice-serving record. The subject is taken from the session. Staff must first sign in through the principal OTP flow; staff-role sessions are refused. This handler loads its cookie directly instead of using CurrentUser/its CSRF dependency.
+- **Rules:** Requires a loaded session whose effective role is data_subject, a valid link, and a matching server-side notice-serving record. The subject is taken from the session. Staff must first sign in through the principal OTP flow; staff-role sessions are refused. This handler loads its cookie directly instead of using CurrentUser/its CSRF dependency. The account's age must be known and adult: an unknown age is refused as age_required and a child as consent_minor_not_permitted, before anything is written (S2-01). Withdrawal is not gated by age.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/consent.py#L232), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/consent/service.py#L327), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/consent/service.py#L453).
 
 ## GET /c/{token}/notice
@@ -88,5 +88,5 @@ Register.
 
 - **Who:** Public; no role required.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** Valid consent link required. Registration/contact verification does not grant a staff session.
+- **Rules:** Valid consent link required. Registration/contact verification does not grant a staff session. A date of birth is required; one under eighteen creates no account and spends no use of the link (S2-01, cmp.domain.users.age). An existing account is recognised and not updated.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/consent.py#L132), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/consent/service.py#L327), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/consent/service.py#L453).

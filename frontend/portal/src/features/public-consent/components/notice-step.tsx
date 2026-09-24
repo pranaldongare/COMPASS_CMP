@@ -46,6 +46,7 @@ export function NoticeStep({
   onLanguageChange,
   onDone,
   onError,
+  onAgeRequired,
 }: {
   token: string;
   notice: ServedNotice;
@@ -54,6 +55,8 @@ export function NoticeStep({
   onLanguageChange: (code: LanguageCode) => void;
   onDone: (uuid: string, declined: boolean) => void;
   onError: (message: string | null) => void;
+  /** The server wants a date of birth before it records anything (S2-01). */
+  onAgeRequired?: () => void;
 }) {
   // Nothing pre-ticked: consent must be an affirmative action.
   const [grants, setGrants] = React.useState<Record<string, boolean>>({});
@@ -85,6 +88,10 @@ export function NoticeStep({
       });
       onDone(result.consent_uuid, decision === "decline");
     } catch (err) {
+      if (err instanceof ApiError && err.code === "age_required" && onAgeRequired) {
+        onAgeRequired();
+        return;
+      }
       onError(
         err instanceof ApiError ? err.userMessage() : "Your choices could not be recorded.",
       );

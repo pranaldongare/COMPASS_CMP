@@ -23859,7 +23859,8 @@
             "anyOf": [
               {
                 "type": "string",
-                "format": "date"
+                "format": "date",
+                "description": "Date of birth, YYYY-MM-DD"
               },
               {
                 "type": "null"
@@ -24364,6 +24365,12 @@
             "pattern": "^\\+?[0-9 \\-]+$",
             "title": "Mobile"
           },
+          "dob": {
+            "type": "string",
+            "format": "date",
+            "title": "Dob",
+            "description": "Date of birth, YYYY-MM-DD"
+          },
           "email": {
             "anyOf": [
               {
@@ -24404,7 +24411,8 @@
         "type": "object",
         "required": [
           "full_name",
-          "mobile"
+          "mobile",
+          "dob"
         ],
         "title": "RegisterBody"
       },

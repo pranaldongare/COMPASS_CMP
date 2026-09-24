@@ -68,6 +68,25 @@ async def by_id(conn: Conn, user_id: int) -> Row | None:
     )
 
 
+async def is_minor(conn: Conn, user_id: int) -> bool | None:
+    """Section 9's answer for an account: True, False, or None for unknown."""
+    row = await fetch_one(
+        conn,
+        "SELECT cmp_is_minor(minor_until) AS is_minor FROM auth_user WHERE id = %s",
+        (user_id,),
+    )
+    return row["is_minor"] if row else None
+
+
+async def would_be_minor(conn: Conn, dob: str) -> bool:
+    """Whether a date of birth makes a child today - by the database's test, not
+    Python's, so it cannot disagree with `is_minor` on the day the row is written."""
+    row = await fetch_one(
+        conn, "SELECT cmp_is_minor((%s::date + INTERVAL '18 years')::date) AS is_minor", (dob,)
+    )
+    return bool(row and row["is_minor"])
+
+
 async def credentials_by_login(conn: Conn, login: str) -> Row | None:
     """Fetch the hash for a sign-in attempt.
 

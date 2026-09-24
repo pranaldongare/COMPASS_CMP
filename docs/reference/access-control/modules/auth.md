@@ -161,7 +161,7 @@ Data-subject self-registration.
 
 - **Who:** Public; no role required.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** Public self-registration creates a data_subject account; callers cannot choose a staff role. Contact verification is required.
+- **Rules:** Public self-registration creates a data_subject account; callers cannot choose a staff role. Contact verification is required. A date of birth under eighteen creates no account (S2-01).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L215), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/auth/authentication/service.py#L52), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/dependencies/authentication.py#L61).
 
 ## POST /auth/register/verify

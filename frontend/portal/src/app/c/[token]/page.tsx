@@ -5,6 +5,10 @@
  * that has to be right. Four steps: validate the link, identify herself by one
  * contact, confirm it with a code, read the notice and choose.
  *
+ * Between confirming and the notice, an account with no date of birth is asked
+ * for one. The server records no consent from an unknown age (S2-01), and
+ * asking before the notice is read is kinder than refusing after it.
+ *
  * The link authenticates; it does not enrol. Somebody without an account is
  * sent to sign up and returns here, so that every artefact this screen writes
  * belongs to a data principal who can find it, read it and withdraw it later -
@@ -32,6 +36,8 @@ import { useParams } from "next/navigation";
 import * as React from "react";
 
 import { Alert, Card, CardBody, Skeleton } from "@/components/ui/primitives";
+import { DateOfBirthPrompt } from "@/components/security";
+import { getMe } from "@/features/auth/api";
 import { getLink, serveNotice } from "@/features/public-consent/api";
 import {
   DoneStep,
@@ -157,6 +163,11 @@ export default function ConsentPage() {
           onDone={async () => {
             setError(null);
             try {
+              const me = await getMe();
+              if (me.is_minor === null) {
+                setStep("age");
+                return;
+              }
               await serve(language);
               setStep("notice");
             } catch (err) {
@@ -166,6 +177,21 @@ export default function ConsentPage() {
             }
           }}
           onError={setError}
+        />
+      )}
+
+      {step === "age" && (
+        <DateOfBirthPrompt
+          onSaved={async () => {
+            try {
+              await serve(language);
+              setStep("notice");
+            } catch (err) {
+              setError(
+                err instanceof ApiError ? err.userMessage() : "Could not load the notice.",
+              );
+            }
+          }}
         />
       )}
 
@@ -187,6 +213,10 @@ export default function ConsentPage() {
             setStep("done");
           }}
           onError={setError}
+          onAgeRequired={() => {
+            setError(null);
+            setStep("age");
+          }}
         />
       )}
 

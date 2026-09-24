@@ -235,6 +235,27 @@ export const storageRef = z
   .min(1, "A storage reference is required")
   .max(500, "A storage reference has to fit in 500 characters");
 
+/* --------------------------------------------------------- date of birth */
+
+/** The earliest date of birth the server accepts. */
+export const EARLIEST_DOB = "1900-01-01";
+
+/** Today, as the `YYYY-MM-DD` a date input speaks. */
+export const today = (): string => new Date().toISOString().slice(0, 10);
+
+/**
+ * A date of birth, as a date input's `YYYY-MM-DD`.
+ *
+ * Mirrors `cmp.validation.common.plausible_dob`: in the past, and not before
+ * 1900. Section 9 turns on it, so sign-up and the portal's age prompt check it
+ * the same way.
+ */
+export const dateOfBirth = z
+  .string()
+  .min(1, "Enter your date of birth")
+  .refine((v) => v > EARLIEST_DOB, "Enter a valid date of birth")
+  .refine((v) => v < today(), "Date of birth must be in the past");
+
 /* -------------------------------------------------------------- optional */
 
 /**

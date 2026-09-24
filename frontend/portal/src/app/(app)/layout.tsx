@@ -15,7 +15,7 @@
 "use client";
 
 import { AppShell } from "@/components/layout/app-shell";
-import { RequireSection, SessionWarning } from "@/components/security";
+import { RequireAge, RequireSection, SessionWarning } from "@/components/security";
 import { Skeleton } from "@/components/ui/primitives";
 import { RequireAuth } from "@/providers";
 
@@ -26,7 +26,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           because somebody who followed a wrong link needs somewhere to go.
           What does not render is the section. */}
       <AppShell>
-        <RequireSection>{children}</RequireSection>
+        <RequireSection>
+          {/* Third: an account with no date of birth is asked for one before
+              anything else, bar withdrawing and making a request (S2-01). */}
+          <RequireAge>{children}</RequireAge>
+        </RequireSection>
       </AppShell>
       {/* Outside the shell so it survives a page-level error boundary: a
           session about to end is exactly when somebody needs to be told. */}

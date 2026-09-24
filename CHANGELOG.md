@@ -414,6 +414,27 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **An unknown age is no longer an adult, and a child is refused (S2-01).**
+  `cmp_is_minor()` answers NULL when it does not know and says callers must not
+  treat that as adult; the consent gate tested `is True`, so every account
+  created through a link - none of which was asked - consented as one. Until
+  the guardian route exists there is one lawful answer to a child under s.9(1),
+  so `capture` now records nothing, grant or refusal, from an unknown age
+  (`age_required`) or from a child (`consent_minor_not_permitted`), whatever the
+  purpose's `permitted_for_minors` says - that flag is s.9(3) and never stood in
+  for the guardian. Sign-up and `POST /c/{token}/register`, which now asks for a
+  date of birth too, create no account for a child and spend no use of the
+  link. The refusal names no guardian route, and sign-up's hint stops implying
+  one. The portal asks an account with no date of birth for one at its next
+  sign-in, before any page but consents and requests, which stay open because
+  withdrawing and making a request are not consents; the consent-link page asks
+  between the code and the notice. `PATCH /me` checks the date as sign-up does
+  (in the past, after 1900) - since 0028 sealed the column the API is the only
+  place that rule can live, and this route never applied it. The rule is one
+  module, `cmp.domain.users.age`, and the test is always the database's. The
+  seeded data principal is an adult, on a new database and an existing one.
+  Both portals' generated API types are regenerated, catching up with three
+  earlier `openapi.json` changes they had missed.
 - **A message that cannot open its recipient says so, and is retried.** Every
   contact is sealed and the worker opens it on the way out, so a worker that
   cannot reach the key service sent nothing while every request answered "a

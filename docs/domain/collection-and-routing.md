@@ -10,8 +10,10 @@ Three reference tables, maintained mostly by the DPO and read by everyone:
 
 - **Purposes**: each with a lawful basis, itemised data categories (Rule
   3(b)(i) - the database refuses an empty list), a retention period and basis,
-  an erasure trigger and what happens when retention lapses, and whether a
-  minor may consent to it (s.9). A purpose is drafted, activated, and later
+  an erasure trigger and what happens when retention lapses, and
+  `permitted_for_minors` - s.9(3), no tracking or targeting of children. It
+  will matter once the guardian route exists; until then no child's consent is
+  recorded for any purpose (see [consent-lifecycle.md](consent-lifecycle.md)). A purpose is drafted, activated, and later
   retired; a retired purpose stays on the notices that named it.
 - **Processors**: the parties that collect or handle data. `is_in_house`
   distinguishes the organisation's own teams from a third party, and that one

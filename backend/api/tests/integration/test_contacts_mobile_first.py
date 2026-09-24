@@ -187,6 +187,7 @@ class TestConsentLinkRegistration:
             email=EMAIL,
             organization_id=None,
             person_type=None,
+            dob="1990-05-17",
         )
         assert result["created"] and plain(result["user"]["mobile"]) == STORED
 
@@ -218,6 +219,7 @@ class TestConsentLinkRegistration:
             email=None,
             organization_id=None,
             person_type=None,
+            dob="1990-05-17",
         )
         link_uuid = str(result["link"]["link_uuid"])
         code = (await otp.issue(otp.Scope.CONSENT_LINK, f"{link_uuid}:+915550000902")).code

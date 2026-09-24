@@ -119,7 +119,7 @@ these need no session; they are marked **public**.
 | GET | `/c/{token}/notice` **public** | `token` | — |
 | POST | `/c/{token}/otp` **public** | `contact`, `token` | — |
 | POST | `/c/{token}/otp/verify` **public** | `code`, `contact`, `token` | — |
-| POST | `/c/{token}/register` **public** | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `token` | — |
+| POST | `/c/{token}/register` **public** | `dob`, `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `token` | — |
 
 ### Public rights pages (`/rights`) — 8 endpoints
 

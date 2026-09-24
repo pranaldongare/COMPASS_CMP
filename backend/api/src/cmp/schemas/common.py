@@ -10,11 +10,13 @@ Two conventions enforced by types rather than by review:
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Any, Generic, TypeVar
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints
+
+from cmp.validation.common import plausible_dob
 
 T = TypeVar("T")
 
@@ -111,6 +113,12 @@ LongText = Annotated[str, StringConstraints(min_length=1, max_length=20_000)]
 NoticeText = Annotated[str, StringConstraints(min_length=1)]
 Mobile = Annotated[str, StringConstraints(min_length=6, max_length=20, pattern=r"^\+?[0-9 \-]+$")]
 OtpCode = Annotated[str, StringConstraints(min_length=4, max_length=10, pattern=r"^[0-9]+$")]
+
+#: Section 9 turns on this date, so every body that accepts one checks it the
+#: same way - see `cmp.validation.common.plausible_dob`.
+DateOfBirth = Annotated[
+    date, AfterValidator(plausible_dob), Field(description="Date of birth, YYYY-MM-DD")
+]
 
 # A URL that must be resolvable by a data subject reading the notice on a phone.
 # Constrained to http(s) so a notice cannot carry a javascript: or data: link.

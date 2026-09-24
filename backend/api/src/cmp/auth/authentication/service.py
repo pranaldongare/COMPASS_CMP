@@ -41,6 +41,7 @@ from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn, unique_violation
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
+from cmp.domain.users import age
 from cmp.infrastructure.dkms import opened
 from cmp.infrastructure.dkms.blind import index_of
 from cmp.validation import is_mobile, normalise_contact, normalise_mobile
@@ -823,9 +824,9 @@ async def register_data_subject(
     A registration that was started and never finished is not a conflict: the
     same codes are sent again so it can be completed.
 
-    Date of birth is required here, unlike on accounts created through a consent
-    link. Section 9 makes it the input to whether this is a child's account, and
-    a self-registration is the one moment the platform can ask.
+    Date of birth is required, and a child is refused before anything is
+    written: section 9 makes it the input to whether this is a child's account,
+    and there is no guardian route yet (`cmp.domain.users.age`).
     """
     mobile = normalise_mobile(mobile)
     email = email.strip().lower() if email and email.strip() else None
@@ -862,6 +863,7 @@ async def register_data_subject(
             field=taken,
         )
 
+    await age.refuse_a_minor(conn, dob=dob)
     user = await user_repo.create(
         conn,
         full_name=full_name,

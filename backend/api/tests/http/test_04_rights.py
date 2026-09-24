@@ -820,7 +820,7 @@ async def world_principal(http: httpx.AsyncClient, world: World, queued: Any) ->
         f"/c/{world.link_token}/register",
         template="/c/{token}/register",
         expect=(200, 201),
-        json={"full_name": f"Second {fresh()}", "mobile": mobile},
+        json={"full_name": f"Second {fresh()}", "mobile": mobile, "dob": "1988-11-02"},
     )
     await call(
         http,

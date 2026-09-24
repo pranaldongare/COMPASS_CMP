@@ -10,7 +10,14 @@
 
 import { Pipeline } from "@/components/ui/charts";
 
-export type Step = "loading" | "invalid" | "identify" | "verify" | "notice" | "done";
+export type Step =
+  | "loading"
+  | "invalid"
+  | "identify"
+  | "verify"
+  | "age"
+  | "notice"
+  | "done";
 
 /**
  * Only the four steps a person walks. `loading` and `invalid` are states the
@@ -25,7 +32,10 @@ export const STEP_LABELS: Array<{ key: Step; label: string }> = [
 ];
 
 export function Steps({ current }: { current: Step }) {
-  const index = STEP_LABELS.findIndex((s) => s.key === current);
+  // Asking for a date of birth is part of confirming who she is, not a stop of
+  // its own: most people never see it.
+  const shown = current === "age" ? "verify" : current;
+  const index = STEP_LABELS.findIndex((s) => s.key === shown);
   return (
     <div className="mb-5">
       <Pipeline steps={STEP_LABELS} currentIndex={index} />

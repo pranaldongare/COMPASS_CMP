@@ -17,7 +17,7 @@ one schema and would otherwise be copy-pasted.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 from cmp.core.errors import ValidationFailed
@@ -92,3 +92,19 @@ def normalise_login(value: str) -> str:
     comparison is folded.
     """
     return value.strip().lower()
+
+
+def plausible_dob(value: date) -> date:
+    """A date of birth that could be somebody's: in the past, and after 1900.
+
+    The database enforced this until migration 0028 sealed the column, and a
+    CHECK cannot read ciphertext; since then this is the only place the rule
+    lives, so every body that accepts a date of birth goes through it (as the
+    `DateOfBirth` type). UTC rather than the server's local date: "is this in
+    the past" must not depend on which side of midnight the machine is.
+    """
+    if value >= datetime.now(UTC).date():
+        raise ValueError("Date of birth must be in the past.")
+    if value.year < 1900:
+        raise ValueError("Date of birth is not plausible.")
+    return value

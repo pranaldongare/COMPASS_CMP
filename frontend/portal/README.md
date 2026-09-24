@@ -78,9 +78,12 @@ A staff account that signs in here is told where the console is
 (`NEXT_PUBLIC_STAFF_PORTAL_URL`) and offered sign-out. `AuthPageGate`
 (`src/components/security/`) sits on sign-in and sign-up: a visitor who is
 already signed in goes where she was going, and a member of staff goes to
-the console, or to its code step when the code is outstanding. That is a
-courtesy, not a boundary: the permission matrix on the server is what
-protects the data.
+the console, or to its code step when the code is outstanding. `RequireAge`
+asks an account with no date of birth for one at its next sign-in, before any
+page but consents and requests, and the consent-link page asks between the
+code and the notice - the server records no consent from an unknown age. Those
+are courtesies, not boundaries: the permission matrix and the consent service
+on the server are what protect the data.
 
 The rules the consent flow follows - nothing pre-ticked, accept and decline of
 equal prominence, every purpose answered, `served_at` from the server, an

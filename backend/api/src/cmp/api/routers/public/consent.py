@@ -31,7 +31,15 @@ from cmp.db.repositories import notices as notice_repo
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.consent import service as service
-from cmp.schemas.common import Acknowledged, Mobile, OtpCode, Out, Schema, ShortText
+from cmp.schemas.common import (
+    Acknowledged,
+    DateOfBirth,
+    Mobile,
+    OtpCode,
+    Out,
+    Schema,
+    ShortText,
+)
 
 router = APIRouter(tags=["public consent"])
 
@@ -52,6 +60,9 @@ class LinkView(Out):
 class RegisterBody(Schema):
     full_name: ShortText
     mobile: Mobile
+    #: Asked here as on sign-up: s.9 turns on it, and an account created without
+    #: one is an account whose age nobody knows.
+    dob: DateOfBirth
     email: EmailStr | None = None
     organization_id: Annotated[str | None, Field(default=None, max_length=60)] = None
     person_type: str | None = None
@@ -141,6 +152,7 @@ async def register(token: TokenPath, body: RegisterBody, response: Response) -> 
             email=str(body.email) if body.email else None,
             organization_id=body.organization_id,
             person_type=body.person_type,
+            dob=body.dob.isoformat(),
         )
     return {
         "ok": True,

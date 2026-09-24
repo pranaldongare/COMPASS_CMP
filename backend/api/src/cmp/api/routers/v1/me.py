@@ -7,7 +7,7 @@ because no query here accepts a subject identifier.
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import datetime
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -28,7 +28,7 @@ from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.consent import service as consent_service
 from cmp.infrastructure.dkms.blind import index_of
-from cmp.schemas.common import Acknowledged, Mobile, OtpCode, Out, Schema, ShortText
+from cmp.schemas.common import Acknowledged, DateOfBirth, Mobile, OtpCode, Out, Schema, ShortText
 from cmp.validation import Email, normalise_mobile
 
 router = APIRouter(prefix="/me", tags=["me"])
@@ -69,8 +69,9 @@ class UpdateMe(Schema):
     secondary_email: Email | None = None
     #: Editable because accounts created through a consent link never had one
     #: asked for, and the alternative is a data principal who cannot correct a
-    #: field that decides whether section 9 applies to them.
-    dob: date | None = None
+    #: field that decides whether section 9 applies to them. The portal asks for
+    #: it here at the next sign-in when the account has none (S2-01).
+    dob: DateOfBirth | None = None
 
 
 class PersonTypeChange(Schema):

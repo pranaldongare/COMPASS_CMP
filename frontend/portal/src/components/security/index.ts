@@ -16,3 +16,4 @@ export {
 export { SessionWarning } from "@/components/security/session-warning";
 export { RequireSection } from "@/components/security/require-section";
 export { AuthPageGate } from "@/components/security/auth-page-gate";
+export { DateOfBirthPrompt, RequireAge } from "@/components/security/require-age";

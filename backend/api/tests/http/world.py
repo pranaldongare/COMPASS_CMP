@@ -273,6 +273,7 @@ async def build(http: httpx.AsyncClient, session_for: SessionFactory, queued: li
             "email": w.principal_email,
             "organization_id": f"STU-{tag}",
             "person_type": "external",
+            "dob": "1990-05-17",
         },
     )
     # She registered with two contacts, so two codes: the second completes it

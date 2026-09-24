@@ -27,6 +27,22 @@ async function signInByEmail(page: import("@playwright/test").Page, contact: str
   await page.waitForURL(/\/my-consents/, { timeout: 20_000 });
 }
 
+/**
+ * A staff account has no date of birth until its owner gives one, and the
+ * portal asks for it before any page but consents and requests (S2-01). The
+ * first run answers it; later runs find it answered - either way the page
+ * behind it is what the test goes on to use.
+ */
+async function answerAgeIfAsked(page: import("@playwright/test").Page) {
+  const prompt = page.getByRole("heading", { name: /your date of birth/i });
+  const account = page.getByTestId("contact-secondary_email");
+  await expect(prompt.or(account)).toBeVisible();
+  if (await prompt.isVisible()) {
+    await page.getByLabel(/date of birth/i).fill("1985-07-21");
+    await page.getByRole("button", { name: /save and continue/i }).click();
+  }
+}
+
 test.describe("a member of staff on the portal", () => {
   // Serial: the sign-in codes for one address are capped per hour.
   test.describe.configure({ mode: "serial" });
@@ -63,6 +79,7 @@ test.describe("a member of staff on the portal", () => {
   }) => {
     await signInByEmail(page, DPO);
     await page.goto("/account");
+    await answerAgeIfAsked(page);
 
     const row = page.getByTestId("contact-secondary_email");
     await expect(row).toBeVisible();

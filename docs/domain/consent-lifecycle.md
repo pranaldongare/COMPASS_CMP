@@ -61,9 +61,22 @@ contact already registered is recognised rather than duplicated; a staff
 account arriving through a consent link is refused.
 
 Date of birth matters because of s.9: whether she is a **minor** is derived
-from it in the database (`cmp_is_minor`), and a minor cannot grant a purpose
-the registry has not marked as permitted for minors. Where the date is
-unknown the account is recorded as such, not assumed adult. See
+from it in the database (`cmp_is_minor`, over `minor_until`). Section 9(1)
+asks for a parent's or guardian's verifiable consent before *any* processing of
+a child's data, and the guardian route does not exist yet, so the platform has
+one lawful answer to a child: no. Sign-up and the link's own registration
+(`POST /c/{token}/register`, which asks for the date too) create no account for
+a child, and `capture` records no consent from one - whatever the purpose's
+`permitted_for_minors` says, because that flag is s.9(3) and never stood in for
+the guardian. The refusal names no guardian route, since there is none to offer.
+
+**An unknown age is not an adult.** Most accounts were created through a link
+that never asked, and `cmp_is_minor` answers NULL for them. `capture` refuses
+them too (`age_required`, nothing written) until a date of birth is given, and
+the portal asks for it at the next sign-in, before any page but the two that
+must always open - withdrawing a consent and making a request are not consents.
+On this page the question comes between confirming the code and serving the
+notice. The rule lives in `cmp.domain.users.age`. See
 [ADR 0007](../decisions/0007-mobile-first-contacts.md) for why the mobile
 comes first.
 
@@ -142,7 +155,7 @@ way to alter one.
 | The serving moment is the server's | the serving record in Redis, required by `capture` |
 | Consent evidence is append-only | statement trigger and revoked grant (migrations 0002, 0003) |
 | Status is derived, never stored | `v_current_consent` |
-| A minor cannot grant a purpose not permitted for minors | the consent service, from `cmp_is_minor(dob)` |
+| No consent from a child, or from an unknown age | `cmp.domain.users.age`, from `cmp_is_minor(minor_until)`, before `capture` writes anything |
 
 `tests/integration/enforcement/` bypasses the service layer on purpose and
 writes SQL directly, because a guarantee that only holds through Python is

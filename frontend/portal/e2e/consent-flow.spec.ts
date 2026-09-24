@@ -14,6 +14,8 @@
  */
 import { expect, test } from "@playwright/test";
 
+import { freshCode, latestCodeFor } from "./support/outbox";
+
 const TOKEN = process.env.E2E_CONSENT_TOKEN;
 
 test.describe("invalid consent link", () => {
@@ -147,6 +149,33 @@ test.describe("consent journey", () => {
     );
     // Still on the verification step: a rejected code must not let anyone past.
     await expect(page.getByLabel(/six-digit code/i)).toBeVisible();
+  });
+
+  test("an unknown age is asked for before the notice is served", async ({ page }) => {
+    // S2-01. The server records no consent from an account whose age it does
+    // not know, so the page asks between the code and the notice rather than
+    // letting her read it and then refusing. A seeded staff account has no date
+    // of birth until its owner gives one - every account may act as a data
+    // principal - so the first run meets the question and answers it; later
+    // runs find it answered and go straight to the notice.
+    const contact = "rco@cmp.local";
+    await page.goto(`/c/${TOKEN}`);
+    await page.getByRole("radio", { name: /^email$/i }).check();
+    const before = latestCodeFor(contact);
+    await page.getByLabel(/email address/i).fill(contact);
+    await page.getByRole("button", { name: /send the code/i }).click();
+    await page.getByLabel(/six-digit code/i).fill(await freshCode(contact, before));
+    await page.getByRole("button", { name: /confirm and read the notice/i }).click();
+
+    const prompt = page.getByRole("heading", { name: /your date of birth/i });
+    const notice = page.getByRole("button", { name: /decline everything/i });
+    await expect(prompt.or(notice)).toBeVisible({ timeout: 15_000 });
+    if (await prompt.isVisible()) {
+      await expect(page.locator("main")).not.toContainText(/guardian|parent/i);
+      await page.getByLabel(/date of birth/i).fill("1982-02-14");
+      await page.getByRole("button", { name: /save and continue/i }).click();
+    }
+    await expect(notice).toBeVisible();
   });
 });
 

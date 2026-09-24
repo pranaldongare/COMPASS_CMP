@@ -104,7 +104,8 @@ frontend/console/src/
     forms/                shared form pieces
     feedback/             error-boundary
     security/             Can, RequireRole, RequireFullSession, RequireSection, AuthPageGate,
-                          session-warning — render-time gates, none of them a security boundary
+                          RequireAge (portal), session-warning — render-time gates, none of them
+                          a security boundary
   providers/              query, auth, theme, toast; the one Providers composition
   lib/
     api/                  the axios client and the four verbs — the only network code
@@ -555,6 +556,7 @@ one of them could be bypassed and the API would still answer 401, 403 or
 | No cookie at all | [`proxy.ts`](../../frontend/console/src/proxy.ts) | A request for a non-public path carrying no session cookie is redirected to `/sign-in?next=<path>`. It sees only whether a cookie is present, never whether it is valid. Public paths are one list, `lib/security/public-routes.ts`, shared with the auth provider |
 | A protected page | `RequireAuth` in `providers/auth-provider.tsx`, wrapping `(app)/layout.tsx` | Renders nothing until the session resolves, so no page flashes its contents. No session: `/sign-in?next=`. A 401 from any request lands in the same place, through the one handler the provider wires into the API client |
 | An auth page | `AuthPageGate` in `components/security/auth-page-gate.tsx` | Sends away the people a sign-in form was not written for, below |
+| An unknown age (portal only) | `RequireAge` in `components/security/require-age.tsx`, inside `RequireSection` in `(app)/layout.tsx` | When `me.is_minor` is `null` - the server's "unknown", never "adult" - every page shows the date-of-birth question instead, bar `/my-consents` and `/my-requests`, which stay open with a reminder: withdrawing and making a request are not consents. The answer goes to `PATCH /me` and the session is re-read. The consent-link page asks the same question between the code and the notice. The server is what refuses (`age_required`); this asks at the moment it can be answered (S2-01) |
 
 **Three session states.** `useSessionState()`, in the auth provider, asks
 `/auth/me` under the provider's own query key - the provider itself does

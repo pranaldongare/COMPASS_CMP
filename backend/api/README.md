@@ -113,7 +113,7 @@ is a claim about a codebase, and a codebase changes
 | Data categories are itemised (Rule 3(b)(i)) | `CHECK cardinality(...) >= 1` |
 | Links only for approved projects | `cmp_link_coherent()` |
 | A data principal and a nominee have a mobile; staff have an email | `BEFORE INSERT` triggers and a CHECK |
-| A minor cannot consent to a purpose not permitted for minors | `cmp_is_minor(dob)`, checked in the consent service |
+| No account or consent for a child; no consent from an unknown age | `cmp_is_minor(minor_until)`, checked by `cmp.domain.users.age` |
 
 `tests/integration/enforcement/` breaks each of these with raw SQL, on
 purpose.

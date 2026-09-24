@@ -251,10 +251,13 @@ async def seeded(conn: Any, request_context: Any) -> dict[str, Any]:
 
     subject = await fetch_one(
         conn,
+        # A known adult: since S2-01 a consent waits for a date of birth, and
+        # the tests about age set their own. `dob` stays empty - it is sealed,
+        # and the s.9 test reads `minor_until` alone.
         """INSERT INTO auth_user (full_name, email, email_hash, mobile, mobile_hash, role, status,
-                               registered_via_link_id)
+                               registered_via_link_id, minor_until)
            VALUES ('Test Subject', 'subject@test.local', %s, '+915550000001', %s, 'data_subject',
-                   'active', %s)
+                   'active', %s, DATE '2008-05-17')
            RETURNING id, uuid""",
         (hashed("email", "subject@test.local"), hashed("mobile", "+915550000001"), link["link_id"]),
     )

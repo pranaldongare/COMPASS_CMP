@@ -28,6 +28,10 @@ from cmp.db.sql import fetch_one
 
 log = get_logger("cmp.seed")
 
+#: The seeded data principal is an adult (S2-01): a consent waits for a known
+#: age, and the browser suites consent as her.
+SUBJECT_DOB = "1994-03-12"
+
 PASSWORD = "SeedPassw0rd!2026"  # noqa: S105 - development only, guarded below
 
 USERS = [
@@ -514,6 +518,14 @@ async def seed() -> None:
                     person_type="external",
                     status="active",
                     organization_id="ORG-SUB-001",
+                    dob=SUBJECT_DOB,
+                )
+            elif subject.get("is_minor") is None:
+                # Seeded before S2-01, when the seed gave her no date of birth.
+                # An unknown age is asked at sign-in and refused at consent, so
+                # the seeded adult has to be one on an existing database too.
+                subject = await user_repo.update_profile(
+                    conn, subject["id"], full_name=None, mobile=None, dob=SUBJECT_DOB
                 )
             log.info("seed.subject", email="subject@cmp.local")
 

@@ -37,6 +37,7 @@ from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
+from cmp.domain.users import age
 from cmp.validation import is_mobile, normalise_contact, normalise_mobile
 
 log = get_logger("cmp.consent")
@@ -176,8 +177,15 @@ async def register_subject(
     email: str | None,
     organization_id: str | None,
     person_type: str | None,
+    dob: str,
 ) -> dict[str, Any]:
     """Create or recognise the person behind a link.
+
+    A new account is created with its date of birth, as sign-up does, and a
+    child is refused before anything is written or a use of the link is spent.
+    An existing account is recognised and *not* updated: this call is
+    unauthenticated, and knowing somebody's number is not being them. Her age,
+    if the register has none, is asked once she has signed in.
 
     `registered_via_link_id` is the audit trail for an open link. If a link
     circulates beyond its intended population this identifies everyone who came
@@ -203,6 +211,7 @@ async def register_subject(
         user = existing
         created = False
     else:
+        await age.refuse_a_minor(conn, dob=dob)
         consumed = await repo.increment_use(conn, link["link_id"])
         if not consumed:
             raise LinkInvalid()
@@ -216,6 +225,7 @@ async def register_subject(
             person_type=person_type,
             status="pending",
             registered_via_link_id=link["link_id"],
+            dob=dob,
         )
         created = True
 
@@ -525,35 +535,11 @@ async def capture(
                 field="grants",
             )
 
-    # Section 9. A child's personal data may only be processed with verifiable
-    # consent from a parent or lawful guardian, which this platform does not
-    # collect - so a purpose the registry has not marked as permitted for
-    # minors cannot be granted by a data principal it knows to be one. Unknown
-    # age is neither: most accounts were registered through a link that never
-    # asked, and treating "we did not ask" as "adult" is the mistake the
-    # nullable column exists to avoid. The gap is recorded rather than decided.
-    granted_uuids = [u for u, v in grants.items() if v]
-    if granted_uuids:
-        age = await (
-            await conn.execute(
-                "SELECT cmp_is_minor(minor_until) AS is_minor FROM auth_user WHERE id = %s",
-                (user_id,),
-            )
-        ).fetchone()
-        if age and age["is_minor"] is True:
-            blocked = sorted(
-                purpose["name"]
-                for u, purpose in by_uuid.items()
-                if u in granted_uuids and not purpose.get("permitted_for_minors")
-            )
-            if blocked:
-                raise ConsentDefective(
-                    "This notice includes purposes that cannot be processed for a person "
-                    "under eighteen without a parent or guardian's verifiable consent "
-                    f"(s.9): {', '.join(blocked)}. Please contact the Privacy Office.",
-                    code="consent_minor_not_permitted",
-                    details={"blocked": blocked},
-                )
+    # Section 9, before anything is written: a known adult, or no artefact at
+    # all - not for a grant, and not for a refusal either. See
+    # `cmp.domain.users.age` for why an unknown age waits and a child is refused
+    # whatever the purpose says.
+    await age.require_an_adult(conn, user_id=user_id)
 
     # Serialise per (person, notice) before reading what is current. Two first
     # captures racing would each see nothing current and each write a root;

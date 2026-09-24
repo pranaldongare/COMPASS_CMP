@@ -7,12 +7,12 @@ Staff sign-in is two-step where MFA applies: `/auth/login` returns
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime
+from datetime import datetime
 from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Request, Response, status
-from pydantic import EmailStr, Field, field_validator
+from pydantic import EmailStr, Field
 
 from cmp.api.dependencies import (
     CurrentUser,
@@ -27,7 +27,7 @@ from cmp.core.errors import NotFound, Unauthenticated
 from cmp.db.pool import connection, transaction
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
-from cmp.schemas.common import Acknowledged, OtpCode, Out, Password, Schema
+from cmp.schemas.common import Acknowledged, DateOfBirth, OtpCode, Out, Password, Schema
 from cmp.validation import Mobile
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -58,25 +58,8 @@ class RegisterBody(Schema):
 
     full_name: Annotated[str, Field(min_length=2, max_length=120)]
     mobile: Mobile
-    dob: Annotated[date, Field(description="Date of birth, YYYY-MM-DD")]
+    dob: DateOfBirth
     email: EmailStr | None = None
-
-    @field_validator("dob")
-    @classmethod
-    def _plausible(cls, value: date) -> date:
-        """The same window the database CHECK enforces, refused earlier.
-
-        Rejected here as well as there so the person gets a message naming the
-        field, rather than a constraint violation naming a constraint.
-        """
-        # UTC rather than the server's local date: "is this in the past" must
-        # not depend on which side of midnight the machine happens to be.
-        today = datetime.now(UTC).date()
-        if value >= today:
-            raise ValueError("Date of birth must be in the past.")
-        if value.year < 1900:
-            raise ValueError("Date of birth is not plausible.")
-        return value
 
 
 class OtpRequestBody(Schema):
