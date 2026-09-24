@@ -71,6 +71,7 @@ No request body.
       "subject_name": "…",
       "entity_uuid": "…",
       "entity_label": "…",
+      "entity_label_parts": "…",
       "entity_noun": "…",
       "entity_href": "…"
     }
@@ -481,6 +482,9 @@ No request body.
   "subject_name": "string",
   "entity_uuid": "string",
   "entity_label": "string",
+  "entity_label_parts": [
+    "string"
+  ],
   "entity_noun": "string",
   "entity_href": "string"
 }
@@ -524,6 +528,7 @@ No request body.
 | `subject_name` | `string` or `null` | No | — | — |
 | `entity_uuid` | `string` or `null` | No | — | — |
 | `entity_label` | `string` or `null` | No | — | — |
+| `entity_label_parts` | array of `string` or `null` | No | — | — |
 | `entity_noun` | `string` or `null` | No | — | — |
 | `entity_href` | `string` or `null` | No | — | — |
 

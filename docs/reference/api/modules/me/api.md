@@ -66,7 +66,7 @@ No request body.
   "organization_id": "string",
   "person_type": "string",
   "status": "string",
-  "dob": "2026-09-17",
+  "dob": "string",
   "is_minor": true,
   "created_at": "string",
   "secondary_email": "string",
@@ -125,7 +125,7 @@ Request body required: **yes**.
   "organization_id": "string",
   "person_type": "string",
   "status": "string",
-  "dob": "2026-09-17",
+  "dob": "string",
   "is_minor": true,
   "created_at": "string",
   "secondary_email": "string",
@@ -1723,7 +1723,7 @@ For state changes whose only interesting output is that they happened.
 | `organization_id` | `string` or `null` | Yes | — | — |
 | `person_type` | `string` or `null` | Yes | — | — |
 | `status` | `string` | Yes | — | — |
-| `dob` | `string` or `null` | Yes | format: `date` | — |
+| `dob` | `string` or `null` | Yes | — | — |
 | `is_minor` | `boolean` or `null` | Yes | — | — |
 | `created_at` | `object` | Yes | — | — |
 | `secondary_email` | `string` or `null` | Yes | — | — |

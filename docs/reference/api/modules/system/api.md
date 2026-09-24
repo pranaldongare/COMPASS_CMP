@@ -54,7 +54,7 @@ No request body.
 - **Operation ID:** `ready_ready_get`
 - **Access:** Public or operator endpoint; see the endpoint description and deployment controls.
 
-Database reachable, migrations current, Redis reachable.
+Database reachable, migrations current, Redis reachable, key service reachable.
 
 ### Validation
 

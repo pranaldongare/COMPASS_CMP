@@ -31,6 +31,31 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **Part of a name finds a person again, without the name leaving its seal.**
+  Sealing the names had narrowed the users list, the requests search and the
+  audit trail's About picker to whole contacts. Migration 0030 adds
+  `full_name_ngrams`, `submitted_name_ngrams` and `nominee_name_ngrams` —
+  `text[]` of the keyed hashes of every three-character run, under GIN —
+  backfilled by opening each sealed name once through the key service. A search
+  asks for every run of the term in one row: three characters up, case, spacing
+  and accent composition ignored. What that costs is written beside the field
+  map: a set of runs leaks letter statistics a single hash does not, so it is
+  three name columns and never a contact; a contact is still matched whole.
+- **The key service hashes and answers searches.** `/bulk_hash` hashes the named
+  fields of a batch; `/search` says what to look for when the whole value is
+  known, `/search_ngram` when part of it is, and a term under three characters
+  is refused rather than answered with an empty list. `/bulk_encrypt` gained
+  `with_hash` and `with_ngrams`, both off by default. The hashes are the
+  platform's to the byte — the labels and the normalisation are a contract
+  between the two codebases, so people can still sign in while the service is
+  unreachable — under `DKMS_HASH_KEY`, which must equal the API's
+  `BLIND_INDEX_KEY` and is refused at startup outside development if it is
+  still the example one.
+- **The database reference is generated, not written.**
+  `docs/tools/generate-schema-docs.py` reads PostgreSQL's catalogues on a
+  scratch database replayed from the migration chain and writes the inventory,
+  the column and enum references and the source of all eleven diagrams. At
+  0030: 32 tables, 426 columns, 42 CHECKs.
 - **Personal data is encrypted on its way into the database, and opened only
   where a person reads it.** Every repository write of a column in
   `ENCRYPTED_FIELDS` goes through `seal()` — one call to the key service per
@@ -61,8 +86,9 @@ as a release yet.
   ciphertext (migration 0028: the columns, a Python backfill, every uniqueness
   rule and the one cross-column trigger moved onto the indexes). Date of birth
   is sealed and the section 9 test moves to `minor_until`, the one date kept
-  in the clear. What is given up is partial search: the users list, the
-  requests list and the audit lookup find a person by the whole contact, or
+  in the clear. What was given up is partial search (given back by migration
+  0030, above): the users list, the requests list and the audit lookup find a
+  person by the whole contact, or
   by reference, uuid and project as before, and not by a few letters of a
   name; the fields say so. `scripts/reseal.py` sealed every row written before
   the switch, and `--check` reports zero plaintext.
@@ -94,8 +120,181 @@ as a release yet.
   a collection's assets 500ed when the manifest gave no `storage_ref`; the
   audit search still pattern-matched sealed names, finding nothing and
   scanning for it.
+- **A key service, and the two layers that use it.** `backend/dkms` is a separate
+  FastAPI deployable holding one secret and doing one thing with it:
+  `POST /encrypt/bulk` and `POST /decrypt/bulk` take an array of records and a
+  mapping of field names to DKMS data types, encrypt only the fields named, and
+  pass everything else through. `method` picks the form — `string` for the
+  `SE::` prefix, `bytes` for base64 — and both carry the same envelope.
+  AES-256-GCM, a key derived per data type by HKDF, and the type bound into the
+  ciphertext as additional authenticated data, so a value written as `MOBILE`
+  refuses to open as `NAME` rather than returning plausible rubbish. The thread
+  pool is real parallelism, because OpenSSL releases the GIL: 15,000 values in
+  74 ms across 14 workers, measured. Separate from the platform API on purpose —
+  that process holds the database, this one holds the key that makes it
+  readable. Installed with `python -m venv` and `pip install -r
+  requirements.txt`; 35 tests, including the caller's own example asserted
+  verbatim and key rotation walked end to end.
+- **`cmp.infrastructure.dkms`**, the platform API's client. Batches a write's
+  personal fields into one call rather than one per field, and **fails closed**:
+  if the key service cannot be reached the write fails rather than quietly
+  storing plaintext. `fields.py` is the field map — which column holds which
+  kind of personal data — with a second list naming every personal column that
+  *cannot* be encrypted yet and why, so a plaintext column is a decision on the
+  record rather than an oversight. Production now refuses to start with
+  `DKMS_ENABLED=false`.
+- **Decryption in each portal's server layer**, at `/dkms/decrypt`, with a
+  `useDecrypted()` hook that decrypts a whole list in one call. The browser
+  never holds a key and never learns where the service is: it sends back
+  ciphertext the API already served it, which means the permission matrix and
+  the scope have already run, and gets plaintext. A page that cannot decrypt
+  says so rather than rendering a blank where a name should be.
+- **An inventory of the personal data this platform holds.**
+  [docs/domain/personal-data.md](docs/domain/personal-data.md) lists every table
+  and column that carries something about a person, the four stores that are
+  not the database — Redis, the file store, the logs, the messages that leave —
+  and all 159 of the 245 API operations that accept or return personal data,
+  each with the fields by name and the permission matrix's own answer for who
+  may call it. The 20 operations that answer without a session are pulled out
+  separately, with what stops each being an oracle. It is a join over
+  `openapi.json`, `endpoint_permissions.json` and `schema_inventory.json`, so
+  `docs/scripts/personal_data_scan.py` regenerates the endpoint tables; the
+  script exits non-zero on a field name it has not been taught to classify,
+  which is the one thing a document like this cannot notice on its own.
+- **The audit trail can be asked questions.** Filters by data principal,
+  member of staff, consent record, processor, data source, project, notice,
+  site or rights request (found by name, resolved server-side), by area,
+  event, record type, actor role and period, and a free-text search over the
+  recorded details; a summary strip (counts by area, event, role and day)
+  over the same rows; a CSV export that is itself recorded in the trail; the
+  question in the address bar so it can be shared; and an **Audit trail**
+  button on consent, project, notice and request pages that arrives
+  pre-filtered. The filter vocabulary is served by the API, so a new event or
+  table appears in the filters the day it lands; the console's own list of
+  tables, eight behind the truth, is gone
+  ([audit-trail.md](docs/domain/audit-trail.md)).
+- **A nominee can follow the request they raised, to the end.** Section 14
+  makes them the person exercising the right, and the request now reads to
+  them as it does to the principal: the state, the clock, the path, the
+  response and the files released with it, from the nomination card on their
+  own account page. Reading is not acting - making another request in her
+  name, or disputing a response, still needs the nominee page and a code to a
+  contact she recorded. A nomination revoked after it was invoked keeps its
+  request in view, marked as no longer in effect. On an incapacity claim the
+  principal is acknowledged too. Acceptance now records which account
+  accepted (migration 0026), so the nominee is matched by account rather than
+  by comparing contact strings
+  ([ADR 0014](docs/decisions/0014-a-nominee-follows-the-request-they-raised.md)).
+- **A mobile an administrator sets is sent a code.** Creating an account with
+  a number, or changing one on the register, now writes to that number:
+  `contact_added_for_you` says an administrator added it and carries a code to
+  confirm it with, valid for `STAFF_INVITE_TTL_H` hours because nobody is
+  waiting at a code box for it. Until the code comes back the number signs
+  nobody in, as for any contact. A quota already spent withholds the message
+  rather than refusing the edit, and the console says what was sent.
+- **The console has the contacts card too.** A member of staff can see which
+  of their contacts are confirmed, add or change a mobile, and add a personal
+  email, from the console's own account page rather than only from the
+  portal's. The routes under `/me` that are about the person rather than about
+  being a data principal — the profile, the contacts, the person type — now
+  admit any signed-in session; the rest of `/me` stays the data principal's
+  ([ADR 0013](docs/decisions/0013-every-account-is-a-data-principal.md)).
+- **A member of staff is also a data principal.** Their corporate address
+  signs them in on the data-principal portal and through a consent link, with
+  a code like anybody's, into a session that acts as a data principal and
+  nothing more; the portal says which account is in use. Deactivating a
+  member of staff now ends the role and keeps the person: the row becomes a
+  data principal, the password goes, `person_type` becomes `ex_employee`, and
+  they still reach their own consents and rights ("End staff access" on the
+  register).
+- **A second email and a mobile, added by the person.** From the account
+  page, each confirmed by a code sent to it (`contact_confirmation`) before it
+  can sign them in; `PATCH /me`, `POST /me/contacts/code`,
+  `POST /me/contact/verify`, `DELETE /me/secondary-email`. An address belongs
+  to one account whichever column holds it (migration 0025).
+- **Flower, for watching the task queues.** Which tasks ran, on which queue, how
+  long they took, which failed and what they raised. Behind a compose profile
+  (`--profile monitoring`) and in the dev dependency group, so it is never in
+  the runtime image; bound to the loopback and refusing to start without
+  `FLOWER_BASIC_AUTH`, because it can revoke and terminate tasks and has no
+  roles ([monitoring.md](docs/operations/monitoring.md)).
+- **A provisioned staff account now invites its owner.** Creating one sends
+  `staff_invitation` to the address on the account: their role in words, a
+  link to the reset page with the address filled in, and a code that lasts
+  `STAFF_INVITE_TTL_H` hours (48 by default). It is the reset flow's own code,
+  so an expired invitation is replaced by "Forgotten your password?" rather
+  than by a second mechanism. `POST /users/{uuid}/invite` sends it again while
+  the account is pending; the console offers it on the register.
+- **Configurable messages.** Every email and SMS the platform sends is a
+  named junction with default words per channel; the administrator and the
+  DPO edit subject and body from the console's Messages page, with variable
+  chips, a preview on sample values, and reset to default. Saves and resets
+  are audited. `GET/PUT/DELETE /messages/...` (migration 0024). A message
+  cannot be sent except through a junction, and three tests keep the list
+  complete ([messages.md](docs/domain/messages.md)).
+- Every default message reworded: the code on its own line and in the
+  subject, what it is for, how long it lasts, what to do if it was not you;
+  SMS bodies written separately and short. `ORGANISATION_NAME` names the
+  organisation in them.
+- Consent receipts list the purposes agreed to; consent-link codes name the
+  project.
+- An HTTP SMS transport: a JSON POST with a bearer token to an https gateway
+  (`SMS_TRANSPORT=http`, `SMS_HTTP_URL`, `SMS_HTTP_TOKEN`, `SMS_HTTP_SENDER`).
+- The CI workflow at the repository root, where GitHub runs it, covering the
+  backend, both portals, an OpenAPI freshness check and an asserted image
+  smoke test.
+- `docs/reviews/2026-09-10-implementation-review.md`: the disposition of the
+  external review that found the above, and why the suites had not.
+- Redis runs with `noeviction` in the compose file: every key there is state.
+- Node 22 required by both portals' `engines`.
+- A documentation set under `docs/`: system overview, repository layout,
+  domain model, API map, the four workflows, roles and access, local
+  development, testing, deployment, runbook, ten architecture decision
+  records, a glossary, and this changelog.
+- `CONTRIBUTING.md`.
 
 ### Changed
+- **The documents catch up with the key service.** Most of `docs/` had last
+  been read for content before sealing existed; the move into `docs/` changed
+  paths, not words. Every document was checked against the code at `daca825`
+  and brought level: four services where three were drawn, 30 migrations,
+  port 32688, the database named `cmp`, where sealing happens in a request and
+  in a transaction, what the portals open, and every setting the four
+  processes read. New: ADRs [0016](docs/decisions/0016-personal-data-sealed-by-a-separate-key-service.md)
+  (the key service), [0017](docs/decisions/0017-lookup-by-keyed-hash-and-name-ngrams.md)
+  (keyed hashes and name n-grams) and [0018](docs/decisions/0018-pip-and-a-virtualenv-no-containers.md)
+  (no containers), with dated amendments to 0001, 0002, 0005, 0007, 0012 and
+  0013; [docs/security/encryption-at-rest.md](docs/security/encryption-at-rest.md);
+  and [docs/dkms/adding-a-personal-field.md](docs/dkms/adding-a-personal-field.md),
+  the nine places a new personal column touches. The superseded coverage plan
+  and the frontend decryption stub are removed, and the restructure runbook is
+  in `docs/history/`. Where a document found the code short of its own
+  intent - the portals' decrypt route, `reseal.py` and the append-only
+  triggers, the worker's key-service request - it says so and marks it under
+  review.
+- **The keyed-hash columns are called `*_hash`.** 0028 named them `*_idx`, which
+  described what an index is built on and hid what the column holds, and six
+  ordinary btree indexes end in `_idx` too. Migration 0029 renames the eight
+  columns, the indexes that quote them and the one trigger function whose body
+  does; same values, same uniqueness, no backfill. A test holds `BLIND_INDEXED`
+  and the migration together.
+- **`/ready` reports the key service.** Nothing personal can be written or read
+  without it, and no message can be addressed, so an API that cannot reach it
+  is not ready. The `encryption` check names the URL and the reason.
+- **Each portal decrypts with the key service `DKMS_URL` names, and only that
+  one.** There is no fallback to a local instance: the service that opens a
+  value is the one that sealed it. Unset, the route answers 503 and the log says
+  what to set.
+- **Only the contract travels to the key service.** `{data, key, method}` and
+  nothing beyond it, from the API's request path and from both portals, so any
+  service that implements the contract can stand behind this one. Only values
+  needing the work are sent: an already sealed value is held back from an
+  encrypt, only sealed values go to a decrypt, and a value that comes back
+  unchanged is reported naming its field. The worker's synchronous path still
+  sends `on_error`; see [docs/dkms/backend-api.md](docs/dkms/backend-api.md).
+- `PUBLIC_BASE_URL` defaults to port 3001, the portal, in the setting and in
+  `.env.example`. At 3000 every link the API put in a message to a person
+  landed on the console, which has none of those pages.
 - **The API is installed with `pip`, and nothing ships as a container.** `uv`
   and its lockfile are gone; `backend/api/requirements.txt` carries the runtime
   pinned to the exact versions the lockfile held on the day of the change, so
@@ -214,50 +413,53 @@ as a release yet.
 - Every README and backend document brought up to the current counts, the
   22-migration chain, Node 22, the two portals and the rights module.
 
-### Added
-- **A key service, and the two layers that use it.** `backend/dkms` is a separate
-  FastAPI deployable holding one secret and doing one thing with it:
-  `POST /encrypt/bulk` and `POST /decrypt/bulk` take an array of records and a
-  mapping of field names to DKMS data types, encrypt only the fields named, and
-  pass everything else through. `method` picks the form — `string` for the
-  `SE::` prefix, `bytes` for base64 — and both carry the same envelope.
-  AES-256-GCM, a key derived per data type by HKDF, and the type bound into the
-  ciphertext as additional authenticated data, so a value written as `MOBILE`
-  refuses to open as `NAME` rather than returning plausible rubbish. The thread
-  pool is real parallelism, because OpenSSL releases the GIL: 15,000 values in
-  74 ms across 14 workers, measured. Separate from the platform API on purpose —
-  that process holds the database, this one holds the key that makes it
-  readable. Installed with `python -m venv` and `pip install -r
-  requirements.txt`; 35 tests, including the caller's own example asserted
-  verbatim and key rotation walked end to end.
-- **`cmp.infrastructure.dkms`**, the platform API's client. Batches a write's
-  personal fields into one call rather than one per field, and **fails closed**:
-  if the key service cannot be reached the write fails rather than quietly
-  storing plaintext. `fields.py` is the field map — which column holds which
-  kind of personal data — with a second list naming every personal column that
-  *cannot* be encrypted yet and why, so a plaintext column is a decision on the
-  record rather than an oversight. Production now refuses to start with
-  `DKMS_ENABLED=false`.
-- **Decryption in each portal's server layer**, at `/dkms/decrypt`, with a
-  `useDecrypted()` hook that decrypts a whole list in one call. The browser
-  never holds a key and never learns where the service is: it sends back
-  ciphertext the API already served it, which means the permission matrix and
-  the scope have already run, and gets plaintext. A page that cannot decrypt
-  says so rather than rendering a blank where a name should be.
-- **An inventory of the personal data this platform holds.**
-  [docs/domain/personal-data.md](docs/domain/personal-data.md) lists every table
-  and column that carries something about a person, the four stores that are
-  not the database — Redis, the file store, the logs, the messages that leave —
-  and all 159 of the 245 API operations that accept or return personal data,
-  each with the fields by name and the permission matrix's own answer for who
-  may call it. The 20 operations that answer without a session are pulled out
-  separately, with what stops each being an oracle. It is a join over
-  `openapi.json`, `endpoint_permissions.json` and `schema_inventory.json`, so
-  `docs/scripts/personal_data_scan.py` regenerates the endpoint tables; the
-  script exits non-zero on a field name it has not been taught to classify,
-  which is the one thing a document like this cannot notice on its own.
-
 ### Fixed
+- **A message that cannot open its recipient says so, and is retried.** Every
+  contact is sealed and the worker opens it on the way out, so a worker that
+  cannot reach the key service sent nothing while every request answered "a
+  code has been sent". `deliver()` now logs `message.not_sent` once, naming the
+  junction and the service and never the address, and every message task
+  retries on `DkmsUnavailable`; a service that blinks no longer loses somebody's
+  sign-in code.
+- **A sealed value nothing can open says why.** With `DKMS_ENABLED` false in the
+  worker and the rows sealed, the ciphertext passed through as a contact, had no
+  `@`, was taken for an SMS number, and every sign-in failed with "'mfa_code' is
+  not sent by sms". Sealed values with the service switched off now raise
+  naming the setting and both processes it must be true in; a value with the
+  prefix whose envelope does not parse raises; and `deliver()` refuses a
+  recipient still sealed after opening, before the channel is chosen. The prefix
+  is one constant, `fields.PREFIX`.
+- **Every response the portals receive opens.** Five audit-entity labels were
+  built in SQL as a sealed name concatenated with plain text, a string that
+  starts with the prefix and is not an envelope, and the key service refused the
+  whole batch it sat in. A label that names a person now comes as
+  `entity_label_parts`, the name sealed among plain pieces; a static test fails
+  the build on the next `||` against a sealed column. The portals' walker
+  retries a refused batch one value at a time, so one bad value no longer costs
+  the rest.
+- **A key service on another host is reachable, and says so when it is not.**
+  The decrypt route sends exactly the contract, with a ten-second bound, and a
+  failure logs one line naming the host and the status, never a value; the page
+  renders with the ciphertext showing rather than failing on every screen. The
+  key service binds to 127.0.0.1 by default, and its `.env.example` says when to
+  bind the interface callers use.
+- **Foreign ciphertext is labelled by its field.** The walker reads a value's
+  type off this implementation's envelope; against another service's it read
+  nothing and left the value sealed in silence. It now falls back to the field's
+  name (`lib/dkms/field-types.ts`, a mirror of `ENCRYPTED_FIELDS`), and a field
+  in neither is reported by name, once.
+- **Every auth page sends its visitor where they belong.** A person already
+  signed in reaches the page they were after; one halfway through the second
+  factor goes to the code step; the code step with no session goes back to the
+  start; a data principal on the console goes to the portal and staff on the
+  portal go to the console. `AuthPageGate` in each portal acts on
+  `useSessionState`. The portal's `/sign-in/verify`, which answered 404,
+  forwards to the console's code step with its query string.
+- **The notification bell links only to what its reader can open.** The staff
+  feed was every event for every member of staff, and for an R&D user all 26 of
+  its links opened pages the role cannot see. It is scoped by the project
+  register's own predicate; events with no project go to the DPO in full and to
+  the administrator only for lockouts.
 - **A project showed no notice, however many it had.** `NoticeOut` gained the
   project a notice belongs to, so its page could lead back there, and both
   fields are required. Four of the repository's six notice-row producers did
@@ -389,99 +591,6 @@ as a release yet.
 - Production refuses to start unless the email transport is SMTP and the SMS
   transport is the HTTP gateway; the console transports raise outside local
   and test instead of reporting delivery.
-
-### Added
-- **The audit trail can be asked questions.** Filters by data principal,
-  member of staff, consent record, processor, data source, project, notice,
-  site or rights request (found by name, resolved server-side), by area,
-  event, record type, actor role and period, and a free-text search over the
-  recorded details; a summary strip (counts by area, event, role and day)
-  over the same rows; a CSV export that is itself recorded in the trail; the
-  question in the address bar so it can be shared; and an **Audit trail**
-  button on consent, project, notice and request pages that arrives
-  pre-filtered. The filter vocabulary is served by the API, so a new event or
-  table appears in the filters the day it lands; the console's own list of
-  tables, eight behind the truth, is gone
-  ([audit-trail.md](docs/domain/audit-trail.md)).
-- **A nominee can follow the request they raised, to the end.** Section 14
-  makes them the person exercising the right, and the request now reads to
-  them as it does to the principal: the state, the clock, the path, the
-  response and the files released with it, from the nomination card on their
-  own account page. Reading is not acting - making another request in her
-  name, or disputing a response, still needs the nominee page and a code to a
-  contact she recorded. A nomination revoked after it was invoked keeps its
-  request in view, marked as no longer in effect. On an incapacity claim the
-  principal is acknowledged too. Acceptance now records which account
-  accepted (migration 0026), so the nominee is matched by account rather than
-  by comparing contact strings
-  ([ADR 0014](docs/decisions/0014-a-nominee-follows-the-request-they-raised.md)).
-- **A mobile an administrator sets is sent a code.** Creating an account with
-  a number, or changing one on the register, now writes to that number:
-  `contact_added_for_you` says an administrator added it and carries a code to
-  confirm it with, valid for `STAFF_INVITE_TTL_H` hours because nobody is
-  waiting at a code box for it. Until the code comes back the number signs
-  nobody in, as for any contact. A quota already spent withholds the message
-  rather than refusing the edit, and the console says what was sent.
-- **The console has the contacts card too.** A member of staff can see which
-  of their contacts are confirmed, add or change a mobile, and add a personal
-  email, from the console's own account page rather than only from the
-  portal's. The routes under `/me` that are about the person rather than about
-  being a data principal — the profile, the contacts, the person type — now
-  admit any signed-in session; the rest of `/me` stays the data principal's
-  ([ADR 0013](docs/decisions/0013-every-account-is-a-data-principal.md)).
-- **A member of staff is also a data principal.** Their corporate address
-  signs them in on the data-principal portal and through a consent link, with
-  a code like anybody's, into a session that acts as a data principal and
-  nothing more; the portal says which account is in use. Deactivating a
-  member of staff now ends the role and keeps the person: the row becomes a
-  data principal, the password goes, `person_type` becomes `ex_employee`, and
-  they still reach their own consents and rights ("End staff access" on the
-  register).
-- **A second email and a mobile, added by the person.** From the account
-  page, each confirmed by a code sent to it (`contact_confirmation`) before it
-  can sign them in; `PATCH /me`, `POST /me/contacts/code`,
-  `POST /me/contact/verify`, `DELETE /me/secondary-email`. An address belongs
-  to one account whichever column holds it (migration 0025).
-- **Flower, for watching the task queues.** Which tasks ran, on which queue, how
-  long they took, which failed and what they raised. Behind a compose profile
-  (`--profile monitoring`) and in the dev dependency group, so it is never in
-  the runtime image; bound to the loopback and refusing to start without
-  `FLOWER_BASIC_AUTH`, because it can revoke and terminate tasks and has no
-  roles ([monitoring.md](docs/operations/monitoring.md)).
-- **A provisioned staff account now invites its owner.** Creating one sends
-  `staff_invitation` to the address on the account: their role in words, a
-  link to the reset page with the address filled in, and a code that lasts
-  `STAFF_INVITE_TTL_H` hours (48 by default). It is the reset flow's own code,
-  so an expired invitation is replaced by "Forgotten your password?" rather
-  than by a second mechanism. `POST /users/{uuid}/invite` sends it again while
-  the account is pending; the console offers it on the register.
-- **Configurable messages.** Every email and SMS the platform sends is a
-  named junction with default words per channel; the administrator and the
-  DPO edit subject and body from the console's Messages page, with variable
-  chips, a preview on sample values, and reset to default. Saves and resets
-  are audited. `GET/PUT/DELETE /messages/...` (migration 0024). A message
-  cannot be sent except through a junction, and three tests keep the list
-  complete ([messages.md](docs/domain/messages.md)).
-- Every default message reworded: the code on its own line and in the
-  subject, what it is for, how long it lasts, what to do if it was not you;
-  SMS bodies written separately and short. `ORGANISATION_NAME` names the
-  organisation in them.
-- Consent receipts list the purposes agreed to; consent-link codes name the
-  project.
-- An HTTP SMS transport: a JSON POST with a bearer token to an https gateway
-  (`SMS_TRANSPORT=http`, `SMS_HTTP_URL`, `SMS_HTTP_TOKEN`, `SMS_HTTP_SENDER`).
-- The CI workflow at the repository root, where GitHub runs it, covering the
-  backend, both portals, an OpenAPI freshness check and an asserted image
-  smoke test.
-- `docs/reviews/2026-09-10-implementation-review.md`: the disposition of the
-  external review that found the above, and why the suites had not.
-- Redis runs with `noeviction` in the compose file: every key there is state.
-- Node 22 required by both portals' `engines`.
-- A documentation set under `docs/`: system overview, repository layout,
-  domain model, API map, the four workflows, roles and access, local
-  development, testing, deployment, runbook, ten architecture decision
-  records, a glossary, and this changelog.
-- `CONTRIBUTING.md`.
 
 ## 2026-09-10
 

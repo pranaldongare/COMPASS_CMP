@@ -499,7 +499,7 @@ No request body.
   "account_role": "string",
   "person_type": "string",
   "status": "string",
-  "dob": "2026-09-17",
+  "dob": "string",
   "is_minor": true,
   "mfa_verified": true,
   "session_expires_at": "2026-09-17T12:00:00Z",
@@ -832,7 +832,7 @@ For state changes whose only interesting output is that they happened.
 | `account_role` | `string` | Yes | — | — |
 | `person_type` | `string` or `null` | Yes | — | — |
 | `status` | `string` | Yes | — | — |
-| `dob` | `string` or `null` | No | format: `date` | — |
+| `dob` | `string` or `null` | No | — | — |
 | `is_minor` | `boolean` or `null` | No | — | — |
 | `mfa_verified` | `boolean` | Yes | — | — |
 | `session_expires_at` | `string` | Yes | format: `date-time` | — |
