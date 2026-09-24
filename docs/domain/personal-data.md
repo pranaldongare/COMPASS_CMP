@@ -69,13 +69,15 @@ than deleting it.
 | Column | Type | What it is |
 |---|---|---|
 | `uuid` | uuid | The identifier every API uses. Pseudonymous, and stable for the life of the person |
-| `username` | varchar(120) | Optional login name |
-| `full_name` | varchar(200) | **Required.** The only mandatory personal datum on the row |
-| `email` | varchar(255) | Primary address. Signs in, receives codes and messages |
-| `secondary_email` | varchar(255) | A second address the person added themselves |
-| `mobile` | varchar(20) | Signs in, receives SMS codes |
-| `organization_id` | varchar(60) | Employee or student number, where the fiduciary uses one |
-| `dob` | date | **Date of birth.** Drives the section 9 test for whether this is a child's account |
+| `username` | text, sealed | Optional login name |
+| `full_name` | text, sealed | **Required.** The only mandatory personal datum on the row |
+| `email` | text, sealed | Primary address. Signs in, receives codes and messages |
+| `secondary_email` | text, sealed | A second address the person added themselves |
+| `mobile` | text, sealed | Signs in, receives SMS codes |
+| `organization_id` | text, sealed | Employee or student number, where the fiduciary uses one |
+| `dob` | text, sealed | **Date of birth.** Sealed like the rest; the section 9 test reads `minor_until` |
+| `minor_until` | date | The day she turns eighteen, in the clear, because SQL compares it. It says that date and nothing else |
+| `email_hash`, `secondary_email_hash`, `mobile_hash`, `username_hash`, `organization_id_hash`, `full_name_ngrams` | text, text[] | Keyed hashes of the sealed values beside them, which is how a row is found by a contact or by part of a name. Opaque without the key |
 | `person_type` | person_type | Employee, student, ex-employee, external — an employment/affiliation fact |
 | `role` | user_role | Staff role, or `data_subject` |
 | `status` | user_status | pending / active / suspended / deactivated |
@@ -97,7 +99,7 @@ text). Who covered for whom, for how long, and why.
 | Column | Type | What it is |
 |---|---|---|
 | `auth_user_id` | integer | Whose consent this is |
-| `ip_address` | inet | **The address she consented from.** The only device datum the platform keeps about a data principal |
+| `ip_address` | text, sealed | **The address she consented from.** The only device datum the platform keeps about a data principal |
 | `served_at`, `affirmative_action_at` | timestamptz | When the notice was shown to her, and when she acted. The first is the server's own record, never the client's claim |
 | `notice_content_hash` | text | The exact text she was shown, frozen |
 | `action_type` | action_type | What she did |
@@ -600,6 +602,7 @@ rediscover them.
 
 | Control | Where |
 |---|---|
+| 33 personal columns - people's names and contacts, date of birth, free text, file names, the consent IP - are ciphertext at rest, and the API serves them that way | [docs/dkms/](../dkms/README.md), [encryption at rest](../security/encryption-at-rest.md) |
 | A password is Argon2, and `password_hash` appears in **no** response schema | `auth_user`, and the absence is the point |
 | A one-time code is never stored — Redis holds a keyed digest, and the check, the consumption and the attempt count are one atomic script | `cmp/auth/authentication/otp.py` |
 | A session token is never stored; Redis is keyed by its fingerprint | `cmp/auth/sessions/service.py` |
@@ -617,56 +620,25 @@ rediscover them.
 
 ## Encrypting it: the DKMS layer
 
-A separate service, [`backend/dkms`](../../backend/dkms/README.md), holds the key and
-does the encrypting. Separate because this API holds the database: one
-compromise should not be both, and the key should rotate on its own schedule.
+Thirty-three of the columns above, in 13 tables - the people's names and
+contacts, the date of birth, the free text and file names about them, and
+the consent IP - are encrypted by a separate key service before they reach
+the database, and the API serves them as ciphertext, `SE::…`. The portals
+open them in their own server at the moment a person reads them; the
+backend opens a value itself only where it has to act on it - a message,
+an export, a response package, the nomination link. Eight of the
+columns carry a keyed hash, `*_hash`, so the platform can still find a row
+by a whole contact, and three names carry hashed runs, `*_ngrams`, so staff
+can find a person by part of a name.
 
-| Layer | What it does |
-|---|---|
-| `backend/dkms` on `:32688` | `POST /bulk_encrypt` and `/bulk_decrypt` over a batch of records and a mapping of field names to data types. AES-256-GCM, a key derived per data type, the type bound into the ciphertext as AAD |
-| `cmp.infrastructure.dkms` | The platform API's client. One call per batch, never per field. **Fails closed**: if the service cannot be reached, the write fails rather than storing plaintext |
-| `/dkms/decrypt` in each portal | Decryption in the portal's **server**, so the browser never holds a key. The page sends back ciphertext the API already served it — which means it already passed the permission matrix — and gets plaintext |
-| `useDecrypted()` | One call for a whole list. A table of two hundred rows costs one round trip, not two hundred |
-
-**Which fields, and it is live.** `cmp/infrastructure/dkms/fields.py` is this
-document made executable: `ENCRYPTED_FIELDS` per table, and `LOOKUP_FIELDS` for
-the personal columns that **cannot** be encrypted yet, each with its reason. A
-unit test holds the two lists apart and checks the vocabulary and the envelope
-type table against the service's own. Since 21 September 2026 every write of a
-column in the first list goes through `seal()` at the repository, and the
-database holds `SE::…` where the value was:
-
-| Table | Sealed on write |
-|---|---|
-| `auth_user` | `full_name`, `organization_id` |
-| `nomination` | `nominee_name` |
-| `rights_request` | `submitted_name`, `request_text`, `verification_note`, `refusal_reason`, `remedy_text`, `response_text` |
-| `rights_request_holder` | `responder_name`, `responder_contact`, `instruction`, `return_summary`, `sent_back_reason` |
-| `rights_ticket_message` | `body`, `evidence_name` |
-| `rights_response_file`, `import_batch` | `file_name` |
-| `consent_artefact` | `ip_address` (the column became `text` in 0027) |
-| `processor_respondent` | `name`, `contact` |
-| `person_type_history`, `delegation`, `project_status_history` | `reason` |
-| `project_processor` | `decision_reason` |
-
-**The API serves ciphertext; the portals open it.** Every JSON response is
-walked once by the portal's API client; every `SE::` value in it is opened in
-one call to that origin's `/dkms/decrypt`, which runs on the portal's server and
-holds the session cookie. The data type is read off the envelope, so no page
-knows which of its fields are sealed. The backend itself opens a value only
-where it hands one to a person: the greeting in a message (`deliver()`), the
-contact a ticket is sent to, the export CSV, and the response package.
-
-**Why the second list exists.** DKMS ciphertext is randomised — the same
-address encrypts differently every time, which is the property that makes it
-safe at rest. It also means an encrypted column cannot be looked up, joined,
-sorted or uniquely indexed. `auth_user.email` is what you sign in with and is
-unique across the register; `mobile` is where a code is sent; `submitted_contact`
-is how a public request is verified and matched. Encrypting those without a
-deterministic blind index beside them would not be a stricter system, it would
-be a broken sign-in. The blind index is the next piece of work, and until it
-lands those columns stay in plaintext **by decision, written down**, rather than
-by oversight.
+All of that is in [docs/dkms/](../dkms/README.md): the columns one by one
+and the type each is sealed as ([PII tables and fields](../dkms/pii-tables-and-fields.md)),
+where the backend seals and opens ([the backend](../dkms/backend-api.md)),
+how the portals open a response ([the frontend layer](../dkms/frontend-layer.md)),
+and what changes when a column joins the list
+([adding a personal field](../dkms/adding-a-personal-field.md)). Why it is a
+separate service is [ADR 0016](../decisions/0016-personal-data-sealed-by-a-separate-key-service.md);
+why lookups go through hashes is [ADR 0017](../decisions/0017-lookup-by-keyed-hash-and-name-ngrams.md).
 
 ## What a scan of the values finds that the column names do not
 
@@ -686,7 +658,7 @@ holds none of these, and the inventory above is complete for what it does hold.
 
 | Where | What | State |
 |---|---|---|
-| `audit_log.detail_json` → `ip` | the client address | Written as its blind index since ADR 0015; rows before that stand as written - the trail is hash-chained over `detail_json` and cannot be rewritten |
+| `audit_log.detail_json` → `ip` | the client address | Written as its keyed hash since [ADR 0015](../decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md); rows before that stand as written - the trail is hash-chained over `detail_json` and cannot be rewritten |
 | `audit_log.detail_json` → `email` | the invited address, on `user.invited` and `user.created` | No longer written; the row's `user_id` names the person |
 | `rights_request_holder.brief` (jsonb) | the subject's name, email and phone, copied in when the ticket opens | Copied sealed, as the account row holds them; opened only for the prose of the mail (`opened_brief`) |
 | `rights_request_holder.contact_log` (jsonb) | the responder's address, per contact attempt | Stored sealed, as the holder row holds it (`_sealed_address`); the console opens it like any other value |
@@ -728,7 +700,7 @@ It is produced by joining three artefacts the repository already regenerates:
 
 To redo the join after a change, regenerate those three
 ([CONTRIBUTING.md](../../CONTRIBUTING.md) says how), then re-run the classifier
-in `docs/scripts/personal_data_scan.py`, which prints the per-module tables
+in `docs/tools/personal-data-scan.py`, which prints the per-module tables
 above and flags any field name it has not been taught to classify. A new field
 that looks personal and is not in its lists is the one thing this document
 cannot catch on its own, so the script fails loudly rather than quietly

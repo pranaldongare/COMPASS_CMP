@@ -2,7 +2,7 @@
 
 How the two portals open the personal values the API serves sealed, how a
 person is searched for when the column holding their name is ciphertext,
-which APIs that covers, the three files that do it, the one setting, and how
+which APIs that covers, the four files that do it, the one setting, and how
 it was checked end to end. Companion to
 [the field list](pii-tables-and-fields.md) and
 [the backend document](backend-api.md); the narrative on what is sealed and
@@ -90,7 +90,8 @@ allowed to see.
 |---|---|---|
 | Part of a name, three characters up | the hashed runs beside the name | `Name, or a whole email, mobile or id` (users), `Name, email or mobile` (the audit About picker) |
 | A whole email, mobile, username or employee id | that value's own hash | the same boxes |
-| A reference, a uuid, a project | the plaintext column, as before | the requests list |
+| A request's reference, or part of it | the plaintext column, `ILIKE` | the audit About picker; `GET /requests?q=` in the API, which the console's requests list does not send (it has no search box) |
+| Part of a project's, notice's or site's name | the plaintext column, as before | the audit About picker |
 
 Half an address matches nothing, deliberately: a contact carries no runs, so
 all its hash ever leaks is equality. A term under three characters produces
@@ -104,11 +105,12 @@ property worth keeping: a portal knows which values are personal only
 because they arrive with a prefix, and it knows nothing at all about how
 they are found.
 
-## The three files
+## The four files
 
 | File (same in both portals) | Role |
 |---|---|
-| [`src/lib/dkms/deep.ts`](../../frontend/console/src/lib/dkms/deep.ts) | The walker: finds every `SE::`, reads the data type off byte 3 of the envelope, batches, puts plaintext back in place. A refused batch is retried one value at a time so one bad value costs only itself; an unreachable service leaves values as they arrived, visibly |
+| [`src/lib/dkms/deep.ts`](../../frontend/console/src/lib/dkms/deep.ts) | The walker: finds every `SE::`, reads the data type off byte 3 of the envelope - or, when the envelope is not this implementation's, off the field's name - batches, puts plaintext back in place. A refused batch is retried one value at a time so one bad value costs only itself; an unreachable service leaves values as they arrived, visibly |
+| [`src/lib/dkms/field-types.ts`](../../frontend/console/src/lib/dkms/field-types.ts) | `TYPE_BY_FIELD`: the fallback, field name → type. A hand-kept mirror of `ENCRYPTED_FIELDS` plus the joined names responses carry (`created_by_name`, `subject_email`, …); `name` and `contact` are left out on purpose, because they are a purpose's or a queue's everywhere but one table. **Nothing checks it against the backend** - a new sealed field, or a new alias for one, is added here by hand in both portals ([the checklist](adding-a-personal-field.md)) |
 | [`src/lib/dkms/api.ts`](../../frontend/console/src/lib/dkms/api.ts) | `decryptRecords()`: the call to `/dkms/decrypt`; error messages name the service and its answer |
 | [`src/app/dkms/decrypt/route.ts`](../../frontend/console/src/app/dkms/decrypt/route.ts) | The server route: session required, the pure contract to `${DKMS_URL}/bulk_decrypt`, 10 s bound, one diagnostic log line on failure naming the host and never a value |
 
@@ -123,7 +125,9 @@ The service it names must be the one the API encrypts with (the API's own
 `DKMS_URL`), reachable from the portal's server, and the portal restarted
 after the change. Each failure looks the same on the page - `SE::…` where a
 name should be - so the portal's log says which: `[dkms] … unreachable`,
-`answered 422`, or `DKMS_URL is not set`.
+`answered 422`, `DKMS_URL is not set`, or, in the browser console,
+`[dkms] sealed value(s) no type could be read for, left as they arrived:`
+followed by the field names.
 
 ## What breaks it, and the guard for each
 
@@ -133,7 +137,8 @@ name should be - so the portal's log says which: `[dkms] … unreachable`,
 | A value the service **cannot open** (wrong key, tampered) | Would have sunk the batch | The walker retries one by one; the bad value stays as it arrived and is counted in the log, never quoted |
 | Service **unreachable** / not configured | 503 from the route | The page still renders with the ciphertext showing; both logs name the host |
 | Browser reaching the key service directly | Not possible: `DKMS_URL` is server-only, not `NEXT_PUBLIC_`; the service has no CORS | By construction |
-| A **type id** the walker does not know | Value skipped, stays sealed | `TYPE_BY_ID` in `deep.ts` mirrors the service's `TYPE_IDS` (13 types); `deep.test.ts` reads real envelopes |
+| An envelope the walker cannot read - **another key service's format**, or a type id it does not know | The value is labelled by its field name instead (`TYPE_BY_FIELD`) and opened as usual | `TYPE_BY_ID` in `deep.ts` mirrors the service's `TYPE_IDS` (13 types); `deep.test.ts` reads real envelopes and a deliberately foreign one |
+| A sealed value under a field name **nobody listed** | Stays sealed on the page, and the field name - never the value - is logged once: `[dkms] sealed value(s) no type could be read for` | Add the name to `field-types.ts` in both portals |
 | A search finding **nobody** when somebody exists | The row's runs are missing or were written under a different key | The runs are written with the row, in the repository; `BLIND_INDEX_KEY` and the key service's `DKMS_HASH_KEY` must match. `tests/integration/test_search_over_sealed_names.py` covers the write, the rename and the miss |
 | A search finding **everybody** | A term too short to have runs, with the clause still applied | The clause is added only when the term yields runs; pinned by a test that searches for two characters and expects nothing |
 

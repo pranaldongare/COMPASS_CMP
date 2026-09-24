@@ -103,7 +103,8 @@ frontend/console/src/
     data-display/         resource-list, activity-feed, audit-link — business-neutral composites
     forms/                shared form pieces
     feedback/             error-boundary
-    security/             Can, RequireSection, session-warning — render-time role checks
+    security/             Can, RequireRole, RequireFullSession, RequireSection, AuthPageGate,
+                          session-warning — render-time gates, none of them a security boundary
   providers/              query, auth, theme, toast; the one Providers composition
   lib/
     api/                  the axios client and the four verbs — the only network code
@@ -541,6 +542,68 @@ redirect — and explicitly is *not* authorisation. Per-section access is
 a permission.
 
 Parallel and intercepting routes are not used; nothing needs them yet.
+
+### Who lands where: the auth routing
+
+Signed-in-ness is decided by the API, answered through `GET /auth/me`, and
+read in three places that must agree. None of them is authorisation - every
+one of them could be bypassed and the API would still answer 401, 403 or
+404 - they only send a person to the page that is theirs.
+
+| Layer | Where | What it does |
+|---|---|---|
+| No cookie at all | [`proxy.ts`](../../frontend/console/src/proxy.ts) | A request for a non-public path carrying no session cookie is redirected to `/sign-in?next=<path>`. It sees only whether a cookie is present, never whether it is valid. Public paths are one list, `lib/security/public-routes.ts`, shared with the auth provider |
+| A protected page | `RequireAuth` in `providers/auth-provider.tsx`, wrapping `(app)/layout.tsx` | Renders nothing until the session resolves, so no page flashes its contents. No session: `/sign-in?next=`. A 401 from any request lands in the same place, through the one handler the provider wires into the API client |
+| An auth page | `AuthPageGate` in `components/security/auth-page-gate.tsx` | Sends away the people a sign-in form was not written for, below |
+
+**Three session states.** `useSessionState()`, in the auth provider, asks
+`/auth/me` under the provider's own query key - the provider itself does
+not ask on a public path - and answers `none` (no session), `partial`
+(password accepted, the staff second factor outstanding: a 401 carrying
+`needsMfa`) or `full` (signed in, with the account), plus `loading` while it
+asks. The form renders while it asks; it discloses nothing, so there is no
+flash to hide.
+
+**On the console**, `AuthPageGate step=…` wraps `/sign-in` (`password`) and
+`/sign-in/verify` (`code`):
+
+| Arrives | On `/sign-in` | On `/sign-in/verify` |
+|---|---|---|
+| `none` | the form | back to `/sign-in`, carrying `?next=` |
+| `partial` | on to `/sign-in/verify`, carrying `?next=` | the code form |
+| `full`, staff | to `next`, or `/dashboard` | to `next`, or `/dashboard` |
+| `full`, data principal | to her portal (`NEXT_PUBLIC_SUBJECT_PORTAL_URL`) | the same |
+
+A `reset` step exists for a reset page and leaves a full session where it
+is, since a signed-in person may be finishing a reset from an email;
+`/sign-in/reset` does not use the gate today. `RequireAuth` sends a partial
+session to `/sign-in/verify?next=`, and shows a data principal who reached
+the console with a shared cookie a page saying the console is for staff,
+with a link to her portal.
+
+**On the portal**, `AuthPageGate` wraps `/sign-in` and `/sign-up`:
+
+| Arrives | Goes to |
+|---|---|
+| `none` | the form |
+| `full`, data principal | `next`, or `/my-consents` |
+| `full`, staff | the console's `/dashboard` (`NEXT_PUBLIC_STAFF_PORTAL_URL`) |
+| `partial` | the console's `/sign-in/verify` |
+
+Nobody who belongs on the portal has a password, so it has no code step of
+its own - but staff who use both sites type `/sign-in/verify`, bookmark it
+and carry it in `?next=`. The portal's `/sign-in/verify` is therefore a
+forwarder to the console's, carrying `next`. `RequireAuth` on the portal
+sends a partial session there too, and shows a staff account a page saying
+the portal is for data principals.
+
+**`next` is a same-origin path or nothing.** Every place that honours it -
+the forms and both gates - passes it through `safeRedirectPath` in
+`lib/security/sanitize.ts`, which strips invisible characters, accepts a
+path beginning `/`, and refuses `//host`, `/\host` and anything with a
+scheme, falling back to the default. Leaving for the other portal is always an absolute URL
+built from configuration, with `window.location.replace`, because the
+router cannot cross origins; `next` never names another origin.
 
 ## 19. Observability
 

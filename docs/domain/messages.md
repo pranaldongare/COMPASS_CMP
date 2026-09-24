@@ -34,8 +34,8 @@ the defaults are what is sent until they do. The catalogue lives in
 | Rights | `ticket_message` | email, SMS | a message is written on a ticket thread |
 | Staff | `office_note` | email | the office resends a notification from the console |
 
-The channel is chosen by the shape of the contact: an address gets the email
-words, a number gets the SMS words. SMS bodies are separate and short, at
+The channel is chosen by the shape of the contact, once it has been opened
+(below): an address gets the email words, a number gets the SMS words. SMS bodies are separate and short, at
 most 480 characters, because a phone screen is not an inbox.
 
 ## Editing the words
@@ -76,7 +76,42 @@ and it takes a `Message` member, never free text. The worker reads the
 office's replacements from a Redis mirror of the `message_template` table;
 if the mirror is empty it reads the table and fills it for five minutes, and
 if neither is reachable it sends the defaults and logs the failure, because a
-sign-in code has to go out whatever else is wrong.
+sign-in code has to go out whatever else is wrong. The key service is the
+exception to that rule: without it there is no address to send to.
+
+## Addressing a sealed recipient
+
+Every contact is sealed in the database, and so is every name a message
+greets, so what a task hands to `deliver` is usually ciphertext, `SE::…`.
+`deliver` opens the recipient and every sealed variable in one call to the
+key service, at the one point every message passes through, and only then
+chooses the channel and renders the words. This runs in the **worker**, a
+separate process with its own environment, so the worker needs
+`DKMS_ENABLED=true` and a `DKMS_URL` naming the service the data was sealed
+with - the API having them is not enough.
+
+When the recipient cannot be opened, nothing is sent, and it says so:
+
+- `deliver` logs `message.not_sent` with the junction and the error - the
+  service's URL, never the address or the code - and raises
+  `DkmsUnavailable`.
+- Every message task retries on it: five times, from five seconds and
+  doubling, with jitter - about two and a half minutes in all. A key service
+  that blinks delays a code; one that stays away longer loses it, and the
+  person asks for another.
+- The error names the cause: the service unreachable or answering an error;
+  values sealed but `DKMS_ENABLED` false in this process; a value that
+  begins `SE::` but carries no envelope this code can read; or a recipient
+  still sealed after opening, which is refused before the channel is chosen
+  so that ciphertext is never mistaken for a mobile number.
+- `GET /ready` on the API carries an `encryption` check naming the URL it
+  tried.
+
+The request that asked for the message has already answered - "a code has
+been sent" means one was queued - so this is the one failure invisible from
+outside. The runbook has the steps:
+[No message of any kind is sent, and the request said one was](../operations/runbook.md#no-message-of-any-kind-is-sent-and-the-request-said-one-was).
+How the key service is set up is in [docs/dkms/](../dkms/README.md).
 
 ## Adding a junction
 
@@ -103,6 +138,7 @@ transport, which is what stops a message being sent around the catalogue.
 | `PUBLIC_BASE_URL` | `{portal_url}`, and the links in consent and rights messages |
 | `CONSOLE_BASE_URL` | `{console_url}`, and the links in staff messages |
 | `OTP_TTL_S`, `MFA_TTL_S` | `{minutes}` on the code messages |
+| `DKMS_ENABLED`, `DKMS_URL` | Opening the recipient, in the worker's environment as well as the API's |
 
 The transports themselves (`EMAIL_TRANSPORT`, `SMS_TRANSPORT`) are described
 in [configuration.md](../operations/configuration.md).

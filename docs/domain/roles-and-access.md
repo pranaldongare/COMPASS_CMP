@@ -185,6 +185,45 @@ administrator's to activate, so she is not counted; a grievance about the
 DPO that has been escalated is the administrator's, so the DPO no longer
 sees it.
 
+## The bell
+
+The notifications page and the bell over it are derived from the audit
+trail, not a table of their own, and each reader sees only what they could
+open.
+
+- **A data principal** sees the events about herself that she is meant to
+  see: the outcome of her request, not the office's working on it
+  (`SUBJECT_VISIBLE` in the audit repository).
+- **Staff** see six kinds of event - a project moving state, a notice
+  published, an import rejected, an export generated, a consent withdrawn,
+  an account locked out. One that belongs to a project - the project itself,
+  a notice on it, an import or an export for it - is shown to exactly the
+  people who could see that project in the project register, by the same
+  scope predicate. One with no project goes by role: the DPO sees withdrawals
+  and lockouts; the administrator sees lockouts only, because a withdrawal
+  links to a consent record and the administrator's role does not read
+  those; every other role sees neither.
+- **Tickets.** Every member of staff also sees what happened on the tickets
+  addressed to them, and the DPO what respondents did on everyone's. A
+  respondent's link opens the ticket, not the request page their role may
+  not reach.
+
+The rule the bell keeps is the dashboard's: no link in it leads to a page
+that answers 403 or 404 for the person reading it.
+
+## Finding a person in the register
+
+The staff register's search box (`GET /users?q=`) takes part of a name, from
+three letters up, or a whole email, mobile, username or employee number.
+Names and contacts are sealed, so neither is compared as text: the name is
+matched through hashed runs of three characters kept beside it, and a
+contact through a keyed hash of the whole value. Half an address finds
+nobody, deliberately; a two-letter term matches only the exact contacts,
+never everybody. The mechanism, and what the runs cost, is in
+[the DKMS field list](../dkms/pii-tables-and-fields.md#2a-searching-by-part-of-a-name).
+The list is not in alphabetical order, and cannot be: ciphertext does not
+sort.
+
 ## Second factors
 
 Every staff role signs in with a password and then a six-digit code sent to

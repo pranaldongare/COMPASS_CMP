@@ -103,8 +103,10 @@ one site cannot mint a link for a colleague's site on the same study.
 
 A site's owner mints a **consent link** for it: a capability URL on the
 data-principal portal, tied to the notice version current at minting, with an
-expiry and a use budget. The database keeps the token sealed as well as
-digested, so the address can be shown again to whoever has to share it; a link
+expiry and a use budget. The database keeps the token digested and, beside
+the digest, encrypted under a key derived from the application secret
+(`token_sealed` - not the key service that seals personal columns), so the
+address can be shown again to whoever has to share it; a link
 minted before that was so cannot be recovered, and the console says so rather
 than copying an empty string. Either way it can be **reminted**, which replaces
 it with a fresh one and records why. A field agent can be assigned to a site,
@@ -125,7 +127,12 @@ covers the export's purpose, produced by a collection owner or the DPO. The
 disclosure record - `export_log` and one `export_line` per person - is written
 with the file, in one transaction, and is what answers "who was my data shared
 with" on a data principal's page and what derives the holders of her data when
-she makes a rights request.
+she makes a rights request. The people's names and contacts are sealed in the
+database and **opened on the way into the file**: a collector cannot use a
+list of ciphertext. So the CSV is one of the few places personal data leaves
+the platform in the clear, and the file kept under the uploads directory
+holds it that way; [personal-data.md](personal-data.md#files-on-disk) lists
+what is in it.
 
 **Import.** A manifest of collected assets from a source, validated as a dry
 run first (`POST /imports/validate` writes nothing), then written as a batch

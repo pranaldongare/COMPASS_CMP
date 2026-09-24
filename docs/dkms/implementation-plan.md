@@ -4,18 +4,26 @@ What was built, in the order it was built, what each phase proved, and what
 a team carrying this into another environment has to do. The design
 decisions behind each choice are in
 [the backend document](backend-api.md) and
-[the frontend document](frontend-layer.md); this is the plan.
+[the frontend document](frontend-layer.md), and the two decisions are
+[ADR 0016](../decisions/0016-personal-data-sealed-by-a-separate-key-service.md)
+and [ADR 0017](../decisions/0017-lookup-by-keyed-hash-and-name-ngrams.md);
+this is the plan.
 
-**Status: phases 1–9 complete** (September 2026). Phase 10 is the standing
-work — what a new field, a new endpoint or a new environment costs.
+**Status: phases 1–10 complete** (September 2026), with two known gaps in
+phase 10 still under review. Phase 11 is the standing work — what a new
+field, a new endpoint or a new environment costs.
 
 ## The goal, stated once
 
 Personal data is **encrypted before it reaches the database** and
 **decrypted only in the frontend layer**. The platform API stores and serves
 ciphertext and never holds the plaintext it is protecting; a portal opens a
-value at the moment a person reads it. Lookups keep working because a blind
-index sits beside every column the platform searches by.
+value at the moment a person reads it - except where the backend hands a
+value to somebody outside the browser, which
+[the backend document](backend-api.md#where-the-backend-decrypts) lists.
+Lookups keep working because a keyed hash (`*_hash`) sits beside every
+column the platform finds rows by, and hashed runs (`*_ngrams`) beside the
+three names staff search by part of.
 
 Two properties follow, and both are testable:
 
@@ -80,9 +88,9 @@ sealed.
   cross-column trigger moved onto the indexes, the columns widened.
 - `dob` sealed; the s.9 test moved to `minor_until`, the one date kept in
   the clear.
-- **Given up, deliberately:** partial search on a person. Whole contact,
-  reference, uuid and project still work; a few letters of a name do not,
-  and the fields say so.
+- **Given up, for the time being:** partial search on a person. Whole
+  contact, reference, uuid and project still worked; a few letters of a
+  name did not. Phase 9 brought it back for names.
 
 **Proved by:** sign-in, "is this taken", code delivery and the nomination
 flows, all against sealed rows.
@@ -163,20 +171,58 @@ statistics that a single hash does not, so it is three name columns and
 never a contact. [The field list](pii-tables-and-fields.md#2a-searching-by-part-of-a-name)
 carries the reasoning.
 
+**As built, narrower than planned:** the users register and the audit
+trail's About picker use the runs. `GET /requests?q=` does too, but the
+console's requests list has no search box to send it, and
+`nominee_name_ngrams` is written and not yet searched.
+
+## Phase 10 — any key service, and failures that say what they are
+
+The brief was always that any service implementing `{data, key, method}`
+could take the place of `backend/dkms`, and a report from a Windows worker
+showed what silence costs: every sign-in died on "`'mfa_code' is not sent by
+sms`" because `DKMS_ENABLED` was false in the worker and a sealed address
+had been read as a phone number.
+
+- **Contract and nothing else, from the API.** The request-time client
+  stopped sending `on_error` and relying on `skip_encrypted`; only values
+  that need the work travel, and a value that comes back unchanged from a
+  "fail" call is reported by field name.
+- **Foreign ciphertext in the portals.** The walker falls back to the
+  field's name (`lib/dkms/field-types.ts`, a hand-kept mirror of
+  `ENCRYPTED_FIELDS`) when it cannot read the envelope, and names - never
+  quotes - any field it still cannot label.
+- **Three silences became three sentences** in the worker: sealed values
+  with `DKMS_ENABLED` off, a `SE::` value with no readable envelope, and a
+  recipient still sealed after opening each raise `DkmsUnavailable` with the
+  cause, before a channel is chosen. `fields.PREFIX` is the one "is this
+  ciphertext" test.
+
+**Proved by:** `deep.test.ts` in both portals against a deliberately
+foreign envelope; `test_a_message_says_when_it_cannot_be_addressed.py`; the
+reported failure reproduced and answered with the setting to change; the
+backend suite; sign-in by sealed email and by sealed mobile, staff MFA
+delivered.
+
+**Known gaps, under review.** The worker's `unseal_values_sync` still sends
+`"on_error": "fail"`, and it cannot open a value whose envelope it cannot
+parse, having no field name to fall back to. So against a different key
+service, the API and the portals work and messages do not.
+[The backend document](backend-api.md#standing-behind-this-with-another-key-service)
+has the detail.
+
 ---
 
-## Phase 10 — the standing work
+## Phase 11 — the standing work
 
 ### A new personal field
 
-1. Add it to `ENCRYPTED_FIELDS` with its type.
-2. Make the column `text` in a migration. If anything looks the row up by
-   it whole, add a `*_hash` column and `BLIND_INDEXED` entry. If staff will
-   search by *part* of it, add a `*_ngrams text[]` with a GIN index and an
-   `NGRAM_INDEXED` entry — and write down why the leak is worth it.
-3. Write it through the repository, so `seal()` applies.
-4. Add its name to `contract.SEALED` in the HTTP suite.
-5. If the frontend shows it, nothing to do — the interceptor is generic.
+[Adding a personal field](adding-a-personal-field.md) is the whole
+checklist, each step with where it lives and what fails if it is skipped.
+In short: the field map, a migration (`text`, and `*_hash` or `*_ngrams`
+where rows are found by it), the repository write, `scripts/reseal.py` for
+rows already there, the field-name fallback in both portals, the HTTP
+contract for any alias it is served under, and the generated documents.
 
 ### A new endpoint
 
@@ -194,22 +240,38 @@ after opening, or open the value at the one point the message is sent.
 1. Run the key service where the API and both portals' servers can reach it.
    It binds `127.0.0.1` by default — set `HOST` to the interface its callers
    use, and firewall it: **it authenticates nobody**.
-2. `DKMS_MASTER_KEY` and `BLIND_INDEX_KEY`: generated, stored in the secret
-   store, **never rotated casually** — the master key opens existing rows and
-   the index key is what makes existing indexes match. Rotating either is a
-   re-seal, not a config change.
-3. `DKMS_URL` in three places, all naming the same service: the platform
-   API, the console, the portal. The **worker** has its own environment and
-   is the process that opens a recipient — a message fails if only the API
-   is pointed correctly.
+2. `DKMS_MASTER_KEY` on the key service; `DKMS_HASH_KEY` on the key
+   service and `BLIND_INDEX_KEY` on the API and worker, **the same string**.
+   Generated, stored in the secret store, **never rotated casually** — the
+   master key opens existing rows and the hash key is what makes existing
+   `*_hash` and `*_ngrams` values match. Rotating either is a re-seal or a
+   re-hash of every row, not a config change.
+3. `DKMS_URL` in four places, all naming the same service: the platform
+   API, the worker, the console, the portal. `DKMS_ENABLED=true` in two:
+   the API and the **worker**, which has its own environment, is the
+   process that opens a recipient, and defaults to false.
 4. `curl <api>/ready` — the `encryption` check names the URL and the reason.
 5. Run `scripts/reseal.py --check` against the database before serving.
+
+### Verification, at the end of any change to this
+
+```bash
+cd backend/api && pytest                     # every suite, encryption on
+python scripts/reseal.py --check             # zero plaintext rows in sealed columns
+psql -d cmp -c "select count(*) from auth_user where email not like 'SE::%'"   # 0
+```
+
+And on the running stack: sign in with an email whose stored form is `SE::…`,
+receive the code at it, open the users list and see names, and find somebody
+there by three letters of their name.
 
 ### What breaks, and how it shows
 
 | Failure | Symptom | Where to look |
 |---|---|---|
 | Key service unreachable from the **worker** | No email or SMS at all; every request still answers normally | `/ready`, then `message.not_sent` in the worker log |
+| `DKMS_ENABLED` unset in the **worker** | The same silence | The worker log: "value(s) are sealed but DKMS_ENABLED is false" |
+| A **different key service** behind the worker | The same silence | "carry no readable envelope", or a 422 for the `on_error` the worker still sends — the phase 10 gaps |
 | Unreachable from a **portal** | Pages render with `SE::…` where names should be | The portal log: `[dkms] <url> unreachable` |
 | A **different master key** | Nothing opens; 4xx from the service | Compare the API's `DKMS_URL` with the portals' |
 | A **different index key** | Sign-in fails for existing accounts, "is this taken" says no | `BLIND_INDEX_KEY`; a change here needs a re-index |
@@ -221,9 +283,10 @@ after opening, or open the value at the one point the message is sent.
 
 | Document | What it holds |
 |---|---|
-| [pii-tables-and-fields.md](pii-tables-and-fields.md) | Every personal column: which are sealed, as what type, which carry a blind index, which are plaintext and why |
-| [backend-api.md](backend-api.md) | Where encryption happens, the key service's contract, the 159 endpoints, the four places the backend decrypts |
-| [frontend-layer.md](frontend-layer.md) | How the portals decrypt, which APIs it covers, the three files, the one setting, what breaks it |
+| [pii-tables-and-fields.md](pii-tables-and-fields.md) | Every personal column: which are sealed, as what type, which carry a `*_hash` or `*_ngrams`, which are plaintext and why |
+| [adding-a-personal-field.md](adding-a-personal-field.md) | Everything that changes together when a column joins the list |
+| [backend-api.md](backend-api.md) | Where encryption happens, the key service's contract, the 159 endpoints, the places the backend decrypts |
+| [frontend-layer.md](frontend-layer.md) | How the portals decrypt, which APIs it covers, the four files, the one setting, what breaks it |
 | [personal-data.md](../domain/personal-data.md) | The narrative inventory — every store, not only the database |
 | [pii-fields-and-endpoints.md](../domain/pii-fields-and-endpoints.md) | The generated list: 54 columns by table, 159 endpoints by module |
 | [runbook.md](../operations/runbook.md) | What to do when messages stop arriving |

@@ -11,12 +11,21 @@ run each (that is in each portal's own `README.md`).
   and what is still open. Ends with the fifteen-question decision matrix a
   pull request answers.
 
+- [Who lands where](best-practices.md#who-lands-where-the-auth-routing):
+  the auth routing, in §18 of the standard - `proxy.ts`, `RequireAuth` and
+  `AuthPageGate`, the three session states `useSessionState` reads, which
+  sign-in step sends whom where on each portal and across to the other,
+  the portal's `/sign-in/verify` forwarder, and why `next` goes through
+  `safeRedirectPath`.
+
 - [Decryption in the frontend layer](../dkms/frontend-layer.md): how every
   API response is opened in the portal - one client, one interceptor, one
   call to the portal's own `/dkms/decrypt` and on to
-  `${DKMS_URL}/bulk_decrypt` - which endpoints that was proven on, the three
-  files, the one setting, and what breaks it. Sits with the rest of the
-  [DKMS documents](../dkms/README.md).
+  `${DKMS_URL}/bulk_decrypt` - which endpoints that was proven on, the four
+  files (including `field-types.ts`, the hand-kept fallback for another key
+  service's ciphertext), the one setting, and what breaks it. Sits with the
+  rest of the [DKMS documents](../dkms/README.md); a new sealed field is
+  [its own checklist](../dkms/adding-a-personal-field.md).
 
 Related, elsewhere in the tree:
 

@@ -178,6 +178,18 @@ escalations.
   tickets awaiting it, and the unread messages by request; it shows a
   respondent the tickets awaiting them.
 
+## Finding a request
+
+The console's requests list filters by status, kind, overdue and unread; it
+has no search box. The API's `GET /requests?q=` takes a reference or part
+of one, the contact on the request or on the matched account typed
+**whole**, or three letters or more of the name on the form or on the
+account. The contact and the name are sealed, so they are matched through
+keyed hashes and never compared as text
+([the DKMS field list](../dkms/pii-tables-and-fields.md#2-the-eight-lookup-columns-and-their-hash-columns)).
+In the console today a request is found by name through the audit trail's
+**About** picker, which runs the same match.
+
 ## Where this is enforced
 
 | Rule | Where |

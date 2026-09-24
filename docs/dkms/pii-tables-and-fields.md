@@ -1,12 +1,15 @@
 # DKMS — the personal data, table by table and field by field
 
 What the platform holds about people, which column it sits in, what protects
-it, and what has to happen before it can be read. Generated from the field
-map the code itself uses
-([`cmp/infrastructure/dkms/fields.py`](../../backend/api/src/cmp/infrastructure/dkms/fields.py))
-and checked against the database on 2026-09-22. The narrative version is
-[personal-data.md](../domain/personal-data.md); the endpoint list is
-[the API document](backend-api.md).
+it, and what has to happen before it can be read. Written by hand from the
+field map the code itself uses
+([`cmp/infrastructure/dkms/fields.py`](../../backend/api/src/cmp/infrastructure/dkms/fields.py)),
+which is the authority - where this page and that file disagree, the file is
+right - and checked against it and migrations 0028-0030 on 2026-09-24. The
+narrative version, every store and not only the database, is
+[personal-data.md](../domain/personal-data.md); the endpoints are in
+[the backend document](backend-api.md). Adding a column is
+[its own checklist](adding-a-personal-field.md).
 
 ## How to read the tables
 
@@ -30,7 +33,7 @@ The 13 types and their ids (byte 3 of every envelope):
 
 ---
 
-## 1. Sealed columns — 33 across 14 tables
+## 1. Sealed columns — 33 across 13 tables
 
 ### `auth_user` — the person
 
@@ -136,9 +139,14 @@ Shukla". The answer is candidates, not certainty - a row holding the runs of
 
 | Table | Sealed column | Runs column | Where it is used |
 |---|---|---|---|
-| `auth_user` | `full_name` | `full_name_ngrams` | the staff register, the audit trail's About picker |
-| `rights_request` | `submitted_name` | `submitted_name_ngrams` | the requests list |
-| `nomination` | `nominee_name` | `nominee_name_ngrams` | finding a nomination somebody is asking about |
+| `auth_user` | `full_name` | `full_name_ngrams` | the staff register (`GET /users?q=`), the audit trail's About picker, and `GET /requests?q=` for the account a request was matched to |
+| `rights_request` | `submitted_name` | `submitted_name_ngrams` | `GET /requests?q=`, and the About picker when it looks for a rights request |
+| `nomination` | `nominee_name` | `nominee_name_ngrams` | written with every nomination; **no query reads it yet** |
+
+Two of those uses are narrower than they sound. `GET /requests?q=` answers
+in the API, but the console's requests list has no search box and never
+sends `q`. And the nominee's runs are kept current so that a search can be
+added without a backfill, but nothing searches them today.
 
 **What the runs cost, stated plainly.** They leak more than an exact hash.
 Anyone holding the column can count how often each run appears and compare
@@ -147,7 +155,8 @@ names can be recovered without the key. That is inherent to substring search
 over encrypted data, not a flaw in this implementation. So the list above is
 short by design, and a **contact is never in it** - contacts are searched
 whole. Adding a fourth column means accepting that trade for that column,
-and writing down why.
+and writing down why
+([ADR 0017](../decisions/0017-lookup-by-keyed-hash-and-name-ngrams.md)).
 
 ---
 
@@ -156,7 +165,7 @@ and writing down why.
 | Where | What | Why |
 |---|---|---|
 | `auth_user.minor_until` | The date a person stops being a child | `cmp_is_minor()` is a date comparison in SQL and decides the s.9 case. It says that date and nothing else; `dob` itself is sealed |
-| `audit_log.detail_json → ip` | The blind index of the address, not the address | The trail is hash-chained and append-only. An address written there would outlive every right to have it removed ([ADR 0015](../decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md)) |
+| `audit_log.detail_json → ip` | The keyed hash of the address (`index_of("ip", …)`), not the address | The trail is hash-chained and append-only. An address written there would outlive every right to have it removed ([ADR 0015](../decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md)) |
 | `audit_log.detail_json` | No emails, no free-text reasons | Reasons live in the sealed row they belong to; the trail records `reason_given: true` |
 | Ids, uuids, hashes, tokens | — | Identifiers and digests, personal only by reference |
 
@@ -173,11 +182,11 @@ sealed column after everything it writes.
 |---|---|
 | Tables holding personal data | 20 |
 | Personal columns | 54 |
-| **Sealed columns** | **33** in 14 tables |
+| **Sealed columns** | **33** in 13 tables |
 | With a `*_hash` lookup column | 8 |
 | With a `*_ngrams` search column | 3 |
-| Plaintext by decision | 1 (`minor_until`) |
-| Plaintext by nature (ids, flags, hashes, paths) | 12 |
+| Plaintext by nature (ids, flags, hashes, tokens, storage paths, jsonb) | 21 - the other 54 − 33 |
+| Plaintext by decision | 1 (`minor_until`, derived from `dob` and not counted in the 54) |
 | API endpoints carrying any of it | 159 |
 
 The full 54-column listing with the endpoints that carry each is in
