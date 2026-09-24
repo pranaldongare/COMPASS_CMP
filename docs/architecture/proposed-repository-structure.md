@@ -1,6 +1,16 @@
 # A proposed repository structure
 
-**Status: a proposal.** Nothing here has been done.
+**Status: partly carried out.** Phase 1 (the four services under `backend/`
+and `frontend/`) landed in `89b1e8e`, phase 2 (every document under `docs/`)
+in `209e1da`, and phase 5 (one Python toolchain: `pip` and a virtualenv for
+both services, no containers) in `879bfc1`. Phases 3 and 4 - the
+`frontend/shared` package and the reconciling of near-duplicates - are still
+open, and this document is still the proposal for them. The body below is
+left as it was argued: its "today, measured" tree and its paths describe the
+repository before phase 1. The current tree is
+[repository-layout.md](repository-layout.md), and the commands phases 1, 2
+and 5 followed are in
+[history/restructure-runbook.md](../history/restructure-runbook.md).
 
 **The shape you asked for:** three layers at the root and nothing else.
 Everything the server does under one folder, everything the browser does under
@@ -368,7 +378,7 @@ A restructure is a good opportunity to break working things, so it is worth
 naming what stays exactly as it is.
 
 - **The backend's internal layering.** `api → domain → db`, with `core`
-  importing nothing local, is enforced by a test and works. It does not become
+  importing nothing local, is kept by review and works. It does not become
   better inside `backend/api/`; it just moves.
 - **Raw SQL and the migration chain.** 0001 to 0026, both directions, is the
   only record of how the schema came to be. Renumbering or squashing it for

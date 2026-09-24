@@ -9,16 +9,28 @@ bootstrap
     ↓
    api  ──────────────┐
     ↓                 │
-   auth               │
-    ↓                 │
-  domain              │
+   auth     tasks     │
+    ↓        ↓        │
+  domain ◀───┘        │
     ↓                 ↓
-    db          infrastructure
+    db  ─ ─ ─ ─ ▶ infrastructure
     ↓                 ↓
+       validation (imports only core)
+    ↓
         core (imports nothing local)
 ```
 
-Everything may import `core`. Nothing may be imported by `core`.
+Everything may import `core`. Nothing may be imported by `core`. `tasks` sits
+beside `auth`: it is queued by services and runs their work in the worker.
+
+The dashed edge is the one exception: `db/repositories` import
+`infrastructure/dkms` to seal a row before writing it and to compute the keyed
+hash a sealed column is looked up by. Routers and the authentication service
+import the same package for the hash and for `opened()`. It is deliberate -
+sealing belongs at the one place every write passes through - and it creates
+no cycle, because `infrastructure/dkms` imports only `core`, `validation` and
+itself. Why sealing sits there is in [layers.md](layers.md); the decision is
+[ADR 0016](../decisions/0016-personal-data-sealed-by-a-separate-key-service.md).
 
 ## The three rules that are easy to break
 
@@ -36,7 +48,9 @@ denial, feeding the audit trail.
 
 ### 2. `infrastructure` does not import `domain` or `auth`
 
-Adapters are called by those layers; they do not call back.
+Adapters are called by those layers; they do not call back. It may import
+`core`, `validation`, `db/redis` and other adapters, none of which import it
+back.
 
 ### 3. A private name does not cross a module boundary
 
@@ -57,6 +71,11 @@ correct here:
 * **An optional dependency.** `_install_metrics` imports the Prometheus
   instrumentator inside a `try`, because an exporter that fails to import must
   not stop the API from serving.
+* **An adapter chosen at the moment of use.** `infrastructure/messaging`'s
+  `deliver()` imports the key service client, and then the email or SMS
+  transport, inside the function. Every message passes through it, and the
+  transport it needs is decided by the shape of the contact after it is
+  opened.
 
 Anything else at function scope is deferring a problem rather than solving it.
 

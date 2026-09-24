@@ -71,6 +71,16 @@ and the verification step says "invalid or expired code" whether the code was
 wrong or never issued. A public-form request that never verifies is closed by
 the nightly sweep after `RIGHTS_UNVERIFIED_CLOSE_DAYS`.
 
+What the form collects is sealed like every other personal column: the
+submitted name, the submitted contact, the request's own words. Matching a
+contact typed on the form to a person on file compares the keyed hash of what
+was typed with the account's `email_hash` or `mobile_hash`, never the values;
+the request keeps its own `submitted_contact_hash` so it can be found by that
+contact later. The DPO finds a request by its reference,
+by a whole contact, or by three or more characters of the submitted name
+(`submitted_name_ngrams`) or the account's name. See
+[ADR 0017](../decisions/0017-lookup-by-keyed-hash-and-name-ngrams.md).
+
 ## Holders and tickets
 
 Holders are derived from the records - `export_line` says who received a file
@@ -88,6 +98,11 @@ halfway. A holder that misses its date is escalated once; the transition to
 collation then opens, and the response goes out **partial and on time**, with
 the gap named. The server refuses to call a response with an unreturned
 ticket "complete".
+
+A respondent's name and contact, the holder's instruction, the thread's
+messages and their file names are sealed. A ticket email is addressed by
+opening the contact in the worker at the moment of sending; if the key service
+cannot be reached the task is retried rather than dropped.
 
 ## Erasure and redaction
 
@@ -117,7 +132,7 @@ re-run the original request as a new one, linked to the decision.
 
 ## Nomination
 
-She names a nominee while well: name, mobile, an optional email, and which of her rights he may exercise. When he invokes it he names the trigger event, death or incapacity, and the nomination records the request that invoked it (0022); death closes her account, incapacity does not. Pending until he accepts, revocable by her at any time; one live nomination per person. The acceptance link goes to every contact she recorded, and the link alone accepts nothing: the nominee chooses one of those contacts, shown masked, receives a code there, and enters it to accept or to decline - so a link-holder cannot answer on his behalf either way. When the time comes he identifies himself with whichever recorded contact he types, and the code goes to that one. The nominee is written to, not her.
+She names a nominee while well: name, mobile, an optional email, and which of her rights he may exercise. When he invokes it he names the trigger event, death or incapacity, and the nomination records the request that invoked it (0022); death closes her account, incapacity does not. Pending until he accepts, revocable by her at any time; one live nomination per person. The acceptance link goes to every contact she recorded, and the link alone accepts nothing: the nominee chooses one of those contacts, shown masked, receives a code there, and enters it to accept or to decline - so a link-holder cannot answer on his behalf either way. When the time comes he identifies himself with whichever recorded contact he types, and the code goes to that one. The nominee is written to, not her. The nominee's name and contacts are sealed; "whichever recorded contact he types" is found by comparing the keyed hash of what he typed with `nominee_email_hash` and `nominee_mobile_hash`.
 
 ## Surface
 
@@ -131,6 +146,12 @@ She names a nominee while well: name, mobile, an optional email, and which of he
 Every write is audited with the request reference in its detail, so
 `GET /requests/{uuid}/trail` reads one request's story across the four tables
 that make it up, and the data principal reads the same rows on her own page.
+The trail names people by id and never holds anything erasable. Where the
+office gives a reason - a transition, a withdrawn or sent-back ticket - the
+entry records `reason_given: true` and the words stay in the request's own
+sealed columns; a reassigned ticket records the respondents' ids, not their
+contacts. See
+[ADR 0015](../decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md).
 
 ## Open decisions
 

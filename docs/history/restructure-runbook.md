@@ -1,6 +1,17 @@
+> **Historical.** The commands for restructuring the repository, written
+> before any of it was done. Phases 1, 2 and 5 were carried out in September
+> 2026 (`89b1e8e`, `209e1da`, `879bfc1`): the services moved under `backend/`
+> and `frontend/`, every document under `docs/`, and the API went from `uv`
+> to `pip` and a virtualenv as Phase 5 below draws it, with the container
+> images removed at the same time. Its paths (`cmp_backend/`, `cmp_internal_ui/`, the Dockerfile)
+> no longer exist. Phases 3 and 4 have not been done; what remains of them is
+> argued in the [proposal](../architecture/proposed-repository-structure.md).
+> Current layout:
+> [docs/architecture/repository-layout.md](../architecture/repository-layout.md).
+
 # Restructure: how it is actually done
 
-The [proposal](proposed-repository-structure.md) says what the tree becomes.
+The [proposal](../architecture/proposed-repository-structure.md) says what the tree becomes.
 This says how to get there, in commands, and what breaks on the way.
 
 ## Why this is cheaper than it looks

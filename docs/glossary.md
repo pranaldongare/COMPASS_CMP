@@ -171,8 +171,63 @@ factor. It authorises the MFA verification route and nothing else.
 **Audit trail.** The append-only, SHA-256 hash-chained log of every write, in
 the same transaction as the write. `GET /audit/verify` names the first row
 that does not verify. Read on the console by person, record, area, event and
-period; see [audit-trail.md](domain/audit-trail.md).
+period; see [audit-trail.md](domain/audit-trail.md). Nothing erasable goes into
+it: a person is named by id, the client's address is written as its keyed
+hash, and where a reason was given the entry says `reason_given: true` while
+the words stay in their own sealed column
+([ADR 0015](decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md)).
+Rows written before 21 September 2026 still carry raw addresses and cannot be
+rewritten.
 
 **Scope.** Which rows a role may see, compiled into the SQL `WHERE` clause:
 `ALL`, `SCOPED` (assigned to them), `OWN` (theirs or about them), `NONE`. A row
 outside scope is a 404, never a 403.
+
+## Encryption
+
+**Key service (DKMS).** The separate process, `backend/dkms` on port 32688,
+that holds the key personal fields are encrypted under. The API seals through
+it, the worker opens a recipient's contact through it, and each portal's
+server opens responses through it. No browser ever reaches it. See
+[docs/dkms/](dkms/README.md) and
+[ADR 0016](decisions/0016-personal-data-sealed-by-a-separate-key-service.md).
+
+**Sealed.** Encrypted by the key service, before the database sees it. A sealed
+value is a string starting `SE::`, and it is different every time the same
+value is sealed. The API stores and serves personal fields sealed.
+
+**Open.** Turn a sealed value back into plaintext. A portal opens a response in
+its own server route, `/dkms/decrypt`; the backend opens a value only to act on
+it - send a code, write a CSV - and never into a response. In the code,
+`unseal` and `opened`.
+
+**Data type.** What the key service is told a field is when it seals it:
+`NAME`, `EMAIL`, `MOBILE`, `CONTACT`, `DOB`, `FREE_TEXT` and so on. The type is
+written into the sealed value, and a value opens only under the type it was
+sealed as. The list is `DataType` in `infrastructure/dkms/fields.py`.
+
+**Keyed hash (blind index).** `HMAC-SHA256` of a normalised value, kept in a
+`<column>_hash` column beside a sealed column the platform finds rows by: an
+email, a mobile, a username, a contact. The same value always gives the same
+hash, so it can be compared and uniquely indexed; without the key it cannot be
+reversed or guessed at. See
+[ADR 0017](decisions/0017-lookup-by-keyed-hash-and-name-ngrams.md).
+
+**`BLIND_INDEX_KEY`.** The key the keyed hashes are computed under, in the API.
+It must equal `DKMS_HASH_KEY` in the key service: the API computes the hashes
+itself, so sign-in survives the key service being down, and the key service
+computes the same ones for any other caller. Separate from the key that seals.
+
+**N-gram search.** Finding a sealed name by part of it. The name is cut into
+overlapping runs of three characters, each run is hashed like a keyed hash,
+and the set is kept in `<column>_ngrams`. A search term needs three characters
+or more, and matches rows whose set holds every run of it. Only three name
+columns carry one, because a set of runs leaks more than a single hash.
+
+**Reseal.** `backend/api/scripts/reseal.py`: seal the values written before a
+column was sealed, and recompute the keyed hash beside each. A row already
+sealed is skipped, so it can run at any time; `--check` only reports.
+
+**`minor_until`.** The date a person turns eighteen, kept in the clear beside a
+sealed date of birth, because the s.9 test is a date comparison in SQL and a
+sealed date cannot be compared.

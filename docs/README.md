@@ -8,9 +8,9 @@ you need. **Every document is in this tree.** The one exception is a
 
 **New to the codebase**
 
-1. [Architecture - system overview](architecture/system-overview.md): the three deployables, the two datastores, and how a request travels
+1. [Architecture - system overview](architecture/system-overview.md): the four services - the API with its worker, the key service, the two portals - the two datastores, and how a request travels, sealed on the way in and opened in the portal
 2. [Repository layout](architecture/repository-layout.md): where things live and what each directory owns —
-   and [a proposal for restructuring it](architecture/proposed-repository-structure.md), written to be argued with and not yet acted on
+   and [the restructuring proposal](architecture/proposed-repository-structure.md), carried out in its first two phases and its fifth; the shared frontend package it argues for is still open
 3. [Glossary](glossary.md): the vocabulary of the DPDP Act and of this platform
 4. [Local development](operations/local-development.md): a working system on your machine in one sitting
 
@@ -21,20 +21,20 @@ you need. **Every document is in this tree.** The one exception is a
 - Behaviour, by obligation: [consent lifecycle](domain/consent-lifecycle.md), [collection and routing](domain/collection-and-routing.md), [rights requests](domain/rights-requests.md), [messages the platform sends](domain/messages.md), [reading the audit trail](domain/audit-trail.md)
 - [Personal data](domain/personal-data.md): every table, store and endpoint that holds or moves something about a person, and what protects it
 - [PII fields and endpoints](domain/pii-fields-and-endpoints.md): the short form — the 54 personal columns by table, and every endpoint that carries one, by module
-- [DKMS — encryption of personal data](dkms/README.md): the four documents on the key service — the sealed fields table by table, the backend, the frontend layer that decrypts, and the implementation plan
+- [DKMS — encryption of personal data](dkms/README.md): the documents on the key service — the sealed fields table by table, the backend, the frontend layer that decrypts, and the implementation plan — and [adding a personal field](dkms/adding-a-personal-field.md), the steps a new sealed column takes
 - [API](architecture/api.md): route families, the error contract, pagination, identifiers
-- [Frontend best practices](frontend/best-practices.md): the React and Next.js standard — each rule, how the portals meet it and where, what is deliberately different, and the decision matrix a pull request answers
+- [Frontend](frontend/README.md): what is written about the two portals beyond how to run them. Chiefly [best practices](frontend/best-practices.md): the React and Next.js standard — each rule, how the portals meet it and where, what is deliberately different, and the decision matrix a pull request answers
 - [Testing](operations/testing.md): what each suite proves and how to run it without fighting the rate limiter
 - [Contributing](../CONTRIBUTING.md): the checks a change must pass and how commits are written
 
 **Running it somewhere**
 
-- [Local development](operations/local-development.md) is also how it runs anywhere: a virtualenv per Python service, `npm run dev` per portal, PostgreSQL and Redis beside them. How it was once meant to be containerised is in [history/](history/README.md)
+- [Local development](operations/local-development.md) is also how it runs anywhere: a virtualenv per Python service, `npm run dev` per portal, PostgreSQL and Redis beside them. Why there are no containers is [ADR 0018](decisions/0018-pip-and-a-virtualenv-no-containers.md); how it was once meant to be containerised is in [history/](history/README.md)
 - [Runbook](operations/runbook.md): restarts, rebuilding a development database, an audit chain that does not verify, rate-limit buckets
 
 **Understanding why**
 
-- [Decisions](decisions/README.md): the architecture decision records, one per choice that would otherwise be re-litigated
+- [Decisions](decisions/README.md): the architecture decision records, one per choice that would otherwise be re-litigated. The latest: [0016](decisions/0016-personal-data-sealed-by-a-separate-key-service.md), personal data sealed by a separate key service; [0017](decisions/0017-lookup-by-keyed-hash-and-name-ngrams.md), lookup by keyed hash and name n-grams; [0018](decisions/0018-pip-and-a-virtualenv-no-containers.md), pip and a virtualenv, no containers
 - [Reviews](reviews/2026-09-10-implementation-review.md): what an external review found, what was done about each finding, and why the suites had not caught it
 - [DPDP Act gap assessment](reviews/2026-09-17-dpdp-act-gap-assessment.md): statutory requirement map, implemented capabilities, prioritised gaps and remediation sequence
 - [Personal data inventory](domain/personal-data.md): what the platform holds about people, where, and which of the 245 operations touch it
@@ -49,7 +49,10 @@ when it changes; the third is reviewed by hand against it:
   validation, payload and response, and one page per role listing what it may
   reach — regenerate with `python3 docs/tools/generate-api-docs.py`
 - [reference/database/](reference/database/README.md): the schema drawn, every
-  table with its columns and constraints, every enumeration
+  table with its columns and constraints, every enumeration — generated from
+  PostgreSQL's catalogues of a scratch database replayed from the migration
+  chain: `POSTGRES_DB=cmp_ref alembic upgrade head`, then
+  `python3 docs/tools/generate-schema-docs.py --database cmp_ref`
 - [reference/access-control/](reference/access-control/README.md): which role
   may call each endpoint, on which rows, under what conditions, with the guard
   and the source line as evidence; hand-reviewed, amended when a route changes
@@ -57,8 +60,20 @@ when it changes; the third is reviewed by hand against it:
 ## Tools
 
 [tools/](tools/) holds what regenerates and checks this tree:
-`generate-api-docs.py`, `personal-data-scan.py`, and `check-links.py`, which
-asserts that every relative link in every document resolves.
+
+- `generate-api-docs.py`: reference/api/, from `backend/api/openapi.json`
+- `generate-schema-docs.py`: reference/database/, from a database's
+  catalogues (`--database cmp_ref`)
+- `pii-fields-and-endpoints.py`: the tables in
+  [pii-fields-and-endpoints.md](domain/pii-fields-and-endpoints.md)
+- `personal-data-scan.py`: the endpoint tables in
+  [personal-data.md](domain/personal-data.md), joined from the OpenAPI
+  document, the access-control reference and the schema inventory; `--check`
+  exits non-zero on a field that looks personal and is not classified
+- `check-links.py`: asserts that every relative link in every document resolves
+- [ci-paths.md](tools/ci-paths.md) and `ci.yml.proposed`: the changes
+  `.github/workflows/ci.yml` still needs after the restructure, and the
+  workflow with them made, not yet applied
 
 ## The API's internals
 
@@ -80,6 +95,7 @@ asserts that every relative link in every document resolves.
 | [security/csrf.md](security/csrf.md) | The double-submit defence |
 | [security/rate-limiting.md](security/rate-limiting.md) | The bounded surfaces and why the counters live in Redis |
 | [security/audit.md](security/audit.md) | The append-only, hash-chained trail |
+| [security/encryption-at-rest.md](security/encryption-at-rest.md) | Personal fields sealed by the key service, opened only in the portals' server, found by keyed hash |
 
 ## The services' own documents
 
@@ -92,8 +108,10 @@ asserts that every relative link in every document resolves.
 
 [docs/history/](history/README.md) keeps earlier design documents that no
 longer describe the system: a generated low-level design from before the two
-portals were split, a proposal for restructuring the backend, and a frontend
-gap analysis whose gaps have since been closed. They are kept because they
+portals were split, a proposal for restructuring the backend, two documents on
+deploying the platform as containers, the runbook the repository was
+restructured by, and a frontend gap analysis whose gaps have since been
+closed. They are kept because they
 explain how the code came to be shaped, and marked so nobody mistakes them for
 the present.
 

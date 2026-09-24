@@ -7,14 +7,17 @@ the browser does, and every document.
 compass/
   backend/                  every server-side thing
     api/                    the platform API, the worker, the migrations
-    dkms/                   the key service: bulk field encryption
+    dkms/                   the key service: sealing, opening, keyed hashes
   frontend/                 every browser-side thing
     console/                the staff console, port 3000
     portal/                 the data-principal portal, port 3001
   docs/                     every document in the repository
+    README.md  glossary.md  the map, and the vocabulary
     architecture/           the system, the API's internals, this file
     security/  database/    the mechanisms, the schema
     domain/                 behaviour by obligation
+    dkms/                   the key service and what it protects
+    frontend/               the React and Next.js standard for both portals
     operations/             running it, locally and elsewhere
     decisions/              ADRs, one per choice worth not re-litigating
     reviews/  history/
@@ -67,22 +70,50 @@ backend/api/
     db/
       pool.py sql.py redis.py
       repositories/       one per table cluster, plus the audit entity resolver
-    infrastructure/       email, sms, storage, outbound HTTP - swappable adapters
+    infrastructure/       email, sms, storage, outbound HTTP - swappable adapters;
+                          messaging (junction to words to transport); dkms (the
+                          key service client, the sealed-field map, seal/unseal,
+                          the keyed hashes)
     core/                 config, enums, permissions, security, errors, pagination,
                           logging - imports nothing local
     tasks/                Celery: authentication, notifications, maintenance, exchange
-  migrations/versions/    0001 to 0026, every one raw SQL, both directions
+  migrations/versions/    0001 to 0030, raw SQL in both directions; 0028 also
+                          computes keyed hashes in Python, and says why
   tests/
     unit/                 pure functions; no I/O
     integration/          a real PostgreSQL and Redis; each test rolls back
     security/             BOLA, BFLA, CSRF, rate limits, authentication, registration
-  scripts/                seed, create_admin, reset_dev, healthcheck, db
+    http/                 the ASGI app over the real database, committed not rolled
+                          back: every personal-data endpoint called, every response
+                          checked against the contract in contract.py
+    fixtures/             files the suites upload
+  scripts/                seed, create_admin, reset_dev, healthcheck, db, reseal
   dev-services.yml        PostgreSQL and Redis for development; the one Docker file
   requirements*.txt       the runtime, pinned; and the tools on top of it
-  docs/                   the API's internals, security and operations
   openapi.json            generated from the application; the API reference
-  var/                    local only, ignored: uploads, the outbox, the beat schedule
+  var/                    local only, ignored: uploads, the outbox
+  celerybeat-schedule.*   beat's state, written in the directory beat starts from
 ```
+
+## `backend/dkms/`
+
+```
+backend/dkms/
+  app/
+    main.py               `python3 -m app.main`, port 32688
+    config.py             settings, and the refusals outside local and test
+    api/routes.py         /bulk_encrypt, /bulk_decrypt, /bulk_hash, /search,
+                          /search_ngram, /types, /health
+    engine.py             the batch: one call, a thread pool across its records
+    dkms/                 providers (local AES-GCM, a vendor SDK), the data types,
+                          the keyed hashes and n-grams
+  tests/                  the contract, the providers, the hashes
+  requirements*.txt       its own virtualenv; it shares nothing with the API
+```
+
+It imports nothing from `backend/api/`, and the API imports nothing from it:
+they talk over HTTP. What it holds and why it is separate is in
+[docs/dkms/](../dkms/README.md).
 
 The layering rule - a layer may only call the layer below it - is in
 [layers.md](../architecture/layers.md), and the import
@@ -99,15 +130,22 @@ Both portals share one shape:
     proxy.ts              the first thing that touches a request: CSP nonce,
                           cookie-presence redirect (Next 16's middleware)
     app/                  routes; (app)/ is the authenticated shell
+      dkms/decrypt/route.ts the server route that opens sealed values; the
+                          only code that calls the key service
     features/<name>/      one folder per business area
       api.ts              thin endpoint functions - no React
       queries.ts          useQuery hooks, keyed from lib/query/keys
       mutations.ts        useMutation hooks and what they invalidate
       schemas.ts          zod form schemas mirroring the API's validation
       components/         the feature's forms, cards and dialogs
+    features/dkms/        useDecrypted, for a value a page holds outside the client
     components/           ui primitives, data display, forms, layout, security
+                          (security/auth-page-gate.tsx sends a visitor on a
+                          sign-in page to where they belong)
     lib/                  api client, errors, query keys, permissions, security,
                           config, formatting
+      dkms/               the browser's half of opening: find sealed values in a
+                          response, send them in one batch to /dkms/decrypt
     providers/            error boundary, query, theme, toast, auth
     schemas/              shared zod primitives: contacts, files, security
     types/                curated API types per domain; api-schema.d.ts is generated
@@ -134,7 +172,11 @@ Both portals share one shape:
 | A scheduled task | `tasks/app.py` (`beat_schedule`) |
 | A queue | `tasks/app.py` (`task_routes`) |
 | An error code | `core/errors.py` |
-| An email or SMS wording | `infrastructure/email/templates.py`, `tasks/authentication/otp.py` |
+| An email or SMS wording | `core/messages.py` (the catalogue), `infrastructure/messaging/` (rendering and delivery) |
+| Which columns are sealed, and as what | `infrastructure/dkms/fields.py` (`ENCRYPTED_FIELDS`, `BLIND_INDEXED`, `NGRAM_INDEXED`) |
+| How a sealed column is looked up | `infrastructure/dkms/blind.py` |
+| Where a portal opens a sealed value | `src/app/dkms/decrypt/route.ts` and `src/lib/dkms/` in either portal |
+| A key service setting | `backend/dkms/app/config.py`, documented in `backend/dkms/.env.example` |
 | A console page's data | `frontend/console/src/features/<area>/queries.ts` |
 | A form's validation | `src/features/<area>/schemas.ts` in either portal |
 | How a browser test signs in | `e2e/auth.setup.ts` and `e2e/support/` in either portal |
@@ -151,7 +193,8 @@ Both portals share one shape:
 
 | Path | Holds |
 |---|---|
-| `backend/api/.env`, `<portal>/.env.local` | Local settings; created from the `.env.example` beside each |
+| `backend/api/.env`, `backend/dkms/.env`, `<portal>/.env.local` | Local settings; created from the `.env.example` beside each |
+| `backend/api/.venv/`, `backend/dkms/.venv/` | Each Python service's virtualenv |
 | `backend/api/var/outbox.log` | Every email and SMS the local system "sent": codes, links, notices |
 | `backend/api/var/uploads/` | Files stored by the local storage backend |
 | `<portal>/e2e/.auth/` | Browser sessions saved by the Playwright setup project |

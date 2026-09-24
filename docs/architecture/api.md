@@ -73,8 +73,24 @@ the notice, and refuses a consent without one. The field is still accepted
 from older clients and ignored. See
 [ADR 0011](../decisions/0011-server-held-notice-serving.md).
 
-**Readiness is specific.** `GET /ready` names the deployed schema revision
-and the one this build expects, and answers 503 when they differ.
+**Personal fields travel sealed.** A name, a contact, a date of birth, a
+reason: every column the platform seals is served as stored, a string starting
+`SE::`. The portal's API client opens them through its own server route before
+a page sees them. A client that is not a portal receives ciphertext. The
+OpenAPI document types these fields as strings, which they are. See
+[docs/dkms/](../dkms/README.md).
+
+**Search over sealed columns is exact, except for names.** A `q` that is an
+email, a mobile, a username or an employee number matches the whole value,
+through its keyed hash; part of an address finds nothing. A name is matched by
+part of it, three characters or more, through hashed runs of three characters
+- candidates, so `ana` may find `banana`. A term shorter than three characters
+matches no name. See
+[ADR 0017](../decisions/0017-lookup-by-keyed-hash-and-name-ngrams.md).
+
+**Readiness is specific.** `GET /ready` checks PostgreSQL, Redis, the schema
+revision and the key service, one named check each, and answers 503 when any
+fails. It names the deployed schema revision and the one this build expects.
 
 ## The error contract
 
@@ -101,7 +117,7 @@ Every error, from a validation failure to a rate limit, has one shape:
 | 422 (consent) | `notice_not_served` when no serving of the notice to this person exists; `notice_stale` when it is older than six hours |
 | 422 | `validation_failed`, with `field` naming the input |
 | 429 | `rate_limited`, with a `Retry-After` header the browser may read |
-| 503 | `service_unavailable` - a datastore could not be reached |
+| 503 | `service_unavailable` - a datastore or the key service could not be reached; nothing was written |
 
 The `request_id` is the correlation id the first middleware minted; quote it
 when reporting a failure and the log line is one search away.
@@ -133,7 +149,7 @@ clears its own buckets rather than waiting an hour.
 
 | Artefact | Command |
 |---|---|
-| `backend/api/openapi.json` | `uv run python -c "from cmp.main import app; import json; json.dump(app.openapi(), open('openapi.json','w'), indent=2)"` from `backend/api/` |
+| `backend/api/openapi.json` | `python -c "from cmp.main import app; import json; json.dump(app.openapi(), open('openapi.json','w'), indent=2)"` from `backend/api/`, in its virtualenv |
 | `src/types/api-schema.d.ts` in each portal | `npm run api:types` while the API is running |
 
 The portals' hand-curated types in `src/types/*.ts` are contract-tested

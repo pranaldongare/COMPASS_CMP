@@ -67,7 +67,7 @@ erDiagram
 
 | Group | Tables | Notes |
 |---|---|---|
-| Identity | `auth_user`, `person_type_history`, `delegation` | One table for every account, staff and data principal, distinguished by `role`. Email nullable; a CHECK requires it for staff and a trigger requires a mobile for a data principal. Person type (external, employee, ex-employee, vendor) is tracked with its history. |
+| Identity | `auth_user`, `person_type_history`, `delegation` | One table for every account, staff and data principal, distinguished by `role`. Email nullable; a CHECK requires it for staff and a trigger requires a mobile for a data principal. Name, contacts, username, date of birth and organisation id are sealed; each contact, the username and the organisation id carry a keyed hash in a `*_hash` column beside them, and the name carries `full_name_ngrams`. `minor_until`, eighteen years after birth, is kept in the clear for the s.9 test. Person type (external, employee, ex-employee, vendor) is tracked with its history. |
 | Registry | `purpose`, `processor`, `processor_respondent`, `data_source` | Reference data. Sources belong to a processor and an owner; respondents are retired by date, never deleted. |
 | Projects | `project`, `project_processor`, `project_approval`, `project_site`, `project_status_history` | A project names processors (each decided by the DPO), proves its approval, and collects at sites. A site is a source deployed for a project with an optional owner override. Status changes are history rows. |
 | Notices | `notice`, `notice_language`, `notice_purpose` | A notice per project version; a rendition per language, each approved; the purposes it covers, with per-notice Rule 3 overrides. |
@@ -75,6 +75,16 @@ erDiagram
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` | A disclosure record per export and per person, with the generated file kept in storage (`file_ref`); an import batch produces a collection of assets; a junction says which consent covers whom in which asset, with a disposition. |
 | Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_ticket_message`, `rights_response_file`, `nomination` | A request with its clock; one holder per party asked, with a message thread; one scope item per appearance; files released with the response; the nominee arrangement. |
 | Platform | `audit_log`, `message_template` | The audit log is append-only and hash-chained. `message_template` holds the office's replacement words per message and channel; absence means the code default. Sessions, one-time codes, rate counters and lockouts live in Redis, not here. |
+
+Personal columns are sealed: the row holds `SE::…` ciphertext from the key
+service, never the value. Which columns, and as which data type, is
+`ENCRYPTED_FIELDS` in `infrastructure/dkms/fields.py`, with the few kept in
+the clear and why in `LOOKUP_FIELDS`, and table by table in
+[pii-tables-and-fields.md](../dkms/pii-tables-and-fields.md). A column the
+platform finds rows by cannot be compared as ciphertext, so beside it sits
+`<column>_hash`, `HMAC-SHA256` of the normalised value under
+`BLIND_INDEX_KEY`; three name columns also carry `<column>_ngrams`, the hashed
+three-character runs, under a GIN index. Uniqueness is on the hash.
 
 The view `v_current_consent` resolves each (person, notice) pair to the
 artefact currently in force by following the supersession chain, and derives
@@ -119,8 +129,10 @@ with raw SQL that bypasses the service layer.
 | One root artefact per (person, notice) | partial unique index `uq_artefact_one_root_per_notice` (0023); the service also locks per pair before reading what is current |
 | Every write is audited in the same transaction, in a chain | `audit_log` triggers; `log_id` drawn inside `pg_advisory_xact_lock(hashtext('cmp_audit_chain'))` |
 | A purpose itemises its categories | `CHECK cardinality(data_categories) >= 1` |
-| A data principal has a mobile; a nominee has a mobile; staff have an email | `trg_subject_needs_mobile`, `trg_nominee_needs_mobile`, `CHECK staff_needs_email` |
-| Minority is a fact of the date of birth | `cmp_is_minor(dob)` |
+| A data principal has a mobile; a nominee has a mobile; staff have an email | `trg_subject_needs_mobile`, `trg_nominee_needs_mobile`, `CHECK auth_user_staff_email_required` |
+| An email, a mobile, a username, an organisation id belongs to one account | unique indexes on `email_hash`, `mobile_hash`, `username_hash`, `organization_id_hash`, `secondary_email_hash` (0028, renamed in 0029) |
+| An address is nobody's secondary email if it is somebody's primary, and the reverse | `trg_contact_belongs_to_one_person`, over the hashes |
+| Minority is a fact of the date of birth | `cmp_is_minor(minor_until)`; `minor_until` is the birth date plus eighteen years, in the clear, because the date of birth itself is sealed (0028) |
 | One live nomination per person | partial unique index on `nomination` |
 | A rights reference is unique and minted by the database | sequence-backed default on `rights_request.reference` |
 
@@ -147,4 +159,6 @@ acceptance).
 | One-time codes, MFA codes, their attempt counts | Redis db 0, with TTLs |
 | Rate-limit buckets and lockouts | Redis db 0, keys `rate:*` |
 | Celery broker and results | Redis db 1 and db 2 |
-| Uploaded documents and released files | the `uploads` volume, referenced by path and hash |
+| Uploaded documents and released files | `UPLOAD_ROOT` (`backend/api/var/uploads` locally) under the local storage backend, referenced by path and hash |
+| The key personal fields are sealed under | the key service, `DKMS_MASTER_KEY`; the API never holds it |
+| The key the `*_hash` and `*_ngrams` columns are computed under | `BLIND_INDEX_KEY` in the API, the same value as `DKMS_HASH_KEY` in the key service |

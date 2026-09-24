@@ -34,13 +34,28 @@ Dependencies                                   api/dependencies/
   │   unknown filters refused   filters.py
   ▼
 Domain service, in ONE transaction             domain/*/service.py
-  │   validates, mutates, and writes the audit row together
+  │   validates, mutates, and writes the audit row together;
+  │   registers side effects to run after the commit
   ▼
 Repository                                     db/repositories/
   │   hand-written SQL; scope is a WHERE predicate
+  │   a write: personal columns sealed first     infrastructure/dkms/rows.py
+  │     seal() → one call to the key service      POST /bulk_encrypt
+  │   a lookup by a sealed value: its keyed hash  infrastructure/dkms/blind.py
+  │     `*_hash = %s`, or `*_ngrams @> %s` for part of a name
   ▼
 PostgreSQL
       CHECK constraints · triggers · append-only · revoked grants
+  │
+  ▼  the response, personal fields as stored: `SE::…`
+Portal API client                              src/lib/api/client.ts
+  │   finds the sealed values; one batch per response
+  ▼
+Portal server route                            src/app/dkms/decrypt/route.ts
+  │   no session, no decryption; nothing logged
+  ▼
+Key service                                    POST ${DKMS_URL}/bulk_decrypt
+      plaintext back to the page, never to the API
 ```
 
 ## Ordering that is load-bearing
@@ -59,6 +74,21 @@ shadowed by a path parameter on another router.
 One transaction per request that writes, opened by the router and passed to the
 service. The service does everything inside it — including `audit.record()` —
 so a change and its audit row commit together or not at all.
+
+The key service is called inside the transaction, before the statement that
+binds the sealed value. If it cannot be reached the call raises
+`DkmsUnavailable`, a `ServiceUnavailable`: the transaction rolls back, nothing
+is written, and the caller gets 503 `service_unavailable` rather than a row
+with a personal field in the clear.
+
+Side effects wait for the commit. A service registers them with `defer()`
+(`core/after_commit.py`) and they run only once the transaction has
+committed, so a message never describes a row that was rolled back
+([ADR 0012](../decisions/0012-side-effects-after-commit.md)). The worker then
+opens the recipient's sealed contact at the moment of sending; if the key
+service is down the task raises `DkmsUnavailable` and Celery retries it, with
+backoff, up to five times, so a short outage makes a message late rather than
+lost.
 
 A dependency never opens one. A guard that wrote an audit row would be writing
 outside the transaction the service is about to start, so denials are audited by
