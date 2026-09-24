@@ -50,6 +50,8 @@ SEALED: frozenset[str] = frozenset(
         "confirmed_by_name",
         "decided_by_name",
         "placed_by_name",
+        "listed_by_name",
+        "lifted_by_name",
         "released_by_name",
         "delegate_name",
         "delegator_name",

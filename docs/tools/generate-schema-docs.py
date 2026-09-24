@@ -75,7 +75,7 @@ MODULES: dict[str, list[str]] = {
         "legal_hold",
         "nomination",
     ],
-    "platform": ["audit_log", "message_template"],
+    "platform": ["audit_log", "message_template", "restricted_country"],
 }
 MODULE_OF = {table: module for module, tables in MODULES.items() for table in tables}
 

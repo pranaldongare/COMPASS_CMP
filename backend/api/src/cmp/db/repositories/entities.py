@@ -259,6 +259,13 @@ _SPECS: dict[str, _Spec] = {
         href=None,
         noun="Legal hold",
     ),
+    "restricted_country": _Spec(
+        sql="""SELECT country_id AS id, country_uuid::text AS uuid,
+                      'Restricted country ' || country_code AS label
+               FROM restricted_country WHERE country_id = ANY(%s)""",
+        href=None,
+        noun="Restricted country",
+    ),
     "nomination": _Spec(
         sql="""SELECT n.nomination_id AS id, n.nomination_uuid::text AS uuid,
                       'nomination' AS label,

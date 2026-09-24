@@ -53,6 +53,7 @@ export function ProcessorForm({
     contract_ref: processor?.contract_ref ?? "",
     security_confirmed_at: processor?.security_confirmed_at ?? "",
     is_in_house: processor?.is_in_house ?? false,
+    location_country: processor?.location_country ?? "",
   });
 
   const busy = create.isPending || update.isPending;
@@ -110,6 +111,16 @@ export function ProcessorForm({
             {(p) => <Input {...p} {...form.register("contract_ref")} placeholder="CTR-2026-0091" />}
           </Field>
         </div>
+
+        <Field
+          label="Country"
+          hint="Where it is, as a two-letter code (IN for India). An export to a processor with no country is refused; one abroad goes only where the law and every purpose allow."
+          error={form.formState.errors.location_country?.message}
+        >
+          {(p) => (
+            <Input {...p} {...form.register("location_country")} placeholder="IN" maxLength={2} autoComplete="off" />
+          )}
+        </Field>
 
         <Field
           label="Security confirmed on"

@@ -26,6 +26,7 @@ from cmp.api.routers.v1.rights import router as rights_router
 from cmp.api.routers.v1.rights import subject_router as rights_subject_router
 from cmp.api.routers.v1.rights import ticket_router as tickets_router
 from cmp.api.routers.v1.system import router as system_router
+from cmp.api.routers.v1.transfers import router as transfers_router
 from cmp.api.routers.v1.users import router as users_router
 
 __all__ = [
@@ -45,5 +46,6 @@ __all__ = [
     "rights_subject_router",
     "system_router",
     "tickets_router",
+    "transfers_router",
     "users_router",
 ]

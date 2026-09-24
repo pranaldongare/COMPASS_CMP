@@ -32,7 +32,16 @@ from cmp.db.sql import unique_violation
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.infrastructure.dkms import opened
-from cmp.schemas.common import Acknowledged, CodeText, LongText, Out, Page, Schema, ShortText
+from cmp.schemas.common import (
+    Acknowledged,
+    CodeText,
+    CountryCode,
+    LongText,
+    Out,
+    Page,
+    Schema,
+    ShortText,
+)
 from cmp.validation import Email
 
 router = APIRouter(tags=["registry"])
@@ -292,6 +301,10 @@ class ProcessorOut(Out):
     security_confirmed_at: date
     status: str
     is_in_house: bool = False
+    #: Where the processor is (S2-04). Null until recorded, and an export to it
+    #: is refused until it is: a transfer the platform cannot place is one it
+    #: cannot say is lawful under s.16.
+    location_country: str | None = None
     created_at: Any
 
 
@@ -307,6 +320,9 @@ class ProcessorIn(Schema):
     #: name the sources and an RCO. Separate from `type`, which says what kind of
     #: thing a processor is and not whose it is - a lab can be either.
     is_in_house: bool = False
+    #: ISO 3166-1 alpha-2. Optional here; an export to a processor without one
+    #: is refused (S2-04).
+    location_country: CountryCode | None = None
 
     @field_validator("security_confirmed_at")
     @classmethod
@@ -347,6 +363,7 @@ class ProcessorUpdate(Schema):
     legal_name: ShortText | None = None
     contract_ref: Annotated[str | None, Field(default=None, max_length=120)] = None
     security_confirmed_at: date | None = None
+    location_country: CountryCode | None = None
 
 
 @router.get("/processors", response_model=Page[ProcessorOut])
@@ -376,6 +393,7 @@ async def create_processor(
             contract_ref=body.contract_ref,
             security_confirmed_at=body.security_confirmed_at,
             is_in_house=body.is_in_house,
+            location_country=body.location_country,
         )
         await audit.record(
             conn,
@@ -386,6 +404,7 @@ async def create_processor(
                 "legal_name": body.legal_name,
                 "contract_ref": body.contract_ref,
                 "is_in_house": body.is_in_house,
+                "location_country": body.location_country,
             },
         )
     return processor
@@ -534,6 +553,7 @@ async def update_processor(
             legal_name=body.legal_name,
             contract_ref=body.contract_ref,
             security_confirmed_at=body.security_confirmed_at,
+            location_country=body.location_country,
         )
         await audit.record(
             conn,

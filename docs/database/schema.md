@@ -1,7 +1,7 @@
 # Schema
 
-34 tables, 39 enums, 1 view, 29 triggers, 46 named CHECK constraints and 99
-foreign keys, as of migration 0031. Those counts are read from the PostgreSQL
+35 tables, 39 enums, 1 view, 30 triggers, 50 named CHECK constraints and 102
+foreign keys, as of migration 0032. Those counts are read from the PostgreSQL
 catalogs after replaying every migration, not maintained by hand.
 
 The migrations are the source of truth: 0001 transcribed the original
@@ -18,7 +18,7 @@ its stated commit before trusting it against a later change.
 | Group | Tables |
 |---|---|
 | Identity | `auth_user`, `person_type_history`, `delegation` |
-| Registry | `purpose`, `processor`, `processor_respondent`, `data_source` |
+| Registry | `purpose`, `processor`, `processor_respondent`, `data_source`, `restricted_country` |
 | Projects | `project`, `project_status_history`, `project_approval`, `project_site`, `project_processor` |
 | Notices | `notice`, `notice_purpose`, `notice_language` |
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant` |
@@ -74,6 +74,14 @@ than a constraint error.
 **`export_log.file_ref`, since 0023,** is the CSV exactly as generated, kept
 in storage; the download serves it back. Exports from before it re-render
 and their `file_hash` says whether the result still matches.
+
+**Every export row says where it went, since 0032.** `export_line` carries the
+destination processor and its country as they were at the export, and
+`export_log.transfer_basis` the decision per destination. `restricted_country`
+is the s.16 list: `uq_restricted_country_active` allows one active listing per
+country, `restricted_country_not_india` keeps India off it, and
+`trg_restricted_country_lift_only` allows exactly one change to a listing - its
+lifting. `processor_location_is_iso` holds a country to two capital letters.
 
 **`asset_consent.disposition`** is where an erasure lands: the person's junction
 row, never the asset, because an asset may hold several people.

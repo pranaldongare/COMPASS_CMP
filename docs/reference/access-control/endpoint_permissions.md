@@ -60,6 +60,16 @@ Roles refer to the **effective session role**. A staff account signed in through
 | GET | `/projects/{project_uuid}/consents/summary` | NO | ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
 | GET | `/projects/{project_uuid}/links` | NO | ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
 
+## Cross-border transfers
+
+[Conditions and source evidence](modules/cross_border_transfers.md)
+
+| Method | Endpoint | Anonymous | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GET | `/restricted-countries` | NO | ALL | ALL | NO | NO | NO | NO | NO |
+| POST | `/restricted-countries` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/restricted-countries/{country_uuid}/lift` | NO | ALL | NO | NO | NO | NO | NO | NO |
+
 ## Dashboard
 
 [Conditions and source evidence](modules/dashboard.md)

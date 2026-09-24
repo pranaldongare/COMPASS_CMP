@@ -77,6 +77,7 @@ the [runbook](../operations/runbook.md).
 | `0029` | The hash columns are renamed `*_idx` → `*_hash`, with the indexes that quote the name and the one trigger function whose body does. No data changes |
 | `0030` | `*_ngrams text[]` with a GIN index on `auth_user.full_name`, `rights_request.submitted_name` and `nomination.nominee_name`: hashed three-character runs, so a name can be searched by part. Backfilled **in Python**, opening each sealed name through the key service |
 | `0031` | Erasure that erases (S2-03): `rights_item_execution`, append-only, one row per attempt at each store that holds a scope item; `rights_request_item.executed_at`; `legal_hold`, placed once and released once by trigger (`cmp_legal_hold_release_only`), its reason sealed. Raw SQL; nothing to backfill |
+| `0032` | Cross-border control (S2-04): `processor.location_country`; `restricted_country`, the s.16 list as data, listed once and lifted once by trigger, one active listing per country, never India; `export_line.destination_processor_id` and `destination_country`; `export_log.transfer_basis`. Raw SQL; nothing to backfill - earlier lines never recorded a destination |
 
 ## What 0004 fixed
 

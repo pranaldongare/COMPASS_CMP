@@ -53,13 +53,14 @@ COLUMNS: list[tuple[str, list[str]]] = [
 ]
 
 ORDER = ["auth", "me", "public consent", "public information", "rights", "legal holds",
-         "tickets", "consent", "exchange", "users", "delegations", "projects", "notices",
+         "cross-border transfers", "tickets", "consent", "exchange", "users", "delegations", "projects", "notices",
          "registry", "messages", "audit", "dashboard"]
 TITLE = {
     "auth": "Authentication (`/auth`)", "me": "My own records (`/me`)",
     "public consent": "Consent link (`/c/{token}`)", "public information": "Public rights pages (`/rights`)",
     "rights": "Rights requests — Privacy Office (`/requests`)",
-    "legal holds": "Legal holds (`/legal-holds`)", "tickets": "Tickets (`/tickets`)",
+    "legal holds": "Legal holds (`/legal-holds`)",
+    "cross-border transfers": "Cross-border transfers (`/restricted-countries`)", "tickets": "Tickets (`/tickets`)",
     "consent": "Consents and links", "exchange": "Exports, imports, collections, assets",
     "users": "Users (`/users`)", "delegations": "Delegations (`/delegations`)",
     "projects": "Projects, approvals, sites", "notices": "Notices",

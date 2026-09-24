@@ -15,6 +15,7 @@ import type {
   Processor,
   Purpose,
   PurposeUsageEntry,
+  RestrictedCountry,
   Uuid,
   ProcessorRespondent,
 } from "@/types";
@@ -129,6 +130,23 @@ export function updateProcessor(uuid: Uuid, body: Partial<ProcessorInput>): Prom
 
 export function suspendProcessor(uuid: Uuid): Promise<Acknowledged> {
   return apiPost<Acknowledged>(`/processors/${uuid}/suspend`);
+}
+
+/* ------------------------------------------------ restricted countries (S2-04) */
+
+export function listRestrictedCountries(): Promise<RestrictedCountry[]> {
+  return apiGet<RestrictedCountry[]>("/restricted-countries");
+}
+
+export function restrictCountry(body: {
+  country_code: string;
+  notification_ref: string;
+}): Promise<RestrictedCountry> {
+  return apiPost<RestrictedCountry>("/restricted-countries", body);
+}
+
+export function liftRestriction(uuid: Uuid): Promise<RestrictedCountry> {
+  return apiPost<RestrictedCountry>(`/restricted-countries/${uuid}/lift`, {});
 }
 
 export function createSource(body: SourceInput): Promise<DataSource> {

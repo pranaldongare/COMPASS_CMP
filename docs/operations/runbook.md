@@ -159,6 +159,27 @@ column, and whenever you want proof that nothing is in the clear.
   closes requests past `RIGHTS_UNVERIFIED_CLOSE_DAYS`. Check beat is running
   and there is exactly one of it.
 
+## An export is refused: "This export cannot go"
+
+`transfer_refused` (422). Every row's destination - the processor running its
+site - was checked under s.16 and at least one failed; the message names each.
+
+- **"… has no recorded location - record its country first."** Edit the
+  processor on the Processors page and give its two-letter country. Unknown is
+  refused on purpose: a transfer the platform cannot place is not one it can
+  call lawful.
+- **"… is in XX, restricted by <notification>."** The country is on the
+  restricted list. Nothing is to be done at the export: either the site must be
+  run by a processor elsewhere, or the restriction lifted when the Government
+  lifts it (Processors page, *Restricted countries*, DPO only).
+- **"… is in XX, and PURPOSE does not permit a transfer outside India."** A
+  purpose the people in the file granted says their data stays in India. That
+  is what their notice told them; the purpose, not the export, is where to
+  look.
+
+The refusal is in the audit trail as `export.refused`, with the processors and
+causes and none of the people.
+
 ## An erasure is not finishing
 
 An applied erasure or redaction is quarantined at once and erased only when

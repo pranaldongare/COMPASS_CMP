@@ -62,7 +62,7 @@ python3.12 -m venv .venv
 . .venv/bin/activate            # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
 cp .env.example .env            # PUBLIC_BASE_URL, CONSOLE_BASE_URL - see below
-alembic upgrade head            # 31 migrations; 0028 and 0030 call the key service
+alembic upgrade head            # 32 migrations; 0028 and 0030 call the key service
 python scripts/seed.py          # one coherent world; refuses outside local/test
 python -m cmp --port 8000
 ```

@@ -292,6 +292,6 @@ Generate Export.
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `ExportActor`.
 - **Resolved gate:** `RequireResource(export, write=True)`.
-- **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
+- **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading. Each row's destination - the processor running its site - is checked under s.16 first (S2-04): an unknown location, a restricted country, or a granted purpose not permitted cross-border refuses the whole export with 422 `transfer_refused`, recorded in its own transaction.
 - Source consent rows for a new export are selected using the caller’s site scope.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/exchange.py#L174), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/exchange.py#L23), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/exchange/service.py#L49).

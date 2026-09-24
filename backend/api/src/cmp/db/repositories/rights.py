@@ -531,8 +531,12 @@ async def derive_holder_candidates(
                  array_agg(DISTINCT e.export_uuid::text) AS exports
           FROM export_line el
           JOIN export_log e     ON e.export_id = el.export_id
-          JOIN project_site s   ON s.site_id = e.site_id
-          JOIN processor pr     ON pr.processor_id = s.processor_id
+          -- Where the line went: recorded on the line since 0032. Before it,
+          -- only a per-site export named its site; a project export (since
+          -- 0010) named none, and derived no holder at all.
+          LEFT JOIN project_site s ON s.site_id = e.site_id
+          JOIN processor pr     ON pr.processor_id =
+                                   COALESCE(el.destination_processor_id, s.processor_id)
           WHERE el.auth_user_id = %(u)s {by_export}
           GROUP BY pr.processor_id, pr.legal_name
         ),
@@ -863,9 +867,10 @@ async def holder_brief(
         f"""SELECT e.export_uuid, e.exported_at, e.export_type, p.project_name
            FROM export_line el
            JOIN export_log e ON e.export_id = el.export_id
-           JOIN project_site s ON s.site_id = e.site_id
+           LEFT JOIN project_site s ON s.site_id = e.site_id
            JOIN project p ON p.project_id = e.project_id
-           WHERE el.auth_user_id = %(u)s AND s.processor_id = %(p)s {by_export}
+           WHERE el.auth_user_id = %(u)s
+             AND COALESCE(el.destination_processor_id, s.processor_id) = %(p)s {by_export}
            ORDER BY e.exported_at""",
         params,
     )

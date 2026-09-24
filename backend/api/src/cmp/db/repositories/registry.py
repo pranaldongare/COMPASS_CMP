@@ -16,7 +16,7 @@ from cmp.infrastructure.dkms import seal
 # ------------------------------------------------------------------ processor
 PROCESSOR_COLUMNS = """
   p.processor_uuid, p.legal_name, p.type, p.contract_ref,
-  p.security_confirmed_at, p.status, p.is_in_house, p.created_at
+  p.security_confirmed_at, p.status, p.is_in_house, p.location_country, p.created_at
 """
 
 PROCESSOR_SORTS = ("created_at", "legal_name", "security_confirmed_at")
@@ -38,17 +38,18 @@ async def create_processor(
     contract_ref: str,
     security_confirmed_at: Any,
     is_in_house: bool = False,
+    location_country: str | None = None,
 ) -> Row:
     row = await fetch_one(
         conn,
         """
         INSERT INTO processor (legal_name, type, contract_ref, security_confirmed_at,
-                               is_in_house)
-        VALUES (%s, %s::processor_type, %s, %s, %s)
+                               is_in_house, location_country)
+        VALUES (%s, %s::processor_type, %s, %s, %s, %s)
         RETURNING processor_id, processor_uuid, legal_name, type, contract_ref,
-                  security_confirmed_at, status, is_in_house, created_at
+                  security_confirmed_at, status, is_in_house, location_country, created_at
         """,
-        (legal_name, type_, contract_ref, security_confirmed_at, is_in_house),
+        (legal_name, type_, contract_ref, security_confirmed_at, is_in_house, location_country),
     )
     assert row is not None
     return row
@@ -61,6 +62,7 @@ async def update_processor(
     legal_name: str | None,
     contract_ref: str | None,
     security_confirmed_at: Any,
+    location_country: str | None = None,
 ) -> Row:
     row = await fetch_one(
         conn,
@@ -68,12 +70,13 @@ async def update_processor(
         UPDATE processor
            SET legal_name            = COALESCE(%s, legal_name),
                contract_ref          = COALESCE(%s, contract_ref),
-               security_confirmed_at = COALESCE(%s, security_confirmed_at)
+               security_confirmed_at = COALESCE(%s, security_confirmed_at),
+               location_country      = COALESCE(%s, location_country)
          WHERE processor_id = %s
         RETURNING processor_id, processor_uuid, legal_name, type, contract_ref,
-                  security_confirmed_at, status, created_at
+                  security_confirmed_at, status, is_in_house, location_country, created_at
         """,
-        (legal_name, contract_ref, security_confirmed_at, processor_id),
+        (legal_name, contract_ref, security_confirmed_at, location_country, processor_id),
     )
     assert row is not None
     return row

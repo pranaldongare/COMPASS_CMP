@@ -10,7 +10,7 @@
 <title>Schema</title>
 <polygon fill="#f7fafc" stroke="none" points="-36,36 -36,-2331 1964.14,-2331 1964.14,36 -36,36"/>
 <text xml:space="preserve" text-anchor="start" x="8" y="-2265" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="30.00" fill="#142c44">COMPASS / RIGHTS</text>
-<text xml:space="preserve" text-anchor="start" x="8" y="-2249.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0031 / full module tables with outgoing references / source 416f0de</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-2249.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0032 / full module tables with outgoing references / source 5242eb6</text>
 <text xml:space="preserve" text-anchor="start" x="8" y="-2223.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">FK arrow: child column to referenced key &#160;&#160;| &#160;&#160;Solid = required FK; dashed = nullable FK; dotted = view dependency</text>
 <text xml:space="preserve" text-anchor="start" x="13.43" y="-2211.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">PK = primary key; FK = foreign key; UQ = member of unique constraint (possibly composite); ? = nullable column</text>
 <g id="clust1" class="cluster">
@@ -19,235 +19,226 @@
 <text xml:space="preserve" text-anchor="middle" x="46.22" y="-1633.6" font-family="Helvetica,sans-Serif" font-size="16.00" fill="#174e82">RIGHTS</text>
 </g>
 <!-- rights_request&#45;&gt;rights_request -->
-<g id="FK090" class="edge">
+<g id="FK093" class="edge">
 <title>rights_request:e&#45;&gt;rights_request:w</title>
-<g id="a_FK090"><a xlink:title="FK090 / rights_request_linked_request_id_fkey / rights_request(linked_request_id) to rights_request(request_id) / FOREIGN KEY (linked_request_id) REFERENCES rights_request(request_id)">
+<g id="a_FK093"><a xlink:title="FK093 / rights_request_linked_request_id_fkey / rights_request(linked_request_id) to rights_request(request_id) / FOREIGN KEY (linked_request_id) REFERENCES rights_request(request_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1154.16,-907.8C1246.91,-1128.93 1246.91,-1611.4 1083.04,-1611.4 922.85,-1611.4 919.25,-1592.29 1005.81,-1517.82"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1007.19,-1519.63 1010.65,-1513.68 1004.23,-1516.18 1007.19,-1519.63"/>
 </a>
 </g>
 </g>
 <!-- rights_request&#45;&gt;nomination -->
-<g id="FK091" class="edge">
+<g id="FK094" class="edge">
 <title>rights_request:e&#45;&gt;nomination:w</title>
-<g id="a_FK091"><a xlink:title="FK091 / rights_request_nomination_id_fkey / rights_request(nomination_id) to nomination(nomination_id) / FOREIGN KEY (nomination_id) REFERENCES nomination(nomination_id)">
+<g id="a_FK094"><a xlink:title="FK094 / rights_request_nomination_id_fkey / rights_request(nomination_id) to nomination(nomination_id) / FOREIGN KEY (nomination_id) REFERENCES nomination(nomination_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1155.16,-882.6C1155.16,-882.6 1359.21,-1103.01 1394.28,-1140.89"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1392.17,-1141.95 1398.25,-1145.18 1395.51,-1138.86 1392.17,-1141.95"/>
 </a>
 </g>
 </g>
 <!-- rights_request&#45;&gt;auth_user -->
-<g id="FK078" class="edge">
+<g id="FK081" class="edge">
 <title>rights_request:e&#45;&gt;auth_user:w</title>
-<g id="a_FK078"><a xlink:title="FK078 / rights_request_classified_by_fkey / rights_request(classified_by) to auth_user(id) / FOREIGN KEY (classified_by) REFERENCES auth_user(id)">
+<g id="a_FK081"><a xlink:title="FK081 / rights_request_classified_by_fkey / rights_request(classified_by) to auth_user(id) / FOREIGN KEY (classified_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1155.16,-983.4C1155.16,-983.4 1373.89,-1408 1373.89,-1408 1373.89,-1408 1701.02,-1440.39 1755.97,-1445.83"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1755.4,-1448.06 1762.1,-1446.44 1755.85,-1443.53 1755.4,-1448.06"/>
 </a>
 </g>
 </g>
 <!-- rights_request&#45;&gt;auth_user -->
-<g id="FK080" class="edge">
+<g id="FK083" class="edge">
 <title>rights_request:e&#45;&gt;auth_user:w</title>
-<g id="a_FK080"><a xlink:title="FK080 / rights_request_created_by_fkey / rights_request(created_by) to auth_user(id) / FOREIGN KEY (created_by) REFERENCES auth_user(id)">
+<g id="a_FK083"><a xlink:title="FK083 / rights_request_created_by_fkey / rights_request(created_by) to auth_user(id) / FOREIGN KEY (created_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1155.16,-454.2C1155.16,-454.2 1373.89,-1230 1373.89,-1230 1373.89,-1230 1667.52,-1300 1667.52,-1300 1667.52,-1300 1740.54,-1411.24 1759.37,-1439.92"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1757.37,-1441.02 1762.84,-1445.21 1761.18,-1438.53 1757.37,-1441.02"/>
 </a>
 </g>
 </g>
 <!-- rights_request&#45;&gt;auth_user -->
-<g id="FK092" class="edge">
+<g id="FK095" class="edge">
 <title>rights_request:e&#45;&gt;auth_user:w</title>
-<g id="a_FK092"><a xlink:title="FK092 / rights_request_responded_by_fkey / rights_request(responded_by) to auth_user(id) / FOREIGN KEY (responded_by) REFERENCES auth_user(id)">
+<g id="a_FK095"><a xlink:title="FK095 / rights_request_responded_by_fkey / rights_request(responded_by) to auth_user(id) / FOREIGN KEY (responded_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1155.16,-529.8C1155.16,-529.8 1373.89,-1288 1373.89,-1288 1373.89,-1288 1667.52,-1362 1667.52,-1362 1667.52,-1362 1736.67,-1422.79 1757.73,-1441.31"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1756.12,-1442.92 1762.5,-1445.5 1759.12,-1439.5 1756.12,-1442.92"/>
 </a>
 </g>
 </g>
 <!-- rights_request&#45;&gt;auth_user -->
-<g id="FK093" class="edge">
+<g id="FK096" class="edge">
 <title>rights_request:e&#45;&gt;auth_user:w</title>
-<g id="a_FK093"><a xlink:title="FK093 / rights_request_reviewer_user_id_fkey / rights_request(reviewer_user_id) to auth_user(id) / FOREIGN KEY (reviewer_user_id) REFERENCES auth_user(id)">
+<g id="a_FK096"><a xlink:title="FK096 / rights_request_reviewer_user_id_fkey / rights_request(reviewer_user_id) to auth_user(id) / FOREIGN KEY (reviewer_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1155.16,-731.4C1155.16,-731.4 1373.89,-1348 1373.89,-1348 1373.89,-1348 1667.52,-1405 1667.52,-1405 1667.52,-1405 1734.14,-1433.8 1756.52,-1443.47"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1755.36,-1445.45 1762.23,-1445.94 1757.16,-1441.27 1755.36,-1445.45"/>
 </a>
 </g>
 </g>
 <!-- rights_request&#45;&gt;auth_user -->
-<g id="FK094" class="edge">
+<g id="FK097" class="edge">
 <title>rights_request:e&#45;&gt;auth_user:w</title>
-<g id="a_FK094"><a xlink:title="FK094 / rights_request_subject_user_id_fkey / rights_request(subject_user_id) to auth_user(id) / FOREIGN KEY (subject_user_id) REFERENCES auth_user(id)">
+<g id="a_FK097"><a xlink:title="FK097 / rights_request_subject_user_id_fkey / rights_request(subject_user_id) to auth_user(id) / FOREIGN KEY (subject_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1155.16,-1311C1155.16,-1311 1373.89,-1532 1373.89,-1532 1373.89,-1532 1667.52,-1532 1667.52,-1532 1667.52,-1532 1736.67,-1470.64 1757.73,-1451.94"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1759.16,-1453.72 1762.51,-1447.71 1756.14,-1450.32 1759.16,-1453.72"/>
 </a>
 </g>
 </g>
 <!-- rights_request&#45;&gt;auth_user -->
-<g id="FK095" class="edge">
+<g id="FK098" class="edge">
 <title>rights_request:e&#45;&gt;auth_user:w</title>
-<g id="a_FK095"><a xlink:title="FK095 / rights_request_verified_by_fkey / rights_request(verified_by) to auth_user(id) / FOREIGN KEY (verified_by) REFERENCES auth_user(id)">
+<g id="a_FK098"><a xlink:title="FK098 / rights_request_verified_by_fkey / rights_request(verified_by) to auth_user(id) / FOREIGN KEY (verified_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1155.16,-1059C1155.16,-1059 1373.89,-1445 1373.89,-1445 1373.89,-1445 1699.62,-1446.34 1755.61,-1446.57"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1755.58,-1448.84 1762.09,-1446.59 1755.6,-1444.29 1755.58,-1448.84"/>
 </a>
 </g>
 </g>
 <!-- rights_request&#45;&gt;consent_artefact -->
-<g id="FK079" class="edge">
+<g id="FK082" class="edge">
 <title>rights_request:e&#45;&gt;consent_artefact:w</title>
-<g id="a_FK079"><a xlink:title="FK079 / rights_request_consent_id_fkey / rights_request(consent_id) to consent_artefact(consent_id) / FOREIGN KEY (consent_id) REFERENCES consent_artefact(consent_id)">
+<g id="a_FK082"><a xlink:title="FK082 / rights_request_consent_id_fkey / rights_request(consent_id) to consent_artefact(consent_id) / FOREIGN KEY (consent_id) REFERENCES consent_artefact(consent_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1155.16,-378.6C1155.16,-378.6 1389.3,-214.08 1431.37,-184.52"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1432.43,-186.56 1436.44,-180.96 1429.82,-182.83 1432.43,-186.56"/>
 </a>
 </g>
 </g>
 <!-- rights_request_holder&#45;&gt;rights_request -->
-<g id="FK083" class="edge">
+<g id="FK086" class="edge">
 <title>rights_request_holder:e&#45;&gt;rights_request:w</title>
-<g id="a_FK083"><a xlink:title="FK083 / rights_request_holder_request_id_fkey / rights_request_holder(request_id) to rights_request(request_id) / FOREIGN KEY (request_id) REFERENCES rights_request(request_id)">
+<g id="a_FK086"><a xlink:title="FK086 / rights_request_holder_request_id_fkey / rights_request_holder(request_id) to rights_request(request_id) / FOREIGN KEY (request_id) REFERENCES rights_request(request_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M790.03,-1481.8C790.03,-1481.8 963.71,-1506.02 1003.06,-1511.5"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1002.52,-1513.73 1009.27,-1512.37 1003.15,-1509.22 1002.52,-1513.73"/>
 </a>
 </g>
 </g>
 <!-- rights_request_holder&#45;&gt;auth_user -->
-<g id="FK081" class="edge">
+<g id="FK084" class="edge">
 <title>rights_request_holder:e&#45;&gt;auth_user:w</title>
-<g id="a_FK081"><a xlink:title="FK081 / rights_request_holder_confirmed_by_fkey / rights_request_holder(confirmed_by) to auth_user(id) / FOREIGN KEY (confirmed_by) REFERENCES auth_user(id)">
+<g id="a_FK084"><a xlink:title="FK084 / rights_request_holder_confirmed_by_fkey / rights_request_holder(confirmed_by) to auth_user(id) / FOREIGN KEY (confirmed_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M790.03,-1330.6C790.03,-1330.6 985.42,-1926 985.42,-1926 985.42,-1926 1373.89,-1936 1373.89,-1936 1373.89,-1936 1667.52,-1936 1667.52,-1936 1667.52,-1936 1750,-1516.55 1762.24,-1454.29"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1764.41,-1455.05 1763.43,-1448.23 1759.95,-1454.17 1764.41,-1455.05"/>
 </a>
 </g>
 </g>
 <!-- rights_request_holder&#45;&gt;auth_user -->
-<g id="FK085" class="edge">
+<g id="FK088" class="edge">
 <title>rights_request_holder:e&#45;&gt;auth_user:w</title>
-<g id="a_FK085"><a xlink:title="FK085 / rights_request_holder_responder_user_id_fkey / rights_request_holder(responder_user_id) to auth_user(id) / FOREIGN KEY (responder_user_id) REFERENCES auth_user(id)">
+<g id="a_FK088"><a xlink:title="FK088 / rights_request_holder_responder_user_id_fkey / rights_request_holder(responder_user_id) to auth_user(id) / FOREIGN KEY (responder_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M790.03,-977.8C790.03,-977.8 985.42,-1668 985.42,-1668 985.42,-1668 1283.89,-1668 1283.89,-1668 1283.89,-1668 1667.52,-1666 1667.52,-1666 1667.52,-1666 1743.85,-1491.97 1760.55,-1453.9"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1762.56,-1454.99 1763.09,-1448.12 1758.39,-1453.16 1762.56,-1454.99"/>
 </a>
 </g>
 </g>
 <!-- rights_request_holder&#45;&gt;processor -->
-<g id="FK082" class="edge">
+<g id="FK085" class="edge">
 <title>rights_request_holder:e&#45;&gt;processor:w</title>
-<g id="a_FK082"><a xlink:title="FK082 / rights_request_holder_processor_id_fkey / rights_request_holder(processor_id) to processor(processor_id) / FOREIGN KEY (processor_id) REFERENCES processor(processor_id)">
-<path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M790.03,-1456.6C790.03,-1456.6 985.42,-1926 985.42,-1926 985.42,-1926 1283.89,-1926 1283.89,-1926 1283.89,-1926 1414.17,-1869.34 1446.75,-1855.18"/>
-<polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1447.48,-1857.34 1452.53,-1852.66 1445.66,-1853.17 1447.48,-1857.34"/>
+<g id="a_FK085"><a xlink:title="FK085 / rights_request_holder_processor_id_fkey / rights_request_holder(processor_id) to processor(processor_id) / FOREIGN KEY (processor_id) REFERENCES processor(processor_id)">
+<path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M790.03,-1456.6C790.03,-1456.6 985.42,-1926 985.42,-1926 985.42,-1926 1283.89,-1926 1283.89,-1926 1283.89,-1926 1413.47,-1869.34 1445.86,-1855.18"/>
+<polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1446.56,-1857.36 1451.61,-1852.67 1444.74,-1853.19 1446.56,-1857.36"/>
 </a>
 </g>
 </g>
 <!-- rights_request_holder&#45;&gt;processor_respondent -->
-<g id="FK084" class="edge">
+<g id="FK087" class="edge">
 <title>rights_request_holder:e&#45;&gt;processor_respondent:w</title>
-<g id="a_FK084"><a xlink:title="FK084 / rights_request_holder_respondent_id_fkey / rights_request_holder(respondent_id) to processor_respondent(respondent_id) / FOREIGN KEY (respondent_id) REFERENCES processor_respondent(respondent_id)">
+<g id="a_FK087"><a xlink:title="FK087 / rights_request_holder_respondent_id_fkey / rights_request_holder(respondent_id) to processor_respondent(respondent_id) / FOREIGN KEY (respondent_id) REFERENCES processor_respondent(respondent_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M790.03,-1003C790.03,-1003 985.42,-1730 985.42,-1730 985.42,-1730 1053.62,-1812.86 1072.8,-1836.17"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1070.82,-1837.34 1076.7,-1840.91 1074.33,-1834.45 1070.82,-1837.34"/>
 </a>
 </g>
 </g>
 <!-- rights_request_item&#45;&gt;rights_request -->
-<g id="FK089" class="edge">
+<g id="FK092" class="edge">
 <title>rights_request_item:e&#45;&gt;rights_request:w</title>
-<g id="a_FK089"><a xlink:title="FK089 / rights_request_item_request_id_fkey / rights_request_item(request_id) to rights_request(request_id) / FOREIGN KEY (request_id) REFERENCES rights_request(request_id)">
+<g id="a_FK092"><a xlink:title="FK092 / rights_request_item_request_id_fkey / rights_request_item(request_id) to rights_request(request_id) / FOREIGN KEY (request_id) REFERENCES rights_request(request_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M430.94,-1118C430.94,-1118 631.89,-332 631.89,-332 631.89,-332 895.42,-332 895.42,-332 895.42,-332 1000.13,-1402.32 1010.15,-1504.75"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1007.86,-1504.7 1010.76,-1510.94 1012.39,-1504.25 1007.86,-1504.7"/>
 </a>
 </g>
 </g>
 <!-- rights_request_item&#45;&gt;rights_request_holder -->
-<g id="FK088" class="edge">
+<g id="FK091" class="edge">
 <title>rights_request_item:e&#45;&gt;rights_request_holder:w</title>
-<g id="a_FK088"><a xlink:title="FK088 / rights_request_item_holder_id_fkey / rights_request_item(holder_id) to rights_request_holder(holder_id) / FOREIGN KEY (holder_id) REFERENCES rights_request_holder(holder_id)">
+<g id="a_FK091"><a xlink:title="FK091 / rights_request_item_holder_id_fkey / rights_request_item(holder_id) to rights_request_holder(holder_id) / FOREIGN KEY (holder_id) REFERENCES rights_request_holder(holder_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M430.94,-1067.6C430.94,-1067.6 541.89,-1252 541.89,-1252 541.89,-1252 635.94,-1480.15 654.3,-1524.71"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="652.18,-1525.52 656.76,-1530.66 656.39,-1523.78 652.18,-1525.52"/>
 </a>
 </g>
 </g>
 <!-- rights_request_item&#45;&gt;asset_consent -->
-<g id="FK086" class="edge">
+<g id="FK089" class="edge">
 <title>rights_request_item:e&#45;&gt;asset_consent:w</title>
-<g id="a_FK086"><a xlink:title="FK086 / rights_request_item_asset_consent_id_fkey / rights_request_item(asset_consent_id) to asset_consent(asset_consent_id) / FOREIGN KEY (asset_consent_id) REFERENCES asset_consent(asset_consent_id)">
+<g id="a_FK089"><a xlink:title="FK089 / rights_request_item_asset_consent_id_fkey / rights_request_item(asset_consent_id) to asset_consent(asset_consent_id) / FOREIGN KEY (asset_consent_id) REFERENCES asset_consent(asset_consent_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M430.94,-1092.8C430.94,-1092.8 631.89,-325 631.89,-325 631.89,-325 1009.01,-217.58 1067.94,-200.79"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1068.41,-203.02 1074.04,-199.06 1067.16,-198.65 1068.41,-203.02"/>
 </a>
 </g>
 </g>
 <!-- rights_request_item&#45;&gt;auth_user -->
-<g id="FK087" class="edge">
+<g id="FK090" class="edge">
 <title>rights_request_item:e&#45;&gt;auth_user:w</title>
-<g id="a_FK087"><a xlink:title="FK087 / rights_request_item_decided_by_fkey / rights_request_item(decided_by) to auth_user(id) / FOREIGN KEY (decided_by) REFERENCES auth_user(id)">
+<g id="a_FK090"><a xlink:title="FK090 / rights_request_item_decided_by_fkey / rights_request_item(decided_by) to auth_user(id) / FOREIGN KEY (decided_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M430.94,-866C430.94,-866 541.89,-1252 541.89,-1252 541.89,-1252 631.89,-1616 631.89,-1616 631.89,-1616 985.42,-1949 985.42,-1949 985.42,-1949 1373.89,-1959 1373.89,-1959 1373.89,-1959 1667.52,-1959 1667.52,-1959 1667.52,-1959 1750.35,-1517.98 1762.32,-1454.24"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1764.48,-1455.04 1763.45,-1448.24 1760.01,-1454.2 1764.48,-1455.04"/>
 </a>
 </g>
 </g>
 <!-- rights_ticket_message&#45;&gt;rights_request_holder -->
-<g id="FK099" class="edge">
+<g id="FK102" class="edge">
 <title>rights_ticket_message:e&#45;&gt;rights_request_holder:w</title>
-<g id="a_FK099"><a xlink:title="FK099 / rights_ticket_message_holder_id_fkey / rights_ticket_message(holder_id) to rights_request_holder(holder_id) / FOREIGN KEY (holder_id) REFERENCES rights_request_holder(holder_id)">
+<g id="a_FK102"><a xlink:title="FK102 / rights_ticket_message_holder_id_fkey / rights_ticket_message(holder_id) to rights_request_holder(holder_id) / FOREIGN KEY (holder_id) REFERENCES rights_request_holder(holder_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M452.55,-1482C452.55,-1482 612.2,-1521.12 649.61,-1530.29"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="648.92,-1532.47 655.78,-1531.8 650,-1528.05 648.92,-1532.47"/>
 </a>
 </g>
 </g>
 <!-- rights_ticket_message&#45;&gt;auth_user -->
-<g id="FK098" class="edge">
+<g id="FK101" class="edge">
 <title>rights_ticket_message:e&#45;&gt;auth_user:w</title>
-<g id="a_FK098"><a xlink:title="FK098 / rights_ticket_message_author_user_id_fkey / rights_ticket_message(author_user_id) to auth_user(id) / FOREIGN KEY (author_user_id) REFERENCES auth_user(id)">
+<g id="a_FK101"><a xlink:title="FK101 / rights_ticket_message_author_user_id_fkey / rights_ticket_message(author_user_id) to auth_user(id) / FOREIGN KEY (author_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M452.55,-1456.8C452.55,-1456.8 631.89,-2104 631.89,-2104 631.89,-2104 1667.52,-2104 1667.52,-2104 1667.52,-2104 1751.75,-1528.61 1762.61,-1454.44"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1764.82,-1455.01 1763.51,-1448.25 1760.32,-1454.35 1764.82,-1455.01"/>
 </a>
 </g>
 </g>
 <!-- rights_response_file&#45;&gt;rights_request -->
-<g id="FK096" class="edge">
+<g id="FK099" class="edge">
 <title>rights_response_file:e&#45;&gt;rights_request:w</title>
-<g id="a_FK096"><a xlink:title="FK096 / rights_response_file_request_id_fkey / rights_response_file(request_id) to rights_request(request_id) / FOREIGN KEY (request_id) REFERENCES rights_request(request_id)">
+<g id="a_FK099"><a xlink:title="FK099 / rights_response_file_request_id_fkey / rights_response_file(request_id) to rights_request(request_id) / FOREIGN KEY (request_id) REFERENCES rights_request(request_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M784.38,-537.4C784.38,-537.4 895.42,-672 895.42,-672 895.42,-672 997.99,-1418.52 1009.81,-1504.55"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1007.55,-1504.82 1010.69,-1510.95 1012.06,-1504.2 1007.55,-1504.82"/>
 </a>
 </g>
 </g>
 <!-- rights_response_file&#45;&gt;auth_user -->
-<g id="FK097" class="edge">
+<g id="FK100" class="edge">
 <title>rights_response_file:e&#45;&gt;auth_user:w</title>
-<g id="a_FK097"><a xlink:title="FK097 / rights_response_file_uploaded_by_fkey / rights_response_file(uploaded_by) to auth_user(id) / FOREIGN KEY (uploaded_by) REFERENCES auth_user(id)">
+<g id="a_FK100"><a xlink:title="FK100 / rights_response_file_uploaded_by_fkey / rights_response_file(uploaded_by) to auth_user(id) / FOREIGN KEY (uploaded_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M784.38,-386.2C784.38,-386.2 895.42,-672 895.42,-672 895.42,-672 985.42,-1614 985.42,-1614 985.42,-1614 1283.89,-1614 1283.89,-1614 1283.89,-1614 1667.52,-1555 1667.52,-1555 1667.52,-1555 1738.59,-1474.94 1758.58,-1452.43"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1760.03,-1454.22 1762.65,-1447.85 1756.63,-1451.2 1760.03,-1454.22"/>
 </a>
 </g>
 </g>
 <!-- rights_item_execution&#45;&gt;rights_request_item -->
-<g id="FK077" class="edge">
+<g id="FK080" class="edge">
 <title>rights_item_execution:e&#45;&gt;rights_request_item:w</title>
-<g id="a_FK077"><a xlink:title="FK077 / rights_item_execution_item_id_fkey / rights_item_execution(item_id) to rights_request_item(item_id) / FOREIGN KEY (item_id) REFERENCES rights_request_item(item_id)">
+<g id="a_FK080"><a xlink:title="FK080 / rights_item_execution_item_id_fkey / rights_item_execution(item_id) to rights_request_item(item_id) / FOREIGN KEY (item_id) REFERENCES rights_request_item(item_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M148.45,-1324.2C148.45,-1324.2 293.51,-1200.62 325.24,-1173.58"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="326.59,-1175.43 330.06,-1169.48 323.64,-1171.96 326.59,-1175.43"/>
 </a>
 </g>
 </g>
 <!-- rights_item_execution&#45;&gt;auth_user -->
-<g id="FK076" class="edge">
+<g id="FK079" class="edge">
 <title>rights_item_execution:e&#45;&gt;auth_user:w</title>
-<g id="a_FK076"><a xlink:title="FK076 / rights_item_execution_attempted_by_fkey / rights_item_execution(attempted_by) to auth_user(id) / FOREIGN KEY (attempted_by) REFERENCES auth_user(id)">
+<g id="a_FK079"><a xlink:title="FK079 / rights_item_execution_attempted_by_fkey / rights_item_execution(attempted_by) to auth_user(id) / FOREIGN KEY (attempted_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M148.45,-1223.4C148.45,-1223.4 305.83,-1616 305.83,-1616 305.83,-1616 631.89,-2127 631.89,-2127 631.89,-2127 762.66,-2205 762.66,-2205 762.66,-2205 762.66,-2205 1135.65,-2205 1135.65,-2205 1667.52,-2127 1667.52,-2127 1667.52,-2127 1752.1,-1528.99 1762.67,-1454.24"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1764.86,-1455 1763.52,-1448.25 1760.36,-1454.37 1764.86,-1455"/>
 </a>
 </g>
 </g>
 <!-- legal_hold&#45;&gt;auth_user -->
-<g id="FK041" class="edge">
-<title>legal_hold:e&#45;&gt;auth_user:w</title>
-<g id="a_FK041"><a xlink:title="FK041 / legal_hold_placed_by_fkey / legal_hold(placed_by) to auth_user(id) / FOREIGN KEY (placed_by) REFERENCES auth_user(id)">
-<path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M1537.08,-404.2C1537.08,-404.2 1667.52,-614 1667.52,-614 1667.52,-614 1752.98,-1353.42 1762.83,-1438.63"/>
-<polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1760.56,-1438.75 1763.56,-1444.95 1765.08,-1438.23 1760.56,-1438.75"/>
-</a>
-</g>
-</g>
-<!-- legal_hold&#45;&gt;auth_user -->
 <g id="FK042" class="edge">
 <title>legal_hold:e&#45;&gt;auth_user:w</title>
-<g id="a_FK042"><a xlink:title="FK042 / legal_hold_released_by_fkey / legal_hold(released_by) to auth_user(id) / FOREIGN KEY (released_by) REFERENCES auth_user(id)">
-<path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1537.08,-353.8C1537.08,-353.8 1667.52,-614 1667.52,-614 1667.52,-614 1752.98,-1353.42 1762.83,-1438.63"/>
+<g id="a_FK042"><a xlink:title="FK042 / legal_hold_placed_by_fkey / legal_hold(placed_by) to auth_user(id) / FOREIGN KEY (placed_by) REFERENCES auth_user(id)">
+<path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M1537.08,-404.2C1537.08,-404.2 1667.52,-614 1667.52,-614 1667.52,-614 1752.98,-1353.42 1762.83,-1438.63"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1760.56,-1438.75 1763.56,-1444.95 1765.08,-1438.23 1760.56,-1438.75"/>
 </a>
 </g>
@@ -255,43 +246,52 @@
 <!-- legal_hold&#45;&gt;auth_user -->
 <g id="FK043" class="edge">
 <title>legal_hold:e&#45;&gt;auth_user:w</title>
-<g id="a_FK043"><a xlink:title="FK043 / legal_hold_subject_user_id_fkey / legal_hold(subject_user_id) to auth_user(id) / FOREIGN KEY (subject_user_id) REFERENCES auth_user(id)">
+<g id="a_FK043"><a xlink:title="FK043 / legal_hold_released_by_fkey / legal_hold(released_by) to auth_user(id) / FOREIGN KEY (released_by) REFERENCES auth_user(id)">
+<path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1537.08,-353.8C1537.08,-353.8 1667.52,-614 1667.52,-614 1667.52,-614 1752.98,-1353.42 1762.83,-1438.63"/>
+<polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1760.56,-1438.75 1763.56,-1444.95 1765.08,-1438.23 1760.56,-1438.75"/>
+</a>
+</g>
+</g>
+<!-- legal_hold&#45;&gt;auth_user -->
+<g id="FK044" class="edge">
+<title>legal_hold:e&#45;&gt;auth_user:w</title>
+<g id="a_FK044"><a xlink:title="FK044 / legal_hold_subject_user_id_fkey / legal_hold(subject_user_id) to auth_user(id) / FOREIGN KEY (subject_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1537.08,-454.6C1537.08,-454.6 1667.52,-614 1667.52,-614 1667.52,-614 1752.98,-1353.42 1762.83,-1438.63"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1760.56,-1438.75 1763.56,-1444.95 1765.08,-1438.23 1760.56,-1438.75"/>
 </a>
 </g>
 </g>
 <!-- legal_hold&#45;&gt;data_asset -->
-<g id="FK040" class="edge">
+<g id="FK041" class="edge">
 <title>legal_hold:e&#45;&gt;data_asset:w</title>
-<g id="a_FK040"><a xlink:title="FK040 / legal_hold_asset_id_fkey / legal_hold(asset_id) to data_asset(asset_id) / FOREIGN KEY (asset_id) REFERENCES data_asset(asset_id)">
+<g id="a_FK041"><a xlink:title="FK041 / legal_hold_asset_id_fkey / legal_hold(asset_id) to data_asset(asset_id) / FOREIGN KEY (asset_id) REFERENCES data_asset(asset_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1537.08,-479.8C1537.08,-479.8 1721.5,-268.56 1754.64,-230.61"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1756.05,-232.45 1758.61,-226.05 1752.62,-229.45 1756.05,-232.45"/>
 </a>
 </g>
 </g>
 <!-- nomination&#45;&gt;rights_request -->
-<g id="FK045" class="edge">
+<g id="FK046" class="edge">
 <title>nomination:e&#45;&gt;rights_request:w</title>
-<g id="a_FK045"><a xlink:title="FK045 / nomination_invoked_request_id_fkey / nomination(invoked_request_id) to rights_request(request_id) / FOREIGN KEY (invoked_request_id) REFERENCES rights_request(request_id)">
+<g id="a_FK046"><a xlink:title="FK046 / nomination_invoked_request_id_fkey / nomination(invoked_request_id) to rights_request(request_id) / FOREIGN KEY (invoked_request_id) REFERENCES rights_request(request_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1536.13,-743.2C1536.13,-743.2 1068.58,-1430.75 1017.44,-1505.95"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1015.63,-1504.57 1013.86,-1511.22 1019.39,-1507.13 1015.63,-1504.57"/>
 </a>
 </g>
 </g>
 <!-- nomination&#45;&gt;auth_user -->
-<g id="FK046" class="edge">
+<g id="FK047" class="edge">
 <title>nomination:e&#45;&gt;auth_user:w</title>
-<g id="a_FK046"><a xlink:title="FK046 / nomination_nominee_user_id_fkey / nomination(nominee_user_id) to auth_user(id) / FOREIGN KEY (nominee_user_id) REFERENCES auth_user(id)">
+<g id="a_FK047"><a xlink:title="FK047 / nomination_nominee_user_id_fkey / nomination(nominee_user_id) to auth_user(id) / FOREIGN KEY (nominee_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1538.13,-718C1538.13,-718 1737.26,-1361.04 1761.37,-1438.91"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1759.17,-1439.47 1763.26,-1445.01 1763.51,-1438.13 1759.17,-1439.47"/>
 </a>
 </g>
 </g>
 <!-- nomination&#45;&gt;auth_user -->
-<g id="FK047" class="edge">
+<g id="FK048" class="edge">
 <title>nomination:e&#45;&gt;auth_user:w</title>
-<g id="a_FK047"><a xlink:title="FK047 / nomination_principal_user_id_fkey / nomination(principal_user_id) to auth_user(id) / FOREIGN KEY (principal_user_id) REFERENCES auth_user(id)">
+<g id="a_FK048"><a xlink:title="FK048 / nomination_principal_user_id_fkey / nomination(principal_user_id) to auth_user(id) / FOREIGN KEY (principal_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M1538.13,-1096C1538.13,-1096 1667.52,-1238 1667.52,-1238 1667.52,-1238 1743.85,-1403.46 1760.55,-1439.66"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1758.27,-1440.14 1763.06,-1445.09 1762.4,-1438.23 1758.27,-1440.14"/>
 </a>
@@ -334,20 +334,20 @@
 </g>
 </g>
 <!-- processor_respondent&#45;&gt;auth_user -->
-<g id="FK059" class="edge">
+<g id="FK060" class="edge">
 <title>processor_respondent:e&#45;&gt;auth_user:w</title>
-<g id="a_FK059"><a xlink:title="FK059 / processor_respondent_user_id_fkey / processor_respondent(user_id) to auth_user(id) / FOREIGN KEY (user_id) REFERENCES auth_user(id)">
+<g id="a_FK060"><a xlink:title="FK060 / processor_respondent_user_id_fkey / processor_respondent(user_id) to auth_user(id) / FOREIGN KEY (user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1186.14,-1766.6C1186.14,-1766.6 1667.52,-1728 1667.52,-1728 1667.52,-1728 1745.88,-1498.88 1761.18,-1454.13"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1763.26,-1455.06 1763.22,-1448.18 1758.96,-1453.59 1763.26,-1455.06"/>
 </a>
 </g>
 </g>
 <!-- processor_respondent&#45;&gt;processor -->
-<g id="FK058" class="edge">
+<g id="FK059" class="edge">
 <title>processor_respondent:e&#45;&gt;processor:w</title>
-<g id="a_FK058"><a xlink:title="FK058 / processor_respondent_processor_id_fkey / processor_respondent(processor_id) to processor(processor_id) / FOREIGN KEY (processor_id) REFERENCES processor(processor_id)">
-<path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M1186.14,-1791.8C1186.14,-1791.8 1402.4,-1840.39 1446.33,-1850.26"/>
-<polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1445.59,-1852.43 1452.43,-1851.63 1446.59,-1847.99 1445.59,-1852.43"/>
+<g id="a_FK059"><a xlink:title="FK059 / processor_respondent_processor_id_fkey / processor_respondent(processor_id) to processor(processor_id) / FOREIGN KEY (processor_id) REFERENCES processor(processor_id)">
+<path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M1186.14,-1791.8C1186.14,-1791.8 1401.65,-1840.39 1445.43,-1850.26"/>
+<polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1444.67,-1852.42 1451.51,-1851.63 1445.67,-1847.98 1444.67,-1852.42"/>
 </a>
 </g>
 </g>
@@ -1561,24 +1561,24 @@
 <g id="table_processor" class="node">
 <title>processor</title>
 <g id="a_table_processor"><a xlink:href="../table_reference.md#processor" xlink:title="processor">
-<polygon fill="#ffffff" stroke="none" points="1413.89,-1813.2 1413.89,-1920.8 1603.51,-1920.8 1603.51,-1813.2 1413.89,-1813.2"/>
-<polygon fill="none" stroke="#174e82" points="1413.89,-1813.2 1413.89,-1920.8 1603.51,-1920.8 1603.51,-1813.2 1413.89,-1813.2"/>
-<polygon fill="#174e82" stroke="none" points="1414.89,-1888.6 1414.89,-1919.8 1602.51,-1919.8 1602.51,-1888.6 1414.89,-1888.6"/>
-<text xml:space="preserve" text-anchor="start" x="1420.89" y="-1900.4" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="white">processor</text>
-<polygon fill="#f1f5f9" stroke="none" points="1414.89,-1864.6 1414.89,-1888.6 1602.51,-1888.6 1602.51,-1864.6 1414.89,-1864.6"/>
-<text xml:space="preserve" text-anchor="start" x="1420.89" y="-1872.6" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">REGISTRY / 9 columns / 0 foreign keys</text>
-<polygon fill="#f8fafc" stroke="none" points="1414.89,-1839.4 1414.89,-1864.6 1455.06,-1864.6 1455.06,-1839.4 1414.89,-1839.4"/>
-<text xml:space="preserve" text-anchor="start" x="1420.89" y="-1848.4" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#174e82">PK</text>
-<polygon fill="#f8fafc" stroke="none" points="1455.06,-1839.4 1455.06,-1864.6 1556.94,-1864.6 1556.94,-1839.4 1455.06,-1839.4"/>
-<text xml:space="preserve" text-anchor="start" x="1461.06" y="-1847.6" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">processor_id</text>
-<polygon fill="#f8fafc" stroke="none" points="1556.94,-1839.4 1556.94,-1864.6 1602.51,-1864.6 1602.51,-1839.4 1556.94,-1839.4"/>
-<text xml:space="preserve" text-anchor="start" x="1562.94" y="-1848" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">int4</text>
-<polygon fill="#ffffff" stroke="none" points="1414.89,-1814.2 1414.89,-1839.4 1455.06,-1839.4 1455.06,-1814.2 1414.89,-1814.2"/>
-<text xml:space="preserve" text-anchor="start" x="1420.89" y="-1823.2" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">UQ</text>
-<polygon fill="#ffffff" stroke="none" points="1455.06,-1814.2 1455.06,-1839.4 1556.94,-1839.4 1556.94,-1814.2 1455.06,-1814.2"/>
-<text xml:space="preserve" text-anchor="start" x="1461.06" y="-1822.4" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">processor_uuid</text>
-<polygon fill="#ffffff" stroke="none" points="1556.94,-1814.2 1556.94,-1839.4 1602.51,-1839.4 1602.51,-1814.2 1556.94,-1814.2"/>
-<text xml:space="preserve" text-anchor="start" x="1562.94" y="-1822.8" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">uuid</text>
+<polygon fill="#ffffff" stroke="none" points="1411.11,-1813.2 1411.11,-1920.8 1606.29,-1920.8 1606.29,-1813.2 1411.11,-1813.2"/>
+<polygon fill="none" stroke="#174e82" points="1411.11,-1813.2 1411.11,-1920.8 1606.29,-1920.8 1606.29,-1813.2 1411.11,-1813.2"/>
+<polygon fill="#174e82" stroke="none" points="1412.11,-1888.6 1412.11,-1919.8 1605.29,-1919.8 1605.29,-1888.6 1412.11,-1888.6"/>
+<text xml:space="preserve" text-anchor="start" x="1418.11" y="-1900.4" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="white">processor</text>
+<polygon fill="#f1f5f9" stroke="none" points="1412.11,-1864.6 1412.11,-1888.6 1605.29,-1888.6 1605.29,-1864.6 1412.11,-1864.6"/>
+<text xml:space="preserve" text-anchor="start" x="1418.11" y="-1872.6" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">REGISTRY / 10 columns / 0 foreign keys</text>
+<polygon fill="#f8fafc" stroke="none" points="1412.11,-1839.4 1412.11,-1864.6 1454.13,-1864.6 1454.13,-1839.4 1412.11,-1839.4"/>
+<text xml:space="preserve" text-anchor="start" x="1418.11" y="-1848.4" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#174e82">PK</text>
+<polygon fill="#f8fafc" stroke="none" points="1454.13,-1839.4 1454.13,-1864.6 1557.87,-1864.6 1557.87,-1839.4 1454.13,-1839.4"/>
+<text xml:space="preserve" text-anchor="start" x="1460.13" y="-1847.6" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">processor_id</text>
+<polygon fill="#f8fafc" stroke="none" points="1557.87,-1839.4 1557.87,-1864.6 1605.29,-1864.6 1605.29,-1839.4 1557.87,-1839.4"/>
+<text xml:space="preserve" text-anchor="start" x="1563.87" y="-1848" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">int4</text>
+<polygon fill="#ffffff" stroke="none" points="1412.11,-1814.2 1412.11,-1839.4 1454.13,-1839.4 1454.13,-1814.2 1412.11,-1814.2"/>
+<text xml:space="preserve" text-anchor="start" x="1418.11" y="-1823.2" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">UQ</text>
+<polygon fill="#ffffff" stroke="none" points="1454.13,-1814.2 1454.13,-1839.4 1557.87,-1839.4 1557.87,-1814.2 1454.13,-1814.2"/>
+<text xml:space="preserve" text-anchor="start" x="1460.13" y="-1822.4" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">processor_uuid</text>
+<polygon fill="#ffffff" stroke="none" points="1557.87,-1814.2 1557.87,-1839.4 1605.29,-1839.4 1605.29,-1814.2 1557.87,-1814.2"/>
+<text xml:space="preserve" text-anchor="start" x="1563.87" y="-1822.8" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">uuid</text>
 </a>
 </g>
 </g>

@@ -46,6 +46,8 @@ from cmp.api.dependencies.common import (
     RequireStaff,
     RightsReader,
     RightsWriter,
+    TransferListReader,
+    TransferListWriter,
 )
 from cmp.api.dependencies.csrf import UNSAFE_METHODS, verify_csrf
 from cmp.api.dependencies.filters import reject_unknown_filters
@@ -80,6 +82,8 @@ __all__ = [
     "RequireStaff",
     "RightsReader",
     "RightsWriter",
+    "TransferListReader",
+    "TransferListWriter",
     "clear_session_cookies",
     "current_principal",
     "optional_principal",

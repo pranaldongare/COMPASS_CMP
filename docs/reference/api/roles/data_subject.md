@@ -24,6 +24,7 @@ Navigation returned after sign-in: `consents`, `requests`, `notifications`, `pro
 | `processor` | No | No | `none` | Denied |
 | `project` | No | No | `none` | Denied |
 | `purpose` | No | No | `none` | Denied |
+| `restricted_country` | No | No | `none` | Denied |
 | `rights_request` | No | No | `none` | Denied |
 | `site` | No | No | `none` | Denied |
 | `ticket` | No | No | `none` | Denied |

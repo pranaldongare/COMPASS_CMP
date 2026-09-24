@@ -1,6 +1,6 @@
 # COMPASS complete database schema
 
-Generated from the catalogue of a scratch database built by replaying migrations **0001 → 0031**, on 2026-09-24. Rebuild it with `python3 docs/tools/generate-schema-docs.py --database <db>`; nothing here is maintained by hand.
+Generated from the catalogue of a scratch database built by replaying migrations **0001 → 0032**, on 2026-09-24. Rebuild it with `python3 docs/tools/generate-schema-docs.py --database <db>`; nothing here is maintained by hand.
 
 ## Open the diagrams
 
@@ -31,26 +31,28 @@ Module diagrams include full local tables and their outgoing foreign keys. Refer
 
 | Object | Count |
 | --- | --- |
-| Application Tables | 34 |
+| Application Tables | 35 |
 | Metadata Tables | 1 |
 | Views | 1 |
-| Table Columns | 444 |
-| Foreign Keys | 99 |
+| Table Columns | 456 |
+| Foreign Keys | 102 |
 | Enums | 39 |
-| Triggers | 29 |
-| Checks | 46 |
+| Triggers | 30 |
+| Checks | 50 |
 
-The Alembic `alembic_version` table is included separately as migration metadata. Its one column and the view's derived columns are additional to the 444 application-table columns; the inventory above comes from PostgreSQL's catalogues after replaying the full migration chain.
+The Alembic `alembic_version` table is included separately as migration metadata. Its one column and the view's derived columns are additional to the 456 application-table columns; the inventory above comes from PostgreSQL's catalogues after replaying the full migration chain.
 
 Since **0027–0030** the personal columns are `text` rather than `varchar(n)` - ciphertext is longer than the plaintext it replaces - and each column the platform looks rows up by carries a `*_hash` column beside it holding `HMAC-SHA256(normalised value, BLIND_INDEX_KEY)`. Three name columns additionally carry `*_ngrams text[]` with a GIN index: the hashed three-character runs that let staff search by part of a name without the name being readable. `auth_user.minor_until` is the one date kept in the clear, for the section 9 test. What each column holds and why is in [docs/dkms/](../../dkms/README.md).
 
 **0031** (S2-03) adds the record of carrying an erasure out: `rights_item_execution`, one append-only row per attempt at each store that holds an item, and `rights_request_item.executed_at`; and `legal_hold`, which stops erasure of an asset or a person until it is released - placed once and released once, by trigger, with a sealed reason.
 
+**0032** (S2-04) adds where data goes: `processor.location_country` (ISO 3166-1 alpha-2), `restricted_country` - the Government's s.16 list, kept as data, listed once and lifted once by trigger, one active listing per country - and on each `export_line` the destination processor and its country, with the export's `transfer_basis`.
+
 ## Reading relationships and keys
 
 - Arrow direction is **referencing child column → referenced parent key**. A solid line means all FK columns are NOT NULL; a dashed line means at least one is nullable. A dotted green line is a view dependency, not an FK.
 - `PK` = primary key; `FK` = foreign key; `UQ` = member of a declared unique constraint, which can be composite; `?` = nullable column. Not every UQ-marked column is unique on its own. Unique expression/partial indexes are listed in the column reference and SQL.
-- Repeated arrows between tables represent distinct foreign-key constraints, for example created-by versus approved-by. The full SVG includes all 99 constraints, including circular and self-referencing ones.
+- Repeated arrows between tables represent distinct foreign-key constraints, for example created-by versus approved-by. The full SVG includes all 102 constraints, including circular and self-referencing ones.
 - Types are displayed compactly (`int4`, `int8`, `varchar`, `timestamptz`, `bool`); the exact PostgreSQL types are in the column reference. View nullability is derived and is not asserted by the diagram.
 - Arrow styles express foreign-key nullability, not universal one-to-many cardinality. Composite uniqueness, partial indexes and trigger rules must also be considered; these are retained in the supporting SQL/reference.
 
@@ -58,8 +60,8 @@ Since **0027–0030** the personal columns are `text` rather than `varchar(n)` -
 
 - [Catalog inventory JSON](schema_inventory.json) includes tables, columns, constraints, indexes, enum values, views, dependencies, triggers, sequences and application functions.
 - [Schema-only SQL](schema.sql) is PostgreSQL’s schema dump after replaying the migrations, including functions and triggers. It contains no application data or passwords. Owner and privilege statements are omitted; use the original migration grant rules for deployment permissions.
-- The [Graphviz sources](source/complete_schema.dot) are written by the generator, not by hand. Render with `dot -Tsvg source/complete_schema.dot -o complete_schema.svg`, or with `@viz-js/viz` where Graphviz is not installed; `generate-schema-docs.py` renders them itself when `dot` is on the path. The 0031 diagrams were rendered with `@viz-js/viz`, which embeds the same Graphviz.
+- The [Graphviz sources](source/complete_schema.dot) are written by the generator, not by hand. Render with `dot -Tsvg source/complete_schema.dot -o complete_schema.svg`, or with `@viz-js/viz` where Graphviz is not installed; `generate-schema-docs.py` renders them itself when `dot` is on the path. The 0031 and 0032 diagrams were rendered with `@viz-js/viz`, which embeds the same Graphviz.
 
-The schema was reconstructed in an isolated, disposable PostgreSQL 16 database from all 31 repository `upgrade()` functions. No existing application database was migrated or queried for user data. This is the repository’s migration-head schema, not a claim that every deployment has applied that revision. Empty-data replay validates DDL shape; it does not exercise migrations’ data-dependent backfill/guard branches on production data.
+The schema was reconstructed in an isolated, disposable PostgreSQL 16 database from all 32 repository `upgrade()` functions. No existing application database was migrated or queried for user data. This is the repository’s migration-head schema, not a claim that every deployment has applied that revision. Empty-data replay validates DDL shape; it does not exercise migrations’ data-dependent backfill/guard branches on production data.
 
 Redis stores sessions, OTP/MFA codes, rate counters, caches and Celery queues/results; those are not relational PostgreSQL tables. Uploaded documents/media are stored outside PostgreSQL, with references/hashes held in the tables. Generic audit entity IDs, array membership and JSON references are not invented as foreign-key constraints in this diagram.

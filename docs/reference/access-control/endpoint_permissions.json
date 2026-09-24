@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 249,
-  "registered_business_and_system_operations": 252,
+  "documented_operations": 252,
+  "registered_business_and_system_operations": 255,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -2180,7 +2180,8 @@
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.",
-        "Source consent rows for a new export are selected using the caller’s site scope."
+        "Source consent rows for a new export are selected using the caller’s site scope.",
+        "Each row's destination - the processor running its site - is checked under s.16 first (S2-04): an unknown location, a restricted country, or a granted purpose not permitted cross-border refuses the whole export with 422 transfer_refused, recorded in its own transaction."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/exchange.py#L174",
@@ -9435,6 +9436,115 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/erasure.py"
       ]
+    },
+    {
+      "module": "cross-border transfers",
+      "method": "GET",
+      "path": "/restricted-countries",
+      "summary": "The restricted list",
+      "function": "list_restrictions",
+      "operation_id": "list_restrictions_restricted_countries_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "TransferListReader",
+      "resolved_gate": "RequireResource(restricted_country)",
+      "route_roles": [
+        "admin",
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "restricted_country",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The Government's s.16 restricted-country list (resource `restricted_country`, S2-04): the DPO keeps it, the administrator reads it. Data, not code - a country, the notification that lists it, lifted once. Every export is checked against it."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/transfers.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/exchange/transfer.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "cross-border transfers",
+      "method": "POST",
+      "path": "/restricted-countries",
+      "summary": "Restrict transfers to a country",
+      "function": "restrict",
+      "operation_id": "restrict_restricted_countries_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "TransferListWriter",
+      "resolved_gate": "RequireResource(restricted_country, write=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "restricted_country",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The Government's s.16 restricted-country list (resource `restricted_country`, S2-04): the DPO keeps it, the administrator reads it. Data, not code - a country, the notification that lists it, lifted once. Every export is checked against it."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/transfers.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/exchange/transfer.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "cross-border transfers",
+      "method": "POST",
+      "path": "/restricted-countries/{country_uuid}/lift",
+      "summary": "Lift a restriction",
+      "function": "lift",
+      "operation_id": "lift_restricted_countries__country_uuid__lift_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "TransferListWriter",
+      "resolved_gate": "RequireResource(restricted_country, write=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "restricted_country",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The Government's s.16 restricted-country list (resource `restricted_country`, S2-04): the DPO keeps it, the administrator reads it. Data, not code - a country, the notification that lists it, lifted once. Every export is checked against it."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/transfers.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/exchange/transfer.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
     }
   ],
   "amended": [
@@ -9452,6 +9562,11 @@
       "on": "2026-09-24",
       "commit": "S2-03",
       "note": "Four operations added with S2-03: GET/POST /legal-holds, POST /legal-holds/{hold_uuid}/release (resource legal_hold, DPO only) and POST /requests/{request_uuid}/scope/{item_uuid}/execute. Evidence links for these point at HEAD."
+    },
+    {
+      "on": "2026-09-24",
+      "commit": "S2-04",
+      "note": "Three operations added with S2-04: GET/POST /restricted-countries and POST /restricted-countries/{country_uuid}/lift (resource restricted_country: DPO writes, Admin reads). The project export gains the s.16 check. Evidence links for these point at HEAD."
     }
   ]
 }

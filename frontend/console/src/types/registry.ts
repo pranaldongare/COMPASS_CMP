@@ -64,8 +64,22 @@ export interface Processor {
    *  sources and an RCO. Separate from `type`, which says what kind of thing a
    *  processor is and not whose it is — a lab can be either. */
   is_in_house: boolean;
+  /** Where it is, ISO 3166-1 alpha-2 (S2-04). Null until recorded, and an
+   *  export to it is refused until it is. */
+  location_country: string | null;
   created_at: Timestamp;
   sites?: number;
+}
+
+/** A country the Government has restricted transfers to under s.16 (S2-04). */
+export interface RestrictedCountry {
+  country_uuid: Uuid;
+  country_code: string;
+  notification_ref: string;
+  listed_at: Timestamp;
+  listed_by_name: string | null;
+  lifted_at: Timestamp | null;
+  lifted_by_name: string | null;
 }
 
 export interface DataSource {

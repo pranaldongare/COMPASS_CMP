@@ -1,6 +1,6 @@
 {
-  "commit": "416f0de8edca349b0d8ed6c8c8d63cd985c68113",
-  "migration_head": "0031",
+  "commit": "5242eb67ce866f98a42575f1e5a28001a4744e98",
+  "migration_head": "0032",
   "migrations": [
     {
       "revision": "0001",
@@ -125,6 +125,10 @@
     {
       "revision": "0031",
       "source": "backend/api/migrations/versions/0031_erasure_execution.py"
+    },
+    {
+      "revision": "0032",
+      "source": "backend/api/migrations/versions/0032_cross_border_transfer.py"
     }
   ],
   "postgres_version": "16.15",
@@ -278,6 +282,11 @@
       "name": "purpose",
       "kind": "r",
       "comment": null
+    },
+    {
+      "name": "restricted_country",
+      "kind": "r",
+      "comment": "Countries the Government has notified under s.16 - data, maintained by the Privacy Office"
     },
     {
       "name": "rights_item_execution",
@@ -1419,6 +1428,24 @@
       "comment": null
     },
     {
+      "table_name": "export_line",
+      "name": "destination_processor_id",
+      "position": 5,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "export_line",
+      "name": "destination_country",
+      "position": 6,
+      "type": "character(2)",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
       "table_name": "export_log",
       "name": "export_id",
       "position": 1,
@@ -1507,6 +1534,15 @@
       "not_null": false,
       "default_value": null,
       "comment": "Storage reference of the CSV exactly as generated; NULL for exports that predate 0023"
+    },
+    {
+      "table_name": "export_log",
+      "name": "transfer_basis",
+      "position": 11,
+      "type": "jsonb",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Each destination of the export, its country, and the ground the transfer rested on (S2-04)"
     },
     {
       "table_name": "import_batch",
@@ -2454,6 +2490,15 @@
       "comment": "Whether this is the organisation collecting for itself. It drives routing: a project collected by a third party goes to a DCO Admin to be assigned, one collected in-house goes back to the R&D owner to assign an RCO. Separate from processor_type, which says what kind of thing a processor is (lab, tool) and not whose it is - a lab can be either."
     },
     {
+      "table_name": "processor",
+      "name": "location_country",
+      "position": 10,
+      "type": "character(2)",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Where the processor is, ISO 3166-1 alpha-2. Unknown is refused at export (S2-04)"
+    },
+    {
       "table_name": "processor_respondent",
       "name": "respondent_id",
       "position": 1,
@@ -3171,6 +3216,78 @@
       "type": "timestamp with time zone",
       "not_null": true,
       "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "country_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('restricted_country_country_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "country_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "country_code",
+      "position": 3,
+      "type": "character(2)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "notification_ref",
+      "position": 4,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "listed_by",
+      "position": 5,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "listed_at",
+      "position": 6,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "lifted_by",
+      "position": 7,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "lifted_at",
+      "position": 8,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
       "comment": null
     },
     {
@@ -5528,6 +5645,23 @@
     },
     {
       "table_name": "export_line",
+      "name": "export_line_destination_processor_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (destination_processor_id) REFERENCES processor(processor_id)",
+      "columns": [
+        "destination_processor_id"
+      ],
+      "referenced_table": "processor",
+      "referenced_columns": [
+        "processor_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "export_line",
       "name": "export_line_export_id_fkey",
       "kind": "f",
       "definition": "FOREIGN KEY (export_id) REFERENCES export_log(export_id)",
@@ -6465,6 +6599,21 @@
     },
     {
       "table_name": "processor",
+      "name": "processor_location_is_iso",
+      "kind": "c",
+      "definition": "CHECK (((location_country IS NULL) OR (location_country ~ '^[A-Z]{2}$'::text)))",
+      "columns": [
+        "location_country"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "processor",
       "name": "processor_pkey",
       "kind": "p",
       "definition": "PRIMARY KEY (processor_id)",
@@ -7117,6 +7266,116 @@
       "columns": [
         "lawful_basis",
         "s7_clause"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "restricted_country_country_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (country_uuid)",
+      "columns": [
+        "country_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "restricted_country_is_iso",
+      "kind": "c",
+      "definition": "CHECK ((country_code ~ '^[A-Z]{2}$'::text))",
+      "columns": [
+        "country_code"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "restricted_country_lift_attributed",
+      "kind": "c",
+      "definition": "CHECK (((lifted_at IS NULL) = (lifted_by IS NULL)))",
+      "columns": [
+        "lifted_at",
+        "lifted_by"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "restricted_country_lifted_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (lifted_by) REFERENCES auth_user(id)",
+      "columns": [
+        "lifted_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "restricted_country_listed_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (listed_by) REFERENCES auth_user(id)",
+      "columns": [
+        "listed_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "restricted_country_not_india",
+      "kind": "c",
+      "definition": "CHECK ((country_code <> 'IN'::bpchar))",
+      "columns": [
+        "country_code"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "restricted_country_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (country_id)",
+      "columns": [
+        "country_id"
       ],
       "referenced_table": null,
       "referenced_columns": [],
@@ -8291,6 +8550,11 @@
     },
     {
       "table_name": "export_line",
+      "name": "idx_export_line_destination",
+      "definition": "CREATE INDEX idx_export_line_destination ON public.export_line USING btree (destination_processor_id)"
+    },
+    {
+      "table_name": "export_line",
       "name": "idx_export_line_export",
       "definition": "CREATE INDEX idx_export_line_export ON public.export_line USING btree (export_id)"
     },
@@ -8623,6 +8887,21 @@
       "table_name": "purpose",
       "name": "purpose_purpose_uuid_key",
       "definition": "CREATE UNIQUE INDEX purpose_purpose_uuid_key ON public.purpose USING btree (purpose_uuid)"
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "restricted_country_country_uuid_key",
+      "definition": "CREATE UNIQUE INDEX restricted_country_country_uuid_key ON public.restricted_country USING btree (country_uuid)"
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "restricted_country_pkey",
+      "definition": "CREATE UNIQUE INDEX restricted_country_pkey ON public.restricted_country USING btree (country_id)"
+    },
+    {
+      "table_name": "restricted_country",
+      "name": "uq_restricted_country_active",
+      "definition": "CREATE UNIQUE INDEX uq_restricted_country_active ON public.restricted_country USING btree (country_code) WHERE (lifted_at IS NULL)"
     },
     {
       "table_name": "rights_item_execution",
@@ -9252,6 +9531,11 @@
       "definition": "CREATE TRIGGER trg_purpose_touch BEFORE UPDATE ON public.purpose FOR EACH ROW EXECUTE FUNCTION cmp_touch_updated_at()"
     },
     {
+      "table_name": "restricted_country",
+      "name": "trg_restricted_country_lift_only",
+      "definition": "CREATE TRIGGER trg_restricted_country_lift_only BEFORE DELETE OR UPDATE ON public.restricted_country FOR EACH ROW EXECUTE FUNCTION cmp_restricted_country_lift_only()"
+    },
+    {
       "table_name": "rights_item_execution",
       "name": "trg_item_execution_append_only",
       "definition": "CREATE TRIGGER trg_item_execution_append_only BEFORE DELETE OR UPDATE ON public.rights_item_execution FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
@@ -9365,6 +9649,9 @@
       "name": "purpose_purpose_id_seq"
     },
     {
+      "name": "restricted_country_country_id_seq"
+    },
+    {
       "name": "rights_item_execution_execution_id_seq"
     },
     {
@@ -9439,6 +9726,9 @@
       "name": "cmp_primary_site_id"
     },
     {
+      "name": "cmp_restricted_country_lift_only"
+    },
+    {
       "name": "cmp_site_owner_changed"
     },
     {
@@ -9452,13 +9742,13 @@
     }
   ],
   "counts": {
-    "application_tables": 34,
+    "application_tables": 35,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 444,
-    "foreign_keys": 99,
+    "table_columns": 456,
+    "foreign_keys": 102,
     "enums": 39,
-    "triggers": 29,
-    "checks": 46
+    "triggers": 30,
+    "checks": 50
   }
 }

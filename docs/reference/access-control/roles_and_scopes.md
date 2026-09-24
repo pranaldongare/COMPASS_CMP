@@ -41,6 +41,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | me | NO | NO | NO | NO | NO | NO | RW / OWN |
 | rights_request | RW / ALL | RW / SCOPED | NO | NO | NO | NO | NO |
 | legal_hold | RW / ALL | NO | NO | NO | NO | NO | NO |
+| restricted_country | RW / ALL | R / ALL | NO | NO | NO | NO | NO |
 | ticket | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | NO |
 
 ## What scopes mean in this code

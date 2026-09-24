@@ -36,6 +36,7 @@ ROUTERS: tuple[APIRouter, ...] = (
     v1.notices_router,
     v1.consents_router,
     v1.exchange_router,
+    v1.transfers_router,
     # Oversight.
     v1.rights_router,
     v1.legal_holds_router,

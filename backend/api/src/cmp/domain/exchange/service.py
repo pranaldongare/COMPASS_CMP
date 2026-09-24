@@ -43,6 +43,7 @@ from cmp.db.sql import Conn
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.consent.service import link_path as consent_link_path
+from cmp.domain.exchange import transfer
 from cmp.infrastructure.dkms import unseal_many
 
 log = get_logger("cmp.exchange")
@@ -71,7 +72,9 @@ async def generate(
     """
     project = await project_repo.require(conn, project_uuid, role=role, user_id=actor_id)
 
-    payload, rows, lines = await _project_export(conn, project, role=role, user_id=actor_id)
+    # Refused before anything is written: a transfer the s.16 check fails is
+    # not a disclosure the record should hold (S2-04, `transfer`).
+    payload, rows, lines, basis = await _project_export(conn, project, role=role, user_id=actor_id)
     raw = payload.encode("utf-8")
     digest = file_hash(raw)
     # Keep the bytes. The disclosure record is what left the building, and a
@@ -89,6 +92,7 @@ async def generate(
         row_count=rows,
         file_hash=digest,
         file_ref=file_ref,
+        transfer_basis=basis,
     )
     written = await repo.add_export_lines(conn, export["export_id"], lines)
 
@@ -103,6 +107,10 @@ async def generate(
             "row_count": rows,
             "lines": written,
             "sha256": digest,
+            "destinations": [
+                {"country": d["country"], "basis": d["basis"], "rows": d["rows"]}
+                for d in basis["destinations"]
+            ],
         },
     )
     log.info("export.generated", project=project_uuid, rows=rows, lines=written)
@@ -238,23 +246,33 @@ def _write_csv(project: dict[str, Any], consents: list[dict[str, Any]]) -> str:
 
 async def _project_export(
     conn: Conn, project: dict[str, Any], *, role: str, user_id: int
-) -> tuple[str, int, list[tuple[int, int]]]:
-    """The CSV, and one `export_line` per person disclosed.
+) -> tuple[str, int, list[tuple[int, int, int | None, str | None]], dict[str, Any]]:
+    """The CSV, one `export_line` per person disclosed, and the transfer decision.
 
-    The line rows are the disclosure record - who was named in what, and when.
-    Withdrawn people are in it too: their details left the building in this
-    file, and a record that omitted them would understate what was disclosed.
+    The line rows are the disclosure record - who was named in what, when, and
+    where it went. Withdrawn people are in it too: their details left the
+    building in this file, and a record that omitted them would understate what
+    was disclosed.
     """
     consents = await repo.project_consents(
         conn, project_id=project["project_id"], role=role, user_id=user_id
     )
+    basis = await transfer.assess(conn, consents)
     # The file is for whoever collects, and a name they cannot read is not a
     # name. The person's columns are opened here, on the way into the CSV; the
     # rows in the database stay sealed.
     consents = await unseal_many("auth_user", consents)
     payload = _write_csv(project, consents)
-    lines = [(c["auth_user_id"], c["consent_id"]) for c in consents]
-    return payload, len(consents), lines
+    lines = [
+        (
+            c["auth_user_id"],
+            c["consent_id"],
+            c.get("destination_processor_id"),
+            c.get("destination_country"),
+        )
+        for c in consents
+    ]
+    return payload, len(consents), lines, basis
 
 
 async def render(conn: Conn, export: dict[str, Any]) -> tuple[str, str, str]:

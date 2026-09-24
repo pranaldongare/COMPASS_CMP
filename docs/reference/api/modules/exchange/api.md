@@ -74,6 +74,7 @@ No request body.
       "site_uuid": "…",
       "site_label": "…",
       "exported_by_name": "…",
+      "transfer_basis": "…",
       "project_uuid": "00000000-0000-4000-8000-000000000000",
       "project_name": "string"
     }
@@ -218,7 +219,8 @@ No request body.
     "line_count": 1,
     "site_uuid": "00000000-0000-4000-8000-000000000000",
     "site_label": "string",
-    "exported_by_name": "string"
+    "exported_by_name": "string",
+    "transfer_basis": {}
   }
 ]
 ```
@@ -260,6 +262,11 @@ Every person named writes an `export_line`. That is the disclosure record,
 and it is why generating and downloading are separate: re-downloading must
 not claim a second disclosure.
 
+Each row's destination is checked under s.16 first (S2-04). A refusal rolls
+back everything the export would have written, so it is recorded in a
+transaction of its own before the 422 goes back - a refused transfer is
+evidence too.
+
 ### Validation
 
 | Parameter | Location | Required | Type | Constraints | Description |
@@ -289,7 +296,8 @@ No request body.
   "line_count": 1,
   "site_uuid": "00000000-0000-4000-8000-000000000000",
   "site_label": "string",
-  "exported_by_name": "string"
+  "exported_by_name": "string",
+  "transfer_basis": {}
 }
 ```
 
@@ -348,7 +356,8 @@ No request body.
   "line_count": 1,
   "site_uuid": "00000000-0000-4000-8000-000000000000",
   "site_label": "string",
-  "exported_by_name": "string"
+  "exported_by_name": "string",
+  "transfer_basis": {}
 }
 ```
 
@@ -1204,6 +1213,7 @@ key has no business on the wire.
 | `site_uuid` | `string` or `null` | No | format: `uuid` | — |
 | `site_label` | `string` or `null` | No | — | — |
 | `exported_by_name` | `string` or `null` | No | — | — |
+| `transfer_basis` | `object` or `null` | No | — | — |
 
 <a id="schema-httpvalidationerror"></a>
 #### `HTTPValidationError`
@@ -1297,5 +1307,6 @@ key has no business on the wire.
 | `site_uuid` | `string` or `null` | No | format: `uuid` | — |
 | `site_label` | `string` or `null` | No | — | — |
 | `exported_by_name` | `string` or `null` | No | — | — |
+| `transfer_basis` | `object` or `null` | No | — | — |
 | `project_uuid` | `string` | Yes | format: `uuid` | — |
 | `project_name` | `string` | Yes | — | — |

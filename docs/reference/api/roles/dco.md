@@ -24,6 +24,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `sites`, `sources`, 
 | `processor` | Yes | No | `all` | All rows |
 | `project` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `purpose` | Yes | No | `all` | All rows |
+| `restricted_country` | No | No | `none` | Denied |
 | `rights_request` | No | No | `none` | Denied |
 | `site` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `ticket` | Yes | Yes | `own` | Own or addressed rows |

@@ -66,3 +66,64 @@ async def test_the_export_opened_her_columns_for_the_file(
     )
     text = csv.text
     assert world.principal_email in text and "SE::" not in text
+
+
+async def test_an_export_to_a_restricted_country_is_refused(
+    world: World, http: httpx.AsyncClient
+) -> None:
+    """S2-04 over HTTP: the list is data the DPO keeps, a processor says where it
+    is, and an export whose rows would go to a restricted country is refused -
+    then goes once the processor is back in India and the restriction lifted.
+
+    Idempotent across runs on the same database: a run that died with XZ still
+    listed finds it listed and carries on."""
+    listed = await call(
+        http,
+        "POST",
+        "/restricted-countries",
+        template="/restricted-countries",
+        session=world.dpo,
+        expect=(201, 409),
+        json={"country_code": "xz", "notification_ref": "G.S.R. 000(E) - test"},
+    )
+    current = await call(
+        http, "GET", "/restricted-countries", template="/restricted-countries", session=world.dpo
+    )
+    [xz] = [r for r in current.json() if r["country_code"] == "XZ"]
+    assert listed.status_code == 409 or listed.json()["country_code"] == "XZ"
+
+    moved = await call(
+        http,
+        "PUT",
+        f"/processors/{world.processor_uuid}",
+        template="/processors/{processor_uuid}",
+        session=world.dpo,
+        json={"location_country": "XZ"},
+    )
+    assert moved.json()["location_country"] == "XZ"
+    refused = await call(
+        http,
+        "POST",
+        f"/projects/{world.project_uuid}/exports",
+        template="/projects/{project_uuid}/exports",
+        session=world.dco,
+        expect=(422,),
+    )
+    body = refused.json()["error"]
+    assert body["code"] == "transfer_refused"
+
+    await call(
+        http,
+        "PUT",
+        f"/processors/{world.processor_uuid}",
+        template="/processors/{processor_uuid}",
+        session=world.dpo,
+        json={"location_country": "IN"},
+    )
+    await call(
+        http,
+        "POST",
+        f"/restricted-countries/{xz['country_uuid']}/lift",
+        template="/restricted-countries/{country_uuid}/lift",
+        session=world.dpo,
+    )

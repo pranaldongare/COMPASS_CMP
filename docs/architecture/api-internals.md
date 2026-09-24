@@ -1,7 +1,7 @@
 # Architecture overview
 
-A layered FastAPI service over PostgreSQL 16 with **no ORM**, serving 249
-endpoints across 34 tables. The repository-wide picture, including the two
+A layered FastAPI service over PostgreSQL 16 with **no ORM**, serving 252
+endpoints across 35 tables. The repository-wide picture, including the two
 portals, is in [docs/architecture/system-overview.md](../architecture/system-overview.md).
 
 ## What the system is for

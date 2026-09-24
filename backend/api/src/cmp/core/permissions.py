@@ -295,6 +295,13 @@ MATRIX: dict[str, dict[Role, Grant]] = {
     "legal_hold": {
         Role.DPO: Grant(Scope.ALL, write=True),
     },
+    # The Government's s.16 restricted-country list (S2-04). The DPO keeps it,
+    # because it decides what may leave the country; the administrator reads it,
+    # because a refused export lands on their desk as often as anyone's.
+    "restricted_country": {
+        Role.DPO: Grant(Scope.ALL, write=True),
+        Role.ADMIN: Grant(Scope.ALL),
+    },
     # A ticket on a rights request, addressed to a member of staff because the
     # holder is one of our own teams. Every staff role: which team holds the
     # data is not a function of role. OWN: the tickets addressed to *you*, and

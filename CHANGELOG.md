@@ -31,6 +31,24 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **Cross-border control, enforced at export (S2-04).** A purpose carried
+  `cross_border_permitted` and nothing read it. Each export row now has a
+  destination - the processor running its site - and a processor has a
+  `location_country`; before anything is written every destination is checked.
+  India goes as domestic; abroad goes under s.16 only if the country is not on
+  the restricted list and every purpose the people granted permits it; a
+  processor with no recorded country is refused, as decided with the product
+  owner. One failing destination refuses the whole export (422
+  `transfer_refused`, every cause named), audited in its own transaction with
+  the processors and none of the people. An export that goes records each
+  destination, country and ground on `export_log.transfer_basis`, and each
+  `export_line` its processor and country. The Government's list is data the
+  DPO keeps - `/restricted-countries`, listed with its notification and lifted
+  once, never India, one active listing per country; its contents are Legal's.
+  Migration 0032, [ADR 0020](docs/decisions/0020-cross-border-transfer-checked-at-export.md).
+  The console's processor form takes a country, the list shows it, and the
+  Processors page carries the restricted list for whoever may keep it. The
+  seed's processors are in India.
 - **Erasure that erases (S2-03).** An erasure decision used to change her
   disposition on `asset_consent` and nothing else; the recording stayed at the
   lab and the platform kept its pointer to it. Applying a decision now
@@ -442,6 +460,12 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **Exports derive the holders of a person's data again.** Holder derivation
+  for a rights request read the processor from the export's site, and since
+  exports became one per project (0010) they name no site - so no export had
+  derived a holder, and every rights request's holders came from assets alone.
+  Each line now names its destination (0032) and the derivation, and the
+  ticket's brief, read it from there.
 - **A closed request never claims what did not happen (S2-02).** An erasure
   decision changes her disposition on `asset_consent` and deletes nothing, yet
   a request whose items were only applied could close as `complete` - which

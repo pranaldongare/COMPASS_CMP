@@ -71,3 +71,7 @@ RightsReader = Annotated[Principal, Depends(RequireResource("rights_request"))]
 RightsWriter = Annotated[Principal, Depends(RequireResource("rights_request", write=True))]
 LegalHoldReader = Annotated[Principal, Depends(RequireResource("legal_hold"))]
 LegalHoldWriter = Annotated[Principal, Depends(RequireResource("legal_hold", write=True))]
+TransferListReader = Annotated[Principal, Depends(RequireResource("restricted_country"))]
+TransferListWriter = Annotated[
+    Principal, Depends(RequireResource("restricted_country", write=True))
+]

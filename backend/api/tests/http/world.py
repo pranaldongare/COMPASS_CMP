@@ -111,6 +111,7 @@ async def build(http: httpx.AsyncClient, session_for: SessionFactory, queued: li
             "contract_ref": f"CTR-{tag}",
             "security_confirmed_at": datetime.now(UTC).date().isoformat(),
             "is_in_house": False,
+            "location_country": "IN",
         },
     )
     w.processor_uuid = processor.json()["processor_uuid"]

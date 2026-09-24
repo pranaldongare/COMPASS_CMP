@@ -2985,6 +2985,11 @@ export interface paths {
          *     Every person named writes an `export_line`. That is the disclosure record,
          *     and it is why generating and downloading are separate: re-downloading must
          *     not claim a second disclosure.
+         *
+         *     Each row's destination is checked under s.16 first (S2-04). A refusal rolls
+         *     back everything the export would have written, so it is recorded in a
+         *     transaction of its own before the 422 goes back - a refused transfer is
+         *     evidence too.
          */
         post: operations["generate_export_projects__project_uuid__exports_post"];
         delete?: never;
@@ -3266,6 +3271,41 @@ export interface paths {
         get: operations["asset_subjects_assets__asset_uuid__subjects_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/restricted-countries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The restricted list */
+        get: operations["list_restrictions_restricted_countries_get"];
+        put?: never;
+        /** Restrict transfers to a country */
+        post: operations["restrict_restricted_countries_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/restricted-countries/{country_uuid}/lift": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Lift a restriction */
+        post: operations["lift_restricted_countries__country_uuid__lift_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5532,6 +5572,10 @@ export interface components {
             site_label?: string | null;
             /** Exported By Name */
             exported_by_name?: string | null;
+            /** Transfer Basis */
+            transfer_basis?: {
+                [key: string]: unknown;
+            } | null;
             /**
              * Project Uuid
              * Format: uuid
@@ -5566,6 +5610,10 @@ export interface components {
             site_label?: string | null;
             /** Exported By Name */
             exported_by_name?: string | null;
+            /** Transfer Basis */
+            transfer_basis?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** GrantOut */
         GrantOut: {
@@ -6892,6 +6940,8 @@ export interface components {
              * @default false
              */
             is_in_house: boolean;
+            /** Location Country */
+            location_country?: string | null;
         };
         /** ProcessorOut */
         ProcessorOut: {
@@ -6918,6 +6968,8 @@ export interface components {
              * @default false
              */
             is_in_house: boolean;
+            /** Location Country */
+            location_country?: string | null;
             /** Created At */
             created_at: unknown;
         };
@@ -6937,6 +6989,8 @@ export interface components {
             contract_ref?: string | null;
             /** Security Confirmed At */
             security_confirmed_at?: string | null;
+            /** Location Country */
+            location_country?: string | null;
         };
         /** ProcessorsIn */
         ProcessorsIn: {
@@ -7713,6 +7767,39 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** RestrictionIn */
+        RestrictionIn: {
+            /**
+             * Country Code
+             * @description ISO 3166-1 alpha-2 country code, e.g. IN
+             */
+            country_code: string;
+            /** Notification Ref */
+            notification_ref: string;
+        };
+        /** RestrictionOut */
+        RestrictionOut: {
+            /**
+             * Country Uuid
+             * Format: uuid
+             */
+            country_uuid: string;
+            /** Country Code */
+            country_code: string;
+            /** Notification Ref */
+            notification_ref: string;
+            /**
+             * Listed At
+             * Format: date-time
+             */
+            listed_at: string;
+            /** Listed By Name */
+            listed_by_name: string | null;
+            /** Lifted At */
+            lifted_at: string | null;
+            /** Lifted By Name */
+            lifted_by_name: string | null;
         };
         /** ReviewerIn */
         ReviewerIn: {
@@ -14202,6 +14289,102 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_restrictions_restricted_countries_get: {
+        parameters: {
+            query?: {
+                /** @description Only restrictions in force */
+                active?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestrictionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restrict_restricted_countries_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestrictionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestrictionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    lift_restricted_countries__country_uuid__lift_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                country_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestrictionOut"];
                 };
             };
             /** @description Validation Error */

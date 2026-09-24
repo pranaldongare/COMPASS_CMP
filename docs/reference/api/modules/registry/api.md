@@ -645,6 +645,7 @@ No request body.
       "security_confirmed_at": "2026-09-17",
       "status": "string",
       "is_in_house": false,
+      "location_country": "…",
       "created_at": "string"
     }
   ],
@@ -696,7 +697,8 @@ Request body required: **yes**.
   "type": "string",
   "contract_ref": "string",
   "security_confirmed_at": "2026-09-17",
-  "is_in_house": false
+  "is_in_house": false,
+  "location_country": "string"
 }
 ```
 
@@ -718,6 +720,7 @@ Request body required: **yes**.
   "security_confirmed_at": "2026-09-17",
   "status": "string",
   "is_in_house": false,
+  "location_country": "string",
   "created_at": "string"
 }
 ```
@@ -967,6 +970,7 @@ No request body.
   "security_confirmed_at": "2026-09-17",
   "status": "string",
   "is_in_house": false,
+  "location_country": "string",
   "created_at": "string"
 }
 ```
@@ -1014,7 +1018,8 @@ Request body required: **yes**.
 {
   "legal_name": "string",
   "contract_ref": "string",
-  "security_confirmed_at": "2026-09-17"
+  "security_confirmed_at": "2026-09-17",
+  "location_country": "string"
 }
 ```
 
@@ -1036,6 +1041,7 @@ Request body required: **yes**.
   "security_confirmed_at": "2026-09-17",
   "status": "string",
   "is_in_house": false,
+  "location_country": "string",
   "created_at": "string"
 }
 ```
@@ -1689,6 +1695,7 @@ For state changes whose only interesting output is that they happened.
 | `contract_ref` | `string` | Yes | min length: `1`; max length: `120` | — |
 | `security_confirmed_at` | `string` | Yes | format: `date` | — |
 | `is_in_house` | `boolean` | No | default: `False` | — |
+| `location_country` | `string` or `null` | No | min length: `2`; max length: `2`; pattern: `^[A-Za-z]{2}$` | — |
 
 <a id="schema-processorout"></a>
 #### `ProcessorOut`
@@ -1702,6 +1709,7 @@ For state changes whose only interesting output is that they happened.
 | `security_confirmed_at` | `string` | Yes | format: `date` | — |
 | `status` | `string` | Yes | — | — |
 | `is_in_house` | `boolean` | No | default: `False` | — |
+| `location_country` | `string` or `null` | No | — | — |
 | `created_at` | `object` | Yes | — | — |
 
 <a id="schema-processorupdate"></a>
@@ -1712,6 +1720,7 @@ For state changes whose only interesting output is that they happened.
 | `legal_name` | `string` or `null` | No | min length: `1`; max length: `200` | — |
 | `contract_ref` | `string` or `null` | No | max length: `120` | — |
 | `security_confirmed_at` | `string` or `null` | No | format: `date` | — |
+| `location_country` | `string` or `null` | No | min length: `2`; max length: `2`; pattern: `^[A-Za-z]{2}$` | — |
 
 <a id="schema-purposein"></a>
 #### `PurposeIn`

@@ -182,9 +182,11 @@ async def seeded(conn: Any, request_context: Any) -> dict[str, Any]:
     ]:
         processors[key] = await fetch_one(
             conn,
+            # In India: since S2-04 an export to a processor with no recorded
+            # location is refused, and the tests about transfers set their own.
             """INSERT INTO processor (legal_name, type, contract_ref,
-                                     security_confirmed_at, is_in_house)
-               VALUES (%s, 'lab', 'CTR-TEST', current_date, %s)
+                                     security_confirmed_at, is_in_house, location_country)
+               VALUES (%s, 'lab', 'CTR-TEST', current_date, %s, 'IN')
                RETURNING processor_id, processor_uuid""",
             (legal_name, in_house),
         )
@@ -201,9 +203,11 @@ async def seeded(conn: Any, request_context: Any) -> dict[str, Any]:
 
     site = await fetch_one(
         conn,
-        """INSERT INTO project_site (project_id, site_label, location)
-           VALUES (%s, 'Test Site', 'Pune') RETURNING site_id, site_uuid""",
-        (project["project_id"],),
+        # Run by the external processor, as every real site is by someone: an
+        # export row goes to the processor running its site (S2-04).
+        """INSERT INTO project_site (project_id, site_label, location, processor_id)
+           VALUES (%s, 'Test Site', 'Pune', %s) RETURNING site_id, site_uuid""",
+        (project["project_id"], processors["external"]["processor_id"]),
     )
 
     # Created as a draft: the freeze triggers refuse purposes and languages on a

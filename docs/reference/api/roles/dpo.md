@@ -24,6 +24,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `approvals`, `notice
 | `processor` | Yes | Yes | `all` | All rows |
 | `project` | Yes | Yes | `all` | All rows |
 | `purpose` | Yes | Yes | `all` | All rows |
+| `restricted_country` | Yes | Yes | `all` | All rows |
 | `rights_request` | Yes | Yes | `all` | All rows |
 | `site` | Yes | Yes | `all` | All rows |
 | `ticket` | Yes | Yes | `own` | Own or addressed rows |

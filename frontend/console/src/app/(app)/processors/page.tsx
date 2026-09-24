@@ -23,6 +23,7 @@ import {
 } from "@/components/data-display/resource-list";
 import { ProcessorForm } from "@/features/registry/components/forms";
 import { RespondentsPanel } from "@/features/registry/components/respondents";
+import { RestrictedCountries } from "@/features/registry/components/restricted-countries";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyRecords } from "@/components/ui/graphics";
 import { Button, Td, Tr } from "@/components/ui/primitives";
@@ -106,7 +107,7 @@ export default function ProcessorsPage() {
         query={query}
         stack={stack}
         caption="Registered processors"
-        columns={["Legal name", "Type", "Contract", "Security confirmed", "Status", "Action"]}
+        columns={["Legal name", "Type", "Country", "Contract", "Security confirmed", "Status", "Action"]}
         keyOf={(p) => p.processor_uuid}
         empty={{
           illustration: <EmptyRecords />,
@@ -118,6 +119,15 @@ export default function ProcessorsPage() {
           <Tr>
             <Td className="font-medium">{p.legal_name}</Td>
             <Td className="text-text-muted">{humanise(p.type)}</Td>
+            <Td>
+              {p.location_country ? (
+                <span className="font-mono text-xs">{p.location_country}</span>
+              ) : (
+                <span className="text-xs text-warning-text" title="An export to this processor is refused until its country is recorded">
+                  not recorded
+                </span>
+              )}
+            </Td>
             <Td className="font-mono text-xs text-text-muted">{p.contract_ref}</Td>
             <Td className="whitespace-nowrap text-text-muted">
               {formatDate(p.security_confirmed_at)}
@@ -155,6 +165,9 @@ export default function ProcessorsPage() {
           </Tr>
         )}
       />
+
+      {/* The s.16 list: shown to whoever the server says may keep it. */}
+      {me?.writes?.includes("restricted_country") && <RestrictedCountries />}
 
       <Dialog open={creating} onOpenChange={setCreating}>
         <DialogContent

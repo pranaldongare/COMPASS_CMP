@@ -114,6 +114,13 @@ NoticeText = Annotated[str, StringConstraints(min_length=1)]
 Mobile = Annotated[str, StringConstraints(min_length=6, max_length=20, pattern=r"^\+?[0-9 \-]+$")]
 OtpCode = Annotated[str, StringConstraints(min_length=4, max_length=10, pattern=r"^[0-9]+$")]
 
+#: Where a processor is, for s.16: ISO 3166-1 alpha-2, upper-cased on the way in.
+CountryCode = Annotated[
+    str,
+    StringConstraints(min_length=2, max_length=2, pattern=r"^[A-Za-z]{2}$", to_upper=True),
+    Field(description="ISO 3166-1 alpha-2 country code, e.g. IN"),
+]
+
 #: Section 9 turns on this date, so every body that accepts one checks it the
 #: same way - see `cmp.validation.common.plausible_dob`.
 DateOfBirth = Annotated[

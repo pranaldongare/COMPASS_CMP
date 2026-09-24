@@ -71,6 +71,8 @@ ENTITY_TYPES: Final[frozenset[str]] = frozenset(
         "nomination",
         # What stops an erasure until it is released (S2-03).
         "legal_hold",
+        # The Government's s.16 list, as the office keeps it (S2-04).
+        "restricted_country",
         # The office's replacement words for a message junction.
         "message_template",
     }
@@ -231,6 +233,10 @@ class Event:
     RIGHTS_ITEM_EXECUTED = "rights.item_executed"
     LEGAL_HOLD_PLACED = "legal_hold.placed"
     LEGAL_HOLD_RELEASED = "legal_hold.released"
+    #: An export that failed the s.16 check, with the reasons (S2-04).
+    EXPORT_REFUSED = "export.refused"
+    TRANSFER_COUNTRY_RESTRICTED = "transfer.country_restricted"
+    TRANSFER_COUNTRY_LIFTED = "transfer.country_lifted"
     RIGHTS_RESPONDED = "rights.responded"
     RIGHTS_RESPONSE_DOWNLOADED = "rights.response_downloaded"
     RIGHTS_CLOSED = "rights.closed"

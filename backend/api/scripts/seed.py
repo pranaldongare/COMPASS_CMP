@@ -369,13 +369,17 @@ async def seed() -> None:
             # works against an empty one is no use at the moment it is wanted.
             processor = await fetch_one(
                 conn,
+                # In India (S2-04): an export to a processor with no recorded
+                # location is refused, so the seed's processors carry one, and a
+                # database seeded before the check gets it on the next run.
                 """WITH existing AS (
-                     SELECT processor_id, processor_uuid FROM processor
+                     UPDATE processor SET location_country = COALESCE(location_country, 'IN')
                       WHERE legal_name = 'Pune Motion Lab Pvt Ltd'
+                     RETURNING processor_id, processor_uuid
                    ), created AS (
                      INSERT INTO processor (legal_name, type, contract_ref,
-                                            security_confirmed_at)
-                     SELECT 'Pune Motion Lab Pvt Ltd', 'lab', 'CTR-2026-0091', %s
+                                            security_confirmed_at, location_country)
+                     SELECT 'Pune Motion Lab Pvt Ltd', 'lab', 'CTR-2026-0091', %s, 'IN'
                       WHERE NOT EXISTS (SELECT 1 FROM existing)
                      RETURNING processor_id, processor_uuid
                    )
@@ -407,13 +411,16 @@ async def seed() -> None:
                          -- created correctly once but never corrected drifts the
                          -- moment anything changes it - which is exactly what a
                          -- migration down-and-up does to is_in_house.
-                         UPDATE processor SET is_in_house = %s
+                         UPDATE processor
+                            SET is_in_house = %s,
+                                location_country = COALESCE(location_country, 'IN')
                           WHERE legal_name = %s
                          RETURNING processor_id
                        ), created AS (
                          INSERT INTO processor (legal_name, type, contract_ref,
-                                                security_confirmed_at, is_in_house)
-                         SELECT %s, %s::processor_type, %s, %s, %s
+                                                security_confirmed_at, is_in_house,
+                                                location_country)
+                         SELECT %s, %s::processor_type, %s, %s, %s, 'IN'
                           WHERE NOT EXISTS (SELECT 1 FROM existing)
                          RETURNING processor_id
                        )

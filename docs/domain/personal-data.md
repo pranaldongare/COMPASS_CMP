@@ -5,7 +5,7 @@ that accepts or returns it. Written for the questions that have to be answered
 quickly and exactly: what do we hold, where does it go, who can see it, and
 which call would expose it.
 
-The counts here are measured, not remembered. **163 of the API's 249
+The counts here are measured, not remembered. **166 of the API's 252
 operations** carry personal data; **20 of those need no session**. They come
 from joining three artefacts the repository already keeps current, and the
 last section says how to redo the join after a change.
@@ -165,10 +165,14 @@ row.
 
 ### Collection and disclosure
 
-**`export_line`** — `auth_user_id`, `consent_id`. **This is the disclosure
-record**: one row per person per export. It is what answers "who was my data
-shared with", and what derives the holders of her data when she makes a rights
-request.
+**`export_line`** — `auth_user_id`, `consent_id`, and since 0032
+`destination_processor_id` and `destination_country`. **This is the disclosure
+record**: one row per person per export, saying to whom and where. It is what
+answers "who was my data shared with", and what derives the holders of her data
+when she makes a rights request.
+
+**`restricted_country`** (0032) — no personal data beyond who listed and lifted
+it: the Government's s.16 list, kept as data.
 
 **`export_log`** — `exported_by`, `file_ref`, `file_hash`, `row_count`. The CSV
 itself contains names, emails, mobiles, organisation ids and granted purposes —
@@ -287,7 +291,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-163 of 249 operations accept or return personal data. Each table gives the
+166 of 252 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -430,6 +434,16 @@ selected.
 | GET | `/legal-holds` | DPO every row | — | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
 | POST | `/legal-holds` | DPO every row | `reason`, `subject_uuid` | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
 | POST | `/legal-holds/{hold_uuid}/release` | DPO every row | — | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
+
+### Cross-border transfers — `/restricted-countries/*`
+
+3 operations carry personal data.
+
+| Method | Endpoint | Who may call it | Personal data in | Personal data out |
+|---|---|---|---|---|
+| GET | `/restricted-countries` | DPO every row, Admin every row | — | `lifted_by_name`, `listed_by_name` |
+| POST | `/restricted-countries` | DPO every row | — | `lifted_by_name`, `listed_by_name` |
+| POST | `/restricted-countries/{country_uuid}/lift` | DPO every row | — | `lifted_by_name`, `listed_by_name` |
 
 ### Tickets a holder answers — `/tickets/*`
 

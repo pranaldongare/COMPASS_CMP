@@ -130,6 +130,15 @@ the holder's copy by its returned ticket, and for an erasure the platform's
 pointer to the asset cleared. Recorded as `executed_at`, from the append-only
 attempts in `rights_item_execution`. Applied is not executed.
 
+**Destination (export).** Where an export row goes: the processor running the
+site the consent was given at, and that processor's country. Recorded on each
+`export_line` (S2-04).
+
+**Restricted country.** A country the Government has notified under s.16 that
+personal data may not be transferred to. Kept as data by the Privacy Office
+(`/restricted-countries`), listed once and lifted once; an export with a row
+going there is refused.
+
 **Legal hold.** A record that stops erasure of one asset, or of everything
 about one person, until the DPO releases it. Placed once, released once, with
 a sealed reason; an item it covers records `held` and goes no further.

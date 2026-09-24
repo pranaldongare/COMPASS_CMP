@@ -172,7 +172,7 @@ class TestItIsOneCsvWithThePeopleInIt:
             person="Anjali Verma",
         )
 
-        payload, count, lines = await exchange_service._project_export(
+        payload, count, lines, _ = await exchange_service._project_export(
             conn, await _project(conn, seeded), role=Role.DCO, user_id=dco
         )
         rows = _rows(payload)
@@ -212,7 +212,7 @@ class TestItIsOneCsvWithThePeopleInIt:
             withdrawn=True,
         )
 
-        payload, _, _ = await exchange_service._project_export(
+        payload, _, _, _ = await exchange_service._project_export(
             conn, await _project(conn, seeded), role=Role.DCO, user_id=dco
         )
         row = next(r for r in _rows(payload) if r["full_name"] == "Ravi Kumar")
@@ -224,7 +224,7 @@ class TestItIsOneCsvWithThePeopleInIt:
     ) -> None:
         """A file of nothing but column names reads as a broken export."""
         stranger = await _owner(conn, "dco", "exp.empty@test.local")
-        payload, count, lines = await exchange_service._project_export(
+        payload, count, lines, _ = await exchange_service._project_export(
             conn, await _project(conn, seeded), role=Role.DCO, user_id=stranger
         )
         rows = _rows(payload)
@@ -274,10 +274,10 @@ class TestTheExportFollowsTheExportersScope:
         far worse one, because the result is a file that leaves the building."""
         who = await self._two_owners(conn, seeded)
 
-        dco_csv, _, _ = await exchange_service._project_export(
+        dco_csv, _, _, _ = await exchange_service._project_export(
             conn, await _project(conn, seeded), role=Role.DCO, user_id=who["dco"]
         )
-        rco_csv, _, _ = await exchange_service._project_export(
+        rco_csv, _, _, _ = await exchange_service._project_export(
             conn, await _project(conn, seeded), role=Role.RCO, user_id=who["rco"]
         )
 
@@ -286,7 +286,7 @@ class TestTheExportFollowsTheExportersScope:
 
     async def test_the_dpo_gets_everybody(self, conn: Any, seeded: dict[str, Any]) -> None:
         await self._two_owners(conn, seeded)
-        payload, _, _ = await exchange_service._project_export(
+        payload, _, _, _ = await exchange_service._project_export(
             conn, await _project(conn, seeded), role=Role.DPO, user_id=seeded["users"]["dpo"]["id"]
         )
         assert {"Campus Person", "Lab Person"} <= {r["full_name"] for r in _rows(payload)}
@@ -455,7 +455,7 @@ class TestTheConsentLinkIsNamedAndOpenable:
             person="Linked Person",
         )
 
-        payload, _, _ = await exchange_service._project_export(
+        payload, _, _, _ = await exchange_service._project_export(
             conn, await _project(conn, seeded), role=Role.DCO, user_id=dco
         )
         row = _rows(payload)[0]
@@ -487,7 +487,7 @@ class TestTheConsentLinkIsNamedAndOpenable:
         )
         assert stored is not None
 
-        payload, _, _ = await exchange_service._project_export(
+        payload, _, _, _ = await exchange_service._project_export(
             conn, await _project(conn, seeded), role=Role.DCO, user_id=dco
         )
         assert stored["token"] not in payload
@@ -523,7 +523,7 @@ class TestTheLinkIsUsableAndStillProtected:
             sealed=True,
         )
 
-        payload, _, _ = await exchange_service._project_export(
+        payload, _, _, _ = await exchange_service._project_export(
             conn, await _project(conn, seeded), role=Role.DCO, user_id=dco
         )
         row = _rows(payload)[0]
@@ -557,7 +557,7 @@ class TestTheLinkIsUsableAndStillProtected:
             sealed=False,
         )
 
-        payload, _, _ = await exchange_service._project_export(
+        payload, _, _, _ = await exchange_service._project_export(
             conn, await _project(conn, seeded), role=Role.DCO, user_id=dco
         )
         row = _rows(payload)[0]

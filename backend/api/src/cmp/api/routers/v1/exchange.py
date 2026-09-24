@@ -24,6 +24,7 @@ from cmp.db.repositories import projects as project_repo
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.exchange import service as service
+from cmp.domain.exchange import transfer
 from cmp.schemas.common import Out, Page
 
 router = APIRouter(tags=["exchange"])
@@ -47,6 +48,9 @@ class ExportOut(Out):
     site_uuid: UUID | None = None
     site_label: str | None = None
     exported_by_name: str | None = None
+    #: Each destination, its country and the ground the transfer went on (S2-04).
+    #: Null on exports from before the check existed.
+    transfer_basis: dict[str, Any] | None = None
 
 
 export_paging = Paging(repo.EXPORT_SORTS, "-exported_at")
@@ -184,14 +188,29 @@ async def generate_export(project_uuid: UUID, principal: ExportActor) -> dict[st
     Every person named writes an `export_line`. That is the disclosure record,
     and it is why generating and downloading are separate: re-downloading must
     not claim a second disclosure.
+
+    Each row's destination is checked under s.16 first (S2-04). A refusal rolls
+    back everything the export would have written, so it is recorded in a
+    transaction of its own before the 422 goes back - a refused transfer is
+    evidence too.
     """
-    async with transaction() as conn:
-        return await service.generate(
-            conn,
-            project_uuid=str(project_uuid),
-            actor_id=principal.user_id,
-            role=principal.role,
-        )
+    try:
+        async with transaction() as conn:
+            return await service.generate(
+                conn,
+                project_uuid=str(project_uuid),
+                actor_id=principal.user_id,
+                role=principal.role,
+            )
+    except transfer.TransferRefused as refused:
+        async with transaction() as conn:
+            project = await project_repo.require(
+                conn, str(project_uuid), role=principal.role, user_id=principal.user_id
+            )
+            await transfer.record_refusal(
+                conn, refused, project_id=int(project["project_id"]), actor_id=principal.user_id
+            )
+        raise
 
 
 @router.get("/projects/{project_uuid}/exports", response_model=list[ExportOut])

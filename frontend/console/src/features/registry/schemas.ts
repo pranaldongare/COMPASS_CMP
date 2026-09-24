@@ -107,6 +107,15 @@ export const processorSchema = z.object({
   // is routed by a DCO Admin, an in-house one goes straight back to its author.
   // An unanswered question should land on the path with the extra pair of eyes.
   is_in_house: z.boolean().default(false),
+  // Where it is, for s.16 (S2-04). Optional to register, but an export to a
+  // processor without one is refused - the server's rule, stated in the hint.
+  location_country: optional(
+    z
+      .string()
+      .trim()
+      .regex(/^[A-Za-z]{2}$/, "Two letters: the ISO country code, e.g. IN")
+      .transform((v) => v.toUpperCase()),
+  ),
 });
 
 export type ProcessorValues = z.infer<typeof processorSchema>;

@@ -52,6 +52,8 @@ RIGHTS_REQUEST: Final = "rights_request"
 TICKET: Final = "ticket"
 #: What stops an erasure until it is released: a hold on an asset or a person.
 LEGAL_HOLD: Final = "legal_hold"
+#: The Government's s.16 list of countries transfers may not go to.
+RESTRICTED_COUNTRY: Final = "restricted_country"
 
 #: The words of a message the platform sends, per junction and channel.
 MESSAGE_TEMPLATE: Final = "message_template"
@@ -81,5 +83,6 @@ ALL: Final[frozenset[str]] = frozenset(
         MESSAGE_TEMPLATE,
         TICKET,
         LEGAL_HOLD,
+        RESTRICTED_COUNTRY,
     }
 )

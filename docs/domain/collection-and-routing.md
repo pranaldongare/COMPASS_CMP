@@ -17,7 +17,8 @@ Three reference tables, maintained mostly by the DPO and read by everyone:
   retired; a retired purpose stays on the notices that named it.
 - **Processors**: the parties that collect or handle data. `is_in_house`
   distinguishes the organisation's own teams from a third party, and that one
-  flag decides most of the routing below. A processor carries its
+  flag decides most of the routing below. `location_country` says where it is, and an
+  export to it is refused until it is recorded (S2-04). A processor carries its
   **respondents**: for an in-house processor, accounts on the platform who
   answer a rights ticket in the console; for a third party, names and
   addresses reached by email. Respondents are retired by stamping a date,
@@ -135,6 +136,36 @@ list of ciphertext. So the CSV is one of the few places personal data leaves
 the platform in the clear, and the file kept under the uploads directory
 holds it that way; [personal-data.md](personal-data.md#files-on-disk) lists
 what is in it.
+
+**Where an export goes, and whether it may (s.16).** Each row is a consent
+given at a site, and a site is run by a processor: that processor is the row's
+**destination**, and its `location_country` is where the row goes. Before
+anything is written, every destination is checked
+(`cmp.domain.exchange.transfer`, S2-04):
+
+| Destination | Outcome |
+|---|---|
+| The processor has no recorded country | **refused** - a transfer the platform cannot place is one it cannot say is lawful |
+| India | goes, as domestic |
+| On the restricted list | **refused**, naming the notification |
+| Abroad, and a purpose the person granted does not permit a cross-border transfer | **refused**, naming the purposes |
+| Abroad otherwise | goes, under s.16 |
+
+One failing destination refuses the whole export (422 `transfer_refused`,
+every reason named), and the refusal is audited with the processors and
+causes, never the people. An export that goes records each destination, its
+country and the ground on `export_log.transfer_basis`, and each
+`export_line` records the processor and country that row went to, as they
+were at that moment. The **restricted list** is the Government's s.16
+notifications kept as data (`/restricted-countries`): the DPO lists a country
+with its notification and lifts it once; what belongs on it is Legal's to say.
+A row with nothing granted - a withdrawal, exported so the agent stops -
+carries no purpose to check.
+
+Because each line names its destination, holder derivation for a rights
+request reads the processor from the line. Before 0032 it read it from the
+export's site, which one-per-project exports never had - so exports derived
+no holders at all until this was fixed.
 
 **Import.** A manifest of collected assets from a source, validated as a dry
 run first (`POST /imports/validate` writes nothing), then written as a batch

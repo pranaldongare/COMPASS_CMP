@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict F5C0mXsBjF0Lv6lldE8dQBlRp2TXs4VwII2CZjOeQtXDGwwWRRmYfyNcFJJFgwi
+\restrict fbiBNPgaigw3Y9aZPabPWoqcUPtJf0zeeIhtL007rmdTa636xPQMJNhL2seRfIg
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -988,6 +988,33 @@ COMMENT ON FUNCTION public.cmp_primary_site_id(p_project_id integer) IS 'A proje
 
 
 --
+-- Name: cmp_restricted_country_lift_only(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_restricted_country_lift_only() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    RAISE EXCEPTION 'restricted_country rows are never deleted' USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF OLD.lifted_at IS NOT NULL THEN
+    RAISE EXCEPTION 'a lifted restriction does not change' USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF NEW.country_id IS DISTINCT FROM OLD.country_id
+     OR NEW.country_uuid IS DISTINCT FROM OLD.country_uuid
+     OR NEW.country_code IS DISTINCT FROM OLD.country_code
+     OR NEW.notification_ref IS DISTINCT FROM OLD.notification_ref
+     OR NEW.listed_by IS DISTINCT FROM OLD.listed_by
+     OR NEW.listed_at IS DISTINCT FROM OLD.listed_at THEN
+    RAISE EXCEPTION 'only the lifting of a restriction may be recorded' USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+--
 -- Name: cmp_site_owner_changed(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1617,7 +1644,9 @@ CREATE TABLE public.export_line (
     line_id integer NOT NULL,
     export_id integer NOT NULL,
     auth_user_id integer NOT NULL,
-    consent_id integer NOT NULL
+    consent_id integer NOT NULL,
+    destination_processor_id integer,
+    destination_country character(2)
 );
 
 
@@ -1655,7 +1684,8 @@ CREATE TABLE public.export_log (
     exported_at timestamp with time zone DEFAULT now() NOT NULL,
     row_count integer NOT NULL,
     file_hash text NOT NULL,
-    file_ref text
+    file_ref text,
+    transfer_basis jsonb
 );
 
 
@@ -1671,6 +1701,13 @@ COMMENT ON COLUMN public.export_log.site_id IS 'The site this export covered, on
 --
 
 COMMENT ON COLUMN public.export_log.file_ref IS 'Storage reference of the CSV exactly as generated; NULL for exports that predate 0023';
+
+
+--
+-- Name: COLUMN export_log.transfer_basis; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.export_log.transfer_basis IS 'Each destination of the export, its country, and the ground the transfer rested on (S2-04)';
 
 
 --
@@ -2087,7 +2124,9 @@ CREATE TABLE public.processor (
     security_confirmed_at date NOT NULL,
     status public.record_status DEFAULT 'active'::public.record_status NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    is_in_house boolean DEFAULT false NOT NULL
+    is_in_house boolean DEFAULT false NOT NULL,
+    location_country character(2),
+    CONSTRAINT processor_location_is_iso CHECK (((location_country IS NULL) OR (location_country ~ '^[A-Z]{2}$'::text)))
 );
 
 
@@ -2096,6 +2135,13 @@ CREATE TABLE public.processor (
 --
 
 COMMENT ON COLUMN public.processor.is_in_house IS 'Whether this is the organisation collecting for itself. It drives routing: a project collected by a third party goes to a DCO Admin to be assigned, one collected in-house goes back to the R&D owner to assign an RCO. Separate from processor_type, which says what kind of thing a processor is (lab, tool) and not whose it is - a lab can be either.';
+
+
+--
+-- Name: COLUMN processor.location_country; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.processor.location_country IS 'Where the processor is, ISO 3166-1 alpha-2. Unknown is refused at export (S2-04)';
 
 
 --
@@ -2439,6 +2485,52 @@ CREATE SEQUENCE public.purpose_purpose_id_seq
 --
 
 ALTER SEQUENCE public.purpose_purpose_id_seq OWNED BY public.purpose.purpose_id;
+
+
+--
+-- Name: restricted_country; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.restricted_country (
+    country_id integer NOT NULL,
+    country_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    country_code character(2) NOT NULL,
+    notification_ref text NOT NULL,
+    listed_by integer NOT NULL,
+    listed_at timestamp with time zone DEFAULT now() NOT NULL,
+    lifted_by integer,
+    lifted_at timestamp with time zone,
+    CONSTRAINT restricted_country_is_iso CHECK ((country_code ~ '^[A-Z]{2}$'::text)),
+    CONSTRAINT restricted_country_lift_attributed CHECK (((lifted_at IS NULL) = (lifted_by IS NULL))),
+    CONSTRAINT restricted_country_not_india CHECK ((country_code <> 'IN'::bpchar))
+);
+
+
+--
+-- Name: TABLE restricted_country; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.restricted_country IS 'Countries the Government has notified under s.16 - data, maintained by the Privacy Office';
+
+
+--
+-- Name: restricted_country_country_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.restricted_country_country_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: restricted_country_country_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.restricted_country_country_id_seq OWNED BY public.restricted_country.country_id;
 
 
 --
@@ -3008,6 +3100,13 @@ ALTER TABLE ONLY public.purpose ALTER COLUMN purpose_id SET DEFAULT nextval('pub
 
 
 --
+-- Name: restricted_country country_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.restricted_country ALTER COLUMN country_id SET DEFAULT nextval('public.restricted_country_country_id_seq'::regclass);
+
+
+--
 -- Name: rights_item_execution execution_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3546,6 +3645,22 @@ ALTER TABLE ONLY public.purpose
 
 
 --
+-- Name: restricted_country restricted_country_country_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.restricted_country
+    ADD CONSTRAINT restricted_country_country_uuid_key UNIQUE (country_uuid);
+
+
+--
+-- Name: restricted_country restricted_country_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.restricted_country
+    ADD CONSTRAINT restricted_country_pkey PRIMARY KEY (country_id);
+
+
+--
 -- Name: rights_item_execution rights_item_execution_execution_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3816,6 +3931,13 @@ CREATE INDEX idx_delegation_active ON public.delegation USING btree (delegate_us
 --
 
 CREATE INDEX idx_delegation_by_delegator ON public.delegation USING btree (delegator_user_id);
+
+
+--
+-- Name: idx_export_line_destination; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_export_line_destination ON public.export_line USING btree (destination_processor_id);
 
 
 --
@@ -4169,6 +4291,13 @@ CREATE UNIQUE INDEX uq_processor_respondent_user ON public.processor_respondent 
 
 
 --
+-- Name: uq_restricted_country_active; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uq_restricted_country_active ON public.restricted_country USING btree (country_code) WHERE (lifted_at IS NULL);
+
+
+--
 -- Name: uq_rights_holder_processor; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4348,6 +4477,13 @@ CREATE TRIGGER trg_project_touch BEFORE UPDATE ON public.project FOR EACH ROW EX
 --
 
 CREATE TRIGGER trg_purpose_touch BEFORE UPDATE ON public.purpose FOR EACH ROW EXECUTE FUNCTION public.cmp_touch_updated_at();
+
+
+--
+-- Name: restricted_country trg_restricted_country_lift_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_restricted_country_lift_only BEFORE DELETE OR UPDATE ON public.restricted_country FOR EACH ROW EXECUTE FUNCTION public.cmp_restricted_country_lift_only();
 
 
 --
@@ -4608,6 +4744,14 @@ ALTER TABLE ONLY public.export_line
 
 ALTER TABLE ONLY public.export_line
     ADD CONSTRAINT export_line_consent_id_fkey FOREIGN KEY (consent_id) REFERENCES public.consent_artefact(consent_id);
+
+
+--
+-- Name: export_line export_line_destination_processor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.export_line
+    ADD CONSTRAINT export_line_destination_processor_id_fkey FOREIGN KEY (destination_processor_id) REFERENCES public.processor(processor_id);
 
 
 --
@@ -4979,6 +5123,22 @@ ALTER TABLE ONLY public.purpose
 
 
 --
+-- Name: restricted_country restricted_country_lifted_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.restricted_country
+    ADD CONSTRAINT restricted_country_lifted_by_fkey FOREIGN KEY (lifted_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: restricted_country restricted_country_listed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.restricted_country
+    ADD CONSTRAINT restricted_country_listed_by_fkey FOREIGN KEY (listed_by) REFERENCES public.auth_user(id);
+
+
+--
 -- Name: rights_item_execution rights_item_execution_attempted_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5174,5 +5334,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict F5C0mXsBjF0Lv6lldE8dQBlRp2TXs4VwII2CZjOeQtXDGwwWRRmYfyNcFJJFgwi
+\unrestrict fbiBNPgaigw3Y9aZPabPWoqcUPtJf0zeeIhtL007rmdTa636xPQMJNhL2seRfIg
 

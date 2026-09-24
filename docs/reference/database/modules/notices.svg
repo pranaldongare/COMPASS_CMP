@@ -10,7 +10,7 @@
 <title>Schema</title>
 <polygon fill="#f7fafc" stroke="none" points="-36,36 -36,-1023 1183.19,-1023 1183.19,36 -36,36"/>
 <text xml:space="preserve" text-anchor="start" x="8" y="-957" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="30.00" fill="#142c44">COMPASS / NOTICES</text>
-<text xml:space="preserve" text-anchor="start" x="8" y="-941.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0031 / full module tables with outgoing references / source 416f0de</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-941.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0032 / full module tables with outgoing references / source 5242eb6</text>
 <text xml:space="preserve" text-anchor="start" x="8" y="-915.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">FK arrow: child column to referenced key &#160;&#160;| &#160;&#160;Solid = required FK; dashed = nullable FK; dotted = view dependency</text>
 <text xml:space="preserve" text-anchor="start" x="13.43" y="-903.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">PK = primary key; FK = foreign key; UQ = member of unique constraint (possibly composite); ? = nullable column</text>
 <g id="clust1" class="cluster">
@@ -19,108 +19,108 @@
 <text xml:space="preserve" text-anchor="middle" x="51.56" y="-870.6" font-family="Helvetica,sans-Serif" font-size="16.00" fill="#174e82">NOTICES</text>
 </g>
 <!-- notice&#45;&gt;auth_user -->
-<g id="FK048" class="edge">
+<g id="FK049" class="edge">
 <title>notice:e&#45;&gt;auth_user:w</title>
-<g id="a_FK048"><a xlink:title="FK048 / notice_approved_by_fkey / notice(approved_by) to auth_user(id) / FOREIGN KEY (approved_by) REFERENCES auth_user(id)">
+<g id="a_FK049"><a xlink:title="FK049 / notice_approved_by_fkey / notice(approved_by) to auth_user(id) / FOREIGN KEY (approved_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M495.33,-466.2C495.33,-466.2 917.05,-306.46 978,-283.37"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="978.48,-285.62 983.75,-281.19 976.87,-281.36 978.48,-285.62"/>
 </a>
 </g>
 </g>
 <!-- notice&#45;&gt;project -->
-<g id="FK052" class="edge">
+<g id="FK053" class="edge">
 <title>notice:e&#45;&gt;project:w</title>
-<g id="a_FK052"><a xlink:title="FK052 / notice_project_id_fkey / notice(project_id) to project(project_id) / FOREIGN KEY (project_id) REFERENCES project(project_id)">
+<g id="a_FK053"><a xlink:title="FK053 / notice_project_id_fkey / notice(project_id) to project(project_id) / FOREIGN KEY (project_id) REFERENCES project(project_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M495.33,-693C495.33,-693 663.15,-617.82 700.52,-601.08"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="701.31,-603.21 706.32,-598.48 699.45,-599.06 701.31,-603.21"/>
 </a>
 </g>
 </g>
 <!-- notice_language&#45;&gt;notice -->
-<g id="FK051" class="edge">
+<g id="FK052" class="edge">
 <title>notice_language:e&#45;&gt;notice:w</title>
-<g id="a_FK051"><a xlink:title="FK051 / notice_language_notice_id_fkey / notice_language(notice_id) to notice(notice_id) / FOREIGN KEY (notice_id) REFERENCES notice(notice_id)">
+<g id="a_FK052"><a xlink:title="FK052 / notice_language_notice_id_fkey / notice_language(notice_id) to notice(notice_id) / FOREIGN KEY (notice_id) REFERENCES notice(notice_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M182.46,-719C182.46,-719 337.71,-757.66 374.1,-766.72"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="373.19,-768.83 380.05,-768.2 374.29,-764.42 373.19,-768.83"/>
 </a>
 </g>
 </g>
 <!-- notice_language&#45;&gt;auth_user -->
-<g id="FK049" class="edge">
+<g id="FK050" class="edge">
 <title>notice_language:e&#45;&gt;auth_user:w</title>
-<g id="a_FK049"><a xlink:title="FK049 / notice_language_approved_by_fkey / notice_language(approved_by) to auth_user(id) / FOREIGN KEY (approved_by) REFERENCES auth_user(id)">
+<g id="a_FK050"><a xlink:title="FK050 / notice_language_approved_by_fkey / notice_language(approved_by) to auth_user(id) / FOREIGN KEY (approved_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M182.46,-593C182.46,-593 266.16,-489 266.16,-489 266.16,-489 356.16,-258 356.16,-258 356.16,-258 867.57,-258 867.57,-258 867.57,-258 951.39,-274.09 977.58,-279.12"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="976.86,-281.29 983.67,-280.29 977.72,-276.83 976.86,-281.29"/>
 </a>
 </g>
 </g>
 <!-- notice_language&#45;&gt;auth_user -->
-<g id="FK050" class="edge">
+<g id="FK051" class="edge">
 <title>notice_language:e&#45;&gt;auth_user:w</title>
-<g id="a_FK050"><a xlink:title="FK050 / notice_language_created_by_fkey / notice_language(created_by) to auth_user(id) / FOREIGN KEY (created_by) REFERENCES auth_user(id)">
+<g id="a_FK051"><a xlink:title="FK051 / notice_language_created_by_fkey / notice_language(created_by) to auth_user(id) / FOREIGN KEY (created_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M182.46,-618.2C182.46,-618.2 266.16,-489 266.16,-489 266.16,-489 356.16,-312 356.16,-312 356.16,-312 904.52,-284.63 977.35,-281"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="977.27,-283.28 983.64,-280.68 977.04,-278.73 977.27,-283.28"/>
 </a>
 </g>
 </g>
 <!-- notice_purpose&#45;&gt;notice -->
-<g id="FK053" class="edge">
+<g id="FK054" class="edge">
 <title>notice_purpose:e&#45;&gt;notice:w</title>
-<g id="a_FK053"><a xlink:title="FK053 / notice_purpose_notice_id_fkey / notice_purpose(notice_id) to notice(notice_id) / FOREIGN KEY (notice_id) REFERENCES notice(notice_id)">
+<g id="a_FK054"><a xlink:title="FK054 / notice_purpose_notice_id_fkey / notice_purpose(notice_id) to notice(notice_id) / FOREIGN KEY (notice_id) REFERENCES notice(notice_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M200.26,-380C200.26,-380 266.16,-489 266.16,-489 266.16,-489 360.2,-716.66 378.57,-761.12"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="376.44,-761.92 381.03,-767.06 380.65,-760.19 376.44,-761.92"/>
 </a>
 </g>
 </g>
 <!-- notice_purpose&#45;&gt;auth_user -->
-<g id="FK054" class="edge">
+<g id="FK055" class="edge">
 <title>notice_purpose:e&#45;&gt;auth_user:w</title>
-<g id="a_FK054"><a xlink:title="FK054 / notice_purpose_overridden_by_fkey / notice_purpose(overridden_by) to auth_user(id) / FOREIGN KEY (overridden_by) REFERENCES auth_user(id)">
+<g id="a_FK055"><a xlink:title="FK055 / notice_purpose_overridden_by_fkey / notice_purpose(overridden_by) to auth_user(id) / FOREIGN KEY (overridden_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M200.26,-228.8C200.26,-228.8 356.16,-124 356.16,-124 356.16,-124 670.17,0 670.17,0 670.17,0 867.57,0 867.57,0 867.57,0 963.43,-228.47 982.16,-273.09"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="980.05,-273.95 984.66,-279.06 984.25,-272.19 980.05,-273.95"/>
 </a>
 </g>
 </g>
 <!-- notice_purpose&#45;&gt;purpose -->
-<g id="FK055" class="edge">
+<g id="FK056" class="edge">
 <title>notice_purpose:e&#45;&gt;purpose:w</title>
-<g id="a_FK055"><a xlink:title="FK055 / notice_purpose_purpose_id_fkey / notice_purpose(purpose_id) to purpose(purpose_id) / FOREIGN KEY (purpose_id) REFERENCES purpose(purpose_id)">
+<g id="a_FK056"><a xlink:title="FK056 / notice_purpose_purpose_id_fkey / notice_purpose(purpose_id) to purpose(purpose_id) / FOREIGN KEY (purpose_id) REFERENCES purpose(purpose_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M200.26,-354.8C200.26,-354.8 356.16,-196 356.16,-196 356.16,-196 645.87,-119.63 696.79,-106.2"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="697.08,-108.48 702.78,-104.62 695.92,-104.08 697.08,-108.48"/>
 </a>
 </g>
 </g>
 <!-- project&#45;&gt;notice -->
-<g id="FK034" class="edge">
+<g id="FK035" class="edge">
 <title>project:e&#45;&gt;notice:w</title>
-<g id="a_FK034"><a xlink:title="FK034 / fk_project_notice / project(current_notice_id) to notice(notice_id) / FOREIGN KEY (current_notice_id) REFERENCES notice(notice_id)">
+<g id="a_FK035"><a xlink:title="FK035 / fk_project_notice / project(current_notice_id) to notice(notice_id) / FOREIGN KEY (current_notice_id) REFERENCES notice(notice_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M822.5,-547.4C822.5,-547.4 447.97,-736.18 390.91,-764.95"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="389.93,-762.89 385.15,-767.85 391.98,-766.96 389.93,-762.89"/>
 </a>
 </g>
 </g>
 <!-- project&#45;&gt;auth_user -->
-<g id="FK062" class="edge">
+<g id="FK063" class="edge">
 <title>project:e&#45;&gt;auth_user:w</title>
-<g id="a_FK062"><a xlink:title="FK062 / project_created_by_fkey / project(created_by) to auth_user(id) / FOREIGN KEY (created_by) REFERENCES auth_user(id)">
+<g id="a_FK063"><a xlink:title="FK063 / project_created_by_fkey / project(created_by) to auth_user(id) / FOREIGN KEY (created_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M824.5,-522.2C824.5,-522.2 954.87,-326.33 980.84,-287.31"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="982.68,-288.66 984.38,-281.99 978.89,-286.14 982.68,-288.66"/>
 </a>
 </g>
 </g>
 <!-- project&#45;&gt;auth_user -->
-<g id="FK063" class="edge">
+<g id="FK064" class="edge">
 <title>project:e&#45;&gt;auth_user:w</title>
-<g id="a_FK063"><a xlink:title="FK063 / project_dco_user_id_fkey / project(dco_user_id) to auth_user(id) / FOREIGN KEY (dco_user_id) REFERENCES auth_user(id)">
+<g id="a_FK064"><a xlink:title="FK064 / project_dco_user_id_fkey / project(dco_user_id) to auth_user(id) / FOREIGN KEY (dco_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M824.5,-497C824.5,-497 954.3,-322.32 980.67,-286.84"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="982.26,-288.51 984.31,-281.94 978.61,-285.8 982.26,-288.51"/>
 </a>
 </g>
 </g>
 <!-- purpose&#45;&gt;auth_user -->
-<g id="FK075" class="edge">
+<g id="FK076" class="edge">
 <title>purpose:e&#45;&gt;auth_user:w</title>
-<g id="a_FK075"><a xlink:title="FK075 / purpose_created_by_fkey / purpose(created_by) to auth_user(id) / FOREIGN KEY (created_by) REFERENCES auth_user(id)">
+<g id="a_FK076"><a xlink:title="FK076 / purpose_created_by_fkey / purpose(created_by) to auth_user(id) / FOREIGN KEY (created_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M795.72,-28.6C795.72,-28.6 950.76,-234.67 980.43,-274.12"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="978.58,-275.44 984.31,-279.27 982.22,-272.71 978.58,-275.44"/>
 </a>

@@ -61,7 +61,7 @@ hash and no email is written
 rows from before that change stand as written, because the trail is
 hash-chained and cannot be rewritten.
 
-## 2. API endpoints that carry PII — 163 endpoints in 17 modules
+## 2. API endpoints that carry PII — 166 endpoints in 18 modules
 
 Every GET, POST, PUT, PATCH and DELETE whose request or response includes a
 personal field. *In* is what the caller sends (body, path and query); *out* is
@@ -183,6 +183,14 @@ these need no session; they are marked **public**.
 | GET | `/legal-holds` | — | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
 | POST | `/legal-holds` | `reason`, `subject_uuid` | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
 | POST | `/legal-holds/{hold_uuid}/release` | — | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
+
+### Cross-border transfers (`/restricted-countries`) — 3 endpoints
+
+| Method | Endpoint | PII in (request) | PII out (response) |
+|---|---|---|---|
+| GET | `/restricted-countries` | — | `lifted_by_name`, `listed_by_name` |
+| POST | `/restricted-countries` | — | `lifted_by_name`, `listed_by_name` |
+| POST | `/restricted-countries/{country_uuid}/lift` | — | `lifted_by_name`, `listed_by_name` |
 
 ### Tickets (`/tickets`) — 4 endpoints
 

@@ -8336,7 +8336,7 @@
           "exchange"
         ],
         "summary": "Generate Export",
-        "description": "One CSV for the project, and it carries person rows.\n\nNo body: there is one kind of export and it covers the project. What the\ncaller may see decides the contents - a collection owner gets the people who\nconsented at the sites they run, a DPO gets all of them - so the same\nrequest returns a different, correct file to each of them.\n\nEvery person named writes an `export_line`. That is the disclosure record,\nand it is why generating and downloading are separate: re-downloading must\nnot claim a second disclosure.",
+        "description": "One CSV for the project, and it carries person rows.\n\nNo body: there is one kind of export and it covers the project. What the\ncaller may see decides the contents - a collection owner gets the people who\nconsented at the sites they run, a DPO gets all of them - so the same\nrequest returns a different, correct file to each of them.\n\nEvery person named writes an `export_line`. That is the disclosure record,\nand it is why generating and downloading are separate: re-downloading must\nnot claim a second disclosure.\n\nEach row's destination is checked under s.16 first (S2-04). A refusal rolls\nback everything the export would have written, so it is recorded in a\ntransaction of its own before the 422 goes back - a refused transfer is\nevidence too.",
         "operationId": "generate_export_projects__project_uuid__exports_post",
         "parameters": [
           {
@@ -9176,6 +9176,137 @@
                     "additionalProperties": true
                   },
                   "title": "Response Asset Subjects Assets  Asset Uuid  Subjects Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/restricted-countries": {
+      "get": {
+        "tags": [
+          "cross-border transfers"
+        ],
+        "summary": "The restricted list",
+        "operationId": "list_restrictions_restricted_countries_get",
+        "parameters": [
+          {
+            "name": "active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only restrictions in force",
+              "default": true,
+              "title": "Active"
+            },
+            "description": "Only restrictions in force"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RestrictionOut"
+                  },
+                  "title": "Response List Restrictions Restricted Countries Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "cross-border transfers"
+        ],
+        "summary": "Restrict transfers to a country",
+        "operationId": "restrict_restricted_countries_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestrictionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestrictionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/restricted-countries/{country_uuid}/lift": {
+      "post": {
+        "tags": [
+          "cross-border transfers"
+        ],
+        "summary": "Lift a restriction",
+        "operationId": "lift_restricted_countries__country_uuid__lift_post",
+        "parameters": [
+          {
+            "name": "country_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Country Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestrictionOut"
                 }
               }
             }
@@ -15761,6 +15892,18 @@
             ],
             "title": "Exported By Name"
           },
+          "transfer_basis": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transfer Basis"
+          },
           "project_uuid": {
             "type": "string",
             "format": "uuid",
@@ -15851,6 +15994,18 @@
               }
             ],
             "title": "Exported By Name"
+          },
+          "transfer_basis": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transfer Basis"
           }
         },
         "type": "object",
@@ -19891,6 +20046,21 @@
             "type": "boolean",
             "title": "Is In House",
             "default": false
+          },
+          "location_country": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2,
+                "minLength": 2,
+                "pattern": "^[A-Za-z]{2}$",
+                "description": "ISO 3166-1 alpha-2 country code, e.g. IN"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Country"
           }
         },
         "additionalProperties": false,
@@ -19935,6 +20105,17 @@
             "type": "boolean",
             "title": "Is In House",
             "default": false
+          },
+          "location_country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Country"
           },
           "created_at": {
             "title": "Created At"
@@ -20005,6 +20186,21 @@
               }
             ],
             "title": "Security Confirmed At"
+          },
+          "location_country": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2,
+                "minLength": 2,
+                "pattern": "^[A-Za-z]{2}$",
+                "description": "ISO 3166-1 alpha-2 country code, e.g. IN"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Country"
           }
         },
         "additionalProperties": false,
@@ -22830,6 +23026,98 @@
         ],
         "title": "ResponseFileOut",
         "description": "A file released with the response, downloaded from the account."
+      },
+      "RestrictionIn": {
+        "properties": {
+          "country_code": {
+            "type": "string",
+            "maxLength": 2,
+            "minLength": 2,
+            "pattern": "^[A-Za-z]{2}$",
+            "title": "Country Code",
+            "description": "ISO 3166-1 alpha-2 country code, e.g. IN"
+          },
+          "notification_ref": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Notification Ref"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "country_code",
+          "notification_ref"
+        ],
+        "title": "RestrictionIn"
+      },
+      "RestrictionOut": {
+        "properties": {
+          "country_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Country Uuid"
+          },
+          "country_code": {
+            "type": "string",
+            "title": "Country Code"
+          },
+          "notification_ref": {
+            "type": "string",
+            "title": "Notification Ref"
+          },
+          "listed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Listed At"
+          },
+          "listed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Listed By Name"
+          },
+          "lifted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lifted At"
+          },
+          "lifted_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lifted By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "country_uuid",
+          "country_code",
+          "notification_ref",
+          "listed_at",
+          "listed_by_name",
+          "lifted_at",
+          "lifted_by_name"
+        ],
+        "title": "RestrictionOut"
       },
       "ReviewerIn": {
         "properties": {
