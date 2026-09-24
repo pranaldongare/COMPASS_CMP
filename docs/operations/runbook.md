@@ -15,6 +15,36 @@ API error carries a `request_id`; ask for it first, then search the log.
 | Signed in on the wrong portal | a staff account on the portal or a principal on the console | each portal points the wrong kind of account at the other |
 | Works on `localhost`, not on `127.0.0.1` | the cookie is first-party to one origin | use the proxied origin |
 
+## "Could not reach the server" when the portal is opened by IP
+
+Works at `http://localhost:3000`, fails at `http://<ip>:3000`: the page shows
+*Could not reach the server*, and sometimes the API's log shows the request
+arriving anyway. The browser got no answer it was allowed to read.
+
+The cause is almost always `NEXT_PUBLIC_API_URL`. Unset, the browser asks
+`/api` on the portal's own origin and Next forwards it to `API_ORIGIN` on the
+server, which works however the page was opened. Set to `http://localhost:8000`,
+it sends a browser opened by IP to *its own* `localhost` - another machine's,
+where nothing listens. Set to `http://<ip>:8000`, the call is cross-origin: the
+API is bound to `127.0.0.1` and refuses it, or answers without
+`access-control-allow-origin` for an origin not in `CORS_ORIGINS`, and the
+browser throws the answer away.
+
+1. **Remove `NEXT_PUBLIC_API_URL`** from both portals' `.env.local`. Keep
+   `API_ORIGIN=http://127.0.0.1:8000` (server-side, where Next forwards to)
+   and `DEV_ORIGINS=<ip>` (without it the page does not hydrate by IP).
+2. **Restart both `npm run dev`.** `NEXT_PUBLIC_*` values are fixed when the
+   server starts; a hot reload does not pick them up.
+3. DevTools → Console says which URL was tried: `[api] no response from …`.
+   Since 2026-09-24 a localhost `NEXT_PUBLIC_API_URL` on a page opened by IP
+   is replaced with `/api` automatically, with an `[api] NEXT_PUBLIC_API_URL
+   is …` warning - so seeing that warning means step 1 is still to do.
+
+Only if the browser genuinely must call the API directly: add
+`http://<ip>:3000,http://<ip>:3001` to `CORS_ORIGINS`, keep
+`COOKIE_SECURE=false` over plain http, start the API with `--host 0.0.0.0`,
+and restart it.
+
 ## No message of any kind is sent, and the request said one was
 
 Every message is addressed to a contact that is **sealed in the database**.

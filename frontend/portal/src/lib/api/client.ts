@@ -45,8 +45,48 @@ export function setUnauthenticatedHandler(handler: (() => void) | null): void {
   onUnauthenticated = handler;
 }
 
+const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
+
+/**
+ * The API base a browser on this page can actually reach.
+ *
+ * `/api` - the default - is this portal's own origin, which Next forwards to
+ * the API server-side (`API_ORIGIN`), so it works however the page was
+ * opened. An absolute `NEXT_PUBLIC_API_URL` on a loopback host does not: a
+ * page opened at `http://<ip>:3000` from another computer asks *that*
+ * computer's `localhost:8000`, where nothing is listening, and every request
+ * fails with "Could not reach the server" while the API sits idle. That
+ * combination can never work, so it falls back to `/api` and says why once.
+ * Any other absolute URL - a real API host - is used exactly as configured.
+ */
+export function reachableApiBase(apiUrl: string, pageHost: string | undefined): string {
+  if (!pageHost || !/^https?:\/\//i.test(apiUrl)) return apiUrl;
+  let target: URL;
+  try {
+    target = new URL(apiUrl);
+  } catch {
+    return apiUrl;
+  }
+  if (LOOPBACK.has(target.hostname) && !LOOPBACK.has(pageHost)) {
+    if (!warnedAboutBase) {
+      warnedAboutBase = true;
+      console.warn(
+        `[api] NEXT_PUBLIC_API_URL is ${apiUrl}, but this page was opened at ${pageHost}: ` +
+          `a browser here cannot reach the API's localhost. Using /api (forwarded by ` +
+          `this portal to API_ORIGIN) instead. Remove NEXT_PUBLIC_API_URL to silence this.`,
+      );
+    }
+    return "/api";
+  }
+  return apiUrl;
+}
+let warnedAboutBase = false;
+
 export const http: AxiosInstance = axios.create({
-  baseURL: config.apiUrl,
+  baseURL: reachableApiBase(
+    config.apiUrl,
+    typeof window === "undefined" ? undefined : window.location.hostname,
+  ),
   withCredentials: true,
   timeout: 30_000, // never infinite: a hung request is a spinner nobody can cancel
   headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -90,6 +130,17 @@ http.interceptors.response.use(
   },
   (error: AxiosError<{ error?: ApiErrorBody }>) => {
     if (!error.response) {
+      // No answer reached this page. Say which URL was tried and the three
+      // usual reasons, once per failure, in the console - never a body or a
+      // value. The person sees the short message; whoever opens DevTools
+      // sees what to change.
+      const tried = `${error.config?.baseURL ?? ""}${error.config?.url ?? ""}`;
+      console.error(
+        `[api] no response from ${tried || "the API"} (${error.code ?? "network error"}). ` +
+          `Usual causes: the API is not running or not reachable from this browser; ` +
+          `NEXT_PUBLIC_API_URL points somewhere this browser cannot reach (leave it ` +
+          `unset to use /api); or the API refused this origin under CORS (CORS_ORIGINS).`,
+      );
       const message =
         error.code === "ECONNABORTED"
           ? "The request timed out. Try again."

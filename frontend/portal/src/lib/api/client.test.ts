@@ -8,9 +8,9 @@
  * not a mocked module agreeing with itself.
  */
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { apiGet, apiPost } from "@/lib/api/client";
+import { apiGet, apiPost, reachableApiBase } from "@/lib/api/client";
 import { API, HttpResponse, http, server } from "@/test/server";
 
 // Real envelopes from the key service - the same three `deep.test.ts` uses.
@@ -50,8 +50,20 @@ describe("the response interceptor opens sealed values", () => {
       http.get(`${API}/users`, () =>
         HttpResponse.json({
           items: [
-            { user_uuid: "u1", full_name: NAME, email: EMAIL, role: "dpo", is_minor: false },
-            { user_uuid: "u2", full_name: "Plain Name", email: null, role: "dco", is_minor: null },
+            {
+              user_uuid: "u1",
+              full_name: NAME,
+              email: EMAIL,
+              role: "dpo",
+              is_minor: false,
+            },
+            {
+              user_uuid: "u2",
+              full_name: "Plain Name",
+              email: null,
+              role: "dco",
+              is_minor: null,
+            },
           ],
           total: 2,
           next_cursor: null,
@@ -67,7 +79,11 @@ describe("the response interceptor opens sealed values", () => {
     }>("/users");
 
     expect(calls).toHaveLength(1);
-    expect((calls[0] as { data: unknown[] }).data).toEqual([{ NAME }, { EMAIL }, { FREE_TEXT: TEXT }]);
+    expect((calls[0] as { data: unknown[] }).data).toEqual([
+      { NAME },
+      { EMAIL },
+      { FREE_TEXT: TEXT },
+    ]);
     expect(body.items[0]).toMatchObject({
       user_uuid: "u1",
       full_name: "Amruta Shukla",
@@ -75,7 +91,11 @@ describe("the response interceptor opens sealed values", () => {
       role: "dpo",
       is_minor: false,
     });
-    expect(body.items[1]).toMatchObject({ full_name: "Plain Name", email: null, is_minor: null });
+    expect(body.items[1]).toMatchObject({
+      full_name: "Plain Name",
+      email: null,
+      is_minor: null,
+    });
     expect(body.detail.request_text).toBe("Please send my file.");
     expect(body.total).toBe(2);
     expect(JSON.stringify(body)).not.toContain("SE::");
@@ -85,7 +105,10 @@ describe("the response interceptor opens sealed values", () => {
     const calls = decryptService({});
     server.use(
       http.get(`${API}/purposes`, () =>
-        HttpResponse.json({ items: [{ name: "Gait research", status: "active" }], total: 1 }),
+        HttpResponse.json({
+          items: [{ name: "Gait research", status: "active" }],
+          total: 1,
+        }),
       ),
     );
     const body = await apiGet<{ items: { name: string }[] }>("/purposes");
@@ -98,15 +121,25 @@ describe("the response interceptor opens sealed values", () => {
     server.use(
       http.post(`${API}/me/nominations`, () =>
         HttpResponse.json(
-          { nomination_uuid: "n1", nominee_name: NAME, nominee_email: EMAIL, status: "pending" },
+          {
+            nomination_uuid: "n1",
+            nominee_name: NAME,
+            nominee_email: EMAIL,
+            status: "pending",
+          },
           { status: 201 },
         ),
       ),
     );
-    const body = await apiPost<{ nominee_name: string; nominee_email: string; status: string }>(
-      "/me/nominations",
-      { nominee_name: "Arjun Nominee", nominee_email: "arjun@example.org", rights: ["access"] },
-    );
+    const body = await apiPost<{
+      nominee_name: string;
+      nominee_email: string;
+      status: string;
+    }>("/me/nominations", {
+      nominee_name: "Arjun Nominee",
+      nominee_email: "arjun@example.org",
+      rights: ["access"],
+    });
     expect(calls).toHaveLength(1);
     expect(body).toMatchObject({
       nominee_name: "Arjun Nominee",
@@ -140,5 +173,33 @@ describe("the response interceptor opens sealed values", () => {
     );
     await apiGet("/me");
     expect(elsewhere.filter((url) => !url.includes("/dkms/decrypt"))).toEqual([]);
+  });
+});
+
+describe("the API base a browser can reach", () => {
+  it("keeps /api, which works however the page was opened", () => {
+    expect(reachableApiBase("/api", "172.17.236.160")).toBe("/api");
+  });
+
+  it("falls back to /api when a localhost API URL meets a page opened by IP", () => {
+    // The report: the page at http://<ip>:3000, NEXT_PUBLIC_API_URL at
+    // localhost:8000 - which is the viewer's own computer - and every request
+    // answering "Could not reach the server".
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    expect(reachableApiBase("http://localhost:8000", "172.17.236.160")).toBe("/api");
+    expect(reachableApiBase("http://127.0.0.1:8000", "cmp.intranet")).toBe("/api");
+    warn.mockRestore();
+  });
+
+  it("uses a localhost API URL as configured when the page is on localhost too", () => {
+    expect(reachableApiBase("http://localhost:8000", "localhost")).toBe(
+      "http://localhost:8000",
+    );
+  });
+
+  it("never second-guesses a real API host", () => {
+    expect(reachableApiBase("https://api.example.org", "172.17.236.160")).toBe(
+      "https://api.example.org",
+    );
   });
 });
