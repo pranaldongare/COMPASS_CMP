@@ -49,3 +49,17 @@ ROUTERS: tuple[APIRouter, ...] = (
 )
 
 __all__ = ["ROUTERS"]
+
+
+def _development_routers() -> tuple[APIRouter, ...]:
+    """Routers that exist only on a developer's machine, and only when asked."""
+    from cmp.infrastructure import devcodes
+
+    if not devcodes.enabled():
+        return ()
+    from cmp.api.routers.public.devcodes import router as devcodes_router
+
+    return (devcodes_router,)
+
+
+ROUTERS = (*ROUTERS, *_development_routers())

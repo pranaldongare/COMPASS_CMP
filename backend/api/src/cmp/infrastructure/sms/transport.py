@@ -56,6 +56,9 @@ class ConsoleSmsTransport:
         except OSError as exc:  # pragma: no cover
             log.warning("sms.outbox_unavailable", error=str(exc))
 
+        from cmp.infrastructure import devcodes
+
+        devcodes.record(channel="sms", to=to, text=body)
         log.info("sms.delivered", to=obscure(to), transport="console")
         return {"channel": "sms", "transport": "console", "delivered": True}
 

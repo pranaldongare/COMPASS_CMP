@@ -123,6 +123,15 @@ class Settings(BaseSettings):
     #: deployment that silently stores plaintext is the exact failure the
     #: service exists to prevent.
     dkms_enabled: bool = False
+
+    #: Development only: show each one-time code the console transports write
+    #: in a popup on the portal that asked for it, so signing in does not mean
+    #: reading `var/outbox.log` - which, on a phone or a second machine opened
+    #: by IP, is not something the person at the screen can do. Off unless
+    #: asked for, honoured only where the console transports are in use, and
+    #: refused outright outside local and test: shown on the screen that asks
+    #: for it, a code proves nothing about who is holding the phone.
+    dev_show_codes: bool = False
     #: The key the blind indexes are computed under. Separate from SECRET_KEY on
     #: purpose: rotating the session secret must not change every index, and
     #: the index key never leaves this process. 32+ bytes.
@@ -263,6 +272,10 @@ class Settings(BaseSettings):
             bik = self.blind_index_key.get_secret_value()
             if bik.startswith("dev-only") or len(bik) < 32:
                 raise ValueError("BLIND_INDEX_KEY must be a real 32+ byte secret in production")
+        if self.dev_show_codes and self.environment not in ("local", "test"):
+            # Not production-only: a staging deployment real people sign in
+            # to must not print their codes on the screen either.
+            raise ValueError("DEV_SHOW_CODES is for local development only")
         if self.sms_transport == "http" and not self.sms_http_url.startswith("https://"):
             raise ValueError("SMS_HTTP_URL must be an https:// gateway when SMS_TRANSPORT=http")
         return self

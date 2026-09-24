@@ -146,7 +146,17 @@ class TestProductionStartupGuards:
             # through it rather than in the clear.
             "dkms_enabled": True,
             "blind_index_key": SecretStr("a-real-blind-index-key-of-thirty-two-bytes"),
+            # Stated, not left to the developer's .env: a machine running with
+            # the code popup on would otherwise fail this for the right reason.
+            "dev_show_codes": False,
         }
+
+    def test_the_code_popup_is_refused_in_production(self) -> None:
+        """A code on the screen that asks for it proves nothing."""
+        from cmp.core.config import Settings
+
+        with pytest.raises(ValueError, match="DEV_SHOW_CODES"):
+            Settings(**{**self._valid(), "dev_show_codes": True})  # type: ignore[arg-type]
 
     def test_a_complete_production_configuration_is_accepted(self) -> None:
         """The guards must permit a correct deployment, or they are just an outage."""

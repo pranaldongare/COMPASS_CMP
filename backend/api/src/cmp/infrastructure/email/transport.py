@@ -81,6 +81,9 @@ class ConsoleEmailTransport:
             # it did turns a misconfiguration into silent loss.
             raise RuntimeError("The console email transport does not deliver outside local/test")
         self._write(to=to, subject=subject, body=body)
+        from cmp.infrastructure import devcodes
+
+        devcodes.record(channel="email", to=to, text=f"{subject}\n{body}")
         log.info(
             "email.delivered",
             to=obscure(to),

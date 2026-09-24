@@ -154,6 +154,24 @@ bottom:
 tail -n 20 backend/api/var/outbox.log
 ```
 
+**Or have the portal show it.** From a phone, or another machine opening the
+portal by IP, the outbox is out of reach. Switch on the development popup
+and each code appears in the top-right corner of the page that asked for it,
+with who it went to and a Copy button:
+
+```bash
+# backend/api/.env
+DEV_SHOW_CODES=true
+# frontend/console/.env.local and frontend/portal/.env.local
+NEXT_PUBLIC_DEV_SHOW_CODES=true
+```
+
+Restart the API, the worker and both `npm run dev`. The API refuses to start
+with `DEV_SHOW_CODES` outside `ENVIRONMENT=local`/`test`, and `/dev/codes`
+does not exist unless it is on - a code shown on the screen that asks for it
+proves nothing about who holds the phone, so this never goes near a real
+deployment.
+
 A code is valid for ten minutes (five for MFA) and five attempts. Five codes
 per contact per hour; if you hit that during manual testing, clear the
 counters:

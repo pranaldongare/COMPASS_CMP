@@ -18,6 +18,7 @@ import { QueryProvider } from "./query-provider";
 import { ThemeProvider } from "./theme-provider";
 import { ToastProvider } from "./toast-provider";
 import { AppErrorBoundary } from "@/components/feedback/error-boundary";
+import { DevCodePopup } from "@/features/dev";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -26,6 +27,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <ThemeProvider>
           <ToastProvider>
             <AuthProvider>{children}</AuthProvider>
+            <DevCodePopup />
           </ToastProvider>
         </ThemeProvider>
       </QueryProvider>
