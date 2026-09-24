@@ -15,6 +15,7 @@ import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
 import * as React from "react";
 
 import { cn } from "@/lib/format";
+import { uid } from "@/lib/browser";
 
 export type ToastTone = "success" | "error" | "info" | "warning";
 
@@ -76,7 +77,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const push = React.useCallback(
     (toast: Omit<Toast, "id">) => {
-      const id = crypto.randomUUID();
+      const id = uid();
       // Errors default to staying: they usually carry a request id somebody
       // needs to copy, and four seconds is not long enough to do that.
       const duration = toast.duration ?? (toast.tone === "error" ? 0 : 4500);

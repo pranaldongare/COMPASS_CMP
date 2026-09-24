@@ -17,6 +17,7 @@ import { consentLinkUrl } from "@/features/consent/link-url";
 import { type MintedLink, useAssignAgent } from "@/features/projects";
 import { useToast } from "@/providers";
 import { agentSchema } from "@/features/projects/schemas";
+import { copyText } from "@/lib/browser";
 
 export function AgentForm({ siteUuid, onDone }: { siteUuid: string; onDone: () => void }) {
   const toast = useToast();
@@ -116,7 +117,7 @@ function MintedLinkPanel({ link, onDone }: { link: MintedLink; onDone: () => voi
         variant="secondary"
         className="mt-3"
         onClick={async () => {
-          await navigator.clipboard.writeText(url);
+          await copyText(url);
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
         }}

@@ -37,6 +37,7 @@ import { REQUEST_TYPE_COPY } from "@/features/rights/components/copy";
 import { ApiError } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
 import type { NominationView } from "@/types";
+import { copyText } from "@/lib/browser";
 
 type Phase = "loading" | "invalid" | "ready" | "accepted" | "declined";
 
@@ -290,7 +291,7 @@ function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = React.useState(false);
   async function copy() {
     try {
-      await navigator.clipboard.writeText(value);
+      await copyText(value);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {

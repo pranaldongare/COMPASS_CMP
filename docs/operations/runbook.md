@@ -45,6 +45,23 @@ Only if the browser genuinely must call the API directly: add
 `COOKIE_SECURE=false` over plain http, start the API with `--host 0.0.0.0`,
 and restart it.
 
+## Works on localhost, a save fails by IP: "Something went wrong on this page"
+
+The save reaches the API and succeeds, but the page reports a failure -
+before 2026-09-24 it said *Could not reach the server*. The page was opened
+at `http://<ip>:…`, which is not a **secure context**: only `https://` and
+`http://localhost` are. There the browser leaves out `crypto.randomUUID`,
+`crypto.subtle` and `navigator.clipboard`, and code that calls them throws a
+TypeError. The success toast took its id from `crypto.randomUUID`, so every
+successful save threw while announcing itself.
+
+Fixed in the portals: nothing calls those directly any more;
+`lib/browser` (`uid()`, `copyText()`) falls back to what every context
+offers. If it recurs, DevTools → Console shows `[form] the page failed after
+the server answered:` with the real error; `… is not a function` on a
+browser API is this, and the call belongs behind `lib/browser`. Serving the
+portals over https removes the whole class.
+
 ## No message of any kind is sent, and the request said one was
 
 Every message is addressed to a contact that is **sealed in the database**.

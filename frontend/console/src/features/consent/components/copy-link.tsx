@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/primitives";
 import { consentLinkUrl } from "@/features/consent/link-url";
 import { useToast } from "@/providers";
 import type { ConsentLink } from "@/types";
+import { copyText } from "@/lib/browser";
 
 export function CopyLinkButton({
   link,
@@ -69,7 +70,7 @@ export function CopyLinkButton({
       onClick={async () => {
         const url = consentLinkUrl(link.url_path);
         try {
-          await navigator.clipboard.writeText(url);
+          await copyText(url);
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
         } catch {

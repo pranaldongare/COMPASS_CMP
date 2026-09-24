@@ -27,6 +27,7 @@ import type { RemintedLink } from "@/features/consent/api";
 import { formatDateTime } from "@/lib/format";
 import { useToast } from "@/providers";
 import type { ConsentLink } from "@/types";
+import { copyText } from "@/lib/browser";
 
 /**
  * Typed to `ConsentLink` rather than `LinkListRow` because that is all it uses.
@@ -148,7 +149,7 @@ function MintedPanel({ link, onDone }: { link: RemintedLink; onDone: () => void 
         variant="secondary"
         className="mt-3"
         onClick={async () => {
-          await navigator.clipboard.writeText(url);
+          await copyText(url);
           setCopied(true);
           window.setTimeout(() => setCopied(false), 2000);
         }}

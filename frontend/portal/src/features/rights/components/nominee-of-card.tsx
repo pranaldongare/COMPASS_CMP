@@ -41,6 +41,7 @@ import { RequestCard } from "@/features/rights/components/request-card";
 import { useMyRequest, useNominationsNamingMe } from "@/features/rights/queries";
 import { formatDate } from "@/lib/format";
 import type { NomineeOf } from "@/types";
+import { copyText } from "@/lib/browser";
 
 export function NomineeOfCard() {
   const naming = useNominationsNamingMe();
@@ -73,7 +74,7 @@ function NomineeOfRow({ n }: { n: NomineeOf }) {
   const [copied, setCopied] = React.useState(false);
   async function copy() {
     try {
-      await navigator.clipboard.writeText(n.nomination_uuid);
+      await copyText(n.nomination_uuid);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
