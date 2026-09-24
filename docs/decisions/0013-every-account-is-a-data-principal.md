@@ -1,6 +1,7 @@
 # 0013. Every account is a data principal; staff is a role the session acts with
 
-Status: accepted. September 2026. Migration 0025.
+Status: accepted. September 2026. Migration 0025. Amended 2026-09-21: the
+contact rules are enforced on keyed hashes (below).
 
 ## Context
 
@@ -90,3 +91,13 @@ A deployment needs a staff member's principal standing to end with their
 employment, or needs more than two email addresses per person. The first is a
 policy flag on `end_staff_access`; the second is a contacts table replacing
 the two columns.
+
+## Amended · 2026-09-21
+
+The contacts are sealed since 0028, so "a unique index on the new column and a
+trigger across the diagonal" are now on the hashes beside the columns:
+`auth_user_secondary_email_hash_key`, and `cmp_contact_belongs_to_one_person()`
+comparing `email_hash` with `secondary_email_hash` (renamed from `*_idx` in
+0029). The rule, and the unique violation the application reports as a
+conflict, are unchanged. The code sign-in lookup matches a confirmed
+secondary address by its hash (`users.by_contact`). See [ADR 0017](0017-lookup-by-keyed-hash-and-name-ngrams.md).

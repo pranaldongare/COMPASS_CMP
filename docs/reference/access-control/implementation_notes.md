@@ -34,11 +34,11 @@ DPO, Admin, DCO, DCO Admin and RCO are data_source writers. Existing-source upda
 
 Evidence: [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L664), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L758), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L816).
 
-## Notification scope is broader than project scope
+## Notification resend is broader than project scope
 
-The staff notification feed reads selected global audit event types without a project ownership predicate. Resend admits DPO/DCO and resolves the event by UUID without caller scope. Principal notifications are own-subject; ticket events have separate respondent/office filters.
+Since `79b7fac` the staff notification feed applies the project register's scope predicate: an event about a project, or about a notice, import or export on one, reaches only a role that could see that project; a lockout reaches DPO and Admin; a consent withdrawal reaches DPO only. Resend is unchanged: it admits DPO/DCO and resolves the event by UUID without caller scope. Principal notifications are own-subject; ticket events have separate respondent/office filters.
 
-Evidence: [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/dashboard.py#L766), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/dashboard.py#L830).
+Evidence: [feed, as of daca825](https://github.com/pranaldongare/COMPASS_CMP/blob/daca825864313166693c3f2973d50ec5c05d4170/backend/api/src/cmp/api/routers/v1/dashboard.py#L805-L846), [resend, as of daca825](https://github.com/pranaldongare/COMPASS_CMP/blob/daca825864313166693c3f2973d50ec5c05d4170/backend/api/src/cmp/api/routers/v1/dashboard.py#L887).
 
 ## Delegation creation has a narrower successful role set
 
@@ -66,6 +66,12 @@ Evidence: [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069
 
 ## Three registered system routes are absent from the API docs
 
-GET /, /health/live and /health/ready set include_in_schema=False. The new inventory includes them explicitly: 241 OpenAPI operations plus three hidden system operations. Framework-generated development documentation endpoints and CORS middleware responses are outside this business/router inventory.
+GET /, /health/live and /health/ready set include_in_schema=False. The new inventory includes them explicitly: 245 OpenAPI operations plus three hidden system operations. Framework-generated development documentation endpoints and CORS middleware responses are outside this business/router inventory.
 
 Evidence: [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/system.py#L104), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/system.py#L143), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/system.py#L174).
+
+## The portals' decrypt route is not an API operation
+
+Both portals serve `POST /dkms/decrypt` from their own Next.js server, not from the API, so it is not in this inventory and no role, matrix cell or scope applies to it. It refuses a request with no `cmp_session` cookie and does not otherwise validate the session, check a CSRF token or rate-limit; it opens whatever sealed values the body carries. That behaviour is under review; see [csrf.md](../../security/csrf.md#not-covered-the-portals-own-dkmsdecrypt).
+
+Evidence: [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/daca825864313166693c3f2973d50ec5c05d4170/frontend/console/src/app/dkms/decrypt/route.ts#L66-L100), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/daca825864313166693c3f2973d50ec5c05d4170/frontend/portal/src/app/dkms/decrypt/route.ts#L66-L100).

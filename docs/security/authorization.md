@@ -75,3 +75,12 @@ the route is not registered, the matrix has no write grant, the `UPDATE` and
 
 The Privacy Office is audited by this table. A DPO who can edit her own audit
 trail makes it worthless as evidence.
+
+## What a portal opens rests on this
+
+Personal values leave the API sealed, and the portals open them in their own
+server route ([ADR 0016](../decisions/0016-personal-data-sealed-by-a-separate-key-service.md)).
+That route makes no authorisation decision of its own: the decision is the one
+this page describes, made when the API chose which rows to serve. How far the
+route itself relies on that, and whether it should check more, is under
+review; see [csrf.md](csrf.md#not-covered-the-portals-own-dkmsdecrypt).

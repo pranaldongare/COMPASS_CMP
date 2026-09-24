@@ -67,8 +67,8 @@ Find a record to filter on.
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RequireDPOorAdmin`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]`.
-- **Rules:** DPO/Admin only. Name search over data principals, staff, consent records, processors, data sources, projects, notices, sites and rights requests, unscoped (the two supervising roles read every row). `kind` must be a known lookup kind, else 422; at most ten answers.
-- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/c7d3f6ba15a5cfdc6f9df6632c9c7e336c9936fa/backend/api/src/cmp/api/routers/v1/audit.py#L310).
+- **Rules:** DPO/Admin only. Finds data principals, staff, consent records, processors, data sources, projects, notices, sites and rights requests, unscoped (the two supervising roles read every row). Names and contacts are sealed, so a person is matched by the whole email, mobile or username through its keyed hash, by uuid, or by three or more characters of a name through the hashed name runs (since `f5fffcc`); labels and hints come back sealed for the console to open. `kind` must be a known lookup kind, else 422; at most ten answers.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/c7d3f6ba15a5cfdc6f9df6632c9c7e336c9936fa/backend/api/src/cmp/api/routers/v1/audit.py#L310), [lookup as of daca825](https://github.com/pranaldongare/COMPASS_CMP/blob/daca825864313166693c3f2973d50ec5c05d4170/backend/api/src/cmp/db/repositories/audit_lookup.py#L86-L212).
 
 ## GET /audit/export.csv
 

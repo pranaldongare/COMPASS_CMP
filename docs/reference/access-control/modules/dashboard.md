@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-3 operations; 3 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+3 operations; 3 appear in the existing OpenAPI/API docs. Snapshot `1757d50`; `GET /notifications` re-reviewed at `daca825`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
@@ -33,8 +33,8 @@ Notifications.
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`.
 - **Route guard:** `CurrentUser`.
-- **Rules:** Principal sees own audit events. Staff receive a global feed of selected event types plus own ticket events; DPO also gets office ticket events. The staff event query has no project/owner predicate.
-- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/dashboard.py#L766).
+- **Rules:** Principal sees own audit events. Staff receive selected event types scoped as the project register is: an event about a project, or about a notice, import or export on one, is shown only to a role that could see that project; a lockout is shown to DPO and Admin; a consent withdrawal to DPO only. Plus own ticket events; DPO also gets office ticket events. (Before `79b7fac` the staff query had no project/owner predicate.)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/daca825864313166693c3f2973d50ec5c05d4170/backend/api/src/cmp/api/routers/v1/dashboard.py#L805-L846).
 
 ## POST /notifications/{log_uuid}/resend
 

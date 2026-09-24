@@ -1,6 +1,7 @@
 # 0005. The audit chain position is drawn inside the advisory lock
 
-Status: accepted. Migration 0014, September 2026.
+Status: accepted. Migration 0014, September 2026. Amended 2026-09-21: the
+lock can now be held across a call to the key service (below).
 
 ## Context
 
@@ -41,3 +42,16 @@ finding is recorded rather than repaired.
 
 Audit write volume makes one lock a bottleneck. Partitioning the chain by
 subject would be the next step, and is a schema change, not a code change.
+
+## Amended · 2026-09-21
+
+"A few milliseconds" no longer holds for every transaction. Since personal
+data is sealed by the key service inside the transaction that writes it
+([ADR 0016](0016-personal-data-sealed-by-a-separate-key-service.md)), a
+transaction that records an audit row and *then* seals something holds this
+lock across an HTTP round trip, bounded by `DKMS_TIMEOUT_S` (5 s) per call,
+and every other audited write on the platform waits for it. `PATCH /me` does
+this: it records `user.contact_changed` and then seals a new secondary email
+(`api/routers/v1/me.py:166`, `:176`). Nothing enforces sealing before the
+first audit row. The ordering and its effects are in
+[transactions.md](../database/transactions.md).

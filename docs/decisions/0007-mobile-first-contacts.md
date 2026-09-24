@@ -1,7 +1,8 @@
 # 0007. Mobile required, email optional, for data principals and nominees
 
 Status: accepted. Migration 0015, September 2026. Supersedes email as the
-identity of a data principal.
+identity of a data principal. Amended 2026-09-21: the contacts are sealed and
+found by keyed hash ([ADR 0017](0017-lookup-by-keyed-hash-and-name-ngrams.md)).
 
 ## Context
 
@@ -40,3 +41,15 @@ which turned revoking an old nomination into a 500.
 
 A deployment serves people without a mobile. Email-only registration would be
 a configuration switch on the same schema.
+
+## Amended · 2026-09-21
+
+Since 0028 the mobile and the email are sealed, and every rule here that
+compares them (uniqueness, "which of her contacts is this", the nominee's
+contacts) compares their keyed hashes instead
+([ADR 0017](0017-lookup-by-keyed-hash-and-name-ngrams.md)). The normalisation
+under *Consequences* (E.164 for mobiles, lower-cased emails) is now also part
+of how each hash is computed, so changing it means recomputing every stored
+hash. The trigger requiring a mobile for a data principal and the CHECK
+requiring an email for staff test for presence and work unchanged on sealed
+values.

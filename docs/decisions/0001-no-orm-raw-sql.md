@@ -1,6 +1,7 @@
 # 0001. No ORM: hand-written SQL and raw-SQL migrations
 
-Status: accepted. Dates from the first commit.
+Status: accepted. Dates from the first commit. Amended 2026-09-22: two
+migrations backfill in Python (below).
 
 ## Context
 
@@ -37,3 +38,22 @@ query appearing anywhere else still fails lint.
 
 A second consumer of the schema appears that needs a model layer, or the
 repository count grows past what one person can hold. Neither is close.
+
+## Amended · 2026-09-21 and 2026-09-22
+
+Two migrations are not raw SQL throughout. 0028 (2026-09-21) and 0030
+(2026-09-22) fill columns whose values are keyed hashes under
+`BLIND_INDEX_KEY`, a key the database does not hold, and 0030 must first open
+names that are already sealed, through the key service. So their backfills are
+Python: each imports the application's own `cmp.infrastructure.dkms.blind`
+and `client.unseal_values_sync`, so the migration and the code agree on every
+hash, and writes row by row inside the migration's transaction. The DDL around
+them is still SQL, and every other migration is still raw DDL in both
+directions.
+
+What this costs: those two migrations depend on application code as it stands
+when they run, on the environment's `BLIND_INDEX_KEY`, and on a reachable key
+service wherever sealed values exist. "Reading `migrations/versions/` is
+reading the truth" still holds for the schema, not for the values those two
+wrote. See [ADR 0017](0017-lookup-by-keyed-hash-and-name-ngrams.md) and
+[migrations.md](../database/migrations.md).

@@ -1186,10 +1186,10 @@
         "data_subject": "COND"
       },
       "conditions": [
-        "Principal sees own audit events. Staff receive a global feed of selected event types plus own ticket events; DPO also gets office ticket events. The staff event query has no project/owner predicate."
+        "Principal sees own audit events. Staff receive selected event types scoped as the project register is: an event about a project, or about a notice, import or export on one, is shown only to a role that could see that project; a lockout is shown to DPO and Admin; a consent withdrawal to DPO only. Plus own ticket events; DPO also gets office ticket events."
       ],
       "evidence": [
-        "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/dashboard.py#L766"
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/daca825864313166693c3f2973d50ec5c05d4170/backend/api/src/cmp/api/routers/v1/dashboard.py#L805-L846"
       ]
     },
     {
@@ -8485,10 +8485,10 @@
         "data_subject": "PUBLIC"
       },
       "conditions": [
-        "No application session or role is required. Availability can still depend on deployment/network configuration."
+        "No application session or role is required. Checks PostgreSQL, Redis, the migration head and, since ce9a984, the key service (`encryption`); a failing check's detail names the key service URL and the connection error to an unauthenticated caller. Availability can still depend on deployment/network configuration."
       ],
       "evidence": [
-        "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/system.py#L148"
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/daca825864313166693c3f2973d50ec5c05d4170/backend/api/src/cmp/api/routers/v1/system.py#L148-L170"
       ]
     },
     {
@@ -9246,10 +9246,11 @@
         "data_subject": "NO"
       },
       "conditions": [
-        "DPO/Admin only. Name search over data principals, staff, consent records, processors, data sources, projects, notices, sites and rights requests, unscoped (the two supervising roles read every row). `kind` must be a known lookup kind, else 422; at most ten answers."
+        "DPO/Admin only. Finds data principals, staff, consent records, processors, data sources, projects, notices, sites and rights requests, unscoped (the two supervising roles read every row). A person is matched by the whole email, mobile or username through its keyed hash, by uuid, or by three or more characters of a name through the hashed name runs; sealed labels and hints are returned for the console to open. `kind` must be a known lookup kind, else 422; at most ten answers."
       ],
       "evidence": [
-        "https://github.com/pranaldongare/COMPASS_CMP/blob/c7d3f6ba15a5cfdc6f9df6632c9c7e336c9936fa/backend/api/src/cmp/api/routers/v1/audit.py#L310"
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c7d3f6ba15a5cfdc6f9df6632c9c7e336c9936fa/backend/api/src/cmp/api/routers/v1/audit.py#L310",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/daca825864313166693c3f2973d50ec5c05d4170/backend/api/src/cmp/db/repositories/audit_lookup.py#L86-L212"
       ]
     },
     {
@@ -9288,9 +9289,16 @@
       ]
     }
   ],
-  "amended": {
-    "on": "2026-09-17",
-    "commit": "c7d3f6ba15a5cfdc6f9df6632c9c7e336c9936fa",
-    "note": "Four audit endpoints added (summary, vocabulary, lookup, export.csv); the rest of the snapshot is as reviewed at 1757d50."
-  }
+  "amended": [
+    {
+      "on": "2026-09-17",
+      "commit": "c7d3f6ba15a5cfdc6f9df6632c9c7e336c9936fa",
+      "note": "Four audit endpoints added (summary, vocabulary, lookup, export.csv); the rest of the snapshot is as reviewed at 1757d50."
+    },
+    {
+      "on": "2026-09-24",
+      "commit": "daca825864313166693c3f2973d50ec5c05d4170",
+      "note": "Re-reviewed at daca825: no route, guard or matrix change since 1757d50. GET /notifications is now scoped by the project predicate (79b7fac); GET /audit/lookup matches sealed people by hash and name runs; GET /ready checks the key service. Other evidence links remain pinned to 1757d50."
+    }
+  ]
 }

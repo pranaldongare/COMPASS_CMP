@@ -119,5 +119,5 @@ Readiness.
 
 - **Who:** Public; no role required.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** No application session or role is required. Availability can still depend on deployment/network configuration.
-- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/system.py#L148).
+- **Rules:** No application session or role is required. Checks PostgreSQL, Redis, the migration head and, since `ce9a984`, the key service (`encryption`). A failing `encryption` check's detail names the key service URL and the connection error, to an unauthenticated caller. Availability can still depend on deployment/network configuration.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/daca825864313166693c3f2973d50ec5c05d4170/backend/api/src/cmp/api/routers/v1/system.py#L148-L170).

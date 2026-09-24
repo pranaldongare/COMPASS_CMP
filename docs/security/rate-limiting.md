@@ -16,12 +16,25 @@ suite clears between runs. The buckets in use:
 | Bucket | Guards |
 |---|---|
 | `subject_register`, `subject_otp` | self-registration and the data principal's sign-in code, per contact |
+| `contact_confirm` | a code to confirm a contact on one's own account, or one an administrator has just set; per contact, 5 an hour |
 | `consent_otp_contact`, `consent_otp_token` | codes sent from the consent flow, per contact and per link |
 | `mfa_resend`, `pwreset` | a staff member asking for another second-factor code; password reset |
 | `public_link` | `/c/{token}`, per address |
 | `rights_public_contact`, `rights_public_ip`, `rights_verify_ip` | the public rights form and its verification; a request is neutral, so the address is the only handle a stranger has |
 | `nominee_start`, `nominee_start_ip`, `nominee_request_ip` | a nominee identifying themselves and acting |
 | `nomination_view_ip`, `nomination_act_ip` | opening and answering an acceptance link, so a link-holder cannot guess a code |
+
+**The identity is stored as given.** A contact bucket's key holds the
+normalised address or number in the clear (`rate:subject_otp:a@x.org`), and an
+address bucket the client IP, for as long as the window lasts, an hour at
+most. Since the database seals every contact
+([encryption-at-rest.md](encryption-at-rest.md)), these keys, and the `otp:*`
+keys whose identity includes a contact (a contact confirmation's, a consent
+link's), are among the few places a contact sits in plaintext at rest.
+
+**Not everything is bounded.** The portals' own `POST /dkms/decrypt` has no
+limit; see [csrf.md](csrf.md#not-covered-the-portals-own-dkmsdecrypt), where
+it is recorded as under review.
 
 ## Why Redis and not memory
 

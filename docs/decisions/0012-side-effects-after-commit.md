@@ -1,6 +1,7 @@
 # 0012. Side effects wait for the commit; a durable outbox is deferred
 
-Status: accepted. September 2026.
+Status: accepted. September 2026. Amended 2026-09-22: a message that cannot
+open its recipient is retried (below).
 
 ## Context
 
@@ -46,3 +47,16 @@ A dropped receipt or ticket notification is unacceptable rather than
 inconvenient. Then: an `outbox` table written by `defer`, a relay task on the
 `default` queue, `event_id` on every message, and the worker deduplicating
 on it.
+
+## Amended · 2026-09-22
+
+A message's recipient and the name in it may now be sealed
+([ADR 0016](0016-personal-data-sealed-by-a-separate-key-service.md)). They are
+opened in the worker, at `deliver()`, after the commit and synchronously. If
+the key service cannot be reached there, the task raises `DkmsUnavailable`,
+which Celery retries with the same backoff and jitter as a transport failure
+(`tasks/authentication/otp.py`, `RETRY_KW`; commit `ce9a984`). Before that
+change such a message was lost with the request already having answered that
+it was sent. The deferral itself still runs nothing inside the transaction;
+sealing a write does, which is the amendment to
+[ADR 0005](0005-audit-chain-position-inside-the-lock.md).
