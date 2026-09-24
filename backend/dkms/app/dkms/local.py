@@ -155,6 +155,27 @@ class LocalAesProvider:
             raise DkmsError("the value is not valid base64", data_type=data_type) from exc
         return self._open(envelope, data_type)
 
+    def detect(self, value: str) -> DataType:
+        """The type a sealed value was written as, read off its own envelope.
+
+        What `/auto_decrypt` needs: a caller holding a value and not the
+        column it came from - a message's recipient, a joined name - can
+        have it opened without saying what it is. The envelope names its
+        type; the tag check in `decrypt` still refuses a forgery.
+        """
+        if not value.startswith(PREFIX):
+            raise DkmsError(f"expected a value beginning {PREFIX}")
+        try:
+            head = base64.urlsafe_b64decode(value[len(PREFIX) :])[:HEADER_BYTES]
+        except (ValueError, TypeError) as exc:
+            raise DkmsError("the value is not valid base64") from exc
+        if len(head) < HEADER_BYTES or head[:2] != MAGIC:
+            raise DkmsError("not a DKMS envelope")
+        written_as = BY_ID.get(head[3])
+        if written_as is None:
+            raise DkmsError(f"unknown data type id {head[3]}")
+        return written_as
+
     def encrypt_bytes(self, value: str, data_type: DataType) -> str:
         return base64.b64encode(self._seal(value, data_type)).decode("ascii")
 

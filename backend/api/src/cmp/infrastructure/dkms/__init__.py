@@ -11,6 +11,7 @@ one call as well.
 from cmp.infrastructure.dkms.client import (
     DkmsClient,
     DkmsUnavailable,
+    SealedValueUnreadable,
     decrypt_records,
     encrypt_records,
     get_dkms,
@@ -25,6 +26,7 @@ __all__ = [
     "DataType",
     "DkmsClient",
     "DkmsUnavailable",
+    "SealedValueUnreadable",
     "decrypt_records",
     "encrypt_records",
     "fields_for",

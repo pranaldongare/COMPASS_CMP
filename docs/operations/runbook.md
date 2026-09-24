@@ -32,15 +32,20 @@ works.**
 2. The worker has its own environment. It is the process that opens the
    recipient, so **its** `DKMS_URL` and **its** `DKMS_ENABLED` are the ones
    that matter for messages; `grep message.not_sent` in its log names the
-   service it tried. `DKMS_ENABLED` defaults to *false* in code: unset
-   there, the task fails with "N value(s) are sealed but DKMS_ENABLED is
-   false", or "the recipient of '…' is still sealed after opening … Check
-   DKMS_ENABLED and DKMS_URL in this process's environment".
+   service it tried, and `retried=` says which kind of failure it was.
+   `DKMS_ENABLED` defaults to *false* in code: unset there, the task fails
+   at once with "N value(s) are sealed but DKMS_ENABLED is false", or "the
+   recipient of '…' is still sealed after opening … Check DKMS_ENABLED and
+   DKMS_URL in this process's environment".
+   A `SealedValueUnreadable` naming `/auto_decrypt` means the values were
+   sealed by a service whose envelope names no data type and the service
+   at `DKMS_URL` cannot read it - usually `DKMS_URL` points at a different
+   key service than the one that sealed the data.
 3. The service must also hold the key the data was sealed with - the API's
    own `DKMS_URL`. A reachable service with a different key answers 4xx and
    opens nothing.
 4. Fix the setting and **restart the worker and the API**; each reads it at
-   start. Every message task retries a key-service failure five times, with
+   start. Every message task retries an *outage* (`DkmsUnavailable`) five times, with
    jittered exponential backoff from 5 seconds (`max_retries=5`,
    `retry_backoff=5`): at most about two and a half minutes. A message queued during a
    longer outage is dropped after the last retry; the person asks for a new

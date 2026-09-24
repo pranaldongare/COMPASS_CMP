@@ -170,3 +170,29 @@ class NgramSearchResponse(BaseModel):
     ngrams: list[str] = Field(description="Every one must be present in the row's set.")
     ngram_size: int
     sql: str
+
+
+class AutoDecryptRequest(BaseModel):
+    """Sealed values by a key of the caller's choosing, with no types named.
+
+    The shape the deployed key service answers on: a flat `payload` of
+    key to `SE::` value. Each value's type is read off its envelope, so the
+    caller need know nothing but that it holds ciphertext.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    payload: Annotated[
+        dict[str, str],
+        Field(
+            min_length=1,
+            description="Caller's key to an `SE::` value.",
+            examples=[{"v0": "SE::..."}],
+        ),
+    ]
+
+
+class AutoDecryptResponse(BaseModel):
+    """The same keys, each against its plaintext."""
+
+    data: dict[str, str]

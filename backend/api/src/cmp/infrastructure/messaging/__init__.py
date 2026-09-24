@@ -133,23 +133,25 @@ def deliver(key: Message, *, to: str, **variables: Any) -> dict[str, Any]:
     # one point every message passes through, rather than at every call site
     # that might have read it from a row.
     from cmp.infrastructure.dkms import unseal_values_sync, unseal_variables_sync
-    from cmp.infrastructure.dkms.client import DkmsUnavailable
+    from cmp.infrastructure.dkms.client import DkmsUnavailable, SealedValueUnreadable
     from cmp.infrastructure.dkms.fields import PREFIX
 
     try:
         variables = unseal_variables_sync(variables)
         if to.startswith(PREFIX):
             to = unseal_values_sync([to])[0]
-    except DkmsUnavailable as exc:
+    except (DkmsUnavailable, SealedValueUnreadable) as exc:
         # The one failure that is invisible from the outside: the request that
         # asked for this message answered "a code has been sent", because it
         # had queued one. It cannot be sent, because the address it goes to is
-        # sealed and the key service cannot open it. Said plainly, once, with
-        # the service named and no value quoted; the task then retries.
+        # sealed and cannot be opened. Said plainly, once, with the service
+        # named and no value quoted. An outage (`DkmsUnavailable`) is then
+        # retried by the task; a value no retry will open is not.
         log.error(
             "message.not_sent",
             message=str(getattr(key, "value", key)),
             reason="the key service could not open the recipient",
+            retried=isinstance(exc, DkmsUnavailable),
             error=str(exc),
         )
         raise
@@ -159,7 +161,7 @@ def deliver(key: Message, *, to: str, **variables: Any) -> dict[str, Any]:
         # something does, the next line would read it as a number - there is
         # no `@` in ciphertext - and refuse the message for the wrong reason.
         # This says the real one.
-        raise DkmsUnavailable(
+        raise SealedValueUnreadable(
             f"the recipient of '{getattr(key, 'value', key)}' is still sealed after "
             "opening, so there is nothing to address it to. Check DKMS_ENABLED and "
             "DKMS_URL in this process's environment."

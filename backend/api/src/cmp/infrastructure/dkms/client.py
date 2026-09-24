@@ -23,7 +23,7 @@ from typing import Any, Literal
 import httpx
 
 from cmp.core.config import settings
-from cmp.core.errors import ServiceUnavailable
+from cmp.core.errors import CmpError, ServiceUnavailable
 from cmp.core.logging import get_logger
 from cmp.infrastructure.dkms.fields import PREFIX, DataType
 
@@ -42,6 +42,23 @@ class DkmsUnavailable(ServiceUnavailable):
 
     def __init__(self, detail: str) -> None:
         super().__init__(f"The encryption service is unavailable: {detail}")
+
+
+class SealedValueUnreadable(CmpError):
+    """A sealed value that no retry will open.
+
+    Not a `DkmsUnavailable`, on purpose. That one means the service did not
+    answer, which a retry a minute later may cure, and the message tasks
+    retry on it. This one means the service answered and the value is the
+    problem - truncated by a column that was too narrow, written under a key
+    this service does not hold, glued to other text - and five retries
+    spread over minutes change nothing but how long it takes to find out.
+    Kept out of every task's `autoretry_for`, so it fails the first time,
+    with its reason.
+    """
+
+    status_code = 500
+    code = "sealed_value_unreadable"
 
 
 class DkmsClient:
@@ -284,54 +301,100 @@ def unseal_values_sync(values: list[str]) -> list[str]:
         # address, which downstream becomes a nonsense error a long way from
         # the cause. This is that cause, said once.
         if sealed_at:
-            raise DkmsUnavailable(
+            # Not retried: the flag is read when the process starts, so the
+            # same worker will answer the same way on every retry. The cure is
+            # the setting and a restart, and saying so at once is kinder than
+            # saying it five times over several minutes.
+            raise SealedValueUnreadable(
                 f"{len(sealed_at)} value(s) are sealed but DKMS_ENABLED is false, so "
                 "nothing can open them. Set DKMS_ENABLED=true in the environment of "
                 "every process that reads personal data - the API *and* the worker."
             )
         return list(values)
 
-    positions: list[tuple[int, DataType]] = []
+    # Two ways to open a value, chosen by what its envelope says.
+    #
+    # * The envelope names its type - this repository's service writes it in
+    #   byte 3 - so it goes to `/bulk_decrypt` with that type, the contract
+    #   every key service implements.
+    # * It does not. Another key service writes its own format; the deployed
+    #   one begins its envelope with two different bytes and carries no type
+    #   at all. Those go to `/auto_decrypt`, where the service reads its own
+    #   envelope. No vendor's bytes are hard-coded here: whether a value is
+    #   readable is the service's question, and it answers it.
+    typed: list[tuple[int, DataType]] = []
     records: list[Record] = []
-    unreadable: list[int] = []
-    for i, v in enumerate(values):
-        t = type_of(v) if isinstance(v, str) else None
+    untyped: list[int] = []
+    for i in sealed_at:
+        t = type_of(values[i])
         if t is not None:
-            positions.append((i, t))
-            records.append({t.value: v})
-        elif i in sealed_at:
-            # It carries the prefix, so it was meant to be ciphertext, but
-            # the envelope does not parse or names a type this build does not
-            # know. Skipping it would hand `SE::...` onward as if it were a
-            # value.
-            unreadable.append(i)
-    if unreadable:
-        raise DkmsUnavailable(
-            f"{len(unreadable)} value(s) begin with {PREFIX} but carry no readable "
-            "envelope: written by a different key service, truncated by a column that "
-            "was too narrow, or glued to other text."
-        )
-    if not records:
+            typed.append((i, t))
+            records.append({t.value: values[i]})
+        else:
+            untyped.append(i)
+    if not sealed_at:
         return list(values)
 
-    key = {t.value: t.value for _, t in positions}
-    body = {"data": records, "key": key, "method": "string", "on_error": "fail"}
+    out = list(values)
+    if typed:
+        key = {t.value: t.value for _, t in typed}
+        # The contract and nothing beyond it. `on_error` is this
+        # repository's service's extension and a strict service refuses a
+        # body carrying it; only sealed values are sent, so "fail" is what
+        # any service does anyway.
+        answer = _post_sync("/bulk_decrypt", {"data": records, "key": key, "method": "string"})
+        for (i, t), record in zip(typed, answer["data"], strict=True):
+            out[i] = record[t.value]
+    if untyped:
+        payload = {f"v{n}": values[i] for n, i in enumerate(untyped)}
+        answer = _post_sync("/auto_decrypt", {"payload": payload}, auto=True)
+        opened = answer.get("data") or {}
+        for n, i in enumerate(untyped):
+            out[i] = opened.get(f"v{n}", values[i])
+
+    still = [i for i in sealed_at if isinstance(out[i], str) and out[i].startswith(PREFIX)]
+    if still:
+        # The service answered 200 and handed a value back as it went. That is
+        # not an outage, and retrying will not change it.
+        raise SealedValueUnreadable(
+            f"{len(still)} value(s) came back from the key service still sealed: "
+            "it could not open them and did not say so."
+        )
+    return out
+
+
+def _post_sync(path: str, body: dict[str, Any], *, auto: bool = False) -> dict[str, Any]:
+    """One synchronous call, with its failure sorted into the right kind.
+
+    An outage - no answer, a 5xx, a timeout - is a `DkmsUnavailable`, which
+    the message tasks retry. An answer that refuses the values - a 4xx - is a
+    `SealedValueUnreadable`, which they do not: the same values will be
+    refused the same way however long they wait.
+    """
+    url = f"{settings.dkms_url.rstrip('/')}{path}"
     try:
         with httpx.Client(base_url=settings.dkms_url, timeout=settings.dkms_timeout_s) as client:
-            response = client.post("/bulk_decrypt", json=body)
+            response = client.post(path, json=body)
     except httpx.HTTPError as exc:
-        url = f"{settings.dkms_url.rstrip('/')}/bulk_decrypt"
-        log.error("dkms.unreachable", url=url, records=len(records), error=str(exc))
+        log.error("dkms.unreachable", url=url, error=str(exc))
         raise DkmsUnavailable(f"{url}: {exc}") from exc
-    if response.status_code >= 400:
-        url = f"{settings.dkms_url.rstrip('/')}/bulk_decrypt"
+    if response.status_code >= 500:
         log.error("dkms.error", url=url, status=response.status_code)
         raise DkmsUnavailable(f"{url} answered {response.status_code}")
-
-    out = list(values)
-    for (i, t), record in zip(positions, response.json()["data"], strict=True):
-        out[i] = record[t.value]
-    return out
+    if response.status_code >= 400:
+        log.error("dkms.refused", url=url, status=response.status_code)
+        if auto and response.status_code in (404, 405, 501):
+            raise SealedValueUnreadable(
+                f"{url} answered {response.status_code}: the value's envelope does not name "
+                "its type, and this key service offers no /auto_decrypt to read it. Either "
+                "the value was written by a different key service than DKMS_URL names, or "
+                "that service needs /auto_decrypt."
+            )
+        raise SealedValueUnreadable(
+            f"{url} answered {response.status_code}: the service could not open the value - "
+            "truncated, written under a key it does not hold, or glued to other text."
+        )
+    return dict(response.json())
 
 
 def unseal_variables_sync(variables: dict[str, Any]) -> dict[str, Any]:

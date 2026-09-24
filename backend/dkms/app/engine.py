@@ -237,6 +237,27 @@ class BulkEngine:
         )
 
     # ---------------------------------------------------------- the searches
+    def auto_decrypt(self, payload: dict[str, str]) -> dict[str, str]:
+        """Open each value under the type its envelope names.
+
+        Refuses the whole payload on the first value that cannot be opened,
+        naming its key and never its content: an answer with one value left
+        sealed would be used as if it had been opened.
+        """
+        detect = getattr(self._provider, "detect", None)
+        if detect is None:
+            raise AutoDecryptUnsupported(self._provider.name)
+        out: dict[str, str] = {}
+        failed: list[str] = []
+        for k, value in payload.items():
+            try:
+                out[k] = self._provider.decrypt(value, detect(value))
+            except DkmsError:
+                failed.append(k)
+        if failed:
+            raise AutoDecryptFailed(failed)
+        return out
+
     def search(self, data_type: DataType, term: str) -> tuple[str, str]:
         """(normalised term, hash) for an exact lookup."""
         return normalise(data_type, term), hash_of(self._hash_key, data_type, term)
@@ -255,3 +276,15 @@ class BulkFailed(Exception):
     def __init__(self, errors: list[FieldError]) -> None:
         super().__init__(f"{len(errors)} value(s) failed")
         self.errors = errors
+
+
+class AutoDecryptUnsupported(Exception):
+    """The provider cannot say what type a value was written as."""
+
+
+class AutoDecryptFailed(Exception):
+    """Values that did not open, by the caller's key."""
+
+    def __init__(self, keys: list[str]) -> None:
+        super().__init__(f"{len(keys)} value(s) did not open")
+        self.keys = keys

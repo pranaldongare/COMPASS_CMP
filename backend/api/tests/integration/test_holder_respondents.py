@@ -433,7 +433,10 @@ class TestThread:
         assert after["messages"][-1]["author_side"] == "holder"
         office = await repo.holder_by_uuid(conn, int(row["request_id"]), ref)
         assert office["unread_for_office"] == 1
-        waiting = await repo.holders_awaiting_office(conn)
+        # A limit wide enough to find this test's own ticket: the query shows
+        # the office its first 25 by due date, and a development database
+        # other suites have committed to can hold more than that.
+        waiting = await repo.holders_awaiting_office(conn, limit=10_000)
         assert ref in {str(w["holder_uuid"]) for w in waiting}
 
         # The office reads and answers. Reading clears its count; answering
@@ -834,7 +837,9 @@ class TestSendBack:
             holder_uuid=str(portal["holder_uuid"]),
             role="dpo",
         )
-        unread = await repo.holders_awaiting_office(conn)
+        # Wide, for the same reason as above - and here it matters more: an
+        # absence asserted over the first 25 rows passes for a row on page two.
+        unread = await repo.holders_awaiting_office(conn, limit=10_000)
         assert all(str(h["holder_uuid"]) != str(portal["holder_uuid"]) for h in unread)
 
     async def test_the_register_names_the_request_the_message_is_on(

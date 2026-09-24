@@ -173,3 +173,44 @@ def test_the_first_paths_still_answer(client: Any) -> None:
         "/decrypt/bulk", json={"data": sealed.json()["data"], "key": SPEC_EXAMPLE["key"]}
     )
     assert opened.json()["data"][0]["fullName"] == "Amruta Shukla"
+
+
+# ------------------------------------------------------------- auto_decrypt
+#
+# The shape the deployed key service answers on: `{"payload": {k: sealed}}`
+# in, `{"data": {k: plain}}` out, types read off each envelope. The platform
+# uses it for values whose envelope it cannot read itself.
+
+
+def test_auto_decrypt_opens_values_of_different_types_without_being_told(client: Any) -> None:
+    sealed = client.post(
+        "/bulk_encrypt",
+        json={
+            "data": [{"n": "Amruta Shukla", "e": "amruta@example.org", "m": "+919876543210"}],
+            "key": {"n": "NAME", "e": "EMAIL", "m": "MOBILE"},
+            "method": "string",
+        },
+    ).json()["data"][0]
+
+    r = client.post(
+        "/auto_decrypt", json={"payload": {"v0": sealed["n"], "v1": sealed["e"], "v2": sealed["m"]}}
+    )
+
+    assert r.status_code == 200
+    assert r.json() == {
+        "data": {"v0": "Amruta Shukla", "v1": "amruta@example.org", "v2": "+919876543210"}
+    }
+
+
+def test_auto_decrypt_refuses_what_it_cannot_open_naming_the_key_not_the_value(client: Any) -> None:
+    r = client.post(
+        "/auto_decrypt", json={"payload": {"good": "SE::bm90LWFuLWVudmVsb3Bl", "plain": "hello"}}
+    )
+
+    assert r.status_code == 422
+    assert sorted(r.json()["detail"]["keys"]) == ["good", "plain"]
+    assert "hello" not in r.text
+
+
+def test_auto_decrypt_refuses_an_empty_payload(client: Any) -> None:
+    assert client.post("/auto_decrypt", json={"payload": {}}).status_code == 422

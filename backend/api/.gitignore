@@ -24,3 +24,6 @@ build/
 .vscode/
 .DS_Store
 tests/http/.ledger.json
+
+# Celery beat keeps its schedule state here and rewrites it while it runs.
+celerybeat-schedule*

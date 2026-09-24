@@ -13,8 +13,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from app.dkms.searchable import MIN_TERM
 from app.dkms.types import DataType
-from app.engine import BulkEngine, BulkFailed
+from app.engine import AutoDecryptFailed, AutoDecryptUnsupported, BulkEngine, BulkFailed
 from app.schemas import (
+    AutoDecryptRequest,
+    AutoDecryptResponse,
     BulkRequest,
     BulkResponse,
     HashRequest,
@@ -91,6 +93,43 @@ async def decrypt_bulk(body: BulkRequest, request: Request, engine: Engine) -> B
                 "message": "decryption failed",
                 "errors": [e.model_dump(mode="json") for e in failed.errors],
             },
+        ) from failed
+
+
+@router.post(
+    "/auto_decrypt",
+    response_model=AutoDecryptResponse,
+    summary="Decrypt values without naming their types",
+)
+async def auto_decrypt(
+    body: AutoDecryptRequest, request: Request, engine: Engine
+) -> AutoDecryptResponse:
+    """Open each value under the type its own envelope names.
+
+    For a caller that holds ciphertext and not the column it came from - the
+    address a message goes to, a name joined from another table. The deployed
+    key service answers on the same path in the same shape; this one does so
+    that the platform can be run against either.
+    """
+    if len(body.payload) > request.app.state.max_records:
+        raise HTTPException(
+            status.HTTP_413_CONTENT_TOO_LARGE,
+            detail=(
+                f"{len(body.payload)} values in one call; "
+                f"the limit is {request.app.state.max_records}"
+            ),
+        )
+    try:
+        return AutoDecryptResponse(data=engine.auto_decrypt(body.payload))
+    except AutoDecryptUnsupported as unsupported:
+        raise HTTPException(
+            status.HTTP_501_NOT_IMPLEMENTED,
+            detail=f"the {unsupported} provider cannot read a value's type off its envelope",
+        ) from unsupported
+    except AutoDecryptFailed as failed:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"message": "decryption failed", "keys": failed.keys},
         ) from failed
 
 

@@ -80,7 +80,8 @@ this one offers:
 |---|---|
 | `POST /bulk_encrypt` | every write of a personal column |
 | `POST /bulk_decrypt` | the portals' `/dkms/decrypt` route, the worker addressing a message, the export |
-| `{data, key, method}` accepted, `{data}` returned | the contract. The API's request-time client and the portals' route send exactly this and nothing more |
+| `{data, key, method}` accepted, `{data}` returned | the contract. The API, the worker and the portals' route send exactly this and nothing more |
+| `POST /auto_decrypt` — *only if its envelope does not name the data type* | `{"payload": {k: "SE::…"}}` in, `{"data": {k: plain}}` out. The worker opens a message's recipient from a bare string, with no column to say what it is; where the envelope names its type it goes to `/bulk_decrypt`, and where it does not the service is asked to read its own envelope. This repository's service answers it too |
 
 `/bulk_hash`, `/search` and `/search_ngram` are **not** called by the
 platform: it computes the same hashes locally from `BLIND_INDEX_KEY`, so
@@ -99,13 +100,8 @@ asked to fail: a value that travelled and came back unchanged raises
 `on_error="skip"`, so a value the service hands back unopened is left as it
 was.)
 
-**Known gap, under review: the worker's path is not contract-only yet.**
-`unseal_values_sync` in `client.py` - the synchronous call that opens a
-message's recipient and template variables, and that migration 0030's
-backfill used - still sends `"on_error": "fail"` in its `/bulk_decrypt`
-body. A service that forbids unknown fields refuses that with a 422, the
-message task retries, and nothing is sent. Until it changes, a replacement
-service has to tolerate that one extra field.
+The worker's path (`unseal_values_sync`) sends the contract alone as well:
+`/bulk_decrypt` with `{data, key, method}`, and only sealed values.
 
 **The one thing to know about the ciphertext.** The platform prefers to read
 a value's data type off the envelope this implementation writes — `'D' 'K'
@@ -119,12 +115,22 @@ the page. On the backend, `unseal` and `unseal_many` name each column's
 type from `ENCRYPTED_FIELDS` anyway, and `unseal_value` falls back to it
 when the envelope does not parse.
 
-**Known gap, under review:** `unseal_values_sync` has no field name to fall
-back to - it is handed bare strings - so a value that begins `SE::` but
-whose envelope it cannot read raises `DkmsUnavailable` ("carry no readable
-envelope"). Against a service writing a different envelope, that is every
-message: the recipient cannot be opened, the task retries, and no email or
-SMS goes out.
+`unseal_values_sync` has no field name to fall back to - it is handed bare
+strings, a message's recipient and its template variables. So a value whose
+envelope names no type goes to the service's `/auto_decrypt`, which reads its
+own envelope. That is what the deployed key service needed: its envelope
+begins with the bytes `0x19 0xEF`, not `DK`, and carries no type, so until
+2026-09-24 every sign-in code it had sealed an address for failed as "no
+readable envelope". No vendor's bytes are hard-coded - whether a value can
+be opened is the service's question to answer.
+
+**Which failures are retried.** Two kinds, kept apart because a message task
+treats them differently:
+
+| Raised | Means | The message task |
+|---|---|---|
+| `DkmsUnavailable` | no answer, a timeout, a 5xx: the service may be back in a minute | retries, five times with backoff |
+| `SealedValueUnreadable` | the service answered and refused the value (4xx), handed it back still sealed, offers no `/auto_decrypt` for an envelope that needs one, or `DKMS_ENABLED` is false in this process | fails at once, naming the reason — no retry would change the answer |
 
 **Two keys.** `DKMS_MASTER_KEY` encrypts; `DKMS_HASH_KEY` hashes. Separate,
 so a hash says nothing about an encryption key and either can be rotated

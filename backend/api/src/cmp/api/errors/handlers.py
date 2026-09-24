@@ -30,6 +30,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from cmp.api.errors.responses import response
 from cmp.api.middleware.request_context import safe_path
+from cmp.core.constants import REQUEST_ID_HEADER
 from cmp.core.errors import CmpError, RateLimited
 from cmp.core.logging import get_logger
 
@@ -57,6 +58,7 @@ async def cmp_error_handler(request: Request, exc: Exception) -> ORJSONResponse:
         field=exc.field,
         extra=exc.details or None,
         headers=headers,
+        request_id=_request_id(request),
     )
 
 
@@ -98,6 +100,7 @@ async def validation_handler(request: Request, exc: Exception) -> ORJSONResponse
                 for e in errors[:20]  # a bounded body: a 500-field form is not a useful error
             ]
         },
+        request_id=_request_id(request),
     )
 
 
@@ -122,13 +125,20 @@ async def http_exception_handler(request: Request, exc: Exception) -> ORJSONResp
         code,
         detail,
         headers=dict(exc.headers) if exc.headers else None,
+        request_id=_request_id(request),
     )
+
+
+def _request_id(request: Request) -> str | None:
+    """The id the request-context middleware gave this request, if it got that far."""
+    return getattr(request.state, "request_id", None)
 
 
 async def unhandled_handler(request: Request, exc: Exception) -> ORJSONResponse:
     """The last resort. The client gets a request id; the log gets everything else."""
     log.error(
         "request.unhandled",
+        request_id=_request_id(request),
         endpoint=safe_path(request.url.path),
         method=request.method,
         exc_type=type(exc).__name__,
@@ -138,4 +148,6 @@ async def unhandled_handler(request: Request, exc: Exception) -> ORJSONResponse:
         status.HTTP_500_INTERNAL_SERVER_ERROR,
         "internal_error",
         "An unexpected error occurred. Quote the request id if you report this.",
+        request_id=_request_id(request),
+        headers={REQUEST_ID_HEADER: rid} if (rid := _request_id(request)) else None,
     )

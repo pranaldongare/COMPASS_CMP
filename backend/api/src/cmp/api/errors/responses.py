@@ -29,11 +29,17 @@ def error_body(
     *,
     field: str | None = None,
     extra: dict[str, Any] | None = None,
+    request_id: str | None = None,
 ) -> dict[str, Any]:
     body: dict[str, Any] = {
         "code": code,
         "message": message,
-        "request_id": current_context().request_id,
+        # Passed in by the handlers, from the request itself. The context
+        # variable is the fallback only: the handler for an unhandled
+        # exception runs in Starlette's outermost middleware, after the
+        # request-context middleware has already reset it, and a 500 that
+        # says "quote the request id" and then gives "-" is no use to anyone.
+        "request_id": request_id or current_context().request_id,
     }
     if field:
         body["field"] = field
@@ -50,9 +56,10 @@ def response(
     field: str | None = None,
     extra: dict[str, Any] | None = None,
     headers: dict[str, str] | None = None,
+    request_id: str | None = None,
 ) -> ORJSONResponse:
     return ORJSONResponse(
         status_code=status_code,
-        content=error_body(code, message, field=field, extra=extra),
+        content=error_body(code, message, field=field, extra=extra, request_id=request_id),
         headers=headers,
     )
