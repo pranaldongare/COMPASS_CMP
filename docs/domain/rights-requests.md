@@ -150,8 +150,10 @@ to her appearance.
 
 **A legal hold stops it.** The DPO may place a hold on an asset or on a person,
 with a reason (sealed). Every item it covers records `held` and goes no
-further; releasing the hold lets the executor carry on at once. A hold is
-placed once and released once - nothing else about it can change.
+further, including an item whose erasure was applied before the hold was
+placed; releasing the hold lets the executor carry on at once, and closes each
+`held` row as done with the hold it waited for, so the item can complete. A
+hold is placed once and released once - nothing else about it can change.
 
 **Backups are not covered yet.** There are no database backups today (parked,
 P-03), and whether a backup holding an erased item is scrubbed or left to

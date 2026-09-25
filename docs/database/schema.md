@@ -37,8 +37,9 @@ it.
 ## Shapes worth explaining
 
 **`consent_artefact` has no status column.** Status is derived from the grants:
-all granted is `consented`, some is `partial`, none is `declined`, and
-`is_withdrawal` is `withdrawn`.
+all granted is `consented`, some is `partial`, none is `declined`, and a
+withdrawal that left nothing granted is `withdrawn`. `is_withdrawal` records
+the act, not the status: withdrawing one purpose of several reads `partial`.
 
 **Withdrawal supersedes.** A withdrawal is a new artefact with
 `supersedes_consent_id` pointing at the one it replaces. The earlier row is never

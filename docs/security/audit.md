@@ -72,8 +72,9 @@ narrowed by date first.
 
 `GET /audit/summary` counts the same rows by event, group, actor role and
 day; `GET /audit/export.csv` downloads them (newest first, at most 10,000,
-free-text cells neutralised against formulas) and records `audit.exported`
-with the filters used; `GET /audit/lookup?kind=&q=` finds a person or a
+free-text cells neutralised against formulas, and the actor, subject and
+label names opened in one key-service call, since the file is read outside
+the platform) and records `audit.exported` with the filters used; `GET /audit/lookup?kind=&q=` finds a person or a
 record for the console's pickers; `GET /audit/vocabulary` serves
 every entity type and event type with labels, so the console holds no list of
 its own. All of it is the two supervising roles' to read, unscoped.

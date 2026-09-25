@@ -36,6 +36,9 @@ never be shadowed by a path parameter on another router.
   an opaque id; the session itself lives in Redis. There is no bearer token.
 - Unsafe verbs carry the double-submit CSRF header `X-CSRF-Token`, copied by
   the page from the readable cookie `cmp_csrf`.
+- A request carrying `X-CMP-Background: 1` is authenticated like any other
+  but does not slide the session's idle window: it is how a page polling on a
+  timer says it is not the person's activity ([sessions](../security/sessions.md)).
 - A staff sign-in returns `mfa_required: true` and a **partial session** that
   authorises only `/auth/mfa/verify`. Every other route answers 401 with code
   `mfa_required` until the code is verified.
