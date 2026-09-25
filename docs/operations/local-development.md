@@ -133,18 +133,23 @@ unset, every name and contact on the page shows as `SE::…`.
 
 ## Signing in
 
-Seeded by `scripts/seed.py`. The password for every staff account is
-`SeedPassw0rd!2026`, and every staff sign-in then asks for a code.
+`scripts/seed.py` creates **one account, the administrator** -
+`admin@cmp.local`, password `SeedPassw0rd!2026` - and the configuration the
+rest is set up against: three processors (two third-party, one in-house),
+their five data sources, two purposes, and an approved project with a
+published notice (English and Hindi) and a live consent link, printed at the
+end of the run. Each is a table at the top of the script; edit it and re-run.
 
-| Role | Email |
-|---|---|
-| DPO | `dpo@cmp.local` |
-| Administrator | `admin@cmp.local` |
-| DCO | `dco@cmp.local` |
-| DCO Admin | `dcoadmin@cmp.local` |
-| RCO | `rco@cmp.local` |
-| R&D User | `rnd@cmp.local` |
-| Data principal | mobile `+919000000001`, email `subject@cmp.local`; no password |
+Every other account is created by the administrator: **Users → Invite** in
+the console. The invitation carries a code that sets the password (with
+`DEV_SHOW_CODES=true` it pops up on the page). Invite a DPO first: the
+project and the notice are the DPO's to open, not the administrator's.
+
+Re-running the seed never deletes anything, so a database seeded before
+2026-09-25 keeps its `dpo@`, `dco@`, `rnd@`, `rco@`, `dcoadmin@` and
+`subject@cmp.local` accounts. **The browser suites sign in as those**; on a
+freshly seeded database, invite them first (same addresses, password
+`SeedPassw0rd!2026`) or the suites' setup step fails.
 
 **Reading a code.** In `local` and `test`, every email and SMS is appended to
 `backend/api/var/outbox.log` instead of being sent. The newest entry is at the

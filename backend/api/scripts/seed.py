@@ -1,14 +1,28 @@
-"""Development seed.
+"""Development seed: one administrator, and the configuration a platform starts from.
 
-Creates one coherent world so the API can be exercised end to end: a user per
-role, the processors and data sources routing is defined against, two
-purposes, and a project carried through the
-whole state machine to `approved` with a published notice and a live consent link.
+Creates exactly one account - the administrator - and the reference data
+every other part of the platform is set up against:
+
+* **processors** - who collects, and whether they are us or a third party;
+* **data sources** - each processor's collection rigs and feeds;
+* **purposes** - what data is collected for, on what lawful basis, for how long;
+* **a notice** - published, in English and Hindi, naming those purposes, on a
+  project that is approved and has a live consent link.
+
+Every other account - the DPO, collection owners, R&D users, data principals -
+is created by the administrator from the console (Users → Invite), which is
+how a real deployment gets them. Until a DPO exists, nobody can open the
+project or the notice: those are the DPO's, and the administrator's role
+reads purposes, processors and sources but not projects.
+
+Everything is data in the tables below: edit a table, re-run, and the
+database comes back into line. Re-running never duplicates anything and
+never touches an account other than the administrator's.
 
 Refuses to run outside local/test. A seed that can run in production is a
-production database with known passwords in it.
+production database with a known password in it.
 
-    uv run python scripts/seed.py
+    python scripts/seed.py
 """
 
 from __future__ import annotations
@@ -16,6 +30,7 @@ from __future__ import annotations
 import asyncio
 import sys
 from datetime import UTC, date, datetime, timedelta
+from typing import Any
 
 from cmp.core.config import settings
 from cmp.core.context import RequestContext, use_context
@@ -28,53 +43,197 @@ from cmp.db.sql import fetch_one
 
 log = get_logger("cmp.seed")
 
-#: The seeded data principal is an adult (S2-01): a consent waits for a known
-#: age, and the browser suites consent as her.
-SUBJECT_DOB = "1994-03-12"
-
 PASSWORD = "SeedPassw0rd!2026"  # noqa: S105 - development only, guarded below
 
-USERS = [
-    ("Priya Menon", "dpo@cmp.local", "dpo", "employee", "ORG-DPO-001"),
-    ("Arun Shetty", "dco@cmp.local", "dco", "employee", "ORG-DCO-001"),
-    ("Kavya Rao", "rnd@cmp.local", "rnd_user", "employee", "ORG-RND-001"),
-    ("System Admin", "admin@cmp.local", "admin", "employee", "ORG-ADM-001"),
-    ("Nikhil Bose", "dcoadmin@cmp.local", "dco_admin", "employee", "ORG-DCA-001"),
-    ("Meera Iyer", "rco@cmp.local", "rco", "employee", "ORG-RCO-001"),
+# =============================================================================
+#  The administrator - the only account the seed creates
+# =============================================================================
+
+ADMIN: dict[str, str] = {
+    "full_name": "System Admin",
+    "email": "admin@cmp.local",
+    "username": "admin",
+    "organization_id": "ORG-ADM-001",
+    "person_type": "employee",
+}
+
+# =============================================================================
+#  Processors and their data sources
+# =============================================================================
+#
+# `is_in_house` is the one field routing reads. A third party's approved
+# project goes to a DCO Admin, who picks its sources; an in-house one goes
+# back to its R&D owner. No rule reads a name, so a new team is a row here.
+#
+# Field values must be the database's own:
+#   type           lab | tool | other
+#   source_role    identity | collection | both
+#   exchange_mode  file_export | file_import | manual_upload | api
+#   authoritative  data-category codes (see DATA CATEGORIES below)
+
+PROCESSORS: list[dict[str, Any]] = [
+    {
+        "legal_name": "Pune Motion Lab Pvt Ltd",
+        "type": "lab",
+        "contract_ref": "CTR-2026-0091",
+        "security_confirmed_at": date(2026, 1, 15),
+        "is_in_house": False,
+        "location_country": "IN",
+        "sources": [
+            {
+                "source_code": "SRC-PUNE-01",
+                "name": "Pune Motion Lab capture rig",
+                "source_role": "collection",
+                "exchange_mode": "file_import",
+                "id_scheme": "lab-local",
+                "authoritative": ["facial_image", "gait_video"],
+            },
+        ],
+    },
+    {
+        "legal_name": "SEED",
+        "type": "lab",
+        "contract_ref": "CTR-2026-0114",
+        "security_confirmed_at": date(2026, 1, 15),
+        "is_in_house": False,
+        "location_country": "IN",
+        "sources": [
+            {
+                "source_code": "SRC-SEED-CIT",
+                "name": "CIT",
+                "source_role": "collection",
+                "exchange_mode": "manual_upload",
+                "id_scheme": "seed-campus",
+                "authoritative": ["facial_image", "gait_video"],
+            },
+            {
+                "source_code": "SRC-SEED-VIT",
+                "name": "VIT",
+                "source_role": "collection",
+                "exchange_mode": "manual_upload",
+                "id_scheme": "seed-campus",
+                "authoritative": ["facial_image", "gait_video"],
+            },
+        ],
+    },
+    {
+        "legal_name": "SRIB",
+        "type": "other",
+        # An in-house team has no contract with itself. The column is NOT NULL,
+        # so it says why rather than sitting empty.
+        "contract_ref": "in-house - no processor contract",
+        "security_confirmed_at": date(2026, 1, 15),
+        "is_in_house": True,
+        "location_country": "IN",
+        "sources": [
+            {
+                "source_code": "SRC-SRIB-SE",
+                "name": "SE",
+                "source_role": "collection",
+                "exchange_mode": "manual_upload",
+                "id_scheme": "srib-employee",
+                "authoritative": ["facial_image", "gait_video"],
+            },
+            {
+                "source_code": "SRC-SRIB-VOICE",
+                "name": "Voice",
+                "source_role": "collection",
+                "exchange_mode": "manual_upload",
+                "id_scheme": "srib-employee",
+                "authoritative": ["voice_recording"],
+            },
+        ],
+    },
 ]
 
-# The two processors the routing rules are written against, and they differ in
-# exactly one way that matters: who is doing the collecting.
+# =============================================================================
+#  Purposes
+# =============================================================================
 #
-# SEED is somebody else. An approved project naming it goes to a DCO Admin, who
-# picks the data sources - and because a source carries its own owner, picking
-# the sources is what decides which DCO ends up with the work.
-#
-# SRIB is us. Nothing leaves the building and there is no DCO to route to, so an
-# approved project goes back to the R&D owner, who names the sources and an RCO.
-#
-# Neither rule reads a name. `is_in_house` is the flag, so a third in-house team
-# tomorrow is a row and not a code change.
-COLLECTION = [
-    (
-        "SEED",
-        False,
-        "lab",
-        "CTR-2026-0114",
-        [("SRC-SEED-CIT", "CIT"), ("SRC-SEED-VIT", "VIT")],
-    ),
-    (
-        "SRIB",
-        True,
-        "other",
-        # No contract reference: an in-house team has no contract with itself.
-        # The column is NOT NULL, so it says why rather than sitting empty.
-        "in-house - no processor contract",
-        [("SRC-SRIB-SE", "SE"), ("SRC-SRIB-VOICE", "Voice")],
-    ),
+# Field values must be the database's own:
+#   lawful_basis      consent_s6 | legitimate_use_s7
+#   retention_basis   statutory | contractual | business_policy
+#   erasure_trigger   withdrawal | purpose_served | period_elapsed | inactivity
+#   lapse_behaviour   quarantine | erase | none
+#   data_categories   name, email, mobile, postal_address, date_of_birth,
+#                     gender, government_id, employee_id, facial_image,
+#                     voice_recording, fingerprint, gait_video, health_data,
+#                     location, device_identifier, ip_address,
+#                     sensor_reading, usage_log
+
+PURPOSES: list[dict[str, Any]] = [
+    {
+        "purpose_code": "PUR-GAIT-TRAIN",
+        "name": "Gait model training",
+        "description": "Building and evaluating gait-based identification models.",
+        "uses": "Train, validate and benchmark models. No decisions are made about you.",
+        "lawful_basis": "consent_s6",
+        "data_categories": ["facial_image", "gait_video", "name", "mobile"],
+        "retention_days": 1095,
+        "retention_basis": "business_policy",
+        "erasure_trigger": "withdrawal",
+        "consent_validity_days": 730,
+        "lapse_behaviour": "quarantine",
+        "cross_border_permitted": False,
+        "permitted_for_minors": False,
+    },
+    {
+        "purpose_code": "PUR-QUALITY",
+        "name": "Recording quality assurance",
+        "description": "Checking that recordings are usable before they enter the dataset.",
+        "uses": "Manual and automated review of recording quality.",
+        "lawful_basis": "consent_s6",
+        "data_categories": ["facial_image", "gait_video"],
+        "retention_days": 365,
+        "retention_basis": "business_policy",
+        "erasure_trigger": "withdrawal",
+        "consent_validity_days": 730,
+        "lapse_behaviour": "quarantine",
+        "cross_border_permitted": False,
+        "permitted_for_minors": False,
+    },
 ]
 
-NOTICE_TEXT = """\
+# =============================================================================
+#  The notice, and the project it belongs to
+# =============================================================================
+#
+# A notice cannot exist without a project (notice.project_id is NOT NULL), so
+# the seed keeps one, approved, with a site per source it names and a live
+# consent link on the first site. `applicable_to`: data_subject | employee |
+# ex_employee | others.
+
+PROJECT: dict[str, Any] = {
+    "project_name": "Gait Identification Study 2026",
+    "internal_project_name": "GAIT-2026",
+    "description": "Collection of gait video and facial images for model training.",
+    "requesting_team": "Computer Vision",
+    # Where it is collected: (source_code, site location). The site takes the
+    # source's name, as the console does when a site is added.
+    "sites": [
+        ("SRC-PUNE-01", "Pune, Maharashtra"),
+        ("SRC-SEED-CIT", "CIT campus, Coimbatore"),
+        ("SRC-SRIB-SE", "SRIB lab, Bengaluru"),
+    ],
+    "approval": {
+        "approval_type": "security",
+        "reference_no": "SEC-2026-0142",
+        "approved_on": date(2026, 2, 10),
+    },
+    "consent_link_days": 60,
+    "consent_link_max_uses": 500,
+}
+
+NOTICE: dict[str, Any] = {
+    "notice_code": "NTC-GAIT-2026",
+    "applicable_to": "data_subject",
+    "withdraw_url": "https://cmp.local/withdraw",
+    "exercise_rights_url": "https://cmp.local/rights",
+    "board_complaint_url": "https://dpb.gov.in/complaint",
+    "dpo_contact": "privacy@bharatresearch.example",
+    "purposes": ["PUR-GAIT-TRAIN", "PUR-QUALITY"],
+    "languages": {
+        "english": """\
 NOTICE UNDER SECTION 5, DIGITAL PERSONAL DATA PROTECTION ACT 2023
 
 Who is asking. Bharat Research Labs, acting as Data Fiduciary.
@@ -98,9 +257,8 @@ want.
 
 If you are not satisfied. Contact our Data Protection Officer first. You may
 also complain to the Data Protection Board of India, independently of us.
-"""
-
-HINDI_TEXT = """\
+""",
+        "hindi": """\
 धारा 5, डिजिटल व्यक्तिगत डेटा संरक्षण अधिनियम 2023 के अंतर्गत सूचना
 
 कौन पूछ रहा है। भारत रिसर्च लैब्स, डेटा फ़िड्यूशियरी के रूप में।
@@ -114,217 +272,321 @@ HINDI_TEXT = """\
 
 आपके अधिकार। आप अपने डेटा का सारांश मांग सकते हैं, सुधार या मिटाने के लिए कह सकते
 हैं, किसी को नामित कर सकते हैं, और अपनी सहमति वापस ले सकते हैं।
-"""
+""",
+    },
+}
 
 
-async def demo_project(
-    conn, ids: dict[str, int], processor: dict, source: dict, purposes: list[dict]
-) -> dict:
-    """One project carried the whole way, so the API has something real to answer with.
+# =============================================================================
+#  Seeding - each step brings the database into line with a table above
+# =============================================================================
 
-    Separate from the reference data above because the two want opposite things
-    from a second run. Users, processors, sources and purposes should be brought
-    back into line every time. A project should not: re-running the seed is how a
-    developer repairs a database, and it should not leave them with a second Gait
-    study, a second published notice and a second live consent link.
+
+async def seed_admin(conn: Any) -> int:
+    """The administrator, through the repository so the personal columns are
+    sealed and indexed on the way in. Found by its index on a re-run and left
+    as it is - including its password, if somebody changed it."""
+    row = await user_repo.by_email(conn, ADMIN["email"])
+    if row is None:
+        row = await user_repo.create(
+            conn,
+            full_name=ADMIN["full_name"],
+            email=ADMIN["email"],
+            role="admin",
+            username=ADMIN["username"],
+            organization_id=ADMIN["organization_id"],
+            person_type=ADMIN["person_type"],
+            status="active",
+            password_hash=hash_password(PASSWORD),
+        )
+    log.info("seed.admin", email=ADMIN["email"])
+    return int(row["id"])
+
+
+async def seed_processors(conn: Any) -> dict[str, dict[str, Any]]:
+    """Every processor and source in PROCESSORS, created or brought into line.
+
+    Returns the sources by code. Idempotent on `legal_name`, which carries no
+    unique constraint - two organisations may genuinely share a name, and the
+    seed should not be the thing that decides they cannot.
     """
-    # -------------------------------------------------------- project
+    sources: dict[str, dict[str, Any]] = {}
+    for p in PROCESSORS:
+        proc = await fetch_one(
+            conn,
+            """WITH existing AS (
+                 UPDATE processor
+                    SET type = %(type)s::processor_type,
+                        contract_ref = %(contract_ref)s,
+                        security_confirmed_at = %(security_confirmed_at)s,
+                        is_in_house = %(is_in_house)s,
+                        location_country = %(location_country)s
+                  WHERE legal_name = %(legal_name)s
+                 RETURNING processor_id
+               ), created AS (
+                 INSERT INTO processor (legal_name, type, contract_ref,
+                                        security_confirmed_at, is_in_house,
+                                        location_country)
+                 SELECT %(legal_name)s, %(type)s::processor_type, %(contract_ref)s,
+                        %(security_confirmed_at)s, %(is_in_house)s, %(location_country)s
+                  WHERE NOT EXISTS (SELECT 1 FROM existing)
+                 RETURNING processor_id
+               )
+               SELECT processor_id FROM created UNION ALL SELECT processor_id FROM existing
+               LIMIT 1""",
+            p,
+        )
+        for s in p["sources"]:
+            sources[s["source_code"]] = await fetch_one(
+                conn,
+                """INSERT INTO data_source (source_code, name, source_role, exchange_mode,
+                                            id_scheme, processor_id, is_authoritative_for)
+                   VALUES (%(source_code)s, %(name)s, %(source_role)s::source_role,
+                           %(exchange_mode)s::exchange_mode, %(id_scheme)s,
+                           %(processor_id)s, %(authoritative)s)
+                   ON CONFLICT (source_code) DO UPDATE
+                      SET name = EXCLUDED.name,
+                          source_role = EXCLUDED.source_role,
+                          exchange_mode = EXCLUDED.exchange_mode,
+                          id_scheme = EXCLUDED.id_scheme,
+                          processor_id = EXCLUDED.processor_id,
+                          is_authoritative_for = EXCLUDED.is_authoritative_for
+                   RETURNING source_id, source_uuid, processor_id, name""",
+                {**s, "processor_id": proc["processor_id"]},
+            )
+        log.info(
+            "seed.processor",
+            name=p["legal_name"],
+            in_house=p["is_in_house"],
+            sources=len(p["sources"]),
+        )
+    return sources
+
+
+async def seed_purposes(conn: Any, admin_id: int) -> dict[str, dict[str, Any]]:
+    """Every purpose in PURPOSES, created or brought into line, by code."""
+    purposes: dict[str, dict[str, Any]] = {}
+    for p in PURPOSES:
+        purposes[p["purpose_code"]] = await fetch_one(
+            conn,
+            """INSERT INTO purpose (purpose_code, name, description, uses, lawful_basis,
+                                    data_categories, retention_period, retention_basis,
+                                    erasure_trigger, consent_validity_period,
+                                    lapse_behaviour, cross_border_permitted,
+                                    permitted_for_minors, status, created_by)
+               VALUES (%(purpose_code)s, %(name)s, %(description)s, %(uses)s,
+                       %(lawful_basis)s::lawful_basis, %(data_categories)s,
+                       %(retention)s, %(retention_basis)s::retention_basis,
+                       %(erasure_trigger)s::erasure_trigger, %(validity)s,
+                       %(lapse_behaviour)s::lapse_behaviour, %(cross_border_permitted)s,
+                       %(permitted_for_minors)s, 'active', %(admin)s)
+               ON CONFLICT (purpose_code) DO UPDATE
+                  SET name = EXCLUDED.name,
+                      description = EXCLUDED.description,
+                      uses = EXCLUDED.uses,
+                      data_categories = EXCLUDED.data_categories,
+                      retention_period = EXCLUDED.retention_period,
+                      retention_basis = EXCLUDED.retention_basis,
+                      erasure_trigger = EXCLUDED.erasure_trigger,
+                      consent_validity_period = EXCLUDED.consent_validity_period,
+                      lapse_behaviour = EXCLUDED.lapse_behaviour,
+                      cross_border_permitted = EXCLUDED.cross_border_permitted,
+                      permitted_for_minors = EXCLUDED.permitted_for_minors
+               RETURNING purpose_id, purpose_uuid, name""",
+            {
+                **p,
+                "retention": timedelta(days=p["retention_days"]),
+                "validity": timedelta(days=p["consent_validity_days"]),
+                "admin": admin_id,
+            },
+        )
+        log.info("seed.purpose", code=p["purpose_code"])
+    return purposes
+
+
+async def seed_notice(
+    conn: Any,
+    admin_id: int,
+    sources: dict[str, dict[str, Any]],
+    purposes: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """The project, its sites, the published notice and a consent link.
+
+    Created once. A second run finds the project and leaves it: re-running is
+    how a developer repairs a database, and it should not leave them with a
+    second study, a second published notice and a second live link.
+    """
+    existing = await fetch_one(
+        conn,
+        """SELECT p.project_uuid, n.notice_uuid, s.site_uuid
+             FROM project p
+             LEFT JOIN notice n       ON n.project_id = p.project_id
+             LEFT JOIN project_site s ON s.project_id = p.project_id
+            WHERE p.internal_project_name = %s
+            ORDER BY n.notice_id, s.site_id
+            LIMIT 1""",
+        (PROJECT["internal_project_name"],),
+    )
+    if existing:
+        log.info("seed.project.exists", internal_name=PROJECT["internal_project_name"])
+        return {**existing, "raw_token": None}
+
+    # ------------------------------------------------------------ project
     project = await fetch_one(
         conn,
         """INSERT INTO project (project_name, internal_project_name, description,
-                                requesting_team, created_by, dco_user_id,
-                                project_status)
-           VALUES ('Gait Identification Study 2026', 'GAIT-2026',
-                   'Collection of gait video and facial images for model training.',
-                   'Computer Vision', %s, %s, 'in_draft')
+                                requesting_team, created_by, project_status)
+           VALUES (%s, %s, %s, %s, %s, 'in_draft')
            RETURNING project_id, project_uuid""",
-        (ids["rnd_user"], ids["dco"]),
+        (
+            PROJECT["project_name"],
+            PROJECT["internal_project_name"],
+            PROJECT["description"],
+            PROJECT["requesting_team"],
+            admin_id,
+        ),
     )
-    await fetch_one(
-        conn,
+    await conn.execute(
         """INSERT INTO project_status_history (project_id, to_status, actor_user_id)
-           VALUES (%s, 'in_draft', %s) RETURNING history_id""",
-        (project["project_id"], ids["rnd_user"]),
+           VALUES (%s, 'in_draft', %s)""",
+        (project["project_id"], admin_id),
     )
 
-    # Who collects. Naming the third-party processor is what routes an approved
-    # project to a DCO Admin; without this row the demo project was approved and
-    # invisible to the role whose job it is to set its collection up.
-    await conn.execute(
-        """INSERT INTO project_processor (project_id, processor_id, added_by, decided_by,
-                                          decided_at)
-           VALUES (%s, %s, %s, %s, now())""",
-        (project["project_id"], processor["processor_id"], ids["rnd_user"], ids["dpo"]),
-    )
-
-    # The rig belongs to somebody, and the site deploys it. Without this the
-    # seed asserted a project owner directly while leaving the source unowned -
-    # two answers to "who runs Pune", and the derivation says the source wins.
-    # The DCO could then open the project and not the site standing in it.
-    await conn.execute(
-        "UPDATE data_source SET owner_user_id = %s WHERE source_id = %s",
-        (ids["dco"], source["source_id"]),
-    )
-
-    site = await fetch_one(
-        conn,
-        """INSERT INTO project_site (project_id, processor_id, source_id, site_label, location)
-           VALUES (%s, %s, %s, 'Pune Motion Lab', 'Pune, Maharashtra')
-           RETURNING site_id, site_uuid""",
-        (project["project_id"], processor["processor_id"], source["source_id"]),
-    )
-
-    # Two collection owners on one study, as the live report that shaped the
-    # site scope described: a third party's campus run by the DCO, and an
-    # in-house lab run by an RCO. Each follows add_site's rule - a site is a
-    # source standing somewhere, so its label is the source's name and its
-    # owner is the source's owner - which is what lets each owner see their own
-    # site and nobody else's. The in-house collector is named on the project
-    # too; a site under a processor the project never approved is a state the
-    # UI refuses to create.
-    for code, owner, location in (
-        ("SRC-SEED-CIT", "dco", "CIT campus, Coimbatore"),
-        ("SRC-SRIB-SE", "rco", "SRIB lab, Bengaluru"),
-    ):
-        deployed = await fetch_one(
-            conn,
-            """UPDATE data_source SET owner_user_id = %s
-                WHERE source_code = %s
-            RETURNING source_id, processor_id, name""",
-            (ids[owner], code),
-        )
+    # --------------------------------------------- processors and sites
+    # Each site is a source standing somewhere: its label is the source's
+    # name and its processor the source's, and that processor is named on
+    # the project, approved - a site under a processor the project never
+    # approved is a state the console refuses to create. The sources carry no
+    # owner yet: owners are DCOs and RCOs, which the administrator invites.
+    first_site = None
+    for code, location in PROJECT["sites"]:
+        src = sources[code]
         await conn.execute(
-            """INSERT INTO project_processor (project_id, processor_id, added_by, decided_by,
-                                              decided_at)
+            """INSERT INTO project_processor (project_id, processor_id, added_by,
+                                              decided_by, decided_at)
                SELECT %s, %s, %s, %s, now()
                 WHERE NOT EXISTS (SELECT 1 FROM project_processor
                                    WHERE project_id = %s AND processor_id = %s)""",
             (
                 project["project_id"],
-                deployed["processor_id"],
-                ids["rnd_user"],
-                ids["dpo"],
+                src["processor_id"],
+                admin_id,
+                admin_id,
                 project["project_id"],
-                deployed["processor_id"],
+                src["processor_id"],
             ),
         )
-        await conn.execute(
-            """INSERT INTO project_site (project_id, processor_id, source_id, site_label, location)
-               VALUES (%s, %s, %s, %s, %s)""",
-            (
-                project["project_id"],
-                deployed["processor_id"],
-                deployed["source_id"],
-                deployed["name"],
-                location,
-            ),
+        site = await fetch_one(
+            conn,
+            """INSERT INTO project_site (project_id, processor_id, source_id,
+                                         site_label, location)
+               VALUES (%s, %s, %s, %s, %s)
+               RETURNING site_id, site_uuid, site_label""",
+            (project["project_id"], src["processor_id"], src["source_id"], src["name"], location),
         )
+        first_site = first_site or site
 
-    # --------------------------------------------------------- notice
+    # ------------------------------------------------------------- notice
     notice = await fetch_one(
         conn,
         """INSERT INTO notice (notice_code, project_id, version, withdraw_url,
-                               exercise_rights_url, board_complaint_url, dpo_contact)
-           VALUES ('NTC-GAIT-2026', %s, 1,
-                   'https://cmp.local/withdraw',
-                   'https://cmp.local/rights',
-                   'https://dpb.gov.in/complaint',
-                   'privacy@bharatresearch.example')
+                               exercise_rights_url, board_complaint_url, dpo_contact,
+                               applicable_to)
+           VALUES (%s, %s, 1, %s, %s, %s, %s, %s::notice_audience)
            RETURNING notice_id, notice_uuid""",
-        (project["project_id"],),
+        (
+            NOTICE["notice_code"],
+            project["project_id"],
+            NOTICE["withdraw_url"],
+            NOTICE["exercise_rights_url"],
+            NOTICE["board_complaint_url"],
+            NOTICE["dpo_contact"],
+            NOTICE["applicable_to"],
+        ),
     )
-    for order, p in enumerate(purposes):
-        await fetch_one(
-            conn,
+    for order, code in enumerate(NOTICE["purposes"]):
+        await conn.execute(
             """INSERT INTO notice_purpose (notice_id, purpose_id, display_order)
-               VALUES (%s, %s, %s) RETURNING notice_purpose_id""",
-            (notice["notice_id"], p["purpose_id"], order),
+               VALUES (%s, %s, %s)""",
+            (notice["notice_id"], purposes[code]["purpose_id"], order),
         )
-
-    for lang, text in (("english", NOTICE_TEXT), ("hindi", HINDI_TEXT)):
-        await fetch_one(
-            conn,
+    for lang, text in NOTICE["languages"].items():
+        await conn.execute(
             """INSERT INTO notice_language (notice_id, language_code, rendered_text,
                                             content_hash, created_by, approved_by,
                                             approved_at)
-               VALUES (%s, %s::language_code, %s, %s, %s, %s, now())
-               RETURNING notice_language_id""",
-            (notice["notice_id"], lang, text, content_hash(text), ids["dpo"], ids["dpo"]),
+               VALUES (%s, %s::language_code, %s, %s, %s, %s, now())""",
+            (notice["notice_id"], lang, text, content_hash(text), admin_id, admin_id),
         )
 
-    # Publish, then walk the project to approved through its real states.
-    recipients = "Pune Motion Lab (operated by Pune Motion Lab Pvt Ltd), Pune, Maharashtra"
+    # Published last: the freeze triggers refuse purposes and languages on a
+    # published notice.
+    recipients = "; ".join(
+        f"{sources[code]['name']} ({location})" for code, location in PROJECT["sites"]
+    )
     await conn.execute(
         """UPDATE notice SET status = 'published', recipients_text = %s,
                   approved_by = %s, published_at = now() WHERE notice_id = %s""",
-        (recipients, ids["dpo"], notice["notice_id"]),
+        (recipients, admin_id, notice["notice_id"]),
     )
     await conn.execute(
         "UPDATE project SET current_notice_id = %s WHERE project_id = %s",
         (notice["notice_id"], project["project_id"]),
     )
 
+    # ---------------------------------------- approval, then to approved
+    approval = PROJECT["approval"]
     await conn.execute(
         """INSERT INTO project_approval (project_id, approval_type, reference_no,
-                                         approved_on, proof_file_ref,
-                                         proof_file_hash, uploaded_by)
-           VALUES (%s, 'security', 'SEC-2026-0142', %s,
-                   'approvals/seed-proof.pdf', %s, %s)""",
+                                         approved_on, proof_file_ref, proof_file_hash,
+                                         uploaded_by)
+           VALUES (%s, %s, %s, %s, 'approvals/seed-proof.pdf', %s, %s)""",
         (
             project["project_id"],
-            date(2026, 2, 10),
+            approval["approval_type"],
+            approval["reference_no"],
+            approval["approved_on"],
             content_hash("seed proof document"),
-            ids["rnd_user"],
+            admin_id,
         ),
     )
-
-    # in_draft covers the whole of assembly. The R&D User attaches the
-    # notice, the purposes and the approval and then submits, so the two
-    # states that used to split that are one and the DPO is not asked to
-    # act in the middle of somebody else's work.
-    for frm, to, actor in [
-        ("in_draft", "pending_approval", ids["rnd_user"]),
-        ("pending_approval", "approved", ids["dpo"]),
-    ]:
+    for frm, to in (("in_draft", "pending_approval"), ("pending_approval", "approved")):
         await conn.execute(
             "UPDATE project SET project_status = %s::project_status WHERE project_id = %s",
             (to, project["project_id"]),
         )
         await conn.execute(
-            """INSERT INTO project_status_history
-                      (project_id, from_status, to_status, actor_user_id)
+            """INSERT INTO project_status_history (project_id, from_status, to_status,
+                                                   actor_user_id)
                VALUES (%s, %s::project_status, %s::project_status, %s)""",
-            (project["project_id"], frm, to, actor),
+            (project["project_id"], frm, to, admin_id),
         )
 
-    # ----------------------------------------------------- consent link
+    # -------------------------------------------------------- consent link
     raw_token = new_token(32)
-    await fetch_one(
-        conn,
-        """INSERT INTO consent_link (notice_id, site_id, token, expires_at,
-                                     max_uses, created_by)
-           VALUES (%s, %s, %s, %s, 500, %s)
-           RETURNING link_id, link_uuid""",
+    await conn.execute(
+        """INSERT INTO consent_link (notice_id, site_id, token, expires_at, max_uses,
+                                     created_by)
+           VALUES (%s, %s, %s, %s, %s, %s)""",
         (
             notice["notice_id"],
-            site["site_id"],
+            first_site["site_id"],
             token_fingerprint(raw_token)[:64],
-            datetime.now(UTC) + timedelta(days=60),
-            ids["dco"],
+            datetime.now(UTC) + timedelta(days=PROJECT["consent_link_days"]),
+            PROJECT["consent_link_max_uses"],
+            admin_id,
         ),
     )
-
     await conn.execute(
-        """INSERT INTO audit_log (event_type, actor_user_id, entity_type,
-                                  entity_id, detail_json)
+        """INSERT INTO audit_log (event_type, actor_user_id, entity_type, entity_id,
+                                  detail_json)
            VALUES ('project.created', %s, 'project', %s, '{"seed": true}'::jsonb)""",
-        (ids["rnd_user"], project["project_id"]),
+        (admin_id, project["project_id"]),
     )
-
     return {
         "project_uuid": project["project_uuid"],
         "notice_uuid": notice["notice_uuid"],
-        "site_uuid": site["site_uuid"],
+        "site_uuid": first_site["site_uuid"],
         "raw_token": raw_token,
     }
 
@@ -339,263 +601,32 @@ async def seed() -> None:
 
     with use_context(RequestContext(request_id="seed", ip_address="127.0.0.1")):
         async with transaction() as conn:
-            ids: dict[str, int] = {}
+            admin_id = await seed_admin(conn)
+            sources = await seed_processors(conn)
+            purposes = await seed_purposes(conn, admin_id)
+            demo = await seed_notice(conn, admin_id, sources, purposes)
 
-            # -------------------------------------------------------- accounts
-            # Through the repository rather than raw SQL: the personal columns
-            # are sealed and indexed on the way in, and a seed that wrote them
-            # in the clear would leave rows nothing could find. Re-running
-            # finds the existing account by its index and leaves it alone.
-            for full_name, email, role, person_type, org in USERS:
-                row = await user_repo.by_email(conn, email)
-                if row is None:
-                    row = await user_repo.create(
-                        conn,
-                        full_name=full_name,
-                        email=email,
-                        role=role,
-                        username=email.split("@")[0],
-                        organization_id=org,
-                        person_type=person_type,
-                        status="active",
-                        password_hash=hash_password(PASSWORD),
-                    )
-                ids[role] = row["id"]
-                log.info("seed.user", role=role, email=email)
-
-            # -------------------------------------------------------- registry
-            # Every insert below is written to survive a second run. The seed is
-            # the fastest way to repair a development database, and one that only
-            # works against an empty one is no use at the moment it is wanted.
-            processor = await fetch_one(
-                conn,
-                # In India (S2-04): an export to a processor with no recorded
-                # location is refused, so the seed's processors carry one, and a
-                # database seeded before the check gets it on the next run.
-                """WITH existing AS (
-                     UPDATE processor SET location_country = COALESCE(location_country, 'IN')
-                      WHERE legal_name = 'Pune Motion Lab Pvt Ltd'
-                     RETURNING processor_id, processor_uuid
-                   ), created AS (
-                     INSERT INTO processor (legal_name, type, contract_ref,
-                                            security_confirmed_at, location_country)
-                     SELECT 'Pune Motion Lab Pvt Ltd', 'lab', 'CTR-2026-0091', %s, 'IN'
-                      WHERE NOT EXISTS (SELECT 1 FROM existing)
-                     RETURNING processor_id, processor_uuid
-                   )
-                   SELECT * FROM created UNION ALL SELECT * FROM existing""",
-                (date(2026, 1, 15),),
-            )
-            source = await fetch_one(
-                conn,
-                """INSERT INTO data_source (source_code, name, source_role, exchange_mode,
-                                            id_scheme, processor_id, is_authoritative_for)
-                   VALUES ('SRC-PUNE-01', 'Pune Motion Lab capture rig', 'collection',
-                           'file_import', 'lab-local', %s, ARRAY['facial_image','gait_video'])
-                   ON CONFLICT (source_code) DO UPDATE
-                      SET processor_id = EXCLUDED.processor_id
-                   RETURNING source_id, source_uuid""",
-                (processor["processor_id"],),
-            )
-
-            # ------------------------------------------- collection model
-            for legal_name, in_house, kind, contract, sources in COLLECTION:
-                # Idempotent on legal_name, which carries no unique constraint -
-                # two organisations may genuinely share a name, and the seed
-                # should not be the thing that decides they cannot.
-                proc = await fetch_one(
-                    conn,
-                    """WITH existing AS (
-                         -- Updated, not merely found. Reference data is meant to
-                         -- come back into line on every run, and a row that is
-                         -- created correctly once but never corrected drifts the
-                         -- moment anything changes it - which is exactly what a
-                         -- migration down-and-up does to is_in_house.
-                         UPDATE processor
-                            SET is_in_house = %s,
-                                location_country = COALESCE(location_country, 'IN')
-                          WHERE legal_name = %s
-                         RETURNING processor_id
-                       ), created AS (
-                         INSERT INTO processor (legal_name, type, contract_ref,
-                                                security_confirmed_at, is_in_house,
-                                                location_country)
-                         SELECT %s, %s::processor_type, %s, %s, %s, 'IN'
-                          WHERE NOT EXISTS (SELECT 1 FROM existing)
-                         RETURNING processor_id
-                       )
-                       SELECT processor_id FROM created
-                       UNION ALL
-                       SELECT processor_id FROM existing""",
-                    (
-                        in_house,
-                        legal_name,
-                        legal_name,
-                        kind,
-                        contract,
-                        date(2026, 1, 15),
-                        in_house,
-                    ),
-                )
-                for code, name in sources:
-                    await fetch_one(
-                        conn,
-                        """INSERT INTO data_source (source_code, name, source_role,
-                                                    exchange_mode, processor_id)
-                           VALUES (%s, %s, 'collection', 'manual_upload', %s)
-                           ON CONFLICT (source_code) DO UPDATE
-                              SET processor_id = EXCLUDED.processor_id,
-                                  name         = EXCLUDED.name
-                           RETURNING source_id""",
-                        (code, name, proc["processor_id"]),
-                    )
-                log.info(
-                    "seed.processor",
-                    name=legal_name,
-                    in_house=in_house,
-                    sources=len(sources),
-                )
-
-            purposes = []
-            for code, name, desc, uses, cats, days, _mandatory in [
-                (
-                    "PUR-GAIT-TRAIN",
-                    "Gait model training",
-                    "Building and evaluating gait-based identification models.",
-                    "Train, validate and benchmark models. No decisions are made about you.",
-                    ["facial_image", "gait_video", "name", "mobile"],
-                    1095,
-                    False,
-                ),
-                (
-                    "PUR-QUALITY",
-                    "Recording quality assurance",
-                    "Checking that recordings are usable before they enter the dataset.",
-                    "Manual and automated review of recording quality.",
-                    ["facial_image", "gait_video"],
-                    365,
-                    False,
-                ),
-            ]:
-                p = await fetch_one(
-                    conn,
-                    """INSERT INTO purpose (purpose_code, name, description, uses,
-                                            lawful_basis, data_categories, retention_period,
-                                            retention_basis, erasure_trigger,
-                                            consent_validity_period, lapse_behaviour,
-                                            status, created_by)
-                       VALUES (%s, %s, %s, %s, 'consent_s6', %s, %s::interval,
-                               'business_policy', 'withdrawal', %s::interval,
-                               'quarantine', 'active', %s)
-                       ON CONFLICT (purpose_code) DO UPDATE
-                          SET name = EXCLUDED.name, description = EXCLUDED.description
-                       RETURNING purpose_id, purpose_uuid, name""",
-                    (
-                        code,
-                        name,
-                        desc,
-                        uses,
-                        cats,
-                        timedelta(days=days),
-                        timedelta(days=730),
-                        ids["dpo"],
-                    ),
-                )
-                purposes.append(p)
-                log.info("seed.purpose", code=code)
-
-            # ------------------------------------------------ data principal
-            # The population the product exists to serve, and the seed had none.
-            # Every staff role was seeded and she was not, so anything that
-            # needed to drive her console - the end-to-end suite, a look at what
-            # her notifications actually link to - had to borrow an account left
-            # behind by manual testing.
-            #
-            # She signs in with a one-time code and has no password, which is
-            # why she is created here rather than in USERS: `password_hash` is
-            # nullable for exactly her.
-            subject = await user_repo.by_email(conn, "subject@cmp.local")
-            if subject is None:
-                subject = await user_repo.create(
-                    conn,
-                    full_name="Anjali Verma",
-                    email="subject@cmp.local",
-                    mobile="+919000000001",
-                    role="data_subject",
-                    person_type="external",
-                    status="active",
-                    organization_id="ORG-SUB-001",
-                    dob=SUBJECT_DOB,
-                )
-            elif subject.get("is_minor") is None:
-                # Seeded before S2-01, when the seed gave her no date of birth.
-                # An unknown age is asked at sign-in and refused at consent, so
-                # the seeded adult has to be one on an existing database too.
-                subject = await user_repo.update_profile(
-                    conn, subject["id"], full_name=None, mobile=None, dob=SUBJECT_DOB
-                )
-            log.info("seed.subject", email="subject@cmp.local")
-
-            # One event about herself, so her feed is not empty. This is the
-            # exact shape that produced the reported bug: an `auth_user` entity,
-            # which resolved to the administrator's account register for every
-            # reader until the resolver learned who was asking.
-            await conn.execute(
-                """INSERT INTO audit_log (event_type, actor_user_id, subject_user_id,
-                                          entity_type, entity_id, detail_json)
-                   SELECT 'subject.registered', %(id)s, %(id)s, 'auth_user', %(id)s,
-                          '{"seed": true}'::jsonb
-                    WHERE NOT EXISTS (
-                      SELECT 1 FROM audit_log
-                       WHERE subject_user_id = %(id)s AND event_type = 'subject.registered'
-                    )""",
-                {"id": subject["id"]},
-            )
-
-            # ---------------------------------------------------- demo project
-            demo = await fetch_one(
-                conn,
-                """SELECT p.project_uuid, n.notice_uuid, s.site_uuid
-                     FROM project p
-                     LEFT JOIN notice n      ON n.project_id = p.project_id
-                     LEFT JOIN project_site s ON s.project_id = p.project_id
-                    WHERE p.internal_project_name = 'GAIT-2026'
-                    ORDER BY n.notice_id, s.site_id
-                    LIMIT 1""",
-            )
-            if demo:
-                # The consent token is a keyed digest in the database and cannot
-                # be read back, so a run that finds the project already there has
-                # no link to print. Saying so beats printing a stale URL.
-                demo["raw_token"] = None
-                log.info("seed.project.exists", internal_name="GAIT-2026")
-            else:
-                demo = await demo_project(conn, ids, processor, source, purposes)
-
+    portal = settings.public_base_url.rstrip("/")
     print("\n" + "=" * 72)
     print("  SEED COMPLETE")
     print("=" * 72)
-    print(f"  Password for every staff account: {PASSWORD}")
-    for full_name, email, role, _, _ in USERS:
-        print(f"    {role:12} {email:20} {full_name}")
-    print(f"    {'data_subject':12} {'subject@cmp.local':20} Anjali Verma")
-    print("      (no password — she signs in with a one-time code from this outbox)")
-    print(f"\n  Project     : Gait Identification Study 2026  ({demo['project_uuid']})")
-    print(f"  Notice      : NTC-GAIT-2026 v1 (published)      ({demo['notice_uuid']})")
-    print(f"  Site        : Pune Motion Lab                   ({demo['site_uuid']})")
-    print(f"  Data source : SRC-PUNE-01                       ({source['source_uuid']})")
-    for legal_name, in_house, _, _, sources in COLLECTION:
-        whose = "collected in-house" if in_house else "collected by a third party"
-        named = ", ".join(name for _, name in sources)
-        print(f"  Processor   : {legal_name:12} {whose:26} ({named})")
-
+    print(f"  Administrator : {ADMIN['email']}   password {PASSWORD}")
+    print("  (the only account; invite the DPO and the rest from Users in the console)")
+    print()
+    for p in PROCESSORS:
+        whose = "in-house" if p["is_in_house"] else "third party"
+        codes = ", ".join(s["source_code"] for s in p["sources"])
+        print(f"  Processor     : {p['legal_name']:26} {whose:12} {codes}")
+    for p in PURPOSES:
+        print(f"  Purpose       : {p['purpose_code']:16} {p['name']}")
+    print(f"  Project       : {PROJECT['project_name']}  ({demo['project_uuid']}, approved)")
+    print(f"  Notice        : {NOTICE['notice_code']} v1, published  ({demo['notice_uuid']})")
     if demo["raw_token"]:
-        print("\n  Public consent link (the token is not recoverable from the database):")
-        print(f"    http://localhost:8000/c/{demo['raw_token']}")
+        print("\n  Consent link (the token is not recoverable from the database):")
+        print(f"    {portal}/c/{demo['raw_token']}")
     else:
-        print("\n  The demo project was already there, so no new consent link was minted.")
-        print("  The stored token is a keyed digest, so the existing URL cannot be")
-        print("  read back - mint a fresh link from the console if you need one.")
+        print("\n  The project was already there, so no new consent link was minted;")
+        print("  the stored token is a keyed digest and cannot be read back.")
     print("=" * 72 + "\n")
 
     await close_redis()
@@ -603,9 +634,7 @@ async def seed() -> None:
 
 
 if __name__ == "__main__":
-    import sys as _sys
-
-    if _sys.platform == "win32":
+    if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     configure_logging()
     asyncio.run(seed())

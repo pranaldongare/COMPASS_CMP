@@ -110,20 +110,15 @@ the platform was once meant to be containerised is kept in
 
 ## Seeded accounts
 
-Created by `scripts/seed.py`, which refuses to run outside `local` and
-`test`. The password for every staff account is `SeedPassw0rd!2026`, and
-every staff sign-in then asks for a code, which a local deployment writes to
-`backend/api/var/outbox.log`.
-
-| Role | Sign-in |
-|---|---|
-| Data Protection Officer | `dpo@cmp.local` |
-| Administrator | `admin@cmp.local` |
-| Data Collection Owner | `dco@cmp.local` |
-| DCO Admin | `dcoadmin@cmp.local` |
-| Research Collection Owner | `rco@cmp.local` |
-| R&D User | `rnd@cmp.local` |
-| Data principal | mobile `+919000000001` or `subject@cmp.local`; a code, no password |
+`scripts/seed.py` (refuses to run outside `local` and `test`) creates one
+account - the **administrator**, `admin@cmp.local`, password
+`SeedPassw0rd!2026` - and the configuration: processors, data sources,
+purposes, and an approved project with a published notice and a consent
+link. Every other account is invited by the administrator from **Users** in
+the console, as in a real deployment; invite a DPO first. Staff sign-ins ask
+for a code, which a local deployment writes to `backend/api/var/outbox.log`
+(or shows in a popup with `DEV_SHOW_CODES=true`). See
+[local development](docs/operations/local-development.md#signing-in).
 
 ## Tests
 
