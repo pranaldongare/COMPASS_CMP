@@ -79,6 +79,7 @@ function PurposesPageView() {
 
       <FilterBar>
         <SearchBox
+          value={q}
           placeholder="Name or code"
           onSubmit={(term) => {
             setQ(term);
@@ -229,10 +230,10 @@ function PurposesPageView() {
         loading={retire.isPending}
         consequence={
           <p>
-            It can no longer be attached to a notice. Existing notices that already
-            carry it are unaffected — and if any published notice references it,
-            the server will refuse, because retiring it would leave a live notice
-            offering something the registry says no longer exists.
+            It can no longer be attached to a notice. Existing notices that already carry it
+            are unaffected — and if any published notice references it, the server will
+            refuse, because retiring it would leave a live notice offering something the
+            registry says no longer exists.
           </p>
         }
         onConfirm={async () => {

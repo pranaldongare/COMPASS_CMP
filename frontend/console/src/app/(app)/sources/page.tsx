@@ -108,6 +108,7 @@ export default function SourcesPage() {
 
       <FilterBar>
         <SearchBox
+          value={q}
           placeholder="Name or code"
           onSubmit={(term) => {
             setQ(term);

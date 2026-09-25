@@ -18,7 +18,7 @@
  */
 "use client";
 
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
 
@@ -91,24 +91,78 @@ export function FilterSelect({
   );
 }
 
+/** How long typing pauses before the list follows it. */
+const SEARCH_DEBOUNCE_MS = 350;
+
+/**
+ * Search that follows the typing.
+ *
+ * The list updates once typing pauses, and at once on Enter; the × empties it.
+ * `value` is the search in force - usually the URL's - and the box follows it
+ * when it changes elsewhere, as when the filter's chip is cleared.
+ *
+ * `instant={false}` searches on Enter only: for a register searched by a whole
+ * contact, where a fragment never matches and would only put pieces of
+ * somebody's email into requests and logs.
+ */
 export function SearchBox({
   label = "Search",
   placeholder,
   onSubmit,
+  value = "",
+  instant = true,
 }: {
   label?: string;
   placeholder?: string;
   onSubmit: (term: string) => void;
+  value?: string;
+  instant?: boolean;
 }) {
   const id = React.useId();
-  const [term, setTerm] = React.useState("");
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [term, setTerm] = React.useState(value);
+  // The last term handed to the list: a pause after typing back to it, or an
+  // Enter on it, must not reset the list's pagination for nothing.
+  const [sent, setSent] = React.useState(value);
+  const submit = React.useRef(onSubmit);
+  React.useEffect(() => {
+    submit.current = onSubmit;
+  });
+
+  // The search in force changed without the box - a chip cleared, Back
+  // pressed. Adjusted while rendering, as React recommends, rather than in an
+  // effect that would paint the stale term first.
+  const [seen, setSeen] = React.useState(value);
+  if (seen !== value) {
+    setSeen(value);
+    setTerm(value);
+    setSent(value);
+  }
+
+  const send = React.useCallback(
+    (next: string) => {
+      if (next === sent) return;
+      setSent(next);
+      submit.current(next);
+    },
+    [sent],
+  );
+
+  React.useEffect(() => {
+    const next = term.trim();
+    if (!instant || next === sent) return;
+    const timer = window.setTimeout(() => send(next), SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [term, send, instant, sent]);
 
   return (
-    <form method="post"
+    <form
+      method="post"
+      role="search"
       className="flex items-end gap-2"
       onSubmit={(e) => {
         e.preventDefault();
-        onSubmit(term.trim());
+        send(term.trim());
       }}
     >
       <div className="w-64">
@@ -117,21 +171,48 @@ export function SearchBox({
         </label>
         <div className="relative">
           <Search
-            className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-text-subtle"
+            className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-text-subtle"
             aria-hidden="true"
           />
           <Input
+            ref={inputRef}
             id={id}
+            type="search"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape" && term) {
+                e.preventDefault();
+                setTerm("");
+                send("");
+              }
+            }}
             placeholder={placeholder}
-            className="pl-8"
+            className="pr-8 pl-8 [&::-webkit-search-cancel-button]:hidden"
           />
+          {term && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              title="Clear search"
+              onClick={() => {
+                setTerm("");
+                send("");
+                inputRef.current?.focus();
+              }}
+              className="absolute top-1/2 right-1.5 grid size-6 -translate-y-1/2 place-items-center rounded-md text-text-subtle transition-colors hover:bg-bg-inset hover:text-text"
+            >
+              <X className="size-3.5" aria-hidden="true" />
+            </button>
+          )}
         </div>
       </div>
-      <Button type="submit" variant="secondary">
-        Search
-      </Button>
+      {/* Searching on Enter alone would be invisible; say so with a button. */}
+      {!instant && (
+        <Button type="submit" variant="secondary">
+          Search
+        </Button>
+      )}
     </form>
   );
 }
@@ -166,7 +247,12 @@ export function ResourceList<T>({
   stack,
   keyOf,
 }: {
-  query: { data?: Page<T>; isLoading: boolean; isFetching: boolean; error: ApiError | null };
+  query: {
+    data?: Page<T>;
+    isLoading: boolean;
+    isFetching: boolean;
+    error: ApiError | null;
+  };
   columns: string[];
   row: (item: T) => React.ReactNode;
   caption: string;
@@ -219,16 +305,23 @@ export function ResourceList<T>({
             ))}
           </tr>
         </thead>
-        <tbody>{items.map((item) => <React.Fragment key={keyOf(item)}>{row(item)}</React.Fragment>)}</tbody>
+        <tbody>
+          {items.map((item) => (
+            <React.Fragment key={keyOf(item)}>{row(item)}</React.Fragment>
+          ))}
+        </tbody>
       </Table>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs tabular text-text-subtle">
+        <p className="tabular text-xs text-text-subtle">
           Showing {items.length}
           {query.data?.total != null && ` of ${query.data.total}`}
           {query.isFetching && (
             <span className="ml-2 inline-flex items-center gap-1.5 text-accent-text">
-              <span className="size-1.5 animate-pulse rounded-full bg-accent" aria-hidden="true" />
+              <span
+                className="size-1.5 animate-pulse rounded-full bg-accent"
+                aria-hidden="true"
+              />
               refreshing
             </span>
           )}

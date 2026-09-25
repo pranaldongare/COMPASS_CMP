@@ -31,6 +31,24 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **The console finds its way faster.** A command palette (⌘K / Ctrl+K)
+  jumps to any page the role has - read from the same `me.nav` the sidebar
+  is, so it offers nothing the server did not grant - with the pages visited
+  last and a theme and sign-out action. The header gains a breadcrumb, a
+  search trigger and a notifications bell, and the desktop sidebar folds to
+  a rail of icons, remembered per browser. The sidebar, breadcrumb and
+  palette read one list of destinations (`components/layout/nav.ts`).
+- **List searches follow the typing.** The shared search box searches once
+  typing pauses and at once on Enter, clears with × or Escape, and follows
+  the search in force when its chip is removed; Projects now uses it. The
+  users register still searches on Enter only - it matches whole contacts,
+  and a fragment would only send pieces of someone's email. Data sources no
+  longer shows an empty box over a list a link had filtered.
+- **The portal narrows her requests.** From six requests up, "Your requests"
+  offers All / Open / Closed with counts (open as the server says,
+  `closed_at`) and a search by reference, kind or words, done in the browser.
+  A jump between a grievance and the request it disputes widens the filter
+  when the card it goes to is hidden.
 - **Cross-border control, enforced at export (S2-04).** A purpose carried
   `cross_border_permitted` and nothing read it. Each export row now has a
   destination - the processor running its site - and a processor has a

@@ -14,36 +14,26 @@
 
 import {
   Bell,
-  Boxes,
-  Building2,
-  ClipboardCheck,
-  Database,
-  FileCheck,
-  FileText,
-  FolderKanban,
-  Gauge,
-  HandHelping,
-  MessageSquareText,
-  Inbox,
-  Layers,
-  Link2,
+  ChevronRight,
   LogOut,
-  MapPin,
   Menu,
   Moon,
-  Scale,
-  ScrollText,
-  ShieldCheck,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Search,
   Sun,
-  Upload,
-  UserRound,
-  Users,
   X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
 
+import {
+  CommandPalette,
+  rememberVisit,
+  useCommandPaletteShortcut,
+} from "@/components/layout/command-palette";
+import { labelFor, locate, sectionsFor, type NavSection } from "@/components/layout/nav";
 import { BrandMark } from "@/components/ui/graphics";
 import { Button } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
@@ -52,87 +42,52 @@ import { cn, initials } from "@/lib/format";
 import { useMyTickets, useRequestsAttention } from "@/features/rights/queries";
 import { useAuth, useTheme } from "@/providers";
 
-interface NavItem {
-  /** Must match a value in `me.nav`, which the server computes from the
-   *  permission matrix. Anything not in that list is not rendered. */
-  key: string;
-  href: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
+/* The desktop sidebar can fold to a rail of icons. The choice is this
+   browser's convenience, so it lives in localStorage - which can be missing or
+   throw, and then the choice lasts only until the page is reloaded. */
+const SIDEBAR_KEY = "cmp.console.sidebar";
+const sidebarListeners = new Set<() => void>();
+let sidebarFallback = false;
+
+function readCollapsed(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_KEY) === "collapsed";
+  } catch {
+    return sidebarFallback;
+  }
 }
 
-interface NavSection {
-  title: string;
-  items: NavItem[];
+function writeCollapsed(collapsed: boolean): void {
+  sidebarFallback = collapsed;
+  try {
+    if (collapsed) localStorage.setItem(SIDEBAR_KEY, "collapsed");
+    else localStorage.removeItem(SIDEBAR_KEY);
+  } catch {
+    // Kept in memory instead.
+  }
+  sidebarListeners.forEach((notify) => notify());
 }
 
-const SECTIONS: NavSection[] = [
-  {
-    title: "Overview",
-    items: [{ key: "dashboard", href: "/dashboard", label: "Dashboard", icon: Gauge }],
-  },
-  {
-    title: "Governance",
-    items: [
-      { key: "projects", href: "/projects", label: "Projects", icon: FolderKanban },
-      { key: "approvals", href: "/approvals", label: "Approvals", icon: FileCheck },
-      { key: "notices", href: "/notices", label: "Notices", icon: ScrollText },
-      { key: "purposes", href: "/purposes", label: "Purposes", icon: ClipboardCheck },
-    ],
-  },
-  {
-    title: "Consent",
-    items: [
-      { key: "consents", href: "/consents", label: "Consents", icon: FileText },
-      { key: "links", href: "/links", label: "Consent links", icon: Link2 },
-      { key: "sites", href: "/sites", label: "Collection sites", icon: MapPin },
-    ],
-  },
-  {
-    title: "Registry",
-    items: [
-      { key: "processors", href: "/processors", label: "Processors", icon: Building2 },
-      { key: "sources", href: "/sources", label: "Data sources", icon: Database },
-    ],
-  },
-  {
-    title: "Data movement",
-    items: [
-      { key: "collections", href: "/collections", label: "Collections", icon: Layers },
-      { key: "exports", href: "/exports", label: "Exports", icon: Upload },
-      { key: "imports", href: "/imports", label: "Imports", icon: Boxes },
-    ],
-  },
-  {
-    title: "Oversight",
-    items: [
-      // The DPO's register of rights requests, and - for the administrator -
-      // the grievances escalated away from the DPO.
-      { key: "requests", href: "/requests", label: "Rights requests", icon: Scale },
-      { key: "audit", href: "/audit", label: "Audit trail", icon: ShieldCheck },
-      { key: "users", href: "/users", label: "Users", icon: Users },
-      { key: "delegate", href: "/delegate", label: "Delegate", icon: HandHelping },
-      // The words of every email and SMS the platform sends.
-      { key: "messages", href: "/messages", label: "Messages", icon: MessageSquareText },
-    ],
-  },
-  {
-    title: "You",
-    items: [
-      // A rights request's holder that is one of our own teams is answered
-      // here, by whoever that team named - whatever their role.
-      { key: "tickets", href: "/tickets", label: "Tickets for you", icon: Inbox },
-      { key: "notifications", href: "/notifications", label: "Notifications", icon: Bell },
-      { key: "profile", href: "/account", label: "Your profile", icon: UserRound },
-    ],
-  },
-];
+function useSidebarCollapsed(): [boolean, (collapsed: boolean) => void] {
+  const collapsed = React.useSyncExternalStore(
+    (notify) => {
+      sidebarListeners.add(notify);
+      return () => sidebarListeners.delete(notify);
+    },
+    readCollapsed,
+    // The server renders the full sidebar; a folded one appears after hydration.
+    () => false,
+  );
+  return [collapsed, writeCollapsed];
+}
 
-/** The same section reads differently by role: the administrator's share of
- * the rights register is the grievances escalated away from the DPO. */
-function labelFor(item: NavItem, role: string | undefined): string {
-  if (item.key === "requests" && role === "admin") return "Grievances about the DPO";
-  return item.label;
+/** ⌘ on Apple keyboards, Ctrl elsewhere. The server does not know which. */
+function useIsApple(): boolean {
+  return React.useSyncExternalStore(
+    () => () => {},
+    () => /Mac|iPhone|iPad/.test(navigator.userAgent),
+    () => false,
+  );
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -147,13 +102,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     (open: boolean) => setOpenedAt(open ? pathname : null),
     [pathname],
   );
+  const [paletteOpen, setPaletteOpen] = React.useState(false);
+  const togglePalette = React.useCallback(() => setPaletteOpen((open) => !open), []);
+  useCommandPaletteShortcut(togglePalette);
+  const [collapsed, setCollapsed] = useSidebarCollapsed();
 
   // The server says which sections this role has; nothing renders that it
   // did not grant.
-  const sections = SECTIONS.map((section) => ({
-    ...section,
-    items: section.items.filter((item) => me?.nav.includes(item.key)),
-  })).filter((section) => section.items.length > 0);
+  const sections = sectionsFor(me);
+  const here = locate(sections, pathname);
+  const hereHref = here?.item.href;
+
+  // The palette's "Recent" group: the destinations visited, not every detail
+  // page under them.
+  React.useEffect(() => {
+    if (hereHref) rememberVisit(hereHref);
+  }, [hereHref]);
 
   return (
     // Deliberately no background on this element: `body` already paints the
@@ -164,13 +128,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           it behaves like light in the room instead of a background image. */}
       <div aria-hidden="true" className="aurora pointer-events-none fixed inset-0 -z-10" />
 
-      <Header onMenuClick={() => setMobileOpen(!mobileOpen)} mobileOpen={mobileOpen} />
+      <Header
+        onMenuClick={() => setMobileOpen(!mobileOpen)}
+        mobileOpen={mobileOpen}
+        onSearch={() => setPaletteOpen(true)}
+        here={here}
+        pathname={pathname}
+      />
 
       <div className="mx-auto flex w-full max-w-[1600px]">
         <Sidebar
           sections={sections}
           pathname={pathname}
           mobileOpen={mobileOpen}
+          collapsed={collapsed}
+          onToggleCollapsed={() => setCollapsed(!collapsed)}
           onClose={() => setMobileOpen(false)}
           onSignOut={signOut}
         />
@@ -179,6 +151,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </div>
   );
 }
@@ -186,12 +160,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 function Header({
   onMenuClick,
   mobileOpen,
+  onSearch,
+  here,
+  pathname,
 }: {
   onMenuClick: () => void;
   mobileOpen: boolean;
+  onSearch: () => void;
+  here: ReturnType<typeof locate>;
+  pathname: string;
 }) {
   const { me } = useAuth();
   const { resolved, setTheme } = useTheme();
+  const apple = useIsApple();
 
   return (
     <header className="glass no-print sticky top-0 z-30 border-b border-border">
@@ -210,7 +191,7 @@ function Header({
 
         <Link
           href="/dashboard"
-          className="group flex items-center gap-2.5 rounded-lg font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-subtle)]"
+          className="group flex shrink-0 items-center gap-2.5 rounded-lg font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-subtle)]"
         >
           <span className="brand-gradient grid size-8 place-items-center rounded-lg shadow-[var(--shadow-sm)] transition-shadow group-hover:shadow-[var(--shadow-glow)]">
             <BrandMark className="size-5 text-white" />
@@ -224,7 +205,50 @@ function Header({
           <span className="text-sm sm:hidden">CMP</span>
         </Link>
 
+        {here && <Breadcrumb here={here} pathname={pathname} role={me?.role} />}
+
         <div className="flex-1" />
+
+        {/* The palette's front door. On a phone it is an icon; on a desk it
+            says what it does and how to get there without the mouse. */}
+        <button
+          type="button"
+          onClick={onSearch}
+          aria-keyshortcuts={apple ? "Meta+K" : "Control+K"}
+          className={cn(
+            "hidden h-9 w-60 items-center gap-2 rounded-lg border border-border bg-surface/70 px-3 text-sm text-text-subtle md:flex",
+            "shadow-[var(--shadow-sm)] transition-colors hover:border-border-strong hover:text-text-muted",
+            "outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-subtle)]",
+          )}
+        >
+          <Search className="size-4" aria-hidden="true" />
+          <span className="flex-1 text-left">Search or jump to…</span>
+          <kbd className="rounded-md border border-border bg-bg-inset px-1.5 py-0.5 font-sans text-2xs font-medium">
+            {apple ? "⌘K" : "Ctrl K"}
+          </kbd>
+        </button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={onSearch}
+          aria-label="Search or jump to"
+        >
+          <Search />
+        </Button>
+
+        {me?.nav.includes("notifications") && (
+          <Button variant="ghost" size="icon" asChild>
+            <Link
+              href="/notifications"
+              aria-label="Notifications"
+              title="Notifications"
+              aria-current={pathname === "/notifications" ? "page" : undefined}
+            >
+              <Bell />
+            </Link>
+          </Button>
+        )}
 
         <Button
           variant="ghost"
@@ -255,20 +279,70 @@ function Header({
   );
 }
 
+/** Where this page sits: its section, then its destination - a link back to
+ *  the list when this is a page under it. */
+function Breadcrumb({
+  here,
+  pathname,
+  role,
+}: {
+  here: NonNullable<ReturnType<typeof locate>>;
+  pathname: string;
+  role: string | undefined;
+}) {
+  const atTop = pathname === here.item.href;
+  const label = labelFor(here.item, role);
+  return (
+    <nav
+      aria-label="Breadcrumb"
+      className="hidden min-w-0 border-l border-border pl-3 lg:block"
+    >
+      <ol className="flex min-w-0 items-center gap-1.5 text-sm">
+        <li className="shrink-0 text-text-subtle">{here.section.title}</li>
+        <li aria-hidden="true" className="text-text-subtle">
+          <ChevronRight className="size-3.5" />
+        </li>
+        <li className="min-w-0 truncate">
+          {atTop ? (
+            <span aria-current="page" className="font-medium text-text">
+              {label}
+            </span>
+          ) : (
+            <Link
+              href={here.item.href}
+              className="text-text-muted hover:text-text hover:underline"
+            >
+              {label}
+            </Link>
+          )}
+        </li>
+      </ol>
+    </nav>
+  );
+}
+
 function Sidebar({
   sections,
   pathname,
   mobileOpen,
+  collapsed,
+  onToggleCollapsed,
   onClose,
   onSignOut,
 }: {
   sections: NavSection[];
   pathname: string;
   mobileOpen: boolean;
+  /** Folded to icons. Desktop only: the phone drawer always shows words. */
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
   onClose: () => void;
   onSignOut: () => void;
 }) {
   const { me } = useAuth();
+  // Folding applies from the desktop breakpoint up; these are the classes that
+  // do it, so the drawer on a phone is untouched.
+  const folded = collapsed && !mobileOpen;
   return (
     <>
       {/* Scrim. Clicking it closes the drawer; it is hidden from assistive tech
@@ -284,33 +358,58 @@ function Sidebar({
       <nav
         id="sidebar-nav"
         aria-label="Main"
+        data-collapsed={folded || undefined}
         className={cn(
           "no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-surface/70",
-          "lg:sticky lg:top-14 lg:h-[calc(100dvh-3.5rem)]",
+          "lg:sticky lg:top-14 lg:h-[calc(100dvh-3.5rem)] lg:transition-[width] lg:duration-200",
+          folded && "lg:w-[4.25rem]",
           mobileOpen
             ? "fixed inset-y-14 left-0 flex overflow-y-auto bg-surface shadow-[var(--shadow-pop)]"
             : "hidden lg:flex",
         )}
       >
-        <div className="flex-1 overflow-y-auto px-3 py-4">
-          {sections.map((section) => (
+        <div
+          className={cn(
+            "flex-1 overflow-x-hidden overflow-y-auto py-4",
+            folded ? "lg:px-2.5" : "px-3",
+          )}
+        >
+          {sections.map((section, i) => (
             <div key={section.title} className="mb-5 last:mb-0">
-              <p className="mb-1.5 px-3 text-2xs font-semibold tracking-wider text-text-subtle uppercase">
+              <p
+                className={cn(
+                  "mb-1.5 px-3 text-2xs font-semibold tracking-wider text-text-subtle uppercase",
+                  folded && "lg:sr-only",
+                )}
+              >
                 {section.title}
               </p>
+              {/* Folded, a hairline stands in for the heading so the groups
+                  still read as groups. */}
+              {folded && i > 0 && (
+                <div
+                  aria-hidden="true"
+                  className="mx-2 mb-2 hidden h-px bg-border lg:block"
+                />
+              )}
               <ul className="space-y-0.5">
                 {section.items.map((item) => {
                   const active =
                     pathname === item.href || pathname.startsWith(`${item.href}/`);
                   const Icon = item.icon;
+                  const label = labelFor(item, me?.role);
                   return (
                     <li key={`${section.title}:${item.href}`}>
                       <Link
                         href={item.href}
                         aria-current={active ? "page" : undefined}
+                        // Folded, the word is visually hidden but still the
+                        // link's name; the tooltip is for sighted mouse users.
+                        title={folded ? label : undefined}
                         className={cn(
                           "group relative flex items-center gap-2.5 rounded-lg py-2 pr-2 pl-3 text-sm",
                           "transition-[background-color,color] duration-150",
+                          folded && "lg:justify-center lg:px-0",
                           active
                             ? "bg-accent-subtle font-medium text-accent-text"
                             : "text-text-muted hover:bg-bg-inset hover:text-text",
@@ -337,9 +436,11 @@ function Sidebar({
                           )}
                           aria-hidden="true"
                         />
-                        <span className="truncate">{labelFor(item, me?.role)}</span>
-                        {item.key === "tickets" && <TicketsBadge />}
-                        {item.key === "requests" && <RequestsBadge />}
+                        <span className={cn("truncate", folded && "lg:sr-only")}>
+                          {label}
+                        </span>
+                        {item.key === "tickets" && <TicketsBadge folded={folded} />}
+                        {item.key === "requests" && <RequestsBadge folded={folded} />}
                       </Link>
                     </li>
                   );
@@ -349,14 +450,43 @@ function Sidebar({
           ))}
         </div>
 
-        <div className="rule-fade shrink-0 border-t border-border p-3">
+        <div
+          className={cn(
+            "rule-fade shrink-0 space-y-0.5 border-t border-border",
+            folded ? "lg:p-2.5" : "p-3",
+          )}
+        >
           <Button
             variant="ghost"
-            className="w-full justify-start px-3 text-text-muted"
+            className={cn(
+              "hidden w-full justify-start px-3 text-text-muted lg:flex",
+              folded && "lg:justify-center lg:px-0",
+            )}
+            onClick={onToggleCollapsed}
+            aria-expanded={!folded}
+            aria-controls="sidebar-nav"
+            title={folded ? "Expand sidebar" : undefined}
+          >
+            {folded ? (
+              <PanelLeftOpen className="size-4" aria-hidden="true" />
+            ) : (
+              <PanelLeftClose className="size-4" aria-hidden="true" />
+            )}
+            <span className={cn(folded && "lg:sr-only")}>
+              {folded ? "Expand sidebar" : "Collapse sidebar"}
+            </span>
+          </Button>
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full justify-start px-3 text-text-muted",
+              folded && "lg:justify-center lg:px-0",
+            )}
             onClick={onSignOut}
+            title={folded ? "Sign out" : undefined}
           >
             <LogOut className="size-4" aria-hidden="true" />
-            Sign out
+            <span className={cn(folded && "lg:sr-only")}>Sign out</span>
           </Button>
         </div>
       </nav>
@@ -416,7 +546,7 @@ export function PageHeader({
  * - a new ticket, a message from the Privacy Office, a ticket sent back.
  * The one conversation staff are in should be visible from every page.
  */
-function TicketsBadge() {
+function TicketsBadge({ folded }: { folded: boolean }) {
   const tickets = useMyTickets();
   const count = (tickets.data ?? []).filter(
     (t) =>
@@ -426,6 +556,7 @@ function TicketsBadge() {
   return (
     <NavCount
       count={count}
+      folded={folded}
       label={`${count} ticket${count === 1 ? "" : "s"} with unread messages`}
     />
   );
@@ -433,22 +564,36 @@ function TicketsBadge() {
 
 /** The office's side of the same bell: open tickets a team has written on
  * that nobody in the office has read. Cleared by opening the thread. */
-function RequestsBadge() {
+function RequestsBadge({ folded }: { folded: boolean }) {
   const attention = useRequestsAttention();
   const count = attention.data?.threads_unread ?? 0;
   return (
     <NavCount
       count={count}
+      folded={folded}
       label={`${count} ticket thread${count === 1 ? "" : "s"} unread`}
     />
   );
 }
 
-function NavCount({ count, label }: { count: number; label: string }) {
+function NavCount({
+  count,
+  label,
+  folded,
+}: {
+  count: number;
+  label: string;
+  folded: boolean;
+}) {
   if (!count) return null;
   return (
     <span
-      className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-2xs font-semibold text-white"
+      className={cn(
+        "ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-2xs font-semibold text-white",
+        // Folded, the count sits on the icon's corner, like a badge on an app.
+        folded &&
+          "lg:absolute lg:top-0.5 lg:right-1 lg:ml-0 lg:min-w-4 lg:px-1 lg:text-[0.625rem] lg:leading-4",
+      )}
       aria-label={label}
     >
       {count}

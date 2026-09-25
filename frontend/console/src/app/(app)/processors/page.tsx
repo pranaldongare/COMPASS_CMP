@@ -85,6 +85,7 @@ export default function ProcessorsPage() {
 
       <FilterBar>
         <SearchBox
+          value={q}
           placeholder="Legal name or contract"
           onSubmit={(term) => {
             setQ(term);
@@ -107,7 +108,15 @@ export default function ProcessorsPage() {
         query={query}
         stack={stack}
         caption="Registered processors"
-        columns={["Legal name", "Type", "Country", "Contract", "Security confirmed", "Status", "Action"]}
+        columns={[
+          "Legal name",
+          "Type",
+          "Country",
+          "Contract",
+          "Security confirmed",
+          "Status",
+          "Action",
+        ]}
         keyOf={(p) => p.processor_uuid}
         empty={{
           illustration: <EmptyRecords />,
@@ -123,7 +132,10 @@ export default function ProcessorsPage() {
               {p.location_country ? (
                 <span className="font-mono text-xs">{p.location_country}</span>
               ) : (
-                <span className="text-xs text-warning-text" title="An export to this processor is refused until its country is recorded">
+                <span
+                  className="text-xs text-warning-text"
+                  title="An export to this processor is refused until its country is recorded"
+                >
                   not recorded
                 </span>
               )}
@@ -141,25 +153,25 @@ export default function ProcessorsPage() {
                   <UsersRound className="size-4" />
                   Respondents
                 </Button>
-              {canSuspend && (
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => setEditing(p)}>
-                    <Pencil className="size-4" />
-                    Edit
-                  </Button>
-                  {p.status === "active" && (
-                    <Button
-                      variant="subtle"
-                      size="sm"
-                      loading={suspend.isPending}
-                      onClick={() => onSuspend(p.processor_uuid, p.legal_name)}
-                    >
-                      <Ban className="size-4" />
-                      Suspend
+                {canSuspend && (
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => setEditing(p)}>
+                      <Pencil className="size-4" />
+                      Edit
                     </Button>
-                  )}
-                </div>
-              )}
+                    {p.status === "active" && (
+                      <Button
+                        variant="subtle"
+                        size="sm"
+                        loading={suspend.isPending}
+                        onClick={() => onSuspend(p.processor_uuid, p.legal_name)}
+                      >
+                        <Ban className="size-4" />
+                        Suspend
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             </Td>
           </Tr>
@@ -178,9 +190,14 @@ export default function ProcessorsPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={Boolean(respondentsFor)} onOpenChange={(o) => !o && setRespondentsFor(null)}>
+      <Dialog
+        open={Boolean(respondentsFor)}
+        onOpenChange={(o) => !o && setRespondentsFor(null)}
+      >
         <DialogContent
-          title={respondentsFor ? `Respondents · ${respondentsFor.legal_name}` : "Respondents"}
+          title={
+            respondentsFor ? `Respondents · ${respondentsFor.legal_name}` : "Respondents"
+          }
           description="Who answers a rights-request ticket for this processor, and how it reaches them."
         >
           {respondentsFor && <RespondentsPanel processor={respondentsFor} />}

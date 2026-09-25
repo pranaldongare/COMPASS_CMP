@@ -8,22 +8,25 @@
  */
 "use client";
 
-import { Plus, Search } from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
 import { ActiveFilters } from "@/components/data-display/active-filters";
-import { useFilterParam } from "@/components/data-display/resource-list";
+import {
+  FilterBar,
+  FilterSelect,
+  SearchBox,
+  useFilterParam,
+} from "@/components/data-display/resource-list";
 import { EmptyProjects } from "@/components/ui/graphics";
 import {
   Alert,
   Button,
   Card,
   EmptyState,
-  Input,
-  Select,
   Table,
   TableSkeleton,
   Td,
@@ -45,7 +48,6 @@ function ProjectsPageView() {
   // be a link somebody can send. It also means arriving here from a search
   // elsewhere - or pressing Back - lands on the results rather than on
   // everything.
-  const [search, setSearch] = useFilterParam("q");
   const [query, setQuery] = useFilterParam("q");
 
   // The cursor stack: each entry is the cursor that produced that page, so
@@ -77,12 +79,6 @@ function ProjectsPageView() {
     setCursors([undefined]);
   };
 
-  const onSearch = (event: React.FormEvent) => {
-    event.preventDefault();
-    setQuery(search.trim());
-    setCursors([undefined]);
-  };
-
   const canCreate = me?.role === "rnd_user";
 
   return (
@@ -100,49 +96,23 @@ function ProjectsPageView() {
         }
       />
 
-      <div className="mb-4 flex flex-wrap items-end gap-3">
-        <form method="post" onSubmit={onSearch} className="flex items-end gap-2">
-          <div className="w-64">
-            <label htmlFor="project-search" className="mb-1.5 block text-sm font-medium">
-              Search
-            </label>
-            <div className="relative">
-              <Search
-                className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-text-subtle"
-                aria-hidden="true"
-              />
-              <Input
-                id="project-search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Project name"
-                className="pl-8"
-              />
-            </div>
-          </div>
-          <Button type="submit" variant="secondary">
-            Search
-          </Button>
-        </form>
-
-        <div className="w-52">
-          <label htmlFor="project-status" className="mb-1.5 block text-sm font-medium">
-            Status
-          </label>
-          <Select
-            id="project-status"
-            value={status}
-            onChange={(e) => changeStatus(e.target.value)}
-          >
-            <option value="">All statuses</option>
-            {enums?.project_status?.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </Select>
-        </div>
-      </div>
+      <FilterBar>
+        <SearchBox
+          value={query}
+          placeholder="Project name"
+          onSubmit={(term) => {
+            setQuery(term);
+            setCursors([undefined]);
+          }}
+        />
+        <FilterSelect
+          label="Status"
+          value={status}
+          onChange={changeStatus}
+          allLabel="All statuses"
+          options={enums?.project_status ?? []}
+        />
+      </FilterBar>
 
       {/* Each filter names itself and removes only itself. The bare "Clear"
           this replaced said nothing about what it would clear, and a filtered
@@ -159,7 +129,6 @@ function ProjectsPageView() {
             label: "Search",
             value: query,
             onClear: () => {
-              setSearch("");
               setQuery("");
               setCursors([undefined]);
             },
@@ -167,7 +136,6 @@ function ProjectsPageView() {
         ]}
         onClearAll={() => {
           setStatus("");
-          setSearch("");
           setQuery("");
           setCursors([undefined]);
         }}

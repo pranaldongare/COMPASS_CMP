@@ -28,6 +28,11 @@ import { NomineeOfCard } from "@/features/rights/components/nominee-of-card";
 import { MyRequestForm } from "@/features/rights/components/request-form";
 import { useMyRequests } from "@/features/rights/queries";
 import { RequestCard, cardId } from "@/features/rights/components/request-card";
+import {
+  FILTER_FROM,
+  RequestFilter,
+  useRequestFilter,
+} from "@/features/rights/components/request-filter";
 import { relate } from "@/features/rights/relate";
 
 export default function MyRequestsPage() {
@@ -36,6 +41,19 @@ export default function MyRequestsPage() {
   const [open, setOpen] = React.useState<string | null>(null);
   const [flash, setFlash] = React.useState<string | null>(null);
   const { byUuid, followers } = relate(requests.data ?? []);
+  const filter = useRequestFilter(requests.data ?? []);
+  const filtering = (requests.data?.length ?? 0) >= FILTER_FROM;
+  // A card to bring into view once it is rendered: after a jump that had to
+  // widen the filter, the card does not exist until the next commit. The jump
+  // itself always renders (it sets the flash), and this runs after it.
+  const scrollTo = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!scrollTo.current) return;
+    document
+      .getElementById(cardId(scrollTo.current))
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    scrollTo.current = null;
+  });
 
   React.useEffect(() => {
     if (!flash) return;
@@ -46,9 +64,8 @@ export default function MyRequestsPage() {
   function jump(uuid: string) {
     setOpen(uuid);
     setFlash(uuid);
-    document
-      .getElementById(cardId(uuid))
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (!filter.isShown(uuid)) filter.reset();
+    scrollTo.current = uuid;
   }
 
   return (
@@ -80,8 +97,24 @@ export default function MyRequestsPage() {
         </Card>
       )}
 
+      {filtering && <RequestFilter filter={filter} />}
+
+      {filtering && filter.shown.length === 0 && (
+        <Card>
+          <EmptyState
+            title="No requests match"
+            description="Try another word, or show all of them."
+            action={
+              <Button variant="secondary" onClick={filter.reset}>
+                Show all requests
+              </Button>
+            }
+          />
+        </Card>
+      )}
+
       <div className="space-y-4">
-        {requests.data?.map((r) => (
+        {(filtering ? filter.shown : (requests.data ?? [])).map((r) => (
           <RequestCard
             key={r.request_uuid}
             request={r}

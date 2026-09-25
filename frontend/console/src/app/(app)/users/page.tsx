@@ -139,6 +139,8 @@ function UsersPageView() {
 
       <FilterBar>
         <SearchBox
+          value={q}
+          instant={false}
           placeholder="Name, or a whole email, mobile or id"
           onSubmit={(term) => {
             setQ(term);
