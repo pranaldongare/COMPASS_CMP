@@ -31,6 +31,17 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **Structure across both apps: tabs, a menu, collapsible cards.** New
+  accessible primitives - `Tabs` (arrow keys, one tab stop, the tab kept in
+  the address), `Menu` (the menu-button pattern) and `CollapsibleCard`
+  (remembered per browser) - with no new dependency. The header gains an
+  account menu (profile, help manual, theme, sign out); the console sidebar's
+  groups fold away, keeping the group of the current page open; Your account
+  is tabbed (Contacts, Active sessions, and in the console Password), with
+  sessions as a table naming the device, a "Show all" fold and "End all other
+  sessions"; a rights request's clock and path and a project's history fold
+  away. The mobile sign-out browser test, which could not reach the sidebar
+  drawer, now signs out through the account menu and passes.
 - **A help manual in the console and the portal** (`/help`). Laid out like a
   product manual - a numbered table of contents that follows the reader,
   numbered steps, notes and warnings, questions and answers, a glossary, and a

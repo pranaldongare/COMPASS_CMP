@@ -15,7 +15,7 @@
  */
 "use client";
 
-import { LogOut, Mail, Monitor, UserRound } from "lucide-react";
+import { KeyRound, Mail, Monitor, UserRound } from "lucide-react";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
@@ -33,8 +33,10 @@ import {
   Input,
   Skeleton,
 } from "@/components/ui/primitives";
+import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
+import { SessionsCard } from "@/features/account/components/sessions-card";
 import { StatusBadge } from "@/components/ui/status";
-import { changePassword, revokeSession } from "@/features/auth";
+import { changePassword } from "@/features/auth";
 import { ApiError } from "@/lib/errors";
 import {
   useRemoveSecondaryEmail,
@@ -43,13 +45,17 @@ import {
   useUpdateMe,
   useVerifyContact,
 } from "@/features/account";
-import { formatDateTime, formatRelative } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 import type { Me } from "@/types";
 import { useAuth, useToast } from "@/providers";
+
+const TABS = ["contacts", "sessions", "password"] as const;
 
 export default function AccountPage() {
   const { me } = useAuth();
   const sessions = useSessions();
+  // In the address, so "your sessions" can be linked to and survives a reload.
+  const [tab, setTab] = useHashTab(TABS, "contacts");
 
   if (!me) return <Skeleton className="h-64" />;
 
@@ -64,39 +70,34 @@ export default function AccountPage() {
         {/* `min-w-0` on both columns: a grid item defaults to `min-width: auto`,
             so one long unbroken string - a user-agent on a single line - makes the
             column wider than its track and the whole page scroll sideways. */}
-        <div className="min-w-0 space-y-6 lg:col-span-2">
-          <ContactsCard me={me} />
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Monitor className="size-4" aria-hidden="true" />
+        <div className="min-w-0 lg:col-span-2">
+          <Tabs value={tab} onValueChange={setTab} label="Your account">
+            <TabList>
+              <Tab value="contacts" icon={Mail}>
+                Contacts
+              </Tab>
+              <Tab value="sessions" icon={Monitor} count={sessions.data?.length}>
                 Active sessions
-              </CardTitle>
-              <p className="mt-1 text-xs text-text-muted">
-                End anything you do not recognise. A session you cannot account for is the
-                earliest sign that a password has leaked.
-              </p>
-            </CardHeader>
-
-            {sessions.isLoading ? (
-              <CardBody>
-                <Skeleton className="h-24" />
-              </CardBody>
-            ) : (
-              <ul className="divide-y divide-border">
-                {sessions.data?.map((s) => (
-                  <SessionRow
-                    key={s.uuid}
-                    session={s}
-                    onRevoked={() => sessions.refetch()}
-                  />
-                ))}
-              </ul>
-            )}
-          </Card>
-
-          <PasswordCard />
+              </Tab>
+              <Tab value="password" icon={KeyRound}>
+                Password
+              </Tab>
+            </TabList>
+            <TabPanel value="contacts">
+              <ContactsCard me={me} />
+            </TabPanel>
+            <TabPanel value="sessions">
+              <SessionsCard
+                sessions={sessions.data}
+                loading={sessions.isLoading}
+                onChanged={() => sessions.refetch()}
+                warning="End anything you do not recognise. A session you cannot account for is the earliest sign that a password has leaked."
+              />
+            </TabPanel>
+            <TabPanel value="password">
+              <PasswordCard />
+            </TabPanel>
+          </Tabs>
         </div>
 
         <Card className="min-w-0">
@@ -441,70 +442,6 @@ function ContactRow({
         </form>
       )}
     </div>
-  );
-}
-
-function SessionRow({
-  session,
-  onRevoked,
-}: {
-  session: {
-    uuid: string;
-    created_at: string;
-    last_seen_at: string;
-    expires_at: string;
-    ip_address: string | null;
-    user_agent: string | null;
-    mfa_verified: boolean;
-    current: boolean;
-  };
-  onRevoked: () => void;
-}) {
-  const toast = useToast();
-  const [busy, setBusy] = React.useState(false);
-
-  async function revoke() {
-    setBusy(true);
-    try {
-      await revokeSession(session.uuid);
-      toast.success("Session ended");
-      onRevoked();
-    } catch (err) {
-      toast.error(
-        "Could not end that session",
-        err instanceof ApiError ? err.userMessage() : "Please try again.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <li className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium">
-          {session.ip_address ?? "Unknown address"}
-          {session.current && (
-            <span className="ml-2 rounded-full border border-success-border bg-success-subtle px-2 py-0.5 text-2xs font-medium text-success-text">
-              this device
-            </span>
-          )}
-        </p>
-        <p className="mt-0.5 truncate text-xs text-text-subtle">
-          {session.user_agent ?? "Unknown client"}
-        </p>
-        <p className="mt-0.5 text-xs text-text-muted">
-          Last active {formatRelative(session.last_seen_at)} · expires{" "}
-          {formatDateTime(session.expires_at)}
-        </p>
-      </div>
-      {!session.current && (
-        <Button variant="subtle" size="sm" loading={busy} onClick={revoke}>
-          <LogOut className="size-4" />
-          End session
-        </Button>
-      )}
-    </li>
   );
 }
 

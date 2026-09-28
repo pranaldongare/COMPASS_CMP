@@ -226,13 +226,11 @@ test.describe("session cookie", () => {
     await signIn(page);
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
 
-    // Sign out is a button in the sidebar, not an item behind an account menu.
-    // Worth stating because the reverse is the more common pattern and this test
-    // originally assumed it.
-    await page
-      .getByRole("button", { name: /^sign out$/i })
-      .first()
-      .click();
+    // Through the account menu in the header, which every screen size shows.
+    // Sign out is also at the foot of the sidebar, but on a phone the sidebar
+    // is a closed drawer, which is why this test once failed on mobile only.
+    await page.getByRole("button", { name: /^account menu for/i }).click();
+    await page.getByRole("menuitem", { name: /^sign out$/i }).click();
     await expect(page).toHaveURL(/\/sign-in/, { timeout: 10_000 });
 
     // Not just cleared client-side: going back to a protected route has to

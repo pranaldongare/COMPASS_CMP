@@ -10,7 +10,7 @@
  */
 "use client";
 
-import { ArrowLeft, Download, History } from "lucide-react";
+import { ArrowLeft, Clock, Download, History } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import * as React from "react";
@@ -18,6 +18,7 @@ import * as React from "react";
 import { ActivityFeed } from "@/components/data-display/activity-feed";
 import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { PageHeader } from "@/components/layout/app-shell";
+import { CollapsibleCard } from "@/components/ui/collapsible";
 import {
   Alert,
   Card,
@@ -198,24 +199,27 @@ export default function RequestDetailPage() {
 
         <LinkedRequestCard request={r} />
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
-          <Card>
-            <CardHeader>
-              <CardTitle>Clock</CardTitle>
-            </CardHeader>
-            <CardBody>
+        {/* The clock and the path are the map of the request: read once, then
+            folded away so the work below comes first. Remembered per browser. */}
+        <CollapsibleCard
+          title="Clock and path"
+          description="The deadlines this request runs to, and every step it takes - with where it can end early."
+          icon={Clock}
+          storageKey="request.overview"
+        >
+          <div className="grid gap-6 p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
+            <div className="min-w-0">
+              <h3 className="mb-3 text-sm font-semibold">Clock</h3>
               <ClockColumn clock={r.clock} closed={closed} />
-            </CardBody>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>The path, and where it can end early</CardTitle>
-            </CardHeader>
-            <CardBody>
+            </div>
+            <div className="min-w-0">
+              <h3 className="mb-3 text-sm font-semibold">
+                The path, and where it can end early
+              </h3>
               <Path request={r} />
-            </CardBody>
-          </Card>
-        </div>
+            </div>
+          </div>
+        </CollapsibleCard>
 
         <div className="grid gap-6 lg:grid-cols-2">
           <VerificationCard request={r} />

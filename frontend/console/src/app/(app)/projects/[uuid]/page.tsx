@@ -16,6 +16,7 @@ import {
   Copy,
   Download,
   FileCheck,
+  History as HistoryIcon,
   Info,
   Link2,
   MapPin,
@@ -31,6 +32,7 @@ import * as React from "react";
 
 import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { PageHeader } from "@/components/layout/app-shell";
+import { CollapsibleCard } from "@/components/ui/collapsible";
 import { TransitionControls } from "@/features/projects/components/transition-controls";
 import {
   AgentForm,
@@ -53,6 +55,7 @@ import {
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Alert,
+  Badge,
   Button,
   Card,
   CardBody,
@@ -564,13 +567,15 @@ export default function ProjectDetailPage() {
             )}
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>History</CardTitle>
-              <p className="mt-1 text-xs text-text-muted">
-                Append-only. Every transition, who made it, and why.
-              </p>
-            </CardHeader>
+          <CollapsibleCard
+            title="History"
+            description="Append-only. Every transition, who made it, and why."
+            icon={HistoryIcon}
+            badge={
+              history.data ? <Badge tone="neutral">{history.data.length}</Badge> : undefined
+            }
+            storageKey="project.history"
+          >
             {history.isLoading ? (
               <CardBody>
                 <Skeleton className="h-24" />
@@ -609,7 +614,7 @@ export default function ProjectDetailPage() {
                 ))}
               </ol>
             )}
-          </Card>
+          </CollapsibleCard>
         </div>
 
         <div className="min-w-0 space-y-6">

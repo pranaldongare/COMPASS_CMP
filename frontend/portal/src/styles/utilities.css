@@ -150,6 +150,13 @@
   }
   .overlay-in { animation: fade-in 180ms ease-out both; }
 
+  /* A dropdown menu grows from the corner it hangs from. */
+  @keyframes menu-pop {
+    from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+    to   { opacity: 1; transform: none; }
+  }
+  .menu-in { animation: menu-pop 140ms var(--ease-out-quint) both; }
+
   /* Staggered reveal for a list or a KPI row. Capped at eight: past that the
      last item waits long enough to feel broken rather than deliberate. */
   .stagger > * { animation: fade-rise 240ms var(--ease-out-quint) both; }

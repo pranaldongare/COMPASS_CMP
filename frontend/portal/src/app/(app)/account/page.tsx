@@ -8,10 +8,12 @@
  */
 "use client";
 
-import { LogOut, Mail, Monitor, UserRound } from "lucide-react";
+import { Mail, Monitor, UserRound } from "lucide-react";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
+import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
+import { SessionsCard } from "@/features/account/components/sessions-card";
 import {
   Alert,
   Badge,
@@ -27,7 +29,6 @@ import {
   Skeleton,
 } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
-import { revokeSession } from "@/features/auth";
 import { ApiError } from "@/lib/errors";
 import {
   useRemoveSecondaryEmail,
@@ -36,12 +37,16 @@ import {
   useUpdateMe,
   useVerifyContact,
 } from "@/features/account";
-import { formatDate, formatDateTime, formatRelative } from "@/lib/format";
+import { formatDate, formatDateTime } from "@/lib/format";
 import { useAuth, useToast } from "@/providers";
+
+const TABS = ["contacts", "sessions"] as const;
 
 export default function AccountPage() {
   const { me } = useAuth();
   const sessions = useSessions();
+  // In the address, so "your sessions" can be linked to and survives a reload.
+  const [tab, setTab] = useHashTab(TABS, "contacts");
 
   if (!me) return <Skeleton className="h-64" />;
 
@@ -58,37 +63,28 @@ export default function AccountPage() {
             one line - stretched this column to 811px on a 412px phone and
             panned the whole page. Only with a minimum of zero can `truncate`
             below actually truncate. */}
-        <div className="min-w-0 space-y-6 lg:col-span-2">
-          <ContactsCard me={me} />
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Monitor className="size-4" aria-hidden="true" />
+        <div className="min-w-0 lg:col-span-2">
+          <Tabs value={tab} onValueChange={setTab} label="Your account">
+            <TabList>
+              <Tab value="contacts" icon={Mail}>
+                Contacts
+              </Tab>
+              <Tab value="sessions" icon={Monitor} count={sessions.data?.length}>
                 Active sessions
-              </CardTitle>
-              <p className="mt-1 text-xs text-text-muted">
-                End anything you do not recognise. A session you cannot account for is the
-                earliest sign that somebody else has your sign-in code.
-              </p>
-            </CardHeader>
-
-            {sessions.isLoading ? (
-              <CardBody>
-                <Skeleton className="h-24" />
-              </CardBody>
-            ) : (
-              <ul className="divide-y divide-border">
-                {sessions.data?.map((s) => (
-                  <SessionRow
-                    key={s.uuid}
-                    session={s}
-                    onRevoked={() => sessions.refetch()}
-                  />
-                ))}
-              </ul>
-            )}
-          </Card>
+              </Tab>
+            </TabList>
+            <TabPanel value="contacts">
+              <ContactsCard me={me} />
+            </TabPanel>
+            <TabPanel value="sessions">
+              <SessionsCard
+                sessions={sessions.data}
+                loading={sessions.isLoading}
+                onChanged={() => sessions.refetch()}
+                warning="End anything you do not recognise. A session you cannot account for is the earliest sign that somebody else has your sign-in code."
+              />
+            </TabPanel>
+          </Tabs>
         </div>
 
         <Card>
@@ -153,70 +149,6 @@ export default function AccountPage() {
         </Card>
       </div>
     </>
-  );
-}
-
-function SessionRow({
-  session,
-  onRevoked,
-}: {
-  session: {
-    uuid: string;
-    created_at: string;
-    last_seen_at: string;
-    expires_at: string;
-    ip_address: string | null;
-    user_agent: string | null;
-    mfa_verified: boolean;
-    current: boolean;
-  };
-  onRevoked: () => void;
-}) {
-  const toast = useToast();
-  const [busy, setBusy] = React.useState(false);
-
-  async function revoke() {
-    setBusy(true);
-    try {
-      await revokeSession(session.uuid);
-      toast.success("Session ended");
-      onRevoked();
-    } catch (err) {
-      toast.error(
-        "Could not end that session",
-        err instanceof ApiError ? err.userMessage() : "Please try again.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <li className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
-      <div className="min-w-0">
-        <p className="text-sm font-medium">
-          {session.ip_address ?? "Unknown address"}
-          {session.current && (
-            <span className="ml-2 rounded-full border border-success-border bg-success-subtle px-2 py-0.5 text-2xs font-medium text-success-text">
-              this device
-            </span>
-          )}
-        </p>
-        <p className="mt-0.5 truncate text-xs text-text-subtle">
-          {session.user_agent ?? "Unknown client"}
-        </p>
-        <p className="mt-0.5 text-xs text-text-muted">
-          Last active {formatRelative(session.last_seen_at)} · expires{" "}
-          {formatDateTime(session.expires_at)}
-        </p>
-      </div>
-      {!session.current && (
-        <Button variant="subtle" size="sm" loading={busy} onClick={revoke}>
-          <LogOut className="size-4" />
-          End session
-        </Button>
-      )}
-    </li>
   );
 }
 

@@ -14,14 +14,14 @@
 
 import {
   Bell,
+  ChevronDown,
   ChevronRight,
+  CircleHelp,
   LogOut,
   Menu,
-  Moon,
   PanelLeftClose,
   PanelLeftOpen,
   Search,
-  Sun,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -34,13 +34,14 @@ import {
   useCommandPaletteShortcut,
 } from "@/components/layout/command-palette";
 import { labelFor, locate, sectionsFor, type NavSection } from "@/components/layout/nav";
+import { UserMenu } from "@/components/layout/user-menu";
+import { useCollapsed } from "@/components/ui/collapsible";
 import { BrandMark } from "@/components/ui/graphics";
 import { Button } from "@/components/ui/primitives";
-import { StatusBadge } from "@/components/ui/status";
 import { config } from "@/lib/config";
-import { cn, initials } from "@/lib/format";
+import { cn } from "@/lib/format";
 import { useMyTickets, useRequestsAttention } from "@/features/rights/queries";
-import { useAuth, useTheme } from "@/providers";
+import { useAuth } from "@/providers";
 
 /* The desktop sidebar can fold to a rail of icons. The choice is this
    browser's convenience, so it lives in localStorage - which can be missing or
@@ -171,7 +172,6 @@ function Header({
   pathname: string;
 }) {
   const { me } = useAuth();
-  const { resolved, setTheme } = useTheme();
   const apple = useIsApple();
 
   return (
@@ -237,6 +237,12 @@ function Header({
           <Search />
         </Button>
 
+        <Button variant="ghost" size="icon" asChild>
+          <Link href="/help" aria-label="Help manual" title="Help manual">
+            <CircleHelp />
+          </Link>
+        </Button>
+
         {me?.nav.includes("notifications") && (
           <Button variant="ghost" size="icon" asChild>
             <Link
@@ -250,30 +256,9 @@ function Header({
           </Button>
         )}
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setTheme(resolved === "dark" ? "light" : "dark")}
-          aria-label={`Switch to ${resolved === "dark" ? "light" : "dark"} theme`}
-          title={`Switch to ${resolved === "dark" ? "light" : "dark"} theme`}
-        >
-          {resolved === "dark" ? <Sun /> : <Moon />}
-        </Button>
-
-        {me && (
-          <div className="flex items-center gap-2.5 border-l border-border pl-3">
-            <div className="hidden text-right sm:block">
-              <p className="text-sm leading-tight font-medium">{me.full_name}</p>
-              <StatusBadge kind="role" value={me.role} dot={false} className="mt-0.5" />
-            </div>
-            <span
-              className="grid size-9 place-items-center rounded-full bg-accent-subtle text-xs font-semibold text-accent-text ring-1 ring-accent-border/60"
-              aria-hidden="true"
-            >
-              {initials(me.full_name)}
-            </span>
-          </div>
-        )}
+        <div className="ml-1 border-l border-border pl-2">
+          <UserMenu />
+        </div>
       </div>
     </header>
   );
@@ -375,78 +360,68 @@ function Sidebar({
           )}
         >
           {sections.map((section, i) => (
-            <div key={section.title} className="mb-5 last:mb-0">
-              <p
-                className={cn(
-                  "mb-1.5 px-3 text-2xs font-semibold tracking-wider text-text-subtle uppercase",
-                  folded && "lg:sr-only",
-                )}
-              >
-                {section.title}
-              </p>
-              {/* Folded, a hairline stands in for the heading so the groups
-                  still read as groups. */}
-              {folded && i > 0 && (
-                <div
-                  aria-hidden="true"
-                  className="mx-2 mb-2 hidden h-px bg-border lg:block"
-                />
+            <NavGroup
+              key={section.title}
+              title={section.title}
+              folded={folded}
+              first={i === 0}
+              current={section.items.some(
+                (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
               )}
-              <ul className="space-y-0.5">
-                {section.items.map((item) => {
-                  const active =
-                    pathname === item.href || pathname.startsWith(`${item.href}/`);
-                  const Icon = item.icon;
-                  const label = labelFor(item, me?.role);
-                  return (
-                    <li key={`${section.title}:${item.href}`}>
-                      <Link
-                        href={item.href}
-                        aria-current={active ? "page" : undefined}
-                        // Folded, the word is visually hidden but still the
-                        // link's name; the tooltip is for sighted mouse users.
-                        title={folded ? label : undefined}
-                        className={cn(
-                          "group relative flex items-center gap-2.5 rounded-lg py-2 pr-2 pl-3 text-sm",
-                          "transition-[background-color,color] duration-150",
-                          folded && "lg:justify-center lg:px-0",
-                          active
-                            ? "bg-accent-subtle font-medium text-accent-text"
-                            : "text-text-muted hover:bg-bg-inset hover:text-text",
-                        )}
-                      >
-                        {/* The rail. Position is the primary signal here -
+            >
+              {section.items.map((item) => {
+                const active =
+                  pathname === item.href || pathname.startsWith(`${item.href}/`);
+                const Icon = item.icon;
+                const label = labelFor(item, me?.role);
+                return (
+                  <li key={`${section.title}:${item.href}`}>
+                    <Link
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
+                      // Folded, the word is visually hidden but still the
+                      // link's name; the tooltip is for sighted mouse users.
+                      title={folded ? label : undefined}
+                      className={cn(
+                        "group relative flex items-center gap-2.5 rounded-lg py-2 pr-2 pl-3 text-sm",
+                        "transition-[background-color,color] duration-150",
+                        folded && "lg:justify-center lg:px-0",
+                        active
+                          ? "bg-accent-subtle font-medium text-accent-text"
+                          : "text-text-muted hover:bg-bg-inset hover:text-text",
+                      )}
+                    >
+                      {/* The rail. Position is the primary signal here -
                             colour alone would not survive greyscale, and
                             aria-current carries it for screen readers. */}
-                        <span
-                          aria-hidden="true"
-                          className={cn(
-                            "absolute inset-y-1.5 left-0 w-0.5 rounded-full transition-opacity",
-                            active
-                              ? "brand-gradient opacity-100"
-                              : "bg-border-strong opacity-0 group-hover:opacity-100",
-                          )}
-                        />
-                        <Icon
-                          className={cn(
-                            "size-4 shrink-0 transition-colors",
-                            active
-                              ? "text-accent"
-                              : "text-text-subtle group-hover:text-text-muted",
-                          )}
-                          aria-hidden="true"
-                        />
-                        <span className={cn("truncate", folded && "lg:sr-only")}>
-                          {label}
-                        </span>
-                        {item.key === "tickets" && <TicketsBadge folded={folded} />}
-                        {item.key === "requests" && <RequestsBadge folded={folded} />}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "absolute inset-y-1.5 left-0 w-0.5 rounded-full transition-opacity",
+                          active
+                            ? "brand-gradient opacity-100"
+                            : "bg-border-strong opacity-0 group-hover:opacity-100",
+                        )}
+                      />
+                      <Icon
+                        className={cn(
+                          "size-4 shrink-0 transition-colors",
+                          active
+                            ? "text-accent"
+                            : "text-text-subtle group-hover:text-text-muted",
+                        )}
+                        aria-hidden="true"
+                      />
+                      <span className={cn("truncate", folded && "lg:sr-only")}>
+                        {label}
+                      </span>
+                      {item.key === "tickets" && <TicketsBadge folded={folded} />}
+                      {item.key === "requests" && <RequestsBadge folded={folded} />}
+                    </Link>
+                  </li>
+                );
+              })}
+            </NavGroup>
           ))}
         </div>
 
@@ -491,6 +466,63 @@ function Sidebar({
         </div>
       </nav>
     </>
+  );
+}
+
+/**
+ * One group of the sidebar - Governance, Consent … - whose heading folds its
+ * links away. The choice is remembered per group in this browser. The group
+ * holding the page you are on stays open whatever was chosen, so the current
+ * page is never hidden, and on the folded icon rail every group shows.
+ */
+function NavGroup({
+  title,
+  folded,
+  first,
+  current,
+  children,
+}: {
+  title: string;
+  folded: boolean;
+  first: boolean;
+  current: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useCollapsed(`nav.${title}`, true);
+  const listId = React.useId();
+  const shown = open || current || folded;
+  return (
+    <div className={cn("last:mb-0", shown ? "mb-5" : "mb-1.5")}>
+      <button
+        type="button"
+        aria-expanded={shown}
+        aria-controls={listId}
+        onClick={() => setOpen(!open)}
+        title={current ? "Holds the page you are on" : undefined}
+        className={cn(
+          "group mb-1.5 flex w-full items-center justify-between rounded-md px-3 py-0.5 text-2xs font-semibold tracking-wider text-text-subtle uppercase",
+          "transition-colors outline-none hover:text-text-muted focus-visible:ring-2 focus-visible:ring-[var(--accent-subtle)]",
+          folded && "lg:sr-only",
+        )}
+      >
+        {title}
+        <ChevronDown
+          aria-hidden="true"
+          className={cn(
+            "size-3.5 opacity-0 transition-[transform,opacity] group-hover:opacity-100 group-focus-visible:opacity-100",
+            !shown && "-rotate-90 opacity-100",
+          )}
+        />
+      </button>
+      {/* Folded, a hairline stands in for the heading so the groups
+          still read as groups. */}
+      {folded && !first && (
+        <div aria-hidden="true" className="mx-2 mb-2 hidden h-px bg-border lg:block" />
+      )}
+      <ul id={listId} hidden={!shown} className="space-y-0.5">
+        {children}
+      </ul>
+    </div>
   );
 }
 

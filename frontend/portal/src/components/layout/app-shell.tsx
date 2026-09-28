@@ -14,12 +14,11 @@
 
 import {
   Bell,
+  CircleHelp,
   FileText,
   LogOut,
   Menu,
-  Moon,
   Scale,
-  Sun,
   UserRound,
   X,
 } from "lucide-react";
@@ -27,12 +26,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
 
+import { UserMenu } from "@/components/layout/user-menu";
 import { BrandMark } from "@/components/ui/graphics";
 import { Button } from "@/components/ui/primitives";
-import { StatusBadge } from "@/components/ui/status";
 import { config } from "@/lib/config";
-import { cn, initials } from "@/lib/format";
-import { useAuth, useTheme } from "@/providers";
+import { cn } from "@/lib/format";
+import { useAuth } from "@/providers";
 
 interface NavItem {
   /** Must match a value in `me.nav`, which the server computes from the
@@ -122,9 +121,6 @@ function Header({
   onMenuClick: () => void;
   mobileOpen: boolean;
 }) {
-  const { me } = useAuth();
-  const { resolved, setTheme } = useTheme();
-
   return (
     <header className="glass no-print sticky top-0 z-30 border-b border-border">
       <div className="mx-auto flex h-14 w-full max-w-[1600px] items-center gap-3 px-4 sm:px-6 lg:px-8">
@@ -158,30 +154,15 @@ function Header({
 
         <div className="flex-1" />
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setTheme(resolved === "dark" ? "light" : "dark")}
-          aria-label={`Switch to ${resolved === "dark" ? "light" : "dark"} theme`}
-          title={`Switch to ${resolved === "dark" ? "light" : "dark"} theme`}
-        >
-          {resolved === "dark" ? <Sun /> : <Moon />}
+        <Button variant="ghost" size="icon" asChild>
+          <Link href="/help" aria-label="Help manual" title="Help manual">
+            <CircleHelp />
+          </Link>
         </Button>
 
-        {me && (
-          <div className="flex items-center gap-2.5 border-l border-border pl-3">
-            <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium leading-tight">{me.full_name}</p>
-              <StatusBadge kind="role" value={me.role} dot={false} className="mt-0.5" />
-            </div>
-            <span
-              className="grid size-9 place-items-center rounded-full bg-accent-subtle text-xs font-semibold text-accent-text ring-1 ring-accent-border/60"
-              aria-hidden="true"
-            >
-              {initials(me.full_name)}
-            </span>
-          </div>
-        )}
+        <div className="ml-1 border-l border-border pl-2">
+          <UserMenu />
+        </div>
       </div>
     </header>
   );
