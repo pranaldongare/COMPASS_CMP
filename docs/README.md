@@ -13,6 +13,7 @@ you need. **Every document is in this tree.** The one exception is a
    and [the restructuring proposal](architecture/proposed-repository-structure.md), carried out in its first two phases and its fifth; the shared frontend package it argues for is still open
 3. [Glossary](glossary.md): the vocabulary of the DPDP Act and of this platform
 4. [Local development](operations/local-development.md): a working system on your machine in one sitting
+5. [Backend developer guide](backend/README.md): the API end to end, in reading order - the code layout, how a request travels, every security control, how tables are made and used, adding a feature from table to endpoint, and where the code departs from the rules today
 
 **Working on a feature**
 

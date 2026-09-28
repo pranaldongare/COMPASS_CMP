@@ -31,6 +31,12 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **A backend developer guide** (`docs/backend/`): one folder, in reading
+  order, written from the code - the package map, a staff write and a
+  public consent traced hop by hop, every security control, how tables are
+  created and what the database refuses, adding a feature from migration to
+  documented endpoint, and a list of where the code departs today from the
+  rules the other documents state.
 - **Demo data through the API** (`scripts/seed_demo.py`). After `seed.py`,
   it builds ten and more of everything - staff invited by the administrator
   and activated by their invitation codes, processors, sources, purposes,
