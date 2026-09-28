@@ -31,6 +31,16 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **Demo data through the API** (`scripts/seed_demo.py`). After `seed.py`,
+  it builds ten and more of everything - staff invited by the administrator
+  and activated by their invitation codes, processors, sources, purposes,
+  projects with published notices, sites, consent links, data principals who
+  register through the links and consent (some in part, one declining, two
+  later withdrawing), exports, imports, rights requests, nominations and
+  cover - each through its endpoint as the role whose job it is, so the
+  permission matrix, sealing and audit apply. The application runs
+  in-process; codes are read off the task queue. Runs once per database,
+  local/test only.
 - **The console finds its way faster.** A command palette (⌘K / Ctrl+K)
   jumps to any page the role has - read from the same `me.nav` the sidebar
   is, so it offers nothing the server did not grant - with the pages visited

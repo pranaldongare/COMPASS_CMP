@@ -145,6 +145,16 @@ the console. The invitation carries a code that sets the password (with
 `DEV_SHOW_CODES=true` it pops up on the page). Invite a DPO first: the
 project and the notice are the DPO's to open, not the administrator's.
 
+**A populated platform, optionally.** `scripts/seed_demo.py`, run after
+`seed.py`, fills the database the way a deployment fills up - through the API,
+each row written by the person whose job it is: twelve staff (password
+`SeedPassw0rd!2026`, e.g. `kavitha.raman@cmp.local` as a DPO), and ten or more
+processors, sources, purposes, projects with notices, sites, consent links,
+data principals and their consents (a few partial, declined or withdrawn),
+exports, imports and rights requests. It runs once per database and stops
+before writing if its people are already there; `POSTGRES_DB=…` points it at
+another database.
+
 Re-running the seed never deletes anything, so a database seeded before
 2026-09-25 keeps its `dpo@`, `dco@`, `rnd@`, `rco@`, `dcoadmin@` and
 `subject@cmp.local` accounts. **The browser suites sign in as those**; on a
