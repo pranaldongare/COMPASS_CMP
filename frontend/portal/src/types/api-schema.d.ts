@@ -2336,6 +2336,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notices/copy-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Notices a new one may start from
+         * @description Every approved or published notice, from every project, whoever wrote it.
+         *
+         *     For "Use an existing notice". Wider than `GET /notices` for an R&D User,
+         *     who otherwise sees only their own projects' notices, and on purpose: text
+         *     the Privacy Office has approved for one study is what another study should
+         *     start from. It carries what the picker shows and nothing more, and copying
+         *     one still brings no legal approval with it.
+         */
+        get: operations["list_copy_sources_notices_copy_sources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{project_uuid}/notices": {
         parameters: {
             query?: never;
@@ -5386,6 +5412,38 @@ export interface components {
             contact: string;
             /** Code */
             code: string;
+        };
+        /** CopySourceOut */
+        CopySourceOut: {
+            /**
+             * Notice Uuid
+             * Format: uuid
+             */
+            notice_uuid: string;
+            /** Notice Code */
+            notice_code: string;
+            /** Version */
+            version: number;
+            /** Status */
+            status: string;
+            /** Published At */
+            published_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Project Uuid
+             * Format: uuid
+             */
+            project_uuid: string;
+            /** Project Name */
+            project_name: string;
+            /** Purpose Count */
+            purpose_count: number;
+            /** Language Count */
+            language_count: number;
         };
         /** Count */
         Count: {
@@ -12654,6 +12712,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_copy_sources_notices_copy_sources_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CopySourceOut"][];
                 };
             };
         };

@@ -5,7 +5,7 @@ that accepts or returns it. Written for the questions that have to be answered
 quickly and exactly: what do we hold, where does it go, who can see it, and
 which call would expose it.
 
-The counts here are measured, not remembered. **167 of the API's 253
+The counts here are measured, not remembered. **167 of the API's 254
 operations** carry personal data; **20 of those need no session**. They come
 from joining three artefacts the repository already keeps current, and the
 last section says how to redo the join after a change.
@@ -291,7 +291,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-167 of 253 operations accept or return personal data. Each table gives the
+167 of 254 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 

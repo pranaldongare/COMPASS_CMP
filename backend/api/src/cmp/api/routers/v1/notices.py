@@ -258,6 +258,37 @@ async def list_all_notices(
     return {"items": items, "next_cursor": cursor, "total": total}
 
 
+class CopySourceOut(Out):
+    notice_uuid: UUID
+    notice_code: str
+    version: int
+    status: str
+    published_at: datetime | None
+    created_at: datetime
+    project_uuid: UUID
+    project_name: str
+    purpose_count: int
+    language_count: int
+
+
+@router.get(
+    "/notices/copy-sources",
+    response_model=list[CopySourceOut],
+    summary="Notices a new one may start from",
+)
+async def list_copy_sources(principal: NoticeAuthor) -> list[dict[str, Any]]:
+    """Every approved or published notice, from every project, whoever wrote it.
+
+    For "Use an existing notice". Wider than `GET /notices` for an R&D User,
+    who otherwise sees only their own projects' notices, and on purpose: text
+    the Privacy Office has approved for one study is what another study should
+    start from. It carries what the picker shows and nothing more, and copying
+    one still brings no legal approval with it.
+    """
+    async with connection() as conn:
+        return await repo.copy_sources(conn)
+
+
 @router.get("/projects/{project_uuid}/notices", response_model=list[NoticeOut])
 async def list_notices(project_uuid: UUID, principal: NoticeReader) -> list[dict[str, Any]]:
     async with connection() as conn:

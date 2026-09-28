@@ -288,7 +288,7 @@ export const SECTIONS: HelpSection[] = [
         kind: "list",
         items: [
           "A template with placeholders still in it is refused.",
-          "A later project can start from an approved notice instead of a new document.",
+          "[[Use an existing notice]] starts from any notice the Privacy Office has approved or published, on any project - it arrives as a draft, and each language must be approved again.",
           "Only the DPO writes or approves notice wording, purposes and translations.",
         ],
       },

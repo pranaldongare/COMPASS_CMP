@@ -53,6 +53,14 @@ are the office's, on routes guarded by role rather than by this resource. The
 split is by act rather than by resource, which is why the table alone does not
 show it; a unit test pins which route is on which side.
 
+Copying reaches wider than the rest of their notice read. "Use an existing
+notice" offers every approved or published notice on the platform
+(`GET /notices/copy-sources`), whichever project it is on and whoever wrote it,
+because text the office has approved for one study is what the next should
+start from; the copy is a draft on their own project and its legal approval
+does not come with it. Everywhere else an R&D User sees only their own
+projects' notices, and another project's draft is never copyable.
+
 Where a cell says "own" for the R&D user, it means the projects they created
 and everything hanging off them. "Scoped" for a collection owner means the
 projects and sites they are the owner of, resolved through the site's owner

@@ -355,6 +355,15 @@ as a release yet.
 - `CONTRIBUTING.md`.
 
 ### Changed
+- **"Use an existing notice" offers every approved notice.** An R&D User was
+  offered only notices on projects they had created, so a researcher's first
+  study could never start from text the Privacy Office had approved for a
+  colleague's - and the copy route answered 404 for a colleague's notice.
+  `GET /notices/copy-sources` lists every approved or published notice, from
+  every project, for the DPO and R&D Users, with only what the picker shows
+  and without the old 100-per-status cap; copying accepts such a source
+  outside the caller's scope. Drafts stay their project's own, the copy still
+  brings no legal approval, and nothing else an R&D User reads widens.
 - **The documents catch up with the key service.** Most of `docs/` had last
   been read for content before sealing existed; the move into `docs/` changed
   paths, not words. Every document was checked against the code at `daca825`

@@ -6326,6 +6326,32 @@
         }
       }
     },
+    "/notices/copy-sources": {
+      "get": {
+        "tags": [
+          "notices"
+        ],
+        "summary": "Notices a new one may start from",
+        "description": "Every approved or published notice, from every project, whoever wrote it.\n\nFor \"Use an existing notice\". Wider than `GET /notices` for an R&D User,\nwho otherwise sees only their own projects' notices, and on purpose: text\nthe Privacy Office has approved for one study is what another study should\nstart from. It carries what the picker shows and nothing more, and copying\none still brings no legal approval with it.",
+        "operationId": "list_copy_sources_notices_copy_sources_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CopySourceOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Copy Sources Notices Copy Sources Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/projects/{project_uuid}/notices": {
       "get": {
         "tags": [
@@ -15360,6 +15386,75 @@
           "code"
         ],
         "title": "ContactVerify"
+      },
+      "CopySourceOut": {
+        "properties": {
+          "notice_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Notice Uuid"
+          },
+          "notice_code": {
+            "type": "string",
+            "title": "Notice Code"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "project_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Uuid"
+          },
+          "project_name": {
+            "type": "string",
+            "title": "Project Name"
+          },
+          "purpose_count": {
+            "type": "integer",
+            "title": "Purpose Count"
+          },
+          "language_count": {
+            "type": "integer",
+            "title": "Language Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "notice_uuid",
+          "notice_code",
+          "version",
+          "status",
+          "published_at",
+          "created_at",
+          "project_uuid",
+          "project_name",
+          "purpose_count",
+          "language_count"
+        ],
+        "title": "CopySourceOut"
       },
       "Count": {
         "properties": {

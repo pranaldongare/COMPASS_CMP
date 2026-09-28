@@ -8,10 +8,12 @@ import { useQuery } from "@tanstack/react-query";
 import {
   getNotice,
   getNoticeChecklist,
+  listCopySources,
   listNoticeLanguages,
   listNoticePurposes,
   listNotices,
   listProjectNotices,
+  type NoticeCopySource,
 } from "@/features/notices/api";
 import type { ApiError } from "@/lib/errors";
 import { keys, type ListFilters } from "@/lib/query";
@@ -30,6 +32,14 @@ export function useNotices(projectUuid: Uuid | undefined) {
     queryKey: keys.notice.list(projectUuid ?? ""),
     queryFn: () => listProjectNotices(projectUuid!),
     enabled: Boolean(projectUuid),
+  });
+}
+
+/** Every approved or published notice, whoever wrote it - see `listCopySources`. */
+export function useCopySources() {
+  return useQuery<NoticeCopySource[], ApiError>({
+    queryKey: keys.notice.copySources,
+    queryFn: listCopySources,
   });
 }
 

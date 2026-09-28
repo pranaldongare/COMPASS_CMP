@@ -33,6 +33,29 @@ export function listNotices(filters: ListFilters = {}): Promise<Page<NoticeListR
   return apiGet<Page<NoticeListRow>>(`/notices${queryString(filters)}`);
 }
 
+/** A notice a new one may start from: approved or published, on any project. */
+export interface NoticeCopySource {
+  notice_uuid: Uuid;
+  notice_code: string;
+  version: number;
+  status: "approved" | "published";
+  published_at: string | null;
+  created_at: string;
+  project_uuid: Uuid;
+  project_name: string;
+  purpose_count: number;
+  language_count: number;
+}
+
+/**
+ * Every approved or published notice, whoever wrote it - for "Use an existing
+ * notice". Wider than `listNotices` for an R&D User, on purpose: text the
+ * Privacy Office has approved for one study is what another should start from.
+ */
+export function listCopySources(): Promise<NoticeCopySource[]> {
+  return apiGet<NoticeCopySource[]>("/notices/copy-sources");
+}
+
 export function getNotice(uuid: Uuid): Promise<Notice> {
   return apiGet<Notice>(`/notices/${uuid}`);
 }

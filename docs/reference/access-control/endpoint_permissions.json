@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 253,
-  "registered_business_and_system_operations": 256,
+  "documented_operations": 254,
+  "registered_business_and_system_operations": 257,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -3357,6 +3357,43 @@
     {
       "module": "notices",
       "method": "GET",
+      "path": "/notices/copy-sources",
+      "summary": "Notices a new one may start from",
+      "function": "list_copy_sources",
+      "operation_id": "list_copy_sources_notices_copy_sources_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "NoticeAuthor",
+      "resolved_gate": "RequireResource(notice, write=True)",
+      "route_roles": [
+        "dpo",
+        "rnd_user"
+      ],
+      "inline_role_checks": [],
+      "resource": "notice",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "ALL",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "Every approved or published notice on the platform, whichever project it is on and whoever wrote it - deliberately wider than GET /notices for an R&D User, whose notice read is otherwise their own projects. Carries only what the copy picker shows (code, version, status, project name, counts). Drafts and superseded notices are never listed.",
+        "Copying one (POST /projects/{project_uuid}/notices/copy) reaches past the caller's scope for these notices only; the copy is a draft on the caller's own project and brings no legal approval."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notices.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/notices.py"
+      ]
+    },
+    {
+      "module": "notices",
+      "method": "GET",
       "path": "/notices/import/template",
       "summary": "The notice document to fill in",
       "function": "notice_document_template",
@@ -4045,7 +4082,8 @@
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.",
-        "Authors are DPO and R&D owner only. Service checks restrict draft editing and require a new version for material changes."
+        "Authors are DPO and R&D owner only. Service checks restrict draft editing and require a new version for material changes.",
+        "The source may be any approved or published notice, also outside the caller's scope (see GET /notices/copy-sources); a draft or superseded source outside scope is 404."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/notices.py#L274",
@@ -9612,6 +9650,11 @@
       "on": "2026-09-24",
       "commit": "UAT defect fixes",
       "note": "GET /delegations/candidates added (the cover form's colleague list). Staff notification and audit links now drop a link into a section the reader's own menu lacks."
+    },
+    {
+      "on": "2026-09-28",
+      "commit": "HEAD",
+      "note": "GET /notices/copy-sources added: every approved or published notice for 'Use an existing notice', so an R&D User may start from a colleague's approved text; the copy route accepts such a source outside the caller's scope."
     }
   ]
 }

@@ -75,6 +75,54 @@ async def by_uuid(conn: Conn, notice_uuid: str, *, role: Role | str, user_id: in
     )
 
 
+#: Notices anybody who may author one may start from: the Privacy Office has
+#: approved the text. A draft is still being written and is its project's own;
+#: a superseded notice was corrected, and copying the uncorrected text would
+#: bring back what the correction removed.
+COPYABLE = "n.status IN ('approved', 'published')"
+
+
+async def copy_sources(conn: Conn) -> list[Row]:
+    """Every notice that may be copied as a starting point, whoever wrote it.
+
+    Deliberately not scoped to the caller's projects. An R&D User reads only
+    their own projects' notices, but a text the Privacy Office has approved for
+    one study is exactly what another study should start from - the copy
+    arrives as a draft, and its legal approval does not come with it. Only what
+    the picker shows is selected: no URLs, no recipients, no note.
+    """
+    return await fetch_all(
+        conn,
+        f"""
+        SELECT n.notice_uuid, n.notice_code, n.version, n.status, n.published_at,
+               n.created_at, p.project_uuid, p.project_name,
+               (SELECT count(*) FROM notice_purpose np WHERE np.notice_id = n.notice_id)
+                 AS purpose_count,
+               (SELECT count(*) FROM notice_language nl WHERE nl.notice_id = n.notice_id)
+                 AS language_count
+        FROM notice n
+        JOIN project p ON p.project_id = n.project_id
+        WHERE {COPYABLE}
+        ORDER BY (n.status = 'approved') DESC, n.created_at DESC, n.notice_id DESC
+        """,
+    )
+
+
+async def copy_source(conn: Conn, notice_uuid: str) -> Row | None:
+    """One notice from `copy_sources`, in full, for the copy to read from."""
+    return await fetch_one(
+        conn,
+        f"""
+        SELECT n.notice_id, {NOTICE_COLUMNS},
+               p.project_uuid, p.project_name, p.project_id, p.project_status
+        FROM notice n
+        JOIN project p ON p.project_id = n.project_id
+        WHERE n.notice_uuid = %s AND {COPYABLE}
+        """,
+        [notice_uuid],
+    )
+
+
 async def by_id(conn: Conn, notice_id: int) -> Row | None:
     return await fetch_one(
         conn,

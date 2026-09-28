@@ -2,11 +2,12 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-22 operations; 22 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+23 operations; 23 appear in the existing OpenAPI/API docs. Snapshot `1757d50`; `GET /notices/copy-sources` added 2026-09-28.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
 | GET | `/notices` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/notices/copy-sources` | `dpo`, `rnd_user` | Full session; anonymous NO |
 | GET | `/notices/import/template` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
 | GET | `/notices/{notice_uuid}` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
 | PUT | `/notices/{notice_uuid}` | `dpo` | Full session; anonymous NO |
@@ -42,6 +43,21 @@ All notices in scope.
 - **Resolved gate:** `RequireResource(notice, write=False)`.
 - **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/notices.py#L206).
+
+## GET /notices/copy-sources
+
+Notices a new one may start from.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
+| --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `rnd_user`.
+- **Route guard:** `NoticeAuthor`.
+- **Resolved gate:** `RequireResource(notice, write=True)`.
+- **Rules:** Every approved or published notice on the platform, whichever project it is on and whoever wrote it - deliberately wider than `GET /notices` for an R&D User, whose notice read is otherwise their own projects. Carries only what the copy picker shows (code, version, status, project name, counts). Drafts and superseded notices are never listed.
+- Copying one reaches past the caller's scope for these notices only; the copy is a draft on the caller's own project and brings no legal approval.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notices.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/notices.py).
 
 ## GET /notices/import/template
 
@@ -325,6 +341,7 @@ Copy an existing notice into this project.
 - **Resolved gate:** `RequireResource(notice, write=True)`.
 - **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
 - Authors are DPO and R&D owner only. Service checks restrict draft editing and require a new version for material changes.
+- The source may be any approved or published notice, also outside the caller's scope (see `GET /notices/copy-sources`); a draft or superseded source outside scope is 404.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/notices.py#L274), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/notices/service.py#L1).
 
 ## POST /projects/{project_uuid}/notices/import

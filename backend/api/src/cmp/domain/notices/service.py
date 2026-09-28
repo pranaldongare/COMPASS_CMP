@@ -188,6 +188,11 @@ async def copy_from(
     project = await project_repo.require(conn, project_uuid, role=role, user_id=actor_id)
     source = await repo.by_uuid(conn, source_notice_uuid, role=role, user_id=actor_id)
     if not source:
+        # Outside the caller's own projects, a notice whose text the Privacy
+        # Office has approved is still a starting point - the picker offers
+        # every one (`repo.copy_sources`). Anything else stays its project's.
+        source = await repo.copy_source(conn, source_notice_uuid)
+    if not source:
         raise NotFound("Notice")
 
     code = await generate_code(conn, project_name=project["project_name"])

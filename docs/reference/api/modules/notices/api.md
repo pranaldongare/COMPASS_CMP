@@ -1,33 +1,34 @@
 # Notices API
 
-Generated from `backend/api/openapi.json`. **22 operations.**
+Generated from `backend/api/openapi.json`. **23 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
 ## Contents
 
 1. [`GET /notices`](#1_get_notices)
-2. [`GET /projects/{project_uuid}/notices`](#2_get_projects_project_uuid_notices)
-3. [`POST /projects/{project_uuid}/notices`](#3_post_projects_project_uuid_notices)
-4. [`POST /projects/{project_uuid}/notices/copy`](#4_post_projects_project_uuid_notices_copy)
-5. [`GET /notices/{notice_uuid}`](#5_get_notices_notice_uuid)
-6. [`PUT /notices/{notice_uuid}`](#6_put_notices_notice_uuid)
-7. [`GET /notices/{notice_uuid}/versions`](#7_get_notices_notice_uuid_versions)
-8. [`GET /notices/{notice_uuid}/purposes`](#8_get_notices_notice_uuid_purposes)
-9. [`POST /notices/{notice_uuid}/purposes`](#9_post_notices_notice_uuid_purposes)
-10. [`PUT /notices/{notice_uuid}/purposes/{purpose_uuid}`](#10_put_notices_notice_uuid_purposes_purpose_uuid)
-11. [`DELETE /notices/{notice_uuid}/purposes/{purpose_uuid}`](#11_delete_notices_notice_uuid_purposes_purpose_uuid)
-12. [`GET /notices/{notice_uuid}/languages`](#12_get_notices_notice_uuid_languages)
-13. [`POST /notices/{notice_uuid}/languages`](#13_post_notices_notice_uuid_languages)
-14. [`PUT /notices/{notice_uuid}/languages/{code}`](#14_put_notices_notice_uuid_languages_code)
-15. [`POST /notices/{notice_uuid}/languages/{code}/approve`](#15_post_notices_notice_uuid_languages_code_approve)
-16. [`GET /notices/{notice_uuid}/checklist`](#16_get_notices_notice_uuid_checklist)
-17. [`GET /notices/{notice_uuid}/preview`](#17_get_notices_notice_uuid_preview)
-18. [`POST /notices/{notice_uuid}/publish`](#18_post_notices_notice_uuid_publish)
-19. [`POST /projects/{project_uuid}/notices/import/validate`](#19_post_projects_project_uuid_notices_import_validate)
-20. [`POST /projects/{project_uuid}/notices/import`](#20_post_projects_project_uuid_notices_import)
-21. [`POST /notices/{notice_uuid}/purposes/activate`](#21_post_notices_notice_uuid_purposes_activate)
-22. [`GET /notices/import/template`](#22_get_notices_import_template)
+2. [`GET /notices/copy-sources`](#2_get_notices_copy_sources)
+3. [`GET /projects/{project_uuid}/notices`](#3_get_projects_project_uuid_notices)
+4. [`POST /projects/{project_uuid}/notices`](#4_post_projects_project_uuid_notices)
+5. [`POST /projects/{project_uuid}/notices/copy`](#5_post_projects_project_uuid_notices_copy)
+6. [`GET /notices/{notice_uuid}`](#6_get_notices_notice_uuid)
+7. [`PUT /notices/{notice_uuid}`](#7_put_notices_notice_uuid)
+8. [`GET /notices/{notice_uuid}/versions`](#8_get_notices_notice_uuid_versions)
+9. [`GET /notices/{notice_uuid}/purposes`](#9_get_notices_notice_uuid_purposes)
+10. [`POST /notices/{notice_uuid}/purposes`](#10_post_notices_notice_uuid_purposes)
+11. [`PUT /notices/{notice_uuid}/purposes/{purpose_uuid}`](#11_put_notices_notice_uuid_purposes_purpose_uuid)
+12. [`DELETE /notices/{notice_uuid}/purposes/{purpose_uuid}`](#12_delete_notices_notice_uuid_purposes_purpose_uuid)
+13. [`GET /notices/{notice_uuid}/languages`](#13_get_notices_notice_uuid_languages)
+14. [`POST /notices/{notice_uuid}/languages`](#14_post_notices_notice_uuid_languages)
+15. [`PUT /notices/{notice_uuid}/languages/{code}`](#15_put_notices_notice_uuid_languages_code)
+16. [`POST /notices/{notice_uuid}/languages/{code}/approve`](#16_post_notices_notice_uuid_languages_code_approve)
+17. [`GET /notices/{notice_uuid}/checklist`](#17_get_notices_notice_uuid_checklist)
+18. [`GET /notices/{notice_uuid}/preview`](#18_get_notices_notice_uuid_preview)
+19. [`POST /notices/{notice_uuid}/publish`](#19_post_notices_notice_uuid_publish)
+20. [`POST /projects/{project_uuid}/notices/import/validate`](#20_post_projects_project_uuid_notices_import_validate)
+21. [`POST /projects/{project_uuid}/notices/import`](#21_post_projects_project_uuid_notices_import)
+22. [`POST /notices/{notice_uuid}/purposes/activate`](#22_post_notices_notice_uuid_purposes_activate)
+23. [`GET /notices/import/template`](#23_get_notices_import_template)
 
 <a id="1_get_notices"></a>
 ## 1. `GET /notices` — All notices in scope
@@ -107,8 +108,57 @@ No request body.
 }
 ```
 
-<a id="2_get_projects_project_uuid_notices"></a>
-## 2. `GET /projects/{project_uuid}/notices` — List Notices
+<a id="2_get_notices_copy_sources"></a>
+## 2. `GET /notices/copy-sources` — Notices a new one may start from
+
+### API
+
+- **Operation ID:** `list_copy_sources_notices_copy_sources_get`
+- **Access:** Role-controlled `notices` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+Every approved or published notice, from every project, whoever wrote it.
+
+For "Use an existing notice". Wider than `GET /notices` for an R&D User,
+who otherwise sees only their own projects' notices, and on purpose: text
+the Privacy Office has approved for one study is what another study should
+start from. It carries what the picker shows and nothing more, and copying
+one still brings no legal approval with it.
+
+### Validation
+
+No path, query, header, or cookie parameters are declared for this operation.
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | array of [`CopySourceOut`](#schema-copysourceout) |
+
+**Example `200` `application/json` response:**
+
+```json
+[
+  {
+    "notice_uuid": "00000000-0000-4000-8000-000000000000",
+    "notice_code": "string",
+    "version": 1,
+    "status": "string",
+    "published_at": "2026-09-17T12:00:00Z",
+    "created_at": "2026-09-17T12:00:00Z",
+    "project_uuid": "00000000-0000-4000-8000-000000000000",
+    "project_name": "string",
+    "purpose_count": 1,
+    "language_count": 1
+  }
+]
+```
+
+<a id="3_get_projects_project_uuid_notices"></a>
+## 3. `GET /projects/{project_uuid}/notices` — List Notices
 
 ### API
 
@@ -178,8 +228,8 @@ No request body.
 }
 ```
 
-<a id="3_post_projects_project_uuid_notices"></a>
-## 3. `POST /projects/{project_uuid}/notices` — Create Notice
+<a id="4_post_projects_project_uuid_notices"></a>
+## 4. `POST /projects/{project_uuid}/notices` — Create Notice
 
 ### API
 
@@ -265,8 +315,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="4_post_projects_project_uuid_notices_copy"></a>
-## 4. `POST /projects/{project_uuid}/notices/copy` — Copy an existing notice into this project
+<a id="5_post_projects_project_uuid_notices_copy"></a>
+## 5. `POST /projects/{project_uuid}/notices/copy` — Copy an existing notice into this project
 
 ### API
 
@@ -351,8 +401,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="5_get_notices_notice_uuid"></a>
-## 5. `GET /notices/{notice_uuid}` — Get Notice
+<a id="6_get_notices_notice_uuid"></a>
+## 6. `GET /notices/{notice_uuid}` — Get Notice
 
 ### API
 
@@ -420,8 +470,8 @@ No request body.
 }
 ```
 
-<a id="6_put_notices_notice_uuid"></a>
-## 6. `PUT /notices/{notice_uuid}` — Draft only
+<a id="7_put_notices_notice_uuid"></a>
+## 7. `PUT /notices/{notice_uuid}` — Draft only
 
 ### API
 
@@ -504,8 +554,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="7_get_notices_notice_uuid_versions"></a>
-## 7. `GET /notices/{notice_uuid}/versions` — Notice Versions
+<a id="8_get_notices_notice_uuid_versions"></a>
+## 8. `GET /notices/{notice_uuid}/versions` — Notice Versions
 
 ### API
 
@@ -575,8 +625,8 @@ No request body.
 }
 ```
 
-<a id="8_get_notices_notice_uuid_purposes"></a>
-## 8. `GET /notices/{notice_uuid}/purposes` — List Notice Purposes
+<a id="9_get_notices_notice_uuid_purposes"></a>
+## 9. `GET /notices/{notice_uuid}/purposes` — List Notice Purposes
 
 ### API
 
@@ -652,8 +702,8 @@ No request body.
 }
 ```
 
-<a id="9_post_notices_notice_uuid_purposes"></a>
-## 9. `POST /notices/{notice_uuid}/purposes` — Attach Purpose
+<a id="10_post_notices_notice_uuid_purposes"></a>
+## 10. `POST /notices/{notice_uuid}/purposes` — Attach Purpose
 
 ### API
 
@@ -716,8 +766,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="10_put_notices_notice_uuid_purposes_purpose_uuid"></a>
-## 10. `PUT /notices/{notice_uuid}/purposes/{purpose_uuid}` — Narrow Rule 3(b) for this notice
+<a id="11_put_notices_notice_uuid_purposes_purpose_uuid"></a>
+## 11. `PUT /notices/{notice_uuid}/purposes/{purpose_uuid}` — Narrow Rule 3(b) for this notice
 
 ### API
 
@@ -800,8 +850,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="11_delete_notices_notice_uuid_purposes_purpose_uuid"></a>
-## 11. `DELETE /notices/{notice_uuid}/purposes/{purpose_uuid}` — Draft only
+<a id="12_delete_notices_notice_uuid_purposes_purpose_uuid"></a>
+## 12. `DELETE /notices/{notice_uuid}/purposes/{purpose_uuid}` — Draft only
 
 ### API
 
@@ -844,8 +894,8 @@ No request body.
 }
 ```
 
-<a id="12_get_notices_notice_uuid_languages"></a>
-## 12. `GET /notices/{notice_uuid}/languages` — List Languages
+<a id="13_get_notices_notice_uuid_languages"></a>
+## 13. `GET /notices/{notice_uuid}/languages` — List Languages
 
 ### API
 
@@ -907,8 +957,8 @@ No request body.
 }
 ```
 
-<a id="13_post_notices_notice_uuid_languages"></a>
-## 13. `POST /notices/{notice_uuid}/languages` — Add Language
+<a id="14_post_notices_notice_uuid_languages"></a>
+## 14. `POST /notices/{notice_uuid}/languages` — Add Language
 
 ### API
 
@@ -966,8 +1016,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="14_put_notices_notice_uuid_languages_code"></a>
-## 14. `PUT /notices/{notice_uuid}/languages/{code}` — Draft only
+<a id="15_put_notices_notice_uuid_languages_code"></a>
+## 15. `PUT /notices/{notice_uuid}/languages/{code}` — Draft only
 
 ### API
 
@@ -1029,8 +1079,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="15_post_notices_notice_uuid_languages_code_approve"></a>
-## 15. `POST /notices/{notice_uuid}/languages/{code}/approve` — Approve Language
+<a id="16_post_notices_notice_uuid_languages_code_approve"></a>
+## 16. `POST /notices/{notice_uuid}/languages/{code}/approve` — Approve Language
 
 ### API
 
@@ -1084,8 +1134,8 @@ No request body.
 }
 ```
 
-<a id="16_get_notices_notice_uuid_checklist"></a>
-## 16. `GET /notices/{notice_uuid}/checklist` — Checklist
+<a id="17_get_notices_notice_uuid_checklist"></a>
+## 17. `GET /notices/{notice_uuid}/checklist` — Checklist
 
 ### API
 
@@ -1142,8 +1192,8 @@ No request body.
 }
 ```
 
-<a id="17_get_notices_notice_uuid_preview"></a>
-## 17. `GET /notices/{notice_uuid}/preview` — Preview
+<a id="18_get_notices_notice_uuid_preview"></a>
+## 18. `GET /notices/{notice_uuid}/preview` — Preview
 
 ### API
 
@@ -1192,8 +1242,8 @@ No request body.
 }
 ```
 
-<a id="18_post_notices_notice_uuid_publish"></a>
-## 18. `POST /notices/{notice_uuid}/publish` — Publish
+<a id="19_post_notices_notice_uuid_publish"></a>
+## 19. `POST /notices/{notice_uuid}/publish` — Publish
 
 ### API
 
@@ -1261,8 +1311,8 @@ No request body.
 }
 ```
 
-<a id="19_post_projects_project_uuid_notices_import_validate"></a>
-## 19. `POST /projects/{project_uuid}/notices/import/validate` — Dry run - reports what the document says, writes nothing
+<a id="20_post_projects_project_uuid_notices_import_validate"></a>
+## 20. `POST /projects/{project_uuid}/notices/import/validate` — Dry run - reports what the document says, writes nothing
 
 ### API
 
@@ -1319,8 +1369,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="20_post_projects_project_uuid_notices_import"></a>
-## 20. `POST /projects/{project_uuid}/notices/import` — Create the notice and its purposes from an uploaded document
+<a id="21_post_projects_project_uuid_notices_import"></a>
+## 21. `POST /projects/{project_uuid}/notices/import` — Create the notice and its purposes from an uploaded document
 
 ### API
 
@@ -1400,8 +1450,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="21_post_notices_notice_uuid_purposes_activate"></a>
-## 21. `POST /notices/{notice_uuid}/purposes/activate` — Activate every draft purpose on this notice
+<a id="22_post_notices_notice_uuid_purposes_activate"></a>
+## 22. `POST /notices/{notice_uuid}/purposes/activate` — Activate every draft purpose on this notice
 
 ### API
 
@@ -1458,8 +1508,8 @@ No request body.
 }
 ```
 
-<a id="22_get_notices_import_template"></a>
-## 22. `GET /notices/import/template` — The notice document to fill in
+<a id="23_get_notices_import_template"></a>
+## 23. `GET /notices/import/template` — The notice document to fill in
 
 ### API
 

@@ -181,6 +181,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | Method | Endpoint | Anonymous | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | GET | `/notices` | NO | ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| GET | `/notices/copy-sources` | NO | ALL | NO | NO | NO | NO | ALL | NO |
 | GET | `/notices/import/template` | NO | ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
 | GET | `/notices/{notice_uuid}` | NO | ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
 | PUT | `/notices/{notice_uuid}` | NO | ALL | NO | NO | NO | NO | NO | NO |

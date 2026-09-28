@@ -73,6 +73,8 @@ export const keys = {
     list: (projectUuid: Uuid) => ["project", projectUuid, "notices"] as const,
     /** Every notice the caller may see, across projects. */
     all: (params?: Params) => ["all", "notices", params ?? {}] as const,
+    /** Every approved or published notice, for starting a new one from. */
+    copySources: ["all", "notices", "copy-sources"] as const,
     detail: (uuid: Uuid) => ["notice", uuid] as const,
     checklist: (uuid: Uuid) => ["notice", uuid, "checklist"] as const,
     purposes: (uuid: Uuid) => ["notice", uuid, "purposes"] as const,

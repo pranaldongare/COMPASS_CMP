@@ -12,7 +12,7 @@ import { FormError } from "@/components/forms";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Alert, Button, Field, Select } from "@/components/ui/primitives";
 import { useCopyNotice } from "@/features/notices";
-import { useAllNotices } from "@/features/notices";
+import { useCopySources } from "@/features/notices";
 import { useToast } from "@/providers";
 
 /**
@@ -37,18 +37,13 @@ export function NoticeCopyForm({
   const [selected, setSelected] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
 
-  // Approved and published, not published alone.
-  //
-  // The bar is that somebody has signed the text off, which is what `approved`
-  // means: the Privacy Office has read that rendition and approved it. Published
-  // alone was too narrow once the office began writing notices for authors to
-  // start from - a notice written as a model is never published, because
-  // publishing attaches it to a project. Drafts stay out: copying a
-  // half-finished one propagates whatever is wrong with it.
-  const approved = useAllNotices({ status: "approved", limit: 100 });
-  const published = useAllNotices({ status: "published", limit: 100 });
-  const notices = approved.isLoading || published.isLoading ? approved : published;
-  const options = [...(approved.data?.items ?? []), ...(published.data?.items ?? [])];
+  // Approved and published, not published alone, and from every project -
+  // not only the caller's. The bar is that the Privacy Office has signed the
+  // text off: a notice written as a model is never published, and a study's
+  // author should be able to start from a colleague's approved text. Drafts
+  // stay out: copying a half-finished one propagates whatever is wrong with it.
+  const notices = useCopySources();
+  const options = notices.data ?? [];
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
