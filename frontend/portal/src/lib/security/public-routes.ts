@@ -13,7 +13,7 @@
  */
 
 /** Path prefixes reachable with no session at all. */
-export const PUBLIC_PREFIXES = ["/sign-in", "/sign-up", "/rights", "/c/"] as const;
+export const PUBLIC_PREFIXES = ["/sign-in", "/sign-up", "/rights", "/c/", "/help"] as const;
 
 /**
  * Is this path public?

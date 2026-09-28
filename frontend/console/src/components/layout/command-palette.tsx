@@ -14,7 +14,7 @@
 "use client";
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { CornerDownLeft, History, LogOut, Moon, Search, Sun } from "lucide-react";
+import { BookOpen, CornerDownLeft, History, LogOut, Moon, Search, Sun } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 
@@ -150,6 +150,14 @@ function PaletteBody({ close }: { close: () => void }) {
       .map((item) => ({ ...go(item, "Recent"), icon: History }));
 
     const actions: Command[] = [
+      {
+        id: "action:help",
+        group: "Actions",
+        label: "Open the help manual",
+        keywords: "help guide manual how instructions",
+        icon: BookOpen,
+        run: () => router.push("/help"),
+      },
       {
         id: "action:theme",
         group: "Actions",

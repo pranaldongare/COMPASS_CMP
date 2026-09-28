@@ -166,6 +166,10 @@ export const keys = {
     nominations: ["me", "nominations"] as const,
     nomineeOf: ["me", "nominee-of"] as const,
   },
+  help: {
+    /** The Privacy Office contact the manual closes with (public `/rights`). */
+    contact: ["help", "contact"] as const,
+  },
 } as const;
 
 /**

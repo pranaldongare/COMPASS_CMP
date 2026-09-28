@@ -15,11 +15,12 @@
 /**
  * Path prefixes reachable with no session at all.
  *
- * Only sign-in and its reset and verify steps. Sign-up, the public rights
- * pages and consent links belong to the data principal's portal, which is a
- * separate deployment.
+ * Sign-in and its reset and verify steps, and the help manual, which the
+ * sign-in page links to for somebody who cannot get in. Sign-up, the public
+ * rights pages and consent links belong to the data principal's portal, which
+ * is a separate deployment.
  */
-export const PUBLIC_PREFIXES = ["/sign-in"] as const;
+export const PUBLIC_PREFIXES = ["/sign-in", "/help"] as const;
 
 /**
  * Is this path public?

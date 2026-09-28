@@ -188,6 +188,10 @@ export const keys = {
     requestTrail: (uuid: Uuid) => ["me", "request", uuid, "trail"] as const,
     nominations: ["me", "nominations"] as const,
   },
+  help: {
+    /** The Privacy Office contact the manual closes with (public `/rights`). */
+    contact: ["help", "contact"] as const,
+  },
 } as const;
 
 /**

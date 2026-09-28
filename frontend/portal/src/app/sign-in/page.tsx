@@ -57,6 +57,13 @@ export default function SignInPage() {
             >
               Your rights and how to exercise them
             </Link>
+            {" · "}
+            <Link
+              href="/help"
+              className="underline underline-offset-2 hover:text-text-muted"
+            >
+              Help manual
+            </Link>
           </p>
           <p className="text-center text-xs text-text-subtle">
             Nominated by someone? Once you have accepted, sign in here with the contact you

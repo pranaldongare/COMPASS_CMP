@@ -1,0 +1,692 @@
+/**
+ * The staff console's help manual.
+ *
+ * Written against the screens as they are: every `[[Label]]` is the exact
+ * words of a button, field or page, so a reader can match an instruction to
+ * what they see. When a screen changes its words, the manual changes with it.
+ */
+import type { HelpSection, RoleOption } from "@/features/help/types";
+
+export const ROLES: RoleOption[] = [
+  { value: "dpo", label: "DPO" },
+  { value: "admin", label: "Administrator" },
+  { value: "rnd_user", label: "R&D User" },
+  { value: "dco_admin", label: "DCO Admin" },
+  { value: "dco", label: "DCO" },
+  { value: "rco", label: "RCO" },
+];
+
+const COLLECTORS = ["dco_admin", "dco", "rco"];
+
+export const INTRO =
+  "How to use the staff console, task by task: signing in, registering projects and their notices, running collection, handling rights requests and reading the audit trail. Choose your role to see only the sections written for you, or search for what you want to do.";
+
+export const SECTIONS: HelpSection[] = [
+  {
+    id: "introduction",
+    title: "Introduction",
+    summary: "What the platform is for, and who does what.",
+    blocks: [
+      {
+        kind: "p",
+        text: "COMPASS CMP records consent under the Digital Personal Data Protection Act 2023 and everything that follows from it: which studies may collect, what people were told, what they agreed to, who their data went to, and how their rights requests were answered. Everything anyone does is written to a tamper-evident audit trail.",
+      },
+      {
+        kind: "terms",
+        items: [
+          {
+            term: "DPO",
+            meaning:
+              "The Data Protection Officer. Keeps purposes and processors, writes and approves notices, approves projects, answers rights requests and reads the audit trail.",
+          },
+          {
+            term: "Administrator",
+            meaning:
+              "Creates staff accounts and sets roles, keeps the wording of messages, and reviews grievances about the DPO.",
+          },
+          {
+            term: "R&D User",
+            meaning:
+              "Registers research projects, brings their notice and approval, and submits them for review.",
+          },
+          {
+            term: "DCO Admin",
+            meaning:
+              "Routes approved projects collected by third parties: adds their collection sites.",
+          },
+          {
+            term: "DCO",
+            meaning:
+              "Data Collection Owner. Runs third-party collection sites: consent links, exports and imports.",
+          },
+          {
+            term: "RCO",
+            meaning:
+              "R&D Collection Owner. Runs in-house collection, and answers rights tickets addressed to in-house teams.",
+          },
+        ],
+      },
+      {
+        kind: "note",
+        text: "What you can see and do is decided by the server from your role. If a button in this manual is not on your screen, your role does not have it - it is not broken.",
+      },
+    ],
+  },
+  {
+    id: "signing-in",
+    title: "Signing in",
+    summary: "Your password, then a six-digit code sent to your email.",
+    blocks: [
+      {
+        kind: "steps",
+        items: [
+          "Open the console. On the [[Sign in]] page type your work email or username in [[Email or username]] and your password in [[Password]], then click [[Sign in]].",
+          "The page changes to [[Verify it is you]]. A six-digit code is on its way to your registered email.",
+          "Type the code in [[6-digit code]] and click [[Verify and continue]]. The code works for five minutes; [[Send a new code]] sends another.",
+          "You land on your [[Dashboard]]. Your name and role are at the top right.",
+        ],
+      },
+      {
+        kind: "steps",
+        title: "Your first sign-in",
+        items: [
+          "Your administrator creates your account; an email invites you to [[Set your password]].",
+          "Open the link in the email, type the [[Code]] it contains, choose a [[New password]] of at least 12 characters, confirm it and click [[Set the new password]].",
+          "Your account is now active. Sign in as above.",
+        ],
+      },
+      {
+        kind: "list",
+        title: "Good to know",
+        items: [
+          "Five wrong passwords lock the account for 30 minutes. The message never says which part was wrong.",
+          "[[Forgotten your password?]] on the sign-in page sends a code to reset it. Setting a new password signs you out everywhere else.",
+          "A session lasts at most eight hours, and ends after 30 minutes without activity. A warning appears before it ends.",
+          "[[Sign out]] is at the bottom of the sidebar.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "finding-your-way",
+    title: "Finding your way around",
+    summary: "The sidebar, search, the command palette and your notifications.",
+    blocks: [
+      {
+        kind: "list",
+        items: [
+          "The sidebar lists only the sections your role has, grouped under Overview, Governance, Consent, Registry, Data movement, Oversight and You. [[Collapse sidebar]] at its foot folds it to icons; your choice is remembered.",
+          "The breadcrumb beside the logo shows where you are, for example [[Oversight › Rights requests]]. Click the second part to go back to the list.",
+          "[[Search or jump to…]] in the header - or ⌘K on a Mac, Ctrl+K elsewhere - opens the command palette. Type a few letters of a page and press Enter. It also offers your recent pages, the theme switch and [[Sign out]].",
+          "The bell opens [[Notifications]]: events on the records you can see, each linking to the page it is about.",
+          "Lists search as you type. Each filter you set shows as a chip under the toolbar; its × removes just that filter.",
+        ],
+      },
+      {
+        kind: "note",
+        title: "“Not part of your account”",
+        text: "If you follow a link to a section your role does not have, the console says so and offers [[Back to your dashboard]]. Nothing is wrong; that page belongs to another role.",
+      },
+    ],
+  },
+  {
+    id: "dashboard",
+    title: "Your dashboard",
+    summary: "What needs you today, your work queues, and the position.",
+    blocks: [
+      {
+        kind: "list",
+        items: [
+          "[[Needs you today]] lists only work you can act on, most urgent first - for example [[Requests awaiting verification]] or [[Projects pending approval]]. Each row opens the list that explains it, already filtered.",
+          "Below it are your work queues; an empty queue is listed as clear rather than hidden.",
+          "The DPO also sees [[Projects by stage]] and the [[Consent position]] across the platform.",
+          "[[Recent activity]] shows the latest events on your records.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "profile",
+    title: "Your profile and sessions",
+    summary: "Contacts, a personal email, your active sessions and your password.",
+    blocks: [
+      {
+        kind: "steps",
+        title: "Add a personal email",
+        items: [
+          "Click [[Your profile]] in the sidebar. The [[Contacts]] card shows your work email (it cannot be changed here).",
+          "In the [[Personal email]] row click [[Add]], type the address and click [[Save and send a code]].",
+          "Type the code sent to that address in [[Six-digit code]] and click [[Confirm]]. It can now sign you in to the portal as a person.",
+        ],
+      },
+      {
+        kind: "list",
+        items: [
+          "[[Active sessions]] lists where you are signed in. [[End session]] signs out another device; this one is marked [[this device]].",
+          "[[Change your password]] needs your current password and signs out your other sessions.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "purposes",
+    title: "Purposes",
+    summary: "What data is collected for, on what basis, and for how long.",
+    roles: ["dpo", "admin"],
+    blocks: [
+      {
+        kind: "steps",
+        title: "Create and activate a purpose",
+        items: [
+          "Click [[Purposes]] under Governance, then [[New purpose]].",
+          "Fill in [[Code]], [[Name]], [[Description]], [[What this allows]], tick the [[Data collected]], and choose the [[Lawful basis]], [[Retention (days)]], [[Retention basis]] and [[Erasure trigger]].",
+          "Tick [[Transfer outside India is permitted for this purpose]] only if it is; exports abroad are refused otherwise. Leave [[May be used for data of children]] unticked unless it truly applies.",
+          "Click [[Create purpose]]. It starts as [[Draft]] and can be edited; the code cannot.",
+          "Click [[Activate]] on its row. Only an active purpose can appear on a notice.",
+        ],
+      },
+      {
+        kind: "warning",
+        text: "A purpose used by a published notice cannot be retired - people agreed to it. [[Retire]] is for purposes no notice carries any more.",
+      },
+    ],
+  },
+  {
+    id: "processors",
+    title: "Processors and restricted countries",
+    summary:
+      "Who collects or handles data for you, where they are, and where data may not go.",
+    roles: ["dpo", "admin"],
+    blocks: [
+      {
+        kind: "steps",
+        title: "Register a processor",
+        items: [
+          "Click [[Processors]] under Registry, then [[Register processor]].",
+          "Enter the [[Registered legal name]], [[Type]], [[Contract reference]], the two-letter [[Country]] (IN for India) and [[Security confirmed on]].",
+          "Tick [[We collect this ourselves]] for an in-house team. Projects naming a third party go to the DCO Admin once approved; projects naming an in-house team come back to their author.",
+          "Click [[Register processor]].",
+        ],
+      },
+      {
+        kind: "list",
+        items: [
+          "[[Respondents]] names the people at a processor who answer rights tickets.",
+          "[[Edit]] changes the details, including the country; [[Suspend]] stops new work with the processor.",
+        ],
+      },
+      {
+        kind: "steps",
+        title: "Restrict a country (DPO)",
+        items: [
+          "Below the processors, find [[Restricted countries (s.16)]].",
+          "Type the [[Country]] and the Government's [[Notification]] reference, and click [[Restrict]].",
+          "From then on an export is refused if any row would go to a processor there. [[Lift]] ends the restriction.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "sources",
+    title: "Data sources",
+    summary:
+      "The rigs and feeds a processor collects with, and who is accountable for each.",
+    roles: ["dpo", ...COLLECTORS],
+    blocks: [
+      {
+        kind: "steps",
+        items: [
+          "Click [[Data sources]] under Registry, then [[Register source]].",
+          "Enter [[Code]], [[Name]], [[Role]], [[Exchange mode]], [[Identifier scheme]], choose [[Operated by]] and tick what it is [[Authoritative for]]. A DCO may choose only a third party; an RCO only an in-house team.",
+          "Click [[Register source]]. Tick the filter [[Nobody accountable]] to find sources without an owner.",
+          "Click [[Assign]] and choose who is accountable: a DCO for a third party's source, an RCO for an in-house one.",
+        ],
+      },
+      {
+        kind: "note",
+        text: "[[Suspend]] refuses further imports from a source. Code, role, exchange mode and processor cannot be changed after registration.",
+      },
+    ],
+  },
+  {
+    id: "projects",
+    title: "Registering a project",
+    summary: "Every collection begins with a project.",
+    roles: ["rnd_user", "dpo"],
+    blocks: [
+      {
+        kind: "steps",
+        items: [
+          "Click [[Projects]], then [[Register a project]].",
+          "Enter the [[Project name]] (what a person would recognise it as), [[Description]], and optionally [[Internal name]] and [[Requesting team]].",
+          "Under [[Who will collect]] tick every processor that will collect - a partner collecting for you and an in-house team can both be ticked. A note explains where the project will go once approved.",
+          "Click [[Register project]]. It starts [[In Draft]].",
+        ],
+      },
+      {
+        kind: "p",
+        text: "The project page shows its progress (In Draft › Pending Approval › Approved), a [[What happens next]] card listing anything still missing, and its notices, approvals, sites and history.",
+      },
+    ],
+  },
+  {
+    id: "notices",
+    title: "Bringing the notice",
+    summary: "The notice people read before they consent.",
+    roles: ["rnd_user", "dpo"],
+    blocks: [
+      {
+        kind: "steps",
+        title: "Upload the filled notice template (R&D User)",
+        items: [
+          "On the project, in the [[Notices]] card, click [[Upload a notice document]].",
+          "Choose the filled DPDP notice template (.docx) and click [[Check the document]]. Nothing is written yet: you see the purposes and data categories it found, and any warnings.",
+          "Click [[Create the notice]]. It is created as [[Draft]] with its purposes.",
+        ],
+      },
+      {
+        kind: "list",
+        items: [
+          "A template with placeholders still in it is refused.",
+          "A later project can start from an approved notice instead of a new document.",
+          "Only the DPO writes or approves notice wording, purposes and translations.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "approval",
+    title: "Submission and approval",
+    summary: "From draft to approved - which publishes and freezes the notice.",
+    roles: ["rnd_user", "dpo"],
+    blocks: [
+      {
+        kind: "steps",
+        title: "Submit (R&D User)",
+        items: [
+          "Click [[Upload approval]]. Choose the [[Type]], enter the [[Reference number]] and [[Approved on]] date, attach the [[Proof document]] and click [[Upload approval]]. An approval without a proof file does not count.",
+          "In [[What happens next]], click [[Pending Approval]]. The DPO is told.",
+        ],
+      },
+      {
+        kind: "steps",
+        title: "Review and approve (DPO)",
+        items: [
+          "Open the project from [[Needs you today]] › [[Projects pending approval]].",
+          "[[What happens next]] lists what still blocks approval, with links: activate each purpose the notice carries, and legally approve each language.",
+          "On the notice, [[Edit this rendition]] to correct the wording, [[Add a rendition]] for another language, then [[Approve]] each language. The approved text is hashed; consent is matched against it.",
+          "Back on the project click [[Approved]], add an optional note and [[Confirm]]. The notice is published and frozen.",
+          "To send it back instead, click [[In Draft]] - a reason is required and kept in the history.",
+        ],
+      },
+      {
+        kind: "warning",
+        text: "A published notice can never be edited. A correction is a new version of the notice, which supersedes the old one. Adding a site after publication adds a recipient, which also needs a new version.",
+      },
+    ],
+  },
+  {
+    id: "sites-and-links",
+    title: "Collection sites and consent links",
+    summary: "Where a project collects, and the link people open to consent.",
+    roles: [...COLLECTORS, "rnd_user", "dpo"],
+    blocks: [
+      {
+        kind: "steps",
+        title: "Add a site",
+        items: [
+          "Third-party collection: the DCO Admin opens the approved project. In-house collection: the project's R&D User does.",
+          "Click [[Add site]], choose the [[Data source]] (only sources under the project's processors are offered) and type the [[Location]].",
+          "Click [[Add collection site]]. The source's owner runs the site; [[Who runs it]] changes that for this project only.",
+        ],
+      },
+      {
+        kind: "steps",
+        title: "Create a consent link (DCO or RCO running the site)",
+        items: [
+          "On the project, click [[Create link]] on the site's row.",
+          "Set when it expires - an expiry is required - and how many times it may be used, then click [[Create link]].",
+          "Copy the link from [[Copy this now]]. It opens on the portal, not the console. Share it with the people you collect from.",
+        ],
+      },
+      {
+        kind: "list",
+        items: [
+          "[[Replace link]] issues a new link; the old one stops working at once.",
+          "A revoked, expired or used-up link shows people [[This link is not valid]] and nothing else.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "consents",
+    title: "The consent register",
+    summary: "Every decision people made, and the exact notice they were shown.",
+    roles: ["dpo", ...COLLECTORS],
+    blocks: [
+      {
+        kind: "list",
+        items: [
+          "[[Consents]] lists each person once, at their current decision: [[Consented]], [[Partial]], [[Declined]] or [[Withdrawn]]. A DCO or RCO sees only the sites they run.",
+          "Withdrawn means a withdrawal left nothing agreed. Someone who withdrew one purpose of several is [[Partial]], and the rest still stands.",
+          "Open a person for the record: the purposes agreed and refused, the exact notice text served, and the assets they appear in. [[Audit trail]] opens the trail filtered to that record.",
+        ],
+      },
+      {
+        kind: "note",
+        text: "A consent record is never edited. A withdrawal is a new record that supersedes the old one, which stays as evidence of what was agreed at the time.",
+      },
+    ],
+  },
+  {
+    id: "exports",
+    title: "Exports",
+    summary:
+      "The file of people whose consent covers a project, and the checks on where it goes.",
+    roles: ["dpo", ...COLLECTORS],
+    blocks: [
+      {
+        kind: "steps",
+        items: [
+          "On an approved project click [[Generate export]]. Read the warning: the file holds names and contacts, and each row is recorded as a disclosure.",
+          "Click [[Generate the export]].",
+          "Open [[Exports]] and click [[Download]]. Downloading again gives the same file and creates no new export.",
+        ],
+      },
+      {
+        kind: "warning",
+        title: "When an export is refused",
+        text: "Before writing anything, every row's destination - the processor running its site - is checked. The export is refused if a processor has no recorded country, is in a restricted country, or is abroad while a purpose the person agreed to does not permit transfer outside India. The message says which.",
+      },
+    ],
+  },
+  {
+    id: "imports",
+    title: "Imports, collections and assets",
+    summary: "The manifest of what a site collected, under whose consent.",
+    roles: ["dpo", ...COLLECTORS],
+    blocks: [
+      {
+        kind: "steps",
+        items: [
+          "Click [[Imports]], then [[Import a manifest]]. [[Download the manifest template]] and fill it in; [[What the file must contain]] explains each column.",
+          "Choose the [[Data source]] and the [[Project]], choose your file and click [[Check it — this writes nothing]]. Problems are listed by row and column.",
+          "When it says [[Manifest is valid]], click [[Import]].",
+          "The batch page shows what was accepted and rejected. [[Collections]] and each collection's assets follow from it.",
+        ],
+      },
+      {
+        kind: "list",
+        items: [
+          "Every row marked consented needs the consent it was collected under; a bystander is marked incidental with none.",
+          "The same file is never imported twice.",
+          "An asset holding someone with no consent is flagged on its collection.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "rights-requests",
+    title: "Rights requests",
+    summary:
+      "Access, correction, erasure and grievances - sections 11 to 14 - on a legal clock.",
+    roles: ["dpo", "admin"],
+    blocks: [
+      {
+        kind: "p",
+        text: "[[Rights requests]] lists every request with its clock. Filter by [[Status]], [[Kind]], [[Clock]] and [[Tickets]]. A request that arrived by email is logged with [[Log a request received by email]]. Open a request to work through its numbered path; [[What happens next]] always says what may be done now and what blocks the rest.",
+      },
+      {
+        kind: "steps",
+        title: "The path",
+        items: [
+          "Check identity: a request made signed in, or verified by code, is already verified.",
+          "Classify it in [[A valid … request?]] and click [[Confirm classification]]. For an erasure, confirm [[She means erasure]] - erasure is not withdrawal.",
+          "Click [[In progress]].",
+          "Holders: [[Derive from the records]], choose each holder's [[Respondent]] and [[Confirm]], then [[Issue tickets]]. Each ticket has a thread; [[Thread]] opens it.",
+          "Erasure scope: [[Derive from asset_consent]]. For each asset choose [[Erase]], [[Redact]], [[Retain]] (a retention floor, with its date) or [[Quarantine]], give the basis and [[Record the decision]], then [[Apply]].",
+          "Respond: write [[The response]], attach any files, choose the outcome and click [[Release and close]]. The person is told and downloads it from the portal.",
+        ],
+      },
+      {
+        kind: "list",
+        title: "How erasure is carried out",
+        items: [
+          "Applying an erasure takes the item out of use at once ([[quarantined - being erased]]). It shows as erased only when the holder confirms its copy is gone and the platform's pointer is cleared; each store's status is listed. [[Try again now]] retries what failed.",
+          "[[Place a legal hold]] stops the erasure of an asset or a person until [[Release hold]]; what it stopped then carries on.",
+          "[[Complete]] is offered only when everything asked was carried out with evidence. Otherwise the response goes out [[Partial]] and says what remains.",
+        ],
+      },
+      {
+        kind: "note",
+        title: "Grievances",
+        text: "A dispute of a response is a grievance linked to the original. The DPO decides it as upheld or not upheld. A grievance about the DPO's own decision goes to the Administrator, who sees it as [[Grievances about the DPO]].",
+      },
+    ],
+  },
+  {
+    id: "tickets",
+    title: "Tickets for you",
+    summary: "Answering the Privacy Office when a request needs your team's records.",
+    blocks: [
+      {
+        kind: "steps",
+        items: [
+          "[[Tickets for you]] in the sidebar shows a count of tickets with something unread.",
+          "Click [[Respond]] on a ticket. It shows what the platform already knows and the messages so far.",
+          "Ask a question or say what you hold in [[Message]], attach a file if needed, and [[Send]].",
+          "When your work is done, tick [[This is my return - close the ticket with it]] and click [[Return the ticket]].",
+        ],
+      },
+    ],
+  },
+  {
+    id: "audit-trail",
+    title: "The audit trail",
+    summary: "The tamper-evident record of everything done on the platform.",
+    roles: ["dpo", "admin"],
+    blocks: [
+      {
+        kind: "list",
+        items: [
+          "[[Audit trail]] can be asked a question: filter by [[Area]], [[Event]], [[Actor role]], [[Record type]], a person ([[About]]) and a period. The address bar keeps the filters, so a question can be bookmarked or shared.",
+          "The summary above the table counts entries by area, event, role and day.",
+          "Click a row for its details; [[Show raw JSON]] shows exactly what was stored.",
+          "[[Verify chain]] checks that no entry has been altered or removed. A [[Chain broken]] result must be reported at once.",
+          "[[Export CSV]] downloads the filtered rows with names readable; the export is itself recorded.",
+        ],
+      },
+      {
+        kind: "note",
+        text: "The trail holds facts and identifiers, never personal words: a reason is recorded as given, not quoted, and addresses are kept only as a keyed hash.",
+      },
+    ],
+  },
+  {
+    id: "users",
+    title: "Staff accounts",
+    summary: "Provisioning accounts, invitations, roles and ending access.",
+    roles: ["admin", "dpo"],
+    blocks: [
+      {
+        kind: "steps",
+        title: "Provision an account (Administrator)",
+        items: [
+          "Click [[Users]], then [[Provision account]].",
+          "Enter [[Full name]] and [[Email]], choose the [[Role]] and [[Person type]]; for a DCO or RCO you may tick the [[Data sources]] they own.",
+          "Click [[Create account]]. No password is set here: an email invites the person to choose one, and the account is [[Pending]] until they do.",
+        ],
+      },
+      {
+        kind: "list",
+        items: [
+          "[[Resend invitation]] sends a fresh code to a pending account.",
+          "[[Role]] changes a role and signs the person out; [[Reset MFA]] clears their second factor.",
+          "[[End staff access]] keeps the person as a data principal but removes every staff power.",
+          "The DPO can read the register but not change it.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "delegation",
+    title: "Cover while you are away",
+    summary: "Hand your work to a colleague in the same role for a period.",
+    roles: ["dpo", "dco", "admin"],
+    blocks: [
+      {
+        kind: "steps",
+        items: [
+          "Click [[Delegate]], then [[Delegate my work]].",
+          "Choose [[Who takes over]] - colleagues in your role are listed - set [[Until]] and say [[Why]].",
+          "Click [[Delegate]]. Your colleague sees it under [[Work delegated to me]] and can act on your records until the end date.",
+          "[[End now]] ends it early.",
+        ],
+      },
+      {
+        kind: "note",
+        text: "Cover applies to the DPO and DCO roles. The Administrator sees every arrangement and can arrange one on someone's behalf.",
+      },
+    ],
+  },
+  {
+    id: "messages",
+    title: "Message wording",
+    summary: "The words of every email and SMS the platform sends.",
+    roles: ["admin", "dpo"],
+    blocks: [
+      {
+        kind: "steps",
+        items: [
+          "Click [[Messages]]. Messages are grouped under Sign-in, Consent, Rights and Staff.",
+          "Edit a message's [[Subject]] and [[Body]]. Click a variable chip, such as {full_name}, to insert it where the cursor is.",
+          "Click [[Preview]] to see it with sample values, then [[Save]].",
+          "[[Reset to default]] brings back the original words.",
+        ],
+      },
+      {
+        kind: "warning",
+        text: "A message that uses a variable it does not provide is refused, so no one receives a message with a gap in it.",
+      },
+    ],
+  },
+  {
+    id: "notifications",
+    title: "Notifications",
+    summary: "What happened on the records you can see.",
+    blocks: [
+      {
+        kind: "p",
+        text: "The bell in the header and [[Notifications]] in the sidebar list recent events on records your role can see - a notice published, a consent withdrawn, an export generated. Each links to the page it is about, and only where your role can open that page.",
+      },
+    ],
+  },
+  {
+    id: "troubleshooting",
+    title: "Troubleshooting",
+    summary: "Common questions and what to do.",
+    blocks: [
+      {
+        kind: "faq",
+        items: [
+          {
+            q: "My sign-in code has not arrived.",
+            a: "Codes go to your registered work email and last five minutes. Wait a minute, check your junk folder, then use [[Send a new code]].",
+          },
+          {
+            q: "It says my account is locked.",
+            a: "Five wrong passwords lock it for 30 minutes. Wait, or use [[Forgotten your password?]] to set a new one.",
+          },
+          {
+            q: "I was sent back to the sign-in page.",
+            a: "Sessions end after 30 minutes without activity and after eight hours in any case. Sign in again; the console returns you to the page you were on.",
+          },
+          {
+            q: "A page says “Not part of your account”.",
+            a: "That section belongs to another role. Your administrator can tell you whether your role should have it.",
+          },
+          {
+            q: "An export was refused.",
+            a: "Read the reason: a processor with no country, a restricted country, or a purpose that does not permit transfer abroad. Fix the processor's country or the purpose, or remove the site.",
+          },
+          {
+            q: "[[Complete]] is greyed out on a rights request.",
+            a: "Something asked for has not been carried out with evidence yet - a ticket not returned, or an erasure not confirmed. Finish it, or respond [[Partial]] saying what remains.",
+          },
+          {
+            q: "I see text beginning “SE::” where a name should be.",
+            a: "That is encrypted data that failed to open. Report it straight away with the page it appeared on.",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "glossary",
+    title: "Glossary",
+    summary: "The words the platform uses.",
+    blocks: [
+      {
+        kind: "terms",
+        items: [
+          {
+            term: "Data principal",
+            meaning: "The person the data is about. Uses the portal.",
+          },
+          {
+            term: "Purpose",
+            meaning:
+              "A reason for processing, with its lawful basis, data categories, retention and transfer rules.",
+          },
+          {
+            term: "Notice",
+            meaning:
+              "What people read before consenting. Versioned; frozen once published.",
+          },
+          {
+            term: "Processor",
+            meaning:
+              "An organisation, or an in-house team, that collects or handles data for you.",
+          },
+          {
+            term: "Site",
+            meaning: "A place a project collects at, run by a processor's data source.",
+          },
+          {
+            term: "Consent link",
+            meaning: "The link a person opens to read the notice and decide. Expires.",
+          },
+          {
+            term: "Consent record",
+            meaning: "The permanent record of one decision, with the exact notice served.",
+          },
+          {
+            term: "Export",
+            meaning:
+              "The file of people whose consent covers a project; every row is a recorded disclosure.",
+          },
+          {
+            term: "Manifest",
+            meaning:
+              "A file listing the assets a site collected and whose consent each is under.",
+          },
+          {
+            term: "Holder / ticket",
+            meaning:
+              "A party that holds a person's data, and the instruction sent to it for a rights request.",
+          },
+          {
+            term: "Legal hold",
+            meaning:
+              "A DPO record that stops erasure of an asset or a person until released.",
+          },
+          {
+            term: "Audit trail",
+            meaning:
+              "The append-only, hash-chained log of everything done on the platform.",
+          },
+        ],
+      },
+    ],
+  },
+];

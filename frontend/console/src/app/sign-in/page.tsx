@@ -45,15 +45,26 @@ export default function SignInPage() {
       title="Sign in"
       subtitle="Sign in with your password, then the code sent to your email."
       footer={
-        <p className="text-center text-xs text-text-subtle">
-          Consented to a project, or want to exercise your rights?{" "}
-          <a
-            href={config.subjectPortalUrl}
-            className="underline underline-offset-2 hover:text-text-muted"
-          >
-            Go to the consent portal
-          </a>
-        </p>
+        <div className="space-y-2">
+          <p className="text-center text-xs text-text-subtle">
+            New here, or stuck?{" "}
+            <Link
+              href="/help"
+              className="underline underline-offset-2 hover:text-text-muted"
+            >
+              Read the help manual
+            </Link>
+          </p>
+          <p className="text-center text-xs text-text-subtle">
+            Consented to a project, or want to exercise your rights?{" "}
+            <a
+              href={config.subjectPortalUrl}
+              className="underline underline-offset-2 hover:text-text-muted"
+            >
+              Go to the consent portal
+            </a>
+          </p>
+        </div>
       }
     >
       {/* useSearchParams() forces client-side rendering, so Next requires a

@@ -31,6 +31,16 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **A help manual in the console and the portal** (`/help`). Laid out like a
+  product manual - a numbered table of contents that follows the reader,
+  numbered steps, notes and warnings, questions and answers, a glossary, and a
+  closing "Have any questions? Contact us" panel with the Privacy Office's
+  address from the public `/rights` answer. Every instruction quotes the
+  screen's own words as a label. The console's 24 sections open filtered to
+  the reader's role; the portal's 15 are written for data principals. Both
+  search as you type, work on a phone, and are open without signing in - the
+  sign-in pages link to them - and the console's header and command palette
+  open it.
 - **A backend developer guide** (`docs/backend/`): one folder, in reading
   order, written from the code - the package map, a staff write and a
   public consent traced hop by hop, every security control, how tables are
