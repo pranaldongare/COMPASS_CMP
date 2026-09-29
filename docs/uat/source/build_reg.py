@@ -1,0 +1,885 @@
+import json
+
+PW = "SeedPassw0rd!2026"
+OUT = str(__import__("pathlib").Path(__file__).with_name("REG.json"))
+AREA = "Registry and administration"
+
+PEOPLE = {
+    "dpo@cmp.local": ("Priya Menon", "DPO"),
+    "admin@cmp.local": ("System Admin", "Administrator"),
+    "dco@cmp.local": ("Arun Shetty", "Data Collection Owner"),
+    "dcoadmin@cmp.local": ("Nikhil Bose", "DCO Admin"),
+    "rnd@cmp.local": ("Kavya Rao", "R&D User"),
+    "rco@cmp.local": ("Meera Iyer", "R&D Collection Owner"),
+}
+
+
+def sign_in(email, password=PW, name=None, badge=None):
+    if name is None:
+        name, badge = PEOPLE[email]
+    return {
+        "action": (
+            f"Open http://localhost:3000. On the 'Sign in' page type {email} in 'Email or username' "
+            f"and {password} in 'Password', then click 'Sign in'. On the 'Verify it is you' page, ask the "
+            f"test coordinator for the sign-in code sent to {email} (from the test outbox), type it in "
+            "'6-digit code' and click 'Verify and continue'."
+        ),
+        "expected": (
+            f"The Dashboard opens. The top-right corner of the header shows '{name}' with the role badge '{badge}'."
+        ),
+    }
+
+
+SIGN_OUT = {
+    "action": "Click 'Sign out' at the bottom of the left-hand sidebar.",
+    "expected": "You are returned to the 'Sign in' page.",
+}
+
+cases = []
+
+
+def add(**kw):
+    kw.setdefault("area", AREA)
+    cases.append(kw)
+
+
+# ---------------------------------------------------------------- users
+add(
+    title="Administrator provisions a new staff account",
+    feature="Users - Provision account",
+    role="Administrator (admin@cmp.local)",
+    priority="High",
+    type="Positive",
+    ref="Core",
+    preconditions=[
+        "The console is running at http://localhost:3000.",
+        "No account exists yet for uat.dco01@cmp.local.",
+    ],
+    test_data=[
+        "Full name: UAT DCO 01",
+        "Email: uat.dco01@cmp.local",
+        "Role: Data Collection Owner",
+        "Person type: Employee",
+        "Username, Mobile, Organisation id: leave blank",
+    ],
+    steps=[
+        sign_in("admin@cmp.local"),
+        {
+            "action": "In the left-hand sidebar, under 'Oversight', click 'Users'.",
+            "expected": "The 'Users' page opens with the register of accounts (columns Name, Role, Person type, Status, Registered, Action) and a 'Provision account' button at the top right.",
+        },
+        {
+            "action": "Click 'Provision account'.",
+            "expected": "A dialog titled 'Provision an account' opens. It says no password is set here and that an email invites the person to choose their own. There is no password field.",
+        },
+        {
+            "action": "Type 'UAT DCO 01' in 'Full name' and 'uat.dco01@cmp.local' in 'Email'. In 'Role' choose 'Data Collection Owner'. In 'Person type' choose 'Employee'. Leave the 'Data sources' boxes unticked.",
+            "expected": "The fields accept the values. Because the role is Data Collection Owner, a 'Data sources' section is shown (optional).",
+        },
+        {
+            "action": "Click 'Create account'.",
+            "expected": "The dialog closes and a green message 'Account created' appears, saying an email is on its way to uat.dco01@cmp.local with a code to set a password and that the account stays pending until they do.",
+        },
+        {
+            "action": "In the 'Search' box type uat.dco01@cmp.local and click 'Search'.",
+            "expected": "The register shows one row: 'UAT DCO 01' (uat.dco01@cmp.local), Role 'Data Collection Owner', Person type 'Employee', Status 'Pending', Registered = today's date.",
+        },
+        {
+            "action": "Look at the 'Action' column for that row.",
+            "expected": "The buttons 'Edit', 'Role', 'Reset MFA', 'Resend invitation' and 'End staff access' are shown.",
+        },
+        {
+            "action": "Ask the test coordinator to confirm an invitation email was sent to uat.dco01@cmp.local (from the test outbox).",
+            "expected": "The coordinator confirms an email with the subject beginning 'Set your password for the' that names the role 'Data Collection Owner', contains a link to the console's password page and a numeric code. No password appears in the email.",
+        },
+    ],
+    pass_criteria="The account is created in 'Pending' status with the chosen role, an invitation (link + code, no password) is sent to the address, and the register shows it with a 'Resend invitation' action.",
+)
+
+add(
+    title="New member of staff sets a password from the invitation, which activates the account",
+    feature="Staff invitation - Set your password",
+    role="New staff member (UAT DCO 01), then Administrator",
+    priority="High",
+    type="Positive",
+    ref="Core",
+    preconditions=[
+        "REG-01 has been completed: UAT DCO 01 (uat.dco01@cmp.local) exists in 'Pending' status.",
+        "The invitation was sent less than 48 hours ago (otherwise use 'Resend invitation' first).",
+        "Tester is signed out of the console.",
+    ],
+    test_data=[
+        "Invitation link and code: from the test coordinator (test outbox, uat.dco01@cmp.local)",
+        "New password: UatPassw0rd!2026",
+        "Mismatched confirmation: UatPassw0rd!2027",
+    ],
+    steps=[
+        {
+            "action": "Ask the test coordinator for the invitation sent to uat.dco01@cmp.local (from the test outbox). Open the link it contains in the browser.",
+            "expected": "A page titled 'Set your password' opens, saying 'Enter the code sent to uat.dco01@cmp.local and choose a password.' It shows the fields 'Code', 'New password' and 'Confirm new password'.",
+        },
+        {
+            "action": "Type the code from the invitation in 'Code', 'UatPassw0rd!2026' in 'New password' and 'UatPassw0rd!2027' in 'Confirm new password'. Click 'Set the new password'.",
+            "expected": "The password is not set. The message 'The two passwords do not match' appears under 'Confirm new password'.",
+        },
+        {
+            "action": "Correct 'Confirm new password' to 'UatPassw0rd!2026' and click 'Set the new password'.",
+            "expected": "A green panel 'Password changed' appears ('Every other session has been signed out. Taking you to sign in…') and after a few seconds the 'Sign in' page opens.",
+        },
+        sign_in("uat.dco01@cmp.local", "UatPassw0rd!2026", "UAT DCO 01", "Data Collection Owner"),
+        {
+            "action": "Look at the left-hand sidebar.",
+            "expected": "The sidebar shows the Data Collection Owner's sections (for example 'Projects', 'Collection sites', 'Data sources', 'Delegate') and does NOT show 'Users'.",
+        },
+        SIGN_OUT,
+        sign_in("admin@cmp.local"),
+        {
+            "action": "Click 'Users', search for uat.dco01@cmp.local and click 'Search'.",
+            "expected": "UAT DCO 01 now shows Status 'Active'. The 'Resend invitation' button is no longer offered for that row.",
+        },
+    ],
+    pass_criteria="Setting a password with the invitation code activates the account (Pending -> Active), the person can sign in with password plus a one-time code, and mismatched passwords are refused.",
+)
+
+add(
+    title="Provisioning refuses a duplicate or incomplete account; invitation can be resent",
+    feature="Users - Provision account validation",
+    role="Administrator (admin@cmp.local)",
+    priority="Medium",
+    type="Negative",
+    ref="Core",
+    preconditions=[
+        "Seeded account dco@cmp.local exists.",
+        "Tester is signed in as admin@cmp.local.",
+    ],
+    test_data=[
+        "Duplicate email: dco@cmp.local",
+        "Bad email: uat.dco02-at-cmp.local",
+        "Second new account: UAT DCO 02 / uat.dco02@cmp.local",
+    ],
+    steps=[
+        {
+            "action": "Click 'Users', then 'Provision account'. Leave every field empty and click 'Create account'.",
+            "expected": "Nothing is created. Messages appear under the fields, including 'A full name is required' under 'Full name' and 'An email address is required' under 'Email'.",
+        },
+        {
+            "action": "Type 'UAT DCO 02' in 'Full name' and 'uat.dco02-at-cmp.local' in 'Email'. Click 'Create account'.",
+            "expected": "Nothing is created. 'That does not look like an email address' appears under 'Email'.",
+        },
+        {
+            "action": "Change 'Email' to dco@cmp.local (an address that already has an account) and click 'Create account'.",
+            "expected": "Nothing is created. An error at the top of the dialog reads 'An account with that email, username or organisation id exists'.",
+        },
+        {
+            "action": "Change 'Email' to uat.dco02@cmp.local, keep role 'Data Collection Owner' and click 'Create account'.",
+            "expected": "'Account created' appears and UAT DCO 02 is listed with Status 'Pending'.",
+        },
+        {
+            "action": "On the UAT DCO 02 row click 'Resend invitation'.",
+            "expected": "A green message 'Invitation sent' appears, saying a new invitation is on its way to uat.dco02@cmp.local.",
+        },
+        {
+            "action": "Ask the test coordinator to confirm (from the test outbox) that uat.dco02@cmp.local received two invitation emails.",
+            "expected": "The coordinator confirms two invitation emails for uat.dco02@cmp.local, the second carrying a new code.",
+        },
+    ],
+    pass_criteria="Missing/invalid fields and an already-registered email are refused with clear messages and no account is created; a pending account's invitation can be resent.",
+)
+
+add(
+    title="Roles that may not administer users cannot provision or manage accounts",
+    feature="Users - access by role; Messages - access by role",
+    role="DPO, Data Collection Owner, R&D User",
+    priority="High",
+    type="Negative",
+    ref="Core",
+    preconditions=["Seeded accounts dpo@cmp.local, dco@cmp.local and rnd@cmp.local are active."],
+    test_data=["Direct addresses: http://localhost:3000/users and http://localhost:3000/messages"],
+    steps=[
+        sign_in("dpo@cmp.local"),
+        {
+            "action": "Click 'Users' in the sidebar (under 'Oversight').",
+            "expected": "The 'Users' register opens read-only: a blue note says 'You can read the register. Provisioning, role changes and deactivation are restricted to administrators.' There is NO 'Provision account' button, and the 'Action' column of every row is empty (no 'Edit', 'Role', 'Reset MFA', 'Resend invitation' or 'End staff access').",
+        },
+        SIGN_OUT,
+        sign_in("dco@cmp.local"),
+        {
+            "action": "Look through the left-hand sidebar.",
+            "expected": "There is no 'Users' entry and no 'Messages' entry.",
+        },
+        {
+            "action": "Type http://localhost:3000/users in the browser address bar and press Enter.",
+            "expected": "No register is shown. A panel titled 'Not part of your account' says the section belongs to a different role, with a 'Back to your dashboard' button.",
+        },
+        {
+            "action": "Type http://localhost:3000/messages in the address bar and press Enter.",
+            "expected": "The same 'Not part of your account' panel is shown; no message templates are visible.",
+        },
+        SIGN_OUT,
+        sign_in("rnd@cmp.local"),
+        {
+            "action": "Look through the sidebar, then open http://localhost:3000/users directly.",
+            "expected": "No 'Users' entry in the sidebar; the address shows 'Not part of your account'.",
+        },
+    ],
+    pass_criteria="Only the Administrator can provision or change accounts; the DPO sees a read-only register; DCO and R&D User have no Users or Messages section and are turned away if they type the address.",
+)
+
+# ---------------------------------------------------------------- purposes
+add(
+    title="DPO drafts a purpose, edits the draft and activates it",
+    feature="Purposes - New purpose / Activate",
+    role="DPO (dpo@cmp.local)",
+    priority="High",
+    type="Positive",
+    ref="Core",
+    preconditions=["No purpose with code PUR-UAT-01 exists."],
+    test_data=[
+        "Code: PUR-UAT-01",
+        "Name: UAT Purpose 01",
+        "Description: Testing the purpose registry during UAT.",
+        "What this allows: Store the recordings for UAT checks only.",
+        "Data collected: Name, Email address",
+        "Lawful basis: Consent (s.6)",
+        "Retention (days): 365; Retention basis: Business policy; Erasure trigger: Withdrawal",
+        "Consent validity (days): blank; When consent lapses: Quarantine",
+        "'Transfer outside India is permitted for this purpose': ticked; 'May be used for data of children': unticked",
+    ],
+    steps=[
+        sign_in("dpo@cmp.local"),
+        {
+            "action": "In the sidebar under 'Governance' click 'Purposes'.",
+            "expected": "The 'Purposes' page opens with the list (columns Purpose, Status, Lawful basis, Data collected, Retention, Actions) and a 'New purpose' button.",
+        },
+        {
+            "action": "Click 'New purpose'.",
+            "expected": "A dialog titled 'New purpose' opens with fields Code, Name, Description, What this allows, Data collected (tick boxes), Lawful basis, Retention (days), Retention basis, Erasure trigger, Consent validity (days), When consent lapses, and two tick boxes: 'Transfer outside India is permitted for this purpose' and 'May be used for data of children'.",
+        },
+        {
+            "action": "Fill in the form with the test data (tick 'Name' and 'Email address' under 'Data collected'; choose 'Consent (s.6)' as 'Lawful basis'; tick 'Transfer outside India is permitted for this purpose'; leave 'May be used for data of children' unticked). Click 'Create purpose'.",
+            "expected": "The dialog closes and 'Purpose created' appears ('It must be activated before a notice can use it.').",
+        },
+        {
+            "action": "Type PUR-UAT-01 in the 'Search' box (the list updates as you type; Enter searches at once).",
+            "expected": "The row 'UAT Purpose 01' (code PUR-UAT-01) shows Status 'Draft', Lawful basis 'Consent s.6', Data collected 'Name, Email', Retention '365 days', and the buttons 'Edit' and 'Activate'.",
+        },
+        {
+            "action": "Click 'Edit'. In the 'Edit purpose' dialog, change 'Name' to 'UAT Purpose 01 (edited)'. Note that 'Code' cannot be changed. Click 'Save changes'.",
+            "expected": "'Purpose updated' appears and the row now reads 'UAT Purpose 01 (edited)'.",
+        },
+        {
+            "action": "Click 'Activate' on the row.",
+            "expected": "'Purpose activated' appears ('Notices can now use it.'). Status changes to 'Active'; 'Edit' and 'Activate' disappear and a 'Retire' button is shown.",
+        },
+        {
+            "action": "Click the purpose name to open it.",
+            "expected": "The purpose page shows 'What was promised' (Description, Uses, Data categories Name and Email) and 'Terms' (Code PUR-UAT-01, Lawful basis, Retention). 'Notices using this purpose' shows 'Not attached to any notice'.",
+        },
+    ],
+    pass_criteria="A purpose carrying lawful basis, itemised data categories, retention and the cross-border / minors flags is saved as Draft, can be edited while Draft, and becomes Active (no longer editable) on activation.",
+)
+
+add(
+    title="Purpose form refuses incomplete or inconsistent purposes",
+    feature="Purposes - New purpose validation",
+    role="DPO (dpo@cmp.local)",
+    priority="Medium",
+    type="Negative",
+    ref="Core",
+    preconditions=["Tester is signed in as dpo@cmp.local.", "Seeded purpose PUR-GAIT-TRAIN exists."],
+    test_data=["Code: PUR-UAT-02", "Name: UAT Purpose 02", "Duplicate code: PUR-GAIT-TRAIN"],
+    steps=[
+        {
+            "action": "Open 'Purposes' and click 'New purpose'. Without filling anything, click 'Create purpose'.",
+            "expected": "Nothing is saved. Messages appear, including 'A code is required', 'A name is required', 'Describe what this purpose is', 'State what this purpose lets you actually do' and 'Rule 3(b)(i): itemise at least one category'.",
+        },
+        {
+            "action": "Fill Code 'PUR-UAT-02', Name 'UAT Purpose 02', a Description and 'What this allows', tick 'Name' under 'Data collected'. Set 'Lawful basis' to 'Certain Legitimate Uses (s.7)'.",
+            "expected": "A new field 'Section 7 clause' appears, showing 'Choose a clause…'.",
+        },
+        {
+            "action": "Leave 'Section 7 clause' on 'Choose a clause…' and click 'Create purpose'.",
+            "expected": "Nothing is saved. 'An s.7 purpose must name the clause it relies on' appears under 'Section 7 clause'.",
+        },
+        {
+            "action": "Set 'Retention (days)' to 0 and click 'Create purpose'.",
+            "expected": "Nothing is saved; 'At least one day' appears under 'Retention (days)'.",
+        },
+        {
+            "action": "Set 'Retention (days)' back to 365, choose 's.7(a) - voluntarily provided' as 'Section 7 clause', and change 'Code' to PUR-GAIT-TRAIN (already used). Click 'Create purpose'.",
+            "expected": "Nothing is saved. An error at the top of the dialog reads 'That purpose code already exists'.",
+        },
+        {
+            "action": "Click 'Cancel'.",
+            "expected": "The dialog closes; no purpose PUR-UAT-02 appears in the list.",
+        },
+    ],
+    pass_criteria="Required fields, the s.7 clause rule, minimum retention and code uniqueness are all enforced; nothing is saved while any of them fails.",
+)
+
+add(
+    title="DPO retires a purpose that is no longer in use",
+    feature="Purposes - Retire",
+    role="DPO (dpo@cmp.local)",
+    priority="High",
+    type="Positive",
+    ref="Core",
+    preconditions=[
+        "REG-05 completed: 'UAT Purpose 01 (edited)' (PUR-UAT-01) is Active and not attached to any notice.",
+        "Tester is signed in as dpo@cmp.local.",
+    ],
+    test_data=["Purpose: PUR-UAT-01"],
+    steps=[
+        {
+            "action": "Open 'Purposes', search PUR-UAT-01 and click 'Retire' on its row.",
+            "expected": "A confirmation dialog titled 'Retire UAT Purpose 01 (edited)?' opens, explaining it can no longer be attached to a notice. It has 'Cancel' and 'Retire purpose' buttons.",
+        },
+        {
+            "action": "Click 'Cancel'.",
+            "expected": "The dialog closes; the purpose is still 'Active'.",
+        },
+        {
+            "action": "Click 'Retire' again, then 'Retire purpose'.",
+            "expected": "'Purpose retired' appears. The row's Status is now 'Retired' and no action buttons remain on it.",
+        },
+        {
+            "action": "Set the 'Status' filter to 'Retired'.",
+            "expected": "The list shows 'UAT Purpose 01 (edited)' among the retired purposes.",
+        },
+        {
+            "action": "Set the 'Status' filter to 'Active'.",
+            "expected": "PUR-UAT-01 is not in the active list (it can no longer be offered on a new notice).",
+        },
+    ],
+    pass_criteria="An active purpose that no published notice uses can be retired after confirmation, and then shows as 'Retired'.",
+)
+
+add(
+    title="A purpose used by a published notice cannot be retired",
+    feature="Purposes - Retire (blocked)",
+    role="DPO (dpo@cmp.local)",
+    priority="High",
+    type="Negative",
+    ref="Core",
+    preconditions=[
+        "Seeded purpose 'Gait model training' (PUR-GAIT-TRAIN) is attached to the published notice NTC-GAIT-2026.",
+        "Tester is signed in as dpo@cmp.local.",
+    ],
+    test_data=["Purpose: Gait model training (PUR-GAIT-TRAIN)"],
+    steps=[
+        {
+            "action": "Open 'Purposes' and click the name 'Gait model training'.",
+            "expected": "The purpose page opens. A blue note says 'This purpose is attached to a published notice, so it cannot be retired.' The card 'Notices using this purpose' lists NTC-GAIT-2026 with status Published.",
+        },
+        {
+            "action": "Go back to 'Purposes', find 'Gait model training' and click 'Retire'.",
+            "expected": "The confirmation dialog 'Retire Gait model training?' opens, warning that the server will refuse if a published notice references it.",
+        },
+        {
+            "action": "Click 'Retire purpose'.",
+            "expected": "A red message 'Could not retire' appears: 'This purpose is attached to a published notice and cannot be retired'.",
+        },
+        {
+            "action": "Close the dialog (Cancel) and look at the row.",
+            "expected": "'Gait model training' is still 'Active'.",
+        },
+    ],
+    pass_criteria="The system refuses to retire a purpose on a published notice, explains why, and leaves the purpose Active.",
+)
+
+# ---------------------------------------------------------------- processors
+add(
+    title="Register a third-party processor abroad and an in-house team",
+    feature="Processors - Register processor (with Country)",
+    role="DPO (dpo@cmp.local)",
+    priority="High",
+    type="Positive",
+    ref="S2-04",
+    preconditions=["No processors named 'UAT Lab 01' or 'UAT In-house Team 01' exist."],
+    test_data=[
+        "Processor A - Registered legal name: UAT Lab 01; Type: Lab; Contract reference: CTR-UAT-001; Country: sg (lower case on purpose); Security confirmed on: 2026-09-01; We collect this ourselves: unticked",
+        "Processor B - Registered legal name: UAT In-house Team 01; Type: Other; Contract reference: in-house - UAT; Country: IN; Security confirmed on: 2026-09-01; We collect this ourselves: ticked",
+    ],
+    steps=[
+        sign_in("dpo@cmp.local"),
+        {
+            "action": "In the sidebar under 'Registry' click 'Processors'.",
+            "expected": "The 'Processors' page opens with columns Legal name, Type, Country, Contract, Security confirmed, Status, Action. Seeded SEED, SRIB and Pune Motion Lab Pvt Ltd show Country 'IN'. A 'Register processor' button is at the top right.",
+        },
+        {
+            "action": "Click 'Register processor'.",
+            "expected": "A dialog 'Register a processor' opens with 'Registered legal name', 'Type', 'Contract reference', 'Country' (hint: two-letter code, IN for India), 'Security confirmed on' and a tick box 'We collect this ourselves'.",
+        },
+        {
+            "action": "Enter Processor A's data (type 'sg' in 'Country', leave 'We collect this ourselves' unticked) and click 'Register processor'.",
+            "expected": "'Processor registered' appears: 'Projects naming it go to the DCO Admin to be assigned once approved.'",
+        },
+        {
+            "action": "Type 'UAT Lab 01' in the 'Search' box (the list updates as you type).",
+            "expected": "The row shows Type 'Lab', Country 'SG' (converted to capitals), Contract 'CTR-UAT-001', Security confirmed 1 Sep 2026 (date format may vary), Status 'Active', and buttons 'Respondents', 'Edit', 'Suspend'.",
+        },
+        {
+            "action": "Click 'Register processor' again, enter Processor B's data and TICK 'We collect this ourselves'. Click 'Register processor'.",
+            "expected": "'Processor registered' appears, this time saying 'Projects naming it come back to their author to assign sources and an RCO.'",
+        },
+        {
+            "action": "Search 'UAT In-house Team 01'.",
+            "expected": "The row shows Type 'Other', Country 'IN', Status 'Active'.",
+        },
+    ],
+    pass_criteria="Both processors are registered with legal name, type, contract, security date and country; the country is stored in capitals; the confirmation message reflects whether it is in-house or a third party.",
+)
+
+add(
+    title="Processor with no country shows 'not recorded'; edit sets the country; then suspend it",
+    feature="Processors - Country / Edit / Suspend",
+    role="DPO (dpo@cmp.local)",
+    priority="High",
+    type="Positive",
+    ref="S2-04",
+    preconditions=["Tester is signed in as dpo@cmp.local.", "No processor named 'UAT Lab 02' exists."],
+    test_data=[
+        "Registered legal name: UAT Lab 02; Type: Tool; Contract reference: CTR-UAT-002; Country: (blank); Security confirmed on: 2026-09-10",
+        "Country to set on edit: DE",
+    ],
+    steps=[
+        {
+            "action": "On 'Processors' click 'Register processor', enter the test data leaving 'Country' empty, and click 'Register processor'.",
+            "expected": "'Processor registered' appears.",
+        },
+        {
+            "action": "Search 'UAT Lab 02'.",
+            "expected": "The Country column shows 'not recorded' (in warning colour). Hovering over it explains that an export to this processor is refused until its country is recorded.",
+        },
+        {
+            "action": "Click 'Edit' on the UAT Lab 02 row.",
+            "expected": "A dialog 'Edit processor' opens with the saved values. 'Type' cannot be changed.",
+        },
+        {
+            "action": "Type 'DE' in 'Country' and click 'Save changes'.",
+            "expected": "'Processor updated' appears and the dialog closes.",
+        },
+        {
+            "action": "Look at the UAT Lab 02 row.",
+            "expected": "Country now shows 'DE' instead of 'not recorded'.",
+        },
+        {
+            "action": "Click 'Suspend' on the UAT Lab 02 row.",
+            "expected": "'Processor suspended' appears: 'UAT Lab 02 can no longer be assigned to a site.' Status changes to 'Suspended' and the 'Suspend' button disappears from the row.",
+        },
+        {
+            "action": "Set the 'Status' filter to 'Suspended'.",
+            "expected": "UAT Lab 02 is listed; the active processors are not.",
+        },
+    ],
+    pass_criteria="A processor registered without a country is flagged 'not recorded'; editing records the country and the list shows it; suspending changes the status to 'Suspended' (processors are never deleted).",
+)
+
+add(
+    title="Processor form refuses a future security date and an invalid country code",
+    feature="Processors - Register processor validation",
+    role="Administrator (admin@cmp.local)",
+    priority="High",
+    type="Negative",
+    ref="S2-04",
+    preconditions=["Tester is signed in as admin@cmp.local (the Administrator may also keep the processor register)."],
+    test_data=[
+        "Registered legal name: UAT Lab 03; Type: Lab; Contract reference: CTR-UAT-003",
+        "Future date: any date after today, e.g. 2026-12-31",
+        "Invalid country codes: 1N, I",
+    ],
+    steps=[
+        sign_in("admin@cmp.local"),
+        {
+            "action": "Click 'Processors', then 'Register processor'. Leave everything blank and click 'Register processor'.",
+            "expected": "Nothing is saved. 'The registered legal name is required' and 'A contract reference is required' appear under their fields, and 'The security confirmation date has to be a date' appears under 'Security confirmed on'.",
+        },
+        {
+            "action": "Fill 'Registered legal name' UAT Lab 03 and 'Contract reference' CTR-UAT-003. In 'Security confirmed on' pick a future date (e.g. 31 Dec 2026). Click 'Register processor'.",
+            "expected": "Nothing is saved. 'The security confirmation date cannot be in the future' appears under 'Security confirmed on'.",
+        },
+        {
+            "action": "Change 'Security confirmed on' to today's date. Type '1N' in 'Country' and click 'Register processor'.",
+            "expected": "Nothing is saved. 'Two letters: the ISO country code, e.g. IN' appears under 'Country'.",
+        },
+        {
+            "action": "Change 'Country' to 'I' (one letter) and click 'Register processor'.",
+            "expected": "The same message 'Two letters: the ISO country code, e.g. IN' appears; nothing is saved. (Typing a third letter is not possible - the field accepts at most two characters.)",
+        },
+        {
+            "action": "Click 'Cancel' and search 'UAT Lab 03'.",
+            "expected": "No processor named UAT Lab 03 exists.",
+        },
+    ],
+    pass_criteria="A security confirmation dated in the future, a malformed country code and missing required fields are each refused with a clear message, and no processor is saved.",
+)
+
+add(
+    title="Name the respondents who answer rights tickets for a processor",
+    feature="Processors - Respondents",
+    role="DPO (dpo@cmp.local); read-only check as R&D User",
+    priority="Medium",
+    type="Positive",
+    ref="Core",
+    preconditions=[
+        "Seeded processors SEED (third party) and SRIB (in-house) are Active.",
+        "Seeded account Meera Iyer (rco@cmp.local) is active.",
+    ],
+    test_data=[
+        "SEED respondent by mail - Name: UAT Respondent 01; Email address: uat.respondent01@cmp.local",
+        "SRIB respondent account: Meera Iyer (rco@cmp.local)",
+    ],
+    steps=[
+        sign_in("dpo@cmp.local"),
+        {
+            "action": "Open 'Processors' and click 'Respondents' on the SEED row.",
+            "expected": "A dialog 'Respondents · SEED' opens. A blue note explains a third party's respondent is usually a name and address, mailed and tracked by hand. Existing respondents are listed, or 'Nobody yet. Until somebody is named, the DPO types who answers on each request.'",
+        },
+        {
+            "action": "Under 'Who answers for them' keep 'Somebody at the third party, by mail' selected. Type 'UAT Respondent 01' in 'Name' and uat.respondent01@cmp.local in 'Email address'. Click 'Add respondent'.",
+            "expected": "'Respondent added' appears. The list shows 'UAT Respondent 01' with a 'by mail' badge and the email address below.",
+        },
+        {
+            "action": "Close the dialog and click 'Respondents' on the SRIB row.",
+            "expected": "A dialog 'Respondents · SRIB' opens, saying for an in-house processor a respondent is a CMP account. There is no by-mail option - only an 'Account' drop-down.",
+        },
+        {
+            "action": "In 'Account' choose 'Meera Iyer · Rco · rco@cmp.local' and click 'Add respondent'.",
+            "expected": "'Respondent added' appears. Meera Iyer is listed with the badge 'on the portal · Rco'.",
+        },
+        {
+            "action": "Click 'Remove' next to Meera Iyer.",
+            "expected": "'Respondent removed' appears and she is no longer listed.",
+        },
+        SIGN_OUT,
+        sign_in("rnd@cmp.local"),
+        {
+            "action": "Open 'Processors' and click 'Respondents' on the SEED row.",
+            "expected": "The dialog lists UAT Respondent 01 (by mail) but offers no 'Add respondent' form and no 'Remove' buttons (read-only).",
+        },
+    ],
+    pass_criteria="The DPO can name a by-mail respondent for a third party and an account respondent for an in-house team, and remove one; other roles can view but not change respondents.",
+)
+
+# ---------------------------------------------------------------- data sources
+add(
+    title="Register a data source, make somebody accountable, edit and suspend it",
+    feature="Data sources - Register source / Assign / Edit / Suspend",
+    role="DPO (dpo@cmp.local)",
+    priority="High",
+    type="Positive",
+    ref="Core",
+    preconditions=["No data source with code SRC-UAT-01 exists.", "Seeded processor SEED is Active; Arun Shetty (dco@cmp.local) is an active DCO."],
+    test_data=[
+        "Code: SRC-UAT-01; Name: UAT Rig 01; Role: Collection; Exchange mode: Manual upload",
+        "Identifier scheme: uat-local; Operated by: SEED; Authoritative for: Name",
+        "Accountable: Arun Shetty · dco@cmp.local",
+        "New name on edit: UAT Rig 01 renamed",
+    ],
+    steps=[
+        sign_in("dpo@cmp.local"),
+        {
+            "action": "In the sidebar under 'Registry' click 'Data sources', then 'Register source'.",
+            "expected": "A dialog 'Register a data source' opens with Code, Name, Role, Exchange mode, Identifier scheme, Operated by and 'Authoritative for' tick boxes.",
+        },
+        {
+            "action": "Enter the test data (Operated by 'SEED'; tick 'Name' under 'Authoritative for') and click 'Register source'.",
+            "expected": "'Source registered' appears.",
+        },
+        {
+            "action": "Tick the filter 'Nobody accountable', then search 'SRC-UAT-01'.",
+            "expected": "UAT Rig 01 (SRC-UAT-01) is listed with Processor 'SEED', Accountable 'nobody yet', Role 'Collection', Exchange 'Manual upload', Authoritative for 'Name', Status 'Active', and buttons 'Assign', 'Edit', 'Suspend'.",
+        },
+        {
+            "action": "Click 'Assign'.",
+            "expected": "A dialog 'Who is accountable for UAT Rig 01?' opens with a 'Data Collection Owner' drop-down (third-party source, so a DCO is accountable).",
+        },
+        {
+            "action": "Choose 'Arun Shetty · dco@cmp.local' and click 'Assign'.",
+            "expected": "'Source assigned' appears with 'No project is currently collecting from it.' Untick 'Nobody accountable': the row now shows Accountable 'Arun Shetty' and the button reads 'Reassign'.",
+        },
+        {
+            "action": "Click 'Edit'. In 'Edit data source' note that Code, Role, Exchange mode and Operated by cannot be changed. Change 'Name' to 'UAT Rig 01 renamed' and click 'Save changes'.",
+            "expected": "'Source updated' appears and the row shows the new name.",
+        },
+        {
+            "action": "Click 'Suspend' on the row.",
+            "expected": "'Source suspended' appears: 'Imports from UAT Rig 01 renamed are now refused.' Status is 'Suspended' and the 'Reassign' and 'Suspend' buttons are gone.",
+        },
+    ],
+    pass_criteria="A data source is registered with its operator and authoritative fields, a DCO is made accountable, its name can be edited (structural fields locked), and it can be suspended.",
+)
+
+add(
+    title="A DCO registers a data source only under a third party's processor",
+    feature="Data sources - Register source (collection owner)",
+    role="Data Collection Owner (dco@cmp.local)",
+    priority="Medium",
+    type="Positive",
+    ref="Core",
+    preconditions=["No data source with code SRC-UAT-02 exists.", "Processors SEED (third party) and SRIB (in-house) are Active."],
+    test_data=["Code: SRC-UAT-02; Name: UAT Rig 02; Role: Collection; Exchange mode: File import; Operated by: SEED"],
+    steps=[
+        sign_in("dco@cmp.local"),
+        {
+            "action": "Click 'Data sources' in the sidebar.",
+            "expected": "The 'Data sources' page opens with a 'Register source' button. Rows show no 'Edit', 'Suspend' or 'Assign' buttons for this role.",
+        },
+        {
+            "action": "Click 'Register source' and open the 'Operated by' drop-down.",
+            "expected": "'Operated by' is marked required and starts at 'Choose a processor…'. It lists third-party processors (e.g. SEED, Pune Motion Lab Pvt Ltd) but NOT the in-house SRIB.",
+        },
+        {
+            "action": "Enter the test data, choosing 'SEED' in 'Operated by', and click 'Register source'.",
+            "expected": "'Source registered' appears.",
+        },
+        {
+            "action": "Search 'SRC-UAT-02'.",
+            "expected": "UAT Rig 02 is listed with Processor 'SEED' and Status 'Active'.",
+        },
+        {
+            "action": "Look for the sidebar entry 'Processors'.",
+            "expected": "There is no 'Processors' entry for a DCO (the processor register is kept by the DPO and Administrator).",
+        },
+    ],
+    pass_criteria="A DCO can register a source but only under a third-party processor, and cannot edit, suspend or assign sources.",
+)
+
+# ---------------------------------------------------------------- restricted countries
+add(
+    title="DPO lists a restricted country with its notification, is stopped from listing it twice, and lifts it",
+    feature="Processors - Restricted countries (s.16)",
+    role="DPO (dpo@cmp.local)",
+    priority="High",
+    type="Positive",
+    ref="S2-04",
+    preconditions=["Fiji (FJ) is not currently on the restricted list.", "Nobody is running an export during this test (the list applies to every export)."],
+    test_data=["Country: fj (lower case on purpose)", "Notification: UAT G.S.R. 001(E)"],
+    steps=[
+        sign_in("dpo@cmp.local"),
+        {
+            "action": "Click 'Processors' and scroll below the list of processors.",
+            "expected": "A card 'Restricted countries (s.16)' is shown, explaining exports to a processor in a listed country are refused. It lists current restrictions or says 'No country is restricted.' It has 'Country' and 'Notification' fields and a 'Restrict' button.",
+        },
+        {
+            "action": "Type 'fj' in 'Country' only, leaving 'Notification' empty.",
+            "expected": "The 'Restrict' button stays disabled until a notification is entered.",
+        },
+        {
+            "action": "Type 'UAT G.S.R. 001(E)' in 'Notification' and click 'Restrict'.",
+            "expected": "'Country restricted' appears: 'Exports whose rows would go there are refused from now on.' The list shows 'FJ' (in capitals), 'UAT G.S.R. 001(E)', 'since <today>' and a 'Lift' button. The fields are cleared.",
+        },
+        {
+            "action": "Type 'FJ' in 'Country' and 'UAT G.S.R. 002(E)' in 'Notification' and click 'Restrict' again.",
+            "expected": "A red message 'Not restricted' appears: 'FJ is already restricted'. FJ is still listed once.",
+        },
+        {
+            "action": "Click 'Lift' next to FJ.",
+            "expected": "'FJ lifted' appears: 'Exports there are judged by the purposes again.' FJ is removed from the card.",
+        },
+        {
+            "action": "Ask the test coordinator (or an Administrator/DPO via 'Audit trail') to confirm the restriction and the lift were recorded.",
+            "expected": "Both the restriction and the lift of FJ appear in the audit trail, attributed to Priya Menon.",
+        },
+    ],
+    pass_criteria="The DPO can list a country with its notification (stored in capitals), a second active listing of the same country is refused, and the restriction can be lifted.",
+)
+
+add(
+    title="India cannot be restricted, bad country codes are refused, and only the DPO sees the restricted list",
+    feature="Processors - Restricted countries (s.16) access and validation",
+    role="DPO, Administrator, R&D User",
+    priority="High",
+    type="Negative",
+    ref="S2-04",
+    preconditions=["Seeded accounts dpo@cmp.local, admin@cmp.local and rnd@cmp.local are active."],
+    test_data=["Country: IN; Notification: UAT G.S.R. 003(E)", "Invalid country: 1A; Notification: UAT G.S.R. 004(E)"],
+    steps=[
+        sign_in("dpo@cmp.local"),
+        {
+            "action": "On 'Processors', in 'Restricted countries (s.16)', type 'IN' in 'Country' and 'UAT G.S.R. 003(E)' in 'Notification'. Click 'Restrict'.",
+            "expected": "A red message 'Not restricted' appears: 'India cannot be restricted for transfers out of India'. IN is not added to the list.",
+        },
+        {
+            "action": "Change 'Country' to '1A', 'Notification' to 'UAT G.S.R. 004(E)', and click 'Restrict'.",
+            "expected": "A red 'Not restricted' message appears refusing the code; nothing is added to the list.",
+        },
+        SIGN_OUT,
+        sign_in("admin@cmp.local"),
+        {
+            "action": "Click 'Processors' and scroll to the bottom of the page.",
+            "expected": "The processor list and 'Register processor' button are shown, but there is NO 'Restricted countries (s.16)' card.",
+        },
+        SIGN_OUT,
+        sign_in("rnd@cmp.local"),
+        {
+            "action": "Click 'Processors' and scroll to the bottom of the page.",
+            "expected": "The processor list is read-only (no 'Register processor', 'Edit' or 'Suspend'), and there is NO 'Restricted countries (s.16)' card.",
+        },
+    ],
+    pass_criteria="India and malformed codes are refused; the restricted-country card is visible and usable only by the DPO.",
+)
+
+# ---------------------------------------------------------------- messages
+add(
+    title="The office rewords the staff invitation email, previews, saves and resets it",
+    feature="Messages - edit the words of a message",
+    role="Administrator (admin@cmp.local)",
+    priority="Medium",
+    type="Positive",
+    ref="Core",
+    preconditions=["The 'Staff account invitation' message is on its default words (badge 'Default words')."],
+    test_data=["Line to add at the end of the Body: 'UAT check: welcome aboard, {full_name}.'"],
+    steps=[
+        sign_in("admin@cmp.local"),
+        {
+            "action": "In the sidebar under 'Oversight' click 'Messages'.",
+            "expected": "The 'Messages' page opens with messages grouped under headings such as 'Sign-in', 'Consent', 'Rights' and 'Staff'.",
+        },
+        {
+            "action": "Under 'Sign-in' find the card 'Staff account invitation'.",
+            "expected": "The card shows a 'Default words' badge, a 'Subject' field, a 'Body' field, the list 'Variables this message can use (click to insert)' (including {full_name}, {code}, {reset_url}) and the buttons 'Save' (disabled) and 'Preview'.",
+        },
+        {
+            "action": "Click at the end of 'Body', press Enter twice and type 'UAT check: welcome aboard, '. Then click the variable chip '{full_name}' and type '.'",
+            "expected": "The text '{full_name}' is inserted where the cursor was. The 'Save' button becomes enabled.",
+        },
+        {
+            "action": "Click 'Preview'.",
+            "expected": "A 'Preview, with sample values' box shows the email with sample values filled in, ending 'UAT check: welcome aboard, Asha Rao.'",
+        },
+        {
+            "action": "Click 'Save'.",
+            "expected": "'Words saved' appears ('Staff account invitation (Email) now sends what you wrote.'). The card now shows a 'Customised' badge 'by System Admin on <today>'.",
+        },
+        {
+            "action": "Click 'Reset to default'.",
+            "expected": "Two buttons appear: 'Yes, use the default words' and 'Keep mine'.",
+        },
+        {
+            "action": "Click 'Yes, use the default words'.",
+            "expected": "'Back to the default' appears. The card shows 'Default words' again and the added line is gone.",
+        },
+    ],
+    pass_criteria="The office can reword a message using the offered variables, preview it with sample values, save it (shown as Customised with who/when), and return to the default words.",
+)
+
+add(
+    title="A message that uses a variable it does not provide is refused",
+    feature="Messages - variable check",
+    role="DPO (dpo@cmp.local)",
+    priority="Medium",
+    type="Negative",
+    ref="Core",
+    preconditions=["Tester is signed in as dpo@cmp.local.", "The 'Staff sign-in code' message is on its default words."],
+    test_data=["Body: 'Dear {full_name}, your code is {code}.'"],
+    steps=[
+        {
+            "action": "Click 'Messages' and find the card 'Staff sign-in code' under 'Sign-in'.",
+            "expected": "The card shows its 'Subject', 'Body' and the variables it can use. {full_name} is NOT in its variable list.",
+        },
+        {
+            "action": "Replace the whole 'Body' with 'Dear {full_name}, your code is {code}.' and click 'Save'.",
+            "expected": "The words are not saved. A red message in the card refuses the save, naming {full_name} and listing the variables that are allowed (including {code}).",
+        },
+        {
+            "action": "Change the 'Body' to 'Your code is {code}.' (only an allowed variable) and click 'Preview' - do NOT click 'Save'.",
+            "expected": "The red message goes away and 'Preview, with sample values' shows 'Your code is 482913.' (a sample code).",
+        },
+        {
+            "action": "Reload the page and look at the 'Staff sign-in code' card.",
+            "expected": "It still shows 'Default words' and the original body.",
+        },
+    ],
+    pass_criteria="A save naming a variable the message does not provide is refused with a message that names it, and the stored words are unchanged.",
+)
+
+# ---------------------------------------------------------------- delegation
+add(
+    title="A Data Collection Owner delegates their work to a colleague for a period and ends it",
+    feature="Delegate - Delegate my work",
+    role="Data Collection Owner (dco@cmp.local), colleague UAT DCO 01, DPO",
+    priority="Medium",
+    type="Positive",
+    ref="Core",
+    preconditions=[
+        "REG-01 and REG-02 completed: UAT DCO 01 (uat.dco01@cmp.local, password UatPassw0rd!2026) is an Active Data Collection Owner.",
+        "Arun Shetty has no live delegation.",
+    ],
+    test_data=[
+        "Who takes over: UAT DCO 01 · uat.dco01@cmp.local",
+        "Until: 7 days from today",
+        "Why: UAT - annual leave cover",
+    ],
+    steps=[
+        sign_in("dco@cmp.local"),
+        {
+            "action": "In the sidebar under 'Oversight' click 'Delegate'.",
+            "expected": "The 'Delegate' page opens with a 'Delegate my work' button and the cards 'My delegations' ('You have not delegated your work to anybody') and 'Work delegated to me'.",
+        },
+        {
+            "action": "Click 'Delegate my work' and open the 'Who takes over' drop-down.",
+            "expected": "A dialog 'Delegate my work' opens. 'Who takes over' lists colleagues in the same role, including 'UAT DCO 01 · uat.dco01@cmp.local'.",
+        },
+        {
+            "action": "Choose UAT DCO 01, set 'Until' to 7 days from today, type 'UAT - annual leave cover' in 'Why' and click 'Delegate'.",
+            "expected": "'Work delegated' appears. 'My delegations' lists UAT DCO 01 with 'until <date>' and the quoted reason, and an 'End now' button.",
+        },
+        SIGN_OUT,
+        sign_in("uat.dco01@cmp.local", "UatPassw0rd!2026", "UAT DCO 01", "Data Collection Owner"),
+        {
+            "action": "Click 'Delegate'.",
+            "expected": "'Work delegated to me' lists Arun Shetty with the end date.",
+        },
+        SIGN_OUT,
+        sign_in("dco@cmp.local"),
+        {
+            "action": "Click 'Delegate' and click 'End now' on the UAT DCO 01 arrangement.",
+            "expected": "'Delegation ended' appears. The arrangement is no longer live (marked 'ended' or removed, with no 'End now' button).",
+        },
+    ],
+    pass_criteria="A DCO can delegate to a same-role colleague for a set period with a reason; the colleague sees it under 'Work delegated to me'; either party can end it.",
+)
+
+add(
+    title="Delegation is not offered where it does not apply",
+    feature="Delegate - access by role",
+    role="R&D User, Administrator, DPO",
+    priority="Low",
+    type="Negative",
+    ref="Core",
+    preconditions=["Only one DPO account (dpo@cmp.local) exists.", "Seeded accounts rnd@cmp.local and admin@cmp.local are active."],
+    test_data=["Direct address: http://localhost:3000/delegate"],
+    steps=[
+        sign_in("rnd@cmp.local"),
+        {
+            "action": "Look through the sidebar, then open http://localhost:3000/delegate directly.",
+            "expected": "There is no 'Delegate' entry; the address shows 'Not part of your account' with 'Back to your dashboard'.",
+        },
+        SIGN_OUT,
+        sign_in("admin@cmp.local"),
+        {
+            "action": "Click 'Delegate'.",
+            "expected": "The page shows NO 'Delegate my work' button; a blue note explains delegation applies to roles whose access is defined by assignment. An 'Everyone, right now' card shows live arrangements across the organisation (or 'No delegation is in place').",
+        },
+        SIGN_OUT,
+        sign_in("dpo@cmp.local"),
+        {
+            "action": "Click 'Delegate', then 'Delegate my work'.",
+            "expected": "The dialog shows 'There is nobody else in your role to delegate to…'. 'Who takes over' is disabled and the 'Delegate' button cannot be clicked.",
+        },
+    ],
+    pass_criteria="R&D Users cannot reach Delegate, the Administrator can only oversee (not arrange), and a DPO with no same-role colleague cannot delegate.",
+)
+
+for i, c in enumerate(cases, 1):
+    c["id"] = f"REG-{i:02d}"
+
+ORDER = ["id", "area", "title", "feature", "role", "priority", "type", "ref",
+         "preconditions", "test_data", "steps", "pass_criteria"]
+cases = [{k: c[k] for k in ORDER} for c in cases]
+
+# Cross-references in preconditions were written against this numbering.
+with open(OUT, "w") as f:
+    json.dump(cases, f, indent=2, ensure_ascii=False)
+print(len(cases), [len(c["steps"]) for c in cases])

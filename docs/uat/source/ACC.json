@@ -1,0 +1,966 @@
+[
+  {
+    "id": "ACC-01",
+    "area": "Access and accounts",
+    "title": "Sign in to the console with password and email code",
+    "feature": "Staff sign-in and second factor",
+    "role": "DPO on console",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "Use a fresh private/incognito browser window in which nobody is signed in to the console or the portal (both sites share one sign-in on this machine).",
+      "The test coordinator can read the test outbox."
+    ],
+    "test_data": [
+      "Email or username: dpo@cmp.local",
+      "Password: SeedPassw0rd!2026"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3000 in the browser.",
+        "expected": "You are taken to the page headed 'Sign in' with the text 'Sign in with your password, then the code sent to your email.' It shows the fields 'Email or username' and 'Password', a 'Sign in' button, a 'Forgotten your password?' link and, at the bottom, a 'Go to the consent portal' link."
+      },
+      {
+        "action": "Type dpo@cmp.local in 'Email or username' and SeedPassw0rd!2026 in 'Password', then click 'Sign in'.",
+        "expected": "The page changes to 'Verify it is you' with the text 'Your role requires a second factor. We have sent a 6-digit code to your registered email.' There is a '6-digit code' box, a 'Verify and continue' button, a 'Send a new code' link and a 'Start over' link."
+      },
+      {
+        "action": "Without typing a code, look at the 'Verify and continue' button. Then type only 3 digits into '6-digit code'.",
+        "expected": "'Verify and continue' stays greyed out (disabled) until exactly six digits are entered. Letters typed into the box are ignored."
+      },
+      {
+        "action": "Ask the test coordinator for the code sent to dpo@cmp.local (from the test outbox). Clear the box, type the six-digit code into '6-digit code' and click 'Verify and continue'. Do this within 5 minutes of step 2.",
+        "expected": "You are signed in and land on the Dashboard. The page heading reads 'Good day, Priya'."
+      },
+      {
+        "action": "Look at the top right of the header.",
+        "expected": "The header shows the name 'Priya Menon' with a 'DPO' role badge and the initials 'PM'."
+      },
+      {
+        "action": "Look at the left-hand sidebar.",
+        "expected": "The sidebar shows the sections Overview, Governance, Consent, Registry, Data movement, Oversight and You. Under Oversight there are 'Rights requests', 'Audit trail', 'Users', 'Delegate' and 'Messages'; under You there are 'Tickets for you', 'Notifications' and 'Your profile'. A 'Sign out' button is at the bottom of the sidebar."
+      }
+    ],
+    "pass_criteria": "The DPO can sign in only after entering both the password and the emailed six-digit code, and then lands on the dashboard greeted by first name with the DPO role shown."
+  },
+  {
+    "id": "ACC-02",
+    "area": "Access and accounts",
+    "title": "Check each staff role lands on its own dashboard and menu",
+    "feature": "Role-based landing page and navigation",
+    "role": "DCO and Administrator on console",
+    "priority": "Medium",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "A fresh private/incognito browser window with nobody signed in.",
+      "The test coordinator can read the test outbox."
+    ],
+    "test_data": [
+      "DCO: dco@cmp.local (Arun Shetty)",
+      "Administrator: admin@cmp.local (System Admin)",
+      "Password for both: SeedPassw0rd!2026"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3000/sign-in. Type dco@cmp.local in 'Email or username' and SeedPassw0rd!2026 in 'Password' and click 'Sign in'.",
+        "expected": "The 'Verify it is you' page appears: the DCO also needs the second factor."
+      },
+      {
+        "action": "Ask the test coordinator for the code sent to dco@cmp.local (from the test outbox), type it into '6-digit code' and click 'Verify and continue'.",
+        "expected": "The Dashboard opens with the heading 'Good day, Arun'. The header shows 'Arun Shetty' with the role badge 'Data Collection Owner'."
+      },
+      {
+        "action": "Read the sidebar menu from top to bottom.",
+        "expected": "The menu shows exactly: Dashboard; Projects; Consents, Consent links, Collection sites; Data sources; Collections, Exports, Imports; Delegate; Tickets for you, Notifications, Your profile. There is no 'Approvals', 'Notices', 'Purposes', 'Audit trail', 'Users' or 'Messages'."
+      },
+      {
+        "action": "In the address bar, open http://localhost:3000/users.",
+        "expected": "The users register is not shown. The sidebar stays, and the page shows a notice titled 'Not part of your account' reading 'This section belongs to a different role, so there is nothing here for you.' with a 'Back to your dashboard' button."
+      },
+      {
+        "action": "Click 'Sign out' at the bottom of the sidebar.",
+        "expected": "You are returned to the 'Sign in' page."
+      },
+      {
+        "action": "Sign in as admin@cmp.local with SeedPassw0rd!2026, then enter the code the test coordinator gives you for admin@cmp.local (from the test outbox) and click 'Verify and continue'.",
+        "expected": "The Dashboard opens with the heading 'Good day, System'. The header shows 'System Admin' with the role badge 'Administrator'."
+      },
+      {
+        "action": "Read the sidebar menu.",
+        "expected": "The menu shows: Dashboard; Processors, Data sources; Grievances about the DPO, Audit trail, Users, Delegate, Messages; Tickets for you, Notifications, Your profile. There is no 'Projects', 'Consents' or 'Consent links'. The rights item is labelled 'Grievances about the DPO', not 'Rights requests'."
+      },
+      {
+        "action": "Click 'Sign out'.",
+        "expected": "You are returned to the 'Sign in' page."
+      }
+    ],
+    "pass_criteria": "Each role sees only the menu items for its role after sign-in, and the header shows the correct name and role badge."
+  },
+  {
+    "id": "ACC-03",
+    "area": "Access and accounts",
+    "title": "Refuse a wrong password without saying which part was wrong",
+    "feature": "Staff sign-in - failed attempts",
+    "role": "Staff user on console",
+    "priority": "High",
+    "type": "Negative",
+    "ref": "Core",
+    "preconditions": [
+      "A fresh private/incognito browser window with nobody signed in.",
+      "Do not make more than 3 wrong attempts on dpo@cmp.local in this case: 5 wrong attempts in 30 minutes lock the account (see ACC-05)."
+    ],
+    "test_data": [
+      "Real account: dpo@cmp.local with wrong password WrongPassword!1",
+      "Account that does not exist: nobody-here@cmp.local with password SeedPassw0rd!2026",
+      "Data principal (has no password): subject@cmp.local with password SeedPassw0rd!2026"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3000/sign-in and click 'Sign in' without typing anything.",
+        "expected": "The form is not sent. Under 'Email or username' the message 'Enter your email address or username' appears, and under 'Password' the message 'Enter your password' appears."
+      },
+      {
+        "action": "Type dpo@cmp.local in 'Email or username' and WrongPassword!1 in 'Password'. Click 'Sign in'.",
+        "expected": "You stay on the 'Sign in' page. A red banner above the fields reads 'Those credentials are not valid'. No code page is shown."
+      },
+      {
+        "action": "Change 'Email or username' to nobody-here@cmp.local, type SeedPassw0rd!2026 in 'Password' and click 'Sign in'.",
+        "expected": "The same red banner 'Those credentials are not valid' appears. The message does not say that the account does not exist."
+      },
+      {
+        "action": "Change 'Email or username' to subject@cmp.local, type SeedPassw0rd!2026 in 'Password' and click 'Sign in'.",
+        "expected": "The same red banner 'Those credentials are not valid' appears. A data principal cannot sign in to the console."
+      },
+      {
+        "action": "Now type dpo@cmp.local with the correct password SeedPassw0rd!2026 and click 'Sign in'.",
+        "expected": "The 'Verify it is you' code page appears, showing that the earlier failures did not block a correct sign-in. (You can click 'Start over' to stop here.)"
+      }
+    ],
+    "pass_criteria": "Every failed sign-in shows the same message 'Those credentials are not valid', whatever the reason, and the correct password still reaches the code step."
+  },
+  {
+    "id": "ACC-04",
+    "area": "Access and accounts",
+    "title": "Refuse a wrong or replaced sign-in code on the console",
+    "feature": "Staff second factor - code step",
+    "role": "DPO on console",
+    "priority": "High",
+    "type": "Negative",
+    "ref": "Core",
+    "preconditions": [
+      "A fresh private/incognito browser window with nobody signed in.",
+      "The test coordinator can read the test outbox.",
+      "No more than 3 new codes may be requested for one account in 10 minutes."
+    ],
+    "test_data": [
+      "Email or username: dpo@cmp.local",
+      "Password: SeedPassw0rd!2026",
+      "Wrong code: 000000"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3000/sign-in, sign in with dpo@cmp.local and SeedPassw0rd!2026 and click 'Sign in'.",
+        "expected": "The 'Verify it is you' page appears."
+      },
+      {
+        "action": "Type 000000 into '6-digit code' and click 'Verify and continue'.",
+        "expected": "You stay on the code page. A red banner reads 'Invalid or expired code'."
+      },
+      {
+        "action": "Ask the test coordinator for the code sent to dpo@cmp.local (from the test outbox) and write it down as Code A. Do not enter it yet. Click 'Send a new code'.",
+        "expected": "The link briefly reads 'Sending…', then a blue banner reads 'A new code has been sent. The previous one no longer works.' The code box is emptied."
+      },
+      {
+        "action": "Type Code A into '6-digit code' and click 'Verify and continue'.",
+        "expected": "The old code is refused with the red banner 'Invalid or expired code'."
+      },
+      {
+        "action": "Click 'Start over'.",
+        "expected": "You are back on the 'Sign in' page with the password form."
+      },
+      {
+        "action": "Sign in again with dpo@cmp.local and SeedPassw0rd!2026, ask the test coordinator for the newest code sent to dpo@cmp.local (from the test outbox), type it and click 'Verify and continue'.",
+        "expected": "The newest code is accepted and the Dashboard opens with 'Good day, Priya'."
+      }
+    ],
+    "pass_criteria": "A wrong code and a code replaced by 'Send a new code' are both refused with 'Invalid or expired code', and only the latest code signs the user in."
+  },
+  {
+    "id": "ACC-05",
+    "area": "Access and accounts",
+    "title": "Lock a staff account after five wrong passwords",
+    "feature": "Staff sign-in - account lockout",
+    "role": "R&D User on console",
+    "priority": "Medium",
+    "type": "Negative",
+    "ref": "Core",
+    "preconditions": [
+      "Agree with the test coordinator before running: this locks rnd@cmp.local for about 30 minutes, so nobody else may need that account during that time.",
+      "A fresh private/incognito browser window with nobody signed in.",
+      "Nobody has signed in to rnd@cmp.local successfully and nobody has failed a sign-in to it in the last 30 minutes."
+    ],
+    "test_data": [
+      "Email or username: rnd@cmp.local (Kavya Rao, R&D User)",
+      "Wrong password: NotThePassword!9",
+      "Correct password: SeedPassw0rd!2026"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3000/sign-in. Type rnd@cmp.local and NotThePassword!9 and click 'Sign in'.",
+        "expected": "Red banner: 'Those credentials are not valid'."
+      },
+      {
+        "action": "Repeat the same wrong attempt three more times (attempts 2, 3 and 4).",
+        "expected": "Each time the red banner reads 'Those credentials are not valid'."
+      },
+      {
+        "action": "Make a fifth attempt with the same wrong password.",
+        "expected": "The red banner still reads 'Those credentials are not valid' (the lock is set now, but this answer does not reveal it)."
+      },
+      {
+        "action": "Now type the correct password SeedPassw0rd!2026 for rnd@cmp.local and click 'Sign in'.",
+        "expected": "Sign-in is refused even with the correct password. The red banner reads 'Too many failed attempts. Try again later. Try again in about 30 minutes.' (the number of minutes may be slightly lower). No code page is shown."
+      },
+      {
+        "action": "Wait until the 30-minute lock has passed (or ask the test coordinator to confirm it has expired), then sign in with rnd@cmp.local and SeedPassw0rd!2026.",
+        "expected": "The 'Verify it is you' code page appears; the lock has lifted by itself without an administrator."
+      }
+    ],
+    "pass_criteria": "After five wrong passwords the account refuses even the correct password with a 'Too many failed attempts' message for about 30 minutes, and then works again on its own."
+  },
+  {
+    "id": "ACC-06",
+    "area": "Access and accounts",
+    "title": "Sign out of the console and confirm the session has ended",
+    "feature": "Staff sign-out",
+    "role": "DCO Admin on console",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "Signed in to the console as dcoadmin@cmp.local (Nikhil Bose) using the password and code, in a private/incognito window."
+    ],
+    "test_data": [
+      "Account: dcoadmin@cmp.local / SeedPassw0rd!2026"
+    ],
+    "steps": [
+      {
+        "action": "Check the header after signing in.",
+        "expected": "The Dashboard shows 'Good day, Nikhil' and the header shows 'Nikhil Bose' with the role badge 'DCO Admin'."
+      },
+      {
+        "action": "Click 'Data sources' in the sidebar.",
+        "expected": "The Data sources page opens."
+      },
+      {
+        "action": "Click 'Sign out' at the bottom of the sidebar.",
+        "expected": "You are taken to the 'Sign in' page."
+      },
+      {
+        "action": "Click the browser's Back button.",
+        "expected": "The Data sources page is not shown again with data; you end up on the 'Sign in' page."
+      },
+      {
+        "action": "Type http://localhost:3000/dashboard into the address bar and press Enter.",
+        "expected": "You are sent to the 'Sign in' page (the address now contains 'next='), not to the dashboard."
+      }
+    ],
+    "pass_criteria": "After 'Sign out' no console page can be reached again by the Back button or a typed address without signing in again."
+  },
+  {
+    "id": "ACC-07",
+    "area": "Access and accounts",
+    "title": "Follow a link while signed out and return to it after sign-in",
+    "feature": "Console sign-in redirects",
+    "role": "DPO on console",
+    "priority": "Medium",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "A fresh private/incognito browser window with nobody signed in.",
+      "The test coordinator can read the test outbox."
+    ],
+    "test_data": [
+      "Account: dpo@cmp.local / SeedPassw0rd!2026",
+      "Link to follow: http://localhost:3000/purposes"
+    ],
+    "steps": [
+      {
+        "action": "Type http://localhost:3000/purposes into the address bar and press Enter.",
+        "expected": "No Purposes data is shown. You are taken to the 'Sign in' page and the address contains 'next=' followed by '/purposes' (shown as %2Fpurposes)."
+      },
+      {
+        "action": "Sign in with dpo@cmp.local and SeedPassw0rd!2026 and click 'Sign in'.",
+        "expected": "The 'Verify it is you' page appears and its address still carries 'next=' for purposes."
+      },
+      {
+        "action": "Enter the code the test coordinator gives you for dpo@cmp.local (from the test outbox) and click 'Verify and continue'.",
+        "expected": "You land directly on the page headed 'Purposes', not on the Dashboard."
+      },
+      {
+        "action": "While still signed in, type http://localhost:3000/sign-in into the address bar and press Enter.",
+        "expected": "The sign-in form does not stay on screen; you are sent straight to the Dashboard ('Good day, Priya')."
+      },
+      {
+        "action": "In the same window, open http://localhost:3001/my-consents (the data principal portal).",
+        "expected": "The portal shows a page headed 'This portal is for data principals' with the text 'You are signed in as Priya Menon, a staff account. Your console is a separate site.' and the buttons 'Go to the staff console' and 'Sign out'."
+      },
+      {
+        "action": "Click 'Go to the staff console'.",
+        "expected": "The console opens and shows the Dashboard, still signed in."
+      },
+      {
+        "action": "Click 'Sign out' in the sidebar. Then type http://localhost:3000/sign-in/verify into the address bar and press Enter.",
+        "expected": "With no sign-in in progress, the code page does not stay on screen; you are taken to the 'Sign in' page."
+      }
+    ],
+    "pass_criteria": "A signed-out link leads to sign-in and then back to the page asked for; a signed-in user is never shown the sign-in form again, and the portal tells a staff session where it belongs."
+  },
+  {
+    "id": "ACC-08",
+    "area": "Access and accounts",
+    "title": "Add a personal email and end another session from Your profile",
+    "feature": "Staff account page (Your profile)",
+    "role": "R&D User on console",
+    "priority": "Medium",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "rnd@cmp.local is not locked (ACC-05 not run in the last 30 minutes).",
+      "Two separate browsers (for example Chrome and Edge, or a normal and a private window) are available.",
+      "The test coordinator can read the test outbox."
+    ],
+    "test_data": [
+      "Account: rnd@cmp.local (Kavya Rao) / SeedPassw0rd!2026",
+      "Personal email to add: tester01-kavya@example.org (make it unique if already used)"
+    ],
+    "steps": [
+      {
+        "action": "In browser 1, sign in to http://localhost:3000 as rnd@cmp.local with the password and code. Click 'Your profile' in the sidebar.",
+        "expected": "The page 'Your account' opens with three tabs - 'Contacts' (selected), 'Active sessions' with a count, and 'Password' - and the 'Identity' card beside them. Identity shows Name 'Kavya Rao', Role 'R&D User', Status 'Active' and a 'Session expires' time about 8 hours from now."
+      },
+      {
+        "action": "On the 'Contacts' tab, look at the 'Work email' row.",
+        "expected": "It shows rnd@cmp.local with a 'Confirmed' badge. It has no 'Change', 'Add' or 'Remove' button."
+      },
+      {
+        "action": "In the 'Personal email' row, click 'Add' (or 'Change' if one is already there). Type tester01-kavya@example.org in the 'Personal email' box and click 'Save and send a code'.",
+        "expected": "A green toast 'Saved' says 'We have sent a code to tester01-kavya@example.org.' The row shows the address with a 'Not confirmed' badge and a 'Six-digit code' box with 'Confirm' and 'Later' buttons."
+      },
+      {
+        "action": "Type 000000 into 'Six-digit code' and click 'Confirm'.",
+        "expected": "A red message 'Invalid or expired code' appears in the row; the address stays 'Not confirmed'."
+      },
+      {
+        "action": "Ask the test coordinator for the code sent to tester01-kavya@example.org (from the test outbox). Replace the digits with it and click 'Confirm'.",
+        "expected": "A green toast 'Confirmed' says 'tester01-kavya@example.org can now sign you in.' The row now shows a 'Confirmed' badge."
+      },
+      {
+        "action": "In browser 2, sign in to http://localhost:3000 as rnd@cmp.local with the password and a new code. Go back to browser 1 and refresh the 'Your account' page and click the 'Active sessions' tab.",
+        "expected": "The tab's count is 2 or more, and a table lists the sessions with 'Device' (for example 'Chrome on Windows'), 'Address', 'Last active' and 'Expires'. The one for browser 1 is marked 'this device' and has no button; the other has an 'End session' button. 'End all other sessions' is shown above the table."
+      },
+      {
+        "action": "In browser 1, click 'End session' on the other session.",
+        "expected": "A green toast 'Session ended' appears; that row disappears from the table and the tab's count drops to 1."
+      },
+      {
+        "action": "In browser 2, click any sidebar item (for example 'Projects').",
+        "expected": "Browser 2 is sent to the 'Sign in' page: its session was ended from browser 1."
+      }
+    ],
+    "pass_criteria": "A member of staff can add and confirm a personal email with the code sent to it, cannot edit the work email, and can end another of their own sessions from the 'Active sessions' tab."
+  },
+  {
+    "id": "ACC-09",
+    "area": "Access and accounts",
+    "title": "Create a new data principal account with mobile and email",
+    "feature": "Portal sign-up",
+    "role": "New data principal on portal",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "S2-01",
+    "preconditions": [
+      "The portal is running at http://localhost:3001.",
+      "A fresh private/incognito browser window with nobody signed in.",
+      "The mobile and email below have never been registered (make up new ones if needed).",
+      "The test coordinator can read the test outbox."
+    ],
+    "test_data": [
+      "Full name: Tester One",
+      "Mobile number: +91 98111 22301 (made up; form +91 98xxx xxxxx)",
+      "Email address: tester01@example.org",
+      "Date of birth: 15 August 1990",
+      "Wrong codes: 000000 and 000000"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3001. On the 'Sign in' page, click 'Create an account'.",
+        "expected": "The page 'Create your account' opens with the text 'For people whose data is being collected. Staff accounts are issued by your administrator.' It has the fields 'Full name', 'Mobile number', 'Email address' (marked optional in its hint) and 'Date of birth', and a 'Create account' button."
+      },
+      {
+        "action": "Read the hint under 'Date of birth'.",
+        "expected": "It reads 'The law protects people under 18 differently, so we ask before an account is opened.' It does not mention a parent or guardian."
+      },
+      {
+        "action": "Fill in Full name 'Tester One', Mobile number '+91 98111 22301', Email address 'tester01@example.org' and Date of birth 15 August 1990. Click 'Create account'.",
+        "expected": "The page 'Confirm your contacts' opens with the text 'If those details are new to us, a code has gone to your mobile and another to your email. Enter both.' It shows 'Code sent to your mobile' (with the mobile number under it), 'Code sent to your email' (with the email under it) and a 'Confirm and sign in' button."
+      },
+      {
+        "action": "Type 000000 in both code boxes and click 'Confirm and sign in'.",
+        "expected": "You stay on the page. A red banner reads 'Invalid or expired code'."
+      },
+      {
+        "action": "Ask the test coordinator for the code sent to +91 98111 22301 and the code sent to tester01@example.org (both from the test outbox). Replace the digits in each box with the matching code and click 'Confirm and sign in'.",
+        "expected": "Both codes are accepted even though a wrong pair was tried first. You are signed in and land on the page headed 'Your consents'."
+      },
+      {
+        "action": "Look at the header and the sidebar.",
+        "expected": "The header shows 'Tester One' with the role badge 'Data Subject'. The sidebar shows 'My consents', 'My requests', 'Notifications', 'Your profile' and 'Sign out'. There is no 'We need your date of birth' notice."
+      },
+      {
+        "action": "Click 'Your profile'.",
+        "expected": "'Your account' opens. Identity shows Name 'Tester One', Mobile and Email as entered, Role 'Data Subject', Status 'Active' and Date of birth 15 Aug 1990 (no under-18 badge). In Contacts, the mobile and email both show 'Confirmed'."
+      }
+    ],
+    "pass_criteria": "A new adult can register with a mobile, an optional email and a date of birth, must confirm every contact given with its own code, and is then signed in to 'Your consents'."
+  },
+  {
+    "id": "ACC-10",
+    "area": "Access and accounts",
+    "title": "Refuse sign-up for a person under 18 with no guardian route",
+    "feature": "Portal sign-up - age check",
+    "role": "New data principal on portal",
+    "priority": "High",
+    "type": "Negative",
+    "ref": "S2-01",
+    "preconditions": [
+      "A fresh private/incognito browser window with nobody signed in.",
+      "The mobile below has never been registered.",
+      "The test coordinator can read the test outbox."
+    ],
+    "test_data": [
+      "Full name: Minor Tester",
+      "Mobile number: +91 98111 22302 (made up)",
+      "Email address: leave empty",
+      "Date of birth: a date less than 18 years before today, e.g. 10 May 2012",
+      "Boundary check: the day after today's date 18 years ago (e.g. if today is 24 Sep 2026, use 25 Sep 2008)"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3001/sign-up. Fill in Full name 'Minor Tester', Mobile number '+91 98111 22302', leave Email address empty, and set Date of birth to 10 May 2012. Click 'Create account'.",
+        "expected": "No account is created and you stay on 'Create your account'. A red message says the person cannot be registered because they are under eighteen. The expected wording is 'We cannot register or record consent for a person under eighteen. If you think your date of birth is wrong, contact the Privacy Office.'"
+      },
+      {
+        "action": "Read the whole page, including the message and the hints.",
+        "expected": "Nothing on the page offers a parent, guardian or 'register on behalf of a child' option; the 'Confirm your contacts' step is not shown."
+      },
+      {
+        "action": "Change Date of birth to the boundary date (one day short of 18 years ago) and click 'Create account' again.",
+        "expected": "The same refusal is shown: a person one day short of 18 is still refused."
+      },
+      {
+        "action": "Click 'Sign in' at the bottom of the page. On the 'Sign in' page keep 'Mobile' selected, type +91 98111 22302 in 'Mobile number' and click 'Send me a code'.",
+        "expected": "The page shows 'Check your messages' and 'If +91 98111 22302 is registered with us, a six-digit code is on its way.' (the same neutral wording as for any number)."
+      },
+      {
+        "action": "Ask the test coordinator to check the test outbox for any message to +91 98111 22302.",
+        "expected": "The coordinator confirms that no registration code and no sign-in code was sent to that number: no account exists for it."
+      }
+    ],
+    "pass_criteria": "A date of birth under 18 is refused at sign-up with a message that offers no guardian route, and no account or code is created for that mobile."
+  },
+  {
+    "id": "ACC-11",
+    "area": "Access and accounts",
+    "title": "Reject a future date of birth and badly formed details at sign-up",
+    "feature": "Portal sign-up - field checks",
+    "role": "New data principal on portal",
+    "priority": "Medium",
+    "type": "Negative",
+    "ref": "S2-01",
+    "preconditions": [
+      "A fresh private/incognito browser window with nobody signed in."
+    ],
+    "test_data": [
+      "Mobile with letters: 98abc12345",
+      "Badly formed email: tester01@",
+      "Future date of birth: 1 January 2030 (type it if the calendar will not let you pick it)",
+      "Valid values for the rest: Full name 'Tester Two', Mobile '+91 98111 22303'"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3001/sign-up and click 'Create account' without filling anything in.",
+        "expected": "Nothing is sent. Messages appear under the fields: 'Enter your full name', 'A mobile number is required' and 'Enter your date of birth'. 'Email address' shows no error because it is optional."
+      },
+      {
+        "action": "Type 'Tester Two' in 'Full name', '98abc12345' in 'Mobile number' and 'tester01@' in 'Email address'. Click 'Create account'.",
+        "expected": "Under 'Mobile number': 'A mobile number may contain digits, spaces, dashes and a leading +'. Under 'Email address': 'That does not look like an email address'."
+      },
+      {
+        "action": "Correct the mobile to '+91 98111 22303' and clear 'Email address'. Type 1 January 2030 into 'Date of birth' and click 'Create account'.",
+        "expected": "Under 'Date of birth': 'Date of birth must be in the past'. The page stays on 'Create your account'."
+      },
+      {
+        "action": "Type today's date into 'Date of birth' and click 'Create account'.",
+        "expected": "The same message 'Date of birth must be in the past' appears; today is not accepted."
+      },
+      {
+        "action": "Click 'Sign in' at the bottom of the page without submitting further.",
+        "expected": "The portal 'Sign in' page opens; no account was created for +91 98111 22303 (the coordinator can confirm no code was written for it in the test outbox)."
+      }
+    ],
+    "pass_criteria": "Sign-up will not proceed with missing details, a malformed mobile or email, or a date of birth that is today or in the future, and each problem is named under its own field."
+  },
+  {
+    "id": "ACC-12",
+    "area": "Access and accounts",
+    "title": "Stop sign-up with a mobile or email that is already registered",
+    "feature": "Portal sign-up - contact already registered",
+    "role": "New data principal on portal",
+    "priority": "Medium",
+    "type": "Negative",
+    "ref": "Core",
+    "preconditions": [
+      "A fresh private/incognito browser window with nobody signed in.",
+      "The seeded data principal Anjali Verma exists with mobile +91 90000 00001 and email subject@cmp.local."
+    ],
+    "test_data": [
+      "Taken mobile: +91 90000 00001",
+      "Taken email: subject@cmp.local",
+      "New mobile for the email check: +91 98111 22304 (made up)",
+      "Date of birth: 1 March 1985"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3001/sign-up. Fill in Full name 'Tester Three', Mobile number '+91 90000 00001', leave Email address empty, Date of birth 1 March 1985. Click 'Create account'.",
+        "expected": "You stay on 'Create your account'. A yellow notice titled 'That mobile is already registered' says 'If it is yours, sign in with it - there is no password, we send a code. Otherwise change it below.' Under 'Mobile number' the message reads 'An account already exists with this mobile. Sign in with it instead, or use a different mobile.'"
+      },
+      {
+        "action": "Check the notice for a link.",
+        "expected": "The notice has a link 'Sign in with this mobile'. The 'Confirm your contacts' step is not shown."
+      },
+      {
+        "action": "Change Mobile number to '+91 98111 22304', type 'subject@cmp.local' in Email address and click 'Create account'.",
+        "expected": "The notice now reads 'That email is already registered' with a link 'Sign in with this email', and the message under 'Email address' reads 'An account already exists with this email. Sign in with it instead, or use a different email.'"
+      },
+      {
+        "action": "Click 'Sign in with this email'.",
+        "expected": "The portal 'Sign in' page opens with 'Email' selected under 'Sign in with' and subject@cmp.local already filled in the 'Email address' box. (Do not click 'Send me a code' unless you intend to sign in as Anjali.)"
+      }
+    ],
+    "pass_criteria": "Sign-up refuses a mobile or email that already belongs to an account, says which one on its field, and offers sign-in with that contact filled in."
+  },
+  {
+    "id": "ACC-13",
+    "area": "Access and accounts",
+    "title": "Sign in to the portal with a one-time code sent to the mobile",
+    "feature": "Portal sign-in (mobile code)",
+    "role": "Data principal on portal",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "A fresh private/incognito browser window with nobody signed in.",
+      "The test coordinator can read the test outbox.",
+      "No more than 5 codes may be requested for one contact per hour."
+    ],
+    "test_data": [
+      "Data principal: Anjali Verma",
+      "Mobile number: +91 90000 00001"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3001.",
+        "expected": "The page headed 'Sign in' opens with the text 'Enter the mobile number or email address you registered with and we will send you a one-time code.' Under 'Sign in with' the 'Mobile' option is selected. At the bottom are 'Create an account', 'Your rights and how to exercise them', 'Act on their behalf here' and 'Sign in to the console'."
+      },
+      {
+        "action": "Type +91 90000 00001 into 'Mobile number' and click 'Send me a code'.",
+        "expected": "A blue notice 'Check your messages' reads 'If +91 90000 00001 is registered with us, a six-digit code is on its way. It expires in ten minutes.' Below it are a 'Six-digit code' box, a 'Verify' button (disabled until six digits are typed) and a 'Use a different contact' button."
+      },
+      {
+        "action": "Ask the test coordinator for the code sent to +91 90000 00001 (from the test outbox). Type it into 'Six-digit code' and click 'Verify'.",
+        "expected": "You land on the page headed 'Your consents'. The header shows 'Anjali Verma' with the role badge 'Data Subject'."
+      },
+      {
+        "action": "Look at the sidebar.",
+        "expected": "Under 'Your data' are 'My consents' and 'My requests'; under 'You' are 'Notifications' and 'Your profile'; 'Sign out' is at the bottom. There is no staff menu and no staff-account notice."
+      },
+      {
+        "action": "Click 'My requests'.",
+        "expected": "The page headed 'Your requests' opens."
+      },
+      {
+        "action": "Click 'Sign out' in the sidebar.",
+        "expected": "You are taken back to the portal 'Sign in' page."
+      },
+      {
+        "action": "Type http://localhost:3001/my-consents into the address bar and press Enter.",
+        "expected": "You are sent to the 'Sign in' page instead of seeing the consents."
+      }
+    ],
+    "pass_criteria": "A registered data principal signs in with just the code sent to her mobile, lands on 'Your consents', and after 'Sign out' can no longer open her pages."
+  },
+  {
+    "id": "ACC-14",
+    "area": "Access and accounts",
+    "title": "Refuse a wrong portal code and stay neutral about unknown contacts",
+    "feature": "Portal sign-in (email code) - failures",
+    "role": "Data principal on portal",
+    "priority": "High",
+    "type": "Negative",
+    "ref": "Core",
+    "preconditions": [
+      "A fresh private/incognito browser window with nobody signed in.",
+      "The test coordinator can read the test outbox."
+    ],
+    "test_data": [
+      "Registered email: subject@cmp.local (Anjali Verma)",
+      "Unregistered email: nobody-registered@example.org",
+      "Wrong code: 123456"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3001/sign-in. Under 'Sign in with' choose 'Email'.",
+        "expected": "The field label changes from 'Mobile number' to 'Email address'."
+      },
+      {
+        "action": "Type nobody-registered@example.org and click 'Send me a code'.",
+        "expected": "The same 'Check your messages' notice appears: 'If nobody-registered@example.org is registered with us, a six-digit code is on its way.' Nothing says the address is unknown. (The coordinator can confirm no code was written to the test outbox for it.)"
+      },
+      {
+        "action": "Click 'Use a different contact'.",
+        "expected": "The form returns to the contact step with the 'Send me a code' button."
+      },
+      {
+        "action": "Choose 'Email', type subject@cmp.local and click 'Send me a code'.",
+        "expected": "'Check your messages' appears for subject@cmp.local with the 'Six-digit code' box."
+      },
+      {
+        "action": "Type 123456 into 'Six-digit code' and click 'Verify'.",
+        "expected": "You stay on the page. A red banner reads 'Invalid or expired code'."
+      },
+      {
+        "action": "Ask the test coordinator for the code sent to subject@cmp.local (from the test outbox). Replace the digits and click 'Verify'.",
+        "expected": "The correct code is accepted and you land on 'Your consents' as Anjali Verma."
+      },
+      {
+        "action": "Click 'Sign out'.",
+        "expected": "You are back on the portal 'Sign in' page."
+      }
+    ],
+    "pass_criteria": "A wrong code is refused with 'Invalid or expired code', the portal answers identically for registered and unregistered contacts, and the right code signs in by email."
+  },
+  {
+    "id": "ACC-15",
+    "area": "Access and accounts",
+    "title": "Ask for a missing date of birth at the next portal sign-in",
+    "feature": "Date-of-birth prompt for accounts with no age on record",
+    "role": "Account with no date of birth, as data principal on portal",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "S2-01",
+    "preconditions": [
+      "The test coordinator confirms that rco@cmp.local (Meera Iyer) has no date of birth recorded. If it already has one, the coordinator names another account with none.",
+      "A date of birth, once saved, cannot be removed from the screens, so this case can be run only once per account.",
+      "A fresh private/incognito browser window with nobody signed in.",
+      "The test coordinator can read the test outbox."
+    ],
+    "test_data": [
+      "Sign-in email: rco@cmp.local",
+      "Future date to try first: 1 January 2030",
+      "Valid date of birth: 21 July 1985"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3001/sign-in, choose 'Email', type rco@cmp.local, click 'Send me a code', then enter the code the test coordinator gives you for rco@cmp.local (from the test outbox) and click 'Verify'.",
+        "expected": "You land on 'Your consents'. Above the list is a blue notice titled 'We need your date of birth' reading 'You can withdraw a consent or make a request without it, but we need it before you give a new consent.' with an 'Add it now' link."
+      },
+      {
+        "action": "Click 'My requests' in the sidebar.",
+        "expected": "The page 'Your requests' opens normally, with the same 'We need your date of birth' notice above it. Nothing blocks this page."
+      },
+      {
+        "action": "Click 'Notifications' in the sidebar.",
+        "expected": "Instead of the notifications, a card headed 'Your date of birth' appears: 'The law protects people under 18 differently, and we do not have your date of birth yet. We need it before you can give a new consent.' It has a 'Date of birth' field, a 'Save and continue' button and links 'withdraw a consent' and 'make a request'."
+      },
+      {
+        "action": "Click 'Your profile' in the sidebar.",
+        "expected": "The same 'Your date of birth' card appears instead of the account page."
+      },
+      {
+        "action": "Click the 'make a request' link on the card.",
+        "expected": "'Your requests' opens without answering the question."
+      },
+      {
+        "action": "Go back to 'Your consents' and click 'Add it now' in the notice.",
+        "expected": "The 'Your date of birth' question is shown so the date can be added. (Record a defect if the link just reloads 'Your consents'.)"
+      },
+      {
+        "action": "Click 'Your profile' to reach the 'Your date of birth' card. Type 1 January 2030 into 'Date of birth' and click 'Save and continue'.",
+        "expected": "The date is refused with 'Date of birth must be in the past' under the field; the card stays."
+      },
+      {
+        "action": "Change 'Date of birth' to 21 July 1985 and click 'Save and continue'.",
+        "expected": "The card disappears and the 'Your account' page opens. In Identity, 'Date of birth' shows 21 Jul 1985 with no under-18 badge."
+      },
+      {
+        "action": "Click 'My consents' and then 'Notifications'.",
+        "expected": "The 'We need your date of birth' notice no longer appears on 'Your consents', and 'Notifications' opens normally."
+      },
+      {
+        "action": "Click 'Sign out', sign in again with rco@cmp.local and a new code.",
+        "expected": "You land on 'Your consents' with no date-of-birth notice; the question is not asked again."
+      }
+    ],
+    "pass_criteria": "An account with no date of birth is asked for one on every page except My consents and My requests, which stay usable with a reminder; a future date is refused and a valid date clears the prompt for good."
+  },
+  {
+    "id": "ACC-16",
+    "area": "Access and accounts",
+    "title": "Sign in to the portal with a staff email and act only as a data principal",
+    "feature": "Staff member on the portal",
+    "role": "DPO signing in on the portal",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "A fresh private/incognito browser window in which nobody is signed in to the console or the portal (a console session in the same window would send you to the console instead).",
+      "The test coordinator can read the test outbox."
+    ],
+    "test_data": [
+      "Sign-in email: dpo@cmp.local (Priya Menon)",
+      "If asked for a date of birth: 21 July 1985"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3001/sign-in, choose 'Email', type dpo@cmp.local and click 'Send me a code'.",
+        "expected": "'Check your messages' appears with the 'Six-digit code' box. No password is asked for."
+      },
+      {
+        "action": "Enter the code the test coordinator gives you for dpo@cmp.local (from the test outbox) and click 'Verify'.",
+        "expected": "You land on 'Your consents'. A line across the top reads 'You are signed in with your staff account, as a data principal. Only your own consents, requests and rights are here; your console is a separate site.'"
+      },
+      {
+        "action": "Look at the header and sidebar.",
+        "expected": "The header shows 'Priya Menon' with the role badge 'Data Subject' (not 'DPO'). The sidebar has only 'My consents', 'My requests', 'Notifications', 'Your profile' and 'Sign out'."
+      },
+      {
+        "action": "Click 'Your profile'. If the 'Your date of birth' card appears, enter 21 July 1985 and click 'Save and continue'.",
+        "expected": "'Your account' opens. In Identity, Role shows 'Data Subject' and an 'Account' line reads 'Your staff account, used here as a data principal.' In Contacts, the 'Email' row shows dpo@cmp.local with the hint 'Your staff address, managed by your organisation. If you may lose it one day, add a personal one below.' and no 'Change' button."
+      },
+      {
+        "action": "In the same window, open http://localhost:3000/users (the console).",
+        "expected": "No user list is shown. The console shows a page headed 'This console is for staff' reading 'You are signed in as Priya Menon. Your consents, your requests and your rights are on the consent portal.' with the buttons 'Go to the consent portal' and 'Sign out'."
+      },
+      {
+        "action": "Open http://localhost:3000/sign-in in the same window.",
+        "expected": "The console sign-in form does not stay; you are sent to the portal (http://localhost:3001), because this window holds a data principal session."
+      },
+      {
+        "action": "On the portal click 'Sign out'. Then sign in to the console at http://localhost:3000/sign-in as dpo@cmp.local with SeedPassw0rd!2026 and the emailed code.",
+        "expected": "The console asks for the password and the code, and only then shows the full DPO Dashboard with the 'DPO' badge. The portal code alone never gave DPO access."
+      }
+    ],
+    "pass_criteria": "A staff email signs in to the portal with a code but the session is only a data principal's: it is labelled as the staff account, shows only the principal's own pages, and cannot open the console."
+  },
+  {
+    "id": "ACC-17",
+    "area": "Access and accounts",
+    "title": "Add a second email on the portal and sign in with it once confirmed",
+    "feature": "Portal account - second email",
+    "role": "Data principal on portal",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "ACC-09 has been passed, so the tester owns the account Tester One (+91 98111 22301, tester01@example.org).",
+      "Signed in to the portal as Tester One in a private/incognito window.",
+      "The test coordinator can read the test outbox."
+    ],
+    "test_data": [
+      "Second email: tester01-personal@example.org",
+      "The account's own first email (should be refused as a second one): tester01@example.org",
+      "Email already used by another account: subject@cmp.local"
+    ],
+    "steps": [
+      {
+        "action": "Click 'Your profile'.",
+        "expected": "'Your account' opens. Contacts lists 'Email' (tester01@example.org, 'Confirmed', no Change button), 'Mobile' (with 'Change') and 'Second email' ('None given', with 'Add'). Identity shows a 'Session expires' time about 8 hours after you signed in."
+      },
+      {
+        "action": "In the 'Second email' row click 'Add', type tester01@example.org and click 'Save and send a code'.",
+        "expected": "A red message in the row reads 'That is already the address on your account'."
+      },
+      {
+        "action": "Replace it with subject@cmp.local and click 'Save and send a code'.",
+        "expected": "A red message reads 'That address belongs to another account'."
+      },
+      {
+        "action": "Replace it with tester01-personal@example.org and click 'Save and send a code'.",
+        "expected": "Green toast 'Saved': 'We have sent a code to tester01-personal@example.org.' The row shows the address with 'Not confirmed' and a 'Six-digit code' box with 'Confirm' and 'Later'."
+      },
+      {
+        "action": "Click 'Later'. Then click 'Sign out'. On 'Sign in', choose 'Email', type tester01-personal@example.org and click 'Send me a code'.",
+        "expected": "The neutral 'Check your messages' notice appears, but the test coordinator confirms that no sign-in code was sent to tester01-personal@example.org: an unconfirmed address cannot sign anyone in."
+      },
+      {
+        "action": "Click 'Use a different contact' and sign in with the mobile +91 98111 22301 and its code from the test coordinator. Open 'Your profile'.",
+        "expected": "The 'Second email' row shows tester01-personal@example.org with 'Not confirmed' and a 'Send a code' button."
+      },
+      {
+        "action": "Click 'Send a code'. Enter the code the test coordinator gives you for tester01-personal@example.org and click 'Confirm'.",
+        "expected": "Green toast 'Confirmed': 'tester01-personal@example.org can now sign you in.' The row shows 'Confirmed' and a 'Remove' button."
+      },
+      {
+        "action": "Click 'Sign out'. Sign in with 'Email' tester01-personal@example.org and the code the test coordinator gives you for it.",
+        "expected": "You are signed in as Tester One and land on 'Your consents'."
+      }
+    ],
+    "pass_criteria": "A second email is added only after its own code is confirmed, cannot sign in before that, can sign in afterwards, and duplicates of own or another account's address are refused."
+  },
+  {
+    "id": "ACC-18",
+    "area": "Access and accounts",
+    "title": "Change the mobile number on the portal and confirm it with a code",
+    "feature": "Portal account - mobile",
+    "role": "Data principal on portal",
+    "priority": "Medium",
+    "type": "Negative",
+    "ref": "Core",
+    "preconditions": [
+      "ACC-09 has been passed, so the tester owns the account Tester One.",
+      "Signed in to the portal as Tester One in a private/incognito window.",
+      "The test coordinator can read the test outbox."
+    ],
+    "test_data": [
+      "Mobile already belonging to another account: +91 90000 00001",
+      "New mobile: +91 98111 22399 (made up, never registered)",
+      "Wrong code: 000000"
+    ],
+    "steps": [
+      {
+        "action": "Click 'Your profile'. In the 'Mobile' row click 'Change'.",
+        "expected": "A 'Mobile' box opens, already filled with the current number, with the buttons 'Save and send a code' and 'Cancel'."
+      },
+      {
+        "action": "Replace the number with +91 90000 00001 and click 'Save and send a code'.",
+        "expected": "A red message in the row reads 'That mobile belongs to another account'. The mobile is not changed."
+      },
+      {
+        "action": "Replace the number with +91 98111 22399 and click 'Save and send a code'.",
+        "expected": "Green toast 'Saved': 'We have sent a code to +91 98111 22399.' The row shows the new number with 'Not confirmed' and a 'Six-digit code' box (hint: 'Sent to the contact above. It expires in ten minutes.')."
+      },
+      {
+        "action": "Type 000000 and click 'Confirm'.",
+        "expected": "A red message 'Invalid or expired code' appears; the number stays 'Not confirmed'."
+      },
+      {
+        "action": "Click 'Later', then click 'Change' on the Mobile row and, without editing the number, click 'Save and send a code'.",
+        "expected": "A new code is sent (toast 'Saved': 'We have sent a code to +91 98111 22399.') and the 'Six-digit code' box appears again."
+      },
+      {
+        "action": "Enter the newest code the test coordinator gives you for +91 98111 22399 (from the test outbox) and click 'Confirm'.",
+        "expected": "Green toast 'Confirmed': '+91 98111 22399 can now sign you in.' The row shows 'Confirmed'."
+      },
+      {
+        "action": "Click 'Change' on the Mobile row again and, without editing, click 'Save and send a code'.",
+        "expected": "Toast 'Saved': 'That contact is already confirmed, so no code was needed.' No code box appears and the badge stays 'Confirmed'."
+      },
+      {
+        "action": "Click 'Sign out' and sign in with 'Mobile' +91 98111 22399 and the code the test coordinator gives you.",
+        "expected": "You are signed in as Tester One and land on 'Your consents'."
+      }
+    ],
+    "pass_criteria": "A new mobile is refused if another account holds it, is not confirmed by a wrong code, is confirmed by the right code, and then signs the principal in."
+  },
+  {
+    "id": "ACC-19",
+    "area": "Access and accounts",
+    "title": "Check portal page redirects for signed-in, signed-out and staff visitors",
+    "feature": "Portal sign-in redirects",
+    "role": "Data principal on portal",
+    "priority": "Medium",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "A fresh private/incognito browser window with nobody signed in.",
+      "The test coordinator can read the test outbox."
+    ],
+    "test_data": [
+      "Data principal: subject@cmp.local (Anjali Verma)",
+      "Deep link: http://localhost:3001/my-requests",
+      "Staff code-step address: http://localhost:3001/sign-in/verify"
+    ],
+    "steps": [
+      {
+        "action": "Type http://localhost:3001/sign-in/verify into the address bar and press Enter.",
+        "expected": "A page headed 'Verify it is you' briefly says 'Staff sign in on the console. Taking you there.' and you are then taken to the console (http://localhost:3000). With no sign-in in progress, the console shows its 'Sign in' page. There is no 'page not found'."
+      },
+      {
+        "action": "Type http://localhost:3001/my-requests into the address bar and press Enter.",
+        "expected": "You are sent to the portal 'Sign in' page; the address contains 'next=' followed by the my-requests path."
+      },
+      {
+        "action": "Choose 'Email', type subject@cmp.local, click 'Send me a code', enter the code the test coordinator gives you for subject@cmp.local (from the test outbox) and click 'Verify'.",
+        "expected": "You land on 'Your requests' (the page you asked for), not on 'Your consents'."
+      },
+      {
+        "action": "While signed in, type http://localhost:3001/sign-in into the address bar and press Enter.",
+        "expected": "The sign-in form does not stay; you are sent to 'Your consents'."
+      },
+      {
+        "action": "Type http://localhost:3001/sign-up and press Enter.",
+        "expected": "The sign-up form does not stay; you are sent to 'Your consents'."
+      },
+      {
+        "action": "Type http://localhost:3001 and press Enter.",
+        "expected": "The portal home goes straight to 'Your consents'."
+      },
+      {
+        "action": "Click 'Sign out'.",
+        "expected": "You are back on the portal 'Sign in' page."
+      }
+    ],
+    "pass_criteria": "The portal sends signed-out visitors to sign-in and back to the page they wanted, never shows sign-in or sign-up to someone already signed in, and forwards the staff code address to the console instead of a missing page."
+  },
+  {
+    "id": "ACC-20",
+    "area": "Access and accounts",
+    "title": "End a portal session after 30 minutes without activity",
+    "feature": "Session idle timeout",
+    "role": "Data principal on portal",
+    "priority": "Low",
+    "type": "Negative",
+    "ref": "Core",
+    "preconditions": [
+      "A fresh private/incognito browser window with nobody signed in.",
+      "The tester can leave the browser untouched for at least 31 minutes.",
+      "The test coordinator can read the test outbox."
+    ],
+    "test_data": [
+      "Data principal: +91 90000 00001 (Anjali Verma)"
+    ],
+    "steps": [
+      {
+        "action": "Sign in to http://localhost:3001 with 'Mobile' +91 90000 00001 and the code the test coordinator gives you. Click 'Your profile' and note the 'Session expires' time in Identity.",
+        "expected": "'Your account' opens. 'Session expires' is about 8 hours after the sign-in time (the absolute limit)."
+      },
+      {
+        "action": "Click 'My consents'. Then leave the browser completely untouched (no clicks, no typing, do not switch to this window) for 31 minutes.",
+        "expected": "Nothing visible happens while you wait."
+      },
+      {
+        "action": "After 31 minutes, return to the window and, if you are still on 'Your consents', click 'My requests'.",
+        "expected": "Your data is not shown any more. As soon as you return to the window, or at the latest when you click, you are taken to the portal 'Sign in' page (the address carries 'next='), because the session ended after 30 minutes without activity."
+      },
+      {
+        "action": "Sign in again with the mobile and a new code from the test coordinator.",
+        "expected": "You are signed in again and land on the page named in the address ('Your consents' or 'Your requests'), not on a blank or error page."
+      }
+    ],
+    "pass_criteria": "A portal session left unused for more than 30 minutes ends by itself and the next action leads to sign-in, well before the 8-hour absolute limit."
+  }
+]

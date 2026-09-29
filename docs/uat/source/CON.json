@@ -1,0 +1,1190 @@
+[
+  {
+    "id": "CON-01",
+    "area": "Consent and data exchange",
+    "title": "A registered data principal gives consent through the link using her mobile",
+    "feature": "Consent link: identify, confirm, read the notice, choose, receipt",
+    "role": "Data principal (Anjali Verma)",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "The data-principal portal is open at http://localhost:3001 in a fresh private (incognito) browser window, so no earlier sign-in carries over.",
+      "You have the live consent link for the CIT site of the seeded project 'Gait Identification Study 2026' (valid until 8 Oct 2026) from the test coordinator, or one the DCO created from the console in PRJ-18. It looks like http://localhost:3001/c/<long code>.",
+      "The test coordinator is available to read six-digit codes from the test outbox and relay them to you.",
+      "Anjali Verma (subject@cmp.local, +91 90000 00001) is a registered data principal who has already given her date of birth."
+    ],
+    "test_data": [
+      "Mobile: +91 90000 00001",
+      "Choices: 'Gait model training' = I agree; 'Recording quality assurance' = I agree"
+    ],
+    "steps": [
+      {
+        "action": "Open the CIT consent link.",
+        "expected": "The page opens with a coloured banner showing 'Gait Identification Study 2026' and 'CIT'. A step bar shows 'Your details', 'Confirm', 'The notice', 'Done' with 'Your details' current. A card 'Your details' says consent is recorded against your account so you can read and withdraw it."
+      },
+      {
+        "action": "Look at the form before typing anything.",
+        "expected": "Under 'Send my code to' the 'Mobile' option is already selected ('Email' is the other option). There is ONE box, 'Mobile number', with the hint 'The one your account is registered with.' There is no box for a name, date of birth or a second contact. 'Send the code' is greyed out. Below it: 'No account yet? Create one — it takes a minute, and this page will be waiting when you come back.'"
+      },
+      {
+        "action": "Type +91 90000 00001 in 'Mobile number' and click 'Send the code'.",
+        "expected": "The card changes to 'Confirm your mobile': 'We have sent a six-digit code to +91 90000 00001. It expires in ten minutes.' The step bar moves to 'Confirm'."
+      },
+      {
+        "action": "Type only five digits in 'Six-digit code'.",
+        "expected": "The box accepts digits only, and 'Confirm and read the notice' stays greyed out."
+      },
+      {
+        "action": "Complete the code with the one the coordinator relays and click 'Confirm and read the notice'.",
+        "expected": "No date-of-birth question appears (Anjali already gave one). The step bar moves to 'The notice'. A 'Read this in' dropdown shows 'English'. A card 'The notice' shows the notice text (starting 'NOTICE UNDER SECTION 5, DIGITAL PERSONAL DATA PROTECTION ACT 2023'), then 'Data Protection Officer:', 'Who else sees your data:', the links 'Exercise your rights', 'Withdraw consent', 'Complain to the Data Protection Board', and 'Version 1 · content hash …'."
+      },
+      {
+        "action": "Scroll to the card 'What are you agreeing to?'.",
+        "expected": "Two purposes are listed: 'Gait model training' and 'Recording quality assurance'. Each shows a description, 'What this allows:', 'Data collected:' and 'Kept for:', and two buttons of the same size, 'I agree' and 'I do not agree'. NEITHER button is selected on either purpose. 'Record my choices' is greyed out and the line 'Answer every purpose above, or decline the whole notice.' is shown. 'Decline everything' is active and the same size as 'Record my choices'."
+      },
+      {
+        "action": "Click 'I agree' on 'Gait model training' only.",
+        "expected": "That choice is highlighted. 'Record my choices' is still greyed out and the line 'Answer every purpose above, or decline the whole notice.' is still shown."
+      },
+      {
+        "action": "On 'Recording quality assurance' click 'I do not agree', then change your mind and click 'I agree'.",
+        "expected": "The highlight moves from 'I do not agree' to 'I agree'. 'Record my choices' becomes active and the 'Answer every purpose above…' line disappears."
+      },
+      {
+        "action": "Click 'Record my choices'.",
+        "expected": "The step bar moves to 'Done'. A green tick and the heading 'Your choices are recorded' appear, with 'We have sent you a receipt. You can review or withdraw your consent at any time - withdrawing is as easy as this was.' Below: 'Your reference:' followed by a long code (write it down), and the links 'Review your consents' and 'Your rights'."
+      },
+      {
+        "action": "Ask the coordinator to look in the test outbox for +91 90000 00001.",
+        "expected": "A receipt message for this consent is in the outbox."
+      },
+      {
+        "action": "Click 'Review your consents'.",
+        "expected": "The portal page 'Your consents' opens, signed in as Anjali, with a card 'Gait Identification Study 2026', status 'Consented' and the line 'You agreed to 2 of 2 purpose(s).'"
+      }
+    ],
+    "pass_criteria": "Only one contact and a code were asked for; no purpose was pre-selected; the consent could only be recorded once every purpose was answered; the Done step shows 'Your choices are recorded' with a reference; a receipt was sent; the record shows as Consented, 2 of 2."
+  },
+  {
+    "id": "CON-02",
+    "area": "Consent and data exchange",
+    "title": "The link never reveals whether a contact is registered, and a wrong code is refused",
+    "feature": "Consent link: neutral identification and code check",
+    "role": "Anyone holding the link (visitor)",
+    "priority": "High",
+    "type": "Negative",
+    "ref": "Core",
+    "preconditions": [
+      "The data-principal portal is open at http://localhost:3001 in a fresh private (incognito) browser window, so no earlier sign-in carries over.",
+      "You have the live consent link for the CIT site of the seeded project 'Gait Identification Study 2026' (valid until 8 Oct 2026) from the test coordinator, or one the DCO created from the console in PRJ-18. It looks like http://localhost:3001/c/<long code>.",
+      "The test coordinator is available to read six-digit codes from the test outbox and relay them to you.",
+      "The coordinator confirms that +91 98100 00002 and tester09@example.org are NOT registered on the platform."
+    ],
+    "test_data": [
+      "Unregistered mobile: +91 98100 00002",
+      "Unregistered email: tester09@example.org",
+      "Registered mobile: +91 90000 00001 (Anjali Verma)",
+      "Wrong code: 123456 (any six digits that are not the code sent)"
+    ],
+    "steps": [
+      {
+        "action": "Open the CIT consent link and look at the 'Your details' card.",
+        "expected": "The line 'No account yet? Create one — …' is already shown, before anything is typed (it is offered to everybody)."
+      },
+      {
+        "action": "With 'Mobile' selected, type +91 98100 00002 in 'Mobile number' and click 'Send the code'.",
+        "expected": "The card changes to 'Confirm your mobile' with 'We have sent a six-digit code to +91 98100 00002. It expires in ten minutes.' There is NO message saying the number is unknown or not registered."
+      },
+      {
+        "action": "Ask the coordinator to check the test outbox for +91 98100 00002.",
+        "expected": "No message was sent to that number."
+      },
+      {
+        "action": "Type 123456 in 'Six-digit code' and click 'Confirm and read the notice'.",
+        "expected": "A red message 'Invalid or expired code' appears. The page stays on 'Confirm your mobile' with the code box; no notice is shown."
+      },
+      {
+        "action": "Reload the page. Under 'Send my code to' select 'Email', type tester09@example.org in 'Email address' and click 'Send the code'.",
+        "expected": "The card 'Confirm your email' says 'We have sent a six-digit code to tester09@example.org. It expires in ten minutes.' Nothing hints that the address is unknown."
+      },
+      {
+        "action": "Reload the page. With 'Mobile' selected type +91 90000 00001 (a registered number) and click 'Send the code'.",
+        "expected": "The screen and wording are exactly the same as in step 2; only the number differs. A visitor cannot tell a registered number from an unregistered one."
+      },
+      {
+        "action": "Type 123456 (not the code that was sent) and click 'Confirm and read the notice'.",
+        "expected": "The red message 'Invalid or expired code' appears and the page stays on the code step."
+      },
+      {
+        "action": "Clear the box, type the correct code relayed by the coordinator and click 'Confirm and read the notice'.",
+        "expected": "The notice opens, proving the earlier wrong attempt did not break the flow. Close the browser tab WITHOUT clicking 'Record my choices' or 'Decline everything'."
+      }
+    ],
+    "pass_criteria": "Registered and unregistered contacts get word-for-word the same response; no code is sent to an unregistered contact; a wrong code never opens the notice and shows 'Invalid or expired code'."
+  },
+  {
+    "id": "CON-03",
+    "area": "Consent and data exchange",
+    "title": "A person with no account uses 'Create one', signs up and returns to the link, then consents in Hindi to one purpose",
+    "feature": "Consent link: 'Create one' to sign-up and back; language switch; partial consent",
+    "role": "New data principal (UAT Tester One)",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "The data-principal portal is open at http://localhost:3001 in a fresh private (incognito) browser window, so no earlier sign-in carries over.",
+      "You have the live consent link for the CIT site of the seeded project 'Gait Identification Study 2026' (valid until 8 Oct 2026) from the test coordinator, or one the DCO created from the console in PRJ-18. It looks like http://localhost:3001/c/<long code>.",
+      "The test coordinator is available to read six-digit codes from the test outbox and relay them to you.",
+      "The coordinator confirms +91 98100 00011 and tester01@example.org are not registered."
+    ],
+    "test_data": [
+      "Full name: UAT Tester One",
+      "Mobile number: +91 98100 00011",
+      "Email address: tester01@example.org",
+      "Date of birth: 15/05/1990",
+      "Language: हिन्दी (Hindi)",
+      "Choices: 'Gait model training' = I agree; 'Recording quality assurance' = I do not agree"
+    ],
+    "steps": [
+      {
+        "action": "Open the CIT consent link and click 'Create one' on the 'Your details' card.",
+        "expected": "The page 'Create your account' opens ('For people whose data is being collected. Staff accounts are issued by your administrator.'). The address bar shows /sign-up?next= followed by the consent link's address."
+      },
+      {
+        "action": "Fill in 'Full name', 'Mobile number', 'Email address' and 'Date of birth' with the test data and click 'Create account'.",
+        "expected": "The page 'Confirm your contacts' opens: 'If those details are new to us, a code has gone to your mobile and another to your email. Enter both.' Two boxes are shown: 'Code sent to your mobile' and 'Code sent to your email'."
+      },
+      {
+        "action": "Type only the mobile code the coordinator relays.",
+        "expected": "'Confirm and sign in' stays greyed out until both six-digit codes are entered."
+      },
+      {
+        "action": "Type the email code as well and click 'Confirm and sign in'.",
+        "expected": "You are taken straight back to the same consent link page (banner 'Gait Identification Study 2026' / 'CIT', card 'Your details'), not to your consents page."
+      },
+      {
+        "action": "On the 'Your details' card select 'Email' under 'Send my code to', type tester01@example.org in 'Email address' and click 'Send the code'.",
+        "expected": "The card changes to 'Confirm your email' and says 'We have sent a six-digit code to tester01@example.org. It expires in ten minutes.' The step bar at the top moves from 'Your details' to 'Confirm'."
+      },
+      {
+        "action": "Type the code the coordinator relays and click 'Confirm and read the notice'.",
+        "expected": "The notice opens directly. No 'Your date of birth' question appears, because it was given at sign-up."
+      },
+      {
+        "action": "In 'Read this in' choose 'हिन्दी'.",
+        "expected": "The notice text changes to Hindi (it starts 'धारा 5, डिजिटल व्यक्तिगत डेटा संरक्षण अधिनियम 2023'). The purposes and the 'I agree' / 'I do not agree' buttons are still shown."
+      },
+      {
+        "action": "Switch 'Read this in' to 'English', then back to 'हिन्दी'.",
+        "expected": "The text switches each time without any error message. Hindi is showing at the end."
+      },
+      {
+        "action": "With Hindi showing, click 'I agree' on 'Gait model training' and 'I do not agree' on 'Recording quality assurance', then click 'Record my choices'.",
+        "expected": "The Done step shows 'Your choices are recorded' and 'Your reference:' with a code."
+      },
+      {
+        "action": "Click 'Review your consents'.",
+        "expected": "'Your consents' opens with a card 'Gait Identification Study 2026' whose small line reads 'NTC-GAIT-2026 v1 · hindi · <date and time>', status 'Partial', and 'You agreed to 1 of 2 purpose(s).'"
+      }
+    ],
+    "pass_criteria": "'Create one' leads to sign-up and back to the same link; the link still asks for one contact and a code; the notice can be read in Hindi; a partial answer is recorded as Partial, 1 of 2, in Hindi."
+  },
+  {
+    "id": "CON-04",
+    "area": "Consent and data exchange",
+    "title": "A person signs up on the portal first, then declines everything at the link",
+    "feature": "Portal sign-up (mobile only); Decline everything; declined record",
+    "role": "New data principal (UAT Tester Two)",
+    "priority": "Medium",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "The data-principal portal is open at http://localhost:3001 in a fresh private (incognito) browser window, so no earlier sign-in carries over.",
+      "You have the live consent link for the CIT site of the seeded project 'Gait Identification Study 2026' (valid until 8 Oct 2026) from the test coordinator, or one the DCO created from the console in PRJ-18. It looks like http://localhost:3001/c/<long code>.",
+      "The test coordinator is available to read six-digit codes from the test outbox and relay them to you.",
+      "The coordinator confirms +91 98100 00022 is not registered."
+    ],
+    "test_data": [
+      "Full name: UAT Tester Two",
+      "Mobile number: +91 98100 00022",
+      "Email address: leave empty",
+      "Date of birth: 02/11/1988"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3001/sign-in and click 'Create an account' (under 'Never registered with us?').",
+        "expected": "The page 'Create your account' opens with 'Full name', 'Mobile number', 'Email address' (hint starts 'Optional.') and 'Date of birth', and a 'Create account' button."
+      },
+      {
+        "action": "Click 'Create account' with every field empty.",
+        "expected": "Nothing is sent. Messages appear under the fields, including 'Enter your full name' and 'Enter your date of birth'."
+      },
+      {
+        "action": "Fill in 'Full name', 'Mobile number' and 'Date of birth' from the test data, leave 'Email address' empty and click 'Create account'.",
+        "expected": "'Confirm your contacts' opens with 'If that number is new to us, a code has gone to your mobile. Enter it to finish.' and only one box, 'Code sent to your mobile'."
+      },
+      {
+        "action": "Type the code the coordinator relays and click 'Confirm and sign in'.",
+        "expected": "You are signed in and 'Your consents' opens with the empty message 'No consent records' / 'When you agree to a notice, it will appear here.'"
+      },
+      {
+        "action": "In the same browser window open the CIT consent link. Leave 'Mobile' selected, type +91 98100 00022, click 'Send the code', type the relayed code and click 'Confirm and read the notice'.",
+        "expected": "The notice opens with the two purposes, neither pre-selected."
+      },
+      {
+        "action": "Without answering any purpose, click 'Decline everything'.",
+        "expected": "The Done step shows a grey cross, the heading 'You have declined' and 'Nothing will be collected from you for this project. You can come back to this link if you change your mind.' plus 'Your reference:' with a code. It does not look like an error."
+      },
+      {
+        "action": "Click 'Review your consents'.",
+        "expected": "The card 'Gait Identification Study 2026' shows status 'Declined' and 'You were asked about 2 purpose(s) and agreed to none.' The first button reads 'See what you were asked'. There is no 'Withdraw everything' button."
+      },
+      {
+        "action": "Click 'See what you were asked'.",
+        "expected": "Both purposes are listed with the badge 'Declined' and no 'Withdraw just this one' button."
+      }
+    ],
+    "pass_criteria": "Sign-up works with a mobile only; 'Decline everything' works without answering purposes and is recorded as a decision ('You have declined', status Declined, agreed to none)."
+  },
+  {
+    "id": "CON-05",
+    "area": "Consent and data exchange",
+    "title": "An account with no date of birth is asked for it before the notice is shown",
+    "feature": "Consent link: 'Your date of birth' step (S2-01)",
+    "role": "Member of staff acting as a data principal (Nikhil Bose, DCO Admin)",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "S2-01",
+    "preconditions": [
+      "The data-principal portal is open at http://localhost:3001 in a fresh private (incognito) browser window, so no earlier sign-in carries over.",
+      "You have the live consent link for the CIT site of the seeded project 'Gait Identification Study 2026' (valid until 8 Oct 2026) from the test coordinator, or one the DCO created from the console in PRJ-18. It looks like http://localhost:3001/c/<long code>.",
+      "The test coordinator is available to read six-digit codes from the test outbox and relay them to you.",
+      "Nikhil Bose (dcoadmin@cmp.local) has never given a date of birth (staff accounts have none until they give one). The coordinator confirms this before the test."
+    ],
+    "test_data": [
+      "Email: dcoadmin@cmp.local",
+      "First try: tomorrow's date",
+      "Date of birth: 21/07/1985",
+      "Choices: both purposes = I agree"
+    ],
+    "steps": [
+      {
+        "action": "Open the CIT consent link. On the 'Your details' card select 'Email' under 'Send my code to', type dcoadmin@cmp.local in 'Email address' and click 'Send the code'.",
+        "expected": "The card changes to 'Confirm your email' and says 'We have sent a six-digit code to dcoadmin@cmp.local. It expires in ten minutes.' The step bar at the top moves from 'Your details' to 'Confirm'."
+      },
+      {
+        "action": "Type the code the coordinator relays and click 'Confirm and read the notice'.",
+        "expected": "Instead of the notice, a card 'Your date of birth' appears: 'The law protects people under 18 differently, and we do not have your date of birth yet. We need it before you can give a new consent.' with a 'Date of birth' field and a 'Save and continue' button. The step bar still shows 'Confirm'. No notice text is visible yet."
+      },
+      {
+        "action": "Click 'Save and continue' with the field empty.",
+        "expected": "The message 'Enter your date of birth' appears and nothing is saved."
+      },
+      {
+        "action": "Enter tomorrow's date in 'Date of birth' and click 'Save and continue'.",
+        "expected": "The message 'Date of birth must be in the past' appears (or the date picker will not allow a future date). The notice is not shown."
+      },
+      {
+        "action": "Enter 21/07/1985 and click 'Save and continue'.",
+        "expected": "The step bar moves to 'The notice' and the notice with its two purposes is shown."
+      },
+      {
+        "action": "Click 'I agree' on both purposes and click 'Record my choices'.",
+        "expected": "The Done step shows 'Your choices are recorded' with a reference."
+      },
+      {
+        "action": "Click 'Review your consents'.",
+        "expected": "'Your consents' shows the card 'Gait Identification Study 2026' with status 'Consented' and 'You agreed to 2 of 2 purpose(s).'"
+      },
+      {
+        "action": "Open the CIT consent link again in a new private window, identify with dcoadmin@cmp.local and the new code, and click 'Confirm and read the notice'.",
+        "expected": "The notice opens directly; the date-of-birth question is NOT asked again. Close the tab without recording anything."
+      }
+    ],
+    "pass_criteria": "An account with no date of birth sees 'Your date of birth' between the code and the notice; empty and future dates are refused; once a valid date is saved the notice appears and consent can be recorded; the question is not asked again."
+  },
+  {
+    "id": "CON-06",
+    "area": "Consent and data exchange",
+    "title": "A person under 18 cannot sign up, and no guardian route is offered",
+    "feature": "Sign-up refuses a minor (S2-01)",
+    "role": "Prospective data principal under 18 (UAT Minor)",
+    "priority": "High",
+    "type": "Negative",
+    "ref": "S2-01",
+    "preconditions": [
+      "The data-principal portal is open at http://localhost:3001 in a fresh private (incognito) browser window, so no earlier sign-in carries over.",
+      "You have the live consent link for the CIT site of the seeded project 'Gait Identification Study 2026' (valid until 8 Oct 2026) from the test coordinator, or one the DCO created from the console in PRJ-18. It looks like http://localhost:3001/c/<long code>.",
+      "The test coordinator is available to read six-digit codes from the test outbox and relay them to you.",
+      "The coordinator confirms +91 98100 00066 and tester06@example.org are not registered."
+    ],
+    "test_data": [
+      "Full name: UAT Minor",
+      "Mobile number: +91 98100 00066",
+      "Email address: tester06@example.org",
+      "Date of birth: a date that makes the person 16 on the test day, e.g. 15/03/2010",
+      "Adult date of birth for the retry: 01/01/1990"
+    ],
+    "steps": [
+      {
+        "action": "Open the CIT consent link and click 'Create one'. Read the hint under 'Date of birth'.",
+        "expected": "'Create your account' opens. The hint reads 'The law protects people under 18 differently, so we ask before an account is opened.' It does not mention a parent or guardian."
+      },
+      {
+        "action": "Fill in all four fields with the test data (date of birth 15/03/2010) and click 'Create account'.",
+        "expected": "The page stays on 'Create your account' and a red message refuses the registration. Expected wording: 'We cannot register or record consent for a person under eighteen. If you think your date of birth is wrong, contact the Privacy Office.' The 'Confirm your contacts' step does NOT appear. Write down the exact message you see."
+      },
+      {
+        "action": "Look over the whole page.",
+        "expected": "There is no link, button, form or field for a parent or guardian to consent on the person's behalf. Only the sign-up fields, 'Create account' and the 'Sign in' link are offered."
+      },
+      {
+        "action": "Ask the coordinator to check the test outbox for +91 98100 00066 and tester06@example.org.",
+        "expected": "No registration codes were sent."
+      },
+      {
+        "action": "Go back to the CIT consent link, leave 'Mobile' selected, type +91 98100 00066 and click 'Send the code'.",
+        "expected": "The neutral 'Confirm your mobile' screen appears as for anyone, and the outbox shows no code was sent (no account exists)."
+      },
+      {
+        "action": "Return to 'Create your account' and submit the same name, mobile and email with the adult date of birth 01/01/1990.",
+        "expected": "'Confirm your contacts' opens, proving nothing was half-created by the refused attempt (the mobile is not reported as already registered). Stop here; do not enter the codes."
+      }
+    ],
+    "pass_criteria": "A date of birth under 18 creates no account and sends no code; the refusal names no guardian route and none is offered anywhere on the page."
+  },
+  {
+    "id": "CON-07",
+    "area": "Consent and data exchange",
+    "title": "A person who gives an under-18 date of birth at the link cannot record any choice, and no guardian route is offered",
+    "feature": "Consent link refuses a minor's consent or refusal (S2-01)",
+    "role": "Account with no date of birth, giving an under-18 date",
+    "priority": "High",
+    "type": "Negative",
+    "ref": "S2-01",
+    "preconditions": [
+      "The data-principal portal is open at http://localhost:3001 in a fresh private (incognito) browser window, so no earlier sign-in carries over.",
+      "You have the live consent link for the CIT site of the seeded project 'Gait Identification Study 2026' (valid until 8 Oct 2026) from the test coordinator, or one the DCO created from the console in PRJ-18. It looks like http://localhost:3001/c/<long code>.",
+      "The test coordinator is available to read six-digit codes from the test outbox and relay them to you.",
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "The coordinator provides a staff account with no date of birth that may be marked as under 18 for this test, ideally one the administrator creates just for it (see REG-01), e.g. tester07@example.org. NEVER use a seeded account other testers need: the date cannot be changed afterwards from the portal."
+    ],
+    "test_data": [
+      "Email: tester07@example.org (or the account the coordinator names)",
+      "Date of birth: a date that makes the person 15 on the test day, e.g. 01/06/2011"
+    ],
+    "steps": [
+      {
+        "action": "Open the CIT consent link. On the 'Your details' card select 'Email' under 'Send my code to', type tester07@example.org in 'Email address' and click 'Send the code'.",
+        "expected": "The card changes to 'Confirm your email' and says 'We have sent a six-digit code to tester07@example.org. It expires in ten minutes.' The step bar at the top moves from 'Your details' to 'Confirm'."
+      },
+      {
+        "action": "Type the relayed code and click 'Confirm and read the notice'.",
+        "expected": "The card 'Your date of birth' appears (the account has no date of birth)."
+      },
+      {
+        "action": "Enter 01/06/2011 and click 'Save and continue'.",
+        "expected": "The notice with its two purposes is shown."
+      },
+      {
+        "action": "Click 'I agree' on both purposes and click 'Record my choices'.",
+        "expected": "A red message appears at the top of the page: 'We cannot register or record consent for a person under eighteen. If you think your date of birth is wrong, contact the Privacy Office.' The page stays on the notice. No Done step and no reference are shown."
+      },
+      {
+        "action": "Click 'Decline everything'.",
+        "expected": "The same refusal message appears. There is no 'You have declined' screen: a child's refusal is not recorded either."
+      },
+      {
+        "action": "Look over the whole page, including the notice links.",
+        "expected": "Nothing offers a parent or guardian route: no link, button, form or contact field for a guardian."
+      },
+      {
+        "action": "Open http://localhost:3001/my-consents in the same window.",
+        "expected": "'Your consents' shows 'No consent records'."
+      },
+      {
+        "action": "Click 'Your profile' in the sidebar and look at 'Date of birth'.",
+        "expected": "It shows the date entered, marked as under 18. Nothing on the page offers a way for a parent or guardian to consent. The badge reads 'Under 18 — we cannot record consent from you'."
+      },
+      {
+        "action": "In the console, as the DPO, open 'Consents' and look for this account's name.",
+        "expected": "There is no consent record for this account."
+      }
+    ],
+    "pass_criteria": "With an under-18 date of birth neither 'Record my choices' nor 'Decline everything' writes anything; the refusal message names no guardian route and none is offered; no record appears on the portal or the console."
+  },
+  {
+    "id": "CON-08",
+    "area": "Consent and data exchange",
+    "title": "An invalid, altered, revoked or expired link shows 'This link is not valid' and nothing else",
+    "feature": "Consent link: invalid link page",
+    "role": "Anyone holding a link (visitor)",
+    "priority": "High",
+    "type": "Negative",
+    "ref": "Core",
+    "preconditions": [
+      "The data-principal portal is open at http://localhost:3001 in a fresh private (incognito) browser window, so no earlier sign-in carries over.",
+      "You have the live consent link for the CIT site of the seeded project 'Gait Identification Study 2026' (valid until 8 Oct 2026) from the test coordinator, or one the DCO created from the console in PRJ-18. It looks like http://localhost:3001/c/<long code>.",
+      "Optional: a revoked or replaced link (PRJ-19, PRJ-20) and an expired link (PRJ-21) from the coordinator."
+    ],
+    "test_data": [
+      "Made-up link: http://localhost:3001/c/not-a-real-link",
+      "Altered link: the CIT link with its last character changed (e.g. last letter a → b)"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3001/c/not-a-real-link.",
+        "expected": "A card with the heading 'This link is not valid' and 'It may have expired, been withdrawn, or been mistyped. Please ask the person who gave it to you for a current one.' and a link 'Your rights under the DPDP Act'. The banner shows only 'Consent' and 'Digital Personal Data Protection Act 2023' — no project or site name. There is no step bar, no contact box and no notice text."
+      },
+      {
+        "action": "Open the CIT link with its last character changed.",
+        "expected": "Exactly the same page and wording as step 1."
+      },
+      {
+        "action": "If the coordinator supplied a revoked/replaced link, open it.",
+        "expected": "Exactly the same page and wording; it does not say whether the link was revoked, expired or mistyped."
+      },
+      {
+        "action": "If the coordinator supplied an expired link, open it.",
+        "expected": "Exactly the same page and wording."
+      },
+      {
+        "action": "Click 'Your rights under the DPDP Act'.",
+        "expected": "A page explaining the data principal's rights opens."
+      },
+      {
+        "action": "Open the original, correct CIT link.",
+        "expected": "The normal 'Your details' page opens with the project banner, so the earlier attempts did not affect the valid link."
+      }
+    ],
+    "pass_criteria": "Every invalid link shows the same 'This link is not valid' page with no project, notice or contact field, and never says why it is invalid."
+  },
+  {
+    "id": "CON-09",
+    "area": "Consent and data exchange",
+    "title": "On My consents the principal sees her choices, the exact notice she was served and the record",
+    "feature": "Portal: My consents (view record, notice as served, trail, disclosures)",
+    "role": "Data principal (UAT Tester One)",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "The data-principal portal is open at http://localhost:3001 in a fresh private (incognito) browser window, so no earlier sign-in carries over.",
+      "The test coordinator is available to read six-digit codes from the test outbox and relay them to you.",
+      "CON-03 is done (UAT Tester One consented in Hindi to one of two purposes).",
+      "Run before CON-14 to see the empty disclosure list; after CON-14 the list shows the processor."
+    ],
+    "test_data": [
+      "Email: tester01@example.org"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3001/sign-in. Under 'Sign in with' select 'Email', type tester01@example.org in 'Email address' and click 'Send me a code'. Then type the code the coordinator relays into 'Six-digit code' and click 'Verify'.",
+        "expected": "After 'Send me a code' a blue box 'Check your messages' says 'If tester01@example.org is registered with us, a six-digit code is on its way. It expires in ten minutes.' After 'Verify' the page 'Your consents' opens and 'My consents' is highlighted in the sidebar."
+      },
+      {
+        "action": "Read the page header and the card for 'Gait Identification Study 2026'.",
+        "expected": "Description: 'Everything you have agreed to, the exact wording you were shown, and who it has been shared with. You can withdraw at any time.' The card shows 'NTC-GAIT-2026 v1 · hindi · <date and time>', status 'Partial', 'You agreed to 1 of 2 purpose(s).' and the buttons 'See what you agreed to', 'What was recorded', 'Withdraw everything' and 'Ask about this consent'."
+      },
+      {
+        "action": "Click 'See what you agreed to'.",
+        "expected": "The button changes to 'Hide details'. 'Gait model training' shows the badge 'Consented' and a 'Withdraw just this one' button; 'Recording quality assurance' shows 'Declined' and no withdraw button. Each shows 'Data:' and 'Kept for:'."
+      },
+      {
+        "action": "Click 'Show the exact notice I was given'.",
+        "expected": "A box shows 'Served <date and time>', a green 'Integrity verified', the Hindi notice text exactly as it was shown at the link (starting 'धारा 5'), and 'Hash recorded at capture:' with a code."
+      },
+      {
+        "action": "Click 'What was recorded'.",
+        "expected": "A panel 'What was recorded' opens ('The same record the Privacy Office sees, for this consent and every change to it. Oldest first.') listing at least the consent being given. The button now reads 'Hide the record'."
+      },
+      {
+        "action": "Scroll to 'Who your data has been shared with'.",
+        "expected": "Before any export (CON-14): 'Not shared with anyone' / 'No export containing your record has been generated.' After CON-14: an entry naming the processor 'SEED' with the project name and date."
+      },
+      {
+        "action": "Click 'Hide details' and 'Hide the record'.",
+        "expected": "Both sections close. Nothing has changed: the status is still 'Partial'."
+      }
+    ],
+    "pass_criteria": "The principal can see per-purpose choices, the exact text served (in the language served) with 'Integrity verified', the record of what happened, and who the data was shared with."
+  },
+  {
+    "id": "CON-10",
+    "area": "Consent and data exchange",
+    "title": "The principal withdraws everything, with a confirmation she can cancel",
+    "feature": "Portal: Withdraw everything",
+    "role": "Member of staff acting as a data principal (Nikhil Bose)",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "The data-principal portal is open at http://localhost:3001 in a fresh private (incognito) browser window, so no earlier sign-in carries over.",
+      "The test coordinator is available to read six-digit codes from the test outbox and relay them to you.",
+      "CON-05 is done (Nikhil Bose consented to both purposes)."
+    ],
+    "test_data": [
+      "Email: dcoadmin@cmp.local"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3001/sign-in. Under 'Sign in with' select 'Email', type dcoadmin@cmp.local in 'Email address' and click 'Send me a code'. Then type the code the coordinator relays into 'Six-digit code' and click 'Verify'.",
+        "expected": "After 'Send me a code' a blue box 'Check your messages' says 'If dcoadmin@cmp.local is registered with us, a six-digit code is on its way. It expires in ten minutes.' After 'Verify' the page 'Your consents' opens and 'My consents' is highlighted in the sidebar."
+      },
+      {
+        "action": "On the card 'Gait Identification Study 2026' (status 'Consented', 'You agreed to 2 of 2 purpose(s).') click 'Withdraw everything'.",
+        "expected": "A warning 'Withdraw all purposes?' appears: 'Processing for these purposes will stop. Data already collected is not deleted by a withdrawal — if you want it erased, make a rights request.' with the buttons 'Withdraw' and 'Keep my consent'."
+      },
+      {
+        "action": "Click 'Keep my consent'.",
+        "expected": "The warning closes and the status is still 'Consented'."
+      },
+      {
+        "action": "Click 'Withdraw everything' again, then 'Withdraw'.",
+        "expected": "A notice 'Withdrawal recorded' appears with 'Stopped: Gait model training, Recording quality assurance.' (the order may differ)."
+      },
+      {
+        "action": "Look at the card.",
+        "expected": "The status is 'Withdrawn' and the text reads 'You were asked about 2 purpose(s) and agreed to none.' The 'Withdraw everything' button is gone."
+      },
+      {
+        "action": "Click 'See what you were asked', then 'Show the exact notice I was given'.",
+        "expected": "Both purposes show 'Declined'. The notice box still shows the English text originally served, with 'Integrity verified'."
+      },
+      {
+        "action": "Click 'What was recorded'.",
+        "expected": "The list shows the consent and, after it, the withdrawal."
+      },
+      {
+        "action": "Ask the coordinator to check the outbox for dcoadmin@cmp.local.",
+        "expected": "A withdrawal confirmation message is present."
+      }
+    ],
+    "pass_criteria": "Withdrawal needs one confirmation that can be cancelled; after 'Withdraw' every purpose is stopped, the record shows Withdrawn, the served notice is still viewable and a confirmation is sent."
+  },
+  {
+    "id": "CON-11",
+    "area": "Consent and data exchange",
+    "title": "Without a date of birth, My consents and My requests stay open while other pages ask for it",
+    "feature": "Portal: withdrawal and requests do not need a date of birth (S2-01)",
+    "role": "Member of staff acting as a data principal (System Admin)",
+    "priority": "Medium",
+    "type": "Positive",
+    "ref": "S2-01",
+    "preconditions": [
+      "The data-principal portal is open at http://localhost:3001 in a fresh private (incognito) browser window, so no earlier sign-in carries over.",
+      "The test coordinator is available to read six-digit codes from the test outbox and relay them to you.",
+      "admin@cmp.local has never given a date of birth; do not use it in any other date-of-birth test.",
+      "Optional: the coordinator supplies an account with no date of birth that already holds an active consent (for step 8)."
+    ],
+    "test_data": [
+      "Email: admin@cmp.local"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3001/sign-in. Under 'Sign in with' select 'Email', type admin@cmp.local in 'Email address' and click 'Send me a code'. Then type the code the coordinator relays into 'Six-digit code' and click 'Verify'.",
+        "expected": "'Your consents' opens — it is NOT replaced by a date-of-birth question. A blue note 'We need your date of birth' reads 'You can withdraw a consent or make a request without it, but we need it before you give a new consent.' with a link 'Add it now'."
+      },
+      {
+        "action": "Look below the note.",
+        "expected": "The page works normally; with no consents it shows 'No consent records'."
+      },
+      {
+        "action": "Click 'Add it now' in the note.",
+        "expected": "'Your profile' opens and shows the card 'Your date of birth' with 'Save and continue'. Do not enter a date."
+      },
+      {
+        "action": "Click 'My requests' in the sidebar.",
+        "expected": "The requests page opens normally, with the same 'We need your date of birth' note."
+      },
+      {
+        "action": "Click 'Your profile' in the sidebar.",
+        "expected": "The page is replaced by the card 'Your date of birth' with 'Save and continue', and the line 'You can still withdraw a consent or make a request without it.'"
+      },
+      {
+        "action": "Click the 'withdraw a consent' link on that card.",
+        "expected": "'Your consents' opens again, with the note."
+      },
+      {
+        "action": "Do not enter a date. Click 'Sign out'.",
+        "expected": "You are signed out; no date of birth was saved."
+      },
+      {
+        "action": "Only if the coordinator supplied an account with no date of birth and an active consent: sign in as it, click 'Withdraw everything' on its card, then 'Withdraw'.",
+        "expected": "'Withdrawal recorded' appears and the card shows 'Withdrawn'. No date of birth was asked for at any point."
+      }
+    ],
+    "pass_criteria": "An account with no date of birth can always reach My consents and My requests (and withdraw), while other pages ask for the date first."
+  },
+  {
+    "id": "CON-12",
+    "area": "Consent and data exchange",
+    "title": "The DPO reads the consent register and a consent record as evidence",
+    "feature": "Console: Consents register and consent record",
+    "role": "DPO",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "CON-01, CON-03, CON-04, CON-05 and CON-10 are done."
+    ],
+    "test_data": [
+      "Anjali Verma (Consented), UAT Tester One (Partial), UAT Tester Two (Declined), Nikhil Bose (Withdrawn) — all at site CIT"
+    ],
+    "steps": [
+      {
+        "action": "In the sidebar, under 'Consent', click 'Consents'.",
+        "expected": "The page 'Consents' opens ('The current position for every data subject in scope…') with a 'Status' filter and the columns Data subject, Project, Site, Status, Purposes, Recorded."
+      },
+      {
+        "action": "Find the four test people on 'Gait Identification Study 2026', site 'CIT'.",
+        "expected": "Each appears once (latest record only): Anjali Verma 'Consented' '2 of 2'; UAT Tester One 'Partial' '1 of 2'; UAT Tester Two 'Declined' '0 of 2'; Nikhil Bose 'Withdrawn'."
+      },
+      {
+        "action": "Set 'Status' to 'Partial', then 'Declined', then 'Withdrawn', then 'Consented', then back to 'All statuses'.",
+        "expected": "Each time only rows with that status are listed, and the matching test person is among them. 'All statuses' shows everyone again."
+      },
+      {
+        "action": "Click 'UAT Tester One'.",
+        "expected": "The record page opens: small heading 'Consent', title 'UAT Tester One', 'Gait Identification Study 2026 · CIT', the status 'Partial', an 'Audit trail' button and the back link 'All consents'."
+      },
+      {
+        "action": "Read the 'Purposes' card.",
+        "expected": "'1 of 2 purposes agreed.' 'Gait model training' shows 'Agreed'; 'Recording quality assurance' shows 'Not agreed'. Each line shows 'Lawful basis:', 'Retention:' and 'Categories:'."
+      },
+      {
+        "action": "Read the 'Evidence' card.",
+        "expected": "'Notice' NTC-GAIT-2026 v1 (a link), 'Language' Hindi, 'Content hash', 'Served at' and 'Acted at' (Served at is not later than Acted at), 'Action' Checkbox click. A note explains the gap between served and acted evidences s.5(1)."
+      },
+      {
+        "action": "Read the 'Data subject' card and 'Assets containing this person'.",
+        "expected": "'Data subject' shows Name, Email (tester01@example.org), Mobile, Site CIT, Project, Record and Recorded — no date of birth or other personal data. 'Assets containing this person' shows 'No assets mapped' (before CON-18)."
+      },
+      {
+        "action": "Look for any control to edit or delete the record.",
+        "expected": "There is none; the record is read-only."
+      },
+      {
+        "action": "Click 'All consents' and open 'Nikhil Bose'.",
+        "expected": "A warning 'This record is a withdrawal' says it supersedes an earlier consent rather than replacing it. Both purposes show 'Not agreed' and 'Action' is 'Button press'."
+      },
+      {
+        "action": "Click 'Audit trail' on this record.",
+        "expected": "The 'Audit trail' page opens already filtered to this record (a filter chip is shown) and lists 'Consent withdrawn'."
+      }
+    ],
+    "pass_criteria": "The register shows one current status per person and filters correctly; a record shows each purpose separately, the notice version, language, hash, served and acted times, contact details only, and cannot be edited."
+  },
+  {
+    "id": "CON-13",
+    "area": "Consent and data exchange",
+    "title": "Consent records and exports are limited to the sites a role runs; other roles have no access",
+    "feature": "Console: role scope for Consents and Exports",
+    "role": "DCO, RCO, R&D User, Administrator",
+    "priority": "Medium",
+    "type": "Negative",
+    "ref": "Core",
+    "preconditions": [
+      "Console sign-in as in the other console cases (password SeedPassw0rd!2026 and a relayed 6-digit code).",
+      "CON-01 to CON-05 are done. Arun Shetty (DCO) runs the CIT site; Meera Iyer (RCO) runs only the SE site of the Gait project."
+    ],
+    "test_data": [
+      "dco@cmp.local, rco@cmp.local, rnd@cmp.local, admin@cmp.local"
+    ],
+    "steps": [
+      {
+        "action": "Sign in as dco@cmp.local and click 'Consents'.",
+        "expected": "The CIT rows for Anjali Verma, UAT Tester One, UAT Tester Two and Nikhil Bose are listed."
+      },
+      {
+        "action": "Open one of them.",
+        "expected": "The record opens read-only, as for the DPO."
+      },
+      {
+        "action": "Sign out, sign in as rco@cmp.local and click 'Consents'.",
+        "expected": "None of the CIT test people are listed (the RCO runs only the SE site); the list is empty ('No consent records yet') unless someone consented at SE."
+      },
+      {
+        "action": "As the RCO click 'Projects', type 'Gait Identification' in 'Search' (the list updates as you type), open 'Gait Identification Study 2026', click 'Generate export' and then 'Generate the export'.",
+        "expected": "The notice 'Export generated' says 'Nobody has consented on this project yet, so the file carries the project details only.' — the RCO's export contains none of the CIT people."
+      },
+      {
+        "action": "Sign out, sign in as rnd@cmp.local and look at the sidebar.",
+        "expected": "There is no 'Consents', 'Consent links' or 'Exports' entry."
+      },
+      {
+        "action": "Type http://localhost:3000/consents in the address bar, then http://localhost:3000/exports.",
+        "expected": "Each shows 'Not part of your account' ('This section belongs to a different role, so there is nothing here for you…'). No consent or export data is shown."
+      },
+      {
+        "action": "Sign out, sign in as admin@cmp.local and look at the sidebar; then open http://localhost:3000/consents.",
+        "expected": "The sidebar has no 'Consents', 'Exports', 'Imports' or 'Collections'. The address shows 'Not part of your account'."
+      }
+    ],
+    "pass_criteria": "A collection owner sees only the consents and export rows of sites they run; the R&D User and Administrator cannot see the consent register or exports at all."
+  },
+  {
+    "id": "CON-14",
+    "area": "Consent and data exchange",
+    "title": "The DPO generates a project export for processors in India and downloads it",
+    "feature": "Console: Generate export, Exports page, download (India = domestic)",
+    "role": "DPO",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "S2-04",
+    "preconditions": [
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "CON-01, CON-03, CON-04, CON-05 and CON-10 are done.",
+      "Spreadsheet software (Excel or similar) to open a CSV. The file contains personal data: keep it on the test machine and delete it after the test."
+    ],
+    "test_data": [
+      "Project: Gait Identification Study 2026",
+      "Expected rows: Anjali Verma = consented, UAT Tester One = partial, Nikhil Bose = withdrawn; UAT Tester Two (declined) must NOT appear"
+    ],
+    "steps": [
+      {
+        "action": "In the sidebar click 'Processors'.",
+        "expected": "The 'Country' column shows 'IN' for 'SEED', 'SRIB' and 'Pune Motion Lab Pvt Ltd'. If any shows something else, set it back to IN (Edit, Country, Save changes) before continuing."
+      },
+      {
+        "action": "Click 'Projects', type 'Gait Identification' in 'Search' (the list updates as you type) and open 'Gait Identification Study 2026'.",
+        "expected": "The project page opens with the status approved and a 'Generate export' button in the header."
+      },
+      {
+        "action": "Click 'Generate export'.",
+        "expected": "A dialog 'Generate an export' opens with a warning ('This CSV contains personal data — name, email and mobile number for every person who consented. Generating it writes one disclosure row each…'), an information box ('One row per consent… People who have withdrawn are included and marked…') and the buttons 'Cancel' and 'Generate the export'. There is nothing to choose."
+      },
+      {
+        "action": "Click 'Cancel'.",
+        "expected": "The dialog closes and nothing is generated."
+      },
+      {
+        "action": "Click 'Generate export' again, then 'Generate the export'.",
+        "expected": "The notice 'Export generated' says '<N> consent(s). Download it from the Exports page — downloading is repeatable.' The dialog closes. Write down N."
+      },
+      {
+        "action": "In the sidebar click 'Exports'.",
+        "expected": "The top row shows the time just now 'by Priya Menon', project 'Gait Identification Study 2026', Site 'Whole project', Type 'Project export', Subjects = N, a SHA-256 code and a 'Download' button."
+      },
+      {
+        "action": "Click 'Download' on that row.",
+        "expected": "The notice 'Downloaded' with the file name appears and one .csv file is saved."
+      },
+      {
+        "action": "Open the CSV in a spreadsheet.",
+        "expected": "One file with a header row including project_name, site_label, consent_uuid, full_name, email, mobile, consent_status, granted_purposes, notice_code and notice_version. Anjali Verma: consent_status 'consented', granted_purposes lists PUR-GAIT-TRAIN and PUR-QUALITY. UAT Tester One: 'partial', PUR-GAIT-TRAIN only. Nikhil Bose: 'withdrawn', granted_purposes empty. There is NO row for UAT Tester Two. Names and contacts are readable. Note Anjali's consent_uuid (needed in CON-18)."
+      },
+      {
+        "action": "Click 'Download' on the same row again.",
+        "expected": "The same file downloads again, and no new row appears on the Exports page (downloading does not create a new export)."
+      },
+      {
+        "action": "Set the 'Type' filter to 'Project export (CSV, personal data)'.",
+        "expected": "The new export is still listed."
+      }
+    ],
+    "pass_criteria": "With every processor in India the export is generated as one CSV per project with rows for consented, partial and withdrawn people (declined excluded), is listed on Exports with a subject count and hash, and can be downloaded repeatedly without a new export."
+  },
+  {
+    "id": "CON-15",
+    "area": "Consent and data exchange",
+    "title": "An export is refused when a site's processor is in a restricted country",
+    "feature": "Console: cross-border check at export — restricted country (S2-04)",
+    "role": "DPO",
+    "priority": "High",
+    "type": "Negative",
+    "ref": "S2-04",
+    "preconditions": [
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "CON-14 passed (so an export would otherwise succeed); at least one current consent with an agreed purpose exists at the CIT site (run by processor SEED).",
+      "REMEMBER: set SEED's Country back to IN and lift the test restriction at the end, even if the test fails."
+    ],
+    "test_data": [
+      "Processor: SEED",
+      "Invalid country: 1N",
+      "Test country: SG",
+      "Notification: UAT-TEST-NOTIF-01"
+    ],
+    "steps": [
+      {
+        "action": "Click 'Processors'. On the 'SEED' row click 'Edit'.",
+        "expected": "A dialog 'Edit processor' opens. 'Country' shows IN with the hint 'Where it is, as a two-letter code (IN for India). An export to a processor with no country is refused; one abroad goes only where the law and every purpose allow.'"
+      },
+      {
+        "action": "Replace the country with 1N and click 'Save changes'.",
+        "expected": "The message 'Two letters: the ISO country code, e.g. IN' appears under 'Country'; nothing is saved."
+      },
+      {
+        "action": "Replace it with SG and click 'Save changes'.",
+        "expected": "The notice 'Processor updated' appears and the 'Country' column for SEED shows SG."
+      },
+      {
+        "action": "Scroll down to the card 'Restricted countries (s.16)'. Type SG in 'Country' and UAT-TEST-NOTIF-01 in 'Notification' and click 'Restrict'.",
+        "expected": "'Restrict' is greyed out until both boxes are filled. After clicking, the notice 'Country restricted' ('Exports whose rows would go there are refused from now on.') appears and the list shows 'SG UAT-TEST-NOTIF-01 since <today>' with a 'Lift' button."
+      },
+      {
+        "action": "Open 'Projects' > 'Gait Identification Study 2026', click 'Generate export', then 'Generate the export'.",
+        "expected": "A red message appears inside the dialog: 'This export cannot go: SEED is in SG, restricted by UAT-TEST-NOTIF-01.' The dialog stays open and there is no 'Export generated' notice."
+      },
+      {
+        "action": "Click 'Cancel' and open 'Exports'.",
+        "expected": "No new export row has been added since CON-14."
+      },
+      {
+        "action": "Go back to 'Processors'; in 'Restricted countries (s.16)' click 'Lift' on SG.",
+        "expected": "The notice 'SG lifted' ('Exports there are judged by the purposes again.') appears and SG leaves the list."
+      },
+      {
+        "action": "Restore: on the 'SEED' row click 'Edit', set 'Country' to IN and click 'Save changes'.",
+        "expected": "'Processor updated' appears and SEED's Country shows IN again."
+      }
+    ],
+    "pass_criteria": "While SEED is in a restricted country the export is refused with 'This export cannot go: … restricted by <notification>.' and nothing is written; SEED is back in IN and the restriction lifted at the end."
+  },
+  {
+    "id": "CON-16",
+    "area": "Consent and data exchange",
+    "title": "An export abroad is refused when an agreed purpose does not permit cross-border transfer, and goes once India is restored",
+    "feature": "Console: cross-border check at export — purpose not permitted abroad; India succeeds (S2-04)",
+    "role": "DPO",
+    "priority": "High",
+    "type": "Negative",
+    "ref": "S2-04",
+    "preconditions": [
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "SG is not on the 'Restricted countries (s.16)' list (CON-15 lifted it).",
+      "At the CIT site there is at least one current consent with agreed purposes (Anjali Verma). The seeded purposes 'Gait model training' (PUR-GAIT-TRAIN) and 'Recording quality assurance' (PUR-QUALITY) do not permit transfer outside India.",
+      "REMEMBER: set SEED's Country back to IN at the end, even if the test fails."
+    ],
+    "test_data": [
+      "Processor: SEED",
+      "Test country: SG"
+    ],
+    "steps": [
+      {
+        "action": "Click 'Processors'; on 'SEED' click 'Edit', set 'Country' to SG and click 'Save changes'.",
+        "expected": "'Processor updated' appears and SEED shows SG."
+      },
+      {
+        "action": "Check the 'Restricted countries (s.16)' card.",
+        "expected": "SG is not listed."
+      },
+      {
+        "action": "Open 'Gait Identification Study 2026', click 'Generate export', then 'Generate the export'.",
+        "expected": "A red message in the dialog: 'This export cannot go: SEED is in SG, and PUR-GAIT-TRAIN, PUR-QUALITY does not permit a transfer outside India.' (it names the purposes people agreed to at CIT). No 'Export generated' notice."
+      },
+      {
+        "action": "Click 'Cancel' and open 'Exports'.",
+        "expected": "No new export row was added by the refused attempt."
+      },
+      {
+        "action": "Restore: 'Processors' > 'SEED' > 'Edit', set 'Country' to IN, 'Save changes'.",
+        "expected": "SEED shows IN."
+      },
+      {
+        "action": "Open the project again, click 'Generate export', then 'Generate the export'.",
+        "expected": "'Export generated' appears with the number of consents."
+      },
+      {
+        "action": "Open 'Exports' and click 'Download' on the new top row, then open the CSV.",
+        "expected": "A new 'Project export' row is listed; the CSV holds the same people and statuses as in CON-14."
+      }
+    ],
+    "pass_criteria": "Abroad with purposes that do not permit transfer the export is refused and names the purposes; with the processor back in India the same export succeeds."
+  },
+  {
+    "id": "CON-17",
+    "area": "Consent and data exchange",
+    "title": "An export is refused when a site's processor has no recorded country",
+    "feature": "Console: cross-border check at export — unknown location (S2-04)",
+    "role": "DPO",
+    "priority": "High",
+    "type": "Negative",
+    "ref": "S2-04",
+    "preconditions": [
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "The coordinator has prepared an approved project (e.g. from the PRJ cases) with a collection site run by a processor whose 'Country' shows 'not recorded', and at least one person has agreed to a purpose at that site. The coordinator gives you the project and processor names. (An existing processor's country cannot be emptied from the Edit dialog, so this has to be prepared.)"
+    ],
+    "test_data": [
+      "New processor: UAT No Country Lab Pvt Ltd, Type Lab, Contract reference CTR-UAT-0001, Security confirmed on: 01/09/2026, Country: leave empty",
+      "Prepared project and processor: as named by the coordinator"
+    ],
+    "steps": [
+      {
+        "action": "Click 'Processors', then 'Register processor'. Fill 'Registered legal name', 'Type', 'Contract reference' and 'Security confirmed on' from the test data, leave 'Country' empty and click 'Register processor'.",
+        "expected": "The notice 'Processor registered' appears. The new row shows 'not recorded' in the Country column; hovering it shows 'An export to this processor is refused until its country is recorded'."
+      },
+      {
+        "action": "Find the coordinator's prepared processor in the list.",
+        "expected": "Its Country also shows 'not recorded'."
+      },
+      {
+        "action": "Open the prepared project, click 'Generate export', then 'Generate the export'.",
+        "expected": "A red message in the dialog: 'This export cannot go: <processor name> has no recorded location - record its country first.' No 'Export generated' notice."
+      },
+      {
+        "action": "Click 'Cancel' and open 'Exports'.",
+        "expected": "No new export row for that project."
+      },
+      {
+        "action": "Go to 'Processors', click 'Edit' on the prepared processor, set 'Country' to IN and click 'Save changes'.",
+        "expected": "'Processor updated' appears and the row shows IN."
+      },
+      {
+        "action": "Open the prepared project again and click 'Generate export', then 'Generate the export'.",
+        "expected": "'Export generated' appears and a new 'Project export' row is listed on 'Exports'."
+      },
+      {
+        "action": "Clean-up: on the 'UAT No Country Lab Pvt Ltd' row click 'Suspend'.",
+        "expected": "'Processor suspended' appears and its status changes."
+      }
+    ],
+    "pass_criteria": "A processor with no country is visibly 'not recorded', an export through it is refused naming the processor and asking for its country, and the export succeeds once the country (India) is recorded."
+  },
+  {
+    "id": "CON-18",
+    "area": "Consent and data exchange",
+    "title": "A collection owner downloads the manifest template, validates a manifest, imports it and sees the collection and assets",
+    "feature": "Console: Imports (template, dry run, import), Collections, assets",
+    "role": "Data Collection Owner",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "Signed in to the console (http://localhost:3000) as Arun Shetty, Data Collection Owner (dco@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "CON-14 is done and you have Anjali Verma's consent_uuid from the export CSV.",
+      "A spreadsheet or text editor that can save a CSV (UTF-8)."
+    ],
+    "test_data": [
+      "File uat-template-asis.csv: the downloaded template saved unchanged",
+      "File uat-manifest-01.csv, keep the template's header row and replace the example with two rows:",
+      "Row 1: source_collection_ref RUN-UAT-CON-01; source_asset_ref IMG_UAT_0001.jpg; asset_type image; collected_on 2026-09-20; subject_role consented; consent_uuid <Anjali's consent_uuid>; storage_ref s3://collections/run-uat-con-01/IMG_UAT_0001.jpg; other columns empty",
+      "Row 2: RUN-UAT-CON-01; VID_UAT_0002.mp4; video; 2026-09-20; incidental; consent_uuid empty; storage_ref s3://collections/run-uat-con-01/VID_UAT_0002.mp4; other columns empty",
+      "Data source: CIT · SRC-SEED-CIT; Project: Gait Identification Study 2026"
+    ],
+    "steps": [
+      {
+        "action": "In the sidebar, under 'Data movement', click 'Imports', then 'Import a manifest'.",
+        "expected": "A dialog 'Import a manifest' opens with three numbered steps: '1 Start from the template', '2 Where it came from, and where it goes' and '3 Check the file' — step 3 is dimmed with 'Choose a source and a project first — the checks depend on both.' The 'Import' button is greyed out."
+      },
+      {
+        "action": "Click 'What the file must contain'.",
+        "expected": "It lists source_collection_ref, source_asset_ref, asset_type, collected_on and subject_role, each with a short explanation."
+      },
+      {
+        "action": "Click 'Download the manifest template' and open the file.",
+        "expected": "collection-manifest-template.csv is saved. It has a header row, one example row (RUN-2026-001, IMG_0001.jpg, image, …, consented) and guidance lines starting with '#', including '# Delete every line below before uploading.'"
+      },
+      {
+        "action": "Save it unchanged as uat-template-asis.csv. In the dialog choose 'CIT · SRC-SEED-CIT' in 'Data source' and 'Gait Identification Study 2026' in 'Project'.",
+        "expected": "Step 3 becomes available with a 'Manifest' file picker (hint 'CSV, up to 25 MB.') and the button 'Check it — this writes nothing', which is greyed out until a file is chosen."
+      },
+      {
+        "action": "Choose uat-template-asis.csv and click 'Check it — this writes nothing'.",
+        "expected": "A red box '1 problem(s) found' ('Nothing has been written. Fix the manifest and check it again…') and a table Row / Column / Problem: row 2, consent_uuid, 'A consented subject requires a consent_uuid'. 'Import' stays greyed out."
+      },
+      {
+        "action": "Create uat-manifest-01.csv from the test data, choose it and click 'Check it — this writes nothing'.",
+        "expected": "The earlier result disappears when the file changes. Then a green box 'Manifest is valid': '2 row(s) parsed with no errors. Nothing has been written yet.' with 'File SHA-256 …', a notice 'Manifest is valid' / '2 row(s) ready to import.', and the footer button now reads 'Import 2 row(s)'."
+      },
+      {
+        "action": "Click 'Import 2 row(s)'.",
+        "expected": "The notice 'Import accepted' / '2 accepted, 0 rejected.' appears and the dialog closes. The Imports list shows a new row: File uat-manifest-01.csv, Source SRC-SEED-CIT, Project Gait Identification Study 2026, Status 'Accepted', Rows '2 of 2', Received just now."
+      },
+      {
+        "action": "Click the file name uat-manifest-01.csv.",
+        "expected": "The batch page shows the tiles 'Declared' 2, 'Accepted' 2, 'Rejected' 0, 'Not processed' 0, an 'Outcome' bar, 'Rejected rows' with 'Nothing was rejected', and a card 'The file' with its hash."
+      },
+      {
+        "action": "In the sidebar click 'Collections'.",
+        "expected": "A row with Reference 'RUN-UAT-CON-01' (site CIT underneath), Project 'Gait Identification Study 2026', Source CIT, Collected 20 Sep 2026."
+      },
+      {
+        "action": "Click 'RUN-UAT-CON-01'.",
+        "expected": "The collection page shows 'Gait Identification Study 2026 · collected …'; the note 'This collection carries no declaration' (no declared_asset_count was given); the tile 'Assets flagged' = 1 ('Contain someone with no consent'); the 'Assets' table lists IMG_UAT_0001.jpg (Image, Subjects 1) and VID_UAT_0002.mp4 (Video, Bystanders 1); 'Provenance' shows Source CIT SRC-SEED-CIT."
+      },
+      {
+        "action": "Open 'Consents' and click 'Anjali Verma'.",
+        "expected": "'Assets containing this person' now lists IMG_UAT_0001.jpg with Source CIT, Collected 20 Sep 2026, Role Consented and a Disposition (Active)."
+      }
+    ],
+    "pass_criteria": "The template downloads with guidance; the dry run reports problems row by row and writes nothing; a valid manifest imports as an Accepted batch; the collection and its assets appear and the consented asset is linked to the person's consent record."
+  },
+  {
+    "id": "CON-19",
+    "area": "Consent and data exchange",
+    "title": "Imports refuse bad manifests, never duplicate a file, and reject rows whose consent does not exist",
+    "feature": "Console: Imports — negative paths",
+    "role": "Data Collection Owner; R&D User",
+    "priority": "Medium",
+    "type": "Negative",
+    "ref": "Core",
+    "preconditions": [
+      "Signed in to the console (http://localhost:3000) as Arun Shetty, Data Collection Owner (dco@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "CON-18 is done (uat-manifest-01.csv was imported).",
+      "R&D User account rnd@cmp.local for step 1 (same console sign-in)."
+    ],
+    "test_data": [
+      "bad-values.csv (template header): row 2 asset_type 'photo', collected_on 2030-01-01, subject_role consented with a consent_uuid; row 3 subject_role incidental WITH a consent_uuid, collected_on 20/09/2026",
+      "extra-column.csv: a valid row but with an extra column named notes",
+      "unknown-consent.csv: one row RUN-UAT-CON-02, IMG_UAT_0100.jpg, image, 2026-09-20, consented, consent_uuid 00000000-0000-4000-8000-000000000000",
+      "uat-manifest-01.csv from CON-18, unchanged"
+    ],
+    "steps": [
+      {
+        "action": "Sign in as rnd@cmp.local and click 'Imports'.",
+        "expected": "The list is visible but there is NO 'Import a manifest' button. Sign out and sign in as dco@cmp.local."
+      },
+      {
+        "action": "As the DCO click 'Imports' > 'Import a manifest'. Choose only a 'Data source'.",
+        "expected": "Step 3 stays dimmed with 'Choose a source and a project first — the checks depend on both.' 'Import' is greyed out."
+      },
+      {
+        "action": "Choose the 'Project' too.",
+        "expected": "Step 3 opens; 'Check it — this writes nothing' is greyed out until a file is chosen; 'Import' is still greyed out."
+      },
+      {
+        "action": "Choose bad-values.csv and click 'Check it — this writes nothing'.",
+        "expected": "A red '<n> problem(s) found' box and a table including: asset_type 'Must be one of: audio, document, image, other, sensor, video'; collected_on 'Collection date is in the future'; consent_uuid 'A incidental subject must not carry a consent_uuid'; collected_on 'Must be YYYY-MM-DD'. 'Import' stays greyed out."
+      },
+      {
+        "action": "Choose extra-column.csv and check it.",
+        "expected": "The table shows Row 'file', Column 'notes', Problem 'Unknown column(s): notes'."
+      },
+      {
+        "action": "Choose uat-manifest-01.csv and check it; then change 'Data source' to a different source.",
+        "expected": "The check first reports 'Already imported' ('This exact file has been imported before (batch …)…'). Changing the data source clears the result, so the file must be checked again before anything can be imported."
+      },
+      {
+        "action": "Set 'Data source' back to 'CIT · SRC-SEED-CIT', check uat-manifest-01.csv again and, if 'Import' is available, click it.",
+        "expected": "'Already imported' is shown again; if imported, the notice 'Nothing to do' / 'This file has already been imported. Nothing was written.' appears. No second batch and no second RUN-UAT-CON-01 collection appear."
+      },
+      {
+        "action": "Open 'Import a manifest' again, choose CIT and the Gait project, choose unknown-consent.csv and check it.",
+        "expected": "'Manifest is valid' — the dry run checks the file's shape, not whether the consent exists."
+      },
+      {
+        "action": "Click 'Import 1 row(s)'.",
+        "expected": "The notice 'Import rejected' / '0 accepted, 1 rejected.' appears. The Imports list shows the batch with Status 'Rejected', Rows '0 of 1' and '1 rejected'."
+      },
+      {
+        "action": "Open that batch.",
+        "expected": "'Rejected' = 1 and the 'Rejected rows' table gives the Reason 'Consent artefact not found'."
+      }
+    ],
+    "pass_criteria": "Import stays locked until a clean dry run; every bad value is reported by row and column with nothing written; a file already imported writes nothing; a row naming a non-existent consent is rejected with a reason; the R&D User cannot import."
+  },
+  {
+    "id": "CON-20",
+    "area": "Consent and data exchange",
+    "title": "Consent, export, cross-border and import events appear in the audit trail",
+    "feature": "Console: Audit trail for consent and data exchange",
+    "role": "DPO",
+    "priority": "Medium",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "CON-01 to CON-19 have been run (in any order), so the events exist."
+    ],
+    "test_data": [
+      "Areas: Consent, Exports, Cross-border transfers, Processors, Imports"
+    ],
+    "steps": [
+      {
+        "action": "Under 'Oversight' click 'Audit trail'.",
+        "expected": "The page 'Audit trail' opens ('Append-only and hash-chained…') with 'Export CSV' and 'Verify chain' buttons, filters 'Area', 'Event', 'Record type', 'Actor role', 'From', 'To' and a 'Search' box, and the columns When, Event, Actor, About, Record."
+      },
+      {
+        "action": "Set 'Area' to 'Consent'.",
+        "expected": "Entries such as 'Consent given', 'Consent declined' and 'Consent withdrawn' for the test people are listed."
+      },
+      {
+        "action": "Set 'Area' to 'Exports'.",
+        "expected": "Entries 'Export generated' (Actor Priya Menon, and Meera Iyer from CON-13), 'Export downloaded' and 'Export refused' (from CON-15, CON-16, CON-17) are listed."
+      },
+      {
+        "action": "Click an 'Export refused' row.",
+        "expected": "A detail panel titled 'Export refused' opens with What, When, Who. It concerns the project and names the processor/cause; it does not name any data principal."
+      },
+      {
+        "action": "Set 'Area' to 'Cross-border transfers'.",
+        "expected": "'Transfer country restricted' and 'Transfer country lifted' entries for SG are listed."
+      },
+      {
+        "action": "Set 'Area' to 'Processors'.",
+        "expected": "'Processor updated' entries for the SEED country changes and 'Processor created' for UAT No Country Lab Pvt Ltd are listed."
+      },
+      {
+        "action": "Set 'Area' to 'Imports'.",
+        "expected": "'Import validated' (one per check), 'Import accepted' and 'Import rejected' entries are listed with Actor Arun Shetty."
+      },
+      {
+        "action": "Click 'Verify chain'.",
+        "expected": "A green box 'Chain intact' appears."
+      }
+    ],
+    "pass_criteria": "Every consent decision, export (generated, downloaded, refused), restricted-country change, processor change and import (validated, accepted, rejected) is in the audit trail, and the chain verifies intact."
+  },
+  {
+    "id": "CON-21",
+    "area": "Consent and data exchange",
+    "title": "After an export the principal sees who received her data, and withdraws one purpose while keeping the other",
+    "feature": "Portal: disclosures and Withdraw just this one",
+    "role": "Data principal (Anjali Verma); DPO for the last check",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "The data-principal portal is open at http://localhost:3001 in a fresh private (incognito) browser window, so no earlier sign-in carries over.",
+      "The test coordinator is available to read six-digit codes from the test outbox and relay them to you.",
+      "CON-14 and CON-18 are done (Anjali is in an export; her consent is still 2 of 2).",
+      "For the last step: Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar."
+    ],
+    "test_data": [
+      "Mobile: +91 90000 00001",
+      "Purpose to withdraw: Recording quality assurance"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3001/sign-in. Under 'Sign in with' select 'Mobile', type +91 90000 00001 in 'Mobile number' and click 'Send me a code'. Then type the code the coordinator relays into 'Six-digit code' and click 'Verify'.",
+        "expected": "After 'Send me a code' a blue box 'Check your messages' says 'If +91 90000 00001 is registered with us, a six-digit code is on its way. It expires in ten minutes.' After 'Verify' the page 'Your consents' opens and 'My consents' is highlighted in the sidebar."
+      },
+      {
+        "action": "Scroll to 'Who your data has been shared with'.",
+        "expected": "At least one entry names the processor 'SEED' with 'Gait Identification Study 2026 · <date and time>' of the export."
+      },
+      {
+        "action": "On the 'Gait Identification Study 2026' card (status 'Consented') click 'See what you agreed to'.",
+        "expected": "Both purposes show 'Consented', each with a 'Withdraw just this one' button."
+      },
+      {
+        "action": "Click 'Withdraw just this one' under 'Recording quality assurance'.",
+        "expected": "The notice 'Withdrawal recorded' / 'Stopped: Recording quality assurance.' appears."
+      },
+      {
+        "action": "Look at the card.",
+        "expected": "The line reads 'You agreed to 1 of 2 purpose(s).' 'Recording quality assurance' now shows 'Declined' and 'Gait model training' still shows 'Consented'. The status badge reads 'Partial', not 'Withdrawn'."
+      },
+      {
+        "action": "Look for a way to withdraw the remaining purpose, 'Gait model training'.",
+        "expected": "A 'Withdraw just this one' button is still offered under 'Gait model training' (and 'Withdraw everything' on the card), so the rest can be withdrawn as easily as consent was given (s.6(4))."
+      },
+      {
+        "action": "Click 'What was recorded'.",
+        "expected": "The list shows the original consent followed by the withdrawal."
+      },
+      {
+        "action": "Ask the coordinator to check the outbox for Anjali.",
+        "expected": "A withdrawal confirmation message is present."
+      },
+      {
+        "action": "In the console as the DPO open 'Consents' > 'Anjali Verma'.",
+        "expected": "The record shows the warning 'This record is a withdrawal'; 'Purposes' shows 'Gait model training' Agreed and 'Recording quality assurance' Not agreed. Its status reads 'Partial', not 'Withdrawn'."
+      }
+    ],
+    "pass_criteria": "The principal sees the processor her data went to; withdrawing one purpose stops only that purpose, the other remains agreed, and she can still withdraw the remaining purpose from the same page."
+  }
+]
