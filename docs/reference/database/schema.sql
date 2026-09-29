@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict fbiBNPgaigw3Y9aZPabPWoqcUPtJf0zeeIhtL007rmdTa636xPQMJNhL2seRfIg
+\restrict wWpT3tRpB4pex4sZ8FQXQrCw0z5MQAxu2VWoOPPFy2hBEVI5oWTQa2aLpMZ4Qyq
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -4284,6 +4284,20 @@ CREATE UNIQUE INDEX uq_nomination_live ON public.nomination USING btree (princip
 
 
 --
+-- Name: uq_notice_one_published_per_project; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uq_notice_one_published_per_project ON public.notice USING btree (project_id) WHERE (status = 'published'::public.notice_status);
+
+
+--
+-- Name: INDEX uq_notice_one_published_per_project; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON INDEX public.uq_notice_one_published_per_project IS 'A project collects under one notice at a time; publishing supersedes the rest.';
+
+
+--
 -- Name: uq_processor_respondent_user; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5334,5 +5348,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict fbiBNPgaigw3Y9aZPabPWoqcUPtJf0zeeIhtL007rmdTa636xPQMJNhL2seRfIg
+\unrestrict wWpT3tRpB4pex4sZ8FQXQrCw0z5MQAxu2VWoOPPFy2hBEVI5oWTQa2aLpMZ4Qyq
 

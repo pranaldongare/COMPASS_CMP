@@ -17,6 +17,11 @@
  *   history useless to whoever reads it next.
  * - A transition that **publishes the notice** says so before it runs, because
  *   publication freezes the text permanently.
+ *
+ * The project page renders it twice: under the header, and again at the foot
+ * of the page with the header's other actions (`footer`), so somebody who has
+ * read to the bottom does not scroll back up to act. Each copy keeps its own
+ * confirmation state; the server decides either way.
  */
 "use client";
 
@@ -44,6 +49,8 @@ export function TransitionControls({
   projectUuid,
   currentStatus,
   noticeUuid,
+  heading = "What happens next",
+  footer,
 }: {
   projectUuid: string;
   currentStatus: ProjectStatus;
@@ -53,8 +60,13 @@ export function TransitionControls({
    *  the project is refused until the notice text is legally approved, and that
    *  is done on the notice, not here. */
   noticeUuid?: string | null;
+  heading?: string;
+  /** More actions under the moves - the page header's, repeated at the foot. */
+  footer?: React.ReactNode;
 }) {
   const toast = useToast();
+  // Unique per copy: the page renders this component twice.
+  const idBase = React.useId();
   const { data, isLoading, error } = useTransitions(projectUuid);
   const transition = useTransition(projectUuid);
 
@@ -76,6 +88,13 @@ export function TransitionControls({
 
   const available = data?.available ?? [];
 
+  const footerBlock = footer ? (
+    <div className="border-t border-border px-5 py-4">
+      <p className="mb-2 text-xs font-medium text-text-muted">Other actions</p>
+      {footer}
+    </div>
+  ) : null;
+
   if (!available.length) {
     return (
       <Card>
@@ -87,6 +106,7 @@ export function TransitionControls({
               : "There is nothing for your role to do at this stage."}
           </p>
         </CardBody>
+        {footerBlock}
       </Card>
     );
   }
@@ -130,7 +150,7 @@ export function TransitionControls({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>What happens next</CardTitle>
+        <CardTitle>{heading}</CardTitle>
         <p className="mt-1 text-xs text-text-muted">
           Currently {statusLabel("project", data?.current ?? currentStatus)}. These are the
           moves your role can make from here.
@@ -198,14 +218,16 @@ export function TransitionControls({
               disabled={!option.allowed}
               onClick={() => onClick(option)}
               // The disabled reason is announced, not only shown.
-              aria-describedby={option.blocked_by ? `blocked-${option.to}` : undefined}
+              aria-describedby={
+                option.blocked_by ? `${idBase}-blocked-${option.to}` : undefined
+              }
               title={option.blocked_by}
             >
               {statusLabel("project", option.to)}
               <ArrowRight className="size-4" />
             </Button>
             {option.blocked_by && (
-              <span id={`blocked-${option.to}`} className="sr-only">
+              <span id={`${idBase}-blocked-${option.to}`} className="sr-only">
                 Blocked: {(option.blockers ?? [option.blocked_by]).join("; ")}
               </span>
             )}
@@ -285,6 +307,7 @@ export function TransitionControls({
           </div>
         )}
       </CardBody>
+      {footerBlock}
     </Card>
   );
 }

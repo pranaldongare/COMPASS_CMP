@@ -1,6 +1,6 @@
 {
-  "commit": "5242eb67ce866f98a42575f1e5a28001a4744e98",
-  "migration_head": "0032",
+  "commit": "aaadc0516455cb0ca0c21ff5f89f80f26c5c3012",
+  "migration_head": "0033",
   "migrations": [
     {
       "revision": "0001",
@@ -129,6 +129,10 @@
     {
       "revision": "0032",
       "source": "backend/api/migrations/versions/0032_cross_border_transfer.py"
+    },
+    {
+      "revision": "0033",
+      "source": "backend/api/migrations/versions/0033_one_published_notice_per_project.py"
     }
   ],
   "postgres_version": "16.15",
@@ -8687,6 +8691,11 @@
       "table_name": "notice",
       "name": "notice_pkey",
       "definition": "CREATE UNIQUE INDEX notice_pkey ON public.notice USING btree (notice_id)"
+    },
+    {
+      "table_name": "notice",
+      "name": "uq_notice_one_published_per_project",
+      "definition": "CREATE UNIQUE INDEX uq_notice_one_published_per_project ON public.notice USING btree (project_id) WHERE (status = 'published'::notice_status)"
     },
     {
       "table_name": "notice_language",

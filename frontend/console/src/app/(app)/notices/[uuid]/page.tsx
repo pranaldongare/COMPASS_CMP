@@ -722,7 +722,7 @@ export default function NoticeDetailPage() {
           description="Only active purposes can be attached, and only while the notice is a draft."
           size="lg"
         >
-          <NoticePurposesForm noticeUuid={uuid} onDone={() => setEditingPurposes(false)} />
+          <NoticePurposesForm noticeUuid={uuid} />
         </DialogContent>
       </Dialog>
 

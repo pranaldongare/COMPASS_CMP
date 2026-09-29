@@ -321,7 +321,7 @@ export const SECTIONS: HelpSection[] = [
       },
       {
         kind: "warning",
-        text: "A published notice can never be edited. A correction is a new version of the notice, which supersedes the old one. Adding a site after publication adds a recipient, which also needs a new version.",
+        text: "A published notice can never be edited. A correction is a new version of the notice, which supersedes the old one. Adding a site after publication adds a recipient, which also needs a new version. A project has one notice in force: publishing another supersedes it, and its consent links then show the new notice - consents already given keep the notice they were given under.",
       },
     ],
   },

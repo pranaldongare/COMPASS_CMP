@@ -172,6 +172,28 @@ async def revoke_links_for_project(conn: Conn, *, project_uuid: str, actor_id: i
     return cur.rowcount
 
 
+async def move_links_to_notice(conn: Conn, *, from_notice_ids: list[int], to_notice_id: int) -> int:
+    """Point a replaced notice's live links at the notice that replaced it.
+
+    A link is handed out once and printed, messaged, pinned up; asking every
+    site to re-share one because the text changed is how an old one stays in
+    circulation. So the link moves, and from then on serves the notice in
+    force. Consents already recorded through it keep the notice they were
+    given under - the artefact carries its own `notice_id`, and nothing here
+    touches it. Only active links move; a revoked or expired one stays dead.
+    """
+    if not from_notice_ids:
+        return 0
+    cur = await conn.execute(
+        """
+        UPDATE consent_link SET notice_id = %s
+         WHERE notice_id = ANY(%s) AND status = 'active'
+        """,
+        (to_notice_id, from_notice_ids),
+    )
+    return cur.rowcount
+
+
 async def expire_due_links(conn: Conn) -> int:
     """Scheduled sweep. Idempotent: rows already expired are not matched."""
     cur = await conn.execute(

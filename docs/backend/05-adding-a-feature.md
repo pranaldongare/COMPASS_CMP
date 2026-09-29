@@ -10,12 +10,12 @@ Alembic's default names a revision with a random hex id. This repository
 numbers them, so give the next number yourself:
 
 ```bash
-alembic revision --rev-id 0033 -m "what it does"
+alembic revision --rev-id 0034 -m "what it does"
 ```
 
 Then rewrite the generated file in house style
 ([the database](04-database.md#what-a-migration-looks-like)): a docstring
-saying why, `Revises: 0032`, the SQL in `UPGRADE` and `DOWNGRADE` strings,
+saying why, `Revises: 0033`, the SQL in `UPGRADE` and `DOWNGRADE` strings,
 and `op.execute()`. Drop the generated `sqlalchemy` import if you do not use
 it. In the SQL:
 

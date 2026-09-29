@@ -22,6 +22,7 @@ from cmp.core.enums import LanguageCode
 from cmp.core.errors import Conflict, NotFound, NoticeImmutable, NoticeIncomplete, ValidationFailed
 from cmp.core.logging import get_logger
 from cmp.core.security import content_hash
+from cmp.db.repositories import consent as consent_repo
 from cmp.db.repositories import notices as repo
 from cmp.db.repositories import projects as project_repo
 from cmp.db.repositories import registry as registry_repo
@@ -125,6 +126,17 @@ async def create(
     project = await project_repo.require(conn, project_uuid, role=role, user_id=actor_id)
 
     code = notice_code or await generate_code(conn, project_name=project["project_name"])
+    # A code names one project's notice through its versions. Another
+    # project's code would make this the next version of *their* notice, and
+    # publishing it would replace their notice rather than this project's.
+    owners = await repo.projects_of_code(conn, code)
+    if owners and owners != {project["project_id"]}:
+        raise Conflict(
+            f"{code} is another project's notice code. Leave the code empty to have "
+            "one generated, or use this project's own.",
+            code="notice_code_taken",
+            field="notice_code",
+        )
     version = await repo.max_version(conn, code) + 1
 
     notice = await repo.create(
@@ -499,22 +511,38 @@ async def publish(conn: Conn, *, notice_id: int, actor_id: int) -> dict[str, Any
                 code="notice_hash_mismatch",
             )
 
-    # Any previously published version of this code is superseded by this one.
-    for prior in await repo.versions(conn, locked["notice_code"]):
-        if prior["notice_id"] != notice_id and prior["status"] == "published":
-            await repo.supersede(conn, prior["notice_id"])
-            await audit.record(
-                conn,
-                event=Event.NOTICE_SUPERSEDED,
-                entity_type="notice",
-                entity_id=prior["notice_id"],
-                detail={"superseded_by": notice_id},
-            )
+    # One notice is in force on a project. Publishing this one supersedes
+    # whichever other is published on the project - a later version of the
+    # same code, or a notice that arrived under a code of its own ("New
+    # notice", "Use an existing notice", an upload). Before this, only the
+    # same code was superseded, and a second notice left two in force.
+    # Superseded first: the database allows one published notice per project.
+    replaced = [
+        prior
+        for prior in await repo.list_for_project(conn, locked["project_id"])
+        if prior["notice_id"] != notice_id and prior["status"] == "published"
+    ]
+    for prior in replaced:
+        await repo.supersede(conn, prior["notice_id"])
+        await audit.record(
+            conn,
+            event=Event.NOTICE_SUPERSEDED,
+            entity_type="notice",
+            entity_id=prior["notice_id"],
+            detail={"superseded_by": notice_id},
+        )
 
     published = await repo.publish(
         conn, notice_id, recipients_text=recipients, approved_by=actor_id
     )
     await project_repo.set_current_notice(conn, locked["project_id"], notice_id)
+    # The replaced notice's live links now serve this one (decided with the
+    # product owner, 2026-09-29); consents already given keep their notice.
+    links_moved = await consent_repo.move_links_to_notice(
+        conn,
+        from_notice_ids=[int(prior["notice_id"]) for prior in replaced],
+        to_notice_id=notice_id,
+    )
 
     await audit.record(
         conn,
@@ -526,6 +554,8 @@ async def publish(conn: Conn, *, notice_id: int, actor_id: int) -> dict[str, Any
             "version": locked["version"],
             "languages": {x["language_code"]: x["content_hash"] for x in languages},
             "recipients_text": recipients,
+            "replaced": [str(prior["notice_uuid"]) for prior in replaced],
+            "links_moved": links_moved,
         },
     )
     log.info(
@@ -557,7 +587,9 @@ async def publish_current(conn: Conn, *, project_id: int, actor_id: int) -> dict
             return max(already, key=lambda n: n["version"])
         raise NoticeIncomplete("The project has no notice to publish")
 
-    newest = max(drafts, key=lambda n: n["version"])
+    # The most recently created draft. Versions alone cannot tell two drafts
+    # apart when each arrived under its own code at version 1.
+    newest = max(drafts, key=lambda n: (n["created_at"], n["notice_id"]))
     return await publish(conn, notice_id=newest["notice_id"], actor_id=actor_id)
 
 

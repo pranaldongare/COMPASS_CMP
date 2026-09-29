@@ -524,6 +524,27 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **A project has one notice in force.** Publishing superseded only earlier
+  versions of the same notice code, so a notice brought in under a code of its
+  own - "New notice", "Use an existing notice", an upload - could be published
+  beside the one in force, leaving two, with consent links still serving the
+  old text. Publishing now supersedes every other published notice on the
+  project, and migration 0033 makes a second one impossible
+  (`uq_notice_one_published_per_project`; it refuses to apply over data that
+  already breaks the rule). The replaced notice's live consent links move to
+  the new notice (decided with the product owner), so links already handed out
+  keep working; consents already given keep the notice they were given under.
+  Approving a project with several drafts publishes the newest, and another
+  project's notice code is refused (`notice_code_taken`) - before, it made the
+  notice a new version of that project's and could supersede it.
+- **The project page offers its next move at the foot as well.** The "What
+  happens next" moves and the header's actions are repeated in a "Next steps"
+  card at the bottom of the page, so nobody scrolls back up to act; the top is
+  unchanged.
+- **Attaching purposes to a notice has one button.** "Attach" and "Done" sat
+  side by side, and only one of them saved anything. "Attach" now adds the
+  chosen purpose and keeps the dialog open for the next; the dialog's own
+  close ends it.
 - **Defects found preparing the first user acceptance cycle (13).**
   - *Withdrawing one purpose is not withdrawing the consent.* Every place that
     turned an artefact into a status read `is_withdrawal` alone, so a person

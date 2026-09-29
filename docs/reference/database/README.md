@@ -1,6 +1,6 @@
 # COMPASS complete database schema
 
-Generated from the catalogue of a scratch database built by replaying migrations **0001 → 0032**, on 2026-09-24. Rebuild it with `python3 docs/tools/generate-schema-docs.py --database <db>`; nothing here is maintained by hand.
+Generated from the catalogue of a scratch database built by replaying migrations **0001 → 0033**, on 2026-09-29. Rebuild it with `python3 docs/tools/generate-schema-docs.py --database <db>`; nothing here is maintained by hand.
 
 ## Open the diagrams
 
@@ -47,6 +47,8 @@ Since **0027–0030** the personal columns are `text` rather than `varchar(n)` -
 **0031** (S2-03) adds the record of carrying an erasure out: `rights_item_execution`, one append-only row per attempt at each store that holds an item, and `rights_request_item.executed_at`; and `legal_hold`, which stops erasure of an asset or a person until it is released - placed once and released once, by trigger, with a sealed reason.
 
 **0032** (S2-04) adds where data goes: `processor.location_country` (ISO 3166-1 alpha-2), `restricted_country` - the Government's s.16 list, kept as data, listed once and lifted once by trigger, one active listing per country - and on each `export_line` the destination processor and its country, with the export's `transfer_basis`.
+
+**0033** adds one rule, not a table: `uq_notice_one_published_per_project`, a partial unique index allowing one published notice per project.
 
 ## Reading relationships and keys
 

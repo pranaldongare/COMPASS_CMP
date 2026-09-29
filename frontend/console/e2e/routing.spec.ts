@@ -109,7 +109,8 @@ test.describe("DCO Admin on an approved project", () => {
     const firstProject = page.locator("table a").first();
     await firstProject.click();
 
-    await expect(page.getByRole("button", { name: /add site/i })).toBeVisible();
+    // The header's, the first: the page repeats its actions at the foot.
+    await expect(page.getByRole("button", { name: /add site/i }).first()).toBeVisible();
   });
 
   test("a collection site is chosen from the registry, not typed", async ({ page }) => {
@@ -120,7 +121,10 @@ test.describe("DCO Admin on an approved project", () => {
     await page.goto("/projects?status=approved");
     await page.locator("table a").first().click();
 
-    await page.getByRole("button", { name: /add site/i }).click();
+    await page
+      .getByRole("button", { name: /add site/i })
+      .first()
+      .click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
 

@@ -66,6 +66,13 @@ async def _two_purpose_consent(
             "INSERT INTO notice_purpose (notice_id, purpose_id) VALUES (%s, %s)",
             (notice_id, purpose_id),
         )
+    # One notice is in force on a project (migration 0033): the seeded one is
+    # superseded first, as publishing does.
+    await conn.execute(
+        """UPDATE notice SET status = 'superseded'
+            WHERE project_id = %s AND status = 'published'""",
+        (seeded["project"]["project_id"],),
+    )
     await conn.execute(
         """UPDATE notice SET status = 'published', recipients_text = 'Test Site',
                   approved_by = %s, published_at = now() WHERE notice_id = %s""",

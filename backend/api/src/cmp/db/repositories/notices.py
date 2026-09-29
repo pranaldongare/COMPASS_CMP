@@ -82,6 +82,16 @@ async def by_uuid(conn: Conn, notice_uuid: str, *, role: Role | str, user_id: in
 COPYABLE = "n.status IN ('approved', 'published')"
 
 
+async def projects_of_code(conn: Conn, notice_code: str) -> set[int]:
+    """The projects a notice code is already used on - one, or none."""
+    rows = await fetch_all(
+        conn,
+        "SELECT DISTINCT project_id FROM notice WHERE notice_code = %s",
+        (notice_code,),
+    )
+    return {int(r["project_id"]) for r in rows}
+
+
 async def copy_sources(conn: Conn) -> list[Row]:
     """Every notice that may be copied as a starting point, whoever wrote it.
 

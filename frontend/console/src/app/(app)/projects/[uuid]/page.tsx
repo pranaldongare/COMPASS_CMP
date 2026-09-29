@@ -187,6 +187,89 @@ export default function ProjectDetailPage() {
   const canAuthorNotice = isDpo || isOwner;
   const noticePublished = Boolean(p.current_notice_uuid);
 
+  // The page's actions, shown under the title and again at the foot of the
+  // page with the next move, so somebody who has read to the bottom does not
+  // scroll back up to act.
+  const headerActions = (
+    <div className="flex flex-wrap items-center gap-2">
+      <StatusBadge kind="project" value={p.project_status} />
+      <AuditTrailLink entityType="project" uuid={p.project_uuid} label={p.project_name} />
+      {/* Editing is permitted only while the project is in draft. */}
+      {isOwner && p.project_status === "in_draft" && (
+        <Button variant="secondary" size="sm" onClick={() => setSheet({ kind: "edit" })}>
+          Edit
+        </Button>
+      )}
+      {canAuthorNotice && (
+        <>
+          {/* First of the three because it is how a notice actually
+              arrives. The wording is drafted in Word by the people whose
+              job that is; typing it in again is where the notice and the
+              document it was approved as start to differ. */}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setSheet({ kind: "notice-import" })}
+          >
+            <Upload className="size-4" />
+            Upload a notice document
+          </Button>
+          {/* Most projects are a variation on one that already exists. The
+              server copies rather than shares — a notice belongs to one
+              project — so this is a starting point, not a link. */}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setSheet({ kind: "notice-copy" })}
+          >
+            <Copy className="size-4" />
+            Use an existing notice
+          </Button>
+          {/* Composing one from nothing is the Privacy Office's. An author
+              brings a notice as a filled-in document or picks one the
+              office has approved; the wording itself is not theirs to
+              invent, and the API refuses it either way. */}
+          {isDpo && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setSheet({ kind: "notice" })}
+            >
+              <ScrollText className="size-4" />
+              New notice
+            </Button>
+          )}
+        </>
+      )}
+      {/* Gated on the project's state as well as the role. The API
+          refuses an approval once the project is approved, and offering a
+          control that 409s teaches people to distrust the ones that
+          work. */}
+      {isOwner && canUploadApproval && (
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => setSheet({ kind: "approval" })}
+        >
+          <FileCheck className="size-4" />
+          Upload approval
+        </Button>
+      )}
+      {canAddSite && (
+        <Button variant="secondary" size="sm" onClick={() => setSheet({ kind: "site" })}>
+          <MapPin className="size-4" />
+          Add site
+        </Button>
+      )}
+      {canExport && p.project_status === "approved" && (
+        <Button variant="secondary" size="sm" onClick={() => setSheet({ kind: "export" })}>
+          <Upload className="size-4" />
+          Generate export
+        </Button>
+      )}
+    </div>
+  );
+
   return (
     <>
       <PageHeader
@@ -198,101 +281,7 @@ export default function ProjectDetailPage() {
         }
         title={p.project_name}
         description={p.description ?? undefined}
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge kind="project" value={p.project_status} />
-            <AuditTrailLink
-              entityType="project"
-              uuid={p.project_uuid}
-              label={p.project_name}
-            />
-            {/* Editing is permitted only while the project is in draft. */}
-            {isOwner && p.project_status === "in_draft" && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setSheet({ kind: "edit" })}
-              >
-                Edit
-              </Button>
-            )}
-            {canAuthorNotice && (
-              <>
-                {/* First of the three because it is how a notice actually
-                    arrives. The wording is drafted in Word by the people whose
-                    job that is; typing it in again is where the notice and the
-                    document it was approved as start to differ. */}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setSheet({ kind: "notice-import" })}
-                >
-                  <Upload className="size-4" />
-                  Upload a notice document
-                </Button>
-                {/* Most projects are a variation on one that already exists. The
-                    server copies rather than shares — a notice belongs to one
-                    project — so this is a starting point, not a link. */}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setSheet({ kind: "notice-copy" })}
-                >
-                  <Copy className="size-4" />
-                  Use an existing notice
-                </Button>
-                {/* Composing one from nothing is the Privacy Office's. An author
-                    brings a notice as a filled-in document or picks one the
-                    office has approved; the wording itself is not theirs to
-                    invent, and the API refuses it either way. */}
-                {isDpo && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setSheet({ kind: "notice" })}
-                  >
-                    <ScrollText className="size-4" />
-                    New notice
-                  </Button>
-                )}
-              </>
-            )}
-            {/* Gated on the project's state as well as the role. The API
-                refuses an approval once the project is approved, and offering a
-                control that 409s teaches people to distrust the ones that
-                work. */}
-            {isOwner && canUploadApproval && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setSheet({ kind: "approval" })}
-              >
-                <FileCheck className="size-4" />
-                Upload approval
-              </Button>
-            )}
-            {canAddSite && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setSheet({ kind: "site" })}
-              >
-                <MapPin className="size-4" />
-                Add site
-              </Button>
-            )}
-            {canExport && p.project_status === "approved" && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setSheet({ kind: "export" })}
-              >
-                <Upload className="size-4" />
-                Generate export
-              </Button>
-            )}
-          </div>
-        }
+        actions={headerActions}
       />
 
       <div className="mb-6">
@@ -715,6 +704,18 @@ export default function ProjectDetailPage() {
           )}
         </div>
       </div>
+
+      {/* The same moves and actions as the top of the page, for whoever has
+          read to the bottom. */}
+      <section aria-label="Next steps" className="mt-6">
+        <TransitionControls
+          projectUuid={uuid}
+          currentStatus={p.project_status}
+          noticeUuid={p.current_notice_uuid ?? notices.data?.[0]?.notice_uuid}
+          heading="Next steps"
+          footer={headerActions}
+        />
+      </section>
 
       <Dialog open={sheet?.kind === "edit"} onOpenChange={(o) => !o && close()}>
         <DialogContent title="Edit project" description="Drafts only.">

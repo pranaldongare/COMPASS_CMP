@@ -4,6 +4,11 @@
  * Rule 3(b) requires a notice to itemise what is collected and why, and a
  * purpose is how that is expressed — so a notice with none cannot be
  * published, and the checklist says so.
+ *
+ * One action, "Attach". It adds the chosen purpose and leaves the dialog open
+ * with the list updated, because a notice often needs several; the dialog's
+ * own close (×, or Escape) ends it. A separate "Done" beside "Attach" read as
+ * two ways to finish, one of which saved nothing.
  */
 "use client";
 
@@ -17,13 +22,7 @@ import { useNoticePurposes } from "@/features/notices";
 import { usePurposes } from "@/features/registry";
 import { useToast } from "@/providers";
 
-export function NoticePurposesForm({
-  noticeUuid,
-  onDone,
-}: {
-  noticeUuid: string;
-  onDone: () => void;
-}) {
+export function NoticePurposesForm({ noticeUuid }: { noticeUuid: string }) {
   const toast = useToast();
   const attached = useNoticePurposes(noticeUuid);
   const { data: available } = usePurposes({ status: "active", limit: 100 });
@@ -35,7 +34,9 @@ export function NoticePurposesForm({
   const [error, setError] = React.useState<string | null>(null);
 
   const attachedUuids = new Set((attached.data ?? []).map((p) => p.purpose_uuid));
-  const selectable = (available?.items ?? []).filter((p) => !attachedUuids.has(p.purpose_uuid));
+  const selectable = (available?.items ?? []).filter(
+    (p) => !attachedUuids.has(p.purpose_uuid),
+  );
 
   async function add() {
     if (!chosen) {
@@ -83,12 +84,15 @@ export function NoticePurposesForm({
       <ul className="mb-4 divide-y divide-border rounded-md border border-border">
         {(attached.data ?? []).length === 0 && (
           <li className="px-3 py-4 text-center text-sm text-text-muted">
-            No purposes attached. A notice with none asks a data subject to agree
-            to nothing in particular.
+            No purposes attached. A notice with none asks a data subject to agree to nothing
+            in particular.
           </li>
         )}
         {(attached.data ?? []).map((p) => (
-          <li key={p.purpose_uuid} className="flex items-center justify-between gap-3 px-3 py-2.5">
+          <li
+            key={p.purpose_uuid}
+            className="flex items-center justify-between gap-3 px-3 py-2.5"
+          >
             <div className="min-w-0">
               <p className="text-sm font-medium">{p.name}</p>
               <p className="mt-0.5 text-xs text-text-subtle">
@@ -133,20 +137,24 @@ export function NoticePurposesForm({
           <span>
             Cannot be refused
             <span className="mt-0.5 block text-xs text-text-subtle">
-              This should be rare and should make you uncomfortable. If a purpose
-              cannot be refused, ask whether it belongs in this notice at all.
+              This should be rare and should make you uncomfortable. If a purpose cannot be
+              refused, ask whether it belongs in this notice at all.
             </span>
           </span>
         </label>
-
-        <Button variant="secondary" loading={attach.isPending} onClick={add}>
-          Attach
-        </Button>
       </div>
 
       <DialogFooter>
-        <Button variant="primary" onClick={onDone}>
-          Done
+        <p className="mr-auto text-xs text-text-subtle">
+          Attach as many as the notice needs, then close this window.
+        </p>
+        <Button
+          variant="primary"
+          loading={attach.isPending}
+          disabled={!chosen}
+          onClick={add}
+        >
+          Attach
         </Button>
       </DialogFooter>
     </div>

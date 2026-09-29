@@ -8,7 +8,7 @@ PostgreSQL, reached with psycopg 3 and hand-written SQL. There is no ORM
 
 - `alembic.ini` points at `migrations/`; `migrations/env.py` takes the
   connection string from the application's own settings.
-- `migrations/versions/0001_baseline_schema.py` … `0032_cross_border_transfer.py`
+- `migrations/versions/0001_baseline_schema.py` … `0033_one_published_notice_per_project.py`
   are one linear chain. Revision ids are the bare numbers (`revision =
   "0019"`, `down_revision = "0018"`).
 - There is no model metadata (`target_metadata = None`) - nothing is
@@ -141,6 +141,7 @@ migration named:
 | A data principal and a nominee must have a mobile | `auth_user`, `nomination` | 0015 |
 | A contact belongs to one person | `auth_user` | 0025, rewritten 0028-0029 |
 | A legal hold can only be released once; a restriction only lifted once | `legal_hold`, `restricted_country` | 0031, 0032 |
+| One published notice per project (a partial unique index) | `notice` | 0033 |
 | Project ownership follows its primary site and source (derives, does not refuse) | `project_site`, `data_source` | 0005-0008 |
 
 Each rule is proven by a test in `tests/integration/enforcement/` that tries

@@ -26,13 +26,25 @@ any change to a published notice or its renditions. A correction is a new
 version; the old one survives, because consents recorded against it must be
 able to say exactly what was shown.
 
+**One notice is in force on a project.** A project may hold several notices -
+drafts, earlier versions, one brought in with "Use an existing notice" - but
+only one is published at a time. Publishing a notice supersedes whichever other
+is published on the project, whatever its code, and the database refuses a
+second (`uq_notice_one_published_per_project`, migration 0033). The superseded
+notice's live consent links move to the new notice, so a link already handed out
+keeps working and shows the text in force; consents already recorded through it
+keep the notice they were given under. When approving a project publishes its
+notice and there are several drafts, the most recently created one is published.
+A notice code belongs to one project: another project's code is refused.
+
 ## 2. The link and the site
 
 A data principal never types an address. She opens a **consent link** minted
 for a collection site by its owner, on the data-principal portal, at
-`/c/{token}`. The link resolves to the site, its project and the notice
-version it was minted for; an invalid, expired, exhausted or revoked link
-says only that it is not valid, and never why.
+`/c/{token}`. The link resolves to the site, its project and the notice in
+force - the one it was minted for, or the one that replaced it; an invalid,
+expired, exhausted or revoked link says only that it is not valid, and never
+why.
 
 ## 3. Who is signing
 
@@ -152,6 +164,7 @@ way to alter one.
 | Invariant | Held by |
 |---|---|
 | A published notice and its renditions never change | `cmp_notice_freeze()` |
+| One published notice per project | partial unique index (migration 0033); `publish` supersedes the rest first |
 | An artefact carries the hash of the text served | `cmp_consent_coherent()` |
 | The notice was served before the action | `CHECK served_before_action` |
 | An artefact is superseded at most once | partial unique index |
