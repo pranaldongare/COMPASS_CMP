@@ -39,8 +39,16 @@ BROKER_ERRORS: tuple[type[BaseException], ...] = (OSError, ConnectionError, Time
 
 
 def _headers() -> dict[str, Any]:
-    """Carry the correlation id into the worker so one id spans both halves."""
-    return {"request_id": current_context().request_id}
+    """Carry the correlation id into the worker so one id spans both halves -
+    and, while the development code popup is on, the id of the browser tab
+    whose request this is, so the code the worker writes is shown to that tab
+    alone (`cmp.infrastructure.devcodes`)."""
+    ctx = current_context()
+    headers: dict[str, Any] = {"request_id": ctx.request_id}
+    client = ctx.extra.get("dev_client")
+    if client:
+        headers["dev_client"] = client
+    return headers
 
 
 def _withheld(args: tuple[Any, ...], kwargs: dict[str, Any]) -> dict[str, str]:

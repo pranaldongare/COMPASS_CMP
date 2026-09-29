@@ -24,6 +24,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from cmp.core.config import settings
 from cmp.core.constants import REQUEST_ID_HEADER
 from cmp.core.context import RequestContext, new_request_id, reset_context, set_context
+from cmp.infrastructure import devcodes
 
 Next = Callable[[Request], Awaitable[Response]]
 
@@ -78,11 +79,19 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         incoming = request.headers.get(REQUEST_ID_HEADER, "")
         request_id = clean_request_id(incoming) or new_request_id()
 
+        extra: dict[str, str] = {}
+        # The development code popup's tab id, carried only while the popup is
+        # on (local and test): it says which screen a code belongs to.
+        if devcodes.enabled():
+            client = devcodes.client_id(request.headers.get(devcodes.CLIENT_HEADER))
+            if client:
+                extra[devcodes.CONTEXT_KEY] = client
         token = set_context(
             RequestContext(
                 request_id=request_id,
                 ip_address=client_ip(request),
                 user_agent=request.headers.get("user-agent", "")[:300] or None,
+                extra=extra,
             )
         )
         request.state.request_id = request_id

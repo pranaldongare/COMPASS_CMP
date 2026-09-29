@@ -24,6 +24,7 @@ import axios, {
 import { ApiError, type ApiErrorBody, networkError } from "@/lib/errors";
 import { config } from "@/lib/config";
 import { decryptDeep, hasSealed } from "@/lib/dkms";
+import { DEV_CLIENT_HEADER, DEV_CODES_ON, devClientId } from "@/lib/dev/dev-client";
 
 const UNSAFE_METHODS = new Set(["post", "put", "patch", "delete"]);
 
@@ -105,6 +106,13 @@ http.interceptors.request.use((request: InternalAxiosRequestConfig) => {
 
   // Correlates this request with the server's log line for it.
   request.headers.set("X-Request-ID", requestId());
+
+  // Development only: lets the one-time-code popup show a code in the tab
+  // that asked for it and nowhere else. See lib/dev/dev-client.ts.
+  if (DEV_CODES_ON) {
+    const tab = devClientId();
+    if (tab) request.headers.set(DEV_CLIENT_HEADER, tab);
+  }
 
   // Let the browser set the boundary for multipart uploads.
   if (request.data instanceof FormData) {

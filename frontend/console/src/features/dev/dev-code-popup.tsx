@@ -8,6 +8,11 @@
  * `DEV_SHOW_CODES=true` on the API, this polls `/api/dev/codes` and shows
  * each new code with who it went to.
  *
+ * Only in the tab that asked: every API call names its tab
+ * (lib/dev/dev-client.ts), the API keeps that name with the code it causes,
+ * and this poll is answered with this tab's codes alone. Another window - on
+ * this machine or another - sees nothing.
+ *
  * Never in a real deployment: the API refuses the setting outside local and
  * test, and without it `/dev/codes` does not exist - a 404 here stops the
  * polling for good. A code shown on the screen that asks for it proves
@@ -21,6 +26,7 @@ import * as React from "react";
 import { reachableApiBase } from "@/lib/api/client";
 import { copyText } from "@/lib/browser";
 import { config } from "@/lib/config";
+import { DEV_CLIENT_HEADER, DEV_CODES_ON, devClientId } from "@/lib/dev/dev-client";
 
 interface SentCode {
   to: string;
@@ -29,7 +35,7 @@ interface SentCode {
   at: number;
 }
 
-const ON = process.env.NEXT_PUBLIC_DEV_SHOW_CODES === "true";
+const ON = DEV_CODES_ON;
 const POLL_MS = 2000;
 const SHOW_MS = 120_000;
 
@@ -53,7 +59,11 @@ export function DevCodePopup() {
           // Plain fetch, same origin: not the API client, whose 401 handling
           // and decryption have nothing to do with this.
           const base = reachableApiBase(config.apiUrl, window.location.hostname);
-          const response = await fetch(`${base}/dev/codes`, { cache: "no-store" });
+          const tab = devClientId();
+          const response = await fetch(`${base}/dev/codes`, {
+            cache: "no-store",
+            headers: tab ? { [DEV_CLIENT_HEADER]: tab } : {},
+          });
           if (response.status === 404) {
             console.warn(
               "[dev codes] /dev/codes is not on the API - set DEV_SHOW_CODES=true there and restart it.",

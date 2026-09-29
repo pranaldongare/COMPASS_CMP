@@ -8,6 +8,13 @@ as a release yet.
 ## [Unreleased]
 
 ### Security
+- **The development code popup shows a code only in the tab that asked.**
+  Every open portal and console polled one shared list, so a code asked for
+  on one screen popped up on every screen on every machine - anyone testing
+  alongside saw everyone else's codes. Each tab now sends an
+  `X-CMP-Dev-Client` id; the API keeps it with the code (through the Celery
+  task that sends it) and `/dev/codes` returns a tab's own codes only.
+  Development only, as before: refused outside local/test.
 - **A one-time code is worth exactly a data principal's session.** The
   portal's code sign-in minted a session with whatever role the account held,
   so a code to a staff mailbox - no password, no second factor - produced a

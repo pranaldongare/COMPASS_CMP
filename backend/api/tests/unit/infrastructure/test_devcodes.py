@@ -97,3 +97,100 @@ def test_the_route_exists_only_when_asked(monkeypatch: Any) -> None:
     assert _development_routers() == ()
     monkeypatch.setattr("cmp.core.config.settings.dev_show_codes", True)
     assert [r.routes[0].path for r in _development_routers()] == ["/dev/codes"]
+
+
+# ------------------------------------------------ only the tab that asked sees a code
+#
+# Every open portal and console polls `/dev/codes`, and a list shared by all of
+# them showed each code in every window on every machine. The tab whose request
+# caused a code is carried to the worker, kept with the code, and matched.
+
+TAB = "tab-0123456789abcdef"
+
+
+class _AsyncList:
+    def __init__(self, items: list[str]) -> None:
+        self.items = items
+
+    async def lrange(self, _key: str, _start: int, _end: int) -> list[str]:
+        return self.items
+
+
+def _entry(code: str, client: str | None, at: float | None = None) -> str:
+    import time
+
+    return json.dumps(
+        {
+            "to": "a@x.org",
+            "channel": "email",
+            "code": code,
+            "at": at or time.time(),
+            "client": client,
+        }
+    )
+
+
+def test_a_code_is_kept_with_the_tab_whose_request_caused_it(kept: _List) -> None:
+    from cmp.core.context import RequestContext, use_context
+
+    with use_context(RequestContext(request_id="r", extra={devcodes.CONTEXT_KEY: TAB})):
+        devcodes.record(channel="sms", to="+919876543210", text="COMPASS: 123456 confirms")
+    assert json.loads(kept.items[0])["client"] == TAB
+
+
+async def test_a_tab_is_shown_its_own_codes_and_no_one_elses() -> None:
+    store = _AsyncList(
+        [_entry("111111", TAB), _entry("222222", "tab-somebody-else"), _entry("333333", None)]
+    )
+
+    mine = await devcodes.recent(store, client=TAB)
+    assert [e["code"] for e in mine] == ["111111"]
+    # The tab id is how codes are matched; it is not handed back.
+    assert "client" not in mine[0]
+    # A tab that says nothing about itself is shown nothing.
+    assert await devcodes.recent(store, client=None) == []
+
+
+def test_only_a_well_formed_tab_id_is_taken() -> None:
+    assert devcodes.client_id(TAB) == TAB
+    for bad in (None, "", "short", "has spaces in it!", "x" * 65, "evil\nX-Injected: 1"):
+        assert devcodes.client_id(bad) is None
+
+
+def test_the_tab_travels_with_the_task_to_the_worker() -> None:
+    from types import SimpleNamespace
+
+    from cmp.core.context import RequestContext, current_context, use_context
+    from cmp.tasks.app import _bind_task_context
+    from cmp.tasks.dispatch import _headers
+
+    with use_context(RequestContext(request_id="r-1", extra={devcodes.CONTEXT_KEY: TAB})):
+        headers = _headers()
+    assert headers == {"request_id": "r-1", "dev_client": TAB}
+
+    # The worker binds what the producer put in the headers.
+    with use_context(RequestContext(request_id="-")):
+        _bind_task_context(task_id="t", task=SimpleNamespace(request=SimpleNamespace(**headers)))
+        assert current_context().extra.get(devcodes.CONTEXT_KEY) == TAB
+        assert current_context().request_id == "r-1"
+
+
+def test_the_request_carries_the_tab_id_only_while_the_popup_is_on(monkeypatch: Any) -> None:
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from cmp.api.middleware.request_context import RequestContextMiddleware
+    from cmp.core.context import current_context
+
+    app = FastAPI()
+    app.add_middleware(RequestContextMiddleware)
+
+    @app.get("/probe")
+    def probe() -> dict[str, Any]:
+        return dict(current_context().extra)
+
+    client = TestClient(app)
+    monkeypatch.setattr("cmp.core.config.settings.dev_show_codes", True)
+    assert client.get("/probe", headers={devcodes.CLIENT_HEADER: TAB}).json() == {"dev_client": TAB}
+    monkeypatch.setattr("cmp.core.config.settings.dev_show_codes", False)
+    assert client.get("/probe", headers={devcodes.CLIENT_HEADER: TAB}).json() == {}

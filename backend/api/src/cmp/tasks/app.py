@@ -150,7 +150,14 @@ def _bind_task_context(task_id: str | None = None, task: object = None, **kw: ob
 
     headers = getattr(task, "request", None)
     request_id = getattr(headers, "request_id", None) if headers else None
-    set_context(RequestContext(request_id=str(request_id or task_id or "-")))
+    # The development code popup's tab id, when the request carried one.
+    client = getattr(headers, "dev_client", None) if headers else None
+    set_context(
+        RequestContext(
+            request_id=str(request_id or task_id or "-"),
+            extra={"dev_client": str(client)} if client else {},
+        )
+    )
 
 
 @signals.task_failure.connect

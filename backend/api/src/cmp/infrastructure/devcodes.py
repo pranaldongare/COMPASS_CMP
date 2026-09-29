@@ -15,6 +15,14 @@ proves nothing about who holds the phone:
 * the route is not mounted unless the setting is on.
 
 Nothing here is ever used by a real delivery.
+
+**Only the screen that asked sees a code.** Every open portal and console
+polls, and a list shared by all of them showed each code in every open window
+on every machine. So each browser tab sends a random id of its own
+(`X-CMP-Dev-Client`) with its requests; the request that causes a code
+carries it to the worker in the task headers, the code is kept with it, and
+`GET /dev/codes` answers a tab with its own codes only. A tab that sends no id
+sees none.
 """
 
 from __future__ import annotations
@@ -30,6 +38,12 @@ from cmp.core.logging import get_logger
 log = get_logger("cmp.devcodes")
 
 KEY = "dev:codes"
+
+#: The header a browser tab identifies itself with, and the context key that
+#: carries it from the request to the worker that writes the message.
+CLIENT_HEADER = "X-CMP-Dev-Client"
+CONTEXT_KEY = "dev_client"
+_CLIENT = re.compile(r"[A-Za-z0-9_-]{8,64}")
 KEEP = 20
 TTL_S = 300
 
@@ -44,6 +58,13 @@ _CODE = re.compile(
 
 def enabled() -> bool:
     return settings.dev_show_codes and settings.environment in ("local", "test")
+
+
+def client_id(value: str | None) -> str | None:
+    """The tab id from a header, if it is one; anything else is no id."""
+    if not value or not _CLIENT.fullmatch(value):
+        return None
+    return value
 
 
 def _redis() -> Any:
@@ -61,7 +82,16 @@ def record(*, channel: str, to: str, text: str) -> None:
     if not match:
         return
     code = next(g for g in match.groups() if g)
-    entry = {"to": to, "channel": channel, "code": code, "at": time.time()}
+    from cmp.core.context import current_context
+
+    entry = {
+        "to": to,
+        "channel": channel,
+        "code": code,
+        "at": time.time(),
+        # The tab whose request caused this message; see the module docstring.
+        "client": current_context().extra.get(CONTEXT_KEY),
+    }
     try:
         r = _redis()
         pipe = r.pipeline()
@@ -73,13 +103,19 @@ def record(*, channel: str, to: str, text: str) -> None:
         log.warning("devcodes.not_recorded", error=str(exc))
 
 
-async def recent(redis: Any, *, within_s: int = TTL_S) -> list[dict[str, Any]]:
-    """The codes written in the last `within_s` seconds, newest first."""
+async def recent(redis: Any, *, client: str | None, within_s: int = TTL_S) -> list[dict[str, Any]]:
+    """This tab's codes from the last `within_s` seconds, newest first.
+
+    Without a tab id there is nothing to match, so nothing is returned: a code
+    is shown to the screen that asked for it or to none.
+    """
+    if not client:
+        return []
     raw = await redis.lrange(KEY, 0, KEEP - 1)
     cutoff = time.time() - within_s
     out: list[dict[str, Any]] = []
     for item in raw:
         entry = json.loads(item)
-        if entry.get("at", 0) >= cutoff:
-            out.append(entry)
+        if entry.get("at", 0) >= cutoff and entry.get("client") == client:
+            out.append({k: v for k, v in entry.items() if k != "client"})
     return out

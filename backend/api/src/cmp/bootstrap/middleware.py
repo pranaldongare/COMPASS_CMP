@@ -33,6 +33,7 @@ from cmp.core.constants import (
     REQUEST_ID_HEADER,
     RESPONSE_TIME_HEADER,
 )
+from cmp.infrastructure import devcodes
 
 
 def install(app: FastAPI) -> None:
@@ -49,6 +50,8 @@ def install(app: FastAPI) -> None:
             "Authorization",
             settings.csrf_header_name,
             REQUEST_ID_HEADER,
+            # Development only: which tab a one-time code is shown in.
+            *([devcodes.CLIENT_HEADER] if devcodes.enabled() else []),
         ],
         expose_headers=[
             REQUEST_ID_HEADER,

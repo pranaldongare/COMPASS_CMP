@@ -181,7 +181,18 @@ DEV_SHOW_CODES=true
 NEXT_PUBLIC_DEV_SHOW_CODES=true
 ```
 
-Restart the API, the worker and both `npm run dev`. The API refuses to start
+Restart the API, the worker and both `npm run dev`.
+
+A code shows in the browser tab whose request caused it and in no other -
+not another tab, not another person's machine. Each tab names itself in an
+`X-CMP-Dev-Client` header (kept in the tab's sessionStorage), the API keeps
+that name with the code, through the worker that sends it, and `/dev/codes`
+answers a tab with its own codes only. So an invitation code shows to the
+administrator who created the account, in that tab; open the invitation link
+in another tab and read the code from the outbox, or copy it from there. A
+request without the header (curl, a script) is shown nothing.
+
+The API refuses to start
 with `DEV_SHOW_CODES` outside `ENVIRONMENT=local`/`test`, and `/dev/codes`
 does not exist unless it is on - a code shown on the screen that asks for it
 proves nothing about who holds the phone, so this never goes near a real

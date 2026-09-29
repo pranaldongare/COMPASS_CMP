@@ -33,7 +33,9 @@ broker, `/2` task results.
 Routers are mounted in the order of `ROUTERS` in `api/routers/__init__.py`:
 `system` and `auth`, then the public consent and rights routers, then the
 signed-in ones. `/dev/codes` is added only when `DEV_SHOW_CODES` is on, which
-is refused outside local/test. `/metrics` (Prometheus) is installed last and
+is refused outside local/test; it answers each browser tab with the codes
+its own requests caused, matched on the `X-CMP-Dev-Client` header, which the
+request context carries into Celery task headers. `/metrics` (Prometheus) is installed last and
 ignores untemplated paths, so a consent token never becomes a metric label.
 
 ## The middleware a request passes through
