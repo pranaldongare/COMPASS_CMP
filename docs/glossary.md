@@ -173,6 +173,37 @@ administrator, who names an independent reviewer.
 **Board.** The Data Protection Board of India, the route beyond the fiduciary.
 Named in every response that does not uphold what was asked.
 
+## Breaches
+
+**Personal data breach.** Section 2(u): any unauthorised processing of
+personal data, or accidental disclosure, acquisition, sharing, use,
+alteration, destruction or loss of access to it, that compromises its
+confidentiality, integrity or availability. Whether an event is one is a
+person's **determination** - *pending*, *yes* or *no*, with reasoning - which
+the platform records and never computes, least of all from encryption.
+
+**Detected, became aware, began.** Three times on a breach, kept apart and
+entered by the DPO. *Detected* is when it was first noticed and starts the
+CERT-In clock; *became aware* is when the organisation knew a personal data
+breach had occurred, is recorded with a determination of *yes*, and starts
+every DPDP clock; *began* is when it started, if known.
+
+**Duty (obligation).** One statutory obligation a breach creates, with its own
+clock: CERT-In in six hours from detection; the Board's initial intimation and
+the notices to principals **without delay**; the Board's detailed report in 72
+hours from awareness or the date the Board allows. A due time is stored when the
+duty is created and never recomputed; what happens afterwards - done, not
+applicable, reinstated, extended - is a new row.
+
+**Without delay.** Rule 7's words for the Board's initial intimation and the
+notices to principals. There are no statutory hours, so the duty has no due
+time: the register shows the time since awareness, flagged against an internal
+target (`BREACH_WITHOUT_DELAY_TARGET_HOURS`) once Legal sets one.
+
+**CERT-In.** The Indian Computer Emergency Response Team. Its Directions of
+April 2022, under IT Act s.70B, require a reportable cyber incident to be
+reported within six hours of noticing it - in force now, and parallel to DPDP.
+
 ## Platform
 
 **Junction.** A named moment at which the platform writes to a person: a

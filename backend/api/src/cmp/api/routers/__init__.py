@@ -40,6 +40,8 @@ ROUTERS: tuple[APIRouter, ...] = (
     # Oversight.
     v1.rights_router,
     v1.legal_holds_router,
+    # Personal data breaches and the duties they start (S3-01).
+    v1.breaches_router,
     # A team's own tickets on rights requests - the portal channel.
     v1.tickets_router,
     v1.audit_router,

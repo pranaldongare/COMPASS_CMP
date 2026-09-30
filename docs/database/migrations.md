@@ -79,6 +79,7 @@ the [runbook](../operations/runbook.md).
 | `0031` | Erasure that erases (S2-03): `rights_item_execution`, append-only, one row per attempt at each store that holds a scope item; `rights_request_item.executed_at`; `legal_hold`, placed once and released once by trigger (`cmp_legal_hold_release_only`), its reason sealed. Raw SQL; nothing to backfill |
 | `0032` | Cross-border control (S2-04): `processor.location_country`; `restricted_country`, the s.16 list as data, listed once and lifted once by trigger, one active listing per country, never India; `export_line.destination_processor_id` and `destination_country`; `export_log.transfer_basis`. Raw SQL; nothing to backfill - earlier lines never recorded a destination |
 | `0033` | One published notice per project: the partial unique index `uq_notice_one_published_per_project`. Refuses to apply over a project that already has two, naming it, rather than choosing which to keep. Publishing now supersedes every other published notice on the project and moves its live links |
+| `0034` | The breach register (S3-01): `breach`, only its status changes (`cmp_breach_status_only`); append-only `breach_status_history`, `breach_determination` (outcome, reasoning, awareness for *yes*), `breach_assessment` (revisions, categories with sealed/key-exposed per category), `breach_obligation` (one per duty per breach, due time stored once) and `breach_obligation_event` (completed, not applicable, reinstated, extended, reopened). Every narrative column sealed. Raw SQL; nothing to backfill |
 
 ## What 0004 fixed
 

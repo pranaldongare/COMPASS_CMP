@@ -25,6 +25,7 @@ import {
   MapPin,
   MessageSquareText,
   Scale,
+  ShieldAlert,
   ScrollText,
   ShieldCheck,
   Upload,
@@ -148,6 +149,14 @@ export const SECTIONS: NavSection[] = [
         label: "Rights requests",
         icon: Scale,
         keywords: "erasure access correction grievance",
+      },
+      // Personal data breaches: the register, and every duty's clock (S3-01).
+      {
+        key: "breaches",
+        href: "/breaches",
+        label: "Breaches",
+        icon: ShieldAlert,
+        keywords: "incident cert-in board rule 7 personal data breach",
       },
       {
         key: "audit",

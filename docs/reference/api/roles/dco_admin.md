@@ -11,6 +11,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `sites`, `sources`, 
 | `approval` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `asset` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `audit` | No | No | `none` | Denied |
+| `breach` | No | No | `none` | Denied |
 | `collection` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `consent` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `data_source` | Yes | Yes | `all` | All rows |

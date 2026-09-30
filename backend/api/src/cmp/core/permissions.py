@@ -295,6 +295,13 @@ MATRIX: dict[str, dict[Role, Grant]] = {
     "legal_hold": {
         Role.DPO: Grant(Scope.ALL, write=True),
     },
+    # The breach register and its duties (S3-01). The DPO's alone, and hidden
+    # from everyone else: the routes answer 404 to any other role, since that a
+    # breach is being handled is itself something to withhold (see
+    # `RequireResource(hidden=True)`).
+    "breach": {
+        Role.DPO: Grant(Scope.ALL, write=True),
+    },
     # The Government's s.16 restricted-country list (S2-04). The DPO keeps it,
     # because it decides what may leave the country; the administrator reads it,
     # because a refused export lands on their desk as often as anyone's.
@@ -370,6 +377,8 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "imports",
         # Rights requests: the DPO owns every one, and the clock on each.
         "requests",
+        # Personal data breaches: the register, and every duty's clock.
+        "breaches",
         "audit",
         "users",
         # The words of every message the platform sends.

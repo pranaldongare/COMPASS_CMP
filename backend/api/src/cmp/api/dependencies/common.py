@@ -71,6 +71,9 @@ RightsReader = Annotated[Principal, Depends(RequireResource("rights_request"))]
 RightsWriter = Annotated[Principal, Depends(RequireResource("rights_request", write=True))]
 LegalHoldReader = Annotated[Principal, Depends(RequireResource("legal_hold"))]
 LegalHoldWriter = Annotated[Principal, Depends(RequireResource("legal_hold", write=True))]
+#: The breach register. Hidden: any other role is answered 404, not 403.
+BreachReader = Annotated[Principal, Depends(RequireResource("breach", hidden=True))]
+BreachWriter = Annotated[Principal, Depends(RequireResource("breach", write=True, hidden=True))]
 TransferListReader = Annotated[Principal, Depends(RequireResource("restricted_country"))]
 TransferListWriter = Annotated[
     Principal, Depends(RequireResource("restricted_country", write=True))

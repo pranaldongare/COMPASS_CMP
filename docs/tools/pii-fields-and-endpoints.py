@@ -36,6 +36,14 @@ COLUMNS: list[tuple[str, list[str]]] = [
     ("rights_ticket_message", ["body", "evidence_name", "evidence_ref"]),
     ("rights_response_file", ["file_name", "file_ref"]),
     ("legal_hold", ["reason", "subject_user_id"]),
+    # The breach register (S3-01): every narrative the office writes, sealed.
+    ("breach", ["title", "location_detail"]),
+    ("breach_status_history", ["reason"]),
+    ("breach_determination", ["reasoning"]),
+    ("breach_assessment", ["nature_extent", "likely_impact", "consequences", "circumstances",
+                           "mitigation", "protective_steps", "caused_by_findings",
+                           "remedial_measures", "contact_point"]),
+    ("breach_obligation_event", ["note"]),
     ("consent_artefact", ["ip_address", "auth_user_id"]),
     ("consent_purpose_grant", ["granted"]),
     ("consent_link", ["token", "token_sealed"]),
@@ -52,7 +60,7 @@ COLUMNS: list[tuple[str, list[str]]] = [
     ("audit_log", ["actor_user_id", "subject_user_id", "detail_json (holds ip, email)"]),
 ]
 
-ORDER = ["auth", "me", "public consent", "public information", "rights", "legal holds",
+ORDER = ["auth", "me", "public consent", "public information", "rights", "legal holds", "breaches",
          "cross-border transfers", "tickets", "consent", "exchange", "users", "delegations", "projects", "notices",
          "registry", "messages", "audit", "dashboard"]
 TITLE = {
@@ -60,6 +68,7 @@ TITLE = {
     "public consent": "Consent link (`/c/{token}`)", "public information": "Public rights pages (`/rights`)",
     "rights": "Rights requests — Privacy Office (`/requests`)",
     "legal holds": "Legal holds (`/legal-holds`)",
+    "breaches": "Personal data breaches (`/breaches`)",
     "cross-border transfers": "Cross-border transfers (`/restricted-countries`)", "tickets": "Tickets (`/tickets`)",
     "consent": "Consents and links", "exchange": "Exports, imports, collections, assets",
     "users": "Users (`/users`)", "delegations": "Delegations (`/delegations`)",
@@ -95,7 +104,9 @@ def main() -> None:
                "`response_text`, `responder_name`, `responder_contact`, `instruction`,\n"
                "`return_summary`, `sent_back_reason`, `body`, `evidence_name`, `file_name` (both\n"
                "tables), `ip_address`, `name` and `contact` on `processor_respondent`, every\n"
-               "`reason`, `decision_reason` — 34 columns in 14 tables. The eight the platform\n"
+               "`reason`, `decision_reason`, and every narrative in the breach register\n"
+               "(`title`, `location_detail`, `reasoning`, the nine assessment facts, a duty\n"
+               "event's `note`) — 48 columns in 19 tables. The eight the platform\n"
                "looks rows up by whole (`email`, `secondary_email`, `mobile`, `username`,\n"
                "`organization_id`, `nominee_email`, `nominee_mobile`, `submitted_contact`) carry\n"
                "a keyed hash beside them - `*_hash`, an HMAC of the normalised value - and three\n"

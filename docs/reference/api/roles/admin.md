@@ -11,6 +11,7 @@ Navigation returned after sign-in: `dashboard`, `users`, `messages`, `processors
 | `approval` | No | No | `none` | Denied |
 | `asset` | No | No | `none` | Denied |
 | `audit` | Yes | No | `all` | All rows |
+| `breach` | No | No | `none` | Denied |
 | `collection` | No | No | `none` | Denied |
 | `consent` | No | No | `none` | Denied |
 | `data_source` | Yes | Yes | `all` | All rows |

@@ -48,6 +48,7 @@ IDENTITY = {
     "overridden_by_name", "owner_name", "placed_by_name", "principal_name",
     "released_by_name", "reviewer_name",
     "subject_name", "updated_by_name", "uploaded_by_name", "verified_by_name",
+    "recorded_by_name", "determined_by_name", "revised_by_name",
     "username",
 }
 CONTACT = {
@@ -85,6 +86,12 @@ FREE_TEXT = {
     "request_text", "response_text", "remedy_text", "verification_note",
     "refusal_reason", "return_summary", "sent_back_reason", "instruction",
     "brief", "body", "contact_log", "reason", "evidence", "decision_reason",
+    # The breach register (S3-01): every narrative the office writes, sealed.
+    # `title` and `note` are sealed there too, but are the plain names of a
+    # message and a notice everywhere else, so they are not listed by name.
+    "reasoning", "nature_extent", "likely_impact", "consequences",
+    "circumstances", "mitigation", "protective_steps", "caused_by_findings",
+    "remedial_measures", "contact_point", "location_detail",
 }
 FILE = {
     "file_name", "file_uuid", "files", "response_files", "evidence_name",
@@ -261,7 +268,7 @@ SHORT = {"dpo": "DPO", "admin": "Admin", "dco": "DCO", "dco_admin": "DCO Admin",
          "rco": "RCO", "rnd_user": "R&D", "data_subject": "Principal"}
 VALUE = {"ALL": "every row", "SCOPED": "rows in scope", "OWN": "own rows",
          "COND": "conditional"}
-ORDER = ["auth", "me", "public consent", "public information", "rights", "legal holds",
+ORDER = ["auth", "me", "public consent", "public information", "rights", "legal holds", "breaches",
          "cross-border transfers", "tickets",
          "consent", "exchange", "users", "delegations", "projects", "notices",
          "registry", "messages", "audit", "dashboard"]
@@ -272,6 +279,7 @@ TITLE = {
     "public information": "The public rights surface — `/rights/*`",
     "rights": "Rights requests, the office's side — `/requests/*`",
     "legal holds": "Legal holds — `/legal-holds/*`",
+    "breaches": "Personal data breaches — `/breaches/*`",
     "cross-border transfers": "Cross-border transfers — `/restricted-countries/*`",
     "tickets": "Tickets a holder answers — `/tickets/*`",
     "consent": "Consents and links, the office's side",

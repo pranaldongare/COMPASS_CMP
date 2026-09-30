@@ -44,6 +44,8 @@ import type {
   Acknowledged,
   ApprovalListRow,
   AuditEntry,
+  Breach,
+  BreachSummary,
   CollectionListRow,
   ConsentListRow,
   ConsentRow,
@@ -131,6 +133,9 @@ export type _CollectionListRow = Covers<
 
 export type _AuditEntry = Covers<"AuditEntry", Schemas["AuditEntry"], AuditEntry>;
 export type _User = Covers<"User", Schemas["UserOut"], User>;
+// The breach register (S3-01): the detail carries every duty and its clock.
+export type _Breach = Covers<"Breach", Schemas["BreachOut"], Breach>;
+export type _BreachSummary = Covers<"BreachSummary", Schemas["BreachSummaryOut"], BreachSummary>;
 
 /**
  * The check itself.
@@ -159,6 +164,8 @@ const _contractHolds: {
   CollectionListRow: _CollectionListRow;
   AuditEntry: _AuditEntry;
   User: _User;
+  Breach: _Breach;
+  BreachSummary: _BreachSummary;
 } = {
   Me: true,
   MeProfile: true,
@@ -180,6 +187,8 @@ const _contractHolds: {
   CollectionListRow: true,
   AuditEntry: true,
   User: true,
+  Breach: true,
+  BreachSummary: true,
 };
 
 void _contractHolds;

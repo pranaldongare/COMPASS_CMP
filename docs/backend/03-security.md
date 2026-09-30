@@ -115,7 +115,7 @@ see [known gaps](06-known-gaps.md) - are not checked.
 
 ## Authorisation
 
-**The matrix.** `core/permissions.py` `MATRIX` maps 21 resources × 7 roles
+**The matrix.** `core/permissions.py` `MATRIX` maps 22 resources × 7 roles
 to a `Grant(scope, write)`. A resource or role missing from a row is denied.
 
 **Scopes** say *which rows*:

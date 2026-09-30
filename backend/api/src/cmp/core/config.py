@@ -10,7 +10,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Annotated, Literal
 
-from pydantic import SecretStr, field_validator, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from cmp.core.permissions import Role
@@ -179,6 +179,15 @@ class Settings(BaseSettings):
     rights_unverified_close_days: int = 7
     # How long a nominee has to accept a nomination before the link lapses.
     nomination_accept_ttl_days: int = 30
+
+    # ----------------------------------------------------------------- breach
+    # The internal target for a duty Rule 7 says is due "without delay" - the
+    # Board's initial intimation and the notices to principals - in hours from
+    # becoming aware. The Rule sets no hours, and what the target is belongs
+    # to Legal and the Programme, not to this file: unset, the register shows
+    # the time elapsed and flags nothing. The 6 and 72 hours are statute and
+    # live with the obligations they time (`cmp.domain.breach.clock`).
+    breach_without_delay_target_hours: float | None = Field(default=None, gt=0)
 
     # ---------------------------------------------------------------- external
     #: How the organisation names itself in messages ({organisation}).

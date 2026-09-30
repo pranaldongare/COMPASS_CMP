@@ -1,10 +1,10 @@
 # COMPASS complete database schema
 
-Generated from the catalogue of a scratch database built by replaying migrations **0001 → 0033**, on 2026-09-29. Rebuild it with `python3 docs/tools/generate-schema-docs.py --database <db>`; nothing here is maintained by hand.
+Generated from the catalogue of a scratch database built by replaying migrations **0001 → 0034**, on 2026-09-30. Rebuild it with `python3 docs/tools/generate-schema-docs.py --database <db>`; nothing here is maintained by hand.
 
 ## Open the diagrams
 
-- **[Complete schema SVG](complete_schema.svg)** — every table/view column, type, primary key, unique-constraint membership, nullability and all 93 foreign-key constraints.
+- **[Complete schema SVG](complete_schema.svg)** — every table/view column, type, primary key, unique-constraint membership, nullability and all 117 foreign-key constraints.
 - [Relationship overview SVG](schema_overview.svg) — all tables and relationships with compact cards.
 - [Enum reference SVG](enums.svg) — all 39 PostgreSQL enum types and values.
 - [Column and constraint reference](table_reference.md) — exact defaults, comments, foreign keys, CHECKs, indexes and triggers.
@@ -22,8 +22,9 @@ The complete SVG is a large, zoomable vector drawing. Open it in a browser or ve
 | Notices | `notice`, `notice_language`, `notice_purpose` | [Open SVG](modules/notices.svg) |
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant`, `v_current_consent` | [Open SVG](modules/consent.svg) |
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` | [Open SVG](modules/exchange.svg) |
-| Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_ticket_message`, `rights_response_file`, `nomination` | [Open SVG](modules/rights.svg) |
-| Platform | `audit_log`, `message_template` | [Open SVG](modules/platform.svg) |
+| Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_ticket_message`, `rights_response_file`, `rights_item_execution`, `legal_hold`, `nomination` | [Open SVG](modules/rights.svg) |
+| Breach | `breach`, `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event` | [Open SVG](modules/breach.svg) |
+| Platform | `audit_log`, `message_template`, `restricted_country` | [Open SVG](modules/platform.svg) |
 
 Module diagrams include full local tables and their outgoing foreign keys. Referenced tables outside the module appear as key-only context; incoming relationships from other modules are shown in the complete diagram.
 
@@ -31,16 +32,16 @@ Module diagrams include full local tables and their outgoing foreign keys. Refer
 
 | Object | Count |
 | --- | --- |
-| Application Tables | 35 |
+| Application Tables | 41 |
 | Metadata Tables | 1 |
 | Views | 1 |
-| Table Columns | 456 |
-| Foreign Keys | 102 |
+| Table Columns | 523 |
+| Foreign Keys | 117 |
 | Enums | 39 |
-| Triggers | 30 |
-| Checks | 50 |
+| Triggers | 36 |
+| Checks | 62 |
 
-The Alembic `alembic_version` table is included separately as migration metadata. Its one column and the view's derived columns are additional to the 456 application-table columns; the inventory above comes from PostgreSQL's catalogues after replaying the full migration chain.
+The Alembic `alembic_version` table is included separately as migration metadata. Its one column and the view's derived columns are additional to the 523 application-table columns; the inventory above comes from PostgreSQL's catalogues after replaying the full migration chain.
 
 Since **0027–0030** the personal columns are `text` rather than `varchar(n)` - ciphertext is longer than the plaintext it replaces - and each column the platform looks rows up by carries a `*_hash` column beside it holding `HMAC-SHA256(normalised value, BLIND_INDEX_KEY)`. Three name columns additionally carry `*_ngrams text[]` with a GIN index: the hashed three-character runs that let staff search by part of a name without the name being readable. `auth_user.minor_until` is the one date kept in the clear, for the section 9 test. What each column holds and why is in [docs/dkms/](../../dkms/README.md).
 
@@ -50,11 +51,13 @@ Since **0027–0030** the personal columns are `text` rather than `varchar(n)` -
 
 **0033** adds one rule, not a table: `uq_notice_one_published_per_project`, a partial unique index allowing one published notice per project.
 
+**0034** (S3-01) adds the breach register: `breach`, whose status alone may change (`cmp_breach_status_only`); and, append-only, its status history, its determinations (whether it is a personal data breach under s.2(u), with the moment of awareness), its assessment revisions, one `breach_obligation` per statutory duty with its due time stored once, and `breach_obligation_event` for everything that happens to a duty afterwards. Every narrative column is sealed.
+
 ## Reading relationships and keys
 
 - Arrow direction is **referencing child column → referenced parent key**. A solid line means all FK columns are NOT NULL; a dashed line means at least one is nullable. A dotted green line is a view dependency, not an FK.
 - `PK` = primary key; `FK` = foreign key; `UQ` = member of a declared unique constraint, which can be composite; `?` = nullable column. Not every UQ-marked column is unique on its own. Unique expression/partial indexes are listed in the column reference and SQL.
-- Repeated arrows between tables represent distinct foreign-key constraints, for example created-by versus approved-by. The full SVG includes all 102 constraints, including circular and self-referencing ones.
+- Repeated arrows between tables represent distinct foreign-key constraints, for example created-by versus approved-by. The full SVG includes all 117 constraints, including circular and self-referencing ones.
 - Types are displayed compactly (`int4`, `int8`, `varchar`, `timestamptz`, `bool`); the exact PostgreSQL types are in the column reference. View nullability is derived and is not asserted by the diagram.
 - Arrow styles express foreign-key nullability, not universal one-to-many cardinality. Composite uniqueness, partial indexes and trigger rules must also be considered; these are retained in the supporting SQL/reference.
 

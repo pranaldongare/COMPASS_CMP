@@ -33,6 +33,7 @@ const RESOURCE_OF: Record<string, string> = {
   "/exports": "export",
   "/imports": "import",
   "/requests": "rights_request",
+  "/breaches": "breach",
   "/audit": "audit",
   "/users": "user",
 };

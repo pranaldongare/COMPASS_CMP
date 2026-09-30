@@ -27,6 +27,7 @@ one stays and points forward.
 | [0018](0018-pip-and-a-virtualenv-no-containers.md) | pip and a virtualenv; nothing ships as a container | accepted |
 | [0019](0019-erasure-reaches-every-store-but-the-record.md) | Erasure reaches every store that holds an item, and never the record of what happened | accepted |
 | [0020](0020-cross-border-transfer-checked-at-export.md) | A transfer is checked at export, and an unknown place is refused | accepted |
+| [0021](0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md) | A breach is recorded and its duties tracked; the platform never submits | accepted |
 
 ## Writing one
 

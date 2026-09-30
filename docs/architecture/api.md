@@ -1,6 +1,6 @@
 # The API
 
-One FastAPI service, 254 endpoints over 222 paths, all under the API's root
+One FastAPI service, 265 endpoints over 231 paths, all under the API's root
 with no version prefix. The interactive reference is at `/docs` in local
 development, and `backend/api/openapi.json` is the same document, regenerated
 from the application whenever a route or schema changes. This page is the map;

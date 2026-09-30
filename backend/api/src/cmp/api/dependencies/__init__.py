@@ -28,6 +28,8 @@ from cmp.api.dependencies.authentication import (
 from cmp.api.dependencies.authorization import RequireResource, RequireRole
 from cmp.api.dependencies.common import (
     AuditReader,
+    BreachReader,
+    BreachWriter,
     CollectionReader,
     ConsentReader,
     CurrentUser,
@@ -61,6 +63,8 @@ from cmp.api.dependencies.sessions import (
 __all__ = [
     "UNSAFE_METHODS",
     "AuditReader",
+    "BreachReader",
+    "BreachWriter",
     "CollectionReader",
     "ConsentReader",
     "CurrentUser",

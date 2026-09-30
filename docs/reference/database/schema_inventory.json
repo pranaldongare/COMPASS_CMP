@@ -1,6 +1,6 @@
 {
-  "commit": "aaadc0516455cb0ca0c21ff5f89f80f26c5c3012",
-  "migration_head": "0033",
+  "commit": "861fe8f0dd1b5ec7bfeecb107c3f0e492490cba3",
+  "migration_head": "0034",
   "migrations": [
     {
       "revision": "0001",
@@ -133,6 +133,10 @@
     {
       "revision": "0033",
       "source": "backend/api/migrations/versions/0033_one_published_notice_per_project.py"
+    },
+    {
+      "revision": "0034",
+      "source": "backend/api/migrations/versions/0034_breach_register.py"
     }
   ],
   "postgres_version": "16.15",
@@ -159,6 +163,36 @@
     },
     {
       "name": "auth_user",
+      "kind": "r",
+      "comment": null
+    },
+    {
+      "name": "breach",
+      "kind": "r",
+      "comment": "A suspected or confirmed personal data breach (s.8(6), Rule 7). Only status changes; see breach_status_history"
+    },
+    {
+      "name": "breach_assessment",
+      "kind": "r",
+      "comment": null
+    },
+    {
+      "name": "breach_determination",
+      "kind": "r",
+      "comment": null
+    },
+    {
+      "name": "breach_obligation",
+      "kind": "r",
+      "comment": null
+    },
+    {
+      "name": "breach_obligation_event",
+      "kind": "r",
+      "comment": null
+    },
+    {
+      "name": "breach_status_history",
       "kind": "r",
       "comment": null
     },
@@ -709,6 +743,609 @@
       "type": "text[]",
       "not_null": false,
       "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach",
+      "name": "breach_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_breach_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach",
+      "name": "breach_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "breach",
+      "name": "reference",
+      "position": 3,
+      "type": "character varying(24)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach",
+      "name": "title",
+      "position": 4,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach",
+      "name": "detected_at",
+      "position": 5,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": null,
+      "comment": "When it was first noticed, as entered by the DPO. Anchors the CERT-In clock"
+    },
+    {
+      "table_name": "breach",
+      "name": "began_at",
+      "position": 6,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach",
+      "name": "location_kind",
+      "position": 7,
+      "type": "character varying(12)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach",
+      "name": "location_processor_id",
+      "position": 8,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach",
+      "name": "location_source_id",
+      "position": 9,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach",
+      "name": "location_detail",
+      "position": 10,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach",
+      "name": "status",
+      "position": 11,
+      "type": "character varying(8)",
+      "not_null": true,
+      "default_value": "'open'::character varying",
+      "comment": null
+    },
+    {
+      "table_name": "breach",
+      "name": "recorded_by",
+      "position": 12,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach",
+      "name": "recorded_at",
+      "position": 13,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "assessment_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_assessment_assessment_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "assessment_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "breach_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "revision",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "began_at",
+      "position": 5,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "nature_extent",
+      "position": 6,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "likely_impact",
+      "position": 7,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "consequences",
+      "position": 8,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "categories",
+      "position": 9,
+      "type": "jsonb",
+      "not_null": true,
+      "default_value": "'[]'::jsonb",
+      "comment": null
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "circumstances",
+      "position": 10,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "mitigation",
+      "position": 11,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "protective_steps",
+      "position": 12,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "caused_by_findings",
+      "position": 13,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "remedial_measures",
+      "position": 14,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "contact_point",
+      "position": 15,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "revised_by",
+      "position": 16,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "revised_at",
+      "position": 17,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "determination_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_determination_determination_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "determination_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "breach_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "outcome",
+      "position": 4,
+      "type": "character varying(8)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "reasoning",
+      "position": 5,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "became_aware_at",
+      "position": 6,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "determined_by",
+      "position": 7,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "determined_at",
+      "position": 8,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "obligation_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_obligation_obligation_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "obligation_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "breach_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "kind",
+      "position": 4,
+      "type": "character varying(20)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "due_at",
+      "position": 5,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "anchored_at",
+      "position": 6,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "determination_id",
+      "position": 7,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "created_by",
+      "position": 8,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "created_at",
+      "position": 9,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "event_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_obligation_event_event_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "event_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "obligation_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "kind",
+      "position": 4,
+      "type": "character varying(16)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "occurred_at",
+      "position": 5,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "reference",
+      "position": 6,
+      "type": "character varying(200)",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "note",
+      "position": 7,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "due_at",
+      "position": 8,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "anchored_at",
+      "position": 9,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "requested_at",
+      "position": 10,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "determination_id",
+      "position": 11,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "recorded_by",
+      "position": 12,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "recorded_at",
+      "position": 13,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_status_history",
+      "name": "history_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_status_history_history_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_status_history",
+      "name": "breach_id",
+      "position": 2,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_status_history",
+      "name": "from_status",
+      "position": 3,
+      "type": "character varying(8)",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_status_history",
+      "name": "to_status",
+      "position": 4,
+      "type": "character varying(8)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_status_history",
+      "name": "reason",
+      "position": 5,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_status_history",
+      "name": "changed_by",
+      "position": 6,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_status_history",
+      "name": "changed_at",
+      "position": 7,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
       "comment": null
     },
     {
@@ -4869,6 +5506,661 @@
       "initially_deferred": false
     },
     {
+      "table_name": "breach",
+      "name": "breach_began_before_detected",
+      "kind": "c",
+      "definition": "CHECK (((began_at IS NULL) OR (began_at <= detected_at)))",
+      "columns": [
+        "began_at",
+        "detected_at"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach",
+      "name": "breach_breach_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (breach_uuid)",
+      "columns": [
+        "breach_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach",
+      "name": "breach_location_kind",
+      "kind": "c",
+      "definition": "CHECK (((location_kind)::text = ANY ((ARRAY['platform'::character varying, 'processor'::character varying, 'data_source'::character varying, 'other'::character varying])::text[])))",
+      "columns": [
+        "location_kind"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach",
+      "name": "breach_location_named",
+      "kind": "c",
+      "definition": "CHECK (((((location_kind)::text = 'processor'::text) = (location_processor_id IS NOT NULL)) AND (((location_kind)::text = 'data_source'::text) = (location_source_id IS NOT NULL))))",
+      "columns": [
+        "location_kind",
+        "location_processor_id",
+        "location_source_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach",
+      "name": "breach_location_processor_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (location_processor_id) REFERENCES processor(processor_id)",
+      "columns": [
+        "location_processor_id"
+      ],
+      "referenced_table": "processor",
+      "referenced_columns": [
+        "processor_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach",
+      "name": "breach_location_source_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (location_source_id) REFERENCES data_source(source_id)",
+      "columns": [
+        "location_source_id"
+      ],
+      "referenced_table": "data_source",
+      "referenced_columns": [
+        "source_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach",
+      "name": "breach_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (breach_id)",
+      "columns": [
+        "breach_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach",
+      "name": "breach_recorded_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (recorded_by) REFERENCES auth_user(id)",
+      "columns": [
+        "recorded_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach",
+      "name": "breach_reference_key",
+      "kind": "u",
+      "definition": "UNIQUE (reference)",
+      "columns": [
+        "reference"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach",
+      "name": "breach_status",
+      "kind": "c",
+      "definition": "CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'closed'::character varying])::text[])))",
+      "columns": [
+        "status"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "breach_assessment_assessment_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (assessment_uuid)",
+      "columns": [
+        "assessment_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "breach_assessment_breach_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (breach_id) REFERENCES breach(breach_id)",
+      "columns": [
+        "breach_id"
+      ],
+      "referenced_table": "breach",
+      "referenced_columns": [
+        "breach_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "breach_assessment_categories_list",
+      "kind": "c",
+      "definition": "CHECK ((jsonb_typeof(categories) = 'array'::text))",
+      "columns": [
+        "categories"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "breach_assessment_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (assessment_id)",
+      "columns": [
+        "assessment_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "breach_assessment_revised_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (revised_by) REFERENCES auth_user(id)",
+      "columns": [
+        "revised_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "breach_assessment_revision",
+      "kind": "u",
+      "definition": "UNIQUE (breach_id, revision)",
+      "columns": [
+        "breach_id",
+        "revision"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "breach_determination_aware_when_yes",
+      "kind": "c",
+      "definition": "CHECK ((((outcome)::text = 'yes'::text) = (became_aware_at IS NOT NULL)))",
+      "columns": [
+        "outcome",
+        "became_aware_at"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "breach_determination_breach_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (breach_id) REFERENCES breach(breach_id)",
+      "columns": [
+        "breach_id"
+      ],
+      "referenced_table": "breach",
+      "referenced_columns": [
+        "breach_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "breach_determination_determination_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (determination_uuid)",
+      "columns": [
+        "determination_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "breach_determination_determined_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (determined_by) REFERENCES auth_user(id)",
+      "columns": [
+        "determined_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "breach_determination_outcome",
+      "kind": "c",
+      "definition": "CHECK (((outcome)::text = ANY ((ARRAY['pending'::character varying, 'yes'::character varying, 'no'::character varying])::text[])))",
+      "columns": [
+        "outcome"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "breach_determination_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (determination_id)",
+      "columns": [
+        "determination_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "breach_obligation_breach_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (breach_id) REFERENCES breach(breach_id)",
+      "columns": [
+        "breach_id"
+      ],
+      "referenced_table": "breach",
+      "referenced_columns": [
+        "breach_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "breach_obligation_created_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (created_by) REFERENCES auth_user(id)",
+      "columns": [
+        "created_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "breach_obligation_determination_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (determination_id) REFERENCES breach_determination(determination_id)",
+      "columns": [
+        "determination_id"
+      ],
+      "referenced_table": "breach_determination",
+      "referenced_columns": [
+        "determination_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "breach_obligation_kind",
+      "kind": "c",
+      "definition": "CHECK (((kind)::text = ANY ((ARRAY['cert_in'::character varying, 'board_intimation'::character varying, 'board_report'::character varying, 'principals'::character varying])::text[])))",
+      "columns": [
+        "kind"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "breach_obligation_obligation_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (obligation_uuid)",
+      "columns": [
+        "obligation_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "breach_obligation_once",
+      "kind": "u",
+      "definition": "UNIQUE (breach_id, kind)",
+      "columns": [
+        "breach_id",
+        "kind"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "breach_obligation_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (obligation_id)",
+      "columns": [
+        "obligation_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "breach_obligation_event_cites_determination",
+      "kind": "c",
+      "definition": "CHECK ((((kind)::text <> ALL ((ARRAY['not_applicable'::character varying, 'reinstated'::character varying])::text[])) OR (determination_id IS NOT NULL)))",
+      "columns": [
+        "kind",
+        "determination_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "breach_obligation_event_completed_when",
+      "kind": "c",
+      "definition": "CHECK ((((kind)::text <> 'completed'::text) OR (occurred_at IS NOT NULL)))",
+      "columns": [
+        "kind",
+        "occurred_at"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "breach_obligation_event_determination_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (determination_id) REFERENCES breach_determination(determination_id)",
+      "columns": [
+        "determination_id"
+      ],
+      "referenced_table": "breach_determination",
+      "referenced_columns": [
+        "determination_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "breach_obligation_event_event_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (event_uuid)",
+      "columns": [
+        "event_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "breach_obligation_event_extension",
+      "kind": "c",
+      "definition": "CHECK ((((kind)::text <> 'extended'::text) OR ((due_at IS NOT NULL) AND (requested_at IS NOT NULL))))",
+      "columns": [
+        "kind",
+        "due_at",
+        "requested_at"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "breach_obligation_event_kind",
+      "kind": "c",
+      "definition": "CHECK (((kind)::text = ANY ((ARRAY['completed'::character varying, 'not_applicable'::character varying, 'reinstated'::character varying, 'extended'::character varying, 'reopened'::character varying])::text[])))",
+      "columns": [
+        "kind"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "breach_obligation_event_obligation_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (obligation_id) REFERENCES breach_obligation(obligation_id)",
+      "columns": [
+        "obligation_id"
+      ],
+      "referenced_table": "breach_obligation",
+      "referenced_columns": [
+        "obligation_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "breach_obligation_event_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (event_id)",
+      "columns": [
+        "event_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "breach_obligation_event_recorded_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (recorded_by) REFERENCES auth_user(id)",
+      "columns": [
+        "recorded_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_status_history",
+      "name": "breach_status_history_breach_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (breach_id) REFERENCES breach(breach_id)",
+      "columns": [
+        "breach_id"
+      ],
+      "referenced_table": "breach",
+      "referenced_columns": [
+        "breach_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_status_history",
+      "name": "breach_status_history_changed_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (changed_by) REFERENCES auth_user(id)",
+      "columns": [
+        "changed_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_status_history",
+      "name": "breach_status_history_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (history_id)",
+      "columns": [
+        "history_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "collection",
       "name": "collection_batch_id_fkey",
       "kind": "f",
@@ -8378,6 +9670,91 @@
       "definition": "CREATE INDEX idx_user_via_link ON public.auth_user USING btree (registered_via_link_id)"
     },
     {
+      "table_name": "breach",
+      "name": "breach_breach_uuid_key",
+      "definition": "CREATE UNIQUE INDEX breach_breach_uuid_key ON public.breach USING btree (breach_uuid)"
+    },
+    {
+      "table_name": "breach",
+      "name": "breach_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_pkey ON public.breach USING btree (breach_id)"
+    },
+    {
+      "table_name": "breach",
+      "name": "breach_reference_key",
+      "definition": "CREATE UNIQUE INDEX breach_reference_key ON public.breach USING btree (reference)"
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "breach_assessment_assessment_uuid_key",
+      "definition": "CREATE UNIQUE INDEX breach_assessment_assessment_uuid_key ON public.breach_assessment USING btree (assessment_uuid)"
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "breach_assessment_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_assessment_pkey ON public.breach_assessment USING btree (assessment_id)"
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "breach_assessment_revision",
+      "definition": "CREATE UNIQUE INDEX breach_assessment_revision ON public.breach_assessment USING btree (breach_id, revision)"
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "breach_determination_determination_uuid_key",
+      "definition": "CREATE UNIQUE INDEX breach_determination_determination_uuid_key ON public.breach_determination USING btree (determination_uuid)"
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "breach_determination_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_determination_pkey ON public.breach_determination USING btree (determination_id)"
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "idx_breach_determination",
+      "definition": "CREATE INDEX idx_breach_determination ON public.breach_determination USING btree (breach_id, determination_id)"
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "breach_obligation_obligation_uuid_key",
+      "definition": "CREATE UNIQUE INDEX breach_obligation_obligation_uuid_key ON public.breach_obligation USING btree (obligation_uuid)"
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "breach_obligation_once",
+      "definition": "CREATE UNIQUE INDEX breach_obligation_once ON public.breach_obligation USING btree (breach_id, kind)"
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "breach_obligation_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_obligation_pkey ON public.breach_obligation USING btree (obligation_id)"
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "breach_obligation_event_event_uuid_key",
+      "definition": "CREATE UNIQUE INDEX breach_obligation_event_event_uuid_key ON public.breach_obligation_event USING btree (event_uuid)"
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "breach_obligation_event_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_obligation_event_pkey ON public.breach_obligation_event USING btree (event_id)"
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "idx_breach_obligation_event",
+      "definition": "CREATE INDEX idx_breach_obligation_event ON public.breach_obligation_event USING btree (obligation_id, event_id)"
+    },
+    {
+      "table_name": "breach_status_history",
+      "name": "breach_status_history_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_status_history_pkey ON public.breach_status_history USING btree (history_id)"
+    },
+    {
+      "table_name": "breach_status_history",
+      "name": "idx_breach_status_history",
+      "definition": "CREATE INDEX idx_breach_status_history ON public.breach_status_history USING btree (breach_id, history_id)"
+    },
+    {
       "table_name": "collection",
       "name": "collection_collection_uuid_key",
       "definition": "CREATE UNIQUE INDEX collection_collection_uuid_key ON public.collection USING btree (collection_uuid)"
@@ -9430,6 +10807,36 @@
       "definition": "CREATE TRIGGER trg_subject_needs_mobile BEFORE INSERT ON public.auth_user FOR EACH ROW EXECUTE FUNCTION cmp_subject_needs_mobile()"
     },
     {
+      "table_name": "breach",
+      "name": "trg_breach_status_only",
+      "definition": "CREATE TRIGGER trg_breach_status_only BEFORE DELETE OR UPDATE ON public.breach FOR EACH ROW EXECUTE FUNCTION cmp_breach_status_only()"
+    },
+    {
+      "table_name": "breach_assessment",
+      "name": "trg_breach_assessment_append_only",
+      "definition": "CREATE TRIGGER trg_breach_assessment_append_only BEFORE DELETE OR UPDATE ON public.breach_assessment FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
+      "table_name": "breach_determination",
+      "name": "trg_breach_determination_append_only",
+      "definition": "CREATE TRIGGER trg_breach_determination_append_only BEFORE DELETE OR UPDATE ON public.breach_determination FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
+      "table_name": "breach_obligation",
+      "name": "trg_breach_obligation_append_only",
+      "definition": "CREATE TRIGGER trg_breach_obligation_append_only BEFORE DELETE OR UPDATE ON public.breach_obligation FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "trg_breach_obligation_event_append_only",
+      "definition": "CREATE TRIGGER trg_breach_obligation_event_append_only BEFORE DELETE OR UPDATE ON public.breach_obligation_event FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
+      "table_name": "breach_status_history",
+      "name": "trg_breach_status_history_append_only",
+      "definition": "CREATE TRIGGER trg_breach_status_history_append_only BEFORE DELETE OR UPDATE ON public.breach_status_history FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
       "table_name": "consent_artefact",
       "name": "trg_consent_append_only",
       "definition": "CREATE TRIGGER trg_consent_append_only BEFORE DELETE OR UPDATE ON public.consent_artefact FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
@@ -9583,6 +10990,27 @@
       "name": "auth_user_id_seq"
     },
     {
+      "name": "breach_assessment_assessment_id_seq"
+    },
+    {
+      "name": "breach_breach_id_seq"
+    },
+    {
+      "name": "breach_determination_determination_id_seq"
+    },
+    {
+      "name": "breach_obligation_event_event_id_seq"
+    },
+    {
+      "name": "breach_obligation_obligation_id_seq"
+    },
+    {
+      "name": "breach_ref_seq"
+    },
+    {
+      "name": "breach_status_history_history_id_seq"
+    },
+    {
       "name": "collection_collection_id_seq"
     },
     {
@@ -9693,6 +11121,9 @@
       "name": "cmp_audit_verify"
     },
     {
+      "name": "cmp_breach_status_only"
+    },
+    {
       "name": "cmp_consent_coherent"
     },
     {
@@ -9751,13 +11182,13 @@
     }
   ],
   "counts": {
-    "application_tables": 35,
+    "application_tables": 41,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 456,
-    "foreign_keys": 102,
+    "table_columns": 523,
+    "foreign_keys": 117,
     "enums": 39,
-    "triggers": 30,
-    "checks": 50
+    "triggers": 36,
+    "checks": 62
   }
 }

@@ -139,6 +139,34 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
     "legal_hold": {
         "reason": DataType.FREE_TEXT,
     },
+    # The breach register (S3-01). Every narrative the office writes about a
+    # breach may name somebody - who caused it, whose laptop, which account -
+    # so every one is sealed, like every other reason the office writes. The
+    # finding on who caused it above all: it may name an employee.
+    "breach": {
+        "title": DataType.FREE_TEXT,
+        "location_detail": DataType.FREE_TEXT,
+    },
+    "breach_status_history": {
+        "reason": DataType.FREE_TEXT,
+    },
+    "breach_determination": {
+        "reasoning": DataType.FREE_TEXT,
+    },
+    "breach_assessment": {
+        "nature_extent": DataType.FREE_TEXT,
+        "likely_impact": DataType.FREE_TEXT,
+        "consequences": DataType.FREE_TEXT,
+        "circumstances": DataType.FREE_TEXT,
+        "mitigation": DataType.FREE_TEXT,
+        "protective_steps": DataType.FREE_TEXT,
+        "caused_by_findings": DataType.FREE_TEXT,
+        "remedial_measures": DataType.FREE_TEXT,
+        "contact_point": DataType.FREE_TEXT,
+    },
+    "breach_obligation_event": {
+        "note": DataType.FREE_TEXT,
+    },
     "consent_artefact": {
         "ip_address": DataType.IP,
     },

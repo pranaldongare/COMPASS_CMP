@@ -38,7 +38,7 @@ Paths are under `backend/api/src/cmp/`.
   Starlette the last one added runs first, so they run *after* the request
   context, security headers, body limit and access log - see
   [how a request works](02-how-a-request-works.md#the-middleware-a-request-passes-through).
-- **The permission matrix has 21 resources.** [Authorization](../security/authorization.md)
+- **The permission matrix has 22 resources.** [Authorization](../security/authorization.md)
   says 19, and the `resources.py` docstring says seventeen.
 - **A partial session reaches two routes** (`/auth/mfa/verify` and
   `/auth/mfa/resend`), not one as [authentication](../security/authentication.md) says.

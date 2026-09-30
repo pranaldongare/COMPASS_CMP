@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict wWpT3tRpB4pex4sZ8FQXQrCw0z5MQAxu2VWoOPPFy2hBEVI5oWTQa2aLpMZ4Qyq
+\restrict j0l1W1Hzc4COqletKfqpw24BnuiraxOdBut0BfaMEYDDTFi1adtQre8ycNm99qM
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -636,6 +636,36 @@ BEGIN
 
     prev_hash := expected;
   END LOOP;
+END;
+$$;
+
+
+--
+-- Name: cmp_breach_status_only(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_breach_status_only() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    RAISE EXCEPTION 'breach rows are never deleted' USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF NEW.breach_id IS DISTINCT FROM OLD.breach_id
+     OR NEW.breach_uuid IS DISTINCT FROM OLD.breach_uuid
+     OR NEW.reference IS DISTINCT FROM OLD.reference
+     OR NEW.title IS DISTINCT FROM OLD.title
+     OR NEW.detected_at IS DISTINCT FROM OLD.detected_at
+     OR NEW.began_at IS DISTINCT FROM OLD.began_at
+     OR NEW.location_kind IS DISTINCT FROM OLD.location_kind
+     OR NEW.location_processor_id IS DISTINCT FROM OLD.location_processor_id
+     OR NEW.location_source_id IS DISTINCT FROM OLD.location_source_id
+     OR NEW.location_detail IS DISTINCT FROM OLD.location_detail
+     OR NEW.recorded_by IS DISTINCT FROM OLD.recorded_by
+     OR NEW.recorded_at IS DISTINCT FROM OLD.recorded_at THEN
+    RAISE EXCEPTION 'only the status of a breach may change' USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
 END;
 $$;
 
@@ -1323,6 +1353,279 @@ CREATE SEQUENCE public.auth_user_id_seq
 --
 
 ALTER SEQUENCE public.auth_user_id_seq OWNED BY public.auth_user.id;
+
+
+--
+-- Name: breach; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach (
+    breach_id integer NOT NULL,
+    breach_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    reference character varying(24) NOT NULL,
+    title text NOT NULL,
+    detected_at timestamp with time zone NOT NULL,
+    began_at timestamp with time zone,
+    location_kind character varying(12) NOT NULL,
+    location_processor_id integer,
+    location_source_id integer,
+    location_detail text,
+    status character varying(8) DEFAULT 'open'::character varying NOT NULL,
+    recorded_by integer NOT NULL,
+    recorded_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT breach_began_before_detected CHECK (((began_at IS NULL) OR (began_at <= detected_at))),
+    CONSTRAINT breach_location_kind CHECK (((location_kind)::text = ANY ((ARRAY['platform'::character varying, 'processor'::character varying, 'data_source'::character varying, 'other'::character varying])::text[]))),
+    CONSTRAINT breach_location_named CHECK (((((location_kind)::text = 'processor'::text) = (location_processor_id IS NOT NULL)) AND (((location_kind)::text = 'data_source'::text) = (location_source_id IS NOT NULL)))),
+    CONSTRAINT breach_status CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'closed'::character varying])::text[])))
+);
+
+
+--
+-- Name: TABLE breach; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.breach IS 'A suspected or confirmed personal data breach (s.8(6), Rule 7). Only status changes; see breach_status_history';
+
+
+--
+-- Name: COLUMN breach.detected_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach.detected_at IS 'When it was first noticed, as entered by the DPO. Anchors the CERT-In clock';
+
+
+--
+-- Name: breach_assessment; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_assessment (
+    assessment_id integer NOT NULL,
+    assessment_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    breach_id integer NOT NULL,
+    revision integer NOT NULL,
+    began_at timestamp with time zone,
+    nature_extent text,
+    likely_impact text,
+    consequences text,
+    categories jsonb DEFAULT '[]'::jsonb NOT NULL,
+    circumstances text,
+    mitigation text,
+    protective_steps text,
+    caused_by_findings text,
+    remedial_measures text,
+    contact_point text,
+    revised_by integer NOT NULL,
+    revised_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT breach_assessment_categories_list CHECK ((jsonb_typeof(categories) = 'array'::text))
+);
+
+
+--
+-- Name: breach_assessment_assessment_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_assessment_assessment_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_assessment_assessment_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_assessment_assessment_id_seq OWNED BY public.breach_assessment.assessment_id;
+
+
+--
+-- Name: breach_breach_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_breach_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_breach_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_breach_id_seq OWNED BY public.breach.breach_id;
+
+
+--
+-- Name: breach_determination; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_determination (
+    determination_id integer NOT NULL,
+    determination_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    breach_id integer NOT NULL,
+    outcome character varying(8) NOT NULL,
+    reasoning text NOT NULL,
+    became_aware_at timestamp with time zone,
+    determined_by integer NOT NULL,
+    determined_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT breach_determination_aware_when_yes CHECK ((((outcome)::text = 'yes'::text) = (became_aware_at IS NOT NULL))),
+    CONSTRAINT breach_determination_outcome CHECK (((outcome)::text = ANY ((ARRAY['pending'::character varying, 'yes'::character varying, 'no'::character varying])::text[])))
+);
+
+
+--
+-- Name: breach_determination_determination_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_determination_determination_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_determination_determination_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_determination_determination_id_seq OWNED BY public.breach_determination.determination_id;
+
+
+--
+-- Name: breach_obligation; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_obligation (
+    obligation_id integer NOT NULL,
+    obligation_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    breach_id integer NOT NULL,
+    kind character varying(20) NOT NULL,
+    due_at timestamp with time zone,
+    anchored_at timestamp with time zone,
+    determination_id integer,
+    created_by integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT breach_obligation_kind CHECK (((kind)::text = ANY ((ARRAY['cert_in'::character varying, 'board_intimation'::character varying, 'board_report'::character varying, 'principals'::character varying])::text[])))
+);
+
+
+--
+-- Name: breach_obligation_event; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_obligation_event (
+    event_id integer NOT NULL,
+    event_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    obligation_id integer NOT NULL,
+    kind character varying(16) NOT NULL,
+    occurred_at timestamp with time zone,
+    reference character varying(200),
+    note text,
+    due_at timestamp with time zone,
+    anchored_at timestamp with time zone,
+    requested_at timestamp with time zone,
+    determination_id integer,
+    recorded_by integer,
+    recorded_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT breach_obligation_event_cites_determination CHECK ((((kind)::text <> ALL ((ARRAY['not_applicable'::character varying, 'reinstated'::character varying])::text[])) OR (determination_id IS NOT NULL))),
+    CONSTRAINT breach_obligation_event_completed_when CHECK ((((kind)::text <> 'completed'::text) OR (occurred_at IS NOT NULL))),
+    CONSTRAINT breach_obligation_event_extension CHECK ((((kind)::text <> 'extended'::text) OR ((due_at IS NOT NULL) AND (requested_at IS NOT NULL)))),
+    CONSTRAINT breach_obligation_event_kind CHECK (((kind)::text = ANY ((ARRAY['completed'::character varying, 'not_applicable'::character varying, 'reinstated'::character varying, 'extended'::character varying, 'reopened'::character varying])::text[])))
+);
+
+
+--
+-- Name: breach_obligation_event_event_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_obligation_event_event_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_obligation_event_event_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_obligation_event_event_id_seq OWNED BY public.breach_obligation_event.event_id;
+
+
+--
+-- Name: breach_obligation_obligation_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_obligation_obligation_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_obligation_obligation_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_obligation_obligation_id_seq OWNED BY public.breach_obligation.obligation_id;
+
+
+--
+-- Name: breach_ref_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_ref_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_status_history; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_status_history (
+    history_id integer NOT NULL,
+    breach_id integer NOT NULL,
+    from_status character varying(8),
+    to_status character varying(8) NOT NULL,
+    reason text,
+    changed_by integer NOT NULL,
+    changed_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: breach_status_history_history_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_status_history_history_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_status_history_history_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_status_history_history_id_seq OWNED BY public.breach_status_history.history_id;
 
 
 --
@@ -2925,6 +3228,48 @@ ALTER TABLE ONLY public.auth_user ALTER COLUMN id SET DEFAULT nextval('public.au
 
 
 --
+-- Name: breach breach_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach ALTER COLUMN breach_id SET DEFAULT nextval('public.breach_breach_id_seq'::regclass);
+
+
+--
+-- Name: breach_assessment assessment_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_assessment ALTER COLUMN assessment_id SET DEFAULT nextval('public.breach_assessment_assessment_id_seq'::regclass);
+
+
+--
+-- Name: breach_determination determination_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_determination ALTER COLUMN determination_id SET DEFAULT nextval('public.breach_determination_determination_id_seq'::regclass);
+
+
+--
+-- Name: breach_obligation obligation_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_obligation ALTER COLUMN obligation_id SET DEFAULT nextval('public.breach_obligation_obligation_id_seq'::regclass);
+
+
+--
+-- Name: breach_obligation_event event_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_obligation_event ALTER COLUMN event_id SET DEFAULT nextval('public.breach_obligation_event_event_id_seq'::regclass);
+
+
+--
+-- Name: breach_status_history history_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_status_history ALTER COLUMN history_id SET DEFAULT nextval('public.breach_status_history_history_id_seq'::regclass);
+
+
+--
 -- Name: collection collection_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3194,6 +3539,118 @@ ALTER TABLE ONLY public.auth_user
 
 ALTER TABLE ONLY public.auth_user
     ADD CONSTRAINT auth_user_uuid_key UNIQUE (uuid);
+
+
+--
+-- Name: breach_assessment breach_assessment_assessment_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_assessment
+    ADD CONSTRAINT breach_assessment_assessment_uuid_key UNIQUE (assessment_uuid);
+
+
+--
+-- Name: breach_assessment breach_assessment_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_assessment
+    ADD CONSTRAINT breach_assessment_pkey PRIMARY KEY (assessment_id);
+
+
+--
+-- Name: breach_assessment breach_assessment_revision; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_assessment
+    ADD CONSTRAINT breach_assessment_revision UNIQUE (breach_id, revision);
+
+
+--
+-- Name: breach breach_breach_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach
+    ADD CONSTRAINT breach_breach_uuid_key UNIQUE (breach_uuid);
+
+
+--
+-- Name: breach_determination breach_determination_determination_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_determination
+    ADD CONSTRAINT breach_determination_determination_uuid_key UNIQUE (determination_uuid);
+
+
+--
+-- Name: breach_determination breach_determination_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_determination
+    ADD CONSTRAINT breach_determination_pkey PRIMARY KEY (determination_id);
+
+
+--
+-- Name: breach_obligation_event breach_obligation_event_event_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_obligation_event
+    ADD CONSTRAINT breach_obligation_event_event_uuid_key UNIQUE (event_uuid);
+
+
+--
+-- Name: breach_obligation_event breach_obligation_event_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_obligation_event
+    ADD CONSTRAINT breach_obligation_event_pkey PRIMARY KEY (event_id);
+
+
+--
+-- Name: breach_obligation breach_obligation_obligation_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_obligation
+    ADD CONSTRAINT breach_obligation_obligation_uuid_key UNIQUE (obligation_uuid);
+
+
+--
+-- Name: breach_obligation breach_obligation_once; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_obligation
+    ADD CONSTRAINT breach_obligation_once UNIQUE (breach_id, kind);
+
+
+--
+-- Name: breach_obligation breach_obligation_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_obligation
+    ADD CONSTRAINT breach_obligation_pkey PRIMARY KEY (obligation_id);
+
+
+--
+-- Name: breach breach_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach
+    ADD CONSTRAINT breach_pkey PRIMARY KEY (breach_id);
+
+
+--
+-- Name: breach breach_reference_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach
+    ADD CONSTRAINT breach_reference_key UNIQUE (reference);
+
+
+--
+-- Name: breach_status_history breach_status_history_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_status_history
+    ADD CONSTRAINT breach_status_history_pkey PRIMARY KEY (history_id);
 
 
 --
@@ -3906,6 +4363,27 @@ CREATE INDEX idx_batch_source ON public.import_batch USING btree (source_id, rec
 
 
 --
+-- Name: idx_breach_determination; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_breach_determination ON public.breach_determination USING btree (breach_id, determination_id);
+
+
+--
+-- Name: idx_breach_obligation_event; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_breach_obligation_event ON public.breach_obligation_event USING btree (obligation_id, event_id);
+
+
+--
+-- Name: idx_breach_status_history; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_breach_status_history ON public.breach_status_history USING btree (breach_id, history_id);
+
+
+--
 -- Name: idx_collection_batch; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4347,6 +4825,48 @@ CREATE TRIGGER trg_auth_user_touch BEFORE UPDATE ON public.auth_user FOR EACH RO
 
 
 --
+-- Name: breach_assessment trg_breach_assessment_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_assessment_append_only BEFORE DELETE OR UPDATE ON public.breach_assessment FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: breach_determination trg_breach_determination_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_determination_append_only BEFORE DELETE OR UPDATE ON public.breach_determination FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: breach_obligation trg_breach_obligation_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_obligation_append_only BEFORE DELETE OR UPDATE ON public.breach_obligation FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: breach_obligation_event trg_breach_obligation_event_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_obligation_event_append_only BEFORE DELETE OR UPDATE ON public.breach_obligation_event FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: breach_status_history trg_breach_status_history_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_status_history_append_only BEFORE DELETE OR UPDATE ON public.breach_status_history FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: breach trg_breach_status_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_status_only BEFORE DELETE OR UPDATE ON public.breach FOR EACH ROW EXECUTE FUNCTION public.cmp_breach_status_only();
+
+
+--
 -- Name: consent_artefact trg_consent_append_only; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -4558,6 +5078,126 @@ ALTER TABLE ONLY public.audit_log
 
 ALTER TABLE ONLY public.audit_log
     ADD CONSTRAINT audit_log_subject_user_id_fkey FOREIGN KEY (subject_user_id) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_assessment breach_assessment_breach_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_assessment
+    ADD CONSTRAINT breach_assessment_breach_id_fkey FOREIGN KEY (breach_id) REFERENCES public.breach(breach_id);
+
+
+--
+-- Name: breach_assessment breach_assessment_revised_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_assessment
+    ADD CONSTRAINT breach_assessment_revised_by_fkey FOREIGN KEY (revised_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_determination breach_determination_breach_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_determination
+    ADD CONSTRAINT breach_determination_breach_id_fkey FOREIGN KEY (breach_id) REFERENCES public.breach(breach_id);
+
+
+--
+-- Name: breach_determination breach_determination_determined_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_determination
+    ADD CONSTRAINT breach_determination_determined_by_fkey FOREIGN KEY (determined_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach breach_location_processor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach
+    ADD CONSTRAINT breach_location_processor_id_fkey FOREIGN KEY (location_processor_id) REFERENCES public.processor(processor_id);
+
+
+--
+-- Name: breach breach_location_source_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach
+    ADD CONSTRAINT breach_location_source_id_fkey FOREIGN KEY (location_source_id) REFERENCES public.data_source(source_id);
+
+
+--
+-- Name: breach_obligation breach_obligation_breach_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_obligation
+    ADD CONSTRAINT breach_obligation_breach_id_fkey FOREIGN KEY (breach_id) REFERENCES public.breach(breach_id);
+
+
+--
+-- Name: breach_obligation breach_obligation_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_obligation
+    ADD CONSTRAINT breach_obligation_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_obligation breach_obligation_determination_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_obligation
+    ADD CONSTRAINT breach_obligation_determination_id_fkey FOREIGN KEY (determination_id) REFERENCES public.breach_determination(determination_id);
+
+
+--
+-- Name: breach_obligation_event breach_obligation_event_determination_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_obligation_event
+    ADD CONSTRAINT breach_obligation_event_determination_id_fkey FOREIGN KEY (determination_id) REFERENCES public.breach_determination(determination_id);
+
+
+--
+-- Name: breach_obligation_event breach_obligation_event_obligation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_obligation_event
+    ADD CONSTRAINT breach_obligation_event_obligation_id_fkey FOREIGN KEY (obligation_id) REFERENCES public.breach_obligation(obligation_id);
+
+
+--
+-- Name: breach_obligation_event breach_obligation_event_recorded_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_obligation_event
+    ADD CONSTRAINT breach_obligation_event_recorded_by_fkey FOREIGN KEY (recorded_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach breach_recorded_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach
+    ADD CONSTRAINT breach_recorded_by_fkey FOREIGN KEY (recorded_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_status_history breach_status_history_breach_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_status_history
+    ADD CONSTRAINT breach_status_history_breach_id_fkey FOREIGN KEY (breach_id) REFERENCES public.breach(breach_id);
+
+
+--
+-- Name: breach_status_history breach_status_history_changed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_status_history
+    ADD CONSTRAINT breach_status_history_changed_by_fkey FOREIGN KEY (changed_by) REFERENCES public.auth_user(id);
 
 
 --
@@ -5348,5 +5988,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict wWpT3tRpB4pex4sZ8FQXQrCw0z5MQAxu2VWoOPPFy2hBEVI5oWTQa2aLpMZ4Qyq
+\unrestrict j0l1W1Hzc4COqletKfqpw24BnuiraxOdBut0BfaMEYDDTFi1adtQre8ycNm99qM
 

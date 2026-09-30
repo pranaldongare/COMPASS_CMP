@@ -41,6 +41,24 @@ Roles refer to the **effective session role**. A staff account signed in through
 | GET | `/auth/sessions` | NO | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
 | DELETE | `/auth/sessions/{session_uuid}` | NO | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
 
+## Breaches
+
+[Conditions and source evidence](modules/breaches.md)
+
+| Method | Endpoint | Anonymous | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GET | `/breaches` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| GET | `/breaches/{breach_uuid}` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/determinations` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| GET | `/breaches/{breach_uuid}/assessments` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/assessments` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/cert-in` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/obligations/{duty}/complete` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/obligations/board_report/extension` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| GET | `/breaches/{breach_uuid}/transitions` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/transition` | NO | ALL | NO | NO | NO | NO | NO | NO |
+
 ## Consent
 
 [Conditions and source evidence](modules/consent.md)

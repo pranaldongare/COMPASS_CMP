@@ -11886,6 +11886,548 @@
         }
       }
     },
+    "/breaches": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "The register, open first",
+        "operationId": "list_breaches_breaches_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "open or closed",
+              "title": "Status"
+            },
+            "description": "open or closed"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BreachSummaryOut"
+                  },
+                  "title": "Response List Breaches Breaches Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Record a breach as it was noticed",
+        "operationId": "record_breach_breaches_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "One breach, with every duty",
+        "operationId": "get_breach_breaches__breach_uuid__get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/determinations": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Record whether it is a personal data breach",
+        "operationId": "determine_breaches__breach_uuid__determinations_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachDeterminationIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/assessments": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Every revision of the assessment, newest first",
+        "operationId": "list_assessments_breaches__breach_uuid__assessments_get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BreachAssessmentOut"
+                  },
+                  "title": "Response List Assessments Breaches  Breach Uuid  Assessments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Revise what is known; the previous revision stays",
+        "operationId": "assess_breaches__breach_uuid__assessments_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachAssessmentIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/cert-in": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Mark as a reportable cyber incident: CERT-In in six hours from detection",
+        "operationId": "mark_cert_in_breaches__breach_uuid__cert_in_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/obligations/{duty}/complete": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Record a submission made, with the regulator's reference",
+        "operationId": "complete_duty_breaches__breach_uuid__obligations__duty__complete_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "duty",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Duty"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachCompletionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/obligations/board_report/extension": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Record the longer period the Board allowed for the detailed report",
+        "operationId": "extend_report_breaches__breach_uuid__obligations_board_report_extension_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachExtensionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/transitions": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Whether it may close, and what stands in the way",
+        "operationId": "transitions_breaches__breach_uuid__transitions_get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachTransitionsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/transition": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Close or reopen a breach",
+        "operationId": "transition_breaches__breach_uuid__transition_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachTransitionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/tickets": {
       "get": {
         "tags": [
@@ -14131,6 +14673,1333 @@
           "document"
         ],
         "title": "Body_validate_notice_document_projects__project_uuid__notices_import_validate_post"
+      },
+      "BreachAssessmentIn": {
+        "properties": {
+          "began_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Began At"
+          },
+          "nature_extent": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nature Extent"
+          },
+          "likely_impact": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Likely Impact"
+          },
+          "consequences": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consequences"
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/BreachCategoryIn"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Categories"
+          },
+          "circumstances": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Circumstances"
+          },
+          "mitigation": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mitigation"
+          },
+          "protective_steps": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protective Steps"
+          },
+          "caused_by_findings": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caused By Findings"
+          },
+          "remedial_measures": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remedial Measures"
+          },
+          "contact_point": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Point"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "BreachAssessmentIn"
+      },
+      "BreachAssessmentOut": {
+        "properties": {
+          "assessment_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Assessment Uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "began_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Began At"
+          },
+          "nature_extent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nature Extent"
+          },
+          "likely_impact": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Likely Impact"
+          },
+          "consequences": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consequences"
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/BreachCategoryOut"
+            },
+            "type": "array",
+            "title": "Categories"
+          },
+          "circumstances": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Circumstances"
+          },
+          "mitigation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mitigation"
+          },
+          "protective_steps": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protective Steps"
+          },
+          "caused_by_findings": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caused By Findings"
+          },
+          "remedial_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remedial Measures"
+          },
+          "contact_point": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Point"
+          },
+          "revised_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Revised At"
+          },
+          "revised_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revised By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "assessment_uuid",
+          "revision",
+          "began_at",
+          "nature_extent",
+          "likely_impact",
+          "consequences",
+          "categories",
+          "circumstances",
+          "mitigation",
+          "protective_steps",
+          "caused_by_findings",
+          "remedial_measures",
+          "contact_point",
+          "revised_at",
+          "revised_by_name"
+        ],
+        "title": "BreachAssessmentOut"
+      },
+      "BreachCategoryIn": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Category"
+          },
+          "sealed": {
+            "type": "boolean",
+            "title": "Sealed"
+          },
+          "key_exposed": {
+            "type": "boolean",
+            "title": "Key Exposed",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "category",
+          "sealed"
+        ],
+        "title": "BreachCategoryIn"
+      },
+      "BreachCategoryOut": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "sealed": {
+            "type": "boolean",
+            "title": "Sealed"
+          },
+          "key_exposed": {
+            "type": "boolean",
+            "title": "Key Exposed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "sealed",
+          "key_exposed"
+        ],
+        "title": "BreachCategoryOut"
+      },
+      "BreachClockOut": {
+        "properties": {
+          "without_delay": {
+            "type": "boolean",
+            "title": "Without Delay"
+          },
+          "seconds_remaining": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seconds Remaining"
+          },
+          "overdue": {
+            "type": "boolean",
+            "title": "Overdue"
+          },
+          "seconds_elapsed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seconds Elapsed"
+          },
+          "target_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target At"
+          },
+          "past_target": {
+            "type": "boolean",
+            "title": "Past Target"
+          }
+        },
+        "type": "object",
+        "required": [
+          "without_delay",
+          "seconds_remaining",
+          "overdue",
+          "seconds_elapsed",
+          "target_at",
+          "past_target"
+        ],
+        "title": "BreachClockOut"
+      },
+      "BreachCompletionIn": {
+        "properties": {
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Occurred At"
+          },
+          "reference": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Reference"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "occurred_at",
+          "reference"
+        ],
+        "title": "BreachCompletionIn"
+      },
+      "BreachDeterminationIn": {
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "title": "Outcome"
+          },
+          "reasoning": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Reasoning"
+          },
+          "became_aware_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Became Aware At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "outcome",
+          "reasoning"
+        ],
+        "title": "BreachDeterminationIn"
+      },
+      "BreachDeterminationOut": {
+        "properties": {
+          "determination_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Determination Uuid"
+          },
+          "outcome": {
+            "type": "string",
+            "title": "Outcome"
+          },
+          "reasoning": {
+            "type": "string",
+            "title": "Reasoning"
+          },
+          "became_aware_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Became Aware At"
+          },
+          "determined_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Determined At"
+          },
+          "determined_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Determined By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "determination_uuid",
+          "outcome",
+          "reasoning",
+          "became_aware_at",
+          "determined_at",
+          "determined_by_name"
+        ],
+        "title": "BreachDeterminationOut"
+      },
+      "BreachDutyEventOut": {
+        "properties": {
+          "event_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Event Uuid"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "requested_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested At"
+          },
+          "determination_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Determination Uuid"
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Recorded At"
+          },
+          "recorded_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_uuid",
+          "kind",
+          "occurred_at",
+          "reference",
+          "note",
+          "due_at",
+          "requested_at",
+          "determination_uuid",
+          "recorded_at",
+          "recorded_by_name"
+        ],
+        "title": "BreachDutyEventOut"
+      },
+      "BreachDutyOut": {
+        "properties": {
+          "obligation_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Obligation Uuid"
+          },
+          "duty": {
+            "type": "string",
+            "title": "Duty"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "basis": {
+            "type": "string",
+            "title": "Basis"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "anchored_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anchored At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "extended_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extended Until"
+          },
+          "extension_requested_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extension Requested At"
+          },
+          "clock": {
+            "$ref": "#/components/schemas/BreachClockOut"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/BreachDutyEventOut"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "obligation_uuid",
+          "duty",
+          "label",
+          "basis",
+          "created_at",
+          "state",
+          "due_at",
+          "anchored_at",
+          "completed_at",
+          "reference",
+          "extended_until",
+          "extension_requested_at",
+          "clock",
+          "events"
+        ],
+        "title": "BreachDutyOut"
+      },
+      "BreachExtensionIn": {
+        "properties": {
+          "requested_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Requested At"
+          },
+          "allowed_until": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Allowed Until"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "requested_at",
+          "allowed_until"
+        ],
+        "title": "BreachExtensionIn"
+      },
+      "BreachIn": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "detected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Detected At"
+          },
+          "began_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Began At"
+          },
+          "location_kind": {
+            "type": "string",
+            "title": "Location Kind"
+          },
+          "processor_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processor Uuid"
+          },
+          "source_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Uuid"
+          },
+          "location_detail": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Detail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "detected_at",
+          "location_kind"
+        ],
+        "title": "BreachIn"
+      },
+      "BreachLocationOut": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "processor_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processor Uuid"
+          },
+          "processor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processor Name"
+          },
+          "source_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Uuid"
+          },
+          "source_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Name"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "processor_uuid",
+          "processor_name",
+          "source_uuid",
+          "source_name",
+          "detail"
+        ],
+        "title": "BreachLocationOut"
+      },
+      "BreachOut": {
+        "properties": {
+          "breach_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Breach Uuid"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "detected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Detected At"
+          },
+          "became_aware_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Became Aware At"
+          },
+          "began_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Began At"
+          },
+          "began_at_recorded": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Began At Recorded"
+          },
+          "location": {
+            "$ref": "#/components/schemas/BreachLocationOut"
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Recorded At"
+          },
+          "recorded_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded By Name"
+          },
+          "determination": {
+            "type": "string",
+            "title": "Determination"
+          },
+          "determinations": {
+            "items": {
+              "$ref": "#/components/schemas/BreachDeterminationOut"
+            },
+            "type": "array",
+            "title": "Determinations"
+          },
+          "assessment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BreachAssessmentOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assessment_revisions": {
+            "type": "integer",
+            "title": "Assessment Revisions"
+          },
+          "obligations": {
+            "items": {
+              "$ref": "#/components/schemas/BreachDutyOut"
+            },
+            "type": "array",
+            "title": "Obligations"
+          },
+          "status_history": {
+            "items": {
+              "$ref": "#/components/schemas/BreachStatusChangeOut"
+            },
+            "type": "array",
+            "title": "Status History"
+          },
+          "transitions": {
+            "items": {
+              "$ref": "#/components/schemas/BreachTransitionOut"
+            },
+            "type": "array",
+            "title": "Transitions"
+          },
+          "without_delay_target_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Without Delay Target Hours"
+          }
+        },
+        "type": "object",
+        "required": [
+          "breach_uuid",
+          "reference",
+          "title",
+          "status",
+          "detected_at",
+          "became_aware_at",
+          "began_at",
+          "began_at_recorded",
+          "location",
+          "recorded_at",
+          "recorded_by_name",
+          "determination",
+          "determinations",
+          "assessment",
+          "assessment_revisions",
+          "obligations",
+          "status_history",
+          "transitions",
+          "without_delay_target_hours"
+        ],
+        "title": "BreachOut"
+      },
+      "BreachStatusChangeOut": {
+        "properties": {
+          "from_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Status"
+          },
+          "to_status": {
+            "type": "string",
+            "title": "To Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "changed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Changed At"
+          },
+          "changed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Changed By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "from_status",
+          "to_status",
+          "reason",
+          "changed_at",
+          "changed_by_name"
+        ],
+        "title": "BreachStatusChangeOut"
+      },
+      "BreachSummaryOut": {
+        "properties": {
+          "breach_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Breach Uuid"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "detected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Detected At"
+          },
+          "location": {
+            "$ref": "#/components/schemas/BreachLocationOut"
+          },
+          "determination": {
+            "type": "string",
+            "title": "Determination"
+          },
+          "obligations": {
+            "items": {
+              "$ref": "#/components/schemas/BreachDutyOut"
+            },
+            "type": "array",
+            "title": "Obligations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "breach_uuid",
+          "reference",
+          "title",
+          "status",
+          "detected_at",
+          "location",
+          "determination",
+          "obligations"
+        ],
+        "title": "BreachSummaryOut"
+      },
+      "BreachTransitionIn": {
+        "properties": {
+          "to": {
+            "type": "string",
+            "title": "To"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "to"
+        ],
+        "title": "BreachTransitionIn"
+      },
+      "BreachTransitionOut": {
+        "properties": {
+          "to": {
+            "type": "string",
+            "title": "To"
+          },
+          "allowed": {
+            "type": "boolean",
+            "title": "Allowed"
+          },
+          "blocked_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blocked By"
+          },
+          "blockers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Blockers"
+          },
+          "reason_required": {
+            "type": "boolean",
+            "title": "Reason Required"
+          }
+        },
+        "type": "object",
+        "required": [
+          "to",
+          "allowed",
+          "blocked_by",
+          "blockers",
+          "reason_required"
+        ],
+        "title": "BreachTransitionOut"
+      },
+      "BreachTransitionsOut": {
+        "properties": {
+          "current": {
+            "type": "string",
+            "title": "Current"
+          },
+          "available": {
+            "items": {
+              "$ref": "#/components/schemas/BreachTransitionOut"
+            },
+            "type": "array",
+            "title": "Available"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current",
+          "available"
+        ],
+        "title": "BreachTransitionsOut"
       },
       "ChannelOut": {
         "properties": {

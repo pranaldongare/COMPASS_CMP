@@ -1,7 +1,7 @@
 # Schema
 
-35 tables, 39 enums, 1 view, 30 triggers, 50 named CHECK constraints and 102
-foreign keys, as of migration 0033. Those counts are read from the PostgreSQL
+41 tables, 39 enums, 1 view, 36 triggers, 62 named CHECK constraints and 117
+foreign keys, as of migration 0034. Those counts are read from the PostgreSQL
 catalogs after replaying every migration, not maintained by hand.
 
 The migrations are the source of truth: 0001 transcribed the original
@@ -24,6 +24,7 @@ its stated commit before trusting it against a later change.
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant` |
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` |
 | Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_item_execution`, `rights_ticket_message`, `rights_response_file`, `nomination`, `legal_hold` |
+| Breach | `breach`, `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event` |
 | Audit | `audit_log` |
 
 ## The view
@@ -98,6 +99,17 @@ every store is done, and only then does the disposition move to erased or
 redacted. `legal_hold` covers one asset or one person
 (`legal_hold_covers_one`); `trg_legal_hold_release_only` allows exactly one
 change to a hold after it is placed - its release.
+
+**A breach changes only its status, since 0034.** `cmp_breach_status_only`
+refuses any other change to a `breach` row: its three times were entered once
+and the clocks stored from them would disagree with an edited value. Everything
+under it is append-only. `breach_determination` requires the time of awareness
+exactly when the outcome is *yes* (`breach_determination_aware_when_yes`).
+`breach_obligation` is one duty per kind per breach (`breach_obligation_once`),
+its `due_at` stored when it is created - NULL is "without delay" - and never
+updated; `breach_obligation_event` carries what happens to it afterwards, and a
+duty's state is read by folding those events in order. `breach.reference` is
+`BR-<year>-<seq>`, minted from `breach_ref_seq` at insert.
 
 ## Sealed columns, and how they are still found
 

@@ -38,6 +38,25 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **The breach register and its duties (S3-01).** There was no breach concept
+  at all. The DPO now records a breach as it was noticed - `detected_at`,
+  `began_at` and, with a determination of *yes*, `became_aware_at`, all
+  entered and never defaulted - and where it occurred. Whether it is a personal
+  data breach under s.2(u) is a determination a person records with reasoning,
+  never computed from encryption; revisions are new rows. The assessment holds
+  every fact Rule 7 asks for, revised by new rows, and per data category whether
+  it was sealed and whether its key was exposed. Each statutory duty is its own
+  record with a due time stored once: CERT-In six hours from detection (marked
+  separately), the Board's initial intimation and the principals' notices
+  without delay, the Board's detailed report 72 hours from awareness or the date
+  the Board allows. A submission is recorded with the regulator's reference; the
+  platform never submits. A breach closes only when determined and every duty is
+  done or not applicable. DPO only, and hidden: every other role gets 404.
+  Migration 0034; `/breaches`; console **Breaches**;
+  [ADR 0021](docs/decisions/0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md),
+  [breaches.md](docs/domain/breaches.md). "Without delay" is flagged against
+  `BREACH_WITHOUT_DELAY_TARGET_HOURS`, left unset until Legal chooses a number.
+
 - **Structure across both apps: tabs, a menu, collapsible cards.** New
   accessible primitives - `Tabs` (arrow keys, one tab stop, the tab kept in
   the address), `Menu` (the menu-button pattern) and `CollapsibleCard`

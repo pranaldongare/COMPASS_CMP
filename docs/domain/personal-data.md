@@ -5,7 +5,7 @@ that accepts or returns it. Written for the questions that have to be answered
 quickly and exactly: what do we hold, where does it go, who can see it, and
 which call would expose it.
 
-The counts here are measured, not remembered. **167 of the API's 254
+The counts here are measured, not remembered. **177 of the API's 265
 operations** carry personal data; **20 of those need no session**. They come
 from joining three artefacts the repository already keeps current, and the
 last section says how to redo the join after a change.
@@ -54,7 +54,7 @@ member of staff who acted.
 
 ## Where it lives: the database
 
-34 objects, of which **22 carry personal data** and 12 do not. Each table below
+40 objects, of which **28 carry personal data** and 12 do not. Each table below
 lists only its personal-data columns; the full column list, with types,
 defaults, constraints and triggers, is in
 [docs/reference/database/table_reference.md](../reference/database/table_reference.md).
@@ -224,6 +224,33 @@ placeholders, not data; rendering one puts a person's name and contact into a
 message.
 **`consent_link`** — `created_by`, `revoked_by`.
 
+### Personal data breaches
+
+The register the Privacy Office keeps under s.8(6) and Rule 7 (S3-01;
+[breaches.md](breaches.md)). It is about incidents, not people - but every
+word the office writes about an incident may name one: whose laptop, which
+account, who caused it. So **every narrative column is sealed**, and the
+register is the DPO's alone, hidden from every other role (404).
+
+**`breach`** — `title`, `location_detail` (sealed), `recorded_by`.
+**`breach_status_history`** — `reason` (sealed), `changed_by`.
+**`breach_determination`** — `reasoning` (sealed), `determined_by`.
+**`breach_assessment`** — nine sealed facts: `nature_extent`,
+`likely_impact`, `consequences`, `circumstances`, `mitigation`,
+`protective_steps`, **`caused_by_findings`** (Rule 7(2)(b)(iv) - it may name
+an employee), `remedial_measures`, `contact_point`; and `revised_by`.
+`categories` is jsonb of category labels and two flags each - never a value
+about a person.
+**`breach_obligation`** — `created_by`.
+**`breach_obligation_event`** — `note` (sealed), `recorded_by`; `reference` is
+what a regulator returned, not about a person.
+
+All of it is append-only but for `breach.status`, so an erasure request cannot
+reach it - and should not need to: the rows name staff by id and hold the
+office's account of an incident, which is the accountability record. The trail
+records that a breach was recorded, determined, assessed, and each duty's
+movement, with the reference and never the words.
+
 ### Tables with no personal data at all
 
 `alembic_version`, `processor` (an organisation), and the reference and join
@@ -294,7 +321,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-167 of 254 operations accept or return personal data. Each table gives the
+177 of 265 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -437,6 +464,23 @@ selected.
 | GET | `/legal-holds` | DPO every row | — | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
 | POST | `/legal-holds` | DPO every row | `reason`, `subject_uuid` | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
 | POST | `/legal-holds/{hold_uuid}/release` | DPO every row | — | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
+
+### Personal data breaches — `/breaches/*`
+
+10 operations carry personal data.
+
+| Method | Endpoint | Who may call it | Personal data in | Personal data out |
+|---|---|---|---|---|
+| GET | `/breaches` | DPO every row | — | `recorded_by_name` |
+| POST | `/breaches` | DPO every row | `location_detail` | `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `revised_by_name` |
+| GET | `/breaches/{breach_uuid}` | DPO every row | — | `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `revised_by_name` |
+| GET | `/breaches/{breach_uuid}/assessments` | DPO every row | — | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures`, `revised_by_name` |
+| POST | `/breaches/{breach_uuid}/assessments` | DPO every row | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures` | `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `revised_by_name` |
+| POST | `/breaches/{breach_uuid}/cert-in` | DPO every row | — | `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `revised_by_name` |
+| POST | `/breaches/{breach_uuid}/determinations` | DPO every row | `reasoning` | `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `revised_by_name` |
+| POST | `/breaches/{breach_uuid}/obligations/board_report/extension` | DPO every row | — | `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `revised_by_name` |
+| POST | `/breaches/{breach_uuid}/obligations/{duty}/complete` | DPO every row | — | `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `revised_by_name` |
+| POST | `/breaches/{breach_uuid}/transition` | DPO every row | `reason` | `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `revised_by_name` |
 
 ### Cross-border transfers — `/restricted-countries/*`
 

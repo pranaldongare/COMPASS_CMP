@@ -22,7 +22,7 @@ from fastapi import Depends
 
 from cmp.api.dependencies.authentication import current_principal
 from cmp.auth.identity import Principal
-from cmp.core.errors import Forbidden
+from cmp.core.errors import Forbidden, NotFound
 from cmp.core.permissions import Role, Scope, can_write, scope_of
 
 
@@ -56,15 +56,23 @@ class RequireResource:
     every route that mentions it.
     """
 
-    def __init__(self, resource: str, *, write: bool = False) -> None:
+    def __init__(self, resource: str, *, write: bool = False, hidden: bool = False) -> None:
         self.resource = resource
         self.write = write
+        #: A role with no grant is told the thing is not there, rather than
+        #: that it may not see it. For a resource whose *existence* is what the
+        #: grant withholds - a breach being handled - a 403 on
+        #: `/breaches/{uuid}` would confirm the uuid is real, which is the fact
+        #: ADR 0004 keeps from a caller walking uuids.
+        self.hidden = hidden
 
     async def __call__(
         self, principal: Annotated[Principal, Depends(current_principal)]
     ) -> Principal:
         grant = scope_of(self.resource, principal.role)
         if grant is Scope.NONE:
+            if self.hidden:
+                raise NotFound()
             raise Forbidden("Your role does not permit this action")
         if self.write and not can_write(self.resource, principal.role):
             raise Forbidden("Your role may read this but not change it")

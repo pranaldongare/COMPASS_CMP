@@ -263,6 +263,15 @@ _SPECS: dict[str, _Spec] = {
         href=None,
         noun="Legal hold",
     ),
+    "breach": _Spec(
+        # The reference, never the title: the title is the office's words, and
+        # the administrator reads this trail without reaching the register.
+        sql="""SELECT breach_id AS id, breach_uuid::text AS uuid,
+                      'Breach ' || reference AS label
+               FROM breach WHERE breach_id = ANY(%s)""",
+        href="/breaches/{uuid}",
+        noun="Personal data breach",
+    ),
     "restricted_country": _Spec(
         sql="""SELECT country_id AS id, country_uuid::text AS uuid,
                       'Restricted country ' || country_code AS label

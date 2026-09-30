@@ -11,6 +11,7 @@ Navigation returned after sign-in: `consents`, `requests`, `notifications`, `pro
 | `approval` | No | No | `none` | Denied |
 | `asset` | No | No | `none` | Denied |
 | `audit` | No | No | `none` | Denied |
+| `breach` | No | No | `none` | Denied |
 | `collection` | No | No | `none` | Denied |
 | `consent` | No | No | `none` | Denied |
 | `data_source` | No | No | `none` | Denied |

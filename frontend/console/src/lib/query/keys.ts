@@ -168,6 +168,17 @@ export const keys = {
       ["request", uuid, "thread", holderUuid] as const,
   },
 
+  /**
+   * The breach register (S3-01). Everything about one breach - its duties,
+   * determinations, assessments - hangs off its uuid, so one invalidation
+   * reaches all of it; the register itself is `["breaches", ...]`.
+   */
+  breach: {
+    list: (params?: Params) => ["breaches", params ?? {}] as const,
+    detail: (uuid: Uuid) => ["breach", uuid] as const,
+    assessments: (uuid: Uuid) => ["breach", uuid, "assessments"] as const,
+  },
+
   users: {
     list: (params?: Params) => ["users", params ?? {}] as const,
     staff: ["users", "staff"] as const,

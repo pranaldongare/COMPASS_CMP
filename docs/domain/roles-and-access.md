@@ -42,6 +42,9 @@ denied: no wildcard, no inheritance.
 | audit | all | all | | | | | |
 | message_template | all +w | all +w | | | | | |
 | rights_request | all +w | scoped +w | | | | | |
+| legal_hold | all +w | | | | | | |
+| restricted_country | all +w | all | | | | | |
+| breach | all +w | | | | | | |
 | ticket | own +w | own +w | own +w | own +w | own +w | own +w | |
 | me | | | | | | | own +w |
 
@@ -79,6 +82,12 @@ A row outside scope is never selected, so it answers 404. 403 is reserved for
 a row the caller can see but may not act on, and is audited. The reasoning is
 in [ADR 0004](../decisions/0004-scope-in-the-where-clause.md).
 
+`breach` goes one step further. A role with no grant on it is answered **404**
+on every breach route, not the 403 every other resource gives - the register,
+a breach that exists and a write all read as "not there" - because that a
+breach is being handled is itself what the grant withholds
+([breaches.md](breaches.md), [ADR 0021](../decisions/0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md)).
+
 ## Navigation
 
 The console draws its navigation from `GET /auth/me`, which returns the
@@ -87,7 +96,7 @@ matrix, so it cannot drift into showing a button that answers 403.
 
 | Role | Sections |
 |---|---|
-| DPO | dashboard, projects, approvals, notices, purposes, sites, collections, processors, sources, consents, links, exports, imports, requests, audit, users, messages, delegate, tickets, notifications, profile |
+| DPO | dashboard, projects, approvals, notices, purposes, sites, collections, processors, sources, consents, links, exports, imports, requests, breaches, audit, users, messages, delegate, tickets, notifications, profile |
 | Administrator | dashboard, users, messages, processors, sources, requests, audit, delegate, tickets, notifications, profile |
 | DCO, DCO Admin, RCO | dashboard, projects, sites, sources, links, consents, exports, imports, collections, delegate, tickets, notifications, profile |
 | R&D User | dashboard, projects, notices, processors, approvals, imports, collections, tickets, notifications, profile |

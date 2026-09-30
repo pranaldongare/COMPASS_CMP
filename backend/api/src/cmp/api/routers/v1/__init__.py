@@ -12,6 +12,7 @@ serving the first one, and the mount point is one line in `bootstrap.routers`.
 
 from cmp.api.routers.v1.audit import router as audit_router
 from cmp.api.routers.v1.auth import router as auth_router
+from cmp.api.routers.v1.breaches import router as breaches_router
 from cmp.api.routers.v1.consents import router as consents_router
 from cmp.api.routers.v1.dashboard import router as dashboard_router
 from cmp.api.routers.v1.delegations import router as delegations_router
@@ -32,6 +33,7 @@ from cmp.api.routers.v1.users import router as users_router
 __all__ = [
     "audit_router",
     "auth_router",
+    "breaches_router",
     "consents_router",
     "dashboard_router",
     "delegations_router",

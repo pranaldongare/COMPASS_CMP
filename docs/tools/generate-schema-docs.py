@@ -75,6 +75,14 @@ MODULES: dict[str, list[str]] = {
         "legal_hold",
         "nomination",
     ],
+    "breach": [
+        "breach",
+        "breach_status_history",
+        "breach_determination",
+        "breach_assessment",
+        "breach_obligation",
+        "breach_obligation_event",
+    ],
     "platform": ["audit_log", "message_template", "restricted_country"],
 }
 MODULE_OF = {table: module for module, tables in MODULES.items() for table in tables}

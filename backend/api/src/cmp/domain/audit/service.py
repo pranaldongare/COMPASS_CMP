@@ -73,6 +73,8 @@ ENTITY_TYPES: Final[frozenset[str]] = frozenset(
         "legal_hold",
         # The Government's s.16 list, as the office keeps it (S2-04).
         "restricted_country",
+        # A personal data breach and its duties (S3-01).
+        "breach",
         # The office's replacement words for a message junction.
         "message_template",
     }
@@ -237,6 +239,18 @@ class Event:
     EXPORT_REFUSED = "export.refused"
     TRANSFER_COUNTRY_RESTRICTED = "transfer.country_restricted"
     TRANSFER_COUNTRY_LIFTED = "transfer.country_lifted"
+    # breach (S3-01): what the office recorded, never what it wrote.
+    BREACH_RECORDED = "breach.recorded"
+    BREACH_DETERMINED = "breach.determined"
+    BREACH_ASSESSED = "breach.assessed"
+    BREACH_CERT_IN_MARKED = "breach.cert_in_marked"
+    BREACH_OBLIGATION_CREATED = "breach.obligation_created"
+    BREACH_OBLIGATION_COMPLETED = "breach.obligation_completed"
+    BREACH_OBLIGATION_NOT_APPLICABLE = "breach.obligation_not_applicable"
+    BREACH_OBLIGATION_REINSTATED = "breach.obligation_reinstated"
+    BREACH_OBLIGATION_EXTENDED = "breach.obligation_extended"
+    BREACH_CLOSED = "breach.closed"
+    BREACH_REOPENED = "breach.reopened"
     RIGHTS_RESPONDED = "rights.responded"
     RIGHTS_RESPONSE_DOWNLOADED = "rights.response_downloaded"
     RIGHTS_CLOSED = "rights.closed"

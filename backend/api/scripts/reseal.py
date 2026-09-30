@@ -52,6 +52,11 @@ PRIMARY_KEY = {
     "project_status_history": "history_id",
     "import_batch": "batch_id",
     "legal_hold": "hold_id",
+    "breach": "breach_id",
+    "breach_status_history": "history_id",
+    "breach_determination": "determination_id",
+    "breach_assessment": "assessment_id",
+    "breach_obligation_event": "event_id",
 }
 
 #: What kind of blind index each indexed column takes.
@@ -91,6 +96,14 @@ APPEND_ONLY = {
     # Not append-only, but its reason is fixed once placed (0031); a value
     # written before sealing was on can only be sealed with the trigger off.
     "legal_hold": "trg_legal_hold_release_only",
+    # The breach register (0034): the breach changes only its status, and
+    # everything under it is append-only. Every value there was sealed when it
+    # was written, so these are here for completeness rather than for rows.
+    "breach": "trg_breach_status_only",
+    "breach_status_history": "trg_breach_status_history_append_only",
+    "breach_determination": "trg_breach_determination_append_only",
+    "breach_assessment": "trg_breach_assessment_append_only",
+    "breach_obligation_event": "trg_breach_obligation_event_append_only",
 }
 
 

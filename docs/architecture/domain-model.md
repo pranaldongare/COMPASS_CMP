@@ -1,6 +1,6 @@
 # Domain model
 
-Thirty-two tables, one view, thirty-nine enumerations, twenty-seven triggers.
+Forty-one tables, one view, thirty-nine enumerations, thirty-six triggers.
 The column-level reference is
 [schema.md](../database/schema.md), and the migrations
 that built it are listed in
@@ -74,6 +74,7 @@ erDiagram
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant` | Links store only a fingerprint. An artefact is one decision on one notice, one grant per purpose, superseded by withdrawal. |
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` | A disclosure record per export and per person, with the generated file kept in storage (`file_ref`); an import batch produces a collection of assets; a junction says which consent covers whom in which asset, with a disposition. |
 | Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_ticket_message`, `rights_response_file`, `nomination` | A request with its clock; one holder per party asked, with a message thread; one scope item per appearance; files released with the response; the nominee arrangement. |
+| Breach | `breach`, `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event` | A personal data breach as recorded, whether it is one (a person's determination, never computed), what is known (revised by new rows), and one duty per statutory obligation with its due time stored once. Only a breach's status changes; everything else is append-only; every narrative is sealed. See [breaches.md](../domain/breaches.md). |
 | Platform | `audit_log`, `message_template` | The audit log is append-only and hash-chained. `message_template` holds the office's replacement words per message and channel; absence means the code default. Sessions, one-time codes, rate counters and lockouts live in Redis, not here. |
 
 Personal columns are sealed: the row holds `SE::…` ciphertext from the key
@@ -135,6 +136,8 @@ with raw SQL that bypasses the service layer.
 | Minority is a fact of the date of birth | `cmp_is_minor(minor_until)`; `minor_until` is the birth date plus eighteen years, in the clear, because the date of birth itself is sealed (0028) |
 | One live nomination per person | partial unique index on `nomination` |
 | A rights reference is unique and minted by the database | sequence-backed default on `rights_request.reference` |
+| A breach's facts are entered once; only its status moves | `cmp_breach_status_only()`; its determinations, assessments, duties and their events are append-only |
+| One duty of each kind per breach, its due time never updated | `breach_obligation_once`; `trg_breach_obligation_append_only` |
 
 Why the rules live here rather than in Python is
 [ADR 0002](../decisions/0002-evidence-enforced-in-the-database.md); why the

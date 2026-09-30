@@ -34,11 +34,19 @@ ROOT = Path(__file__).resolve().parents[4]  # tests/http/<file> -> backend/api -
 #: Every column the repositories seal, by name - and the names the API gives
 #: them when it joins them onto another row. A field in a response under any
 #: of these names is a sealed value.
+#: Sealed column names that are also ordinary field names elsewhere.
+GENERIC_NAMES: frozenset[str] = frozenset({"name", "title", "note"})
+
 SEALED: frozenset[str] = frozenset(
     # `name` is sealed on processor_respondent alone and is the name of a
     # purpose, a queue, a source and a template everywhere else; it is checked
     # where the respondent is read rather than by field name.
-    ({column for columns in ENCRYPTED_FIELDS.values() for column in columns} - {"name"})
+    #
+    # `title` and `note` are the same kind of word: sealed on a breach and on
+    # an event on one of its duties (S3-01), and the plain title of a message
+    # template or the note on a notice everywhere else. The breach journey in
+    # test_06_breaches checks them where a breach is read.
+    ({column for columns in ENCRYPTED_FIELDS.values() for column in columns} - GENERIC_NAMES)
     | {
         # joined names of people, from auth_user.full_name
         "created_by_name",
@@ -64,6 +72,9 @@ SEALED: frozenset[str] = frozenset(
         "updated_by_name",
         "uploaded_by_name",
         "verified_by_name",
+        "recorded_by_name",
+        "determined_by_name",
+        "revised_by_name",
         "responder_user_name",
         # joined contacts
         "delegate_email",

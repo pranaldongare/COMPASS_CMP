@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 254,
-  "registered_business_and_system_operations": 257,
+  "documented_operations": 265,
+  "registered_business_and_system_operations": 268,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -9623,6 +9623,413 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/delegations.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/delegations.py"
       ]
+    },
+    {
+      "module": "breaches",
+      "method": "GET",
+      "path": "/breaches",
+      "summary": "The register, open first",
+      "function": "list",
+      "operation_id": "list_breaches_breaches_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachReader",
+      "resolved_gate": "RequireResource(breach, hidden=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. `status` filters open or closed; each breach carries its duties and their clocks. (S3-01)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
+      "method": "POST",
+      "path": "/breaches",
+      "summary": "Record a breach as it was noticed",
+      "function": "record_breach",
+      "operation_id": "record_breach_breaches_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachWriter",
+      "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Detection is entered, never defaulted; began must not follow it. A processor or source is named only for that kind of location. (S3-01)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
+      "method": "GET",
+      "path": "/breaches/{breach_uuid}",
+      "summary": "One breach, with every duty",
+      "function": "get_breach",
+      "operation_id": "get_breach_breaches__breach_uuid__get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachReader",
+      "resolved_gate": "RequireResource(breach, hidden=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. (S3-01)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
+      "method": "POST",
+      "path": "/breaches/{breach_uuid}/determinations",
+      "summary": "Record whether it is a personal data breach",
+      "function": "determine",
+      "operation_id": "determine_breaches__breach_uuid__determinations_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachWriter",
+      "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Yes needs the time of awareness and creates the three DPDP duties; no sets aside those not done. Refused on a closed breach (409 `breach_closed`). (S3-01)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
+      "method": "GET",
+      "path": "/breaches/{breach_uuid}/assessments",
+      "summary": "Every revision of the assessment, newest first",
+      "function": "list_assessments",
+      "operation_id": "list_assessments_breaches__breach_uuid__assessments_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachReader",
+      "resolved_gate": "RequireResource(breach, hidden=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. (S3-01)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
+      "method": "POST",
+      "path": "/breaches/{breach_uuid}/assessments",
+      "summary": "Revise what is known; the previous revision stays",
+      "function": "assess",
+      "operation_id": "assess_breaches__breach_uuid__assessments_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachWriter",
+      "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. A new revision; the previous stays. Every narrative field sealed. (S3-01)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
+      "method": "POST",
+      "path": "/breaches/{breach_uuid}/cert-in",
+      "summary": "Mark as a reportable cyber incident: CERT-In in six hours from detection",
+      "function": "mark_cert_in",
+      "operation_id": "mark_cert_in_breaches__breach_uuid__cert_in_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachWriter",
+      "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Once per breach (409 `cert_in_marked`); due six hours from detection. (S3-01)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
+      "method": "POST",
+      "path": "/breaches/{breach_uuid}/obligations/{duty}/complete",
+      "summary": "Record a submission made, with the regulator's reference",
+      "function": "complete_duty",
+      "operation_id": "complete_duty_breaches__breach_uuid__obligations__duty__complete_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachWriter",
+      "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. An unknown duty is 422; `principals` is refused (409): it completes by delivery (S3-03). (S3-01)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
+      "method": "POST",
+      "path": "/breaches/{breach_uuid}/obligations/board_report/extension",
+      "summary": "Record the longer period the Board allowed for the detailed report",
+      "function": "extend_report",
+      "operation_id": "extend_report_breaches__breach_uuid__obligations_board_report_extension_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachWriter",
+      "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. The detailed report only; the date allowed must be later than its current due time. (S3-01)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
+      "method": "GET",
+      "path": "/breaches/{breach_uuid}/transitions",
+      "summary": "Whether it may close, and what stands in the way",
+      "function": "transitions",
+      "operation_id": "transitions_breaches__breach_uuid__transitions_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachReader",
+      "resolved_gate": "RequireResource(breach, hidden=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. (S3-01)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
+      "method": "POST",
+      "path": "/breaches/{breach_uuid}/transition",
+      "summary": "Close or reopen a breach",
+      "function": "transition",
+      "operation_id": "transition_breaches__breach_uuid__transition_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachWriter",
+      "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Closing is refused while undetermined or while any duty is outstanding; reopening needs a reason. (S3-01)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
     }
   ],
   "amended": [
@@ -9655,6 +10062,11 @@
       "on": "2026-09-28",
       "commit": "HEAD",
       "note": "GET /notices/copy-sources added: every approved or published notice for 'Use an existing notice', so an R&D User may start from a colleague's approved text; the copy route accepts such a source outside the caller's scope."
+    },
+    {
+      "on": "2026-09-30",
+      "commit": "S3",
+      "note": "The breach register (S3-01 to S3-04): 11 operations under /breaches, resource breach, DPO only and hidden - every other role is answered 404. Evidence links for these point at HEAD."
     }
   ]
 }

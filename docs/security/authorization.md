@@ -4,7 +4,7 @@ Two questions, deliberately answered by different things.
 
 ## 1. May this role call this at all?
 
-A static matrix: 19 resources × 7 roles → a grant. The whole table is laid out in
+A static matrix: 22 resources × 7 roles → a grant. The whole table is laid out in
 [docs/domain/roles-and-access.md](../domain/roles-and-access.md). Checked before any work is
 done, by `RequireResource` or `RequireRole`.
 
@@ -38,13 +38,21 @@ service cannot forget to filter, because there is nothing to filter.
 withhold — a caller walking uuids must not be able to tell "not yours" from "not
 there".
 
+**A hidden resource answers 404 to a role with no grant at all.** Ordinarily a
+role the matrix denies a resource is told 403 - the route exists and is not for
+them. For `breach` that answer would itself say something: a 403 on
+`/breaches/{uuid}` confirms the uuid is a breach. So its guards are
+`RequireResource("breach", hidden=True)`, which raises `NotFound` instead, and
+every other role reads the register, a real breach and a made-up uuid exactly
+alike. `tests/security/test_breach_is_hidden.py` and the HTTP suite hold it.
+
 ## Where it lives
 
 | Module | Holds |
 |---|---|
 | `core/permissions.py` | `Role`, `Scope`, `Grant`, `MATRIX`, `NAV_BY_ROLE` — data, no behaviour |
 | `auth/authorization/roles.py` | staff/privileged sets, the MFA rule |
-| `auth/authorization/resources.py` | the 19 resource names as constants; the roster and the matrix are asserted equal at import |
+| `auth/authorization/resources.py` | the 22 resource names as constants; the roster and the matrix are asserted equal at import |
 | `auth/authorization/scopes.py` | `ScopeContext`, `narrower_of` |
 | `auth/authorization/evaluator.py` | pure decisions, returning a reason |
 | `auth/authorization/policy.py` | `authorize()` — the front door; logs the denial |

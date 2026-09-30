@@ -39,6 +39,7 @@ export type NavKey =
   | "delegate"
   | "messages"
   | "requests"
+  | "breaches"
   | "notifications"
   | "profile";
 
