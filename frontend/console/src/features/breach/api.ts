@@ -16,6 +16,8 @@ import type {
   BreachAssessmentInput,
   BreachDutyKind,
   BreachInput,
+  BreachIntimation,
+  BreachReport,
   BreachNotices,
   BreachNoticeWords,
   BreachOutcome,
@@ -124,4 +126,14 @@ export function approveNotice(uuid: Uuid, noticeUuid: Uuid): Promise<BreachNotic
 
 export function sendNotice(uuid: Uuid): Promise<BreachNotices> {
   return apiPost<BreachNotices>(`/breaches/${uuid}/notices/send`, {});
+}
+
+/* ----------------------------------------------- the Board's documents (S3-04) */
+
+export function getIntimation(uuid: Uuid): Promise<BreachIntimation> {
+  return apiGet<BreachIntimation>(`/breaches/${uuid}/board/intimation`);
+}
+
+export function getReport(uuid: Uuid): Promise<BreachReport> {
+  return apiGet<BreachReport>(`/breaches/${uuid}/board/report`);
 }

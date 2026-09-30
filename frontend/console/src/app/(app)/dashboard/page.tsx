@@ -17,6 +17,7 @@
  */
 "use client";
 
+import { OpenBreaches } from "@/features/breach/components/dashboard-breaches";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
@@ -83,6 +84,7 @@ export default function DashboardPage() {
               projects by stage, the consent picture - is context, and comes
               last: it changes slowly and nobody acts on it directly. */}
           <AttentionList rows={data.attention ?? []} />
+          <OpenBreaches breaches={data.breaches ?? []} />
 
           {busy.map((queue) => (
             <QueueCard key={queue.name} name={queue.name} items={queue.items} slug={queue.slug} href={queue.href} />

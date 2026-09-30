@@ -288,3 +288,54 @@ export interface BreachNotices {
   contents: { key: keyof BreachNoticeWords; label: string }[];
   duty: string;
 }
+
+/* ----------------------------------------------- the Board's documents (S3-04) */
+
+interface BoardDocument {
+  document: "initial_intimation" | "detailed_report";
+  basis: string;
+  reference: string;
+  title: string;
+  generated_at: Timestamp;
+  determination: BreachOutcome;
+  detected_at: Timestamp;
+  began_at: Timestamp | null;
+  became_aware_at: Timestamp | null;
+  location: BreachLocation;
+  /** What the Rule asks for that the register does not yet hold. */
+  missing: string[];
+  duty: BreachDuty | null;
+}
+
+/** Rule 7(2)(a), drafted from the register. The platform never submits it. */
+export interface BreachIntimation extends BoardDocument {
+  nature_extent: string | null;
+  likely_impact: string | null;
+  assessment_revision: number | null;
+}
+
+export interface BreachChannelCount {
+  channel: "portal" | "email" | "sms";
+  delivered: number;
+  queued: number;
+  failed: number;
+}
+
+/** Rule 7(2)(b)(vi): present whether or not anything was sent. */
+export interface BreachNoticeAccount {
+  sent: boolean;
+  statement: string;
+  listed: number;
+  notified: number;
+  versions: { version: number; approved_at: Timestamp | null; channels: BreachChannelCount[] }[];
+}
+
+/** Rule 7(2)(b), all six items, drafted from the register. */
+export interface BreachReport extends BoardDocument {
+  determinations: BreachDetermination[];
+  assessment: BreachAssessment | null;
+  assessment_revisions: number;
+  facts: { item: "ii" | "iii" | "iv" | "v"; label: string; text: string | null }[];
+  notices: BreachNoticeAccount;
+  duties: BreachDuty[];
+}

@@ -8,7 +8,7 @@
  */
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -16,6 +16,7 @@ import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { PageHeader } from "@/components/layout/app-shell";
 import {
   Alert,
+  Button,
   Card,
   CardBody,
   DescriptionItem,
@@ -65,6 +66,12 @@ export default function BreachPage() {
           <div className="flex flex-wrap items-center gap-2">
             <OutcomeBadge outcome={b.determination} />
             <BreachStatusBadge status={b.status} />
+            <Button variant="secondary" size="sm" asChild>
+              <Link href={`/breaches/${b.breach_uuid}/board`}>
+                <FileText className="size-4" />
+                Documents for the Board
+              </Link>
+            </Button>
             <AuditTrailLink entityType="breach" uuid={b.breach_uuid} label={b.reference} />
           </div>
         }

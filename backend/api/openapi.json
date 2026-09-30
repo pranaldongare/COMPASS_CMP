@@ -12871,6 +12871,92 @@
         }
       }
     },
+    "/breaches/{breach_uuid}/board/intimation": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Draft the Board's initial intimation (Rule 7(2)(a)) from the register",
+        "operationId": "board_intimation_breaches__breach_uuid__board_intimation_get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachIntimationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/board/report": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Draft the Board's detailed report (Rule 7(2)(b)), all six items",
+        "operationId": "board_report_breaches__breach_uuid__board_report_get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/tickets": {
       "get": {
         "tags": [
@@ -15755,6 +15841,34 @@
         ],
         "title": "BreachCategoryOut"
       },
+      "BreachChannelCountOut": {
+        "properties": {
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "delivered": {
+            "type": "integer",
+            "title": "Delivered"
+          },
+          "queued": {
+            "type": "integer",
+            "title": "Queued"
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel",
+          "delivered",
+          "queued",
+          "failed"
+        ],
+        "title": "BreachChannelCountOut"
+      },
       "BreachClockOut": {
         "properties": {
           "without_delay": {
@@ -16419,6 +16533,137 @@
         ],
         "title": "BreachIn"
       },
+      "BreachIntimationOut": {
+        "properties": {
+          "document": {
+            "type": "string",
+            "title": "Document"
+          },
+          "basis": {
+            "type": "string",
+            "title": "Basis"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "determination": {
+            "type": "string",
+            "title": "Determination"
+          },
+          "detected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Detected At"
+          },
+          "began_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Began At"
+          },
+          "became_aware_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Became Aware At"
+          },
+          "location": {
+            "$ref": "#/components/schemas/BreachLocationOut"
+          },
+          "nature_extent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nature Extent"
+          },
+          "likely_impact": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Likely Impact"
+          },
+          "assessment_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment Revision"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing"
+          },
+          "duty": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BreachDutyOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "document",
+          "basis",
+          "reference",
+          "title",
+          "generated_at",
+          "determination",
+          "detected_at",
+          "began_at",
+          "became_aware_at",
+          "location",
+          "nature_extent",
+          "likely_impact",
+          "assessment_revision",
+          "missing",
+          "duty"
+        ],
+        "title": "BreachIntimationOut",
+        "description": "Rule 7(2)(a), drafted from the register. The platform never submits it."
+      },
       "BreachLocationOut": {
         "properties": {
           "kind": {
@@ -16493,6 +16738,43 @@
           "detail"
         ],
         "title": "BreachLocationOut"
+      },
+      "BreachNoticeAccountOut": {
+        "properties": {
+          "sent": {
+            "type": "boolean",
+            "title": "Sent"
+          },
+          "statement": {
+            "type": "string",
+            "title": "Statement"
+          },
+          "listed": {
+            "type": "integer",
+            "title": "Listed"
+          },
+          "notified": {
+            "type": "integer",
+            "title": "Notified"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/BreachNoticeVersionCountOut"
+            },
+            "type": "array",
+            "title": "Versions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sent",
+          "statement",
+          "listed",
+          "notified",
+          "versions"
+        ],
+        "title": "BreachNoticeAccountOut",
+        "description": "Rule 7(2)(b)(vi). Present whether or not anything was sent."
       },
       "BreachNoticeContentOut": {
         "properties": {
@@ -16596,23 +16878,58 @@
             "title": "State"
           },
           "what_happened": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "What Happened"
           },
           "consequences": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Consequences"
           },
           "measures": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Measures"
           },
           "protective_steps": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Protective Steps"
           },
           "contact": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Contact"
           },
           "created_at": {
@@ -16677,6 +16994,40 @@
           "approved_by_name"
         ],
         "title": "BreachNoticeOut"
+      },
+      "BreachNoticeVersionCountOut": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "channels": {
+            "items": {
+              "$ref": "#/components/schemas/BreachChannelCountOut"
+            },
+            "type": "array",
+            "title": "Channels"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "approved_at",
+          "channels"
+        ],
+        "title": "BreachNoticeVersionCountOut"
       },
       "BreachNoticesOut": {
         "properties": {
@@ -16952,6 +17303,175 @@
           "people"
         ],
         "title": "BreachPreviewOut"
+      },
+      "BreachReportFactOut": {
+        "properties": {
+          "item": {
+            "type": "string",
+            "title": "Item"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item",
+          "label",
+          "text"
+        ],
+        "title": "BreachReportFactOut"
+      },
+      "BreachReportOut": {
+        "properties": {
+          "document": {
+            "type": "string",
+            "title": "Document"
+          },
+          "basis": {
+            "type": "string",
+            "title": "Basis"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "determination": {
+            "type": "string",
+            "title": "Determination"
+          },
+          "detected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Detected At"
+          },
+          "began_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Began At"
+          },
+          "became_aware_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Became Aware At"
+          },
+          "location": {
+            "$ref": "#/components/schemas/BreachLocationOut"
+          },
+          "determinations": {
+            "items": {
+              "$ref": "#/components/schemas/BreachDeterminationOut"
+            },
+            "type": "array",
+            "title": "Determinations"
+          },
+          "assessment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BreachAssessmentOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assessment_revisions": {
+            "type": "integer",
+            "title": "Assessment Revisions"
+          },
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/BreachReportFactOut"
+            },
+            "type": "array",
+            "title": "Facts"
+          },
+          "notices": {
+            "$ref": "#/components/schemas/BreachNoticeAccountOut"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing"
+          },
+          "duty": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BreachDutyOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "duties": {
+            "items": {
+              "$ref": "#/components/schemas/BreachDutyOut"
+            },
+            "type": "array",
+            "title": "Duties"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document",
+          "basis",
+          "reference",
+          "title",
+          "generated_at",
+          "determination",
+          "detected_at",
+          "began_at",
+          "became_aware_at",
+          "location",
+          "determinations",
+          "assessment",
+          "assessment_revisions",
+          "facts",
+          "notices",
+          "missing",
+          "duty",
+          "duties"
+        ],
+        "title": "BreachReportOut",
+        "description": "Rule 7(2)(b), all six items, drafted from the register."
       },
       "BreachScopeIn": {
         "properties": {
@@ -18713,6 +19233,13 @@
             },
             "type": "array",
             "title": "Attention"
+          },
+          "breaches": {
+            "items": {
+              "$ref": "#/components/schemas/BreachSummaryOut"
+            },
+            "type": "array",
+            "title": "Breaches"
           }
         },
         "type": "object",

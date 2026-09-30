@@ -212,6 +212,42 @@ The words are sealed, like every narrative about the breach; the console and
 her portal open them, and the worker opens them at `deliver()`. They go to
 everyone listed, so they must name nobody.
 
+## The Board and CERT-In
+
+**The platform never submits to the Board or to CERT-In.** It drafts the
+Board's documents, tracks every clock, and records a submission after a person
+has made it through the regulator's own channel. A source test holds that
+nothing in the breach code imports a way to reach anywhere else, and that the
+one task that sends anything sends the principals' notice.
+
+**Documents for the Board**, from a breach's page, drafts both from the
+register as it stands - at any point, as often as wanted; each says when it was
+drafted, and names what the register does not yet hold rather than leaving it
+blank. **Print** produces the copy to file.
+
+| Document | Carries | Rule |
+|---|---|---|
+| Initial intimation | Nature and extent, timing (noticed, aware, began), where it occurred, likely impact | 7(2)(a) |
+| Detailed report | (i) updated and detailed information - the latest assessment, its categories, every determination; (ii) events, circumstances and reasons; (iii) mitigation; (iv) findings on who caused it; (v) remedial measures; (vi) the account of notices to principals | 7(2)(b) |
+
+Item (vi) is always present. Before any notice has gone it says so, in words,
+with how many people are listed; after, it gives per version and channel how
+many were delivered, queued and failed, and how many listed people have been
+notified on every channel.
+
+**Recording a submission** - **Record submission** on the duty - is a new row
+with when it was made and the reference the regulator returned; the Board's
+extension of the detailed report moves only that duty's due time. **CERT-In**
+is the duty created by **Mark reportable to CERT-In**, due six hours from
+detection; whoever files follows CERT-In's own format and records the filing
+the same way. Who files with CERT-In - the DPO or corporate security - is not
+yet decided; today only the DPO can record it.
+
+**The dashboard.** The DPO's dashboard lists every open breach with each duty's
+state and time remaining or elapsed, and its **Needs you today** counts
+**Breach duties overdue** (critical) and **Breach duties outstanding**. No other
+role's dashboard carries any of it.
+
 ## Open and closed
 
 A breach is open or closed, and nothing else: the duties carry the rest. It

@@ -4,6 +4,7 @@
  */
 
 import type { AuditEntry } from "@/types/audit";
+import type { BreachSummary } from "@/types/breach";
 import type { Role } from "@/types/enums";
 
 /** One thing that needs this person today: a count, how urgent, where to act. */
@@ -35,4 +36,7 @@ export interface DashboardData {
    * the audit trail it is drawn from.
    */
   recent: AuditEntry[];
+  /** The DPO's alone: every open breach and each duty's clock (S3-04). Empty
+   *  for every other role. */
+  breaches: BreachSummary[];
 }

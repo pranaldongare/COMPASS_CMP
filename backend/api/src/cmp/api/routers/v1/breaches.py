@@ -18,7 +18,7 @@ from pydantic import AwareDatetime, Field
 
 from cmp.api.dependencies import BreachReader, BreachWriter
 from cmp.db.pool import connection, transaction
-from cmp.domain.breach import affected, notices, service
+from cmp.domain.breach import affected, board, notices, service
 from cmp.schemas.common import Out, Schema
 
 router = APIRouter(prefix="/breaches", tags=["breaches"])
@@ -690,3 +690,104 @@ async def approve_notice(
 async def send_notice(breach_uuid: UUID, principal: BreachWriter) -> dict[str, Any]:
     async with transaction() as conn:
         return await notices.send(conn, breach_uuid=str(breach_uuid), actor_id=principal.user_id)
+
+
+# ------------------------------------------------ the Board's documents (S3-04)
+
+
+class BreachIntimationOut(Out):
+    """Rule 7(2)(a), drafted from the register. The platform never submits it."""
+
+    document: str
+    basis: str
+    reference: str
+    title: str
+    generated_at: datetime
+    determination: str
+    detected_at: datetime
+    began_at: datetime | None
+    became_aware_at: datetime | None
+    location: BreachLocationOut
+    nature_extent: str | None
+    likely_impact: str | None
+    #: The assessment revision the draft was read from.
+    assessment_revision: int | None
+    #: What 7(2)(a) asks for that the register does not yet hold.
+    missing: list[str]
+    duty: BreachDutyOut | None
+
+
+class BreachReportFactOut(Out):
+    #: ii, iii, iv or v.
+    item: str
+    label: str
+    text: str | None
+
+
+class BreachChannelCountOut(Out):
+    channel: str
+    delivered: int
+    queued: int
+    failed: int
+
+
+class BreachNoticeVersionCountOut(Out):
+    version: int
+    approved_at: datetime | None
+    channels: list[BreachChannelCountOut]
+
+
+class BreachNoticeAccountOut(Out):
+    """Rule 7(2)(b)(vi). Present whether or not anything was sent."""
+
+    sent: bool
+    statement: str
+    listed: int
+    notified: int
+    versions: list[BreachNoticeVersionCountOut]
+
+
+class BreachReportOut(Out):
+    """Rule 7(2)(b), all six items, drafted from the register."""
+
+    document: str
+    basis: str
+    reference: str
+    title: str
+    generated_at: datetime
+    determination: str
+    detected_at: datetime
+    began_at: datetime | None
+    became_aware_at: datetime | None
+    location: BreachLocationOut
+    #: (i) updated and detailed information.
+    determinations: list[BreachDeterminationOut]
+    assessment: BreachAssessmentOut | None
+    assessment_revisions: int
+    #: (ii) to (v).
+    facts: list[BreachReportFactOut]
+    #: (vi) the account of notices to principals.
+    notices: BreachNoticeAccountOut
+    missing: list[str]
+    duty: BreachDutyOut | None
+    duties: list[BreachDutyOut]
+
+
+@router.get(
+    "/{breach_uuid}/board/intimation",
+    response_model=BreachIntimationOut,
+    summary="Draft the Board's initial intimation (Rule 7(2)(a)) from the register",
+)
+async def board_intimation(breach_uuid: UUID, principal: BreachReader) -> dict[str, Any]:
+    async with connection() as conn:
+        return await board.intimation(conn, breach_uuid=str(breach_uuid))
+
+
+@router.get(
+    "/{breach_uuid}/board/report",
+    response_model=BreachReportOut,
+    summary="Draft the Board's detailed report (Rule 7(2)(b)), all six items",
+)
+async def board_report(breach_uuid: UUID, principal: BreachReader) -> dict[str, Any]:
+    async with connection() as conn:
+        return await board.report(conn, breach_uuid=str(breach_uuid))

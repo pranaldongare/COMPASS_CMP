@@ -75,6 +75,11 @@ for an extension, or for a determination made by a person.
   to everyone. The principals' duty completes by delivery, never by hand, and
   reopens for people listed after it. The words are sealed like every other
   narrative about the breach; the worker opens them at `deliver()`.
+- **The Board's documents are drafted, never sent.** The initial intimation
+  (7(2)(a)) and the detailed report (7(2)(b)(i)-(vi)) are generated from the
+  register on request, naming whatever it does not yet hold; item (vi) states in
+  words when no notice has gone. The DPO's dashboard carries every open breach
+  and each duty's clock, and no other role's does.
 - **Where the platform ends.** It records, derives, tracks every clock, drafts
   every document and sends the notices to principals. People contain the breach,
   preserve evidence, make the determination, submit to the Board and to CERT-In

@@ -45,6 +45,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 
 
 
+
 ## Breaches
 
 [Conditions and source evidence](modules/breaches.md)
@@ -69,6 +70,8 @@ Roles refer to the **effective session role**. A staff account signed in through
 | PUT | `/breaches/{breach_uuid}/notices/{notice_uuid}` | NO | ALL | NO | NO | NO | NO | NO | NO |
 | POST | `/breaches/{breach_uuid}/notices/{notice_uuid}/approve` | NO | ALL | NO | NO | NO | NO | NO | NO |
 | POST | `/breaches/{breach_uuid}/notices/send` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| GET | `/breaches/{breach_uuid}/board/intimation` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| GET | `/breaches/{breach_uuid}/board/report` | NO | ALL | NO | NO | NO | NO | NO | NO |
 | POST | `/breaches/{breach_uuid}/affected` | NO | ALL | NO | NO | NO | NO | NO | NO |
 
 ## Consent

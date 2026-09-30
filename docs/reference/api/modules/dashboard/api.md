@@ -52,6 +52,20 @@ No request body.
       "severity": "string",
       "href": "string"
     }
+  ],
+  "breaches": [
+    {
+      "breach_uuid": "00000000-0000-4000-8000-000000000000",
+      "reference": "string",
+      "title": "string",
+      "status": "string",
+      "detected_at": "2026-09-17T12:00:00Z",
+      "location": "…",
+      "determination": "string",
+      "obligations": [
+        "…"
+      ]
+    }
   ]
 }
 ```
@@ -190,6 +204,7 @@ For state changes whose only interesting output is that they happened.
 | `queues` | array of `object` | Yes | — | — |
 | `recent` | array of `object` | Yes | — | — |
 | `attention` | array of [`AttentionRow`](#schema-attentionrow) | No | — | — |
+| `breaches` | array of [`BreachSummaryOut`](#schema-breachsummaryout) | No | — | — |
 
 <a id="schema-httpvalidationerror"></a>
 #### `HTTPValidationError`
@@ -212,6 +227,20 @@ and where to act on it. Rows with nothing to count are not sent.
 | `severity` | `string` | Yes | — | — |
 | `href` | `string` | Yes | — | — |
 
+<a id="schema-breachsummaryout"></a>
+#### `BreachSummaryOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `breach_uuid` | `string` | Yes | format: `uuid` | — |
+| `reference` | `string` | Yes | — | — |
+| `title` | `string` | Yes | — | — |
+| `status` | `string` | Yes | — | — |
+| `detected_at` | `string` | Yes | format: `date-time` | — |
+| `location` | [`BreachLocationOut`](#schema-breachlocationout) | Yes | — | — |
+| `determination` | `string` | Yes | — | — |
+| `obligations` | array of [`BreachDutyOut`](#schema-breachdutyout) | Yes | — | — |
+
 <a id="schema-validationerror"></a>
 #### `ValidationError`
 
@@ -222,3 +251,63 @@ and where to act on it. Rows with nothing to count are not sent.
 | `type` | `string` | Yes | — | — |
 | `input` | `object` | No | — | — |
 | `ctx` | `object` | No | — | — |
+
+<a id="schema-breachlocationout"></a>
+#### `BreachLocationOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `kind` | `string` | Yes | — | — |
+| `processor_uuid` | `string` or `null` | Yes | format: `uuid` | — |
+| `processor_name` | `string` or `null` | Yes | — | — |
+| `source_uuid` | `string` or `null` | Yes | format: `uuid` | — |
+| `source_name` | `string` or `null` | Yes | — | — |
+| `detail` | `string` or `null` | Yes | — | — |
+
+<a id="schema-breachdutyout"></a>
+#### `BreachDutyOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `obligation_uuid` | `string` | Yes | format: `uuid` | — |
+| `duty` | `string` | Yes | — | — |
+| `label` | `string` | Yes | — | — |
+| `basis` | `string` | Yes | — | — |
+| `created_at` | `string` | Yes | format: `date-time` | — |
+| `state` | `string` | Yes | — | — |
+| `due_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `anchored_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `completed_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `reference` | `string` or `null` | Yes | — | — |
+| `extended_until` | `string` or `null` | Yes | format: `date-time` | — |
+| `extension_requested_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `clock` | [`BreachClockOut`](#schema-breachclockout) | Yes | — | — |
+| `events` | array of [`BreachDutyEventOut`](#schema-breachdutyeventout) | Yes | — | — |
+
+<a id="schema-breachclockout"></a>
+#### `BreachClockOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `without_delay` | `boolean` | Yes | — | — |
+| `seconds_remaining` | `integer` or `null` | Yes | — | — |
+| `overdue` | `boolean` | Yes | — | — |
+| `seconds_elapsed` | `integer` or `null` | Yes | — | — |
+| `target_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `past_target` | `boolean` | Yes | — | — |
+
+<a id="schema-breachdutyeventout"></a>
+#### `BreachDutyEventOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `event_uuid` | `string` | Yes | format: `uuid` | — |
+| `kind` | `string` | Yes | — | — |
+| `occurred_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `reference` | `string` or `null` | Yes | — | — |
+| `note` | `string` or `null` | Yes | — | — |
+| `due_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `requested_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `determination_uuid` | `string` or `null` | Yes | format: `uuid` | — |
+| `recorded_at` | `string` | Yes | format: `date-time` | — |
+| `recorded_by_name` | `string` or `null` | Yes | — | — |

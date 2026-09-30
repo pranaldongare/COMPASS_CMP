@@ -14,6 +14,7 @@ from fastapi import APIRouter, Query
 from pydantic import Field
 
 from cmp.api.dependencies import CurrentUser
+from cmp.api.routers.v1.breaches import BreachSummaryOut
 from cmp.core.errors import Forbidden, NotFound
 from cmp.core.permissions import Role
 from cmp.db.pool import connection, transaction
@@ -23,6 +24,7 @@ from cmp.db.repositories import projects as project_repo
 from cmp.db.repositories import rights as rights_repo
 from cmp.db.repositories import users as user_repo
 from cmp.db.sql import fetch_all, fetch_one
+from cmp.domain.breach import service as breach_service
 from cmp.schemas.common import Acknowledged, Out
 
 router = APIRouter(tags=["dashboard"])
@@ -45,6 +47,9 @@ class Dashboard(Out):
     queues: list[dict[str, Any]]
     recent: list[dict[str, Any]]
     attention: list[AttentionRow] = Field(default_factory=list)
+    #: The DPO's alone: every open breach, each duty's state and clock (S3-04).
+    #: Empty for every other role, who cannot know a breach is open.
+    breaches: list[BreachSummaryOut] = Field(default_factory=list)
 
 
 def _slug(name: str) -> str:
@@ -79,6 +84,20 @@ _QUEUE_HREF = {
 #: on teaches people to stop reading the list.
 _ATTENTION: dict[str, list[dict[str, Any]]] = {
     "dpo": [
+        # A breach duty past its due time, or past the internal target for
+        # "without delay" once one is set, is the most urgent thing there is.
+        {
+            "count": "breach_duties_late",
+            "label": "Breach duties overdue",
+            "severity": "critical",
+            "href": "/breaches",
+        },
+        {
+            "count": "breach_duties_outstanding",
+            "label": "Breach duties outstanding",
+            "severity": "warning",
+            "href": "/breaches",
+        },
         {
             "queue": "Tickets past their date",
             "label": "Tickets past their date",
@@ -536,6 +555,8 @@ async def _dpo(conn: Any) -> dict[str, Any]:
         ][:8],
         reader_role=Role.DPO,
     )
+    breaches = await breach_service.register(conn, status="open")
+    duties = [d for b in breaches for d in b["obligations"] if d["state"] == "outstanding"]
     return {
         "role": "dpo",
         "counts": {
@@ -543,7 +564,13 @@ async def _dpo(conn: Any) -> dict[str, Any]:
             **_ints(rights_counts),
             "access_denials_7d": denials,
             "pending_processors": len(amendments),
+            "open_breaches": len(breaches),
+            "breach_duties_outstanding": len(duties),
+            "breach_duties_late": sum(
+                1 for d in duties if d["clock"]["overdue"] or d["clock"]["past_target"]
+            ),
         },
+        "breaches": breaches,
         "queues": [
             {"name": "Rights requests, soonest due first", "items": rights_queue},
             {"name": "Tickets past their date", "items": overdue},

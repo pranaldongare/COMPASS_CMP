@@ -95,6 +95,19 @@ test.describe("the DPO", () => {
     await expect(page.getByText("Report to CERT-In is outstanding")).toBeVisible();
     await expect(page.getByText("Principals notified is outstanding")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Close the breach" })).toBeDisabled();
+
+    // The Board's documents, drafted from the register; the account of notices in (vi).
+    const reference = (await page.getByRole("heading", { level: 1 }).textContent()) ?? "";
+    await page.getByRole("link", { name: "Documents for the Board" }).click();
+    await expect(page.getByText("Initial intimation - Rule 7(2)(a)")).toBeVisible();
+    await expect(page.getByText("Detailed report - Rule 7(2)(b)")).toBeVisible();
+    await expect(page.getByText("(vi) The account of notices to the Data Principals affected")).toBeVisible();
+    await expect(page.getByText(/^1 of the 1 Data Principals listed as affected have been notified/)).toBeVisible();
+
+    // And on the dashboard, with every duty's clock.
+    await page.goto("/dashboard");
+    const open = page.getByLabel("Open breaches");
+    await expect(open.getByText(reference)).toBeVisible();
   });
 });
 

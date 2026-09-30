@@ -38,6 +38,15 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **The Board and CERT-In (S3-04).** **Documents for the Board** drafts the
+  initial intimation (Rule 7(2)(a)) and the detailed report with all six items
+  of 7(2)(b) from the register, at any point, naming what it does not yet hold;
+  item (vi), the account of notices, says in words when none has gone. The
+  platform never submits: the DPO files through the regulator's channel and
+  records the submission with its reference, as for CERT-In's six-hour duty.
+  The DPO's dashboard lists every open breach with each duty's clock and counts
+  **Breach duties overdue** and **outstanding**. `GET
+  /breaches/{uuid}/board/intimation` and `.../board/report`.
 - **Notify the people a breach touched (S3-03).** The DPO drafts the five
   things Rule 7(1) requires - filled first from the assessment - and approves
   them; approval is refused while any is empty. Send writes the notice to each

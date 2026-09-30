@@ -343,6 +343,33 @@ class TestTellingThePeople:
         assert plain(mine.json()[0]["contact"]) == "privacy@example.org"
 
 
+class TestTheBoardAndTheDashboard:
+    async def test_documents_and_the_dashboard(self, http: httpx.AsyncClient, world: World) -> None:
+        breach = await _record(http, world, location_kind="platform", processor_uuid=None)
+        path = f"/breaches/{breach['breach_uuid']}"
+        intimation = await call(
+            http,
+            "GET",
+            f"{path}/board/intimation",
+            template=f"{B}/board/intimation",
+            session=world.dpo,
+        )
+        assert intimation.json()["basis"] == "Rule 7(2)(a)"
+        assert str(intimation.json()["title"]).startswith("SE::")
+        report = await call(
+            http, "GET", f"{path}/board/report", template=f"{B}/board/report", session=world.dpo
+        )
+        body = report.json()
+        assert body["notices"]["sent"] is False
+        assert body["notices"]["statement"].startswith("No notice has yet been sent")
+
+        mine = await call(http, "GET", "/dashboard", session=world.dpo)
+        assert breach["breach_uuid"] in {b["breach_uuid"] for b in mine.json()["breaches"]}
+        assert all(str(b["title"]).startswith("SE::") for b in mine.json()["breaches"])
+        theirs = await call(http, "GET", "/dashboard", session=world.admin)
+        assert theirs.json()["breaches"] == [], "nobody else learns a breach is open"
+
+
 class TestHiddenFromEveryoneElse:
     async def test_every_other_role_is_told_it_is_not_there(
         self, http: httpx.AsyncClient, world: World, session_for: SessionFactory
@@ -367,6 +394,14 @@ class TestHiddenFromEveryoneElse:
             )
             await call(
                 http, "GET", f"{real}/notices", template=f"{B}/notices", session=who, expect=404
+            )
+            await call(
+                http,
+                "GET",
+                f"{real}/board/report",
+                template=f"{B}/board/report",
+                session=who,
+                expect=404,
             )
             await call(
                 http,

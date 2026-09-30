@@ -1,6 +1,6 @@
 # Breaches API
 
-Generated from `backend/api/openapi.json`. **19 operations.**
+Generated from `backend/api/openapi.json`. **21 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -25,6 +25,8 @@ For each operation the information is deliberately ordered as **API → Validati
 17. [`PUT /breaches/{breach_uuid}/notices/{notice_uuid}`](#17_put_breaches_breach_uuid_notices_notice_uuid)
 18. [`POST /breaches/{breach_uuid}/notices/{notice_uuid}/approve`](#18_post_breaches_breach_uuid_notices_notice_uuid_approve)
 19. [`POST /breaches/{breach_uuid}/notices/send`](#19_post_breaches_breach_uuid_notices_send)
+20. [`GET /breaches/{breach_uuid}/board/intimation`](#20_get_breaches_breach_uuid_board_intimation)
+21. [`GET /breaches/{breach_uuid}/board/report`](#21_get_breaches_breach_uuid_board_report)
 
 <a id="1_get_breaches"></a>
 ## 1. `GET /breaches` — The register, open first
@@ -1766,11 +1768,11 @@ No request body.
       "notice_uuid": "00000000-0000-4000-8000-000000000000",
       "version": 1,
       "state": "string",
-      "what_happened": "string",
-      "consequences": "string",
-      "measures": "string",
-      "protective_steps": "string",
-      "contact": "string",
+      "what_happened": "…",
+      "consequences": "…",
+      "measures": "…",
+      "protective_steps": "…",
+      "contact": "…",
       "created_at": "2026-09-17T12:00:00Z",
       "created_by_name": "…",
       "updated_at": "2026-09-17T12:00:00Z",
@@ -1876,11 +1878,11 @@ Request body required: **yes**.
       "notice_uuid": "00000000-0000-4000-8000-000000000000",
       "version": 1,
       "state": "string",
-      "what_happened": "string",
-      "consequences": "string",
-      "measures": "string",
-      "protective_steps": "string",
-      "contact": "string",
+      "what_happened": "…",
+      "consequences": "…",
+      "measures": "…",
+      "protective_steps": "…",
+      "contact": "…",
       "created_at": "2026-09-17T12:00:00Z",
       "created_by_name": "…",
       "updated_at": "2026-09-17T12:00:00Z",
@@ -1987,11 +1989,11 @@ Request body required: **yes**.
       "notice_uuid": "00000000-0000-4000-8000-000000000000",
       "version": 1,
       "state": "string",
-      "what_happened": "string",
-      "consequences": "string",
-      "measures": "string",
-      "protective_steps": "string",
-      "contact": "string",
+      "what_happened": "…",
+      "consequences": "…",
+      "measures": "…",
+      "protective_steps": "…",
+      "contact": "…",
       "created_at": "2026-09-17T12:00:00Z",
       "created_by_name": "…",
       "updated_at": "2026-09-17T12:00:00Z",
@@ -2085,11 +2087,11 @@ No request body.
       "notice_uuid": "00000000-0000-4000-8000-000000000000",
       "version": 1,
       "state": "string",
-      "what_happened": "string",
-      "consequences": "string",
-      "measures": "string",
-      "protective_steps": "string",
-      "contact": "string",
+      "what_happened": "…",
+      "consequences": "…",
+      "measures": "…",
+      "protective_steps": "…",
+      "contact": "…",
       "created_at": "2026-09-17T12:00:00Z",
       "created_by_name": "…",
       "updated_at": "2026-09-17T12:00:00Z",
@@ -2182,11 +2184,11 @@ No request body.
       "notice_uuid": "00000000-0000-4000-8000-000000000000",
       "version": 1,
       "state": "string",
-      "what_happened": "string",
-      "consequences": "string",
-      "measures": "string",
-      "protective_steps": "string",
-      "contact": "string",
+      "what_happened": "…",
+      "consequences": "…",
+      "measures": "…",
+      "protective_steps": "…",
+      "contact": "…",
       "created_at": "2026-09-17T12:00:00Z",
       "created_by_name": "…",
       "updated_at": "2026-09-17T12:00:00Z",
@@ -2224,6 +2226,251 @@ No request body.
     }
   ],
   "duty": "string"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="20_get_breaches_breach_uuid_board_intimation"></a>
+## 20. `GET /breaches/{breach_uuid}/board/intimation` — Draft the Board's initial intimation (Rule 7(2)(a)) from the register
+
+### API
+
+- **Operation ID:** `board_intimation_breaches__breach_uuid__board_intimation_get`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachIntimationOut`](#schema-breachintimationout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "document": "string",
+  "basis": "string",
+  "reference": "string",
+  "title": "string",
+  "generated_at": "2026-09-17T12:00:00Z",
+  "determination": "string",
+  "detected_at": "2026-09-17T12:00:00Z",
+  "began_at": "2026-09-17T12:00:00Z",
+  "became_aware_at": "2026-09-17T12:00:00Z",
+  "location": {
+    "kind": "string",
+    "processor_uuid": "00000000-0000-4000-8000-000000000000",
+    "processor_name": "string",
+    "source_uuid": "00000000-0000-4000-8000-000000000000",
+    "source_name": "string",
+    "detail": "string"
+  },
+  "nature_extent": "string",
+  "likely_impact": "string",
+  "assessment_revision": 1,
+  "missing": [
+    "string"
+  ],
+  "duty": {
+    "obligation_uuid": "00000000-0000-4000-8000-000000000000",
+    "duty": "string",
+    "label": "string",
+    "basis": "string",
+    "created_at": "2026-09-17T12:00:00Z",
+    "state": "string",
+    "due_at": "…",
+    "anchored_at": "…",
+    "completed_at": "…",
+    "reference": "…",
+    "extended_until": "…",
+    "extension_requested_at": "…",
+    "clock": "…",
+    "events": [
+      "…"
+    ]
+  }
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="21_get_breaches_breach_uuid_board_report"></a>
+## 21. `GET /breaches/{breach_uuid}/board/report` — Draft the Board's detailed report (Rule 7(2)(b)), all six items
+
+### API
+
+- **Operation ID:** `board_report_breaches__breach_uuid__board_report_get`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachReportOut`](#schema-breachreportout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "document": "string",
+  "basis": "string",
+  "reference": "string",
+  "title": "string",
+  "generated_at": "2026-09-17T12:00:00Z",
+  "determination": "string",
+  "detected_at": "2026-09-17T12:00:00Z",
+  "began_at": "2026-09-17T12:00:00Z",
+  "became_aware_at": "2026-09-17T12:00:00Z",
+  "location": {
+    "kind": "string",
+    "processor_uuid": "00000000-0000-4000-8000-000000000000",
+    "processor_name": "string",
+    "source_uuid": "00000000-0000-4000-8000-000000000000",
+    "source_name": "string",
+    "detail": "string"
+  },
+  "determinations": [
+    {
+      "determination_uuid": "00000000-0000-4000-8000-000000000000",
+      "outcome": "string",
+      "reasoning": "string",
+      "became_aware_at": "…",
+      "determined_at": "2026-09-17T12:00:00Z",
+      "determined_by_name": "…"
+    }
+  ],
+  "assessment": {
+    "assessment_uuid": "00000000-0000-4000-8000-000000000000",
+    "revision": 1,
+    "began_at": "…",
+    "nature_extent": "…",
+    "likely_impact": "…",
+    "consequences": "…",
+    "categories": [
+      "…"
+    ],
+    "circumstances": "…",
+    "mitigation": "…",
+    "protective_steps": "…",
+    "caused_by_findings": "…",
+    "remedial_measures": "…",
+    "contact_point": "…",
+    "revised_at": "2026-09-17T12:00:00Z",
+    "revised_by_name": "…"
+  },
+  "assessment_revisions": 1,
+  "facts": [
+    {
+      "item": "string",
+      "label": "string",
+      "text": "…"
+    }
+  ],
+  "notices": {
+    "sent": true,
+    "statement": "string",
+    "listed": 1,
+    "notified": 1,
+    "versions": [
+      "…"
+    ]
+  },
+  "missing": [
+    "string"
+  ],
+  "duty": {
+    "obligation_uuid": "00000000-0000-4000-8000-000000000000",
+    "duty": "string",
+    "label": "string",
+    "basis": "string",
+    "created_at": "2026-09-17T12:00:00Z",
+    "state": "string",
+    "due_at": "…",
+    "anchored_at": "…",
+    "completed_at": "…",
+    "reference": "…",
+    "extended_until": "…",
+    "extension_requested_at": "…",
+    "clock": "…",
+    "events": [
+      "…"
+    ]
+  },
+  "duties": [
+    {
+      "obligation_uuid": "00000000-0000-4000-8000-000000000000",
+      "duty": "string",
+      "label": "string",
+      "basis": "string",
+      "created_at": "2026-09-17T12:00:00Z",
+      "state": "string",
+      "due_at": "…",
+      "anchored_at": "…",
+      "completed_at": "…",
+      "reference": "…",
+      "extended_until": "…",
+      "extension_requested_at": "…",
+      "clock": "…",
+      "events": [
+        "…"
+      ]
+    }
+  ]
 }
 ```
 
@@ -2326,6 +2573,29 @@ No request body.
 | `source_uuid` | `string` or `null` | No | format: `uuid` | — |
 | `location_detail` | `string` or `null` | No | max length: `8000` | — |
 
+<a id="schema-breachintimationout"></a>
+#### `BreachIntimationOut`
+
+Rule 7(2)(a), drafted from the register. The platform never submits it.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `document` | `string` | Yes | — | — |
+| `basis` | `string` | Yes | — | — |
+| `reference` | `string` | Yes | — | — |
+| `title` | `string` | Yes | — | — |
+| `generated_at` | `string` | Yes | format: `date-time` | — |
+| `determination` | `string` | Yes | — | — |
+| `detected_at` | `string` | Yes | format: `date-time` | — |
+| `began_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `became_aware_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `location` | [`BreachLocationOut`](#schema-breachlocationout) | Yes | — | — |
+| `nature_extent` | `string` or `null` | Yes | — | — |
+| `likely_impact` | `string` or `null` | Yes | — | — |
+| `assessment_revision` | `integer` or `null` | Yes | — | — |
+| `missing` | array of `string` | Yes | — | — |
+| `duty` | [`BreachDutyOut`](#schema-breachdutyout) or `null` | Yes | — | — |
+
 <a id="schema-breachnoticein"></a>
 #### `BreachNoticeIn`
 
@@ -2395,6 +2665,32 @@ approval may not. Written to be sent to everyone listed: name nobody.
 | `already_listed` | `integer` | Yes | — | — |
 | `would_add` | `integer` | Yes | — | — |
 | `people` | array of [`BreachCandidateOut`](#schema-breachcandidateout) | Yes | — | — |
+
+<a id="schema-breachreportout"></a>
+#### `BreachReportOut`
+
+Rule 7(2)(b), all six items, drafted from the register.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `document` | `string` | Yes | — | — |
+| `basis` | `string` | Yes | — | — |
+| `reference` | `string` | Yes | — | — |
+| `title` | `string` | Yes | — | — |
+| `generated_at` | `string` | Yes | format: `date-time` | — |
+| `determination` | `string` | Yes | — | — |
+| `detected_at` | `string` | Yes | format: `date-time` | — |
+| `began_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `became_aware_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `location` | [`BreachLocationOut`](#schema-breachlocationout) | Yes | — | — |
+| `determinations` | array of [`BreachDeterminationOut`](#schema-breachdeterminationout) | Yes | — | — |
+| `assessment` | [`BreachAssessmentOut`](#schema-breachassessmentout) or `null` | Yes | — | — |
+| `assessment_revisions` | `integer` | Yes | — | — |
+| `facts` | array of [`BreachReportFactOut`](#schema-breachreportfactout) | Yes | — | — |
+| `notices` | [`BreachNoticeAccountOut`](#schema-breachnoticeaccountout) | Yes | — | — |
+| `missing` | array of `string` | Yes | — | — |
+| `duty` | [`BreachDutyOut`](#schema-breachdutyout) or `null` | Yes | — | — |
+| `duties` | array of [`BreachDutyOut`](#schema-breachdutyout) | Yes | — | — |
 
 <a id="schema-breachtransitionin"></a>
 #### `BreachTransitionIn`
@@ -2471,6 +2767,38 @@ approval may not. Written to be sent to everyone listed: name nobody.
 | `sealed` | `boolean` | Yes | — | — |
 | `key_exposed` | `boolean` | No | default: `False` | — |
 
+<a id="schema-breachlocationout"></a>
+#### `BreachLocationOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `kind` | `string` | Yes | — | — |
+| `processor_uuid` | `string` or `null` | Yes | format: `uuid` | — |
+| `processor_name` | `string` or `null` | Yes | — | — |
+| `source_uuid` | `string` or `null` | Yes | format: `uuid` | — |
+| `source_name` | `string` or `null` | Yes | — | — |
+| `detail` | `string` or `null` | Yes | — | — |
+
+<a id="schema-breachdutyout"></a>
+#### `BreachDutyOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `obligation_uuid` | `string` | Yes | format: `uuid` | — |
+| `duty` | `string` | Yes | — | — |
+| `label` | `string` | Yes | — | — |
+| `basis` | `string` | Yes | — | — |
+| `created_at` | `string` | Yes | format: `date-time` | — |
+| `state` | `string` | Yes | — | — |
+| `due_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `anchored_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `completed_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `reference` | `string` or `null` | Yes | — | — |
+| `extended_until` | `string` or `null` | Yes | format: `date-time` | — |
+| `extension_requested_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `clock` | [`BreachClockOut`](#schema-breachclockout) | Yes | — | — |
+| `events` | array of [`BreachDutyEventOut`](#schema-breachdutyeventout) | Yes | — | — |
+
 <a id="schema-breachnoticeout"></a>
 #### `BreachNoticeOut`
 
@@ -2479,11 +2807,11 @@ approval may not. Written to be sent to everyone listed: name nobody.
 | `notice_uuid` | `string` | Yes | format: `uuid` | — |
 | `version` | `integer` | Yes | — | — |
 | `state` | `string` | Yes | — | — |
-| `what_happened` | `string` | Yes | — | — |
-| `consequences` | `string` | Yes | — | — |
-| `measures` | `string` | Yes | — | — |
-| `protective_steps` | `string` | Yes | — | — |
-| `contact` | `string` | Yes | — | — |
+| `what_happened` | `string` or `null` | Yes | — | — |
+| `consequences` | `string` or `null` | Yes | — | — |
+| `measures` | `string` or `null` | Yes | — | — |
+| `protective_steps` | `string` or `null` | Yes | — | — |
+| `contact` | `string` or `null` | Yes | — | — |
 | `created_at` | `string` | Yes | format: `date-time` | — |
 | `created_by_name` | `string` or `null` | Yes | — | — |
 | `updated_at` | `string` | Yes | format: `date-time` | — |
@@ -2523,18 +2851,6 @@ approval may not. Written to be sent to everyone listed: name nobody.
 | `key` | `string` | Yes | — | — |
 | `label` | `string` | Yes | — | — |
 
-<a id="schema-breachlocationout"></a>
-#### `BreachLocationOut`
-
-| Field | Type | Required | Validation | Description |
-|---|---|---:|---|---|
-| `kind` | `string` | Yes | — | — |
-| `processor_uuid` | `string` or `null` | Yes | format: `uuid` | — |
-| `processor_name` | `string` or `null` | Yes | — | — |
-| `source_uuid` | `string` or `null` | Yes | format: `uuid` | — |
-| `source_name` | `string` or `null` | Yes | — | — |
-| `detail` | `string` or `null` | Yes | — | — |
-
 <a id="schema-breachdeterminationout"></a>
 #### `BreachDeterminationOut`
 
@@ -2567,26 +2883,6 @@ approval may not. Written to be sent to everyone listed: name nobody.
 | `contact_point` | `string` or `null` | Yes | — | — |
 | `revised_at` | `string` | Yes | format: `date-time` | — |
 | `revised_by_name` | `string` or `null` | Yes | — | — |
-
-<a id="schema-breachdutyout"></a>
-#### `BreachDutyOut`
-
-| Field | Type | Required | Validation | Description |
-|---|---|---:|---|---|
-| `obligation_uuid` | `string` | Yes | format: `uuid` | — |
-| `duty` | `string` | Yes | — | — |
-| `label` | `string` | Yes | — | — |
-| `basis` | `string` | Yes | — | — |
-| `created_at` | `string` | Yes | format: `date-time` | — |
-| `state` | `string` | Yes | — | — |
-| `due_at` | `string` or `null` | Yes | format: `date-time` | — |
-| `anchored_at` | `string` or `null` | Yes | format: `date-time` | — |
-| `completed_at` | `string` or `null` | Yes | format: `date-time` | — |
-| `reference` | `string` or `null` | Yes | — | — |
-| `extended_until` | `string` or `null` | Yes | format: `date-time` | — |
-| `extension_requested_at` | `string` or `null` | Yes | format: `date-time` | — |
-| `clock` | [`BreachClockOut`](#schema-breachclockout) | Yes | — | — |
-| `events` | array of [`BreachDutyEventOut`](#schema-breachdutyeventout) | Yes | — | — |
 
 <a id="schema-breachstatuschangeout"></a>
 #### `BreachStatusChangeOut`
@@ -2624,6 +2920,28 @@ approval may not. Written to be sent to everyone listed: name nobody.
 | `evidence` | [`BreachEvidenceOut`](#schema-breachevidenceout) | Yes | — | — |
 | `already_listed` | `boolean` | Yes | — | — |
 
+<a id="schema-breachreportfactout"></a>
+#### `BreachReportFactOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `item` | `string` | Yes | — | — |
+| `label` | `string` | Yes | — | — |
+| `text` | `string` or `null` | Yes | — | — |
+
+<a id="schema-breachnoticeaccountout"></a>
+#### `BreachNoticeAccountOut`
+
+Rule 7(2)(b)(vi). Present whether or not anything was sent.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `sent` | `boolean` | Yes | — | — |
+| `statement` | `string` | Yes | — | — |
+| `listed` | `integer` | Yes | — | — |
+| `notified` | `integer` | Yes | — | — |
+| `versions` | array of [`BreachNoticeVersionCountOut`](#schema-breachnoticeversioncountout) | Yes | — | — |
+
 <a id="schema-validationerror"></a>
 #### `ValidationError`
 
@@ -2643,15 +2961,6 @@ approval may not. Written to be sent to everyone listed: name nobody.
 | `exports` | array of `string` | No | — | — |
 | `assets` | array of `string` | No | — | — |
 | `tables` | array of `string` | No | — | — |
-
-<a id="schema-breachcategoryout"></a>
-#### `BreachCategoryOut`
-
-| Field | Type | Required | Validation | Description |
-|---|---|---:|---|---|
-| `category` | `string` | Yes | — | — |
-| `sealed` | `boolean` | Yes | — | — |
-| `key_exposed` | `boolean` | Yes | — | — |
 
 <a id="schema-breachclockout"></a>
 #### `BreachClockOut`
@@ -2680,3 +2989,31 @@ approval may not. Written to be sent to everyone listed: name nobody.
 | `determination_uuid` | `string` or `null` | Yes | format: `uuid` | — |
 | `recorded_at` | `string` | Yes | format: `date-time` | — |
 | `recorded_by_name` | `string` or `null` | Yes | — | — |
+
+<a id="schema-breachcategoryout"></a>
+#### `BreachCategoryOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `category` | `string` | Yes | — | — |
+| `sealed` | `boolean` | Yes | — | — |
+| `key_exposed` | `boolean` | Yes | — | — |
+
+<a id="schema-breachnoticeversioncountout"></a>
+#### `BreachNoticeVersionCountOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `version` | `integer` | Yes | — | — |
+| `approved_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `channels` | array of [`BreachChannelCountOut`](#schema-breachchannelcountout) | Yes | — | — |
+
+<a id="schema-breachchannelcountout"></a>
+#### `BreachChannelCountOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `channel` | `string` | Yes | — | — |
+| `delivered` | `integer` | Yes | — | — |
+| `queued` | `integer` | Yes | — | — |
+| `failed` | `integer` | Yes | — | — |

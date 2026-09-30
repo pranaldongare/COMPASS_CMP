@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-19 operations; 19 appear in the existing OpenAPI/API docs. Added with S3-01 to S3-04; evidence links point at `HEAD`.
+21 operations; 21 appear in the existing OpenAPI/API docs. Added with S3-01 to S3-04; evidence links point at `HEAD`.
 
 Every route is the DPO's and **hidden**: any other role - staff or principal - is answered **404**, on the register, on a breach that exists and on a write alike, where other DPO-only modules answer 403. That a breach is being handled is itself withheld.
 
@@ -26,6 +26,8 @@ Every route is the DPO's and **hidden**: any other role - staff or principal - i
 | PUT | `/breaches/{breach_uuid}/notices/{notice_uuid}` | `dpo` | Full session; anonymous NO |
 | POST | `/breaches/{breach_uuid}/notices/{notice_uuid}/approve` | `dpo` | Full session; anonymous NO |
 | POST | `/breaches/{breach_uuid}/notices/send` | `dpo` | Full session; anonymous NO |
+| GET | `/breaches/{breach_uuid}/board/intimation` | `dpo` | Full session; anonymous NO |
+| GET | `/breaches/{breach_uuid}/board/report` | `dpo` | Full session; anonymous NO |
 | POST | `/breaches/{breach_uuid}/affected` | `dpo` | Full session; anonymous NO |
 
 ## GET /breaches
@@ -278,6 +280,34 @@ Send the approved notice to everyone listed who lacks it; never twice.
 - **Route guard:** `BreachWriter`.
 - **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
 - **Rules:** The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Refused before approval (409 `no_approved_notice`) or with nobody listed; writes each listed person's account at once and queues email and SMS; a resend adds only what is missing. (S3-03)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## GET /breaches/{breach_uuid}/board/intimation
+
+Draft the Board's initial intimation (Rule 7(2)(a)) from the register.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
+| --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 404.
+- **Route guard:** `BreachReader`.
+- **Resolved gate:** `RequireResource(breach, hidden=True)`.
+- **Rules:** The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Rule 7(2)(a), drafted from the register at any point; what it lacks is named in `missing`. Never submitted by the platform. (S3-04)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## GET /breaches/{breach_uuid}/board/report
+
+Draft the Board's detailed report (Rule 7(2)(b)), all six items.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
+| --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 404.
+- **Route guard:** `BreachReader`.
+- **Resolved gate:** `RequireResource(breach, hidden=True)`.
+- **Rules:** The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Rule 7(2)(b)(i)-(vi); item (vi), the account of notices, is stated in words when nothing was sent. Never submitted by the platform. (S3-04)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## POST /breaches/{breach_uuid}/affected

@@ -182,6 +182,13 @@ tested: a count the role can only look at is not on the list. Lockouts
 clear themselves; a suspended source was suspended on purpose; refusals in the
 log are the audit trail's. Those stay in the queues and statistics further down.
 
+For the DPO the first two rows can be about a breach: **Breach duties
+overdue** (a duty past its due time, or past the internal target for "without
+delay" once one is set) and **Breach duties outstanding**, both opening the
+register. Below them, **Open breaches** lists each open breach with every
+duty's state and clock (S3-04). No other role's dashboard carries any of it:
+the server sends the list to the DPO alone.
+
 The DPO's queues include one of draft projects, which is not a contradiction:
 it lists only the drafts whose purposes are waiting to be activated, which is
 the one thing on a draft that is theirs. Nobody is held up by it - the author

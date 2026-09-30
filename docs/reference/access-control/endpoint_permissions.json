@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 274,
-  "registered_business_and_system_operations": 277,
+  "documented_operations": 276,
+  "registered_business_and_system_operations": 279,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -10292,6 +10292,80 @@
     },
     {
       "module": "breaches",
+      "method": "GET",
+      "path": "/breaches/{breach_uuid}/board/intimation",
+      "summary": "Draft the Board's initial intimation (Rule 7(2)(a)) from the register",
+      "function": "board_intimation",
+      "operation_id": "board_intimation_breaches__breach_uuid__board_intimation_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachReader",
+      "resolved_gate": "RequireResource(breach, hidden=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Rule 7(2)(a), drafted from the register at any point; what it lacks is named in `missing`. Never submitted by the platform. (S3-04)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
+      "method": "GET",
+      "path": "/breaches/{breach_uuid}/board/report",
+      "summary": "Draft the Board's detailed report (Rule 7(2)(b)), all six items",
+      "function": "board_report",
+      "operation_id": "board_report_breaches__breach_uuid__board_report_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachReader",
+      "resolved_gate": "RequireResource(breach, hidden=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Rule 7(2)(b)(i)-(vi); item (vi), the account of notices, is stated in words when nothing was sent. Never submitted by the platform. (S3-04)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
       "method": "POST",
       "path": "/breaches/{breach_uuid}/affected",
       "summary": "Confirm who the breach touched: a new revision, adding only the newly found",
@@ -10397,7 +10471,7 @@
     {
       "on": "2026-09-30",
       "commit": "S3",
-      "note": "The breach register (S3-01 to S3-04): 19 operations under /breaches, resource breach, DPO only and hidden - every other role is answered 404. Evidence links for these point at HEAD."
+      "note": "The breach register (S3-01 to S3-04): 21 operations under /breaches, resource breach, DPO only and hidden - every other role is answered 404. Evidence links for these point at HEAD."
     }
   ]
 }

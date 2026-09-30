@@ -304,3 +304,52 @@ async def overview(conn: Conn, *, breach_uuid: str) -> Row:
 async def for_subject(conn: Conn, *, user_id: int) -> list[Row]:
     """The notices written to her account."""
     return await repo.for_person(conn, user_id)
+
+
+async def account_for_report(conn: Conn, *, breach_uuid: str) -> Row:
+    """Rule 7(2)(b)(vi): the account of notices, for the Board's report.
+
+    Always present, and in words: a report drafted before any notice went says
+    so, rather than leaving the item out.
+    """
+    breach = await service.require(conn, breach_uuid)
+    breach_id = int(breach["breach_id"])
+    rows = await repo.account(conn, breach_id)
+    approved = {
+        int(v["version"]): v["approved_at"]
+        for v in await repo.versions(conn, breach_id)
+        if v["approved_at"] is not None
+    }
+    by_version: dict[int, dict[str, dict[str, int]]] = {}
+    for r in rows:
+        channels = by_version.setdefault(int(r["version"]), {})
+        counts = channels.setdefault(str(r["channel"]), {"delivered": 0, "queued": 0, "failed": 0})
+        counts[str(r["status"])] = int(r["people"])
+    listed = await breach_repo.count_affected(conn, breach_id)
+    notified = listed - await repo.unnotified(conn, breach_id)
+    if not rows:
+        statement = "No notice has yet been sent to the Data Principals affected. " + (
+            f"{listed} are listed as affected." if listed else "Nobody is yet listed as affected."
+        )
+    else:
+        statement = (
+            f"{notified} of the {listed} Data Principals listed as affected have been notified: "
+            "the notice is in each one's account, and every email and SMS to them has an "
+            "outcome, delivered or failed after retrying."
+        )
+    return {
+        "sent": bool(rows),
+        "statement": statement,
+        "listed": listed,
+        "notified": notified,
+        "versions": [
+            {
+                "version": version,
+                "approved_at": approved.get(version),
+                "channels": [
+                    {"channel": channel, **counts} for channel, counts in sorted(channels.items())
+                ],
+            }
+            for version, channels in sorted(by_version.items())
+        ],
+    }

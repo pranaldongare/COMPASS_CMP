@@ -72,7 +72,7 @@ hash and no email is written
 rows from before that change stand as written, because the trail is
 hash-chained and cannot be rewritten.
 
-## 2. API endpoints that carry PII — 186 endpoints in 19 modules
+## 2. API endpoints that carry PII — 188 endpoints in 19 modules
 
 Every GET, POST, PUT, PATCH and DELETE whose request or response includes a
 personal field. *In* is what the caller sends (body, path and query); *out* is
@@ -196,7 +196,7 @@ these need no session; they are marked **public**.
 | POST | `/legal-holds` | `reason`, `subject_uuid` | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
 | POST | `/legal-holds/{hold_uuid}/release` | — | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
 
-### Personal data breaches (`/breaches`) — 18 endpoints
+### Personal data breaches (`/breaches`) — 20 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
@@ -208,6 +208,8 @@ these need no session; they are marked **public**.
 | POST | `/breaches/{breach_uuid}/affected/preview` | — | `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
 | GET | `/breaches/{breach_uuid}/assessments` | — | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures`, `revised_by_name` |
 | POST | `/breaches/{breach_uuid}/assessments` | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures` | `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `revised_by_name` |
+| GET | `/breaches/{breach_uuid}/board/intimation` | — | `document`, `likely_impact`, `nature_extent`, `recorded_by_name` |
+| GET | `/breaches/{breach_uuid}/board/report` | — | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `document`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reasoning`, `recorded_by_name`, `remedial_measures`, `revised_by_name` |
 | POST | `/breaches/{breach_uuid}/cert-in` | — | `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `revised_by_name` |
 | POST | `/breaches/{breach_uuid}/determinations` | `reasoning` | `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `revised_by_name` |
 | GET | `/breaches/{breach_uuid}/notices` | — | `approved_by_name`, `consequences`, `contact`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |

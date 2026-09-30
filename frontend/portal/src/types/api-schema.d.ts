@@ -4439,6 +4439,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/breaches/{breach_uuid}/board/intimation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Draft the Board's initial intimation (Rule 7(2)(a)) from the register */
+        get: operations["board_intimation_breaches__breach_uuid__board_intimation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/board/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Draft the Board's detailed report (Rule 7(2)(b)), all six items */
+        get: operations["board_report_breaches__breach_uuid__board_report_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tickets": {
         parameters: {
             query?: never;
@@ -5305,6 +5339,17 @@ export interface components {
             /** Key Exposed */
             key_exposed: boolean;
         };
+        /** BreachChannelCountOut */
+        BreachChannelCountOut: {
+            /** Channel */
+            channel: string;
+            /** Delivered */
+            delivered: number;
+            /** Queued */
+            queued: number;
+            /** Failed */
+            failed: number;
+        };
         /** BreachClockOut */
         BreachClockOut: {
             /** Without Delay */
@@ -5519,6 +5564,46 @@ export interface components {
             /** Location Detail */
             location_detail?: string | null;
         };
+        /**
+         * BreachIntimationOut
+         * @description Rule 7(2)(a), drafted from the register. The platform never submits it.
+         */
+        BreachIntimationOut: {
+            /** Document */
+            document: string;
+            /** Basis */
+            basis: string;
+            /** Reference */
+            reference: string;
+            /** Title */
+            title: string;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /** Determination */
+            determination: string;
+            /**
+             * Detected At
+             * Format: date-time
+             */
+            detected_at: string;
+            /** Began At */
+            began_at: string | null;
+            /** Became Aware At */
+            became_aware_at: string | null;
+            location: components["schemas"]["BreachLocationOut"];
+            /** Nature Extent */
+            nature_extent: string | null;
+            /** Likely Impact */
+            likely_impact: string | null;
+            /** Assessment Revision */
+            assessment_revision: number | null;
+            /** Missing */
+            missing: string[];
+            duty: components["schemas"]["BreachDutyOut"] | null;
+        };
         /** BreachLocationOut */
         BreachLocationOut: {
             /** Kind */
@@ -5533,6 +5618,22 @@ export interface components {
             source_name: string | null;
             /** Detail */
             detail: string | null;
+        };
+        /**
+         * BreachNoticeAccountOut
+         * @description Rule 7(2)(b)(vi). Present whether or not anything was sent.
+         */
+        BreachNoticeAccountOut: {
+            /** Sent */
+            sent: boolean;
+            /** Statement */
+            statement: string;
+            /** Listed */
+            listed: number;
+            /** Notified */
+            notified: number;
+            /** Versions */
+            versions: components["schemas"]["BreachNoticeVersionCountOut"][];
         };
         /** BreachNoticeContentOut */
         BreachNoticeContentOut: {
@@ -5570,15 +5671,15 @@ export interface components {
             /** State */
             state: string;
             /** What Happened */
-            what_happened: string;
+            what_happened: string | null;
             /** Consequences */
-            consequences: string;
+            consequences: string | null;
             /** Measures */
-            measures: string;
+            measures: string | null;
             /** Protective Steps */
-            protective_steps: string;
+            protective_steps: string | null;
             /** Contact */
-            contact: string;
+            contact: string | null;
             /**
              * Created At
              * Format: date-time
@@ -5595,6 +5696,15 @@ export interface components {
             approved_at: string | null;
             /** Approved By Name */
             approved_by_name: string | null;
+        };
+        /** BreachNoticeVersionCountOut */
+        BreachNoticeVersionCountOut: {
+            /** Version */
+            version: number;
+            /** Approved At */
+            approved_at: string | null;
+            /** Channels */
+            channels: components["schemas"]["BreachChannelCountOut"][];
         };
         /** BreachNoticesOut */
         BreachNoticesOut: {
@@ -5680,6 +5790,59 @@ export interface components {
             would_add: number;
             /** People */
             people: components["schemas"]["BreachCandidateOut"][];
+        };
+        /** BreachReportFactOut */
+        BreachReportFactOut: {
+            /** Item */
+            item: string;
+            /** Label */
+            label: string;
+            /** Text */
+            text: string | null;
+        };
+        /**
+         * BreachReportOut
+         * @description Rule 7(2)(b), all six items, drafted from the register.
+         */
+        BreachReportOut: {
+            /** Document */
+            document: string;
+            /** Basis */
+            basis: string;
+            /** Reference */
+            reference: string;
+            /** Title */
+            title: string;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /** Determination */
+            determination: string;
+            /**
+             * Detected At
+             * Format: date-time
+             */
+            detected_at: string;
+            /** Began At */
+            began_at: string | null;
+            /** Became Aware At */
+            became_aware_at: string | null;
+            location: components["schemas"]["BreachLocationOut"];
+            /** Determinations */
+            determinations: components["schemas"]["BreachDeterminationOut"][];
+            assessment: components["schemas"]["BreachAssessmentOut"] | null;
+            /** Assessment Revisions */
+            assessment_revisions: number;
+            /** Facts */
+            facts: components["schemas"]["BreachReportFactOut"][];
+            notices: components["schemas"]["BreachNoticeAccountOut"];
+            /** Missing */
+            missing: string[];
+            duty: components["schemas"]["BreachDutyOut"] | null;
+            /** Duties */
+            duties: components["schemas"]["BreachDutyOut"][];
         };
         /** BreachScopeIn */
         BreachScopeIn: {
@@ -6429,6 +6592,8 @@ export interface components {
             }[];
             /** Attention */
             attention?: components["schemas"]["AttentionRow"][];
+            /** Breaches */
+            breaches?: components["schemas"]["BreachSummaryOut"][];
         };
         /** DayCount */
         DayCount: {
@@ -17692,6 +17857,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BreachNoticesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    board_intimation_breaches__breach_uuid__board_intimation_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachIntimationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    board_report_breaches__breach_uuid__board_report_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachReportOut"];
                 };
             };
             /** @description Validation Error */
