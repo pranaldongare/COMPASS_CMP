@@ -84,13 +84,13 @@ function Choose({
 }
 
 /** Searched rather than listed whole: the register can hold hundreds. */
-function ProcessorPicker({ value, onChange }: { value: string; onChange: (uuid: string) => void }) {
+export function ProcessorPicker({ value, onChange }: { value: string; onChange: (uuid: string) => void }) {
   const [q, setQ] = React.useState("");
   const options = useProcessorOptions(q);
   return <Choose label="Processor" q={q} setQ={setQ} options={options} value={value} onChange={onChange} />;
 }
 
-function SourcePicker({ value, onChange }: { value: string; onChange: (uuid: string) => void }) {
+export function SourcePicker({ value, onChange }: { value: string; onChange: (uuid: string) => void }) {
   const [q, setQ] = React.useState("");
   const options = useSourceOptions(q);
   return <Choose label="Data source" q={q} setQ={setQ} options={options} value={value} onChange={onChange} />;

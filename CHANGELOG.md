@@ -38,6 +38,16 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **Who a breach touched, derived (S3-02).** A breach's page derives the
+  people it touched from where it happened - everyone in files exported to a
+  processor, everyone captured in a data source's assets, or everyone with a
+  row in the chosen tables of the platform's own database within a window -
+  previews them, and the DPO confirms the list as a revision, leaving out whom
+  the records wrongly include and adding by hand whom they cannot show. Nobody
+  listed is removed; a later revision adds only the newly found. Processor and
+  source derivation read the same holdings relation a rights request reads,
+  moved to `db/repositories/holdings.py` and read from both ends. Migration
+  0035; `GET/POST /breaches/{uuid}/affected`, `POST .../affected/preview`.
 - **The breach register and its duties (S3-01).** There was no breach concept
   at all. The DPO now records a breach as it was noticed - `detected_at`,
   `began_at` and, with a determination of *yes*, `became_aware_at`, all

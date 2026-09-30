@@ -251,6 +251,8 @@ class Event:
     BREACH_OBLIGATION_EXTENDED = "breach.obligation_extended"
     BREACH_CLOSED = "breach.closed"
     BREACH_REOPENED = "breach.reopened"
+    #: A confirmation of who the breach touched: counts, never people (S3-02).
+    BREACH_AFFECTED_REVISED = "breach.affected_revised"
     RIGHTS_RESPONDED = "rights.responded"
     RIGHTS_RESPONSE_DOWNLOADED = "rights.response_downloaded"
     RIGHTS_CLOSED = "rights.closed"

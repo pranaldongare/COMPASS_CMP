@@ -160,3 +160,76 @@ export interface BreachAssessmentInput extends Partial<BreachAssessmentFacts> {
   began_at?: Timestamp | null;
   categories: BreachCategory[];
 }
+
+/* ------------------------------------------------ who it touched (S3-02) */
+
+export type BreachScopeKind = "processor" | "data_source" | "platform";
+
+/** Where to look. A processor or a source by uuid; the platform by tables
+ *  and a window of when their rows were written. */
+export interface BreachScope {
+  kind: BreachScopeKind;
+  processor_uuid?: Uuid | null;
+  source_uuid?: Uuid | null;
+  tables?: string[];
+  since?: Timestamp | null;
+  until?: Timestamp | null;
+}
+
+/** Which exports, assets or tables put a person on the list. Ids only. */
+export interface BreachEvidence {
+  exports: string[];
+  assets: string[];
+  tables: string[];
+}
+
+export interface BreachPerson {
+  person_uuid: Uuid;
+  full_name: string | null;
+  role: string;
+  has_email: boolean;
+  has_mobile: boolean;
+  found_by: BreachScopeKind | "dpo";
+  evidence: BreachEvidence;
+}
+
+export interface BreachAffectedPerson extends BreachPerson {
+  affected_uuid: Uuid;
+  /** The revision that first listed them. */
+  revision: number;
+}
+
+export interface BreachCandidate extends BreachPerson {
+  already_listed: boolean;
+}
+
+export interface BreachPreview {
+  scopes: Record<string, unknown>[];
+  derived: number;
+  already_listed: number;
+  would_add: number;
+  /** A sample of the people found; `derived` is the count. */
+  people: BreachCandidate[];
+}
+
+export interface BreachAffectedRevision {
+  revision_uuid: Uuid;
+  revision: number;
+  scopes: Record<string, unknown>[];
+  derived: number;
+  added_by_hand: number;
+  excluded: number;
+  newly_listed: number;
+  note: string | null;
+  confirmed_at: Timestamp;
+  confirmed_by_name: string | null;
+}
+
+export interface BreachAffected {
+  total: number;
+  revisions: BreachAffectedRevision[];
+  people: BreachAffectedPerson[];
+  next_cursor: string | null;
+  /** The tables a platform scope may name. */
+  platform_tables: string[];
+}

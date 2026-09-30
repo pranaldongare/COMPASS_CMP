@@ -58,6 +58,12 @@ for an extension, or for a determination made by a person.
   guard answers every other role **404** rather than 403
   (`RequireResource(..., hidden=True)`): that a breach is being handled is itself
   withheld, and a caller walking uuids cannot tell a breach from nothing.
+- **Who it touched is derived, confirmed and only ever added to.** From a
+  processor's exports, a source's assets, or the platform's own tables in a
+  window - the first two from the same holdings relation the rights module
+  reads, generalised rather than copied. The DPO confirms each revision,
+  leaving out and adding by hand; a person listed stays listed, and each
+  revision adds only the newly found.
 - **Where the platform ends.** It records, derives, tracks every clock, drafts
   every document and sends the notices to principals. People contain the breach,
   preserve evidence, make the determination, submit to the Board and to CERT-In

@@ -1,7 +1,7 @@
 # Schema
 
-41 tables, 39 enums, 1 view, 36 triggers, 62 named CHECK constraints and 117
-foreign keys, as of migration 0034. Those counts are read from the PostgreSQL
+43 tables, 39 enums, 1 view, 38 triggers, 65 named CHECK constraints and 122
+foreign keys, as of migration 0035. Those counts are read from the PostgreSQL
 catalogs after replaying every migration, not maintained by hand.
 
 The migrations are the source of truth: 0001 transcribed the original
@@ -24,7 +24,7 @@ its stated commit before trusting it against a later change.
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant` |
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` |
 | Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_item_execution`, `rights_ticket_message`, `rights_response_file`, `nomination`, `legal_hold` |
-| Breach | `breach`, `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event` |
+| Breach | `breach`, `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event`, `breach_affected_revision`, `breach_affected` |
 | Audit | `audit_log` |
 
 ## The view
@@ -110,6 +110,11 @@ its `due_at` stored when it is created - NULL is "without delay" - and never
 updated; `breach_obligation_event` carries what happens to it afterwards, and a
 duty's state is read by folding those events in order. `breach.reference` is
 `BR-<year>-<seq>`, minted from `breach_ref_seq` at insert.
+
+**Who a breach touched is only ever added to, since 0035.** Each
+confirmation is a `breach_affected_revision` with its scopes and counts; each
+person is a `breach_affected` row, once per breach (`breach_affected_once`),
+naming the revision that first listed them. Both are append-only.
 
 ## Sealed columns, and how they are still found
 

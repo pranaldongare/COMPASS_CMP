@@ -510,63 +510,6 @@ async def holder_by_uuid(conn: Conn, request_id: int, holder_uuid: str) -> Row |
     )
 
 
-async def derive_holder_candidates(
-    conn: Conn, subject_user_id: int, *, consent_ids: list[int] | None = None
-) -> list[Row]:
-    """Who holds her data, from the records that say so.
-
-    Two sources, joined: every export that carried one of her consent records
-    went to the processor running the site it was for, and every collected
-    asset she appears in was captured by a data source a processor runs. The
-    DPO confirms the list and adds what the records miss - the records name
-    what the platform knows, and the platform does not know everything.
-
-    `consent_ids` confines the answer to records under those consents: a
-    request made about one consent names only the holders of data under it.
-    """
-    by_export = "AND el.consent_id = ANY(%(c)s)" if consent_ids is not None else ""
-    by_asset = "AND ac.consent_id = ANY(%(c)s)" if consent_ids is not None else ""
-    return await fetch_all(
-        conn,
-        f"""
-        WITH via_exports AS (
-          SELECT pr.processor_id, pr.legal_name,
-                 array_agg(DISTINCT e.export_uuid::text) AS exports
-          FROM export_line el
-          JOIN export_log e     ON e.export_id = el.export_id
-          -- Where the line went: recorded on the line since 0032. Before it,
-          -- only a per-site export named its site; a project export (since
-          -- 0010) named none, and derived no holder at all.
-          LEFT JOIN project_site s ON s.site_id = e.site_id
-          JOIN processor pr     ON pr.processor_id =
-                                   COALESCE(el.destination_processor_id, s.processor_id)
-          WHERE el.auth_user_id = %(u)s {by_export}
-          GROUP BY pr.processor_id, pr.legal_name
-        ),
-        via_assets AS (
-          SELECT pr.processor_id, pr.legal_name,
-                 array_agg(DISTINCT da.asset_uuid::text) AS assets
-          FROM asset_consent ac
-          JOIN consent_artefact ca ON ca.consent_id = ac.consent_id
-          JOIN data_asset da       ON da.asset_id = ac.asset_id
-          JOIN data_source ds      ON ds.source_id = da.source_id
-          JOIN processor pr        ON pr.processor_id = ds.processor_id
-          WHERE ca.auth_user_id = %(u)s {by_asset}
-            AND coalesce(ac.disposition, 'active') = 'active'
-          GROUP BY pr.processor_id, pr.legal_name
-        )
-        SELECT coalesce(x.processor_id, a.processor_id) AS processor_id,
-               coalesce(x.legal_name, a.legal_name)     AS legal_name,
-               coalesce(x.exports, ARRAY[]::text[])     AS exports,
-               coalesce(a.assets, ARRAY[]::text[])      AS assets
-        FROM via_exports x
-        FULL OUTER JOIN via_assets a ON a.processor_id = x.processor_id
-        ORDER BY 2
-        """,
-        {"u": subject_user_id, "c": consent_ids},
-    )
-
-
 async def add_holder(
     conn: Conn,
     request_id: int,

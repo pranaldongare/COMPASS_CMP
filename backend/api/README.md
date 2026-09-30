@@ -1,7 +1,7 @@
 # CMP backend
 
 The API of the consent management platform: FastAPI 0.141 on Python 3.12,
-PostgreSQL 16, Redis 7, Celery 5. 265 endpoints over 41 tables, every query
+PostgreSQL 16, Redis 7, Celery 5. 268 endpoints over 43 tables, every query
 hand-written SQL over psycopg 3, every migration raw DDL. Personal fields are
 sealed through the key service in [`../dkms`](../dkms) before they reach a
 table. The repository-wide documentation is under
@@ -30,7 +30,7 @@ python3.12 -m venv .venv
 pip install -r requirements-dev.txt # the runtime, the tools, and this package (editable)
 
 cp .env.example .env                # PUBLIC_BASE_URL and CONSOLE_BASE_URL to the two portals; DKMS_URL to the key service
-alembic upgrade head                # 34 migrations: 41 tables, triggers, grants, the lookup hashes
+alembic upgrade head                # 35 migrations: 43 tables, triggers, grants, the lookup hashes
 python scripts/seed.py              # one coherent world: a user per role, processors, sources, sites, a project through to approved, a live link
 
 python -m cmp --port 8000

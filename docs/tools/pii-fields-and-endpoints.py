@@ -44,6 +44,9 @@ COLUMNS: list[tuple[str, list[str]]] = [
                            "mitigation", "protective_steps", "caused_by_findings",
                            "remedial_measures", "contact_point"]),
     ("breach_obligation_event", ["note"]),
+    # Who a breach touched (S3-02): the person, by account.
+    ("breach_affected_revision", ["note"]),
+    ("breach_affected", ["auth_user_id"]),
     ("consent_artefact", ["ip_address", "auth_user_id"]),
     ("consent_purpose_grant", ["granted"]),
     ("consent_link", ["token", "token_sealed"]),
@@ -106,7 +109,7 @@ def main() -> None:
                "tables), `ip_address`, `name` and `contact` on `processor_respondent`, every\n"
                "`reason`, `decision_reason`, and every narrative in the breach register\n"
                "(`title`, `location_detail`, `reasoning`, the nine assessment facts, a duty\n"
-               "event's `note`) — 48 columns in 19 tables. The eight the platform\n"
+               "event's and a revision's `note`) — 49 columns in 20 tables. The eight the platform\n"
                "looks rows up by whole (`email`, `secondary_email`, `mobile`, `username`,\n"
                "`organization_id`, `nominee_email`, `nominee_mobile`, `submitted_contact`) carry\n"
                "a keyed hash beside them - `*_hash`, an HMAC of the normalised value - and three\n"

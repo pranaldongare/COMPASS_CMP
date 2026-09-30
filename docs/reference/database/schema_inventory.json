@@ -1,6 +1,6 @@
 {
-  "commit": "861fe8f0dd1b5ec7bfeecb107c3f0e492490cba3",
-  "migration_head": "0034",
+  "commit": "b7e69bcd75f76321dd5519ba4a649f0af4fc903d",
+  "migration_head": "0035",
   "migrations": [
     {
       "revision": "0001",
@@ -137,6 +137,10 @@
     {
       "revision": "0034",
       "source": "backend/api/migrations/versions/0034_breach_register.py"
+    },
+    {
+      "revision": "0035",
+      "source": "backend/api/migrations/versions/0035_breach_affected.py"
     }
   ],
   "postgres_version": "16.15",
@@ -170,6 +174,16 @@
       "name": "breach",
       "kind": "r",
       "comment": "A suspected or confirmed personal data breach (s.8(6), Rule 7). Only status changes; see breach_status_history"
+    },
+    {
+      "name": "breach_affected",
+      "kind": "r",
+      "comment": null
+    },
+    {
+      "name": "breach_affected_revision",
+      "kind": "r",
+      "comment": "One confirmation of who a breach touched, to the best of current knowledge (Rule 7(1), S3-02)"
     },
     {
       "name": "breach_assessment",
@@ -857,6 +871,177 @@
       "table_name": "breach",
       "name": "recorded_at",
       "position": 13,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected",
+      "name": "affected_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_affected_affected_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected",
+      "name": "affected_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected",
+      "name": "breach_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected",
+      "name": "revision_id",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected",
+      "name": "auth_user_id",
+      "position": 5,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected",
+      "name": "found_by",
+      "position": 6,
+      "type": "character varying(12)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected",
+      "name": "evidence",
+      "position": 7,
+      "type": "jsonb",
+      "not_null": true,
+      "default_value": "'{}'::jsonb",
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "revision_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_affected_revision_revision_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "revision_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "breach_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "revision",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "scopes",
+      "position": 5,
+      "type": "jsonb",
+      "not_null": true,
+      "default_value": "'[]'::jsonb",
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "derived",
+      "position": 6,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "added_by_hand",
+      "position": 7,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "excluded",
+      "position": 8,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "newly_listed",
+      "position": 9,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "note",
+      "position": 10,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "confirmed_by",
+      "position": 11,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "confirmed_at",
+      "position": 12,
       "type": "timestamp with time zone",
       "not_null": true,
       "default_value": "now()",
@@ -5665,6 +5850,231 @@
       "initially_deferred": false
     },
     {
+      "table_name": "breach_affected",
+      "name": "breach_affected_affected_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (affected_uuid)",
+      "columns": [
+        "affected_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_affected",
+      "name": "breach_affected_auth_user_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (auth_user_id) REFERENCES auth_user(id)",
+      "columns": [
+        "auth_user_id"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_affected",
+      "name": "breach_affected_breach_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (breach_id) REFERENCES breach(breach_id)",
+      "columns": [
+        "breach_id"
+      ],
+      "referenced_table": "breach",
+      "referenced_columns": [
+        "breach_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_affected",
+      "name": "breach_affected_found_by",
+      "kind": "c",
+      "definition": "CHECK (((found_by)::text = ANY ((ARRAY['processor'::character varying, 'data_source'::character varying, 'platform'::character varying, 'dpo'::character varying])::text[])))",
+      "columns": [
+        "found_by"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_affected",
+      "name": "breach_affected_once",
+      "kind": "u",
+      "definition": "UNIQUE (breach_id, auth_user_id)",
+      "columns": [
+        "breach_id",
+        "auth_user_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_affected",
+      "name": "breach_affected_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (affected_id)",
+      "columns": [
+        "affected_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_affected",
+      "name": "breach_affected_revision_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (revision_id) REFERENCES breach_affected_revision(revision_id)",
+      "columns": [
+        "revision_id"
+      ],
+      "referenced_table": "breach_affected_revision",
+      "referenced_columns": [
+        "revision_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "breach_affected_revision_breach_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (breach_id) REFERENCES breach(breach_id)",
+      "columns": [
+        "breach_id"
+      ],
+      "referenced_table": "breach",
+      "referenced_columns": [
+        "breach_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "breach_affected_revision_confirmed_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (confirmed_by) REFERENCES auth_user(id)",
+      "columns": [
+        "confirmed_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "breach_affected_revision_counts",
+      "kind": "c",
+      "definition": "CHECK (((derived >= 0) AND (added_by_hand >= 0) AND (excluded >= 0) AND (newly_listed >= 0)))",
+      "columns": [
+        "derived",
+        "added_by_hand",
+        "excluded",
+        "newly_listed"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "breach_affected_revision_number",
+      "kind": "u",
+      "definition": "UNIQUE (breach_id, revision)",
+      "columns": [
+        "breach_id",
+        "revision"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "breach_affected_revision_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (revision_id)",
+      "columns": [
+        "revision_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "breach_affected_revision_revision_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (revision_uuid)",
+      "columns": [
+        "revision_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "breach_affected_revision_scopes_list",
+      "kind": "c",
+      "definition": "CHECK ((jsonb_typeof(scopes) = 'array'::text))",
+      "columns": [
+        "scopes"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "breach_assessment",
       "name": "breach_assessment_assessment_uuid_key",
       "kind": "u",
@@ -9685,6 +10095,46 @@
       "definition": "CREATE UNIQUE INDEX breach_reference_key ON public.breach USING btree (reference)"
     },
     {
+      "table_name": "breach_affected",
+      "name": "breach_affected_affected_uuid_key",
+      "definition": "CREATE UNIQUE INDEX breach_affected_affected_uuid_key ON public.breach_affected USING btree (affected_uuid)"
+    },
+    {
+      "table_name": "breach_affected",
+      "name": "breach_affected_once",
+      "definition": "CREATE UNIQUE INDEX breach_affected_once ON public.breach_affected USING btree (breach_id, auth_user_id)"
+    },
+    {
+      "table_name": "breach_affected",
+      "name": "breach_affected_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_affected_pkey ON public.breach_affected USING btree (affected_id)"
+    },
+    {
+      "table_name": "breach_affected",
+      "name": "idx_breach_affected_person",
+      "definition": "CREATE INDEX idx_breach_affected_person ON public.breach_affected USING btree (auth_user_id)"
+    },
+    {
+      "table_name": "breach_affected",
+      "name": "idx_breach_affected_revision",
+      "definition": "CREATE INDEX idx_breach_affected_revision ON public.breach_affected USING btree (revision_id)"
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "breach_affected_revision_number",
+      "definition": "CREATE UNIQUE INDEX breach_affected_revision_number ON public.breach_affected_revision USING btree (breach_id, revision)"
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "breach_affected_revision_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_affected_revision_pkey ON public.breach_affected_revision USING btree (revision_id)"
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "breach_affected_revision_revision_uuid_key",
+      "definition": "CREATE UNIQUE INDEX breach_affected_revision_revision_uuid_key ON public.breach_affected_revision USING btree (revision_uuid)"
+    },
+    {
       "table_name": "breach_assessment",
       "name": "breach_assessment_assessment_uuid_key",
       "definition": "CREATE UNIQUE INDEX breach_assessment_assessment_uuid_key ON public.breach_assessment USING btree (assessment_uuid)"
@@ -10812,6 +11262,16 @@
       "definition": "CREATE TRIGGER trg_breach_status_only BEFORE DELETE OR UPDATE ON public.breach FOR EACH ROW EXECUTE FUNCTION cmp_breach_status_only()"
     },
     {
+      "table_name": "breach_affected",
+      "name": "trg_breach_affected_append_only",
+      "definition": "CREATE TRIGGER trg_breach_affected_append_only BEFORE DELETE OR UPDATE ON public.breach_affected FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
+      "table_name": "breach_affected_revision",
+      "name": "trg_breach_affected_revision_append_only",
+      "definition": "CREATE TRIGGER trg_breach_affected_revision_append_only BEFORE DELETE OR UPDATE ON public.breach_affected_revision FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
       "table_name": "breach_assessment",
       "name": "trg_breach_assessment_append_only",
       "definition": "CREATE TRIGGER trg_breach_assessment_append_only BEFORE DELETE OR UPDATE ON public.breach_assessment FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
@@ -10988,6 +11448,12 @@
     },
     {
       "name": "auth_user_id_seq"
+    },
+    {
+      "name": "breach_affected_affected_id_seq"
+    },
+    {
+      "name": "breach_affected_revision_revision_id_seq"
     },
     {
       "name": "breach_assessment_assessment_id_seq"
@@ -11182,13 +11648,13 @@
     }
   ],
   "counts": {
-    "application_tables": 41,
+    "application_tables": 43,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 523,
-    "foreign_keys": 117,
+    "table_columns": 542,
+    "foreign_keys": 122,
     "enums": 39,
-    "triggers": 36,
-    "checks": 62
+    "triggers": 38,
+    "checks": 65
   }
 }

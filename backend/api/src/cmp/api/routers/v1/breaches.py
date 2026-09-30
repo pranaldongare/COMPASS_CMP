@@ -18,7 +18,7 @@ from pydantic import AwareDatetime, Field
 
 from cmp.api.dependencies import BreachReader, BreachWriter
 from cmp.db.pool import connection, transaction
-from cmp.domain.breach import service
+from cmp.domain.breach import affected, service
 from cmp.schemas.common import Out, Schema
 
 router = APIRouter(prefix="/breaches", tags=["breaches"])
@@ -409,5 +409,143 @@ async def transition(
             breach_uuid=str(breach_uuid),
             to=body.to,
             reason=body.reason,
+            actor_id=principal.user_id,
+        )
+
+
+# ------------------------------------------------------------ who it touched (S3-02)
+
+
+class BreachScopeIn(Schema):
+    #: processor, data_source or platform.
+    kind: str
+    processor_uuid: UUID | None = None
+    source_uuid: UUID | None = None
+    #: platform only: the affected tables, from `platform_tables`.
+    tables: Annotated[list[str], Field(max_length=50)] = Field(default_factory=list)
+    #: platform only: rows written from and until. Either may be open.
+    since: AwareDatetime | None = None
+    until: AwareDatetime | None = None
+
+
+class BreachPreviewIn(Schema):
+    scopes: Annotated[list[BreachScopeIn], Field(min_length=1, max_length=20)]
+
+
+class BreachAffectedIn(Schema):
+    scopes: Annotated[list[BreachScopeIn], Field(max_length=20)] = Field(default_factory=list)
+    #: People the records place in scope who were not touched, by uuid.
+    exclude: Annotated[list[UUID], Field(max_length=5000)] = Field(default_factory=list)
+    #: People the records cannot show, by uuid.
+    add: Annotated[list[UUID], Field(max_length=5000)] = Field(default_factory=list)
+    note: _Text | None = None
+
+
+class BreachEvidenceOut(Out):
+    exports: list[str] = Field(default_factory=list)
+    assets: list[str] = Field(default_factory=list)
+    tables: list[str] = Field(default_factory=list)
+
+
+class BreachPersonOut(Out):
+    person_uuid: UUID
+    full_name: str | None
+    role: str
+    has_email: bool
+    has_mobile: bool
+    #: processor, data_source, platform or dpo (added by hand).
+    found_by: str
+    evidence: BreachEvidenceOut
+
+
+class BreachAffectedPersonOut(BreachPersonOut):
+    affected_uuid: UUID
+    #: The revision that first listed them.
+    revision: int
+
+
+class BreachCandidateOut(BreachPersonOut):
+    already_listed: bool
+
+
+class BreachPreviewOut(Out):
+    scopes: list[dict[str, Any]]
+    derived: int
+    already_listed: int
+    would_add: int
+    #: The first people found, as a sample. `derived` is the count.
+    people: list[BreachCandidateOut]
+
+
+class BreachAffectedRevisionOut(Out):
+    revision_uuid: UUID
+    revision: int
+    scopes: list[dict[str, Any]]
+    derived: int
+    added_by_hand: int
+    excluded: int
+    newly_listed: int
+    note: str | None
+    confirmed_at: datetime
+    confirmed_by_name: str | None
+
+
+class BreachAffectedOut(Out):
+    total: int
+    revisions: list[BreachAffectedRevisionOut]
+    people: list[BreachAffectedPersonOut]
+    next_cursor: str | None
+    #: The tables a platform scope may name.
+    platform_tables: list[str]
+
+
+def _scopes(scopes: list[BreachScopeIn]) -> list[dict[str, Any]]:
+    return [s.model_dump() for s in scopes]
+
+
+@router.get(
+    "/{breach_uuid}/affected",
+    response_model=BreachAffectedOut,
+    summary="Who the breach touched, as confirmed, with every revision",
+)
+async def list_affected(
+    breach_uuid: UUID,
+    principal: BreachReader,
+    cursor: Annotated[str | None, Query(max_length=64)] = None,
+) -> dict[str, Any]:
+    async with connection() as conn:
+        return await affected.listing(conn, breach_uuid=str(breach_uuid), after=cursor)
+
+
+@router.post(
+    "/{breach_uuid}/affected/preview",
+    response_model=BreachPreviewOut,
+    summary="What the records show for these scopes, before confirming",
+)
+async def preview_affected(
+    breach_uuid: UUID, body: BreachPreviewIn, principal: BreachReader
+) -> dict[str, Any]:
+    async with connection() as conn:
+        return await affected.preview(
+            conn, breach_uuid=str(breach_uuid), scopes=_scopes(body.scopes)
+        )
+
+
+@router.post(
+    "/{breach_uuid}/affected",
+    response_model=BreachAffectedOut,
+    summary="Confirm who the breach touched: a new revision, adding only the newly found",
+)
+async def confirm_affected(
+    breach_uuid: UUID, body: BreachAffectedIn, principal: BreachWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await affected.confirm(
+            conn,
+            breach_uuid=str(breach_uuid),
+            scopes=_scopes(body.scopes),
+            exclude=[str(u) for u in body.exclude],
+            add=[str(u) for u in body.add],
+            note=body.note,
             actor_id=principal.user_id,
         )

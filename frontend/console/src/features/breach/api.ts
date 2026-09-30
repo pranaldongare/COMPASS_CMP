@@ -9,6 +9,9 @@
 import { apiGet, apiPost, queryString } from "@/lib/api";
 import type {
   Breach,
+  BreachAffected,
+  BreachPreview,
+  BreachScope,
   BreachAssessment,
   BreachAssessmentInput,
   BreachDutyKind,
@@ -76,4 +79,21 @@ export function transitionBreach(
   body: { to: BreachStatus; reason?: string | null },
 ): Promise<Breach> {
   return apiPost<Breach>(`/breaches/${uuid}/transition`, body);
+}
+
+/* ------------------------------------------------- who it touched (S3-02) */
+
+export function listAffected(uuid: Uuid, cursor?: string | null): Promise<BreachAffected> {
+  return apiGet<BreachAffected>(`/breaches/${uuid}/affected${queryString({ cursor })}`);
+}
+
+export function previewAffected(uuid: Uuid, scopes: BreachScope[]): Promise<BreachPreview> {
+  return apiPost<BreachPreview>(`/breaches/${uuid}/affected/preview`, { scopes });
+}
+
+export function confirmAffected(
+  uuid: Uuid,
+  body: { scopes: BreachScope[]; exclude: Uuid[]; add: Uuid[]; note?: string | null },
+): Promise<BreachAffected> {
+  return apiPost<BreachAffected>(`/breaches/${uuid}/affected`, body);
 }

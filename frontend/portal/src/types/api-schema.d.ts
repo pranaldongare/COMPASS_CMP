@@ -4314,6 +4314,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/breaches/{breach_uuid}/affected": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Who the breach touched, as confirmed, with every revision */
+        get: operations["list_affected_breaches__breach_uuid__affected_get"];
+        put?: never;
+        /** Confirm who the breach touched: a new revision, adding only the newly found */
+        post: operations["confirm_affected_breaches__breach_uuid__affected_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/affected/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** What the records show for these scopes, before confirming */
+        post: operations["preview_affected_breaches__breach_uuid__affected_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tickets": {
         parameters: {
             query?: never;
@@ -4993,6 +5028,87 @@ export interface components {
              */
             document: string;
         };
+        /** BreachAffectedIn */
+        BreachAffectedIn: {
+            /** Scopes */
+            scopes?: components["schemas"]["BreachScopeIn"][];
+            /** Exclude */
+            exclude?: string[];
+            /** Add */
+            add?: string[];
+            /** Note */
+            note?: string | null;
+        };
+        /** BreachAffectedOut */
+        BreachAffectedOut: {
+            /** Total */
+            total: number;
+            /** Revisions */
+            revisions: components["schemas"]["BreachAffectedRevisionOut"][];
+            /** People */
+            people: components["schemas"]["BreachAffectedPersonOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+            /** Platform Tables */
+            platform_tables: string[];
+        };
+        /** BreachAffectedPersonOut */
+        BreachAffectedPersonOut: {
+            /**
+             * Person Uuid
+             * Format: uuid
+             */
+            person_uuid: string;
+            /** Full Name */
+            full_name: string | null;
+            /** Role */
+            role: string;
+            /** Has Email */
+            has_email: boolean;
+            /** Has Mobile */
+            has_mobile: boolean;
+            /** Found By */
+            found_by: string;
+            evidence: components["schemas"]["BreachEvidenceOut"];
+            /**
+             * Affected Uuid
+             * Format: uuid
+             */
+            affected_uuid: string;
+            /** Revision */
+            revision: number;
+        };
+        /** BreachAffectedRevisionOut */
+        BreachAffectedRevisionOut: {
+            /**
+             * Revision Uuid
+             * Format: uuid
+             */
+            revision_uuid: string;
+            /** Revision */
+            revision: number;
+            /** Scopes */
+            scopes: {
+                [key: string]: unknown;
+            }[];
+            /** Derived */
+            derived: number;
+            /** Added By Hand */
+            added_by_hand: number;
+            /** Excluded */
+            excluded: number;
+            /** Newly Listed */
+            newly_listed: number;
+            /** Note */
+            note: string | null;
+            /**
+             * Confirmed At
+             * Format: date-time
+             */
+            confirmed_at: string;
+            /** Confirmed By Name */
+            confirmed_by_name: string | null;
+        };
         /** BreachAssessmentIn */
         BreachAssessmentIn: {
             /** Began At */
@@ -5056,6 +5172,27 @@ export interface components {
             revised_at: string;
             /** Revised By Name */
             revised_by_name: string | null;
+        };
+        /** BreachCandidateOut */
+        BreachCandidateOut: {
+            /**
+             * Person Uuid
+             * Format: uuid
+             */
+            person_uuid: string;
+            /** Full Name */
+            full_name: string | null;
+            /** Role */
+            role: string;
+            /** Has Email */
+            has_email: boolean;
+            /** Has Mobile */
+            has_mobile: boolean;
+            /** Found By */
+            found_by: string;
+            evidence: components["schemas"]["BreachEvidenceOut"];
+            /** Already Listed */
+            already_listed: boolean;
         };
         /** BreachCategoryIn */
         BreachCategoryIn: {
@@ -5200,6 +5337,15 @@ export interface components {
             /** Events */
             events: components["schemas"]["BreachDutyEventOut"][];
         };
+        /** BreachEvidenceOut */
+        BreachEvidenceOut: {
+            /** Exports */
+            exports?: string[];
+            /** Assets */
+            assets?: string[];
+            /** Tables */
+            tables?: string[];
+        };
         /** BreachExtensionIn */
         BreachExtensionIn: {
             /**
@@ -5299,6 +5445,41 @@ export interface components {
             transitions: components["schemas"]["BreachTransitionOut"][];
             /** Without Delay Target Hours */
             without_delay_target_hours: number | null;
+        };
+        /** BreachPreviewIn */
+        BreachPreviewIn: {
+            /** Scopes */
+            scopes: components["schemas"]["BreachScopeIn"][];
+        };
+        /** BreachPreviewOut */
+        BreachPreviewOut: {
+            /** Scopes */
+            scopes: {
+                [key: string]: unknown;
+            }[];
+            /** Derived */
+            derived: number;
+            /** Already Listed */
+            already_listed: number;
+            /** Would Add */
+            would_add: number;
+            /** People */
+            people: components["schemas"]["BreachCandidateOut"][];
+        };
+        /** BreachScopeIn */
+        BreachScopeIn: {
+            /** Kind */
+            kind: string;
+            /** Processor Uuid */
+            processor_uuid?: string | null;
+            /** Source Uuid */
+            source_uuid?: string | null;
+            /** Tables */
+            tables?: string[];
+            /** Since */
+            since?: string | null;
+            /** Until */
+            until?: string | null;
         };
         /** BreachStatusChangeOut */
         BreachStatusChangeOut: {
@@ -16978,6 +17159,109 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BreachOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_affected_breaches__breach_uuid__affected_get: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachAffectedOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_affected_breaches__breach_uuid__affected_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachAffectedIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachAffectedOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_affected_breaches__breach_uuid__affected_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachPreviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachPreviewOut"];
                 };
             };
             /** @description Validation Error */

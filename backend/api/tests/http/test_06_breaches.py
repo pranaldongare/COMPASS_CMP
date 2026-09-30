@@ -202,6 +202,55 @@ class TestTheRegister:
         assert closed.json()["status_history"][-1]["changed_by_name"].startswith("SE::")
 
 
+class TestWhoItTouched:
+    async def test_derive_preview_confirm_and_list(
+        self, http: httpx.AsyncClient, world: World
+    ) -> None:
+        breach = await _record(http, world)
+        path = f"/breaches/{breach['breach_uuid']}"
+        scope = {"kind": "processor", "processor_uuid": world.processor_uuid}
+        shown = await call(
+            http,
+            "POST",
+            f"{path}/affected/preview",
+            template=f"{B}/affected/preview",
+            session=world.dpo,
+            json={"scopes": [scope]},
+        )
+        assert shown.json()["derived"] >= 1, "the world exported to its processor"
+        confirmed = await call(
+            http,
+            "POST",
+            f"{path}/affected",
+            template=f"{B}/affected",
+            session=world.dpo,
+            json={
+                "scopes": [scope],
+                "add": [world.principal.uuid] if world.principal else [],
+                "note": "From the export log",
+            },
+        )
+        body = confirmed.json()
+        assert body["total"] >= 1 and body["revisions"][0]["note"].startswith("SE::")
+        assert all(
+            p["full_name"] is None or p["full_name"].startswith("SE::") for p in body["people"]
+        )
+        listed = await call(
+            http, "GET", f"{path}/affected", template=f"{B}/affected", session=world.dpo
+        )
+        assert listed.json()["total"] == body["total"]
+        assert "consent_artefact" in listed.json()["platform_tables"]
+        await call(
+            http,
+            "POST",
+            f"{path}/affected/preview",
+            template=f"{B}/affected/preview",
+            session=world.dpo,
+            json={"scopes": [{"kind": "platform", "tables": ["pg_authid"]}]},
+            expect=422,
+        )
+
+
 class TestHiddenFromEveryoneElse:
     async def test_every_other_role_is_told_it_is_not_there(
         self, http: httpx.AsyncClient, world: World, session_for: SessionFactory
@@ -221,6 +270,9 @@ class TestHiddenFromEveryoneElse:
             ]
             assert same[0] == same[1], "a real breach reads exactly like no breach"
             assert listed.status_code == 404
+            await call(
+                http, "GET", f"{real}/affected", template=f"{B}/affected", session=who, expect=404
+            )
             await call(
                 http,
                 "POST",

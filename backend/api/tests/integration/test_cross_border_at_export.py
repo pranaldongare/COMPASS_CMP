@@ -15,7 +15,7 @@ from typing import Any
 import pytest
 
 from cmp.core.errors import Conflict, ValidationFailed
-from cmp.db.repositories import rights as rights_repo
+from cmp.db.repositories import holdings
 from cmp.domain.exchange import service as exchange_service
 from cmp.domain.exchange import transfer
 from cmp.infrastructure.storage import service as storage_service
@@ -199,5 +199,5 @@ async def test_the_lines_name_the_holder_a_rights_request_is_ticketed_to(
     destination gives it back."""
     await _consent(conn, seeded)
     await _export(conn, seeded)
-    candidates = await rights_repo.derive_holder_candidates(conn, seeded["subject"]["id"])
+    candidates = await holdings.holders_of_person(conn, seeded["subject"]["id"])
     assert "Test Processor Ltd" in [c["legal_name"] for c in candidates]

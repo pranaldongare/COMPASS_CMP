@@ -127,6 +127,42 @@ Each duty's clock reads, in the console: time left or overdue for a dated duty;
 time since awareness for one due without delay, and whether it is past the
 target once one is set. Overdue rows are marked.
 
+## Who it touched
+
+Rule 7(1) asks for a notice to *each* affected principal, to the best of the
+fiduciary's knowledge. **Who it touched** on a breach's page derives the list
+from the records, and the DPO confirms it.
+
+| Where it happened | Who the records place there |
+|---|---|
+| A processor | Everyone in files exported to it (`export_line`, to the line's destination processor) |
+| A data source | Everyone captured in its assets and not yet erased from them (`asset_consent`). Bystanders - people in frame who never consented - have no account and are not listed |
+| The platform's own database | Everyone with a row in the affected tables, written within a window (either end may be open) |
+
+The first two read the same relation a rights request reads to find a
+person's holders (`db/repositories/holdings.py`), from the other end. For the
+database, each table that holds something about a principal is mapped to the
+person it is about and when the row was written
+(`breaches.PLATFORM_TABLES`); a sealed table that cannot be traced to an
+account says why (`NOT_ABOUT_A_PRINCIPAL`), and a test fails for one that does
+neither. No table is ticked for a database breach until the DPO ticks it:
+every table since the beginning is everyone on the platform.
+
+**Show what the records say** previews the people, counted and sampled, before
+anything is written. **Confirm the list** records a **revision**: what it was
+derived from, how many the records found, how many were left out, how many were
+added by hand, and how many were newly listed. The DPO may:
+
+- **leave out** people the records wrongly include - the left-out count is on
+  the revision;
+- **add** people the records cannot show, found by contact or part of a name.
+
+**Nobody listed is ever removed.** A later revision adds only people not
+already listed - each keeps the revision that first listed them - and every
+earlier row stays as it was. A notice already sent cannot be unsent, and
+listing too many is the safe side of Rule 7. Each person a revision adds is
+notified in turn (S3-03).
+
 ## Open and closed
 
 A breach is open or closed, and nothing else: the duties carry the rest. It
@@ -145,6 +181,8 @@ nothing about it can be recorded.
 | `breach_assessment` | Every revision of the facts. Append-only |
 | `breach_obligation` | One row per duty per breach, with its stored due time and the moment its clock runs from. Append-only; one of each kind per breach, by unique constraint |
 | `breach_obligation_event` | Everything that happens to a duty afterwards: completed, not applicable, reinstated, extended, reopened. Append-only |
+| `breach_affected_revision` | Each confirmation of who it touched: the scopes, the counts, a sealed note. Append-only |
+| `breach_affected` | Each person listed, once per breach (`breach_affected_once`), with the revision that first listed them and what put them there - exports, assets or tables, never a value. Append-only |
 
 Every write takes the breach row first (`FOR UPDATE`), so two people recording
 at once act one after the other: two determinations of *yes* sent together
@@ -155,7 +193,7 @@ create each duty once.
 Every change writes an audit row against `breach`: `breach.recorded`,
 `.determined`, `.assessed`, `.cert_in_marked`, `.obligation_created`,
 `.obligation_completed`, `.obligation_not_applicable`,
-`.obligation_reinstated`, `.obligation_extended`, `.closed`, `.reopened`. The
+`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.closed`, `.reopened`. The
 detail carries the reference, the outcome, which duty, a due time and that a
 reason was given - never the office's words, which are sealed on their rows
 ([ADR 0015](../decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md)).

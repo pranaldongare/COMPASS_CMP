@@ -76,7 +76,7 @@ async def require(conn: Conn, breach_uuid: str) -> Row:
     return row
 
 
-async def _locked_open(conn: Conn, breach_uuid: str) -> Row:
+async def locked_open(conn: Conn, breach_uuid: str) -> Row:
     row = await require(conn, breach_uuid)
     locked = await repo.lock(conn, int(row["breach_id"]))
     if locked["status"] != Status.OPEN:
@@ -84,7 +84,7 @@ async def _locked_open(conn: Conn, breach_uuid: str) -> Row:
     return row
 
 
-async def _record(
+async def record_event(
     conn: Conn, breach: Row, event: str, *, actor_id: int, detail: dict[str, Any] | None = None
 ) -> None:
     await audit.record(
@@ -174,7 +174,7 @@ async def record(
         changed_by=actor_id,
     )
     breach = await require(conn, str(created["breach_uuid"]))
-    await _record(
+    await record_event(
         conn, breach, Event.BREACH_RECORDED, actor_id=actor_id, detail={"location": kind.value}
     )
     return await detail(conn, str(created["breach_uuid"]))
@@ -199,7 +199,7 @@ async def determine(
     done, citing this determination. *Pending* changes no duty. CERT-In stands
     on its own test and is untouched by all three.
     """
-    breach = await _locked_open(conn, breach_uuid)
+    breach = await locked_open(conn, breach_uuid)
     decided = choice(Outcome, outcome, field="outcome")
     reasoning = (reasoning or "").strip()
     if not reasoning:
@@ -230,7 +230,7 @@ async def determine(
         became_aware_at=became_aware_at,
         determined_by=actor_id,
     )
-    await _record(
+    await record_event(
         conn,
         breach,
         Event.BREACH_DETERMINED,
@@ -274,7 +274,7 @@ async def _apply_yes(
                 determination_id=determination_id,
                 created_by=actor_id,
             )
-            await _record(
+            await record_event(
                 conn,
                 breach,
                 Event.BREACH_OBLIGATION_CREATED,
@@ -293,7 +293,7 @@ async def _apply_yes(
                 determination_id=determination_id,
                 recorded_by=actor_id,
             )
-            await _record(
+            await record_event(
                 conn,
                 breach,
                 Event.BREACH_OBLIGATION_REINSTATED,
@@ -331,7 +331,7 @@ async def _apply_no(conn: Conn, breach: Row, determination_id: int, *, actor_id:
             determination_id=determination_id,
             recorded_by=actor_id,
         )
-        await _record(
+        await record_event(
             conn,
             breach,
             Event.BREACH_OBLIGATION_NOT_APPLICABLE,
@@ -353,7 +353,7 @@ async def assess(
     actor_id: int,
 ) -> Row:
     """A new revision of what is known. The previous one stays as it was."""
-    breach = await _locked_open(conn, breach_uuid)
+    breach = await locked_open(conn, breach_uuid)
     if began_at is not None:
         _not_future(began_at, "began_at")
         if began_at > breach["detected_at"]:
@@ -384,7 +384,7 @@ async def assess(
         text=cleaned,
         revised_by=actor_id,
     )
-    await _record(
+    await record_event(
         conn,
         breach,
         Event.BREACH_ASSESSED,
@@ -404,7 +404,7 @@ async def assessments(conn: Conn, *, breach_uuid: str) -> list[Row]:
 
 async def mark_cert_in(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
     """A reportable cyber incident: CERT-In is due six hours from detection."""
-    breach = await _locked_open(conn, breach_uuid)
+    breach = await locked_open(conn, breach_uuid)
     duties = await _duties(conn, int(breach["breach_id"]))
     if Duty.CERT_IN in duties:
         raise Conflict("Already marked as reportable to CERT-In", code="cert_in_marked")
@@ -418,7 +418,7 @@ async def mark_cert_in(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
         determination_id=None,
         created_by=actor_id,
     )
-    await _record(
+    await record_event(
         conn,
         breach,
         Event.BREACH_CERT_IN_MARKED,
@@ -440,7 +440,7 @@ async def complete_duty(
 ) -> Row:
     """Record that a submission was made, when, and what the regulator returned."""
     kind = choice(Duty, duty, field="duty")
-    breach = await _locked_open(conn, breach_uuid)
+    breach = await locked_open(conn, breach_uuid)
     if kind == Duty.PRINCIPALS:
         raise Conflict(
             "Principals are notified by sending the approved notice; this duty completes "
@@ -465,7 +465,7 @@ async def complete_duty(
         note=_text(note),
         recorded_by=actor_id,
     )
-    await _record(
+    await record_event(
         conn,
         breach,
         Event.BREACH_OBLIGATION_COMPLETED,
@@ -491,7 +491,7 @@ async def extend_report(
     """Rule 7(2)(b): "or such longer period as the Board may allow". The detailed
     report's due time becomes the date allowed, as a new row; the initial
     intimation's clock is not touched."""
-    breach = await _locked_open(conn, breach_uuid)
+    breach = await locked_open(conn, breach_uuid)
     row, state = await _outstanding(conn, breach, Duty.BOARD_REPORT)
     _not_future(requested_at, "requested_at")
     if state["anchored_at"] is not None and requested_at < state["anchored_at"]:
@@ -513,7 +513,7 @@ async def extend_report(
         note=_text(note),
         recorded_by=actor_id,
     )
-    await _record(
+    await record_event(
         conn,
         breach,
         Event.BREACH_OBLIGATION_EXTENDED,
@@ -576,7 +576,7 @@ async def transition(
         reason=_text(reason),
         changed_by=actor_id,
     )
-    await _record(
+    await record_event(
         conn,
         breach,
         Event.BREACH_CLOSED if to == Status.CLOSED else Event.BREACH_REOPENED,

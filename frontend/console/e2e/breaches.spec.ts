@@ -51,6 +51,17 @@ test.describe("the DPO", () => {
     await expect(page.getByRole("row", { name: /Board - detailed report/ })).toBeVisible();
     await expect(page.getByRole("row", { name: /Principals notified/ })).toBeVisible();
 
+    // Who it touched: the platform's own tables, as recorded, confirmed as revision 1.
+    await page.getByRole("button", { name: "Derive who it touched" }).click();
+    // Accounts created from now on: nobody, which keeps the dev database's
+    // people off an end-to-end breach's list.
+    await page.getByRole("checkbox", { name: "auth_user" }).check();
+    await page.getByLabel(/^Rows written from/).fill(hoursAgo(0));
+    await page.getByRole("button", { name: "Show what the records say" }).click();
+    await expect(page.getByText(/The records place \d+ people here/)).toBeVisible();
+    await page.getByRole("button", { name: "Confirm the list" }).click();
+    await expect(page.getByText(/^Revision 1, /)).toBeVisible();
+
     await expect(page.getByText("Report to CERT-In is outstanding")).toBeVisible();
     await expect(page.getByRole("button", { name: "Close the breach" })).toBeDisabled();
   });

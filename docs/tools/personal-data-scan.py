@@ -48,7 +48,7 @@ IDENTITY = {
     "overridden_by_name", "owner_name", "placed_by_name", "principal_name",
     "released_by_name", "reviewer_name",
     "subject_name", "updated_by_name", "uploaded_by_name", "verified_by_name",
-    "recorded_by_name", "determined_by_name", "revised_by_name",
+    "recorded_by_name", "determined_by_name", "revised_by_name", "confirmed_by_name",
     "username",
 }
 CONTACT = {
@@ -58,6 +58,8 @@ CONTACT = {
     "dpo_contact", "login", "hint",
     # Not a contact, but the state of one: NULL means it signs nobody in.
     "email_verified_at", "mobile_verified_at", "secondary_email_verified_at",
+    # Whether a person has a contact to be reached by, not the contact (S3-02).
+    "has_email", "has_mobile",
 }
 DEMOGRAPHIC = {
     "dob", "is_minor", "person_type", "organization_id", "role", "user_role",
@@ -80,7 +82,7 @@ ACCOUNT_REF = {
     "delegate_user_uuid", "delegator_uuid", "delegator_user_uuid",
     "owner_user_uuid", "responder_user_uuid", "reviewer_uuid",
     "uploaded_by_uuid", "imported_by_uuid", "changed_by_uuid",
-    "nominee_user_uuid", "nominee_user_id",
+    "nominee_user_uuid", "nominee_user_id", "person_uuid",
 }
 FREE_TEXT = {
     "request_text", "response_text", "remedy_text", "verification_note",

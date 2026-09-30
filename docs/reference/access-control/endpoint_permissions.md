@@ -41,6 +41,8 @@ Roles refer to the **effective session role**. A staff account signed in through
 | GET | `/auth/sessions` | NO | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
 | DELETE | `/auth/sessions/{session_uuid}` | NO | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
 
+
+
 ## Breaches
 
 [Conditions and source evidence](modules/breaches.md)
@@ -58,6 +60,9 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/breaches/{breach_uuid}/obligations/board_report/extension` | NO | ALL | NO | NO | NO | NO | NO | NO |
 | GET | `/breaches/{breach_uuid}/transitions` | NO | ALL | NO | NO | NO | NO | NO | NO |
 | POST | `/breaches/{breach_uuid}/transition` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| GET | `/breaches/{breach_uuid}/affected` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/affected/preview` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/affected` | NO | ALL | NO | NO | NO | NO | NO | NO |
 
 ## Consent
 

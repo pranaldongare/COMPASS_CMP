@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict j0l1W1Hzc4COqletKfqpw24BnuiraxOdBut0BfaMEYDDTFi1adtQre8ycNm99qM
+\restrict 3XnQp9GRwMZdo8Gp3n0ppRSmWPqLA5FOGBqp7UFRYFJU0v0masd2y23FNyzcgED
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -1392,6 +1392,91 @@ COMMENT ON TABLE public.breach IS 'A suspected or confirmed personal data breach
 --
 
 COMMENT ON COLUMN public.breach.detected_at IS 'When it was first noticed, as entered by the DPO. Anchors the CERT-In clock';
+
+
+--
+-- Name: breach_affected; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_affected (
+    affected_id integer NOT NULL,
+    affected_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    breach_id integer NOT NULL,
+    revision_id integer NOT NULL,
+    auth_user_id integer NOT NULL,
+    found_by character varying(12) NOT NULL,
+    evidence jsonb DEFAULT '{}'::jsonb NOT NULL,
+    CONSTRAINT breach_affected_found_by CHECK (((found_by)::text = ANY ((ARRAY['processor'::character varying, 'data_source'::character varying, 'platform'::character varying, 'dpo'::character varying])::text[])))
+);
+
+
+--
+-- Name: breach_affected_affected_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_affected_affected_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_affected_affected_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_affected_affected_id_seq OWNED BY public.breach_affected.affected_id;
+
+
+--
+-- Name: breach_affected_revision; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_affected_revision (
+    revision_id integer NOT NULL,
+    revision_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    breach_id integer NOT NULL,
+    revision integer NOT NULL,
+    scopes jsonb DEFAULT '[]'::jsonb NOT NULL,
+    derived integer NOT NULL,
+    added_by_hand integer NOT NULL,
+    excluded integer NOT NULL,
+    newly_listed integer NOT NULL,
+    note text,
+    confirmed_by integer NOT NULL,
+    confirmed_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT breach_affected_revision_counts CHECK (((derived >= 0) AND (added_by_hand >= 0) AND (excluded >= 0) AND (newly_listed >= 0))),
+    CONSTRAINT breach_affected_revision_scopes_list CHECK ((jsonb_typeof(scopes) = 'array'::text))
+);
+
+
+--
+-- Name: TABLE breach_affected_revision; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.breach_affected_revision IS 'One confirmation of who a breach touched, to the best of current knowledge (Rule 7(1), S3-02)';
+
+
+--
+-- Name: breach_affected_revision_revision_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_affected_revision_revision_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_affected_revision_revision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_affected_revision_revision_id_seq OWNED BY public.breach_affected_revision.revision_id;
 
 
 --
@@ -3235,6 +3320,20 @@ ALTER TABLE ONLY public.breach ALTER COLUMN breach_id SET DEFAULT nextval('publi
 
 
 --
+-- Name: breach_affected affected_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_affected ALTER COLUMN affected_id SET DEFAULT nextval('public.breach_affected_affected_id_seq'::regclass);
+
+
+--
+-- Name: breach_affected_revision revision_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_affected_revision ALTER COLUMN revision_id SET DEFAULT nextval('public.breach_affected_revision_revision_id_seq'::regclass);
+
+
+--
 -- Name: breach_assessment assessment_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3539,6 +3638,54 @@ ALTER TABLE ONLY public.auth_user
 
 ALTER TABLE ONLY public.auth_user
     ADD CONSTRAINT auth_user_uuid_key UNIQUE (uuid);
+
+
+--
+-- Name: breach_affected breach_affected_affected_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_affected
+    ADD CONSTRAINT breach_affected_affected_uuid_key UNIQUE (affected_uuid);
+
+
+--
+-- Name: breach_affected breach_affected_once; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_affected
+    ADD CONSTRAINT breach_affected_once UNIQUE (breach_id, auth_user_id);
+
+
+--
+-- Name: breach_affected breach_affected_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_affected
+    ADD CONSTRAINT breach_affected_pkey PRIMARY KEY (affected_id);
+
+
+--
+-- Name: breach_affected_revision breach_affected_revision_number; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_affected_revision
+    ADD CONSTRAINT breach_affected_revision_number UNIQUE (breach_id, revision);
+
+
+--
+-- Name: breach_affected_revision breach_affected_revision_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_affected_revision
+    ADD CONSTRAINT breach_affected_revision_pkey PRIMARY KEY (revision_id);
+
+
+--
+-- Name: breach_affected_revision breach_affected_revision_revision_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_affected_revision
+    ADD CONSTRAINT breach_affected_revision_revision_uuid_key UNIQUE (revision_uuid);
 
 
 --
@@ -4363,6 +4510,20 @@ CREATE INDEX idx_batch_source ON public.import_batch USING btree (source_id, rec
 
 
 --
+-- Name: idx_breach_affected_person; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_breach_affected_person ON public.breach_affected USING btree (auth_user_id);
+
+
+--
+-- Name: idx_breach_affected_revision; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_breach_affected_revision ON public.breach_affected USING btree (revision_id);
+
+
+--
 -- Name: idx_breach_determination; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4825,6 +4986,20 @@ CREATE TRIGGER trg_auth_user_touch BEFORE UPDATE ON public.auth_user FOR EACH RO
 
 
 --
+-- Name: breach_affected trg_breach_affected_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_affected_append_only BEFORE DELETE OR UPDATE ON public.breach_affected FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: breach_affected_revision trg_breach_affected_revision_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_affected_revision_append_only BEFORE DELETE OR UPDATE ON public.breach_affected_revision FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
 -- Name: breach_assessment trg_breach_assessment_append_only; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -5078,6 +5253,46 @@ ALTER TABLE ONLY public.audit_log
 
 ALTER TABLE ONLY public.audit_log
     ADD CONSTRAINT audit_log_subject_user_id_fkey FOREIGN KEY (subject_user_id) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_affected breach_affected_auth_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_affected
+    ADD CONSTRAINT breach_affected_auth_user_id_fkey FOREIGN KEY (auth_user_id) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_affected breach_affected_breach_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_affected
+    ADD CONSTRAINT breach_affected_breach_id_fkey FOREIGN KEY (breach_id) REFERENCES public.breach(breach_id);
+
+
+--
+-- Name: breach_affected_revision breach_affected_revision_breach_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_affected_revision
+    ADD CONSTRAINT breach_affected_revision_breach_id_fkey FOREIGN KEY (breach_id) REFERENCES public.breach(breach_id);
+
+
+--
+-- Name: breach_affected_revision breach_affected_revision_confirmed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_affected_revision
+    ADD CONSTRAINT breach_affected_revision_confirmed_by_fkey FOREIGN KEY (confirmed_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_affected breach_affected_revision_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_affected
+    ADD CONSTRAINT breach_affected_revision_id_fkey FOREIGN KEY (revision_id) REFERENCES public.breach_affected_revision(revision_id);
 
 
 --
@@ -5988,5 +6203,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict j0l1W1Hzc4COqletKfqpw24BnuiraxOdBut0BfaMEYDDTFi1adtQre8ycNm99qM
+\unrestrict 3XnQp9GRwMZdo8Gp3n0ppRSmWPqLA5FOGBqp7UFRYFJU0v0masd2y23FNyzcgED
 

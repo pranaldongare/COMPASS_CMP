@@ -1,6 +1,6 @@
 # Breaches API
 
-Generated from `backend/api/openapi.json`. **11 operations.**
+Generated from `backend/api/openapi.json`. **14 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -17,6 +17,9 @@ For each operation the information is deliberately ordered as **API → Validati
 9. [`POST /breaches/{breach_uuid}/obligations/board_report/extension`](#9_post_breaches_breach_uuid_obligations_board_report_extension)
 10. [`GET /breaches/{breach_uuid}/transitions`](#10_get_breaches_breach_uuid_transitions)
 11. [`POST /breaches/{breach_uuid}/transition`](#11_post_breaches_breach_uuid_transition)
+12. [`GET /breaches/{breach_uuid}/affected`](#12_get_breaches_breach_uuid_affected)
+13. [`POST /breaches/{breach_uuid}/affected`](#13_post_breaches_breach_uuid_affected)
+14. [`POST /breaches/{breach_uuid}/affected/preview`](#14_post_breaches_breach_uuid_affected_preview)
 
 <a id="1_get_breaches"></a>
 ## 1. `GET /breaches` — The register, open first
@@ -1440,7 +1443,312 @@ Request body required: **yes**.
 }
 ```
 
+<a id="12_get_breaches_breach_uuid_affected"></a>
+## 12. `GET /breaches/{breach_uuid}/affected` — Who the breach touched, as confirmed, with every revision
+
+### API
+
+- **Operation ID:** `list_affected_breaches__breach_uuid__affected_get`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `cursor` | query | No | `string` or `null` | max length: `64` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachAffectedOut`](#schema-breachaffectedout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "total": 1,
+  "revisions": [
+    {
+      "revision_uuid": "00000000-0000-4000-8000-000000000000",
+      "revision": 1,
+      "scopes": [
+        "…"
+      ],
+      "derived": 1,
+      "added_by_hand": 1,
+      "excluded": 1,
+      "newly_listed": 1,
+      "note": "…",
+      "confirmed_at": "2026-09-17T12:00:00Z",
+      "confirmed_by_name": "…"
+    }
+  ],
+  "people": [
+    {
+      "person_uuid": "00000000-0000-4000-8000-000000000000",
+      "full_name": "…",
+      "role": "string",
+      "has_email": true,
+      "has_mobile": true,
+      "found_by": "string",
+      "evidence": "…",
+      "affected_uuid": "00000000-0000-4000-8000-000000000000",
+      "revision": 1
+    }
+  ],
+  "next_cursor": "string",
+  "platform_tables": [
+    "string"
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="13_post_breaches_breach_uuid_affected"></a>
+## 13. `POST /breaches/{breach_uuid}/affected` — Confirm who the breach touched: a new revision, adding only the newly found
+
+### API
+
+- **Operation ID:** `confirm_affected_breaches__breach_uuid__affected_post`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`BreachAffectedIn`](#schema-breachaffectedin)
+
+```json
+{
+  "scopes": [
+    {
+      "kind": "string",
+      "processor_uuid": "…",
+      "source_uuid": "…",
+      "tables": [
+        "…"
+      ],
+      "since": "…",
+      "until": "…"
+    }
+  ],
+  "exclude": [
+    "00000000-0000-4000-8000-000000000000"
+  ],
+  "add": [
+    "00000000-0000-4000-8000-000000000000"
+  ],
+  "note": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachAffectedOut`](#schema-breachaffectedout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "total": 1,
+  "revisions": [
+    {
+      "revision_uuid": "00000000-0000-4000-8000-000000000000",
+      "revision": 1,
+      "scopes": [
+        "…"
+      ],
+      "derived": 1,
+      "added_by_hand": 1,
+      "excluded": 1,
+      "newly_listed": 1,
+      "note": "…",
+      "confirmed_at": "2026-09-17T12:00:00Z",
+      "confirmed_by_name": "…"
+    }
+  ],
+  "people": [
+    {
+      "person_uuid": "00000000-0000-4000-8000-000000000000",
+      "full_name": "…",
+      "role": "string",
+      "has_email": true,
+      "has_mobile": true,
+      "found_by": "string",
+      "evidence": "…",
+      "affected_uuid": "00000000-0000-4000-8000-000000000000",
+      "revision": 1
+    }
+  ],
+  "next_cursor": "string",
+  "platform_tables": [
+    "string"
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="14_post_breaches_breach_uuid_affected_preview"></a>
+## 14. `POST /breaches/{breach_uuid}/affected/preview` — What the records show for these scopes, before confirming
+
+### API
+
+- **Operation ID:** `preview_affected_breaches__breach_uuid__affected_preview_post`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`BreachPreviewIn`](#schema-breachpreviewin)
+
+```json
+{
+  "scopes": [
+    {
+      "kind": "string",
+      "processor_uuid": "…",
+      "source_uuid": "…",
+      "tables": [
+        "…"
+      ],
+      "since": "…",
+      "until": "…"
+    }
+  ]
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachPreviewOut`](#schema-breachpreviewout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "scopes": [
+    {}
+  ],
+  "derived": 1,
+  "already_listed": 1,
+  "would_add": 1,
+  "people": [
+    {
+      "person_uuid": "00000000-0000-4000-8000-000000000000",
+      "full_name": "…",
+      "role": "string",
+      "has_email": true,
+      "has_mobile": true,
+      "found_by": "string",
+      "evidence": "…",
+      "already_listed": true
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
 # Referenced schemas
+
+<a id="schema-breachaffectedin"></a>
+#### `BreachAffectedIn`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `scopes` | array of [`BreachScopeIn`](#schema-breachscopein) | No | — | — |
+| `exclude` | array of `string` | No | — | — |
+| `add` | array of `string` | No | — | — |
+| `note` | `string` or `null` | No | max length: `8000` | — |
+
+<a id="schema-breachaffectedout"></a>
+#### `BreachAffectedOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `total` | `integer` | Yes | — | — |
+| `revisions` | array of [`BreachAffectedRevisionOut`](#schema-breachaffectedrevisionout) | Yes | — | — |
+| `people` | array of [`BreachAffectedPersonOut`](#schema-breachaffectedpersonout) | Yes | — | — |
+| `next_cursor` | `string` or `null` | Yes | — | — |
+| `platform_tables` | array of `string` | Yes | — | — |
 
 <a id="schema-breachassessmentin"></a>
 #### `BreachAssessmentIn`
@@ -1525,6 +1833,24 @@ Request body required: **yes**.
 | `transitions` | array of [`BreachTransitionOut`](#schema-breachtransitionout) | Yes | — | — |
 | `without_delay_target_hours` | `number` or `null` | Yes | — | — |
 
+<a id="schema-breachpreviewin"></a>
+#### `BreachPreviewIn`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `scopes` | array of [`BreachScopeIn`](#schema-breachscopein) | Yes | — | — |
+
+<a id="schema-breachpreviewout"></a>
+#### `BreachPreviewOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `scopes` | array of `object` | Yes | — | — |
+| `derived` | `integer` | Yes | — | — |
+| `already_listed` | `integer` | Yes | — | — |
+| `would_add` | `integer` | Yes | — | — |
+| `people` | array of [`BreachCandidateOut`](#schema-breachcandidateout) | Yes | — | — |
+
 <a id="schema-breachtransitionin"></a>
 #### `BreachTransitionIn`
 
@@ -1547,6 +1873,49 @@ Request body required: **yes**.
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
 | `detail` | array of [`ValidationError`](#schema-validationerror) | No | — | — |
+
+<a id="schema-breachscopein"></a>
+#### `BreachScopeIn`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `kind` | `string` | Yes | — | — |
+| `processor_uuid` | `string` or `null` | No | format: `uuid` | — |
+| `source_uuid` | `string` or `null` | No | format: `uuid` | — |
+| `tables` | array of `string` | No | — | — |
+| `since` | `string` or `null` | No | format: `date-time` | — |
+| `until` | `string` or `null` | No | format: `date-time` | — |
+
+<a id="schema-breachaffectedrevisionout"></a>
+#### `BreachAffectedRevisionOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `revision_uuid` | `string` | Yes | format: `uuid` | — |
+| `revision` | `integer` | Yes | — | — |
+| `scopes` | array of `object` | Yes | — | — |
+| `derived` | `integer` | Yes | — | — |
+| `added_by_hand` | `integer` | Yes | — | — |
+| `excluded` | `integer` | Yes | — | — |
+| `newly_listed` | `integer` | Yes | — | — |
+| `note` | `string` or `null` | Yes | — | — |
+| `confirmed_at` | `string` | Yes | format: `date-time` | — |
+| `confirmed_by_name` | `string` or `null` | Yes | — | — |
+
+<a id="schema-breachaffectedpersonout"></a>
+#### `BreachAffectedPersonOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `person_uuid` | `string` | Yes | format: `uuid` | — |
+| `full_name` | `string` or `null` | Yes | — | — |
+| `role` | `string` | Yes | — | — |
+| `has_email` | `boolean` | Yes | — | — |
+| `has_mobile` | `boolean` | Yes | — | — |
+| `found_by` | `string` | Yes | — | — |
+| `evidence` | [`BreachEvidenceOut`](#schema-breachevidenceout) | Yes | — | — |
+| `affected_uuid` | `string` | Yes | format: `uuid` | — |
+| `revision` | `integer` | Yes | — | — |
 
 <a id="schema-breachcategoryin"></a>
 #### `BreachCategoryIn`
@@ -1644,6 +2013,20 @@ Request body required: **yes**.
 | `blockers` | array of `string` | Yes | — | — |
 | `reason_required` | `boolean` | Yes | — | — |
 
+<a id="schema-breachcandidateout"></a>
+#### `BreachCandidateOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `person_uuid` | `string` | Yes | format: `uuid` | — |
+| `full_name` | `string` or `null` | Yes | — | — |
+| `role` | `string` | Yes | — | — |
+| `has_email` | `boolean` | Yes | — | — |
+| `has_mobile` | `boolean` | Yes | — | — |
+| `found_by` | `string` | Yes | — | — |
+| `evidence` | [`BreachEvidenceOut`](#schema-breachevidenceout) | Yes | — | — |
+| `already_listed` | `boolean` | Yes | — | — |
+
 <a id="schema-validationerror"></a>
 #### `ValidationError`
 
@@ -1654,6 +2037,15 @@ Request body required: **yes**.
 | `type` | `string` | Yes | — | — |
 | `input` | `object` | No | — | — |
 | `ctx` | `object` | No | — | — |
+
+<a id="schema-breachevidenceout"></a>
+#### `BreachEvidenceOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `exports` | array of `string` | No | — | — |
+| `assets` | array of `string` | No | — | — |
+| `tables` | array of `string` | No | — | — |
 
 <a id="schema-breachcategoryout"></a>
 #### `BreachCategoryOut`

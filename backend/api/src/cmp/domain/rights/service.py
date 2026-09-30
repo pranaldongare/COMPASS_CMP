@@ -35,6 +35,7 @@ from cmp.core.permissions import Role
 from cmp.core.security import new_token, token_fingerprint
 from cmp.db.redis import K_CACHE, get_redis
 from cmp.db.redis import key as rkey
+from cmp.db.repositories import holdings
 from cmp.db.repositories import registry as registry_repo
 from cmp.db.repositories import rights as repo
 from cmp.db.repositories import users as user_repo
@@ -765,7 +766,7 @@ async def derive_holders(conn: Conn, row: Row, *, role: Role | str, actor_id: in
             "is not linked to one. Verify identity first, or add holders by hand."
         )
     scope_ids = await _scope_ids(conn, row)
-    candidates = await repo.derive_holder_candidates(
+    candidates = await holdings.holders_of_person(
         conn, int(row["subject_user_id"]), consent_ids=scope_ids
     )
     added = 0

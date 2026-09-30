@@ -10,6 +10,7 @@ office writes; the rows served carry ciphertext and the console opens it.
 
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from typing import Any
 
@@ -332,3 +333,195 @@ async def obligation_events(conn: Conn, obligation_ids: list[int]) -> list[Row]:
             WHERE e.obligation_id = ANY(%s) ORDER BY e.event_id""",
         (obligation_ids,),
     )
+
+
+# ------------------------------------------------------------- who it touched
+
+#: The tables of the platform's own database that hold something about a data
+#: principal, each as (the person it is about, when the row was written).
+#: A database breach names tables and a window; everyone with a row in one of
+#: them written in that window is touched. Hand-kept, like every inventory of
+#: personal data here: `tests/integration/test_breach_affected.py` fails when a
+#: sealed table is neither listed nor named in `NOT_ABOUT_A_PRINCIPAL`.
+PLATFORM_TABLES: dict[str, str] = {
+    # Her account: name, contacts, date of birth.
+    "auth_user": "SELECT id AS person_id, created_at AS at FROM auth_user",
+    "consent_artefact": "SELECT auth_user_id, created_at FROM consent_artefact",
+    "asset_consent": """SELECT ca.auth_user_id, ac.created_at FROM asset_consent ac
+                        JOIN consent_artefact ca ON ca.consent_id = ac.consent_id""",
+    "export_line": """SELECT el.auth_user_id, e.exported_at FROM export_line el
+                      JOIN export_log e ON e.export_id = el.export_id""",
+    "rights_request": """SELECT subject_user_id, received_at FROM rights_request
+                         WHERE subject_user_id IS NOT NULL""",
+    # The holder's brief and thread carry her name, contacts and words.
+    "rights_request_holder": """SELECT r.subject_user_id, h.created_at
+                                FROM rights_request_holder h
+                                JOIN rights_request r ON r.request_id = h.request_id
+                                WHERE r.subject_user_id IS NOT NULL""",
+    "rights_ticket_message": """SELECT r.subject_user_id, m.created_at
+                                FROM rights_ticket_message m
+                                JOIN rights_request_holder h ON h.holder_id = m.holder_id
+                                JOIN rights_request r ON r.request_id = h.request_id
+                                WHERE r.subject_user_id IS NOT NULL""",
+    "rights_response_file": """SELECT r.subject_user_id, f.created_at FROM rights_response_file f
+                               JOIN rights_request r ON r.request_id = f.request_id
+                               WHERE r.subject_user_id IS NOT NULL""",
+    # Both people in a nomination: the principal, and a nominee with an account.
+    "nomination": """SELECT principal_user_id, created_at FROM nomination
+                     UNION ALL
+                     SELECT nominee_user_id, created_at FROM nomination
+                     WHERE nominee_user_id IS NOT NULL""",
+    "person_type_history": "SELECT auth_user_id, changed_at FROM person_type_history",
+    "legal_hold": """SELECT subject_user_id, placed_at FROM legal_hold
+                     WHERE subject_user_id IS NOT NULL""",
+    # Staff are data principals too (ADR 0013): a cover arrangement's reason.
+    "delegation": """SELECT delegator_user_id, created_at FROM delegation
+                     UNION ALL
+                     SELECT delegate_user_id, created_at FROM delegation""",
+    "audit_log": """SELECT subject_user_id, occurred_at FROM audit_log
+                    WHERE subject_user_id IS NOT NULL""",
+}
+
+#: Sealed tables a database breach cannot trace to a data principal's account,
+#: and why. Whoever they concern is added to the list by hand.
+NOT_ABOUT_A_PRINCIPAL: dict[str, str] = {
+    "processor_respondent": "a contact at a processor, not an account the platform can notify",
+    "project_processor": "the office's reason for a processor decision",
+    "project_status_history": "the office's reason for a project's move",
+    "import_batch": "the name of a manifest file",
+    "breach": "the office's account of an incident",
+    "breach_status_history": "the office's reason for reopening a breach",
+    "breach_determination": "the office's reasoning",
+    "breach_assessment": "the office's account; a person named in it is added by hand",
+    "breach_obligation_event": "a note on a submission",
+    "breach_affected_revision": "a note on a revision of this list",
+}
+
+
+async def people_in_tables(
+    conn: Conn, tables: list[str], *, since: datetime | None, until: datetime | None
+) -> list[Row]:
+    """Everyone with a row in these tables written in the window, and which tables."""
+    arms = " UNION ALL ".join(
+        f"SELECT person_id, at, '{t}' AS tbl FROM ({PLATFORM_TABLES[t]}) AS x(person_id, at)"
+        for t in tables
+    )
+    return await fetch_all(
+        conn,
+        f"""SELECT person_id, array_agg(DISTINCT tbl ORDER BY tbl) AS tables
+              FROM ({arms}) AS rows
+             WHERE (%(since)s::timestamptz IS NULL OR at >= %(since)s)
+               AND (%(until)s::timestamptz IS NULL OR at <= %(until)s)
+             GROUP BY person_id""",
+        {"since": since, "until": until},
+    )
+
+
+async def listed_person_ids(conn: Conn, breach_id: int) -> set[int]:
+    rows = await fetch_all(
+        conn, "SELECT auth_user_id FROM breach_affected WHERE breach_id = %s", (breach_id,)
+    )
+    return {int(r["auth_user_id"]) for r in rows}
+
+
+async def add_affected_revision(
+    conn: Conn,
+    breach_id: int,
+    *,
+    scopes: list[dict[str, Any]],
+    derived: int,
+    added_by_hand: int,
+    excluded: int,
+    people: list[tuple[int, str, dict[str, Any]]],
+    note: str | None,
+    confirmed_by: int,
+) -> Row:
+    """The next revision, and a row for each person it lists for the first time.
+
+    The breach row is locked by the caller. `ON CONFLICT DO NOTHING` is the
+    second line: a person already listed stays on the revision that first
+    listed them.
+    """
+    sealed = await seal("breach_affected_revision", {"note": note})
+    revision = await fetch_one(
+        conn,
+        """INSERT INTO breach_affected_revision
+             (breach_id, revision, scopes, derived, added_by_hand, excluded, newly_listed,
+              note, confirmed_by)
+           VALUES (%s, (SELECT coalesce(max(revision), 0) + 1 FROM breach_affected_revision
+                         WHERE breach_id = %s),
+                   %s, %s, %s, %s, %s, %s, %s)
+           RETURNING revision_id, revision_uuid, revision""",
+        (
+            breach_id,
+            breach_id,
+            Jsonb(scopes),
+            derived,
+            added_by_hand,
+            excluded,
+            len(people),
+            sealed["note"],
+            confirmed_by,
+        ),
+    )
+    assert revision is not None
+    if people:
+        await conn.execute(
+            """INSERT INTO breach_affected
+                 (breach_id, revision_id, auth_user_id, found_by, evidence)
+               SELECT %s, %s, p.person_id, p.found_by, p.evidence::jsonb
+                 FROM unnest(%s::int[], %s::text[], %s::text[]) AS p(person_id, found_by, evidence)
+               ON CONFLICT (breach_id, auth_user_id) DO NOTHING""",
+            (
+                breach_id,
+                int(revision["revision_id"]),
+                [p[0] for p in people],
+                [p[1] for p in people],
+                [json.dumps(p[2]) for p in people],
+            ),
+        )
+    return revision
+
+
+async def affected_revisions(conn: Conn, breach_id: int) -> list[Row]:
+    return await fetch_all(
+        conn,
+        """SELECT r.revision_uuid, r.revision, r.scopes, r.derived, r.added_by_hand, r.excluded,
+                  r.newly_listed, r.note, r.confirmed_at, u.full_name AS confirmed_by_name
+             FROM breach_affected_revision r JOIN auth_user u ON u.id = r.confirmed_by
+            WHERE r.breach_id = %s ORDER BY r.revision""",
+        (breach_id,),
+    )
+
+
+_PERSON = """
+  u.uuid AS person_uuid, u.full_name, u.role::text AS role,
+  (u.email IS NOT NULL) AS has_email, (u.mobile IS NOT NULL) AS has_mobile
+"""
+
+
+async def affected_page(conn: Conn, breach_id: int, *, after: int | None, limit: int) -> list[Row]:
+    """The listed people, in the order they were listed, a page at a time."""
+    return await fetch_all(
+        conn,
+        f"""SELECT a.affected_id, a.affected_uuid, a.found_by, a.evidence, r.revision, {_PERSON}
+              FROM breach_affected a
+              JOIN breach_affected_revision r ON r.revision_id = a.revision_id
+              JOIN auth_user u ON u.id = a.auth_user_id
+             WHERE a.breach_id = %s AND (%s::int IS NULL OR a.affected_id > %s)
+             ORDER BY a.affected_id LIMIT %s""",
+        (breach_id, after, after, limit),
+    )
+
+
+async def people_by_ids(conn: Conn, ids: list[int]) -> list[Row]:
+    return await fetch_all(
+        conn, f"SELECT u.id AS person_id, {_PERSON} FROM auth_user u WHERE u.id = ANY(%s)", (ids,)
+    )
+
+
+async def count_affected(conn: Conn, breach_id: int) -> int:
+    row = await fetch_one(
+        conn, "SELECT count(*) AS n FROM breach_affected WHERE breach_id = %s", (breach_id,)
+    )
+    return int(row["n"]) if row else 0

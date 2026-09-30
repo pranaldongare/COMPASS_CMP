@@ -5,7 +5,7 @@ that accepts or returns it. Written for the questions that have to be answered
 quickly and exactly: what do we hold, where does it go, who can see it, and
 which call would expose it.
 
-The counts here are measured, not remembered. **177 of the API's 265
+The counts here are measured, not remembered. **180 of the API's 268
 operations** carry personal data; **20 of those need no session**. They come
 from joining three artefacts the repository already keeps current, and the
 last section says how to redo the join after a change.
@@ -54,7 +54,7 @@ member of staff who acted.
 
 ## Where it lives: the database
 
-40 objects, of which **28 carry personal data** and 12 do not. Each table below
+42 objects, of which **30 carry personal data** and 12 do not. Each table below
 lists only its personal-data columns; the full column list, with types,
 defaults, constraints and triggers, is in
 [docs/reference/database/table_reference.md](../reference/database/table_reference.md).
@@ -244,10 +244,16 @@ about a person.
 **`breach_obligation`** — `created_by`.
 **`breach_obligation_event`** — `note` (sealed), `recorded_by`; `reference` is
 what a regulator returned, not about a person.
+**`breach_affected_revision`** — `note` (sealed), `confirmed_by`; `scopes` names
+processors, sources and tables, never a person.
+**`breach_affected`** — `auth_user_id`: **who the breach touched**, one row per
+person per breach (S3-02). `evidence` names exports, assets and tables.
 
 All of it is append-only but for `breach.status`, so an erasure request cannot
 reach it - and should not need to: the rows name staff by id and hold the
-office's account of an incident, which is the accountability record. The trail
+office's account of an incident, which is the accountability record. That she
+was touched by a breach (`breach_affected`) is the record of a duty owed to her,
+and stays for the same reason the consent she gave does. The trail
 records that a breach was recorded, determined, assessed, and each duty's
 movement, with the reference and never the words.
 
@@ -321,7 +327,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-177 of 265 operations accept or return personal data. Each table gives the
+180 of 268 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -467,13 +473,16 @@ selected.
 
 ### Personal data breaches — `/breaches/*`
 
-10 operations carry personal data.
+13 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
 | GET | `/breaches` | DPO every row | — | `recorded_by_name` |
 | POST | `/breaches` | DPO every row | `location_detail` | `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `revised_by_name` |
 | GET | `/breaches/{breach_uuid}` | DPO every row | — | `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `revised_by_name` |
+| GET | `/breaches/{breach_uuid}/affected` | DPO every row | — | `confirmed_by_name`, `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
+| POST | `/breaches/{breach_uuid}/affected` | DPO every row | — | `confirmed_by_name`, `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
+| POST | `/breaches/{breach_uuid}/affected/preview` | DPO every row | — | `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
 | GET | `/breaches/{breach_uuid}/assessments` | DPO every row | — | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures`, `revised_by_name` |
 | POST | `/breaches/{breach_uuid}/assessments` | DPO every row | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures` | `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `revised_by_name` |
 | POST | `/breaches/{breach_uuid}/cert-in` | DPO every row | — | `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `revised_by_name` |

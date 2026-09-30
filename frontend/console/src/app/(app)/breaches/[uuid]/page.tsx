@@ -22,6 +22,7 @@ import {
   DescriptionList,
   Skeleton,
 } from "@/components/ui/primitives";
+import { AffectedCard } from "@/features/breach/components/affected-card";
 import {
   AssessmentCard,
   BreachTransitions,
@@ -90,6 +91,7 @@ export default function BreachPage() {
 
         <DutiesCard breach={b} />
         <DeterminationCard breach={b} />
+        <AffectedCard breach={b} />
         <AssessmentCard breach={b} />
         <BreachTransitions breach={b} />
       </div>

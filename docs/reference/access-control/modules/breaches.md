@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-11 operations; 11 appear in the existing OpenAPI/API docs. Added with S3-01 to S3-04; evidence links point at `HEAD`.
+14 operations; 14 appear in the existing OpenAPI/API docs. Added with S3-01 to S3-04; evidence links point at `HEAD`.
 
 Every route is the DPO's and **hidden**: any other role - staff or principal - is answered **404**, on the register, on a breach that exists and on a write alike, where other DPO-only modules answer 403. That a breach is being handled is itself withheld.
 
@@ -19,6 +19,9 @@ Every route is the DPO's and **hidden**: any other role - staff or principal - i
 | POST | `/breaches/{breach_uuid}/obligations/board_report/extension` | `dpo` | Full session; anonymous NO |
 | GET | `/breaches/{breach_uuid}/transitions` | `dpo` | Full session; anonymous NO |
 | POST | `/breaches/{breach_uuid}/transition` | `dpo` | Full session; anonymous NO |
+| GET | `/breaches/{breach_uuid}/affected` | `dpo` | Full session; anonymous NO |
+| POST | `/breaches/{breach_uuid}/affected/preview` | `dpo` | Full session; anonymous NO |
+| POST | `/breaches/{breach_uuid}/affected` | `dpo` | Full session; anonymous NO |
 
 ## GET /breaches
 
@@ -172,4 +175,46 @@ Close or reopen a breach.
 - **Route guard:** `BreachWriter`.
 - **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
 - **Rules:** The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Closing is refused while undetermined or while any duty is outstanding; reopening needs a reason. (S3-01)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## GET /breaches/{breach_uuid}/affected
+
+Who the breach touched, as confirmed, with every revision.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
+| --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 404.
+- **Route guard:** `BreachReader`.
+- **Resolved gate:** `RequireResource(breach, hidden=True)`.
+- **Rules:** The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Every revision, and the listed people a page at a time (`cursor` is a listed person's uuid). (S3-02)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /breaches/{breach_uuid}/affected/preview
+
+What the records show for these scopes, before confirming.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
+| --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 404.
+- **Route guard:** `BreachReader`.
+- **Resolved gate:** `RequireResource(breach, hidden=True)`.
+- **Rules:** The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. A read despite the method: derives from the scopes and writes nothing. An unknown table is 422 naming the choices. (S3-02)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /breaches/{breach_uuid}/affected
+
+Confirm who the breach touched: a new revision, adding only the newly found.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
+| --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 404.
+- **Route guard:** `BreachWriter`.
+- **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
+- **Rules:** The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Re-derives from the scopes server-side, leaves out `exclude`, adds `add`; a new revision listing only people not already listed. Refused on a closed breach. (S3-02)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).

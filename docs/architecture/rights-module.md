@@ -85,7 +85,10 @@ by a whole contact, or by three or more characters of the submitted name
 
 Holders are derived from the records - `export_line` says who received a file
 with her in it, `asset_consent` says whose data source captured her - and
-confirmed by the DPO, who adds what the records miss. One ticket per confirmed
+confirmed by the DPO, who adds what the records miss. The relation is one
+query, `db/repositories/holdings.py`, which the breach module reads from the
+other end - everyone a processor or a source holds - so a change to how
+holdings are derived reaches both (S3-02). One ticket per confirmed
 holder, addressed to one of the processor's **respondents** (0016): an account
 on the platform for an in-house team, who sees the ticket on the dashboard and
 the console's tickets page, or a name and an address for a third party, who
