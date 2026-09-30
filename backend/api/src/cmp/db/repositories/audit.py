@@ -56,6 +56,8 @@ SUBJECT_VISIBLE: frozenset[str] = frozenset(
         "consent.withdrawn",
         "notice.served",
         "export.generated",
+        # Rule 7(1): a notice about a breach that touched her, in her account.
+        "breach_notice.delivered",
         "nomination.created",
         "nomination.accepted",
         "nomination.declined",

@@ -89,6 +89,10 @@ async def by_uuid(conn: Conn, breach_uuid: str) -> Row | None:
     return await fetch_one(conn, f"SELECT {_BREACH} WHERE b.breach_uuid = %s", (breach_uuid,))
 
 
+async def by_breach_id(conn: Conn, breach_id: int) -> Row | None:
+    return await fetch_one(conn, f"SELECT {_BREACH} WHERE b.breach_id = %s", (breach_id,))
+
+
 async def lock(conn: Conn, breach_id: int) -> Row:
     """Take the breach row for the rest of the transaction.
 
@@ -395,6 +399,7 @@ NOT_ABOUT_A_PRINCIPAL: dict[str, str] = {
     "breach_assessment": "the office's account; a person named in it is added by hand",
     "breach_obligation_event": "a note on a submission",
     "breach_affected_revision": "a note on a revision of this list",
+    "breach_notice": "what everyone a breach touched is told; it names nobody",
 }
 
 

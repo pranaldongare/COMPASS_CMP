@@ -43,6 +43,8 @@ Roles refer to the **effective session role**. A staff account signed in through
 
 
 
+
+
 ## Breaches
 
 [Conditions and source evidence](modules/breaches.md)
@@ -62,6 +64,11 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/breaches/{breach_uuid}/transition` | NO | ALL | NO | NO | NO | NO | NO | NO |
 | GET | `/breaches/{breach_uuid}/affected` | NO | ALL | NO | NO | NO | NO | NO | NO |
 | POST | `/breaches/{breach_uuid}/affected/preview` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| GET | `/breaches/{breach_uuid}/notices` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/notices` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| PUT | `/breaches/{breach_uuid}/notices/{notice_uuid}` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/notices/{notice_uuid}/approve` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/notices/send` | NO | ALL | NO | NO | NO | NO | NO | NO |
 | POST | `/breaches/{breach_uuid}/affected` | NO | ALL | NO | NO | NO | NO | NO | NO |
 
 ## Consent
@@ -158,6 +165,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 
 | Method | Endpoint | Anonymous | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GET | `/me/breach-notices` | NO | NO | NO | NO | NO | NO | NO | OWN |
 | GET | `/me` | NO | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
 | PATCH | `/me` | NO | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
 | GET | `/me/consents` | NO | NO | NO | NO | NO | NO | NO | OWN |

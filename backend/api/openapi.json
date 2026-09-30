@@ -2591,6 +2591,32 @@
         }
       }
     },
+    "/me/breach-notices": {
+      "get": {
+        "tags": [
+          "me"
+        ],
+        "summary": "Notices about a personal data breach written to my account (Rule 7(1))",
+        "description": "Her own, and only what was sent to her: a later version appears when it\nhas been sent, not when it was written.",
+        "operationId": "my_breach_notices_me_breach_notices_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MyBreachNoticeOut"
+                  },
+                  "type": "array",
+                  "title": "Response My Breach Notices Me Breach Notices Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/me/disclosures": {
       "get": {
         "tags": [
@@ -12592,6 +12618,259 @@
         }
       }
     },
+    "/breaches/{breach_uuid}/notices": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Every version of the notice, and the account of who received which",
+        "operationId": "list_notices_breaches__breach_uuid__notices_get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachNoticesOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Start the next version of the notice, as a draft",
+        "operationId": "draft_notice_breaches__breach_uuid__notices_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachNoticeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachNoticesOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/notices/{notice_uuid}": {
+      "put": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Edit a draft notice",
+        "operationId": "edit_notice_breaches__breach_uuid__notices__notice_uuid__put",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "notice_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Notice Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachNoticeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachNoticesOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/notices/{notice_uuid}/approve": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Approve the words; refused while any of the five is empty",
+        "operationId": "approve_notice_breaches__breach_uuid__notices__notice_uuid__approve_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "notice_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Notice Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachNoticesOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/notices/send": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Send the approved notice to everyone listed who lacks it; never twice",
+        "operationId": "send_notice_breaches__breach_uuid__notices_send_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachNoticesOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/tickets": {
       "get": {
         "tags": [
@@ -15570,6 +15849,99 @@
         ],
         "title": "BreachCompletionIn"
       },
+      "BreachDeliveryCountOut": {
+        "properties": {
+          "notice_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Notice Uuid"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "people": {
+            "type": "integer",
+            "title": "People"
+          },
+          "last_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "notice_uuid",
+          "version",
+          "channel",
+          "status",
+          "people",
+          "last_at"
+        ],
+        "title": "BreachDeliveryCountOut"
+      },
+      "BreachDeliveryFailureOut": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "attempt": {
+            "type": "integer",
+            "title": "Attempt"
+          },
+          "detail": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Detail"
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Recorded At"
+          },
+          "person_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Person Uuid"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "channel",
+          "attempt",
+          "detail",
+          "recorded_at",
+          "person_uuid",
+          "full_name"
+        ],
+        "title": "BreachDeliveryFailureOut"
+      },
       "BreachDeterminationIn": {
         "properties": {
           "outcome": {
@@ -16121,6 +16493,245 @@
           "detail"
         ],
         "title": "BreachLocationOut"
+      },
+      "BreachNoticeContentOut": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label"
+        ],
+        "title": "BreachNoticeContentOut"
+      },
+      "BreachNoticeIn": {
+        "properties": {
+          "what_happened": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "What Happened"
+          },
+          "consequences": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consequences"
+          },
+          "measures": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measures"
+          },
+          "protective_steps": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protective Steps"
+          },
+          "contact": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "BreachNoticeIn",
+        "description": "The five things Rule 7(1) requires. A draft may leave any empty;\napproval may not. Written to be sent to everyone listed: name nobody."
+      },
+      "BreachNoticeOut": {
+        "properties": {
+          "notice_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Notice Uuid"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "what_happened": {
+            "type": "string",
+            "title": "What Happened"
+          },
+          "consequences": {
+            "type": "string",
+            "title": "Consequences"
+          },
+          "measures": {
+            "type": "string",
+            "title": "Measures"
+          },
+          "protective_steps": {
+            "type": "string",
+            "title": "Protective Steps"
+          },
+          "contact": {
+            "type": "string",
+            "title": "Contact"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By Name"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "approved_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "notice_uuid",
+          "version",
+          "state",
+          "what_happened",
+          "consequences",
+          "measures",
+          "protective_steps",
+          "contact",
+          "created_at",
+          "created_by_name",
+          "updated_at",
+          "approved_at",
+          "approved_by_name"
+        ],
+        "title": "BreachNoticeOut"
+      },
+      "BreachNoticesOut": {
+        "properties": {
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/BreachNoticeOut"
+            },
+            "type": "array",
+            "title": "Versions"
+          },
+          "account": {
+            "items": {
+              "$ref": "#/components/schemas/BreachDeliveryCountOut"
+            },
+            "type": "array",
+            "title": "Account"
+          },
+          "failures": {
+            "items": {
+              "$ref": "#/components/schemas/BreachDeliveryFailureOut"
+            },
+            "type": "array",
+            "title": "Failures"
+          },
+          "listed": {
+            "type": "integer",
+            "title": "Listed"
+          },
+          "unnotified": {
+            "type": "integer",
+            "title": "Unnotified"
+          },
+          "contents": {
+            "items": {
+              "$ref": "#/components/schemas/BreachNoticeContentOut"
+            },
+            "type": "array",
+            "title": "Contents"
+          },
+          "duty": {
+            "type": "string",
+            "title": "Duty"
+          }
+        },
+        "type": "object",
+        "required": [
+          "versions",
+          "account",
+          "failures",
+          "listed",
+          "unnotified",
+          "contents",
+          "duty"
+        ],
+        "title": "BreachNoticesOut"
       },
       "BreachOut": {
         "properties": {
@@ -20810,6 +21421,62 @@
           "code"
         ],
         "title": "MfaVerifyRequest"
+      },
+      "MyBreachNoticeOut": {
+        "properties": {
+          "notice_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Notice Uuid"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "what_happened": {
+            "type": "string",
+            "title": "What Happened"
+          },
+          "consequences": {
+            "type": "string",
+            "title": "Consequences"
+          },
+          "measures": {
+            "type": "string",
+            "title": "Measures"
+          },
+          "protective_steps": {
+            "type": "string",
+            "title": "Protective Steps"
+          },
+          "contact": {
+            "type": "string",
+            "title": "Contact"
+          },
+          "delivered_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Delivered At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "notice_uuid",
+          "reference",
+          "version",
+          "what_happened",
+          "consequences",
+          "measures",
+          "protective_steps",
+          "contact",
+          "delivered_at"
+        ],
+        "title": "MyBreachNoticeOut",
+        "description": "A notice about a personal data breach, as written to her account (Rule 7(1))."
       },
       "NominationActIn": {
         "properties": {

@@ -1,7 +1,7 @@
 # Schema
 
-43 tables, 39 enums, 1 view, 38 triggers, 65 named CHECK constraints and 122
-foreign keys, as of migration 0035. Those counts are read from the PostgreSQL
+45 tables, 39 enums, 1 view, 40 triggers, 71 named CHECK constraints and 127
+foreign keys, as of migration 0036. Those counts are read from the PostgreSQL
 catalogs after replaying every migration, not maintained by hand.
 
 The migrations are the source of truth: 0001 transcribed the original
@@ -24,7 +24,7 @@ its stated commit before trusting it against a later change.
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant` |
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` |
 | Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_item_execution`, `rights_ticket_message`, `rights_response_file`, `nomination`, `legal_hold` |
-| Breach | `breach`, `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event`, `breach_affected_revision`, `breach_affected` |
+| Breach | `breach`, `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event`, `breach_affected_revision`, `breach_affected`, `breach_notice`, `breach_notice_delivery` |
 | Audit | `audit_log` |
 
 ## The view
@@ -115,6 +115,15 @@ duty's state is read by folding those events in order. `breach.reference` is
 confirmation is a `breach_affected_revision` with its scopes and counts; each
 person is a `breach_affected` row, once per breach (`breach_affected_once`),
 naming the revision that first listed them. Both are append-only.
+
+**A breach notice is frozen once approved, since 0036.** `breach_notice` holds
+the five Rule 7(1) contents, sealed; a word not yet written is NULL, so
+`breach_notice_complete` refuses an approval with one missing even through the
+ciphertext. `cmp_breach_notice_frozen` lets a draft's words and its approval
+change and nothing after. `breach_notice_delivery` is the account: a person's
+state on a channel is her latest attempt's outcome, and
+`breach_notice_delivery_once` (notice, person, channel, attempt, status) is what
+makes two sends at once, or a worker recording twice, write each state once.
 
 ## Sealed columns, and how they are still found
 

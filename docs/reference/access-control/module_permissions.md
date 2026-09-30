@@ -8,14 +8,14 @@ Each cell is **GET / non-GET endpoint counts** for which that role is eligible. 
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Audit](modules/audit.md) | 7 | 7 / 0 | 7 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
 | [Auth](modules/auth.md) | 14 | 2 / 12 | 2 / 12 | 2 / 12 | 2 / 12 | 2 / 12 | 2 / 12 | 2 / 12 |
-| [Breaches](modules/breaches.md) | 14 | 5 / 9 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| [Breaches](modules/breaches.md) | 19 | 6 / 13 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
 | [Consent](modules/consent.md) | 12 | 10 / 2 | 0 / 0 | 10 / 2 | 10 / 2 | 10 / 2 | 6 / 0 | 0 / 0 |
 | [Cross-border transfers](modules/cross_border_transfers.md) | 3 | 1 / 2 | 1 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
 | [Dashboard](modules/dashboard.md) | 3 | 2 / 1 | 2 / 0 | 2 / 1 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 |
 | [Delegations](modules/delegations.md) | 6 | 4 / 2 | 4 / 2 | 3 / 2 | 3 / 1 | 3 / 1 | 3 / 1 | 2 / 0 |
 | [Exchange](modules/exchange.md) | 19 | 16 / 3 | 3 / 0 | 16 / 3 | 15 / 3 | 15 / 3 | 9 / 0 | 3 / 0 |
 | [Legal holds](modules/legal_holds.md) | 3 | 1 / 2 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
-| [Me](modules/me.md) | 26 | 1 / 5 | 1 / 5 | 1 / 4 | 1 / 4 | 1 / 4 | 1 / 4 | 16 / 10 |
+| [Me](modules/me.md) | 27 | 1 / 5 | 1 / 5 | 1 / 4 | 1 / 4 | 1 / 4 | 1 / 4 | 17 / 10 |
 | [Messages](modules/messages.md) | 5 | 2 / 3 | 2 / 3 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
 | [Notices](modules/notices.md) | 23 | 10 / 13 | 0 / 0 | 9 / 0 | 9 / 0 | 9 / 0 | 10 / 3 | 0 / 0 |
 | [Projects](modules/projects.md) | 27 | 13 / 9 | 0 / 0 | 12 / 5 | 12 / 7 | 12 / 5 | 13 / 10 | 0 / 0 |

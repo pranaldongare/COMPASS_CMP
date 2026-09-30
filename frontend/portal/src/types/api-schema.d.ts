@@ -1159,6 +1159,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/breach-notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Notices about a personal data breach written to my account (Rule 7(1))
+         * @description Her own, and only what was sent to her: a later version appears when it
+         *     has been sent, not when it was written.
+         */
+        get: operations["my_breach_notices_me_breach_notices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/disclosures": {
         parameters: {
             query?: never;
@@ -4349,6 +4370,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/breaches/{breach_uuid}/notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every version of the notice, and the account of who received which */
+        get: operations["list_notices_breaches__breach_uuid__notices_get"];
+        put?: never;
+        /** Start the next version of the notice, as a draft */
+        post: operations["draft_notice_breaches__breach_uuid__notices_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/notices/{notice_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Edit a draft notice */
+        put: operations["edit_notice_breaches__breach_uuid__notices__notice_uuid__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/notices/{notice_uuid}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve the words; refused while any of the five is empty */
+        post: operations["approve_notice_breaches__breach_uuid__notices__notice_uuid__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/notices/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send the approved notice to everyone listed who lacks it; never twice */
+        post: operations["send_notice_breaches__breach_uuid__notices_send_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tickets": {
         parameters: {
             query?: never;
@@ -5242,6 +5332,52 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /** BreachDeliveryCountOut */
+        BreachDeliveryCountOut: {
+            /**
+             * Notice Uuid
+             * Format: uuid
+             */
+            notice_uuid: string;
+            /** Version */
+            version: number;
+            /** Channel */
+            channel: string;
+            /** Status */
+            status: string;
+            /** People */
+            people: number;
+            /**
+             * Last At
+             * Format: date-time
+             */
+            last_at: string;
+        };
+        /** BreachDeliveryFailureOut */
+        BreachDeliveryFailureOut: {
+            /** Version */
+            version: number;
+            /** Channel */
+            channel: string;
+            /** Attempt */
+            attempt: number;
+            /** Detail */
+            detail: {
+                [key: string]: unknown;
+            };
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /**
+             * Person Uuid
+             * Format: uuid
+             */
+            person_uuid: string;
+            /** Full Name */
+            full_name: string | null;
+        };
         /** BreachDeterminationIn */
         BreachDeterminationIn: {
             /** Outcome */
@@ -5397,6 +5533,85 @@ export interface components {
             source_name: string | null;
             /** Detail */
             detail: string | null;
+        };
+        /** BreachNoticeContentOut */
+        BreachNoticeContentOut: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+        };
+        /**
+         * BreachNoticeIn
+         * @description The five things Rule 7(1) requires. A draft may leave any empty;
+         *     approval may not. Written to be sent to everyone listed: name nobody.
+         */
+        BreachNoticeIn: {
+            /** What Happened */
+            what_happened?: string | null;
+            /** Consequences */
+            consequences?: string | null;
+            /** Measures */
+            measures?: string | null;
+            /** Protective Steps */
+            protective_steps?: string | null;
+            /** Contact */
+            contact?: string | null;
+        };
+        /** BreachNoticeOut */
+        BreachNoticeOut: {
+            /**
+             * Notice Uuid
+             * Format: uuid
+             */
+            notice_uuid: string;
+            /** Version */
+            version: number;
+            /** State */
+            state: string;
+            /** What Happened */
+            what_happened: string;
+            /** Consequences */
+            consequences: string;
+            /** Measures */
+            measures: string;
+            /** Protective Steps */
+            protective_steps: string;
+            /** Contact */
+            contact: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By Name */
+            created_by_name: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Approved At */
+            approved_at: string | null;
+            /** Approved By Name */
+            approved_by_name: string | null;
+        };
+        /** BreachNoticesOut */
+        BreachNoticesOut: {
+            /** Versions */
+            versions: components["schemas"]["BreachNoticeOut"][];
+            /** Account */
+            account: components["schemas"]["BreachDeliveryCountOut"][];
+            /** Failures */
+            failures: components["schemas"]["BreachDeliveryFailureOut"][];
+            /** Listed */
+            listed: number;
+            /** Unnotified */
+            unnotified: number;
+            /** Contents */
+            contents: components["schemas"]["BreachNoticeContentOut"][];
+            /** Duty */
+            duty: string;
         };
         /** BreachOut */
         BreachOut: {
@@ -7117,6 +7332,36 @@ export interface components {
         MfaVerifyRequest: {
             /** Code */
             code: string;
+        };
+        /**
+         * MyBreachNoticeOut
+         * @description A notice about a personal data breach, as written to her account (Rule 7(1)).
+         */
+        MyBreachNoticeOut: {
+            /**
+             * Notice Uuid
+             * Format: uuid
+             */
+            notice_uuid: string;
+            /** Reference */
+            reference: string;
+            /** Version */
+            version: number;
+            /** What Happened */
+            what_happened: string;
+            /** Consequences */
+            consequences: string;
+            /** Measures */
+            measures: string;
+            /** Protective Steps */
+            protective_steps: string;
+            /** Contact */
+            contact: string;
+            /**
+             * Delivered At
+             * Format: date-time
+             */
+            delivered_at: string;
         };
         /** NominationActIn */
         NominationActIn: {
@@ -11168,6 +11413,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_breach_notices_me_breach_notices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyBreachNoticeOut"][];
                 };
             };
         };
@@ -17262,6 +17527,171 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BreachPreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_notices_breaches__breach_uuid__notices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachNoticesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draft_notice_breaches__breach_uuid__notices_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachNoticeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachNoticesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_notice_breaches__breach_uuid__notices__notice_uuid__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                notice_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachNoticeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachNoticesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_notice_breaches__breach_uuid__notices__notice_uuid__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                notice_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachNoticesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_notice_breaches__breach_uuid__notices_send_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachNoticesOut"];
                 };
             };
             /** @description Validation Error */

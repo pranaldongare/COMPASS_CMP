@@ -26,6 +26,7 @@ from cmp.db.repositories import users as user_repo
 from cmp.db.sql import unique_violation
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
+from cmp.domain.breach import notices as breach_notices
 from cmp.domain.consent import service as consent_service
 from cmp.infrastructure.dkms.blind import index_of
 from cmp.schemas.common import Acknowledged, DateOfBirth, Mobile, OtpCode, Out, Schema, ShortText
@@ -396,6 +397,32 @@ async def withdraw(
             withdraw_all=body.all,
             ip_address=request.client.host if request.client else None,
         )
+
+
+class MyBreachNoticeOut(Out):
+    """A notice about a personal data breach, as written to her account (Rule 7(1))."""
+
+    notice_uuid: UUID
+    reference: str
+    version: int
+    what_happened: str
+    consequences: str
+    measures: str
+    protective_steps: str
+    contact: str
+    delivered_at: datetime
+
+
+@router.get(
+    "/breach-notices",
+    response_model=list[MyBreachNoticeOut],
+    summary="Notices about a personal data breach written to my account (Rule 7(1))",
+)
+async def my_breach_notices(principal: RequireDataSubject) -> list[dict[str, Any]]:
+    """Her own, and only what was sent to her: a later version appears when it
+    has been sent, not when it was written."""
+    async with connection() as conn:
+        return await breach_notices.for_subject(conn, user_id=principal.user_id)
 
 
 @router.get("/disclosures", summary="Who was my data shared with (s.11(1)(b))")

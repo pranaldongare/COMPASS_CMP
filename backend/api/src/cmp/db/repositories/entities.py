@@ -272,6 +272,16 @@ _SPECS: dict[str, _Spec] = {
         href="/breaches/{uuid}",
         noun="Personal data breach",
     ),
+    "breach_notice": _Spec(
+        sql="""SELECT n.notice_id AS id, b.breach_uuid::text AS uuid,
+                      'Notice about personal data breach ' || b.reference AS label
+               FROM breach_notice n JOIN breach b ON b.breach_id = n.breach_id
+               WHERE n.notice_id = ANY(%s)""",
+        href="/breaches/{uuid}",
+        # Her own page of the notices written to her account.
+        subject_href="/breach-notices",
+        noun="Breach notice",
+    ),
     "restricted_country": _Spec(
         sql="""SELECT country_id AS id, country_uuid::text AS uuid,
                       'Restricted country ' || country_code AS label

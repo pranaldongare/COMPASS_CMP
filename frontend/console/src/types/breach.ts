@@ -233,3 +233,58 @@ export interface BreachAffected {
   /** The tables a platform scope may name. */
   platform_tables: string[];
 }
+
+/* --------------------------------------------- telling the people (S3-03) */
+
+/** Rule 7(1)(a) to (e). */
+export interface BreachNoticeWords {
+  what_happened: string;
+  consequences: string;
+  measures: string;
+  protective_steps: string;
+  contact: string;
+}
+
+export interface BreachNotice extends BreachNoticeWords {
+  notice_uuid: Uuid;
+  version: number;
+  /** An approved notice does not change; an update is a new version. */
+  state: "draft" | "approved";
+  created_at: Timestamp;
+  created_by_name: string | null;
+  updated_at: Timestamp;
+  approved_at: Timestamp | null;
+  approved_by_name: string | null;
+}
+
+/** How many people are in each state, per version and channel. */
+export interface BreachDeliveryCount {
+  notice_uuid: Uuid;
+  version: number;
+  channel: "portal" | "email" | "sms";
+  status: "queued" | "delivered" | "failed";
+  people: number;
+  last_at: Timestamp;
+}
+
+export interface BreachDeliveryFailure {
+  version: number;
+  channel: "portal" | "email" | "sms";
+  attempt: number;
+  detail: Record<string, unknown>;
+  recorded_at: Timestamp;
+  person_uuid: Uuid;
+  full_name: string | null;
+}
+
+export interface BreachNotices {
+  versions: BreachNotice[];
+  /** Rule 7(2)(b)(vi): the account of notices to principals. */
+  account: BreachDeliveryCount[];
+  failures: BreachDeliveryFailure[];
+  listed: number;
+  /** Listed people with no version yet whose every channel has an outcome. */
+  unnotified: number;
+  contents: { key: keyof BreachNoticeWords; label: string }[];
+  duty: string;
+}

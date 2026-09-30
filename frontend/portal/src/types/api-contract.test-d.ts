@@ -53,6 +53,7 @@ import type {
   LoginResponse,
   Me,
   MeProfile,
+  MyBreachNotice,
   NoticeListRow,
   Notice,
   DataSource,
@@ -131,6 +132,8 @@ export type _CollectionListRow = Covers<
 
 export type _AuditEntry = Covers<"AuditEntry", Schemas["AuditEntry"], AuditEntry>;
 export type _User = Covers<"User", Schemas["UserOut"], User>;
+// A breach notice in her account (S3-03).
+export type _MyBreachNotice = Covers<"MyBreachNotice", Schemas["MyBreachNoticeOut"], MyBreachNotice>;
 
 /**
  * The check itself.
@@ -159,6 +162,7 @@ const _contractHolds: {
   CollectionListRow: _CollectionListRow;
   AuditEntry: _AuditEntry;
   User: _User;
+  MyBreachNotice: _MyBreachNotice;
 } = {
   Me: true,
   MeProfile: true,
@@ -180,6 +184,7 @@ const _contractHolds: {
   CollectionListRow: true,
   AuditEntry: true,
   User: true,
+  MyBreachNotice: true,
 };
 
 void _contractHolds;

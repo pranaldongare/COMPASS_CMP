@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 3XnQp9GRwMZdo8Gp3n0ppRSmWPqLA5FOGBqp7UFRYFJU0v0masd2y23FNyzcgED
+\restrict 77cdvvImGGRAqmjtW1feIeYatNppfCPdeEM8DtmQfBk0YOphgMa0r8mXgycieCd
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -636,6 +636,35 @@ BEGIN
 
     prev_hash := expected;
   END LOOP;
+END;
+$$;
+
+
+--
+-- Name: cmp_breach_notice_frozen(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_breach_notice_frozen() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    RAISE EXCEPTION 'breach notices are never deleted' USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF OLD.approved_at IS NOT NULL THEN
+    RAISE EXCEPTION 'an approved breach notice does not change; write a new version'
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF NEW.notice_id IS DISTINCT FROM OLD.notice_id
+     OR NEW.notice_uuid IS DISTINCT FROM OLD.notice_uuid
+     OR NEW.breach_id IS DISTINCT FROM OLD.breach_id
+     OR NEW.version IS DISTINCT FROM OLD.version
+     OR NEW.created_by IS DISTINCT FROM OLD.created_by
+     OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
+    RAISE EXCEPTION 'only the words and the approval of a draft may change'
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
 END;
 $$;
 
@@ -1581,6 +1610,105 @@ CREATE SEQUENCE public.breach_determination_determination_id_seq
 --
 
 ALTER SEQUENCE public.breach_determination_determination_id_seq OWNED BY public.breach_determination.determination_id;
+
+
+--
+-- Name: breach_notice; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_notice (
+    notice_id integer NOT NULL,
+    notice_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    breach_id integer NOT NULL,
+    version integer NOT NULL,
+    what_happened text,
+    consequences text,
+    measures text,
+    protective_steps text,
+    contact text,
+    created_by integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    approved_by integer,
+    approved_at timestamp with time zone,
+    CONSTRAINT breach_notice_approval_attributed CHECK (((approved_at IS NULL) = (approved_by IS NULL))),
+    CONSTRAINT breach_notice_complete CHECK (((approved_at IS NULL) OR ((what_happened IS NOT NULL) AND (consequences IS NOT NULL) AND (measures IS NOT NULL) AND (protective_steps IS NOT NULL) AND (contact IS NOT NULL))))
+);
+
+
+--
+-- Name: TABLE breach_notice; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.breach_notice IS 'A version of the words sent to the people a breach touched (Rule 7(1)). Frozen once approved';
+
+
+--
+-- Name: breach_notice_delivery; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_notice_delivery (
+    delivery_id integer NOT NULL,
+    delivery_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    notice_id integer NOT NULL,
+    auth_user_id integer NOT NULL,
+    channel character varying(8) NOT NULL,
+    attempt integer NOT NULL,
+    status character varying(10) NOT NULL,
+    detail jsonb DEFAULT '{}'::jsonb NOT NULL,
+    recorded_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT breach_notice_delivery_attempt CHECK ((attempt >= 1)),
+    CONSTRAINT breach_notice_delivery_channel CHECK (((channel)::text = ANY ((ARRAY['portal'::character varying, 'email'::character varying, 'sms'::character varying])::text[]))),
+    CONSTRAINT breach_notice_delivery_portal_at_once CHECK ((((channel)::text <> 'portal'::text) OR ((status)::text = 'delivered'::text))),
+    CONSTRAINT breach_notice_delivery_status CHECK (((status)::text = ANY ((ARRAY['queued'::character varying, 'delivered'::character varying, 'failed'::character varying])::text[])))
+);
+
+
+--
+-- Name: TABLE breach_notice_delivery; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.breach_notice_delivery IS 'The account of notices to principals, per version, person and channel (Rule 7(2)(b)(vi))';
+
+
+--
+-- Name: breach_notice_delivery_delivery_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_notice_delivery_delivery_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_notice_delivery_delivery_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_notice_delivery_delivery_id_seq OWNED BY public.breach_notice_delivery.delivery_id;
+
+
+--
+-- Name: breach_notice_notice_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_notice_notice_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_notice_notice_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_notice_notice_id_seq OWNED BY public.breach_notice.notice_id;
 
 
 --
@@ -3348,6 +3476,20 @@ ALTER TABLE ONLY public.breach_determination ALTER COLUMN determination_id SET D
 
 
 --
+-- Name: breach_notice notice_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_notice ALTER COLUMN notice_id SET DEFAULT nextval('public.breach_notice_notice_id_seq'::regclass);
+
+
+--
+-- Name: breach_notice_delivery delivery_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_notice_delivery ALTER COLUMN delivery_id SET DEFAULT nextval('public.breach_notice_delivery_delivery_id_seq'::regclass);
+
+
+--
 -- Name: breach_obligation obligation_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3734,6 +3876,54 @@ ALTER TABLE ONLY public.breach_determination
 
 ALTER TABLE ONLY public.breach_determination
     ADD CONSTRAINT breach_determination_pkey PRIMARY KEY (determination_id);
+
+
+--
+-- Name: breach_notice_delivery breach_notice_delivery_delivery_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_notice_delivery
+    ADD CONSTRAINT breach_notice_delivery_delivery_uuid_key UNIQUE (delivery_uuid);
+
+
+--
+-- Name: breach_notice_delivery breach_notice_delivery_once; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_notice_delivery
+    ADD CONSTRAINT breach_notice_delivery_once UNIQUE (notice_id, auth_user_id, channel, attempt, status);
+
+
+--
+-- Name: breach_notice_delivery breach_notice_delivery_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_notice_delivery
+    ADD CONSTRAINT breach_notice_delivery_pkey PRIMARY KEY (delivery_id);
+
+
+--
+-- Name: breach_notice breach_notice_notice_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_notice
+    ADD CONSTRAINT breach_notice_notice_uuid_key UNIQUE (notice_uuid);
+
+
+--
+-- Name: breach_notice breach_notice_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_notice
+    ADD CONSTRAINT breach_notice_pkey PRIMARY KEY (notice_id);
+
+
+--
+-- Name: breach_notice breach_notice_version; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_notice
+    ADD CONSTRAINT breach_notice_version UNIQUE (breach_id, version);
 
 
 --
@@ -4531,6 +4721,13 @@ CREATE INDEX idx_breach_determination ON public.breach_determination USING btree
 
 
 --
+-- Name: idx_breach_notice_delivery_person; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_breach_notice_delivery_person ON public.breach_notice_delivery USING btree (auth_user_id);
+
+
+--
 -- Name: idx_breach_obligation_event; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4909,6 +5106,13 @@ CREATE UNIQUE INDEX uq_artefact_supersedes_once ON public.consent_artefact USING
 
 
 --
+-- Name: uq_breach_notice_one_draft; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uq_breach_notice_one_draft ON public.breach_notice USING btree (breach_id) WHERE (approved_at IS NULL);
+
+
+--
 -- Name: uq_delegation_live; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5011,6 +5215,20 @@ CREATE TRIGGER trg_breach_assessment_append_only BEFORE DELETE OR UPDATE ON publ
 --
 
 CREATE TRIGGER trg_breach_determination_append_only BEFORE DELETE OR UPDATE ON public.breach_determination FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: breach_notice_delivery trg_breach_notice_delivery_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_notice_delivery_append_only BEFORE DELETE OR UPDATE ON public.breach_notice_delivery FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: breach_notice trg_breach_notice_frozen; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_notice_frozen BEFORE DELETE OR UPDATE ON public.breach_notice FOR EACH ROW EXECUTE FUNCTION public.cmp_breach_notice_frozen();
 
 
 --
@@ -5341,6 +5559,46 @@ ALTER TABLE ONLY public.breach
 
 ALTER TABLE ONLY public.breach
     ADD CONSTRAINT breach_location_source_id_fkey FOREIGN KEY (location_source_id) REFERENCES public.data_source(source_id);
+
+
+--
+-- Name: breach_notice breach_notice_approved_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_notice
+    ADD CONSTRAINT breach_notice_approved_by_fkey FOREIGN KEY (approved_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_notice breach_notice_breach_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_notice
+    ADD CONSTRAINT breach_notice_breach_id_fkey FOREIGN KEY (breach_id) REFERENCES public.breach(breach_id);
+
+
+--
+-- Name: breach_notice breach_notice_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_notice
+    ADD CONSTRAINT breach_notice_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_notice_delivery breach_notice_delivery_auth_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_notice_delivery
+    ADD CONSTRAINT breach_notice_delivery_auth_user_id_fkey FOREIGN KEY (auth_user_id) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_notice_delivery breach_notice_delivery_notice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_notice_delivery
+    ADD CONSTRAINT breach_notice_delivery_notice_id_fkey FOREIGN KEY (notice_id) REFERENCES public.breach_notice(notice_id);
 
 
 --
@@ -6203,5 +6461,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 3XnQp9GRwMZdo8Gp3n0ppRSmWPqLA5FOGBqp7UFRYFJU0v0masd2y23FNyzcgED
+\unrestrict 77cdvvImGGRAqmjtW1feIeYatNppfCPdeEM8DtmQfBk0YOphgMa0r8mXgycieCd
 

@@ -58,6 +58,7 @@ PRIMARY_KEY = {
     "breach_assessment": "assessment_id",
     "breach_obligation_event": "event_id",
     "breach_affected_revision": "revision_id",
+    "breach_notice": "notice_id",
 }
 
 #: What kind of blind index each indexed column takes.
@@ -106,6 +107,7 @@ APPEND_ONLY = {
     "breach_assessment": "trg_breach_assessment_append_only",
     "breach_obligation_event": "trg_breach_obligation_event_append_only",
     "breach_affected_revision": "trg_breach_affected_revision_append_only",
+    "breach_notice": "trg_breach_notice_frozen",
 }
 
 

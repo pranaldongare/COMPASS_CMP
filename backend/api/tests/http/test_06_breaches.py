@@ -20,6 +20,7 @@ from typing import Any
 import httpx
 import pytest
 
+from tests.conftest import plain
 from tests.http.conftest import SessionFactory
 from tests.http.contract import call
 from tests.http.world import World, build
@@ -251,6 +252,97 @@ class TestWhoItTouched:
         )
 
 
+class TestTellingThePeople:
+    async def test_draft_approve_send_twice_and_she_reads_it(
+        self, http: httpx.AsyncClient, world: World, queued: Any
+    ) -> None:
+        assert world.principal is not None
+        breach = await _record(http, world, location_kind="platform", processor_uuid=None)
+        path = f"/breaches/{breach['breach_uuid']}"
+        await call(
+            http,
+            "POST",
+            f"{path}/affected",
+            template=f"{B}/affected",
+            session=world.dpo,
+            json={"add": [world.principal.uuid]},
+        )
+        words = {
+            "what_happened": "A list was sent to the wrong address.",
+            "consequences": "Your mobile number may have been seen.",
+            "measures": "The recipient deleted it.",
+            "protective_steps": "Ignore calls that mention the study.",
+        }
+        drafted = await call(
+            http,
+            "POST",
+            f"{path}/notices",
+            template=f"{B}/notices",
+            session=world.dpo,
+            json=words,
+            expect=201,
+        )
+        notice = drafted.json()["versions"][-1]["notice_uuid"]
+        # Four of five: a draft may be incomplete; an approval may not.
+        await call(
+            http,
+            "POST",
+            f"{path}/notices/{notice}/approve",
+            template=f"{B}/notices/{{notice_uuid}}/approve",
+            session=world.dpo,
+            expect=422,
+        )
+        await call(
+            http,
+            "POST",
+            f"{path}/notices/send",
+            template=f"{B}/notices/send",
+            session=world.dpo,
+            expect=409,
+        )
+        await call(
+            http,
+            "PUT",
+            f"{path}/notices/{notice}",
+            template=f"{B}/notices/{{notice_uuid}}",
+            session=world.dpo,
+            json={**words, "contact": "privacy@example.org"},
+        )
+        await call(
+            http,
+            "POST",
+            f"{path}/notices/{notice}/approve",
+            template=f"{B}/notices/{{notice_uuid}}/approve",
+            session=world.dpo,
+        )
+        await asyncio.gather(
+            call(
+                http,
+                "POST",
+                f"{path}/notices/send",
+                template=f"{B}/notices/send",
+                session=world.dpo,
+            ),
+            call(
+                http,
+                "POST",
+                f"{path}/notices/send",
+                template=f"{B}/notices/send",
+                session=world.dpo,
+            ),
+        )
+        account = await call(
+            http, "GET", f"{path}/notices", template=f"{B}/notices", session=world.dpo
+        )
+        portal = [r for r in account.json()["account"] if r["channel"] == "portal"]
+        assert sum(r["people"] for r in portal) == 1, "two sends at once wrote her account once"
+        assert len([q for q in queued if q[0].endswith("send_breach_notice")]) >= 1
+        mine = await call(http, "GET", "/me/breach-notices", session=world.principal)
+        assert [n["reference"] for n in mine.json()] == [breach["reference"]]
+        assert str(mine.json()[0]["contact"]).startswith("SE::"), "sealed, opened by her portal"
+        assert plain(mine.json()[0]["contact"]) == "privacy@example.org"
+
+
 class TestHiddenFromEveryoneElse:
     async def test_every_other_role_is_told_it_is_not_there(
         self, http: httpx.AsyncClient, world: World, session_for: SessionFactory
@@ -272,6 +364,9 @@ class TestHiddenFromEveryoneElse:
             assert listed.status_code == 404
             await call(
                 http, "GET", f"{real}/affected", template=f"{B}/affected", session=who, expect=404
+            )
+            await call(
+                http, "GET", f"{real}/notices", template=f"{B}/notices", session=who, expect=404
             )
             await call(
                 http,

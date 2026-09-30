@@ -33,6 +33,7 @@ the defaults are what is sent until they do. The catalogue lives in
 | Rights | `ticket_reminder` | email, SMS | a ticket's date is near, today or past |
 | Rights | `ticket_message` | email, SMS | a message is written on a ticket thread |
 | Staff | `office_note` | email | the office resends a notification from the console |
+| Breach | `breach_notice` | email, SMS | the DPO sends an approved notice about a personal data breach to the people it touched; the email carries all five Rule 7(1) contents, the SMS points to her account, where the same notice is |
 
 The channel is chosen by the shape of the contact, once it has been opened
 (below): an address gets the email words, a number gets the SMS words. SMS bodies are separate and short, at

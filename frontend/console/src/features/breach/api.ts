@@ -6,7 +6,7 @@
  * with the reference the regulator returned.
  */
 
-import { apiGet, apiPost, queryString } from "@/lib/api";
+import { apiGet, apiPost, apiPut, queryString } from "@/lib/api";
 import type {
   Breach,
   BreachAffected,
@@ -16,6 +16,8 @@ import type {
   BreachAssessmentInput,
   BreachDutyKind,
   BreachInput,
+  BreachNotices,
+  BreachNoticeWords,
   BreachOutcome,
   BreachStatus,
   BreachSummary,
@@ -96,4 +98,30 @@ export function confirmAffected(
   body: { scopes: BreachScope[]; exclude: Uuid[]; add: Uuid[]; note?: string | null },
 ): Promise<BreachAffected> {
   return apiPost<BreachAffected>(`/breaches/${uuid}/affected`, body);
+}
+
+/* ---------------------------------------------- telling the people (S3-03) */
+
+export function getNotices(uuid: Uuid): Promise<BreachNotices> {
+  return apiGet<BreachNotices>(`/breaches/${uuid}/notices`);
+}
+
+export function draftNotice(uuid: Uuid, words: Partial<BreachNoticeWords>): Promise<BreachNotices> {
+  return apiPost<BreachNotices>(`/breaches/${uuid}/notices`, words);
+}
+
+export function editNotice(
+  uuid: Uuid,
+  noticeUuid: Uuid,
+  words: Partial<BreachNoticeWords>,
+): Promise<BreachNotices> {
+  return apiPut<BreachNotices>(`/breaches/${uuid}/notices/${noticeUuid}`, words);
+}
+
+export function approveNotice(uuid: Uuid, noticeUuid: Uuid): Promise<BreachNotices> {
+  return apiPost<BreachNotices>(`/breaches/${uuid}/notices/${noticeUuid}/approve`, {});
+}
+
+export function sendNotice(uuid: Uuid): Promise<BreachNotices> {
+  return apiPost<BreachNotices>(`/breaches/${uuid}/notices/send`, {});
 }

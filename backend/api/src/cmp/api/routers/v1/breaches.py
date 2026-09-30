@@ -18,7 +18,7 @@ from pydantic import AwareDatetime, Field
 
 from cmp.api.dependencies import BreachReader, BreachWriter
 from cmp.db.pool import connection, transaction
-from cmp.domain.breach import affected, service
+from cmp.domain.breach import affected, notices, service
 from cmp.schemas.common import Out, Schema
 
 router = APIRouter(prefix="/breaches", tags=["breaches"])
@@ -549,3 +549,144 @@ async def confirm_affected(
             note=body.note,
             actor_id=principal.user_id,
         )
+
+
+# --------------------------------------------------- telling the people (S3-03)
+
+_Words = Annotated[str, Field(max_length=4000)]
+
+
+class BreachNoticeIn(Schema):
+    """The five things Rule 7(1) requires. A draft may leave any empty;
+    approval may not. Written to be sent to everyone listed: name nobody."""
+
+    what_happened: _Words | None = None
+    consequences: _Words | None = None
+    measures: _Words | None = None
+    protective_steps: _Words | None = None
+    contact: _Words | None = None
+
+
+class BreachNoticeOut(Out):
+    notice_uuid: UUID
+    version: int
+    #: draft or approved. An approved notice does not change.
+    state: str
+    what_happened: str | None
+    consequences: str | None
+    measures: str | None
+    protective_steps: str | None
+    contact: str | None
+    created_at: datetime
+    created_by_name: str | None
+    updated_at: datetime
+    approved_at: datetime | None
+    approved_by_name: str | None
+
+
+class BreachDeliveryCountOut(Out):
+    notice_uuid: UUID
+    version: int
+    #: portal, email or sms.
+    channel: str
+    #: queued, delivered or failed: each person's latest attempt.
+    status: str
+    people: int
+    last_at: datetime
+
+
+class BreachDeliveryFailureOut(Out):
+    version: int
+    channel: str
+    attempt: int
+    detail: dict[str, Any]
+    recorded_at: datetime
+    person_uuid: UUID
+    full_name: str | None
+
+
+class BreachNoticeContentOut(Out):
+    key: str
+    label: str
+
+
+class BreachNoticesOut(Out):
+    versions: list[BreachNoticeOut]
+    #: Rule 7(2)(b)(vi): per version and channel, how many people are in each state.
+    account: list[BreachDeliveryCountOut]
+    failures: list[BreachDeliveryFailureOut]
+    listed: int
+    #: Listed people with no version yet whose every channel has an outcome.
+    unnotified: int
+    contents: list[BreachNoticeContentOut]
+    duty: str
+
+
+@router.get(
+    "/{breach_uuid}/notices",
+    response_model=BreachNoticesOut,
+    summary="Every version of the notice, and the account of who received which",
+)
+async def list_notices(breach_uuid: UUID, principal: BreachReader) -> dict[str, Any]:
+    async with connection() as conn:
+        return await notices.overview(conn, breach_uuid=str(breach_uuid))
+
+
+@router.post(
+    "/{breach_uuid}/notices",
+    response_model=BreachNoticesOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Start the next version of the notice, as a draft",
+)
+async def draft_notice(
+    breach_uuid: UUID, body: BreachNoticeIn, principal: BreachWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await notices.draft(
+            conn, breach_uuid=str(breach_uuid), words=body.model_dump(), actor_id=principal.user_id
+        )
+
+
+@router.put(
+    "/{breach_uuid}/notices/{notice_uuid}",
+    response_model=BreachNoticesOut,
+    summary="Edit a draft notice",
+)
+async def edit_notice(
+    breach_uuid: UUID, notice_uuid: UUID, body: BreachNoticeIn, principal: BreachWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await notices.edit(
+            conn,
+            breach_uuid=str(breach_uuid),
+            notice_uuid=str(notice_uuid),
+            words=body.model_dump(),
+            actor_id=principal.user_id,
+        )
+
+
+@router.post(
+    "/{breach_uuid}/notices/{notice_uuid}/approve",
+    response_model=BreachNoticesOut,
+    summary="Approve the words; refused while any of the five is empty",
+)
+async def approve_notice(
+    breach_uuid: UUID, notice_uuid: UUID, principal: BreachWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await notices.approve(
+            conn,
+            breach_uuid=str(breach_uuid),
+            notice_uuid=str(notice_uuid),
+            actor_id=principal.user_id,
+        )
+
+
+@router.post(
+    "/{breach_uuid}/notices/send",
+    response_model=BreachNoticesOut,
+    summary="Send the approved notice to everyone listed who lacks it; never twice",
+)
+async def send_notice(breach_uuid: UUID, principal: BreachWriter) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await notices.send(conn, breach_uuid=str(breach_uuid), actor_id=principal.user_id)

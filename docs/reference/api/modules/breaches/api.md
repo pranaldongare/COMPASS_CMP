@@ -1,6 +1,6 @@
 # Breaches API
 
-Generated from `backend/api/openapi.json`. **14 operations.**
+Generated from `backend/api/openapi.json`. **19 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -20,6 +20,11 @@ For each operation the information is deliberately ordered as **API → Validati
 12. [`GET /breaches/{breach_uuid}/affected`](#12_get_breaches_breach_uuid_affected)
 13. [`POST /breaches/{breach_uuid}/affected`](#13_post_breaches_breach_uuid_affected)
 14. [`POST /breaches/{breach_uuid}/affected/preview`](#14_post_breaches_breach_uuid_affected_preview)
+15. [`GET /breaches/{breach_uuid}/notices`](#15_get_breaches_breach_uuid_notices)
+16. [`POST /breaches/{breach_uuid}/notices`](#16_post_breaches_breach_uuid_notices)
+17. [`PUT /breaches/{breach_uuid}/notices/{notice_uuid}`](#17_put_breaches_breach_uuid_notices_notice_uuid)
+18. [`POST /breaches/{breach_uuid}/notices/{notice_uuid}/approve`](#18_post_breaches_breach_uuid_notices_notice_uuid_approve)
+19. [`POST /breaches/{breach_uuid}/notices/send`](#19_post_breaches_breach_uuid_notices_send)
 
 <a id="1_get_breaches"></a>
 ## 1. `GET /breaches` — The register, open first
@@ -1727,6 +1732,519 @@ Request body required: **yes**.
 }
 ```
 
+<a id="15_get_breaches_breach_uuid_notices"></a>
+## 15. `GET /breaches/{breach_uuid}/notices` — Every version of the notice, and the account of who received which
+
+### API
+
+- **Operation ID:** `list_notices_breaches__breach_uuid__notices_get`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachNoticesOut`](#schema-breachnoticesout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "versions": [
+    {
+      "notice_uuid": "00000000-0000-4000-8000-000000000000",
+      "version": 1,
+      "state": "string",
+      "what_happened": "string",
+      "consequences": "string",
+      "measures": "string",
+      "protective_steps": "string",
+      "contact": "string",
+      "created_at": "2026-09-17T12:00:00Z",
+      "created_by_name": "…",
+      "updated_at": "2026-09-17T12:00:00Z",
+      "approved_at": "…",
+      "approved_by_name": "…"
+    }
+  ],
+  "account": [
+    {
+      "notice_uuid": "00000000-0000-4000-8000-000000000000",
+      "version": 1,
+      "channel": "string",
+      "status": "string",
+      "people": 1,
+      "last_at": "2026-09-17T12:00:00Z"
+    }
+  ],
+  "failures": [
+    {
+      "version": 1,
+      "channel": "string",
+      "attempt": 1,
+      "detail": {},
+      "recorded_at": "2026-09-17T12:00:00Z",
+      "person_uuid": "00000000-0000-4000-8000-000000000000",
+      "full_name": "…"
+    }
+  ],
+  "listed": 1,
+  "unnotified": 1,
+  "contents": [
+    {
+      "key": "string",
+      "label": "string"
+    }
+  ],
+  "duty": "string"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="16_post_breaches_breach_uuid_notices"></a>
+## 16. `POST /breaches/{breach_uuid}/notices` — Start the next version of the notice, as a draft
+
+### API
+
+- **Operation ID:** `draft_notice_breaches__breach_uuid__notices_post`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`BreachNoticeIn`](#schema-breachnoticein)
+
+```json
+{
+  "what_happened": "string",
+  "consequences": "string",
+  "measures": "string",
+  "protective_steps": "string",
+  "contact": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `201` | Successful Response | `application/json` | [`BreachNoticesOut`](#schema-breachnoticesout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `201` `application/json` response:**
+
+```json
+{
+  "versions": [
+    {
+      "notice_uuid": "00000000-0000-4000-8000-000000000000",
+      "version": 1,
+      "state": "string",
+      "what_happened": "string",
+      "consequences": "string",
+      "measures": "string",
+      "protective_steps": "string",
+      "contact": "string",
+      "created_at": "2026-09-17T12:00:00Z",
+      "created_by_name": "…",
+      "updated_at": "2026-09-17T12:00:00Z",
+      "approved_at": "…",
+      "approved_by_name": "…"
+    }
+  ],
+  "account": [
+    {
+      "notice_uuid": "00000000-0000-4000-8000-000000000000",
+      "version": 1,
+      "channel": "string",
+      "status": "string",
+      "people": 1,
+      "last_at": "2026-09-17T12:00:00Z"
+    }
+  ],
+  "failures": [
+    {
+      "version": 1,
+      "channel": "string",
+      "attempt": 1,
+      "detail": {},
+      "recorded_at": "2026-09-17T12:00:00Z",
+      "person_uuid": "00000000-0000-4000-8000-000000000000",
+      "full_name": "…"
+    }
+  ],
+  "listed": 1,
+  "unnotified": 1,
+  "contents": [
+    {
+      "key": "string",
+      "label": "string"
+    }
+  ],
+  "duty": "string"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="17_put_breaches_breach_uuid_notices_notice_uuid"></a>
+## 17. `PUT /breaches/{breach_uuid}/notices/{notice_uuid}` — Edit a draft notice
+
+### API
+
+- **Operation ID:** `edit_notice_breaches__breach_uuid__notices__notice_uuid__put`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `notice_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`BreachNoticeIn`](#schema-breachnoticein)
+
+```json
+{
+  "what_happened": "string",
+  "consequences": "string",
+  "measures": "string",
+  "protective_steps": "string",
+  "contact": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachNoticesOut`](#schema-breachnoticesout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "versions": [
+    {
+      "notice_uuid": "00000000-0000-4000-8000-000000000000",
+      "version": 1,
+      "state": "string",
+      "what_happened": "string",
+      "consequences": "string",
+      "measures": "string",
+      "protective_steps": "string",
+      "contact": "string",
+      "created_at": "2026-09-17T12:00:00Z",
+      "created_by_name": "…",
+      "updated_at": "2026-09-17T12:00:00Z",
+      "approved_at": "…",
+      "approved_by_name": "…"
+    }
+  ],
+  "account": [
+    {
+      "notice_uuid": "00000000-0000-4000-8000-000000000000",
+      "version": 1,
+      "channel": "string",
+      "status": "string",
+      "people": 1,
+      "last_at": "2026-09-17T12:00:00Z"
+    }
+  ],
+  "failures": [
+    {
+      "version": 1,
+      "channel": "string",
+      "attempt": 1,
+      "detail": {},
+      "recorded_at": "2026-09-17T12:00:00Z",
+      "person_uuid": "00000000-0000-4000-8000-000000000000",
+      "full_name": "…"
+    }
+  ],
+  "listed": 1,
+  "unnotified": 1,
+  "contents": [
+    {
+      "key": "string",
+      "label": "string"
+    }
+  ],
+  "duty": "string"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="18_post_breaches_breach_uuid_notices_notice_uuid_approve"></a>
+## 18. `POST /breaches/{breach_uuid}/notices/{notice_uuid}/approve` — Approve the words; refused while any of the five is empty
+
+### API
+
+- **Operation ID:** `approve_notice_breaches__breach_uuid__notices__notice_uuid__approve_post`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `notice_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachNoticesOut`](#schema-breachnoticesout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "versions": [
+    {
+      "notice_uuid": "00000000-0000-4000-8000-000000000000",
+      "version": 1,
+      "state": "string",
+      "what_happened": "string",
+      "consequences": "string",
+      "measures": "string",
+      "protective_steps": "string",
+      "contact": "string",
+      "created_at": "2026-09-17T12:00:00Z",
+      "created_by_name": "…",
+      "updated_at": "2026-09-17T12:00:00Z",
+      "approved_at": "…",
+      "approved_by_name": "…"
+    }
+  ],
+  "account": [
+    {
+      "notice_uuid": "00000000-0000-4000-8000-000000000000",
+      "version": 1,
+      "channel": "string",
+      "status": "string",
+      "people": 1,
+      "last_at": "2026-09-17T12:00:00Z"
+    }
+  ],
+  "failures": [
+    {
+      "version": 1,
+      "channel": "string",
+      "attempt": 1,
+      "detail": {},
+      "recorded_at": "2026-09-17T12:00:00Z",
+      "person_uuid": "00000000-0000-4000-8000-000000000000",
+      "full_name": "…"
+    }
+  ],
+  "listed": 1,
+  "unnotified": 1,
+  "contents": [
+    {
+      "key": "string",
+      "label": "string"
+    }
+  ],
+  "duty": "string"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="19_post_breaches_breach_uuid_notices_send"></a>
+## 19. `POST /breaches/{breach_uuid}/notices/send` — Send the approved notice to everyone listed who lacks it; never twice
+
+### API
+
+- **Operation ID:** `send_notice_breaches__breach_uuid__notices_send_post`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachNoticesOut`](#schema-breachnoticesout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "versions": [
+    {
+      "notice_uuid": "00000000-0000-4000-8000-000000000000",
+      "version": 1,
+      "state": "string",
+      "what_happened": "string",
+      "consequences": "string",
+      "measures": "string",
+      "protective_steps": "string",
+      "contact": "string",
+      "created_at": "2026-09-17T12:00:00Z",
+      "created_by_name": "…",
+      "updated_at": "2026-09-17T12:00:00Z",
+      "approved_at": "…",
+      "approved_by_name": "…"
+    }
+  ],
+  "account": [
+    {
+      "notice_uuid": "00000000-0000-4000-8000-000000000000",
+      "version": 1,
+      "channel": "string",
+      "status": "string",
+      "people": 1,
+      "last_at": "2026-09-17T12:00:00Z"
+    }
+  ],
+  "failures": [
+    {
+      "version": 1,
+      "channel": "string",
+      "attempt": 1,
+      "detail": {},
+      "recorded_at": "2026-09-17T12:00:00Z",
+      "person_uuid": "00000000-0000-4000-8000-000000000000",
+      "full_name": "…"
+    }
+  ],
+  "listed": 1,
+  "unnotified": 1,
+  "contents": [
+    {
+      "key": "string",
+      "label": "string"
+    }
+  ],
+  "duty": "string"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
 # Referenced schemas
 
 <a id="schema-breachaffectedin"></a>
@@ -1807,6 +2325,33 @@ Request body required: **yes**.
 | `processor_uuid` | `string` or `null` | No | format: `uuid` | — |
 | `source_uuid` | `string` or `null` | No | format: `uuid` | — |
 | `location_detail` | `string` or `null` | No | max length: `8000` | — |
+
+<a id="schema-breachnoticein"></a>
+#### `BreachNoticeIn`
+
+The five things Rule 7(1) requires. A draft may leave any empty;
+approval may not. Written to be sent to everyone listed: name nobody.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `what_happened` | `string` or `null` | No | max length: `4000` | — |
+| `consequences` | `string` or `null` | No | max length: `4000` | — |
+| `measures` | `string` or `null` | No | max length: `4000` | — |
+| `protective_steps` | `string` or `null` | No | max length: `4000` | — |
+| `contact` | `string` or `null` | No | max length: `4000` | — |
+
+<a id="schema-breachnoticesout"></a>
+#### `BreachNoticesOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `versions` | array of [`BreachNoticeOut`](#schema-breachnoticeout) | Yes | — | — |
+| `account` | array of [`BreachDeliveryCountOut`](#schema-breachdeliverycountout) | Yes | — | — |
+| `failures` | array of [`BreachDeliveryFailureOut`](#schema-breachdeliveryfailureout) | Yes | — | — |
+| `listed` | `integer` | Yes | — | — |
+| `unnotified` | `integer` | Yes | — | — |
+| `contents` | array of [`BreachNoticeContentOut`](#schema-breachnoticecontentout) | Yes | — | — |
+| `duty` | `string` | Yes | — | — |
 
 <a id="schema-breachout"></a>
 #### `BreachOut`
@@ -1925,6 +2470,58 @@ Request body required: **yes**.
 | `category` | `string` | Yes | min length: `1`; max length: `200` | — |
 | `sealed` | `boolean` | Yes | — | — |
 | `key_exposed` | `boolean` | No | default: `False` | — |
+
+<a id="schema-breachnoticeout"></a>
+#### `BreachNoticeOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `notice_uuid` | `string` | Yes | format: `uuid` | — |
+| `version` | `integer` | Yes | — | — |
+| `state` | `string` | Yes | — | — |
+| `what_happened` | `string` | Yes | — | — |
+| `consequences` | `string` | Yes | — | — |
+| `measures` | `string` | Yes | — | — |
+| `protective_steps` | `string` | Yes | — | — |
+| `contact` | `string` | Yes | — | — |
+| `created_at` | `string` | Yes | format: `date-time` | — |
+| `created_by_name` | `string` or `null` | Yes | — | — |
+| `updated_at` | `string` | Yes | format: `date-time` | — |
+| `approved_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `approved_by_name` | `string` or `null` | Yes | — | — |
+
+<a id="schema-breachdeliverycountout"></a>
+#### `BreachDeliveryCountOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `notice_uuid` | `string` | Yes | format: `uuid` | — |
+| `version` | `integer` | Yes | — | — |
+| `channel` | `string` | Yes | — | — |
+| `status` | `string` | Yes | — | — |
+| `people` | `integer` | Yes | — | — |
+| `last_at` | `string` | Yes | format: `date-time` | — |
+
+<a id="schema-breachdeliveryfailureout"></a>
+#### `BreachDeliveryFailureOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `version` | `integer` | Yes | — | — |
+| `channel` | `string` | Yes | — | — |
+| `attempt` | `integer` | Yes | — | — |
+| `detail` | `object` | Yes | — | — |
+| `recorded_at` | `string` | Yes | format: `date-time` | — |
+| `person_uuid` | `string` | Yes | format: `uuid` | — |
+| `full_name` | `string` or `null` | Yes | — | — |
+
+<a id="schema-breachnoticecontentout"></a>
+#### `BreachNoticeContentOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `key` | `string` | Yes | — | — |
+| `label` | `string` | Yes | — | — |
 
 <a id="schema-breachlocationout"></a>
 #### `BreachLocationOut`

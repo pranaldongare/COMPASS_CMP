@@ -75,6 +75,9 @@ ENTITY_TYPES: Final[frozenset[str]] = frozenset(
         "restricted_country",
         # A personal data breach and its duties (S3-01).
         "breach",
+        # A notice to the people a breach touched (S3-03). Her notification
+        # names this, not the breach, which is the office's alone.
+        "breach_notice",
         # The office's replacement words for a message junction.
         "message_template",
     }
@@ -253,6 +256,15 @@ class Event:
     BREACH_REOPENED = "breach.reopened"
     #: A confirmation of who the breach touched: counts, never people (S3-02).
     BREACH_AFFECTED_REVISED = "breach.affected_revised"
+    #: The principals' duty owed again: people listed after it completed.
+    BREACH_OBLIGATION_REOPENED = "breach.obligation_reopened"
+    # Notices to the people it touched (S3-03).
+    BREACH_NOTICE_DRAFTED = "breach.notice_drafted"
+    BREACH_NOTICE_EDITED = "breach.notice_edited"
+    BREACH_NOTICE_APPROVED = "breach.notice_approved"
+    BREACH_NOTICE_SENT = "breach.notice_sent"
+    #: Written against her: the notice is in her account. Her portal's bell.
+    BREACH_NOTICE_DELIVERED = "breach_notice.delivered"
     RIGHTS_RESPONDED = "rights.responded"
     RIGHTS_RESPONSE_DOWNLOADED = "rights.response_downloaded"
     RIGHTS_CLOSED = "rights.closed"

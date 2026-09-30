@@ -28,7 +28,15 @@ from cmp.db.sql import fetch_one
 
 #: What a data principal's console actually consists of. Everything else in the
 #: product is staff-facing, and a link to any of it is the bug.
-HER_PAGES = ("/my-consents", "/my-requests", "/account", "/notifications", "/rights")
+# `/breach-notices` since S3-03: the breach notices written to her account.
+HER_PAGES = (
+    "/my-consents",
+    "/my-requests",
+    "/account",
+    "/notifications",
+    "/rights",
+    "/breach-notices",
+)
 
 
 def test_no_entity_can_send_her_to_a_staff_console() -> None:

@@ -1,6 +1,6 @@
 # Me API
 
-Generated from `backend/api/openapi.json`. **26 operations.**
+Generated from `backend/api/openapi.json`. **27 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -19,19 +19,20 @@ For each operation the information is deliberately ordered as **API → Validati
 11. [`GET /me/consents/{consent_uuid}/history`](#11_get_me_consents_consent_uuid_history)
 12. [`GET /me/consents/{consent_uuid}/trail`](#12_get_me_consents_consent_uuid_trail)
 13. [`POST /me/consents/{consent_uuid}/withdraw`](#13_post_me_consents_consent_uuid_withdraw)
-14. [`GET /me/disclosures`](#14_get_me_disclosures)
-15. [`GET /me/notifications`](#15_get_me_notifications)
-16. [`GET /me/requests`](#16_get_me_requests)
-17. [`POST /me/requests`](#17_post_me_requests)
-18. [`GET /me/requests/{request_uuid}`](#18_get_me_requests_request_uuid)
-19. [`GET /me/requests/{request_uuid}/trail`](#19_get_me_requests_request_uuid_trail)
-20. [`GET /me/requests/{request_uuid}/download`](#20_get_me_requests_request_uuid_download)
-21. [`GET /me/requests/{request_uuid}/files/{file_uuid}`](#21_get_me_requests_request_uuid_files_file_uuid)
-22. [`POST /me/requests/{request_uuid}/dispute`](#22_post_me_requests_request_uuid_dispute)
-23. [`GET /me/nominations`](#23_get_me_nominations)
-24. [`POST /me/nominations`](#24_post_me_nominations)
-25. [`GET /me/nominee-of`](#25_get_me_nominee_of)
-26. [`DELETE /me/nominations/{nomination_uuid}`](#26_delete_me_nominations_nomination_uuid)
+14. [`GET /me/breach-notices`](#14_get_me_breach_notices)
+15. [`GET /me/disclosures`](#15_get_me_disclosures)
+16. [`GET /me/notifications`](#16_get_me_notifications)
+17. [`GET /me/requests`](#17_get_me_requests)
+18. [`POST /me/requests`](#18_post_me_requests)
+19. [`GET /me/requests/{request_uuid}`](#19_get_me_requests_request_uuid)
+20. [`GET /me/requests/{request_uuid}/trail`](#20_get_me_requests_request_uuid_trail)
+21. [`GET /me/requests/{request_uuid}/download`](#21_get_me_requests_request_uuid_download)
+22. [`GET /me/requests/{request_uuid}/files/{file_uuid}`](#22_get_me_requests_request_uuid_files_file_uuid)
+23. [`POST /me/requests/{request_uuid}/dispute`](#23_post_me_requests_request_uuid_dispute)
+24. [`GET /me/nominations`](#24_get_me_nominations)
+25. [`POST /me/nominations`](#25_post_me_nominations)
+26. [`GET /me/nominee-of`](#26_get_me_nominee_of)
+27. [`DELETE /me/nominations/{nomination_uuid}`](#27_delete_me_nominations_nomination_uuid)
 
 <a id="1_get_me"></a>
 ## 1. `GET /me` — Get Me
@@ -747,8 +748,51 @@ Request body required: **yes**.
 }
 ```
 
-<a id="14_get_me_disclosures"></a>
-## 14. `GET /me/disclosures` — Who was my data shared with (s.11(1)(b))
+<a id="14_get_me_breach_notices"></a>
+## 14. `GET /me/breach-notices` — Notices about a personal data breach written to my account (Rule 7(1))
+
+### API
+
+- **Operation ID:** `my_breach_notices_me_breach_notices_get`
+- **Access:** Authenticated caller acting on their own records.
+
+Her own, and only what was sent to her: a later version appears when it
+has been sent, not when it was written.
+
+### Validation
+
+No path, query, header, or cookie parameters are declared for this operation.
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | array of [`MyBreachNoticeOut`](#schema-mybreachnoticeout) |
+
+**Example `200` `application/json` response:**
+
+```json
+[
+  {
+    "notice_uuid": "00000000-0000-4000-8000-000000000000",
+    "reference": "string",
+    "version": 1,
+    "what_happened": "string",
+    "consequences": "string",
+    "measures": "string",
+    "protective_steps": "string",
+    "contact": "string",
+    "delivered_at": "2026-09-17T12:00:00Z"
+  }
+]
+```
+
+<a id="15_get_me_disclosures"></a>
+## 15. `GET /me/disclosures` — Who was my data shared with (s.11(1)(b))
 
 ### API
 
@@ -779,8 +823,8 @@ No request body.
 ]
 ```
 
-<a id="15_get_me_notifications"></a>
-## 15. `GET /me/notifications` — My Notifications
+<a id="16_get_me_notifications"></a>
+## 16. `GET /me/notifications` — My Notifications
 
 ### API
 
@@ -834,8 +878,8 @@ No request body.
 }
 ```
 
-<a id="16_get_me_requests"></a>
-## 16. `GET /me/requests` — My requests
+<a id="17_get_me_requests"></a>
+## 17. `GET /me/requests` — My requests
 
 ### API
 
@@ -920,8 +964,8 @@ No request body.
 ]
 ```
 
-<a id="17_post_me_requests"></a>
-## 17. `POST /me/requests` — Make a request, signed in
+<a id="18_post_me_requests"></a>
+## 18. `POST /me/requests` — Make a request, signed in
 
 ### API
 
@@ -1038,8 +1082,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="18_get_me_requests_request_uuid"></a>
-## 18. `GET /me/requests/{request_uuid}` — My Request
+<a id="19_get_me_requests_request_uuid"></a>
+## 19. `GET /me/requests/{request_uuid}` — My Request
 
 ### API
 
@@ -1143,8 +1187,8 @@ No request body.
 }
 ```
 
-<a id="19_get_me_requests_request_uuid_trail"></a>
-## 19. `GET /me/requests/{request_uuid}/trail` — What was recorded about my request
+<a id="20_get_me_requests_request_uuid_trail"></a>
+## 20. `GET /me/requests/{request_uuid}/trail` — What was recorded about my request
 
 ### API
 
@@ -1194,8 +1238,8 @@ No request body.
 }
 ```
 
-<a id="20_get_me_requests_request_uuid_download"></a>
-## 20. `GET /me/requests/{request_uuid}/download` — The response, while the window is open
+<a id="21_get_me_requests_request_uuid_download"></a>
+## 21. `GET /me/requests/{request_uuid}/download` — The response, while the window is open
 
 ### API
 
@@ -1243,8 +1287,8 @@ No request body.
 }
 ```
 
-<a id="21_get_me_requests_request_uuid_files_file_uuid"></a>
-## 21. `GET /me/requests/{request_uuid}/files/{file_uuid}` — A file released with the response, while the window is open
+<a id="22_get_me_requests_request_uuid_files_file_uuid"></a>
+## 22. `GET /me/requests/{request_uuid}/files/{file_uuid}` — A file released with the response, while the window is open
 
 ### API
 
@@ -1293,8 +1337,8 @@ No request body.
 }
 ```
 
-<a id="22_post_me_requests_request_uuid_dispute"></a>
-## 22. `POST /me/requests/{request_uuid}/dispute` — Dispute the response - a grievance under s.13
+<a id="23_post_me_requests_request_uuid_dispute"></a>
+## 23. `POST /me/requests/{request_uuid}/dispute` — Dispute the response - a grievance under s.13
 
 ### API
 
@@ -1408,8 +1452,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="23_get_me_nominations"></a>
-## 23. `GET /me/nominations` — Whom I have nominated
+<a id="24_get_me_nominations"></a>
+## 24. `GET /me/nominations` — Whom I have nominated
 
 ### API
 
@@ -1457,8 +1501,8 @@ No request body.
 ]
 ```
 
-<a id="24_post_me_nominations"></a>
-## 24. `POST /me/nominations` — Nominate somebody - s.14
+<a id="25_post_me_nominations"></a>
+## 25. `POST /me/nominations` — Nominate somebody - s.14
 
 ### API
 
@@ -1537,8 +1581,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="25_get_me_nominee_of"></a>
-## 25. `GET /me/nominee-of` — Who has nominated me
+<a id="26_get_me_nominee_of"></a>
+## 26. `GET /me/nominee-of` — Who has nominated me
 
 ### API
 
@@ -1601,8 +1645,8 @@ No request body.
 ]
 ```
 
-<a id="26_delete_me_nominations_nomination_uuid"></a>
-## 26. `DELETE /me/nominations/{nomination_uuid}` — Revoke a nomination
+<a id="27_delete_me_nominations_nomination_uuid"></a>
+## 27. `DELETE /me/nominations/{nomination_uuid}` — Revoke a nomination
 
 ### API
 

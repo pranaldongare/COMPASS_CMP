@@ -46,6 +46,11 @@ export const keys = {
     all: ["notifications"] as const,
   },
 
+  /** Notices about a personal data breach, written to her account. */
+  breachNotices: {
+    all: ["breach-notices"] as const,
+  },
+
   /**
    * Projects and everything hanging off one.
    *

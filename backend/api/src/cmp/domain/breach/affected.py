@@ -29,7 +29,7 @@ from cmp.db.repositories import holdings
 from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn, fetch_one
 from cmp.domain.audit.service import Event
-from cmp.domain.breach import service
+from cmp.domain.breach import notices, service
 from cmp.validation.choices import choice
 
 Row = dict[str, Any]
@@ -215,6 +215,7 @@ async def confirm(
             "newly_listed": len(people),
         },
     )
+    await notices.reopen_if_done(conn, breach, newly_listed=len(people), actor_id=actor_id)
     return await listing(conn, breach_uuid=breach_uuid, after=None)
 
 

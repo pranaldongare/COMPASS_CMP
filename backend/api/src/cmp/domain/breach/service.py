@@ -85,8 +85,15 @@ async def locked_open(conn: Conn, breach_uuid: str) -> Row:
 
 
 async def record_event(
-    conn: Conn, breach: Row, event: str, *, actor_id: int, detail: dict[str, Any] | None = None
+    conn: Conn,
+    breach: Row,
+    event: str,
+    *,
+    actor_id: int | None,
+    detail: dict[str, Any] | None = None,
 ) -> None:
+    """One audit row against the breach. `actor_id` None is the system - the
+    worker recording a delivery - never a stand-in person."""
     await audit.record(
         conn,
         event=event,
@@ -246,7 +253,7 @@ async def determine(
     return await detail(conn, breach_uuid)
 
 
-async def _duties(conn: Conn, breach_id: int) -> dict[str, tuple[Row, dict[str, Any]]]:
+async def duties_of(conn: Conn, breach_id: int) -> dict[str, tuple[Row, dict[str, Any]]]:
     """Each duty created on this breach, with its folded state."""
     rows = await repo.obligations(conn, [breach_id])
     events = await repo.obligation_events(conn, [int(r["obligation_id"]) for r in rows])
@@ -261,7 +268,7 @@ async def _duties(conn: Conn, breach_id: int) -> dict[str, tuple[Row, dict[str, 
 async def _apply_yes(
     conn: Conn, breach: Row, determination_id: int, aware: datetime, *, actor_id: int
 ) -> None:
-    duties = await _duties(conn, int(breach["breach_id"]))
+    duties = await duties_of(conn, int(breach["breach_id"]))
     for duty in DPDP_DUTIES:
         due = clock.due_for(duty, aware)
         if duty not in duties:
@@ -305,7 +312,7 @@ async def _apply_yes(
 
 
 async def _apply_no(conn: Conn, breach: Row, determination_id: int, *, actor_id: int) -> None:
-    duties = await _duties(conn, int(breach["breach_id"]))
+    duties = await duties_of(conn, int(breach["breach_id"]))
     for duty in DPDP_DUTIES:
         if duty in duties:
             row, state = duties[duty]
@@ -405,7 +412,7 @@ async def assessments(conn: Conn, *, breach_uuid: str) -> list[Row]:
 async def mark_cert_in(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
     """A reportable cyber incident: CERT-In is due six hours from detection."""
     breach = await locked_open(conn, breach_uuid)
-    duties = await _duties(conn, int(breach["breach_id"]))
+    duties = await duties_of(conn, int(breach["breach_id"]))
     if Duty.CERT_IN in duties:
         raise Conflict("Already marked as reportable to CERT-In", code="cert_in_marked")
     due = clock.due_for(Duty.CERT_IN, breach["detected_at"])
@@ -524,7 +531,7 @@ async def extend_report(
 
 
 async def _outstanding(conn: Conn, breach: Row, duty: Duty) -> tuple[Row, dict[str, Any]]:
-    duties = await _duties(conn, int(breach["breach_id"]))
+    duties = await duties_of(conn, int(breach["breach_id"]))
     if duty not in duties:
         raise Conflict(f"{clock.LABELS[duty]} is not a duty on this breach", code="no_such_duty")
     row, state = duties[duty]
@@ -541,7 +548,7 @@ async def _outstanding(conn: Conn, breach: Row, duty: Duty) -> tuple[Row, dict[s
 
 async def _facts(conn: Conn, breach_id: int) -> BreachFacts:
     latest = await repo.latest_determinations(conn, [breach_id])
-    duties = await _duties(conn, breach_id)
+    duties = await duties_of(conn, breach_id)
     return BreachFacts(
         determination=str(latest[breach_id]["outcome"]) if breach_id in latest else "pending",
         outstanding=tuple(

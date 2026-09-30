@@ -64,6 +64,17 @@ for an extension, or for a determination made by a person.
   reads, generalised rather than copied. The DPO confirms each revision,
   leaving out and adding by hand; a person listed stays listed, and each
   revision adds only the newly found.
+- **The people it touched are told by the platform, and only once approved.**
+  The DPO drafts the five things Rule 7(1) requires and approves them - refused
+  while any is empty, in the service and by a CHECK. Sending writes the notice
+  to every listed person's account in the same transaction (an audit row
+  against her, which is how her portal's notifications are derived) and queues
+  her email and SMS through `dispatch_optional`, after commit. Every attempt on
+  every channel is an append-only delivery row - the account Rule 7(2)(b)(vi)
+  asks for. A resend adds only what is missing; an update is a new version sent
+  to everyone. The principals' duty completes by delivery, never by hand, and
+  reopens for people listed after it. The words are sealed like every other
+  narrative about the breach; the worker opens them at `deliver()`.
 - **Where the platform ends.** It records, derives, tracks every clock, drafts
   every document and sends the notices to principals. People contain the breach,
   preserve evidence, make the determination, submit to the Board and to CERT-In

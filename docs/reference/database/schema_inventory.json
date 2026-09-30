@@ -1,6 +1,6 @@
 {
-  "commit": "b7e69bcd75f76321dd5519ba4a649f0af4fc903d",
-  "migration_head": "0035",
+  "commit": "a5d3fa21c9e294aff44a8bdf9d3cce2541fb952f",
+  "migration_head": "0036",
   "migrations": [
     {
       "revision": "0001",
@@ -141,6 +141,10 @@
     {
       "revision": "0035",
       "source": "backend/api/migrations/versions/0035_breach_affected.py"
+    },
+    {
+      "revision": "0036",
+      "source": "backend/api/migrations/versions/0036_breach_notices.py"
     }
   ],
   "postgres_version": "16.15",
@@ -194,6 +198,16 @@
       "name": "breach_determination",
       "kind": "r",
       "comment": null
+    },
+    {
+      "name": "breach_notice",
+      "kind": "r",
+      "comment": "A version of the words sent to the people a breach touched (Rule 7(1)). Frozen once approved"
+    },
+    {
+      "name": "breach_notice_delivery",
+      "kind": "r",
+      "comment": "The account of notices to principals, per version, person and channel (Rule 7(2)(b)(vi))"
     },
     {
       "name": "breach_obligation",
@@ -1267,6 +1281,213 @@
       "table_name": "breach_determination",
       "name": "determined_at",
       "position": 8,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "notice_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_notice_notice_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "notice_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "breach_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "version",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "what_happened",
+      "position": 5,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "consequences",
+      "position": 6,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "measures",
+      "position": 7,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "protective_steps",
+      "position": 8,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "contact",
+      "position": 9,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "created_by",
+      "position": 10,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "created_at",
+      "position": 11,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "updated_at",
+      "position": 12,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "approved_by",
+      "position": 13,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "approved_at",
+      "position": 14,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "delivery_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_notice_delivery_delivery_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "delivery_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "notice_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "auth_user_id",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "channel",
+      "position": 5,
+      "type": "character varying(8)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "attempt",
+      "position": 6,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "status",
+      "position": 7,
+      "type": "character varying(10)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "detail",
+      "position": 8,
+      "type": "jsonb",
+      "not_null": true,
+      "default_value": "'{}'::jsonb",
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "recorded_at",
+      "position": 9,
       "type": "timestamp with time zone",
       "not_null": true,
       "default_value": "now()",
@@ -6265,6 +6486,283 @@
       "initially_deferred": false
     },
     {
+      "table_name": "breach_notice",
+      "name": "breach_notice_approval_attributed",
+      "kind": "c",
+      "definition": "CHECK (((approved_at IS NULL) = (approved_by IS NULL)))",
+      "columns": [
+        "approved_at",
+        "approved_by"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "breach_notice_approved_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (approved_by) REFERENCES auth_user(id)",
+      "columns": [
+        "approved_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "breach_notice_breach_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (breach_id) REFERENCES breach(breach_id)",
+      "columns": [
+        "breach_id"
+      ],
+      "referenced_table": "breach",
+      "referenced_columns": [
+        "breach_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "breach_notice_complete",
+      "kind": "c",
+      "definition": "CHECK (((approved_at IS NULL) OR ((what_happened IS NOT NULL) AND (consequences IS NOT NULL) AND (measures IS NOT NULL) AND (protective_steps IS NOT NULL) AND (contact IS NOT NULL))))",
+      "columns": [
+        "approved_at",
+        "what_happened",
+        "consequences",
+        "measures",
+        "protective_steps",
+        "contact"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "breach_notice_created_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (created_by) REFERENCES auth_user(id)",
+      "columns": [
+        "created_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "breach_notice_notice_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (notice_uuid)",
+      "columns": [
+        "notice_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "breach_notice_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (notice_id)",
+      "columns": [
+        "notice_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "breach_notice_version",
+      "kind": "u",
+      "definition": "UNIQUE (breach_id, version)",
+      "columns": [
+        "breach_id",
+        "version"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "breach_notice_delivery_attempt",
+      "kind": "c",
+      "definition": "CHECK ((attempt >= 1))",
+      "columns": [
+        "attempt"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "breach_notice_delivery_auth_user_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (auth_user_id) REFERENCES auth_user(id)",
+      "columns": [
+        "auth_user_id"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "breach_notice_delivery_channel",
+      "kind": "c",
+      "definition": "CHECK (((channel)::text = ANY ((ARRAY['portal'::character varying, 'email'::character varying, 'sms'::character varying])::text[])))",
+      "columns": [
+        "channel"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "breach_notice_delivery_delivery_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (delivery_uuid)",
+      "columns": [
+        "delivery_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "breach_notice_delivery_notice_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (notice_id) REFERENCES breach_notice(notice_id)",
+      "columns": [
+        "notice_id"
+      ],
+      "referenced_table": "breach_notice",
+      "referenced_columns": [
+        "notice_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "breach_notice_delivery_once",
+      "kind": "u",
+      "definition": "UNIQUE (notice_id, auth_user_id, channel, attempt, status)",
+      "columns": [
+        "notice_id",
+        "auth_user_id",
+        "channel",
+        "attempt",
+        "status"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "breach_notice_delivery_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (delivery_id)",
+      "columns": [
+        "delivery_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "breach_notice_delivery_portal_at_once",
+      "kind": "c",
+      "definition": "CHECK ((((channel)::text <> 'portal'::text) OR ((status)::text = 'delivered'::text)))",
+      "columns": [
+        "channel",
+        "status"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "breach_notice_delivery_status",
+      "kind": "c",
+      "definition": "CHECK (((status)::text = ANY ((ARRAY['queued'::character varying, 'delivered'::character varying, 'failed'::character varying])::text[])))",
+      "columns": [
+        "status"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "breach_obligation",
       "name": "breach_obligation_breach_id_fkey",
       "kind": "f",
@@ -10165,6 +10663,46 @@
       "definition": "CREATE INDEX idx_breach_determination ON public.breach_determination USING btree (breach_id, determination_id)"
     },
     {
+      "table_name": "breach_notice",
+      "name": "breach_notice_notice_uuid_key",
+      "definition": "CREATE UNIQUE INDEX breach_notice_notice_uuid_key ON public.breach_notice USING btree (notice_uuid)"
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "breach_notice_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_notice_pkey ON public.breach_notice USING btree (notice_id)"
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "breach_notice_version",
+      "definition": "CREATE UNIQUE INDEX breach_notice_version ON public.breach_notice USING btree (breach_id, version)"
+    },
+    {
+      "table_name": "breach_notice",
+      "name": "uq_breach_notice_one_draft",
+      "definition": "CREATE UNIQUE INDEX uq_breach_notice_one_draft ON public.breach_notice USING btree (breach_id) WHERE (approved_at IS NULL)"
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "breach_notice_delivery_delivery_uuid_key",
+      "definition": "CREATE UNIQUE INDEX breach_notice_delivery_delivery_uuid_key ON public.breach_notice_delivery USING btree (delivery_uuid)"
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "breach_notice_delivery_once",
+      "definition": "CREATE UNIQUE INDEX breach_notice_delivery_once ON public.breach_notice_delivery USING btree (notice_id, auth_user_id, channel, attempt, status)"
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "breach_notice_delivery_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_notice_delivery_pkey ON public.breach_notice_delivery USING btree (delivery_id)"
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "idx_breach_notice_delivery_person",
+      "definition": "CREATE INDEX idx_breach_notice_delivery_person ON public.breach_notice_delivery USING btree (auth_user_id)"
+    },
+    {
       "table_name": "breach_obligation",
       "name": "breach_obligation_obligation_uuid_key",
       "definition": "CREATE UNIQUE INDEX breach_obligation_obligation_uuid_key ON public.breach_obligation USING btree (obligation_uuid)"
@@ -11282,6 +11820,16 @@
       "definition": "CREATE TRIGGER trg_breach_determination_append_only BEFORE DELETE OR UPDATE ON public.breach_determination FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
     },
     {
+      "table_name": "breach_notice",
+      "name": "trg_breach_notice_frozen",
+      "definition": "CREATE TRIGGER trg_breach_notice_frozen BEFORE DELETE OR UPDATE ON public.breach_notice FOR EACH ROW EXECUTE FUNCTION cmp_breach_notice_frozen()"
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "trg_breach_notice_delivery_append_only",
+      "definition": "CREATE TRIGGER trg_breach_notice_delivery_append_only BEFORE DELETE OR UPDATE ON public.breach_notice_delivery FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
       "table_name": "breach_obligation",
       "name": "trg_breach_obligation_append_only",
       "definition": "CREATE TRIGGER trg_breach_obligation_append_only BEFORE DELETE OR UPDATE ON public.breach_obligation FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
@@ -11465,6 +12013,12 @@
       "name": "breach_determination_determination_id_seq"
     },
     {
+      "name": "breach_notice_delivery_delivery_id_seq"
+    },
+    {
+      "name": "breach_notice_notice_id_seq"
+    },
+    {
       "name": "breach_obligation_event_event_id_seq"
     },
     {
@@ -11587,6 +12141,9 @@
       "name": "cmp_audit_verify"
     },
     {
+      "name": "cmp_breach_notice_frozen"
+    },
+    {
       "name": "cmp_breach_status_only"
     },
     {
@@ -11648,13 +12205,13 @@
     }
   ],
   "counts": {
-    "application_tables": 43,
+    "application_tables": 45,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 542,
-    "foreign_keys": 122,
+    "table_columns": 565,
+    "foreign_keys": 127,
     "enums": 39,
-    "triggers": 38,
-    "checks": 65
+    "triggers": 40,
+    "checks": 71
   }
 }

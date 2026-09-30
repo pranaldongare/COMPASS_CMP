@@ -163,6 +163,55 @@ earlier row stays as it was. A notice already sent cannot be unsent, and
 listing too many is the safe side of Rule 7. Each person a revision adds is
 notified in turn (S3-03).
 
+## Telling the people it touched
+
+Rule 7(1): each affected principal is told, concisely, clearly and plainly and
+without delay, five things - and **Telling the people it touched** on a
+breach's page is where they are written, approved and sent.
+
+| Content | Rule |
+|---|---|
+| What happened - its nature, extent and timing | 7(1)(a) |
+| The consequences likely for her | 7(1)(b) |
+| What has been done, and is being done, to limit them | 7(1)(c) |
+| What she can do to protect herself | 7(1)(d) |
+| Who to contact with questions | 7(1)(e) |
+
+- **Draft, approve, send - nothing on its own.** The first draft is filled from
+  the assessment. **Approve** is refused while any of the five is empty, and
+  names which; the database refuses it too (`breach_notice_complete`). An
+  approved notice does not change. **Send** is refused before approval and
+  while nobody is listed.
+- **Her account first, then her contacts.** Send writes the notice to each
+  listed person's account in the same transaction - an audit row against her,
+  which is how her portal's notifications are derived, linking to **Personal
+  data breach notices** in her portal - and queues an email to her registered
+  email and an SMS to her registered mobile, each sent by the worker after the
+  commit. The email carries all five; the SMS says a breach may affect her data
+  and points to her account, where the same notice is.
+- **A resend never duplicates.** Send writes only what is missing for the
+  latest approved version: people newly listed, channels never tried, and a new
+  attempt where the last one failed. Two sends at once write each state once
+  (`breach_notice_delivery_once`).
+- **An update is a new version**, approved like the first and sent to everyone
+  listed, the people already notified included. Her portal shows the latest
+  above the earlier.
+- **The account.** Every state of every attempt on every channel for every
+  person is a row in `breach_notice_delivery`: queued, delivered, or failed with
+  the error's class. The card shows, per version and channel, how many are
+  delivered, queued and failed, and lists the failures. This is the account the
+  Board's report quotes (Rule 7(2)(b)(vi)).
+- **The duty completes by delivery.** *Principals notified* is done when every
+  listed person has a version whose every channel has an outcome - delivered, or
+  failed after the worker's retries (five, from five seconds and doubling; a
+  failure no retry will mend, such as a contact that cannot be opened, is
+  recorded at once). Nobody can mark it done by hand. People listed after it
+  completed **reopen** it, and the next send notifies them.
+
+The words are sealed, like every narrative about the breach; the console and
+her portal open them, and the worker opens them at `deliver()`. They go to
+everyone listed, so they must name nobody.
+
 ## Open and closed
 
 A breach is open or closed, and nothing else: the duties carry the rest. It
@@ -182,6 +231,8 @@ nothing about it can be recorded.
 | `breach_obligation` | One row per duty per breach, with its stored due time and the moment its clock runs from. Append-only; one of each kind per breach, by unique constraint |
 | `breach_obligation_event` | Everything that happens to a duty afterwards: completed, not applicable, reinstated, extended, reopened. Append-only |
 | `breach_affected_revision` | Each confirmation of who it touched: the scopes, the counts, a sealed note. Append-only |
+| `breach_notice` | Each version of the five Rule 7(1) contents, sealed. A draft is editable; an approved one is frozen by trigger (`cmp_breach_notice_frozen`) |
+| `breach_notice_delivery` | Every state of every attempt on every channel for every person. Append-only; `breach_notice_delivery_once` makes resends idempotent |
 | `breach_affected` | Each person listed, once per breach (`breach_affected_once`), with the revision that first listed them and what put them there - exports, assets or tables, never a value. Append-only |
 
 Every write takes the breach row first (`FOR UPDATE`), so two people recording
@@ -193,7 +244,7 @@ create each duty once.
 Every change writes an audit row against `breach`: `breach.recorded`,
 `.determined`, `.assessed`, `.cert_in_marked`, `.obligation_created`,
 `.obligation_completed`, `.obligation_not_applicable`,
-`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.closed`, `.reopened`. The
+`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.obligation_reopened`, `.notice_drafted`, `.notice_edited`, `.notice_approved`, `.notice_sent` (with counts), `.closed`, `.reopened`. Each person whose account a notice is written to gets `breach_notice.delivered` against her, naming the breach's reference and the version: that is her portal's notification, and the only breach event she is shown. The
 detail carries the reference, the outcome, which duty, a due time and that a
 reason was given - never the office's words, which are sealed on their rows
 ([ADR 0015](../decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md)).

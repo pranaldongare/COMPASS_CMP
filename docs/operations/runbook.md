@@ -293,6 +293,29 @@ submission with its real time. A time mistyped at recording cannot be edited -
 the clocks were stored from it; note the correct time on the duty's submission
 and in the next assessment revision.
 
+## A breach notice did not reach somebody
+
+**Telling the people it touched** on the breach's page shows, per version and
+channel, how many notices are delivered, queued and failed, and lists each
+failure with its error's class. Her account is written to at the send and
+cannot fail; email and SMS are sent by the worker.
+
+- **Queued and not moving.** The worker is down, or not listening on the
+  `notifications` queue: see "The worker is running but nothing happens". A
+  queued delivery is sent when it comes back.
+- **Failed - `DkmsUnavailable`, `ConnectionError`, `TimeoutError`.** The key
+  service or the transport was away for longer than the worker's retries (about
+  two and a half minutes). Bring it back and press **Send** again: each failed
+  delivery gets one new attempt, and nothing delivered is sent twice.
+- **Failed - `NoContact`, `SealedValueUnreadable`, anything else.** No retry
+  will mend it: her contact is gone or cannot be opened. The notice is in her
+  account regardless. Put a working contact on her record, then Send again.
+
+*Principals notified* completes only when every listed person's every channel
+has an outcome, so a queued delivery holds it open, and a recorded failure does
+not. The worker log carries `breach.notice_failed` with the delivery, never the
+address.
+
 ## Somebody asks what happened to a record
 
 Open the record on the console and press **Audit trail**, or on the Audit

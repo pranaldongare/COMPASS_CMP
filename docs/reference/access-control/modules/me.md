@@ -2,10 +2,11 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-26 operations; 26 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+27 operations; 27 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
+| GET | `/me/breach-notices` | `data_subject` | Full session; anonymous NO |
 | GET | `/me` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject` | Full session; anonymous NO |
 | PATCH | `/me` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject` | Full session; anonymous NO |
 | GET | `/me/consents` | `data_subject` | Full session; anonymous NO |
@@ -426,3 +427,16 @@ Remove my second address.
 - **Rules:** Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.
 - Shared account/profile route: staff sessions are accepted. POST /me/person-type is narrower: DPO, Admin and data_subject only.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/me.py#L202).
+
+## GET /me/breach-notices
+
+Notices about a personal data breach written to my account (Rule 7(1)).
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
+| --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN |
+
+- **Who:** `data_subject`, her own.
+- **Route guard:** `RequireDataSubject`.
+- **Rules:** Her own: the breach notices written to her account (S3-03), only versions actually sent to her.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/me.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/breach_notices.py).

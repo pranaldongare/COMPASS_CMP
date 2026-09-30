@@ -38,6 +38,17 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **Notify the people a breach touched (S3-03).** The DPO drafts the five
+  things Rule 7(1) requires - filled first from the assessment - and approves
+  them; approval is refused while any is empty. Send writes the notice to each
+  listed person's account at once (her portal's notifications link to a new
+  **Personal data breach notices** page) and queues her email and SMS, which the
+  worker sends through the new `breach_notice` junction and records. A resend
+  adds only what is missing, an update is a new version sent to everyone, and
+  every attempt on every channel is on the record - the account the Board's
+  report needs. *Principals notified* completes by delivery and reopens for
+  people listed later. Migration 0036; `/breaches/{uuid}/notices`,
+  `GET /me/breach-notices`.
 - **Who a breach touched, derived (S3-02).** A breach's page derives the
   people it touched from where it happened - everyone in files exported to a
   processor, everyone captured in a data source's assets, or everyone with a

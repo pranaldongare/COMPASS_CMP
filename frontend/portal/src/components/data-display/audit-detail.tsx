@@ -36,6 +36,8 @@ import { formatDateTime, humanise } from "@/lib/format";
  * not know would be a lie in an evidence log.
  */
 const EVENT_SENTENCES: Record<string, string> = {
+  "breach_notice.delivered":
+    "We wrote to tell you about a personal data breach that may affect your data: what happened, what it may mean for you, and what you can do.",
   "notice.published":
     "The notice text was frozen and hashed. From this point it cannot be edited — a correction is a new version.",
   "notice.created": "A draft notice was started.",

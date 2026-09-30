@@ -166,6 +166,14 @@ dev servers on 3000 and 3001 are left alone. The build reads the portal's
 `sealed-never-shown.spec.ts` fails. Codes are read from
 `backend/api/var/outbox.log` by `e2e/support/outbox.ts`.
 
+Run the console suite before the portal's. The console's `breaches.spec.ts`
+records a breach, lists the seeded principal (`subject@cmp.local`) as touched
+and sends her a notice, and waits - up to a minute - for the worker to record
+her email and SMS delivered; the portal's `breach-notices.spec.ts` then reads
+that notice in her account. With no notice there it checks only the empty
+page. Each run leaves one breach behind in the development database, as the
+other specs leave their records.
+
 | Variable | Suite | Default | Without it |
 |---|---|---|---|
 | `E2E_STAFF_LOGIN`, `E2E_STAFF_PASSWORD` | console | none | the `auth.spec.ts` "session cookie" tests skip. A seeded staff account works |

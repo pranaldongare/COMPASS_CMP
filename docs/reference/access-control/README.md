@@ -12,7 +12,7 @@ This folder answers: **which role can call each API, on which records, and under
 - [Implementation notes](implementation_notes.md): places where generic documentation and implemented controls differ.
 - [Machine-readable endpoint inventory](endpoint_permissions.json): guards, roles, conditions and source references.
 
-**Coverage: 20 modules, 268 documented operations over 233 OpenAPI paths, plus 3 registered system operations excluded from OpenAPI (271 total operations).** The breach module (S3-01 onward) is recorded in `endpoint_permissions.json`'s `amended` list; its evidence links point at `HEAD`. No framework-generated Swagger/ReDoc/OpenAPI routes or middleware-generated OPTIONS responses are counted.
+**Coverage: 20 modules, 274 documented operations over 238 OpenAPI paths, plus 3 registered system operations excluded from OpenAPI (277 total operations).** The breach module (S3-01 onward) is recorded in `endpoint_permissions.json`'s `amended` list; its evidence links point at `HEAD`. No framework-generated Swagger/ReDoc/OpenAPI routes or middleware-generated OPTIONS responses are counted.
 
 ## Module details
 
@@ -20,14 +20,14 @@ This folder answers: **which role can call each API, on which records, and under
 | --- | --- | --- |
 | Audit | 7 | [Open module](modules/audit.md) |
 | Auth | 14 | [Open module](modules/auth.md) |
-| Breaches | 14 | [Open module](modules/breaches.md) |
+| Breaches | 19 | [Open module](modules/breaches.md) |
 | Consent | 12 | [Open module](modules/consent.md) |
 | Cross-border transfers | 3 | [Open module](modules/cross_border_transfers.md) |
 | Dashboard | 3 | [Open module](modules/dashboard.md) |
 | Delegations | 6 | [Open module](modules/delegations.md) |
 | Exchange | 19 | [Open module](modules/exchange.md) |
 | Legal holds | 3 | [Open module](modules/legal_holds.md) |
-| Me | 26 | [Open module](modules/me.md) |
+| Me | 27 | [Open module](modules/me.md) |
 | Messages | 5 | [Open module](modules/messages.md) |
 | Notices | 23 | [Open module](modules/notices.md) |
 | Projects | 27 | [Open module](modules/projects.md) |
