@@ -103,10 +103,24 @@ CONSENT = {
     "refused_count", "consents", "withdrawals", "registrations",
 }
 
+#: Worked out from a sealed value so a row can be found without opening it: a
+#: keyed hash of a contact for an exact lookup (`BLIND_INDEXED` in
+#: infrastructure/dkms/fields.py) and keyed hashes of a name's fragments for a
+#: search by part of it (`NGRAM_INDEXED`). Opaque without the key, but with it
+#: they single out the person, so they are personal data and an erasure must
+#: reach them. Columns only: no response schema carries one.
+DERIVED = {
+    "email_hash", "secondary_email_hash", "mobile_hash", "username_hash",
+    "organization_id_hash", "full_name_ngrams",
+    "submitted_contact_hash", "submitted_name_ngrams",
+    "nominee_email_hash", "nominee_mobile_hash", "nominee_name_ngrams",
+}
+
 CATEGORIES = [
     ("identity", IDENTITY), ("contact", CONTACT), ("demographic", DEMOGRAPHIC),
     ("device", DEVICE), ("credential", CREDENTIAL), ("account-ref", ACCOUNT_REF),
     ("free-text", FREE_TEXT), ("file", FILE), ("consent-record", CONSENT),
+    ("derived", DERIVED),
 ]
 
 #: Field names that look personal and are not. Each one is a decision, so each

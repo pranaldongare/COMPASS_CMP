@@ -531,6 +531,13 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- `docs/tools/personal-data-scan.py --check` passes again. It had never been
+  taught the keyed lookup hashes and name fragments migrations 0028-0030 added
+  (`email_hash`, `full_name_ngrams`, `submitted_contact_hash`,
+  `nominee_*_hash` and the rest). They are now a `derived` category - opaque
+  without the key, but personal data an erasure must reach - and the personal
+  data inventory lists the ones on `rights_request` and `nomination` it was
+  missing.
 - **A project has one notice in force.** Publishing superseded only earlier
   versions of the same notice code, so a notice brought in under a code of its
   own - "New notice", "Use an existing notice", an upload - could be published

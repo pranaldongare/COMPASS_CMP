@@ -125,6 +125,7 @@ the same exposure.
 |---|---|
 | `subject_user_id` | The data principal, where she has an account |
 | `submitted_name`, `submitted_contact` | What a public requester typed. `submitted_contact` is **required** — a request with no way back is not a request |
+| `submitted_contact_hash`, `submitted_name_ngrams` | Keyed hashes of the two sealed values above, so a request is found by its contact or by part of the name. Opaque without the key |
 | `request_text` | **Her own words.** Unbounded free text |
 | `reference` | The public reference she quotes |
 | `verification_note` | Why identity was or was not accepted |
@@ -160,7 +161,9 @@ store was done.
 
 **`nomination`** — `principal_user_id`, `nominee_name`, `nominee_email`,
 `nominee_mobile`, `nominee_user_id`, `accept_token_hash`, and `rights` (which
-rights the nominee may exercise). A nominee is a second living person on the
+rights the nominee may exercise), with `nominee_email_hash`,
+`nominee_mobile_hash` and `nominee_name_ngrams` - keyed hashes of the sealed
+contact and name, for finding the nomination. A nominee is a second living person on the
 row.
 
 ### Collection and disclosure
