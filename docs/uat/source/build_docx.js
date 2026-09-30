@@ -155,6 +155,20 @@ children.push(h3("Every tester"));
 ].forEach((t) => children.push(numbered(t, "start")));
 children.push(h3("The test coordinator"));
 R.COORDINATOR.forEach((t) => children.push(numbered(t, "coord")));
+children.push(h3("The coordinator's commands, on a Mac and on Windows"));
+children.push(p("Run them from the backend/api folder (backend\\api on Windows) with its Python environment active - the first row does both."));
+{
+  const mono = (t) => t.split("\n").map((line) => new Paragraph({ spacing: { after: 20 }, children: [new TextRun({ text: line, font: "Consolas", size: 16, color: INK })] }));
+  const w = [2600, (CONTENT - 2600) / 2, (CONTENT - 2600) / 2];
+  const head = new TableRow({ tableHeader: true, children: ["Task", "Mac or Linux (Terminal)", "Windows (PowerShell)"].map((t, i) => cell(t, w[i], { bold: true, fill: HEAD_FILL })) });
+  const rows = R.COMMANDS.map(([task, mac, win], ri) => new TableRow({
+    cantSplit: true,
+    children: [cell(task, w[0], { fill: ri % 2 ? SOFT : undefined }), cell(mono(mac), w[1], { fill: ri % 2 ? SOFT : undefined }), cell(mono(win), w[2], { fill: ri % 2 ? SOFT : undefined })],
+  }));
+  children.push(new Table({ width: { size: CONTENT, type: WidthType.DXA }, columnWidths: w, rows: [head, ...rows] }));
+}
+children.push(p("", { after: 60 }));
+R.COMMANDS_NOTES.forEach((t) => children.push(bullet(t)));
 
 children.push(h2("7. How to run a test case", { pageBreak: true }));
 [

@@ -1,7 +1,7 @@
 // The runbook: what a first-time tester needs before the first test case.
 // Plain data, rendered by build_docx.js (and summarised in the workbook).
 
-const BUILD = { version: "1.2", date: "29 September 2026", commit: "14576a2", branch: "refactor/frontend-architecture" };
+const BUILD = { version: "1.3", date: "29 September 2026", commit: "3024848", branch: "refactor/frontend-architecture" };
 
 const ACCOUNTS = [
   ["Priya Menon", "dpo@cmp.local", "DPO (Data Protection Officer)", "Staff console", "Runs the Privacy Office: purposes, notices, approvals, rights requests, audit, legal holds, restricted countries."],
@@ -107,10 +107,10 @@ const ORDER = [
 
 const COORDINATOR = [
   "Start the stack in this order: databases, key service, API, worker, then both portals (see docs/operations/local-development.md). The API answers \"ready\" at http://127.0.0.1:8000/ready when the database, Redis, migrations and key service are all reachable.",
-  "Start exactly one scheduler (Celery beat: celery -A cmp.tasks.app beat, from backend/api) if the cycle should see scheduled work - a link's status turning Expired, the daily rights sweep that retries erasures and closes unverified requests. Without it the portal still refuses an expired link, but the console keeps showing it as Active.",
-  "Run the seed once (backend/api, python scripts/seed.py). Since 25 September it creates only the administrator (admin@cmp.local) and the reference data: processors SEED, SRIB and Pune Motion Lab with their data sources (CIT, VIT, SE, Voice, the Pune rig), two purposes, and the approved Gait Identification Study 2026 with its published notice NTC-GAIT-2026. It is safe to run again. Do not run scripts/seed_demo.py on the UAT database: it adds a dozen more people and changes what the cases see.",
+  "Start exactly one scheduler (Celery beat; the command is in the table below) if the cycle should see scheduled work - a link's status turning Expired, the daily rights sweep that retries erasures and closes unverified requests. Without it the portal still refuses an expired link, but the console keeps showing it as Active.",
+  "Run the seed once (the command is in the table below). Since 25 September it creates only the administrator (admin@cmp.local) and the reference data: processors SEED, SRIB and Pune Motion Lab with their data sources (CIT, VIT, SE, Voice, the Pune rig), two purposes, and the approved Gait Identification Study 2026 with its published notice NTC-GAIT-2026. It is safe to run again. Do not run scripts/seed_demo.py on the UAT database: it adds a dozen more people and changes what the cases see.",
   "Make sure the test accounts exist - the current test database already has them; check 'Users' first. On a freshly built database, sign in as the Administrator and use 'Provision account' for Priya Menon dpo@cmp.local (DPO), Kavya Rao rnd@cmp.local (R&D User), Nikhil Bose dcoadmin@cmp.local (DCO Admin), Arun Shetty dco@cmp.local (DCO) and Meera Iyer rco@cmp.local (RCO), then set each password to SeedPassw0rd!2026 with the code in its invitation (REG-01 and REG-02 show how). In 'Data sources' use 'Assign' to make Arun Shetty accountable for CIT, VIT and the Pune rig, and Meera Iyer for SE and Voice. Finally sign Anjali Verma up on the portal ('Create an account'): mobile +91 90000 00001, email subject@cmp.local, date of birth 12 March 1994.",
-  "Keep the test outbox open: backend/api/var/outbox.log. Every email and SMS is appended there. To find a tester's code, search for their contact, for example: grep -A6 \"to: dpo@cmp.local\" backend/api/var/outbox.log | tail -8.",
+  "Keep the test outbox open: var/outbox.log in the backend/api folder (backend\\api\\var\\outbox.log on Windows). Every email and SMS is appended there. To find a tester's code, search it for their contact - the table below gives the command on a Mac and on Windows. Use the command rather than opening the file in an editor: the outbox grows to tens of megabytes, and an editor's search finds the oldest code, not the latest.",
   "Give each tester a unique made-up mobile (+91 98xxx xxxxx) and email (testerNN@example.org) for sign-up cases, so tests do not collide.",
   "Hand out a live consent link for the CIT site of Gait Identification Study 2026. On the current test database it is valid until 8 October 2026; on a freshly built one, sign in as Arun Shetty, open the project and use 'Create link' on the CIT row (PRJ-18 shows how) - the link the seed prints is for the Pune site.",
   "Codes are limited to 20 per consent link per hour and 5 per contact per hour. With several testers on one link, mint one link per tester or pair (a DCO can, see the PRJ cases), or space the consent cases out.",
@@ -120,4 +120,24 @@ const COORDINATOR = [
   "After cross-border cases, check every processor changed during testing is back to country IN and any test restriction (XZ) is lifted.",
 ];
 
-module.exports = { BUILD, ACCOUNTS, GLOSSARY, SCOPE_IN, NEW_IN_RELEASE, SCOPE_OUT, KNOWN_LIMITS, STATUS, SEVERITY, ORDER, COORDINATOR };
+// The coordinator's commands on each system. Run from the backend/api folder with
+// its Python environment active (the first row).
+const COMMANDS = [
+  ["Open the API folder and its Python environment", "cd backend/api\n. .venv/bin/activate", "cd backend\\api\n.venv\\Scripts\\Activate.ps1"],
+  ["Check the API is ready", "curl http://127.0.0.1:8000/ready", "curl.exe http://127.0.0.1:8000/ready"],
+  ["Run the seed", "python scripts/seed.py", "python scripts\\seed.py"],
+  ["Start the worker (without it no code is ever delivered)", "celery -A cmp.tasks.app worker -Q high_priority,email,documents,reports,notifications,default -l info --pool=solo", "celery -A cmp.tasks.app worker -Q high_priority,email,documents,reports,notifications,default -l info --pool=solo"],
+  ["Start the scheduler (exactly one)", "celery -A cmp.tasks.app beat -l info", "celery -A cmp.tasks.app beat -l info"],
+  ["Watch the outbox as messages arrive", "tail -f var/outbox.log", "Get-Content var\\outbox.log -Wait -Tail 20"],
+  ["Find the latest code sent to a contact (here dpo@cmp.local)", "grep -A6 \"to: dpo@cmp.local\" var/outbox.log | tail -7", "Select-String -Path var\\outbox.log -Pattern \"to: dpo@cmp.local\" -Context 0,6 | Select-Object -Last 1"],
+  ["Stop a running command", "Ctrl+C", "Ctrl+C"],
+];
+
+const COMMANDS_NOTES = [
+  "Mac or Linux: use the Terminal app. Windows: use PowerShell (Start menu, type PowerShell), not the older Command Prompt - the Windows commands here are PowerShell commands.",
+  "On Windows, if PowerShell refuses to run Activate.ps1 because running scripts is disabled, first run Set-ExecutionPolicy -Scope Process Bypass. It applies to that PowerShell window only and ends when the window closes.",
+  "On Windows type curl.exe, not curl: in Windows PowerShell 5, curl is another command with different output. Or open http://127.0.0.1:8000/ready in the browser.",
+  "Keep each long-running command (worker, scheduler, outbox watch) in its own window.",
+];
+
+module.exports = { BUILD, COMMANDS, COMMANDS_NOTES, ACCOUNTS, GLOSSARY, SCOPE_IN, NEW_IN_RELEASE, SCOPE_OUT, KNOWN_LIMITS, STATUS, SEVERITY, ORDER, COORDINATOR };
