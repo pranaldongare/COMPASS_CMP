@@ -36,6 +36,22 @@ async def world(
 
 
 class TestHerOwnRecords:
+    async def test_a_name_is_corrected_by_its_owner_staff_included(
+        self, http: httpx.AsyncClient, world: World
+    ) -> None:
+        """The profile's name editor, in both portals: a name alone, trimmed;
+        an empty one refused; a member of staff renaming themselves like anyone."""
+        await call(
+            http, "PATCH", "/me", session=world.principal, json={"full_name": "   "}, expect=422
+        )
+        renamed = await call(
+            http, "PATCH", "/me", session=world.dco, json={"full_name": "  Staff Renamed  "}
+        )
+        assert renamed.json()["full_name"].startswith("SE::")
+        assert plain(renamed.json()["full_name"]) == "Staff Renamed"
+        who = await call(http, "GET", "/auth/me", session=world.dco)
+        assert who.json()["role"] == "dco", "a name changes nothing else"
+
     async def test_me_and_the_edits_to_it(
         self, http: httpx.AsyncClient, world: World, queued: Any
     ) -> None:

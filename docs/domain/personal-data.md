@@ -787,7 +787,7 @@ Which endpoint satisfies which section, when she asks.
 | Who did you share it with? | `GET /me/disclosures` — built from `export_line`, which is written in the same transaction as the export |
 | Show me what I agreed to | `GET /me/consents/{uuid}/notice` — the frozen text, by content hash, not today's wording |
 | I withdraw | `POST /me/consents/{uuid}/withdraw` |
-| Correct this | `PATCH /me`, and `POST /requests` for anything the office holds |
+| Correct this | `PATCH /me` - her name and her contacts from her profile - and `POST /requests` for anything the office holds |
 | Erase it | `POST /me/requests` with `request_type=erasure`; the scope is derived into `rights_request_item`, one row per appearance |
 | Act on my behalf | `POST /me/nominations`, then the nominee's own token flow |
 | I am not satisfied | `POST /me/requests/{uuid}/dispute`, which raises a grievance; one about the DPO is escalated to an administrator |

@@ -127,6 +127,17 @@ account stays active so they still reach the consents they gave and the rights
 they hold. A data principal's account, having nothing to be kept as, is
 switched off as before.
 
+**A person may correct their own name** from the account page, on either
+portal (**Change** beside it). It is `PATCH /me` with the name alone: sealed on
+save, its search runs recomputed so the register still finds them by part of
+it, and audited as `user.updated` without the name (ADR 0015). An empty name is
+refused. Nothing else changes with it - not how they sign in, not their role.
+The other profile fields stay as they are: date of birth is asked once when
+missing, person type and the primary email, organisation id and username are
+not edited from the profile. A new name does not yet reach processors that were
+sent the old one in an export; that is deferred with the rest of correction
+(S3-05).
+
 **A person may add a second email and a mobile** from the account page —
 either portal's, since the account is the same one. Each is confirmed by a
 code sent to it, and until the code comes back it cannot sign anyone in — a

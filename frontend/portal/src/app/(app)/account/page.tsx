@@ -13,6 +13,7 @@ import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
 import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
+import { NameEditor } from "@/features/account/components/name-editor";
 import { SessionsCard } from "@/features/account/components/sessions-card";
 import {
   Alert,
@@ -96,7 +97,9 @@ export default function AccountPage() {
           </CardHeader>
           <CardBody>
             <DescriptionList>
-              <DescriptionItem term="Name">{me.full_name}</DescriptionItem>
+              <DescriptionItem term="Name">
+                <NameEditor name={me.full_name} />
+              </DescriptionItem>
               <DescriptionItem term="Mobile">{me.mobile ?? "—"}</DescriptionItem>
               <DescriptionItem term="Email">
                 {me.email ?? <span className="text-text-muted">None given</span>}

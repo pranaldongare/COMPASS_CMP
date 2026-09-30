@@ -38,6 +38,11 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **A person corrects their own name from the profile**, on the portal and
+  the console (**Change** beside the name). `PATCH /me` already accepted it; the
+  pages now offer it. The name is sealed, stays searchable by part, and the
+  change is audited without the name. The rest of correction (S3-05) is
+  deferred to a later release.
 - **The Board and CERT-In (S3-04).** **Documents for the Board** drafts the
   initial intimation (Rule 7(2)(a)) and the detailed report with all six items
   of 7(2)(b) from the register, at any point, naming what it does not yet hold;

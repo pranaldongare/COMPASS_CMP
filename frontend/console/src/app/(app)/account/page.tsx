@@ -34,6 +34,7 @@ import {
   Skeleton,
 } from "@/components/ui/primitives";
 import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
+import { NameEditor } from "@/features/account/components/name-editor";
 import { SessionsCard } from "@/features/account/components/sessions-card";
 import { StatusBadge } from "@/components/ui/status";
 import { changePassword } from "@/features/auth";
@@ -109,7 +110,9 @@ export default function AccountPage() {
           </CardHeader>
           <CardBody>
             <DescriptionList>
-              <DescriptionItem term="Name">{me.full_name}</DescriptionItem>
+              <DescriptionItem term="Name">
+                <NameEditor name={me.full_name} />
+              </DescriptionItem>
               {/* The addresses are in Contacts, with what is confirmed and what
                   is not. Repeating one here said the same thing twice and the
                   quieter copy was the one missing the part that matters. */}
