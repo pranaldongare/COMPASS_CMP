@@ -592,6 +592,12 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **An SMS gateway that hiccups no longer loses the message.** The HTTP SMS
+  adapter raised httpx's own errors for a timeout or a dropped connection and
+  `RuntimeError` for any non-2xx, none of which the message tasks retry, so a
+  sign-in code to a mobile - or a breach notice - was lost on the first
+  hiccup. A timeout, a lost connection, 429 and 5xx are now retried; any other
+  refusal is not (review 2026-10-01, SCALE-2).
 - **A failed request no longer reads as an answer on My consents.** The
   disclosures panel turned a failed request into "Not shared with anyone" - a
   false statement about her data under s.11(1)(b) - and the record trail into

@@ -21,7 +21,8 @@ reaches a log line.
 | `upload.path_escape` | Traversal attempt, or a corrupted reference |
 | Queue depth on `high_priority` | Somebody is waiting for a sign-in code |
 | `after_commit.hook_failed` or `task.dispatch_failed` | A notification was due after a commit and the broker did not take it; the row exists, the message did not go |
-| `sms.gateway_refused` | The SMS gateway answered non-2xx; codes to mobiles are not arriving |
+| `sms.gateway_refused` | The SMS gateway refused a message with a 4xx other than 429 - a bad number, a bad token. Not retried: the same request would be refused again. Codes to mobiles are not arriving |
+| `sms.gateway_busy`, `sms.gateway_timeout`, `sms.gateway_unreachable` | The gateway answered 429 or 5xx, timed out, or could not be reached. The message is retried with the task's backoff (five times, from five seconds); a steady stream means the gateway is down |
 | Redis `used_memory` near `maxmemory` | Redis runs `noeviction`; at the limit it refuses writes and sign-in fails with 503 rather than silently evicting sessions |
 | `cmp.maintenance.sweep_rights_requests` failing | Unverified requests are not being closed, ticket due dates are not being marked, and erasures waiting on a store are not being retried; a clock is running unwatched |
 | `rights.erasure_failed` in the logs, or `erasures_attempted` on `maintenance.rights_swept` staying high while `erasures_finished` stays at zero | An erasure store fails every time it is tried - a defect, not a holder being slow ([runbook](runbook.md#an-erasure-is-not-finishing)) |

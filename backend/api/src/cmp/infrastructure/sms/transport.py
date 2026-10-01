@@ -19,6 +19,13 @@ from cmp.infrastructure.email.transport import obscure
 log = get_logger("cmp.infrastructure.sms")
 
 
+class GatewayBusy(ConnectionError):
+    """The gateway is there but cannot take the message now: 429 or 5xx.
+
+    A ConnectionError, so every message task's retry policy covers it.
+    """
+
+
 @runtime_checkable
 class SmsTransport(Protocol):
     def send(self, *, to: str, body: str) -> dict[str, object]:
@@ -85,7 +92,22 @@ class HttpSmsTransport:
         payload: dict[str, str] = {"to": to, "body": body}
         if self._sender:
             payload["from"] = self._sender
-        response = httpx.post(self._url, json=payload, headers=headers, timeout=self._timeout_s)
+        # Every message task retries ConnectionError, TimeoutError and OSError,
+        # and nothing else. httpx raises its own classes, and a non-2xx used
+        # to be a RuntimeError, so a gateway that hiccuped lost the message
+        # the first time (review SCALE-2). Passing trouble is said in the
+        # tasks' terms; a refusal no retry will mend stays a RuntimeError.
+        try:
+            response = httpx.post(self._url, json=payload, headers=headers, timeout=self._timeout_s)
+        except httpx.TimeoutException as exc:
+            log.warning("sms.gateway_timeout", to=obscure(to))
+            raise TimeoutError(f"SMS gateway timed out: {type(exc).__name__}") from exc
+        except httpx.TransportError as exc:
+            log.warning("sms.gateway_unreachable", to=obscure(to))
+            raise ConnectionError(f"SMS gateway unreachable: {type(exc).__name__}") from exc
+        if response.status_code == 429 or response.status_code >= 500:
+            log.warning("sms.gateway_busy", to=obscure(to), status=response.status_code)
+            raise GatewayBusy(f"SMS gateway answered {response.status_code}")
         if response.status_code >= 300:
             log.error("sms.gateway_refused", to=obscure(to), status=response.status_code)
             raise RuntimeError(f"SMS gateway answered {response.status_code}")
