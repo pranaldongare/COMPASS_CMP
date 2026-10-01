@@ -24,6 +24,7 @@ import pytest
 
 from cmp.auth.authentication import service as auth_service
 from cmp.auth.identity.principal import Principal
+from cmp.auth.rate_limit.service import contact_key
 from cmp.core.permissions import Role, nav_for, writes_for
 from cmp.db.redis import K_RATE
 from cmp.db.redis import key as rkey
@@ -49,7 +50,7 @@ def queued(monkeypatch: Any) -> list[tuple[str, tuple[Any, ...]]]:
 
 async def sign_in_by_code(conn: Any, redis_conn: Any, queued: Any, contact: str) -> dict[str, Any]:
     """The portal's two calls, as the browser makes them."""
-    await redis_conn.delete(rkey(K_RATE, "subject_otp", contact.lower()))
+    await redis_conn.delete(rkey(K_RATE, "subject_otp", contact_key(contact)))
     await auth_service.request_subject_otp(conn, contact=contact)
     code = next(str(args[2]) for name, args in queued if name == LOGIN_CODE)
     return await auth_service.verify_subject_otp(

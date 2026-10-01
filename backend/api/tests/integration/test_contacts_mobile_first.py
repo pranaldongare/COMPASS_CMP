@@ -16,6 +16,7 @@ import pytest
 
 from cmp.auth.authentication import otp
 from cmp.auth.authentication import service as auth_service
+from cmp.auth.rate_limit.service import contact_key
 from cmp.core.errors import BadRequest, NotFound, ValidationFailed
 from cmp.core.security import new_token, token_fingerprint
 from cmp.db.redis import K_RATE
@@ -40,7 +41,7 @@ async def _redis(redis_conn: Any) -> None:
 async def _unthrottle(redis_conn: Any, bucket: str, *identities: str) -> None:
     """Clear a per-contact bucket, so a run is not refused by the run before it."""
     for identity in identities:
-        await redis_conn.delete(rkey(K_RATE, bucket, identity))
+        await redis_conn.delete(rkey(K_RATE, bucket, contact_key(identity)))
 
 
 async def _register(

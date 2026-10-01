@@ -8,6 +8,13 @@ as a release yet.
 ## [Unreleased]
 
 ### Security
+- **One phone is one quota, however it is typed.** The sign-in code and
+  public rights form throttles were keyed on the contact as typed while the
+  lookup normalised it, so "+91 98765 00001", "+919876500001" and two other
+  spellings were four quotas for one person - four times the codes, and four
+  times the guesses. Every contact throttle now keys on the contact's keyed
+  hash, the same identity the lookup finds, so rate keys no longer hold
+  contacts in the clear either (review 2026-10-01, SEC-2).
 - **The development code popup shows a code only in the tab that asked.**
   Every open portal and console polled one shared list, so a code asked for
   on one screen popped up on every screen on every machine - anyone testing

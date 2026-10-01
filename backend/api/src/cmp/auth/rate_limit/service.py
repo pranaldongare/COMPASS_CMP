@@ -77,6 +77,19 @@ async def check(
     return Verdict(allowed=True, remaining=max(0, limit - used), retry_after_s=0)
 
 
+def contact_key(contact: str) -> str:
+    """The throttle identity of a contact: the keyed hash of its normalised form.
+
+    The same normalisation the account lookup uses, so every way of typing one
+    phone - spaces, dashes, brackets - is one quota, as it is one person
+    (review 2026-10-01, SEC-2). And a hash rather than the contact, so the rate
+    counters in Redis hold nobody's address in the clear.
+    """
+    from cmp.infrastructure.dkms.blind import index_of
+
+    return index_of("contact", contact) or "-"
+
+
 async def enforce(
     bucket: str,
     identity: str,

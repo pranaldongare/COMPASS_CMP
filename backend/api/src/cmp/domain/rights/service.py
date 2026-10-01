@@ -306,7 +306,7 @@ async def submit_public(
     contact = contact.strip()
     await ratelimit.enforce(
         "rights_public_contact",
-        contact.lower(),
+        ratelimit.contact_key(contact),
         limit=settings.otp_requests_per_contact_per_hour,
         window_s=3600,
         message="Too many requests for this contact. Try again later.",

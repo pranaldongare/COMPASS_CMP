@@ -234,7 +234,7 @@ async def request_subject_otp(conn: Conn, *, contact: str) -> None:
     """
     await ratelimit.enforce(
         "subject_otp",
-        contact.lower(),
+        ratelimit.contact_key(contact),
         limit=settings.otp_requests_per_contact_per_hour,
         window_s=3600,
         message="Too many code requests for this contact.",
@@ -380,7 +380,7 @@ async def request_password_reset(conn: Conn, *, email: str) -> None:
     """Always succeeds from the caller's point of view - see request_subject_otp."""
     await ratelimit.enforce(
         "pwreset",
-        email.lower(),
+        ratelimit.contact_key(email),
         limit=3,
         window_s=3600,
         message="Too many reset requests.",
@@ -631,7 +631,7 @@ async def request_contact_code(conn: Conn, *, user: dict[str, Any], contact: str
 
     await ratelimit.enforce(
         "contact_confirm",
-        wanted,
+        ratelimit.contact_key(wanted),
         limit=settings.otp_requests_per_contact_per_hour,
         window_s=3600,
         message="Too many code requests for this contact.",
@@ -670,7 +670,7 @@ async def request_contact_code_on_behalf(conn: Conn, *, user: dict[str, Any], co
 
     verdict = await ratelimit.check(
         "contact_confirm",
-        wanted,
+        ratelimit.contact_key(wanted),
         limit=settings.otp_requests_per_contact_per_hour,
         window_s=3600,
     )
@@ -836,7 +836,7 @@ async def register_data_subject(
         if contact:
             await ratelimit.enforce(
                 "subject_register",
-                contact,
+                ratelimit.contact_key(contact),
                 limit=settings.otp_requests_per_contact_per_hour,
                 window_s=3600,
                 message="Too many registration attempts for this contact.",

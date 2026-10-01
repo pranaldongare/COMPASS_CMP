@@ -247,7 +247,7 @@ async def send_contact_code(conn: Conn, *, token: str, contact: str) -> None:
 
     await ratelimit.enforce(
         "consent_otp_contact",
-        contact,
+        ratelimit.contact_key(contact),
         limit=settings.otp_requests_per_contact_per_hour,
         window_s=3600,
         message="Too many code requests for this contact.",

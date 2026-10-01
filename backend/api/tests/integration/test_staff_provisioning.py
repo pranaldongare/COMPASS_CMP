@@ -27,6 +27,7 @@ import pytest
 from cmp.auth.authentication import otp
 from cmp.auth.authentication import service as auth_service
 from cmp.auth.rate_limit import service as ratelimit
+from cmp.auth.rate_limit.service import contact_key
 from cmp.core.config import settings
 from cmp.core.enums import UserStatus
 from cmp.core.errors import Unauthenticated, ValidationFailed
@@ -121,7 +122,7 @@ async def unthrottle(redis_conn: Any, email: str) -> None:
     failure appears only in a full suite, hours from the change that caused it.
     """
     await redis_conn.delete(
-        rkey(K_RATE, "pwreset", email.lower()),
+        rkey(K_RATE, "pwreset", contact_key(email)),
         rkey(K_LOGIN_FAILS, email.lower()),
         rkey(K_LOCKOUT, email.lower()),
     )
@@ -277,7 +278,7 @@ class TestAskingForTheCodeAgain:
 async def unthrottle_mobile(redis_conn: Any) -> None:
     """The per-contact quota on confirmation codes lives in Redis and outlives
     the test transaction."""
-    await redis_conn.delete(rkey(K_RATE, "contact_confirm", MOBILE_E164))
+    await redis_conn.delete(rkey(K_RATE, "contact_confirm", contact_key(MOBILE_E164)))
 
 
 class TestAMobileGivenByTheAdministrator:
@@ -357,7 +358,7 @@ class TestAMobileGivenByTheAdministrator:
         for _ in range(settings.otp_requests_per_contact_per_hour):
             await ratelimit.check(
                 "contact_confirm",
-                MOBILE_E164,
+                contact_key(MOBILE_E164),
                 limit=settings.otp_requests_per_contact_per_hour,
                 window_s=3600,
             )

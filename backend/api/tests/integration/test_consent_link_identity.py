@@ -25,6 +25,7 @@ from typing import Any
 
 import pytest
 
+from cmp.auth.rate_limit.service import contact_key
 from cmp.core.enums import UserStatus
 from cmp.core.errors import LinkInvalid
 from cmp.core.security import new_token, token_fingerprint
@@ -76,7 +77,7 @@ async def a_link(conn: Any, seeded: dict[str, Any]) -> str:
 async def unthrottle(redis_conn: Any, contact: str) -> None:
     """Codes are capped per contact per hour, in Redis, which outlives the test
     transaction. Clear it so a re-run is not a sixth request."""
-    await redis_conn.delete(rkey(K_RATE, "consent_otp_contact", contact.lower()))
+    await redis_conn.delete(rkey(K_RATE, "consent_otp_contact", contact_key(contact)))
 
 
 class TestWhoGetsACode:

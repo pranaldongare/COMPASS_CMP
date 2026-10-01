@@ -24,13 +24,24 @@ suite clears between runs. The buckets in use:
 | `nominee_start`, `nominee_start_ip`, `nominee_request_ip` | a nominee identifying themselves and acting |
 | `nomination_view_ip`, `nomination_act_ip` | opening and answering an acceptance link, so a link-holder cannot guess a code |
 
-**The identity is stored as given.** A contact bucket's key holds the
-normalised address or number in the clear (`rate:subject_otp:a@x.org`), and an
-address bucket the client IP, for as long as the window lasts, an hour at
-most. Since the database seals every contact
-([encryption-at-rest.md](encryption-at-rest.md)), these keys, and the `otp:*`
-keys whose identity includes a contact (a contact confirmation's, a consent
-link's), are among the few places a contact sits in plaintext at rest.
+**A contact bucket is keyed on the contact's keyed hash** (`contact_key()` in
+`auth/rate_limit/service.py`): `index_of("contact", …)`, the normalised form the
+account lookup uses. Every way of typing one phone - spaces, dashes, brackets,
+`+91 98765 00001` and `+919876500001` - is one quota, as it is one person.
+Until 1 October 2026 two buckets, `subject_otp` and `rights_public_contact`,
+were keyed on the text as typed, so four spellings were four quotas - four
+times the codes, and, since each new code resets its guess counter, four times
+the guesses ([review SEC-2](../reviews/2026-10-01-frontend-architecture-review.md)).
+The hash also means no contact sits in a rate key in the clear. An address
+bucket holds the client IP, for as long as the window lasts, an hour at most.
+The `otp:*` keys whose identity includes a contact (a contact confirmation's,
+a consent link's) still hold it normalised but in the clear, among the few
+places a contact sits in plaintext at rest
+([encryption-at-rest.md](encryption-at-rest.md)).
+
+**A new code resets the guess counter**, by design - a person who asks again
+is not locked out by their own typos - so what bounds guessing is the issuing
+quota: at most five codes an hour per contact, five tries each.
 
 **Not everything is bounded.** The portals' own `POST /dkms/decrypt` has no
 limit; see [csrf.md](csrf.md#not-covered-the-portals-own-dkmsdecrypt), where

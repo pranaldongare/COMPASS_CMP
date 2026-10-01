@@ -13,6 +13,7 @@ from typing import Any
 import pytest
 
 from cmp.auth.authentication import service as auth_service
+from cmp.auth.rate_limit.service import contact_key
 from cmp.core.errors import Unauthenticated, ValidationFailed
 from cmp.core.permissions import Role
 from cmp.core.security import hash_password
@@ -84,7 +85,7 @@ class TestEndingStaffAccess:
                 user_agent="test",
             )
 
-        await redis_conn.delete(rkey(K_RATE, "subject_otp", "dco@test.local"))
+        await redis_conn.delete(rkey(K_RATE, "subject_otp", contact_key("dco@test.local")))
         await auth_service.request_subject_otp(conn, contact="dco@test.local")
         code = next(str(a[2]) for n, a in queued if n == "cmp.notifications.send_login_code")
         result = await auth_service.verify_subject_otp(

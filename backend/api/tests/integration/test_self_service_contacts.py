@@ -17,6 +17,7 @@ from typing import Any
 import pytest
 
 from cmp.auth.authentication import service as auth_service
+from cmp.auth.rate_limit.service import contact_key
 from cmp.core.errors import Conflict, ValidationFailed
 from cmp.core.permissions import Role
 from cmp.db.redis import K_RATE
@@ -52,7 +53,8 @@ def last_code(queued: Any, task: str) -> str:
 async def unthrottle(redis_conn: Any, *contacts: str) -> None:
     for c in contacts:
         await redis_conn.delete(
-            rkey(K_RATE, "contact_confirm", c.lower()), rkey(K_RATE, "subject_otp", c.lower())
+            rkey(K_RATE, "contact_confirm", contact_key(c)),
+            rkey(K_RATE, "subject_otp", contact_key(c)),
         )
 
 

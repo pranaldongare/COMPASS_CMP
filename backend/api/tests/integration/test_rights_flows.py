@@ -19,6 +19,7 @@ from typing import Any
 import pytest
 
 from cmp.auth.authentication import otp
+from cmp.auth.rate_limit.service import contact_key
 from cmp.core.errors import BadRequest, Conflict, Forbidden, NotFound, ValidationFailed
 from cmp.core.permissions import Role
 from cmp.core.security import new_token, token_fingerprint
@@ -172,7 +173,7 @@ async def _unthrottle(redis_conn: Any, contact: str) -> None:
     """The public form is rate limited per contact in Redis, which outlives the
     test transaction. Clear the bucket so a re-run is not a sixth attempt."""
     await redis_conn.delete(
-        rkey(K_RATE, "rights_public_contact", contact.lower()),
+        rkey(K_RATE, "rights_public_contact", contact_key(contact)),
         rkey(K_RATE, "rights_public_ip", "127.0.0.1"),
         rkey(K_RATE, "rights_public_ip", "127.0.0.2"),
     )
