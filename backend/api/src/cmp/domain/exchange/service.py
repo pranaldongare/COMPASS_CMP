@@ -648,13 +648,18 @@ async def import_manifest(
         if i in bad_rows:
             continue
         try:
-            await _ingest_row(
-                conn,
-                row=row,
-                source_id=source["source_id"],
-                project_id=project["project_id"],
-                batch_id=batch["batch_id"],
-            )
+            # One savepoint per row. A row writes its collection before its
+            # consent reference is checked, so a row refused half way would
+            # otherwise leave a collection - or a changed count - behind while
+            # the batch reports it rejected (review SCALE-3).
+            async with conn.transaction():
+                await _ingest_row(
+                    conn,
+                    row=row,
+                    source_id=source["source_id"],
+                    project_id=project["project_id"],
+                    batch_id=batch["batch_id"],
+                )
             accepted += 1
         except (ValidationFailed, NotFound, Conflict) as exc:
             rejected.append(

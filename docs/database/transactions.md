@@ -23,7 +23,10 @@ an unpublished notice. (`under_process` used to sit in the middle of this and
 no longer does; nothing transitions to it.)
 
 **An import.** A manifest either lands or does not. Splitting it across a queue
-would make `partial` mean two different things.
+would make `partial` mean two different things. Inside it, **each row is a
+savepoint**: a row refused part way - its collection written, then its consent
+reference found wanting - is rolled back whole, so a rejected row leaves no
+collection and changes no count (review SCALE-3, October 2026).
 
 **An export and its lines.** The disclosure record and the file must agree.
 

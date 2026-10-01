@@ -592,6 +592,10 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **A rejected import row changes nothing.** A manifest row wrote its
+  collection before checking its consent reference, so a row reported as
+  rejected could still create a collection or alter an existing one's declared
+  count. Each row now runs in a savepoint (review 2026-10-01, SCALE-3).
 - **An SMS gateway that hiccups no longer loses the message.** The HTTP SMS
   adapter raised httpx's own errors for a timeout or a dropped connection and
   `RuntimeError` for any non-2xx, none of which the message tasks retry, so a

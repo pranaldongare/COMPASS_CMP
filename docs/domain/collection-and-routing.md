@@ -170,7 +170,9 @@ no holders at all until this was fixed.
 **Import.** A manifest of collected assets from a source, validated as a dry
 run first (`POST /imports/validate` writes nothing), then written as a batch
 that upserts on the source's own reference so a redelivered manifest cannot
-duplicate. Errors are kept per line.
+duplicate. Errors are kept per line, and a line that is rejected changes
+nothing: each runs in a savepoint, so a refused row cannot leave a collection
+behind or alter one's declared count.
 
 **Collections and assets.** A collection is what a site gathered under a
 project; an asset is one collected thing, which may hold several people. The
