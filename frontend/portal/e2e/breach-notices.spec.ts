@@ -14,11 +14,12 @@ test.use({ storageState: statePath("subject") });
 test("her notices say the five things, in the Rule's order", async ({ page }) => {
   await page.goto("/breach-notices");
   await expect(page.getByRole("heading", { name: "Personal data breach notices", level: 1 })).toBeVisible();
+  // Wait for the answer - notices or the empty state - before reading it.
+  // Counting at once raced the request and read an empty page.
   const first = page.locator("section").first();
-  if ((await first.count()) === 0) {
-    await expect(page.getByText("No personal data breach has been notified to you.")).toBeVisible();
-    return;
-  }
+  const none = page.getByText("No personal data breach has been notified to you.");
+  await expect(first.or(none)).toBeVisible();
+  if (await none.isVisible()) return;
   const headings = page.locator("section h2");
   await expect(headings.nth(0)).toHaveText("What happened");
   await expect(headings.nth(1)).toHaveText("What it may mean for you");
