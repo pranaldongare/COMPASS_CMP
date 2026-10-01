@@ -528,8 +528,13 @@ async def capture(
             details={"unanswered": missing},
         )
 
+    # A mandatory purpose cannot be refused on its own: accepting the rest
+    # while refusing what the project depends on is not a choice the notice
+    # offers. Refusing everything is - it is the whole-notice refusal the
+    # portal offers, and a declined artefact like any other (review UX-1).
+    refusing_everything = not any(grants.values())
     for uuid_, purpose in by_uuid.items():
-        if purpose["is_mandatory"] and not grants[uuid_]:
+        if purpose["is_mandatory"] and not grants[uuid_] and not refusing_everything:
             raise ValidationFailed(
                 f"'{purpose['name']}' cannot be refused on this notice",
                 field="grants",

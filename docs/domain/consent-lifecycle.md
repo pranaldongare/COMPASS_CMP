@@ -118,6 +118,15 @@ with:
 - how the action was taken: a checkbox, a button, a signature, a verbal
   recording.
 
+**A mandatory purpose** is one the project cannot run without. It cannot be
+refused on its own - accepting the rest while refusing it is not a choice the
+notice offers, and the form disables its No. **The whole notice can always be
+refused**: **Decline everything** answers every purpose No, and that is
+recorded as a declined artefact like any other. Until 1 October 2026 the
+server read that all-No answer as refusing the mandatory purpose and turned it
+away, so a person could not decline a notice with a mandatory purpose at all -
+the very action the form recommended ([review UX-1](../reviews/2026-10-01-frontend-architecture-review.md)).
+
 Consent is **per purpose, never in aggregate**. The artefact has no status
 column: `consented`, `partial`, `declined` and `withdrawn` are derived from
 its grants on every read. **Withdrawn means a withdrawal left nothing

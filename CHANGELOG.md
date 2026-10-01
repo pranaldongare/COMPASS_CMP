@@ -585,6 +585,11 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **A notice with a mandatory purpose can be declined.** Decline everything
+  answers every purpose No, and the server read that as refusing the mandatory
+  purpose and turned it away - so the refusal the form recommended was
+  impossible. Refusing everything is now a declined artefact; refusing only the
+  mandatory purpose is still refused (review 2026-10-01, UX-1).
 - `docs/tools/personal-data-scan.py --check` passes again. It had never been
   taught the keyed lookup hashes and name fragments migrations 0028-0030 added
   (`email_hash`, `full_name_ngrams`, `submitted_contact_hash`,
