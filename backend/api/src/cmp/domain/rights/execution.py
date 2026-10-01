@@ -28,6 +28,7 @@ the evidence allows the response to say.
 
 from __future__ import annotations
 
+from enum import StrEnum
 from typing import Any
 
 from cmp.core.enums import RightsItemState as ItemState
@@ -43,6 +44,40 @@ KEPT_AS_EVIDENCE = (
     "your consent records, the audit trail, the files of data sent to processors "
     "before your request, and earlier responses given to you."
 )
+
+
+class ReturnOutcome(StrEnum):
+    """What a holder says it did with its ticket (review 2026-10-01, DPDP-1).
+
+    A return used to be taken as the work done, whatever it said - a ticket
+    returned "unable to erase" let the request close complete. Only `done`
+    counts as done now.
+    """
+
+    DONE = "done"
+    PARTIAL = "partial"
+    FAILED = "failed"
+
+
+def returned_done(holder: Row) -> bool:
+    """Returned, and saying it did all of it. NULL is a return from before the
+    holder was asked (0037), read as done, which is how it was taken then.
+
+    `holder["return_outcome"]`, not `.get()`: a query that forgot the column
+    would otherwise read as NULL - as done - and a "failed" return would pass.
+    """
+    return holder.get("ticket_status") == Ticket.RETURNED and holder["return_outcome"] in (
+        None,
+        ReturnOutcome.DONE,
+    )
+
+
+def returned_short(holder: Row) -> bool:
+    """Returned, saying it did only part of it, or none."""
+    return holder.get("ticket_status") == Ticket.RETURNED and holder["return_outcome"] in (
+        ReturnOutcome.PARTIAL,
+        ReturnOutcome.FAILED,
+    )
 
 
 def label(item: Row) -> str:
@@ -106,8 +141,12 @@ def account(kind: str, items: list[Row], holders: list[Row]) -> dict[str, Any] |
         # Decided with the user for S2-03: records of what happened are not
         # rewritten by an erasure, and the response says so rather than hiding it.
         "kept_as_evidence": KEPT_AS_EVIDENCE if kind == Kind.ERASURE else None,
-        "holders_confirmed": [
-            str(h["label"]) for h in holders if h.get("ticket_status") == Ticket.RETURNED
+        "holders_confirmed": [str(h["label"]) for h in holders if returned_done(h)],
+        # Back, but saying they could not do all of it: named, never counted as done.
+        "holders_short": [
+            {"holder": str(h["label"]), "outcome": str(h["return_outcome"])}
+            for h in holders
+            if returned_short(h)
         ],
     }
 
@@ -116,7 +155,15 @@ def why_not_complete(kind: str, items: list[Row], holders: list[Row]) -> str | N
     """None when `complete` is earned; otherwise the sentence that says why not."""
     if kind not in (Kind.ERASURE, Kind.CORRECTION):
         return None
-    returned = [h for h in holders if h.get("ticket_status") == Ticket.RETURNED]
+    returned = [h for h in holders if returned_done(h)]
+    short = [str(h["label"]) for h in holders if returned_short(h)]
+    if short:
+        return (
+            "Reported as not fully done by "
+            + ", ".join(short)
+            + ". The response can go out on time, but it is partial and says what remains;"
+            " send the ticket back if the holder can still finish."
+        )
     undone = [label(i) for i in items if not is_done(i)]
     if undone:
         return (

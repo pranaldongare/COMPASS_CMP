@@ -1,6 +1,6 @@
 # COMPASS complete database schema
 
-Generated from the catalogue of a scratch database built by replaying migrations **0001 → 0036**, on 2026-09-30. Rebuild it with `python3 docs/tools/generate-schema-docs.py --database <db>`; nothing here is maintained by hand.
+Generated from the catalogue of a scratch database built by replaying migrations **0001 → 0037**, on 2026-09-30. Rebuild it with `python3 docs/tools/generate-schema-docs.py --database <db>`; nothing here is maintained by hand.
 
 ## Open the diagrams
 
@@ -35,13 +35,13 @@ Module diagrams include full local tables and their outgoing foreign keys. Refer
 | Application Tables | 45 |
 | Metadata Tables | 1 |
 | Views | 1 |
-| Table Columns | 565 |
+| Table Columns | 566 |
 | Foreign Keys | 127 |
 | Enums | 39 |
 | Triggers | 40 |
-| Checks | 71 |
+| Checks | 72 |
 
-The Alembic `alembic_version` table is included separately as migration metadata. Its one column and the view's derived columns are additional to the 565 application-table columns; the inventory above comes from PostgreSQL's catalogues after replaying the full migration chain.
+The Alembic `alembic_version` table is included separately as migration metadata. Its one column and the view's derived columns are additional to the 566 application-table columns; the inventory above comes from PostgreSQL's catalogues after replaying the full migration chain.
 
 Since **0027–0030** the personal columns are `text` rather than `varchar(n)` - ciphertext is longer than the plaintext it replaces - and each column the platform looks rows up by carries a `*_hash` column beside it holding `HMAC-SHA256(normalised value, BLIND_INDEX_KEY)`. Three name columns additionally carry `*_ngrams text[]` with a GIN index: the hashed three-character runs that let staff search by part of a name without the name being readable. `auth_user.minor_until` is the one date kept in the clear, for the section 9 test. What each column holds and why is in [docs/dkms/](../../dkms/README.md).
 
@@ -56,6 +56,8 @@ Since **0027–0030** the personal columns are `text` rather than `varchar(n)` -
 **0035** (S3-02) adds who a breach touched: `breach_affected_revision`, one per confirmation with its scopes and counts, and `breach_affected`, each person once per breach with the revision that first listed them. Both append-only.
 
 **0036** (S3-03) adds what they are told: `breach_notice`, versions of the five Rule 7(1) contents, sealed, frozen once approved; and `breach_notice_delivery`, the account of every attempt on every channel for every person.
+
+**0037** adds `rights_request_holder.return_outcome` - what a holder says it did with its ticket, `done`, `partial` or `failed`; only `done` counts as done (review DPDP-1).
 
 ## Reading relationships and keys
 

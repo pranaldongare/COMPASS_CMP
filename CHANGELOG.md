@@ -592,6 +592,13 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **A returned ticket counts only when it says the work was done.** Any return
+  used to count: a ticket returned "unable to erase" recorded the holder's copy
+  as erased, and a correction could close complete on it. A return now says
+  whether the holder did all of it, only part, or none - chosen, never
+  defaulted, on the office's form and on the team's tickets page - and only
+  "all of it" counts. Sending the ticket back asks again. Migration 0037
+  (review 2026-10-01, DPDP-1).
 - **A rejected import row changes nothing.** A manifest row wrote its
   collection before checking its consent reference, so a row reported as
   rejected could still create a collection or alter an existing one's declared

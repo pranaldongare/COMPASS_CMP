@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict dle4wsynBakhGXR6j8g8ciyFrDatxe6obzl2on8IX9uBZtCbxPqr9l2cRNiApTu
+\restrict dfJ7I40xfK11LSLLZZvIAmtpIsKDhUtH6jCO14dcKytOzPkAGlyiHKPVRTzwNci
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -3202,11 +3202,20 @@ CREATE TABLE public.rights_request_holder (
     sent_back_at timestamp with time zone,
     sent_back_reason text,
     sent_back_count integer DEFAULT 0 NOT NULL,
+    return_outcome character varying(8),
     CONSTRAINT holder_channel CHECK (((channel)::text = ANY ((ARRAY['portal'::character varying, 'email'::character varying])::text[]))),
     CONSTRAINT holder_issued_has_date CHECK (((ticket_status = 'pending'::public.rights_ticket_status) OR (issued_at IS NOT NULL))),
     CONSTRAINT holder_portal_has_account CHECK ((((channel)::text <> 'portal'::text) OR (responder_user_id IS NOT NULL))),
+    CONSTRAINT holder_return_outcome CHECK (((return_outcome IS NULL) OR ((return_outcome)::text = ANY ((ARRAY['done'::character varying, 'partial'::character varying, 'failed'::character varying])::text[])))),
     CONSTRAINT holder_returned_has_date CHECK (((ticket_status <> 'returned'::public.rights_ticket_status) OR (returned_at IS NOT NULL)))
 );
+
+
+--
+-- Name: COLUMN rights_request_holder.return_outcome; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.rights_request_holder.return_outcome IS 'What the holder says it did with the ticket: done, partial or failed. NULL is a return from before 0037, read as done';
 
 
 --
@@ -6461,5 +6470,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict dle4wsynBakhGXR6j8g8ciyFrDatxe6obzl2on8IX9uBZtCbxPqr9l2cRNiApTu
+\unrestrict dfJ7I40xfK11LSLLZZvIAmtpIsKDhUtH6jCO14dcKytOzPkAGlyiHKPVRTzwNci
 

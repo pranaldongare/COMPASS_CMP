@@ -15108,33 +15108,10 @@
             "minLength": 1,
             "title": "Summary"
           },
-          "evidence": {
-            "anyOf": [
-              {
-                "type": "string",
-                "contentMediaType": "application/octet-stream"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Evidence",
-            "description": "Optional evidence, max 25 MB"
-          }
-        },
-        "type": "object",
-        "required": [
-          "summary"
-        ],
-        "title": "Body_return_my_ticket_tickets__holder_uuid__return_post"
-      },
-      "Body_return_ticket_requests__request_uuid__holders__holder_uuid__return_post": {
-        "properties": {
-          "summary": {
+          "outcome": {
             "type": "string",
-            "maxLength": 20000,
-            "minLength": 1,
-            "title": "Summary"
+            "title": "Outcome",
+            "description": "done, partial or failed"
           },
           "evidence": {
             "anyOf": [
@@ -15152,7 +15129,42 @@
         },
         "type": "object",
         "required": [
-          "summary"
+          "summary",
+          "outcome"
+        ],
+        "title": "Body_return_my_ticket_tickets__holder_uuid__return_post"
+      },
+      "Body_return_ticket_requests__request_uuid__holders__holder_uuid__return_post": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Summary"
+          },
+          "outcome": {
+            "type": "string",
+            "title": "Outcome",
+            "description": "done, partial or failed"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence",
+            "description": "Optional evidence, max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "outcome"
         ],
         "title": "Body_return_ticket_requests__request_uuid__holders__holder_uuid__return_post"
       },
@@ -20148,6 +20160,17 @@
             ],
             "title": "Return Summary"
           },
+          "return_outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Outcome"
+          },
           "return_evidence_hash": {
             "anyOf": [
               {
@@ -20323,6 +20346,7 @@
           "escalated_at",
           "returned_at",
           "return_summary",
+          "return_outcome",
           "return_evidence_hash",
           "created_at"
         ],
@@ -28040,6 +28064,17 @@
             ],
             "title": "Return Summary"
           },
+          "return_outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Outcome"
+          },
           "return_evidence_hash": {
             "anyOf": [
               {
@@ -28217,6 +28252,7 @@
           "escalated_at",
           "returned_at",
           "return_summary",
+          "return_outcome",
           "return_evidence_hash"
         ],
         "title": "TicketOut",

@@ -138,6 +138,8 @@ export interface RightsHolder {
   escalated_at: Timestamp | null;
   returned_at: Timestamp | null;
   return_summary: string | null;
+  /** What the holder says it did. Null for a return from before it was asked. */
+  return_outcome: ReturnOutcome | null;
   return_evidence_hash: string | null;
   created_at: Timestamp;
   /** How this holder is reached: an account on the portal, or a mailed
@@ -248,6 +250,8 @@ export interface MyTicket {
   escalated_at: Timestamp | null;
   returned_at: Timestamp | null;
   return_summary: string | null;
+  /** What the holder says it did. Null for a return from before it was asked. */
+  return_outcome: ReturnOutcome | null;
   return_evidence_hash: string | null;
   brief: HolderBrief | null;
   message_count: number;
@@ -521,3 +525,16 @@ export interface GrievanceDecisionResult {
   rerun_reference: string | null;
   rerun_uuid: Uuid | null;
 }
+
+/**
+ * What a holder says it did with its ticket (review DPDP-1). Only `done`
+ * counts as done: a return that says it fell short keeps an erasure undone
+ * and a correction from closing complete.
+ */
+export type ReturnOutcome = "done" | "partial" | "failed";
+
+export const RETURN_OUTCOME_COPY: Record<ReturnOutcome, string> = {
+  done: "Did all of it",
+  partial: "Did only part of it",
+  failed: "Could not do it",
+};

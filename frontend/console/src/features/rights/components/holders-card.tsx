@@ -54,7 +54,8 @@ import { useHolderThread } from "@/features/rights/queries";
 import { config } from "@/lib/config";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { useToast } from "@/providers";
-import type { RightsHolder, RightsRequestDetail } from "@/types";
+import type { ReturnOutcome, RightsHolder, RightsRequestDetail } from "@/types";
+import { RETURN_OUTCOME_COPY } from "@/types";
 
 function messageOf(err: unknown, fallback: string): string {
   return err && typeof err === "object" && "userMessage" in err
@@ -295,7 +296,9 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
           )}
           {h.return_summary && (
             <p className="mt-1 rounded-md bg-bg-inset p-2 text-xs">
-              <span className="font-medium">Returned: </span>
+              <span className="font-medium">
+                Returned{h.return_outcome ? ` - ${RETURN_OUTCOME_COPY[h.return_outcome].toLowerCase()}` : ""}:{" "}
+              </span>
               {h.return_summary}
               {h.return_evidence_hash && (
                 <a
@@ -734,6 +737,9 @@ function ReturnForm({ request: r, holder: h, onDone }: { request: RightsRequestD
   const toast = useToast();
   const ret = useReturnTicket(r.request_uuid);
   const [summary, setSummary] = React.useState("");
+  // No default: "did all of it" pre-chosen is how a ticket returned "unable
+  // to erase" came to count as erased (review DPDP-1).
+  const [outcome, setOutcome] = React.useState<ReturnOutcome | "">("");
   const [file, setFile] = React.useState<File | null>(null);
 
   return (
@@ -743,7 +749,8 @@ function ReturnForm({ request: r, holder: h, onDone }: { request: RightsRequestD
       onSubmit={async (e) => {
         e.preventDefault();
         try {
-          await ret.mutateAsync({ holderUuid: h.holder_uuid, summary, evidence: file });
+          if (!outcome) return;
+          await ret.mutateAsync({ holderUuid: h.holder_uuid, summary, outcome, evidence: file });
           toast.success("Return recorded");
           onDone();
         } catch (err) {
@@ -752,6 +759,18 @@ function ReturnForm({ request: r, holder: h, onDone }: { request: RightsRequestD
       }}
     >
       <div className="space-y-4">
+        <Field label="What the holder says it did" hint="Only “did all of it” counts as done." required>
+          {(p) => (
+            <Select {...p} value={outcome} onChange={(e) => setOutcome(e.target.value as ReturnOutcome | "")}>
+              <option value="">Choose…</option>
+              {(Object.keys(RETURN_OUTCOME_COPY) as ReturnOutcome[]).map((o) => (
+                <option key={o} value={o}>
+                  {RETURN_OUTCOME_COPY[o]}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
         <Field label="Summary of the return" required>
           {(p) => <Textarea {...p} rows={4} value={summary} onChange={(e) => setSummary(e.target.value)} />}
         </Field>
@@ -759,7 +778,7 @@ function ReturnForm({ request: r, holder: h, onDone }: { request: RightsRequestD
       </div>
       <DialogFooter>
         <Button type="button" variant="ghost" onClick={onDone}>Cancel</Button>
-        <Button type="submit" variant="primary" disabled={summary.trim().length === 0} loading={ret.isPending}>
+        <Button type="submit" variant="primary" disabled={summary.trim().length === 0 || !outcome} loading={ret.isPending}>
           Record
         </Button>
       </DialogFooter>

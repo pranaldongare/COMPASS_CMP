@@ -251,6 +251,11 @@ each store as it stands; the same rows are `rights_item_execution`.
   press **Try again now** (`POST /requests/{uuid}/scope/{item}/execute`).
   Something that fails every time is a defect: the worker and API logs carry
   `rights.erasure_failed` with the item.
+- **"The holder says it could not erase its copy" / "erased only part of
+  it".** The holder returned its ticket saying it fell short. Nothing retries
+  that: **send the ticket back** with what is still needed, and the item
+  carries on when the holder returns it saying it did all of it. If it never
+  can, the response goes out partial and says so.
 - **"Stopped until the hold is released."** A legal hold covers the asset or
   the person. Nothing is erased while it stands. Only the DPO places and
   releases one (`/legal-holds`); releasing it carries the item on at once.

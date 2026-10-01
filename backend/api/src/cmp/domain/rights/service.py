@@ -1071,13 +1071,18 @@ async def return_ticket(
     *,
     holder_uuid: str,
     summary: str,
+    outcome: str,
     evidence_ref: str | None,
     evidence_hash: str | None,
     role: Role | str,
     actor_id: int,
     evidence_name: str | None = None,
 ) -> Row:
-    """What came back: a confirmation of what was done and how - not an assurance."""
+    """What came back: a confirmation of what was done and how - not an assurance.
+
+    `outcome` is what the holder says it did - done, partial or failed - and
+    only `done` counts as done (review DPDP-1).
+    """
     _may_act(row, role)
     _open(row)
     holder = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
@@ -1087,12 +1092,14 @@ async def return_ticket(
         raise Conflict("This holder has no open ticket to return", code="ticket_not_open")
     if not summary.strip():
         raise ValidationFailed("Record what the holder returned", field="summary")
+    said = choice(execution.ReturnOutcome, outcome, field="outcome")
     await repo.update_holder(
         conn,
         int(holder["holder_id"]),
         ticket_status=Ticket.RETURNED.value,
         returned_at=datetime.now(UTC),
         return_summary=summary.strip(),
+        return_outcome=said.value,
         return_evidence_ref=evidence_ref,
         return_evidence_hash=evidence_hash,
         return_evidence_name=evidence_name,
@@ -1115,7 +1122,11 @@ async def return_ticket(
         actor_user_id=actor_id,
         entity_type="rights_request_holder",
         entity_id=int(holder["holder_id"]),
-        detail={"label": holder["label"], "evidence_sha256": evidence_hash},
+        detail={
+            "label": holder["label"],
+            "evidence_sha256": evidence_hash,
+            "outcome": said.value,
+        },
     )
     await _settle(conn, row, actor_id=actor_id)
     # A returned ticket is the evidence the holder's copy is gone.
@@ -1756,6 +1767,7 @@ async def send_back_ticket(
         due_at=when,
         returned_at=None,
         return_summary=None,
+        return_outcome=None,
         return_evidence_ref=None,
         return_evidence_hash=None,
         return_evidence_name=None,
@@ -2047,6 +2059,7 @@ async def return_own_ticket(
     user_id: int,
     holder_uuid: str,
     summary: str,
+    outcome: str,
     evidence_ref: str | None,
     evidence_hash: str | None,
     evidence_name: str | None = None,
@@ -2064,6 +2077,7 @@ async def return_own_ticket(
         raise Conflict("This ticket is not open", code="ticket_not_open")
     if not summary.strip():
         raise ValidationFailed("Say what was done", field="summary")
+    said = choice(execution.ReturnOutcome, outcome, field="outcome")
     row = await repo.by_id(conn, int(holder["request_id"]))
     assert row is not None
     await repo.update_holder(
@@ -2072,6 +2086,7 @@ async def return_own_ticket(
         ticket_status=Ticket.RETURNED.value,
         returned_at=datetime.now(UTC),
         return_summary=summary.strip(),
+        return_outcome=said.value,
         return_evidence_ref=evidence_ref,
         return_evidence_hash=evidence_hash,
         return_evidence_name=evidence_name,
@@ -2093,7 +2108,9 @@ async def return_own_ticket(
         evidence_name=evidence_name,
     )
     await repo.mark_thread_read(conn, int(holder["holder_id"]), side="holder")
-    await _tell_office(conn, row, holder, author_id=user_id, body=f"Returned: {summary.strip()}")
+    await _tell_office(
+        conn, row, holder, author_id=user_id, body=f"Returned ({said.value}): {summary.strip()}"
+    )
     await _record(
         conn,
         row,
@@ -2101,7 +2118,12 @@ async def return_own_ticket(
         actor_user_id=user_id,
         entity_type="rights_request_holder",
         entity_id=int(holder["holder_id"]),
-        detail={"label": holder["label"], "evidence_sha256": evidence_hash, "channel": "portal"},
+        detail={
+            "label": holder["label"],
+            "evidence_sha256": evidence_hash,
+            "channel": "portal",
+            "outcome": said.value,
+        },
     )
     await _settle(conn, row, actor_id=user_id)
     await erasure.execute_request(conn, row, actor_id=user_id)

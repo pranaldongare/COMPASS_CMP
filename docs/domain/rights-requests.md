@@ -107,8 +107,19 @@ respondent's when the office does.
 | `escalated` | reminded formally, once |
 | `withdrawn` | the office no longer needs it |
 
+**A return says what was done.** Whoever records it - the office for a third
+party, the team itself on the console - says whether the holder did **all of
+it**, **only part of it**, or **could not do it** (`return_outcome`: `done`,
+`partial`, `failed`), with nothing chosen in advance. Only *done* counts as done:
+an erasure's holder copy is recorded erased, and a correction counts as carried
+out, only on a return that says so. Until 1 October 2026 any return counted,
+so a ticket returned "unable to erase" closed the request complete
+([review DPDP-1](../reviews/2026-10-01-frontend-architecture-review.md)). A
+return recorded before then has no outcome and is read as done, as it was then.
+
 A returned ticket can be **sent back** with a reason when the answer is not
-enough; a ticket can be **reassigned** to another respondent, **reminded**,
+enough - sending it back clears what the holder said, and is how a holder who
+fell short is asked again; a ticket can be **reassigned** to another respondent, **reminded**,
 or **withdrawn**. The last ticket to come back moves the request off
 `awaiting_holders`.
 
@@ -130,7 +141,7 @@ it - so the stores are:
 
 | Store | Done when |
 |---|---|
-| The holder's copy | the holder of the asset's source returns its ticket - the return, with its evidence, is the confirmation the copy is gone. Until then it is *waiting*, and says for what: no holder asked yet, the ticket not issued, withdrawn, or not returned |
+| The holder's copy | the holder of the asset's source returns its ticket saying it did all of it - the return, with its evidence, is the confirmation the copy is gone. Until then it is *waiting*, and says for what: no holder asked yet, the ticket not issued, withdrawn, or not returned. A return saying it did only part, or none, is *failed* with the holder's word (`holder_reported_partial`, `holder_reported_failed`); send the ticket back to ask again |
 | The platform's pointer | for an erasure (nobody else in the asset), `data_asset.storage_ref` is cleared. A redaction keeps it for the others |
 
 Every attempt at every store is a row, append-only: done, waiting, failed or
@@ -166,7 +177,7 @@ Responding closes the request with an outcome and a response text.
 
 **`complete` has to be earned** (S2-02). A correction or an erasure closes as
 complete only when what it asked for was carried out: every holder returned its
-ticket, every erasure item is done, and something was actually done - a request
+ticket saying it did all of it, every erasure item is done, and something was actually done - a request
 with no item in scope and no holder's return is one nobody carried out, and
 `no_records` is the honest answer when nothing is held. Anything short of that
 closes `partial`, and the record she receives says, item by item, what happened

@@ -65,6 +65,20 @@ describe("ScopeCard execution", () => {
     expect(screen.queryByText(/^erased$/i)).not.toBeInTheDocument();
   });
 
+  it("says when the holder reported it could not erase its copy (DPDP-1)", () => {
+    card(
+      item({
+        state: "applied",
+        disposition: "quarantined",
+        execution: [
+          { store: "holder_copy", status: "failed", detail: { reason: "holder_reported_failed" }, attempted_at: at },
+        ],
+      }),
+    );
+    expect(screen.getByText(/the holder says it could not erase its copy/i)).toBeInTheDocument();
+    expect(screen.queryByText(/confirmed gone/i)).not.toBeInTheDocument();
+  });
+
   it("says a hold stopped it and offers the release", () => {
     card(item({ execution: [{ store: "legal_hold", status: "held", detail: { hold: "dddddddd-dddd-4ddd-8ddd-dddddddddddd", covers: "asset" }, attempted_at: at }] }));
     expect(screen.getByText(/legal hold/i, { selector: "span" })).toBeInTheDocument();

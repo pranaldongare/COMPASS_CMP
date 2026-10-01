@@ -79,5 +79,5 @@ Return a ticket addressed to me.
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `TicketWriter`.
 - **Resolved gate:** `RequireResource(ticket, write=True)`.
-- **Rules:** Any staff role can use tickets addressed to that account only (respondent_user_id). This does not grant the staff member the full rights-request register.
+- **Rules:** Any staff role can use tickets addressed to that account only (respondent_user_id). This does not grant the staff member the full rights-request register. A return must state `outcome` - done, partial or failed (422 otherwise); only done counts as the work done (review DPDP-1, 2026-10-01).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1753), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L891).

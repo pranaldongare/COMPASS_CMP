@@ -466,7 +466,7 @@ async def response_file_by_uuid(conn: Conn, request_id: int, file_uuid: str) -> 
 _HOLDER_SELECT = """
   h.holder_id, h.holder_uuid, h.request_id, h.label, h.derived_from, h.evidence,
   h.confirmed_at, h.ticket_status, h.instruction, h.responder_name, h.responder_contact,
-  h.issued_at, h.due_at, h.escalated_at, h.returned_at, h.return_summary,
+  h.issued_at, h.due_at, h.escalated_at, h.returned_at, h.return_summary, h.return_outcome,
   h.return_evidence_ref, h.return_evidence_hash, h.created_at,
   h.processor_id, pr.processor_uuid, pr.legal_name AS processor_name, pr.is_in_house,
   cb.full_name AS confirmed_by_name,
@@ -571,6 +571,7 @@ _HOLDER_MUTABLE = frozenset(
         "escalated_at",
         "returned_at",
         "return_summary",
+        "return_outcome",
         "return_evidence_ref",
         "return_evidence_hash",
         "respondent_id",
@@ -1074,7 +1075,7 @@ async def holder_for_processor(conn: Conn, request_id: int, processor_id: int) -
     return await fetch_one(
         conn,
         """SELECT holder_id, holder_uuid, label, ticket_status, returned_at,
-                  return_evidence_hash
+                  return_outcome, return_evidence_hash
              FROM rights_request_holder
             WHERE request_id = %s AND processor_id = %s
             ORDER BY holder_id LIMIT 1""",
@@ -1086,7 +1087,7 @@ async def holder_by_id(conn: Conn, holder_id: int) -> Row | None:
     return await fetch_one(
         conn,
         """SELECT holder_id, holder_uuid, label, ticket_status, returned_at,
-                  return_evidence_hash
+                  return_outcome, return_evidence_hash
              FROM rights_request_holder WHERE holder_id = %s""",
         (holder_id,),
     )

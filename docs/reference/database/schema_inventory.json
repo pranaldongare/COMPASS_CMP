@@ -1,6 +1,6 @@
 {
-  "commit": "f00ad328e72fb3dddbbaa8efb1234d8131a00d8b",
-  "migration_head": "0036",
+  "commit": "705bf21731a07552f82c470dc8e9ac47b423ba37",
+  "migration_head": "0037",
   "migrations": [
     {
       "revision": "0001",
@@ -145,6 +145,10 @@
     {
       "revision": "0036",
       "source": "backend/api/migrations/versions/0036_breach_notices.py"
+    },
+    {
+      "revision": "0037",
+      "source": "backend/api/migrations/versions/0037_ticket_return_outcome.py"
     }
   ],
   "postgres_version": "16.15",
@@ -5148,6 +5152,15 @@
       "comment": null
     },
     {
+      "table_name": "rights_request_holder",
+      "name": "return_outcome",
+      "position": 35,
+      "type": "character varying(8)",
+      "not_null": false,
+      "default_value": null,
+      "comment": "What the holder says it did with the ticket: done, partial or failed. NULL is a return from before 0037, read as done"
+    },
+    {
       "table_name": "rights_request_item",
       "name": "item_id",
       "position": 1,
@@ -10026,6 +10039,21 @@
     },
     {
       "table_name": "rights_request_holder",
+      "name": "holder_return_outcome",
+      "kind": "c",
+      "definition": "CHECK (((return_outcome IS NULL) OR ((return_outcome)::text = ANY ((ARRAY['done'::character varying, 'partial'::character varying, 'failed'::character varying])::text[]))))",
+      "columns": [
+        "return_outcome"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request_holder",
       "name": "holder_returned_has_date",
       "kind": "c",
       "definition": "CHECK (((ticket_status <> 'returned'::rights_ticket_status) OR (returned_at IS NOT NULL)))",
@@ -12208,10 +12236,10 @@
     "application_tables": 45,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 565,
+    "table_columns": 566,
     "foreign_keys": 127,
     "enums": 39,
     "triggers": 40,
-    "checks": 71
+    "checks": 72
   }
 }

@@ -57,6 +57,7 @@ No request body.
     "escalated_at": "2026-09-17T12:00:00Z",
     "returned_at": "2026-09-17T12:00:00Z",
     "return_summary": "string",
+    "return_outcome": "string",
     "return_evidence_hash": "string",
     "brief": {},
     "message_count": 0,
@@ -125,6 +126,7 @@ No request body.
     "escalated_at": "2026-09-17T12:00:00Z",
     "returned_at": "2026-09-17T12:00:00Z",
     "return_summary": "string",
+    "return_outcome": "string",
     "return_evidence_hash": "string",
     "brief": {},
     "message_count": 0,
@@ -233,6 +235,7 @@ Request body required: **yes**.
     "escalated_at": "2026-09-17T12:00:00Z",
     "returned_at": "2026-09-17T12:00:00Z",
     "return_summary": "string",
+    "return_outcome": "string",
     "return_evidence_hash": "string",
     "brief": {},
     "message_count": 0,
@@ -359,6 +362,7 @@ Request body required: **yes**.
 ```json
 {
   "summary": "string",
+  "outcome": "string",
   "evidence": "string"
 }
 ```
@@ -388,6 +392,7 @@ Request body required: **yes**.
   "escalated_at": "2026-09-17T12:00:00Z",
   "returned_at": "2026-09-17T12:00:00Z",
   "return_summary": "string",
+  "return_outcome": "string",
   "return_evidence_hash": "string",
   "brief": {},
   "message_count": 0,
@@ -443,6 +448,7 @@ Request body required: **yes**.
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
 | `summary` | `string` | Yes | min length: `1`; max length: `20000` | — |
+| `outcome` | `string` | Yes | — | done, partial or failed |
 | `evidence` | `string` or `null` | No | — | Optional evidence, max 25 MB |
 
 <a id="schema-httpvalidationerror"></a>
@@ -481,6 +487,7 @@ A ticket as its respondent sees it: what is asked, of whom, by when.
 | `escalated_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `returned_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `return_summary` | `string` or `null` | Yes | — | — |
+| `return_outcome` | `string` or `null` | Yes | — | — |
 | `return_evidence_hash` | `string` or `null` | Yes | — | — |
 | `brief` | `object` or `null` | No | — | — |
 | `message_count` | `integer` | No | default: `0` | — |

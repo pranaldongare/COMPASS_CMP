@@ -5117,6 +5117,11 @@ export interface components {
             /** Summary */
             summary: string;
             /**
+             * Outcome
+             * @description done, partial or failed
+             */
+            outcome: string;
+            /**
              * Evidence
              * @description Optional evidence, max 25 MB
              */
@@ -5126,6 +5131,11 @@ export interface components {
         Body_return_ticket_requests__request_uuid__holders__holder_uuid__return_post: {
             /** Summary */
             summary: string;
+            /**
+             * Outcome
+             * @description done, partial or failed
+             */
+            outcome: string;
             /**
              * Evidence
              * @description Optional evidence, max 25 MB
@@ -6908,6 +6918,8 @@ export interface components {
             returned_at: string | null;
             /** Return Summary */
             return_summary: string | null;
+            /** Return Outcome */
+            return_outcome: string | null;
             /** Return Evidence Hash */
             return_evidence_hash: string | null;
             /**
@@ -9389,6 +9401,8 @@ export interface components {
             returned_at: string | null;
             /** Return Summary */
             return_summary: string | null;
+            /** Return Outcome */
+            return_outcome: string | null;
             /** Return Evidence Hash */
             return_evidence_hash: string | null;
             /** Brief */

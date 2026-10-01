@@ -255,6 +255,7 @@ class TestChannels:
                 user_id=dco,
                 holder_uuid=str(mailed["holder_uuid"]),
                 summary="not mine",
+                outcome="done",
                 evidence_ref=None,
                 evidence_hash=None,
             )
@@ -263,6 +264,7 @@ class TestChannels:
             user_id=dco,
             holder_uuid=str(portal["holder_uuid"]),
             summary="Nothing held beyond the consent record itself.",
+            outcome="done",
             evidence_ref=None,
             evidence_hash=None,
         )
@@ -274,6 +276,7 @@ class TestChannels:
                 user_id=dco,
                 holder_uuid=str(portal["holder_uuid"]),
                 summary="again",
+                outcome="done",
                 evidence_ref=None,
                 evidence_hash=None,
             )
@@ -295,6 +298,7 @@ class TestChannels:
             user_id=dco,
             holder_uuid=str(portal["holder_uuid"]),
             summary="Nothing held beyond the consent record itself.",
+            outcome="done",
             evidence_ref=None,
             evidence_hash=None,
         )
@@ -468,6 +472,7 @@ class TestThread:
             user_id=dco,
             holder_uuid=ref,
             summary="Nothing beyond the 2024 batch.",
+            outcome="done",
             evidence_ref=None,
             evidence_hash=None,
         )
@@ -607,6 +612,7 @@ class TestLifecycle:
                 user_id=dco,
                 holder_uuid=str(holder["holder_uuid"]),
                 summary="too late",
+                outcome="done",
                 evidence_ref=None,
                 evidence_hash=None,
             )
@@ -718,6 +724,7 @@ class TestLifecycle:
             user_id=dco,
             holder_uuid=str(holder["holder_uuid"]),
             summary="Returned with the signed confirmation.",
+            outcome="done",
             evidence_ref="rights/y.pdf",
             evidence_hash="d" * 64,
             evidence_name="confirmation-signed.pdf",
@@ -740,6 +747,7 @@ class TestSendBack:
             user_id=dco,
             holder_uuid=str(portal["holder_uuid"]),
             summary="Nothing held.",
+            outcome="done",
             evidence_ref=None,
             evidence_hash=None,
         )
@@ -791,6 +799,7 @@ class TestSendBack:
             user_id=dco,
             holder_uuid=str(portal["holder_uuid"]),
             summary="Two recordings, copies on the lab NAS only.",
+            outcome="done",
             evidence_ref=None,
             evidence_hash=None,
         )

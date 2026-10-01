@@ -157,6 +157,8 @@ class HolderOut(Out):
     escalated_at: datetime | None
     returned_at: datetime | None
     return_summary: str | None
+    #: done, partial or failed; None for a return from before it was asked.
+    return_outcome: str | None
     return_evidence_hash: str | None
     created_at: datetime
     #: How this holder is reached. "portal": the responder has an account here
@@ -243,6 +245,8 @@ class TicketOut(Out):
     escalated_at: datetime | None
     returned_at: datetime | None
     return_summary: str | None
+    #: done, partial or failed; None for a return from before it was asked.
+    return_outcome: str | None
     return_evidence_hash: str | None
     brief: dict[str, Any] | None = None
     message_count: int = 0
@@ -1281,6 +1285,9 @@ async def return_ticket(
     holder_uuid: UUID,
     principal: RightsWriter,
     summary: Annotated[str, Form(min_length=1, max_length=20_000)],
+    #: What the holder says it did: done, partial or failed. Only done counts
+    #: as done - a return used to be taken as the work done whatever it said.
+    outcome: Annotated[str, Form(description="done, partial or failed")],
     evidence: Annotated[UploadFile | None, File(description="Optional evidence, max 25 MB")] = None,
 ) -> dict[str, Any]:
     evidence_ref, evidence_hash, evidence_name = await _attachment(evidence)
@@ -1291,6 +1298,7 @@ async def return_ticket(
             row,
             holder_uuid=str(holder_uuid),
             summary=summary,
+            outcome=outcome,
             evidence_ref=evidence_ref,
             evidence_hash=evidence_hash,
             evidence_name=evidence_name,
@@ -1848,6 +1856,9 @@ async def return_my_ticket(
     holder_uuid: UUID,
     principal: TicketWriter,
     summary: Annotated[str, Form(min_length=1, max_length=20_000)],
+    #: What the holder says it did: done, partial or failed. Only done counts
+    #: as done - a return used to be taken as the work done whatever it said.
+    outcome: Annotated[str, Form(description="done, partial or failed")],
     evidence: Annotated[UploadFile | None, File(description="Optional evidence, max 25 MB")] = None,
 ) -> dict[str, Any]:
     evidence_ref, evidence_hash, evidence_name = await _attachment(evidence)
@@ -1857,6 +1868,7 @@ async def return_my_ticket(
             user_id=principal.user_id,
             holder_uuid=str(holder_uuid),
             summary=summary,
+            outcome=outcome,
             evidence_ref=evidence_ref,
             evidence_hash=evidence_hash,
             evidence_name=evidence_name,

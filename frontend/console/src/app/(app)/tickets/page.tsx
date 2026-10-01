@@ -27,6 +27,8 @@ import {
   CardHeader,
   CardTitle,
   EmptyState,
+  Field,
+  Select,
   Skeleton,
 } from "@/components/ui/primitives";
 import { ConsentScope } from "@/features/rights/components/consent-scope";
@@ -37,7 +39,8 @@ import { useMessageOffice, useReturnMyTicket } from "@/features/rights/mutations
 import { useMyTicket, useMyTickets } from "@/features/rights/queries";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { useToast } from "@/providers";
-import type { MyTicket } from "@/types";
+import type { MyTicket, ReturnOutcome } from "@/types";
+import { RETURN_OUTCOME_COPY } from "@/types";
 
 export default function TicketsPage() {
   return (
@@ -246,6 +249,9 @@ function Respond({ ticket: t, onReturned }: { ticket: MyTicket; onReturned: () =
   const detail = useMyTicket(t.holder_uuid);
   const send = useMessageOffice();
   const ret = useReturnMyTicket();
+  // Asked before the return is sent, with no default: a return is the team
+  // saying what it did, and "did all of it" is not assumed (review DPDP-1).
+  const [outcome, setOutcome] = React.useState<ReturnOutcome | "">("");
   const isOpen = t.ticket_status === "issued" || t.ticket_status === "escalated";
   if (detail.isLoading) return <Skeleton className="h-40" />;
   if (detail.error) return <Alert tone="danger">{detail.error.userMessage()}</Alert>;
@@ -267,6 +273,23 @@ function Respond({ ticket: t, onReturned }: { ticket: MyTicket; onReturned: () =
         you="holder"
         evidenceHref={(m) => (m.evidence_hash ? myMessageAttachmentUrl(t.holder_uuid, m.message_uuid) : null)}
       />
+      {isOpen && (
+        <Field
+          label="When you return the ticket: what was done?"
+          hint="Only “did all of it” counts as done. If you could not do some or all of it, say so and why in the message."
+        >
+          {(p) => (
+            <Select {...p} value={outcome} onChange={(e) => setOutcome(e.target.value as ReturnOutcome | "")}>
+              <option value="">Choose before returning…</option>
+              {(Object.keys(RETURN_OUTCOME_COPY) as ReturnOutcome[]).map((o) => (
+                <option key={o} value={o}>
+                  {RETURN_OUTCOME_COPY[o]}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+      )}
       <ReplyBox
         pending={send.isPending || ret.isPending}
         placeholder={
@@ -284,7 +307,11 @@ function Respond({ ticket: t, onReturned }: { ticket: MyTicket; onReturned: () =
         }
         onSend={async (body, file, final) => {
           if (final) {
-            await ret.mutateAsync({ holderUuid: t.holder_uuid, summary: body, evidence: file });
+            if (!outcome) {
+              const say = "Choose what was done before returning the ticket.";
+              throw Object.assign(new Error(say), { userMessage: () => say });
+            }
+            await ret.mutateAsync({ holderUuid: t.holder_uuid, summary: body, outcome, evidence: file });
             toast.success("Ticket returned", "The Privacy Office can see it.");
             onReturned();
           } else {

@@ -1,7 +1,7 @@
 # Schema
 
-45 tables, 39 enums, 1 view, 40 triggers, 71 named CHECK constraints and 127
-foreign keys, as of migration 0036. Those counts are read from the PostgreSQL
+45 tables, 39 enums, 1 view, 40 triggers, 72 named CHECK constraints and 127
+foreign keys, as of migration 0037. Those counts are read from the PostgreSQL
 catalogs after replaying every migration, not maintained by hand.
 
 The migrations are the source of truth: 0001 transcribed the original

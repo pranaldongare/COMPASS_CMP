@@ -1,6 +1,6 @@
 # 0019. Erasure reaches every store that holds an item, and never the record of what happened
 
-**Status:** accepted · 2026-09-24. Migration 0031, backlog item S2-03.
+**Status:** accepted · 2026-09-24. Migration 0031, backlog item S2-03. Amended 2026-10-01: a return carries an outcome (below).
 
 ## Context
 
@@ -73,3 +73,18 @@ Legal decides the backup question; the platform starts holding asset bytes
 itself (P-02), which would add a storage store erased through
 `infrastructure/storage/service.py`; or a holder integration (S4-03) lets a
 holder confirm erasure other than by returning its ticket.
+
+## Amended · 2026-10-01
+
+A returned ticket was taken as the holder's copy erased whatever the return
+said, so a holder that answered "unable to erase" was recorded as having
+erased, and the request could close complete
+([review DPDP-1](../reviews/2026-10-01-frontend-architecture-review.md)). The
+decision above still stands - the holder's copy is done when the holder
+confirms it - and the confirmation is now explicit: a return carries the
+holder's outcome, `done`, `partial` or `failed` (migration 0037), and only
+`done` confirms. A return saying it fell short records the store *failed* with
+the holder's word, and sending the ticket back is how the holder is asked
+again. Returns recorded before 0037 have no outcome and are read as done,
+which is how they were treated. The same rule applies to a correction: S2-02's
+guard counts only returns that say the work was done.

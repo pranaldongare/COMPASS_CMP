@@ -88,6 +88,7 @@ async def _return(
         row,
         holder_uuid=str(holder["holder_uuid"]),
         summary="Deleted from the lab store and its replicas.",
+        outcome="done",
         evidence_ref=None,
         evidence_hash="f00d",
         role=DPO,

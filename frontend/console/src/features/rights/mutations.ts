@@ -23,6 +23,7 @@ import type {
   RightsScopeItem,
   TicketDetail,
   Uuid,
+  ReturnOutcome,
 } from "@/types";
 
 function useInvalidateRequest(uuid: Uuid) {
@@ -135,7 +136,7 @@ export const useIssueTickets = (uuid: Uuid) =>
     api.issueTickets(uuid, body),
   );
 export const useReturnTicket = (uuid: Uuid) =>
-  useRequestAction<RightsHolder, { holderUuid: Uuid; summary: string; evidence: File | null }>(
+  useRequestAction<RightsHolder, { holderUuid: Uuid; summary: string; outcome: ReturnOutcome; evidence: File | null }>(
     uuid,
     ({ holderUuid, ...input }) => api.returnTicket(uuid, holderUuid, input),
   );
@@ -170,7 +171,7 @@ export const useDecideGrievance = (uuid: Uuid) =>
 
 /* --------------------------------------------------- the respondent's side */
 
-export function useReturnMyTicket(): Result<MyTicket, { holderUuid: Uuid; summary: string; evidence: File | null }> {
+export function useReturnMyTicket(): Result<MyTicket, { holderUuid: Uuid; summary: string; outcome: ReturnOutcome; evidence: File | null }> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ holderUuid, ...input }) => api.returnMyTicket(holderUuid, input),

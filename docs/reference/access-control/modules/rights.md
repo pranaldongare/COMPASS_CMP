@@ -358,7 +358,7 @@ Record what the holder returned.
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. A return must state `outcome` - done, partial or failed (422 otherwise); only done counts as the work done (review DPDP-1, 2026-10-01).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1248), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/holders/{holder_uuid}/send-back

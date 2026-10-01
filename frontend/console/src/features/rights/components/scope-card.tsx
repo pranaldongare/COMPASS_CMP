@@ -90,6 +90,14 @@ function executionText(e: RightsItemExecution): string {
     case "held":
       return "stopped until the hold is released";
     case "failed":
+      // The holder's own word that it fell short (review DPDP-1). Retrying
+      // changes nothing until the holder answers again: send the ticket back.
+      if (reason === "holder_reported_failed") {
+        return "the holder says it could not erase its copy - send the ticket back if it still can";
+      }
+      if (reason === "holder_reported_partial") {
+        return "the holder says it erased only part of its copy - send the ticket back for the rest";
+      }
       return `failed (${String(e.detail.error ?? "error")}) - retried daily, or try again now`;
   }
 }

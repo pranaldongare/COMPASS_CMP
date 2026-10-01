@@ -45,8 +45,20 @@ def test_the_blocker_names_an_unreturned_holder_first() -> None:
 
 def test_nothing_done_blocks_but_a_returned_correction_does_not() -> None:
     assert execution.complete_blocked_by("correction", [], []) is not None
-    returned = [{"label": "Lab A", "ticket_status": "returned"}]
+    returned = [{"label": "Lab A", "ticket_status": "returned", "return_outcome": "done"}]
     assert execution.complete_blocked_by("correction", [], returned) is None
+    # A return from before outcomes were asked (NULL) reads as done, as it did then.
+    legacy = [{"label": "Lab A", "ticket_status": "returned", "return_outcome": None}]
+    assert execution.complete_blocked_by("correction", [], legacy) is None
+
+
+@pytest.mark.parametrize("outcome", ["partial", "failed"])
+def test_a_return_that_says_it_fell_short_blocks_complete(outcome: str) -> None:
+    """DPDP-1: a ticket returned "unable to erase" is not the work done."""
+    short = [{"label": "Lab A", "ticket_status": "returned", "return_outcome": outcome}]
+    reason = execution.complete_blocked_by("correction", [], short)
+    assert reason is not None and "Lab A" in reason
+    assert execution.account("correction", [], short)["holders_confirmed"] == []
 
 
 def test_access_is_never_blocked_by_execution() -> None:

@@ -28,6 +28,7 @@ import type {
   MyTicket,
   HolderThread,
   TicketDetail,
+  ReturnOutcome,
 } from "@/types";
 
 /* ==========================================================================
@@ -182,10 +183,11 @@ export const issueTickets = (uuid: Uuid, body: { instruction?: string | null; du
 export function returnTicket(
   uuid: Uuid,
   holderUuid: Uuid,
-  input: { summary: string; evidence: File | null },
+  input: { summary: string; outcome: ReturnOutcome; evidence: File | null },
 ): Promise<RightsHolder> {
   const form = new FormData();
   form.set("summary", input.summary);
+  form.set("outcome", input.outcome);
   if (input.evidence) form.set("evidence", input.evidence);
   return apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/return`), form);
 }
@@ -253,10 +255,11 @@ export function listMyTickets(background = false): Promise<MyTicket[]> {
 
 export function returnMyTicket(
   holderUuid: Uuid,
-  input: { summary: string; evidence: File | null },
+  input: { summary: string; outcome: ReturnOutcome; evidence: File | null },
 ): Promise<MyTicket> {
   const form = new FormData();
   form.set("summary", input.summary);
+  form.set("outcome", input.outcome);
   if (input.evidence) form.set("evidence", input.evidence);
   return apiPost<MyTicket>(`/tickets/${holderUuid}/return`, form);
 }

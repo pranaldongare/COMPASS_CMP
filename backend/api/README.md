@@ -30,7 +30,7 @@ python3.12 -m venv .venv
 pip install -r requirements-dev.txt # the runtime, the tools, and this package (editable)
 
 cp .env.example .env                # PUBLIC_BASE_URL and CONSOLE_BASE_URL to the two portals; DKMS_URL to the key service
-alembic upgrade head                # 36 migrations: 45 tables, triggers, grants, the lookup hashes
+alembic upgrade head                # 37 migrations: 45 tables, triggers, grants, the lookup hashes
 python scripts/seed.py              # one coherent world: a user per role, processors, sources, sites, a project through to approved, a live link
 
 python -m cmp --port 8000

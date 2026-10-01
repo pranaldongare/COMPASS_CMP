@@ -223,7 +223,7 @@ class TestAnAccessRequestThroughTheOffice:
             template=HOLDER + "/return",
             session=dpo,
             expect=(200, 204),
-            data={"summary": "Two tapes, three consents. Nothing else."},
+            data={"summary": "Two tapes, three consents. Nothing else.", "outcome": "partial"},
         )
         await call(
             http,
@@ -241,7 +241,7 @@ class TestAnAccessRequestThroughTheOffice:
             template=HOLDER + "/return",
             session=dpo,
             expect=(200, 204),
-            data={"summary": "Tapes 12 and 14."},
+            data={"summary": "Tapes 12 and 14.", "outcome": "done"},
         )
 
         # The last ticket back moved the request to collating on its own.
@@ -699,7 +699,7 @@ class TestTicketsFromTheHoldersSide:
             template="/tickets/{holder_uuid}/return",
             session=team,
             expect=(200, 204),
-            data={"summary": "Two files, both from March."},
+            data={"summary": "Two files, both from March.", "outcome": "done"},
             files={"evidence": ("list.txt", b"a.mp4\nb.mp4\n", "text/plain")},
         )
 

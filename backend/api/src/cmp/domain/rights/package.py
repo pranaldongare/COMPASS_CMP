@@ -171,6 +171,7 @@ async def build_response(
                 "issued_at": h["issued_at"],
                 "returned_at": h["returned_at"],
                 "return_summary": h["return_summary"],
+                "return_outcome": h.get("return_outcome"),
                 "return_evidence_sha256": h["return_evidence_hash"],
             }
             for h in holders
@@ -274,8 +275,12 @@ def digest_text(package: dict[str, Any]) -> str:
     if holders:
         for h in holders:
             if h.get("ticket_status") == "returned":
+                said = {"partial": " (did only part of it)", "failed": " (could not do it)"}.get(
+                    str(h.get("return_outcome")), ""
+                )
                 lines.append(
-                    f"- {h['holder']}: {h.get('return_summary') or 'returned without a summary'}"
+                    f"- {h['holder']}{said}: "
+                    f"{h.get('return_summary') or 'returned without a summary'}"
                 )
             else:
                 lines.append(f"- {h['holder']}: not returned ({h.get('ticket_status')})")
