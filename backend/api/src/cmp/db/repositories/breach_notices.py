@@ -148,6 +148,19 @@ async def add_delivery(
     )
 
 
+async def queued_delivery(
+    conn: Conn, notice_id: int, person_id: int, *, channel: str, attempt: int
+) -> Row | None:
+    """The queued row of one attempt, to queue its task again."""
+    return await fetch_one(
+        conn,
+        """SELECT delivery_uuid FROM breach_notice_delivery
+            WHERE notice_id = %s AND auth_user_id = %s AND channel = %s
+              AND attempt = %s AND status = 'queued'""",
+        (notice_id, person_id, channel, attempt),
+    )
+
+
 async def job(conn: Conn, delivery_uuid: str) -> Row | None:
     """Everything the worker needs to send one queued delivery, and whether its
     attempt already has an outcome."""

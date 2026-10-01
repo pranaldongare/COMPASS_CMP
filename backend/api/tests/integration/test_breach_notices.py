@@ -280,3 +280,28 @@ async def test_nobody_listed_nothing_to_send(
     await _approved(conn, seeded, uuid)
     with pytest.raises(Conflict, match="Nobody is listed"):
         await notices.send(conn, breach_uuid=uuid, actor_id=int(seeded["users"]["dpo"]["id"]))
+
+
+async def test_a_delivery_lost_before_the_worker_is_sent_again(
+    conn: Any, seeded: dict[str, Any], queued: list[Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A queued SMS whose task never ran - the broker dropped it - stayed queued
+    for ever, and Send skipped anything queued, so the principals' duty could
+    never complete. Send now queues a stale one again, on the same delivery,
+    without a new row; a fresh one is left to the worker."""
+    a = await _person(conn, seeded, "a")
+    uuid = await _determined(conn, seeded, [a[1]])
+    dpo = int(seeded["users"]["dpo"]["id"])
+    await _approved(conn, seeded, uuid)
+    await notices.send(conn, breach_uuid=uuid, actor_id=dpo)
+    rows = await _deliveries(conn, uuid)
+    [sms] = [r for r in rows if r["channel"] == "sms"]
+
+    await notices.send(conn, breach_uuid=uuid, actor_id=dpo)
+    assert len(_sends(queued)) == 1, "a delivery queued moments ago is the worker's"
+
+    monkeypatch.setattr(notices, "STALE_AFTER", timedelta(0))
+    view = await notices.send(conn, breach_uuid=uuid, actor_id=dpo)
+    assert [args for _, args in _sends(queued)] == [(str(sms["delivery_uuid"]),)] * 2
+    assert await _deliveries(conn, uuid) == rows, "the same delivery, no new row"
+    assert view["unnotified"] == 1

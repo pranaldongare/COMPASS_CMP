@@ -192,7 +192,9 @@ breach's page is where they are written, approved and sent.
 - **A resend never duplicates.** Send writes only what is missing for the
   latest approved version: people newly listed, channels never tried, and a new
   attempt where the last one failed. Two sends at once write each state once
-  (`breach_notice_delivery_once`).
+  (`breach_notice_delivery_once`). An email or SMS still queued fifteen minutes
+  after it was sent was lost before the worker saw it - a broker that dropped
+  it after the commit - and Send queues the same delivery again.
 - **An update is a new version**, approved like the first and sent to everyone
   listed, the people already notified included. Her portal shows the latest
   above the earlier.

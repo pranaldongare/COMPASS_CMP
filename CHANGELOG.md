@@ -592,6 +592,11 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **A breach notice lost before the worker saw it is sent again.** An email
+  or SMS whose task the broker dropped after the commit stayed queued for ever,
+  and Send skipped anything queued, so *Principals notified* could never
+  complete. Send now queues again a delivery still queued fifteen minutes on.
+  Found while weighing review finding SCALE-1 against the Sprint 3 code.
 - **A returned ticket counts only when it says the work was done.** Any return
   used to count: a ticket returned "unable to erase" recorded the holder's copy
   as erased, and a correction could close complete on it. A return now says

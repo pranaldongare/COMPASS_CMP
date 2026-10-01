@@ -14,8 +14,10 @@ her user account and the contact she registered.
   commit (`dispatch_optional`) and records what happened.
 * **A resend never duplicates.** Send writes only what is missing for the
   latest approved version: people newly listed, channels never tried, and a new
-  attempt where the last one failed. `breach_notice_delivery_once` holds it
-  when two sends race.
+  attempt where the last one failed. A delivery still queued long after the
+  worker would have finished with it (`STALE_AFTER`) was lost before the worker
+  saw it, and is queued again - the same delivery, no new row.
+  `breach_notice_delivery_once` holds it when two sends race.
 * **The words are sealed**, like every narrative about a breach, and opened
   where they are read: the console, her portal, and `deliver()` in the worker.
 * **An updated notice is a new version**, approved like the first and sent to
@@ -28,7 +30,7 @@ her user account and the contact she registered.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
@@ -43,6 +45,12 @@ from cmp.domain.breach.clock import Duty, EventKind, State
 Row = dict[str, Any]
 
 CONTENTS = repo.CONTENTS
+
+#: How long a delivery may sit queued before Send queues it again. The worker
+#: retries a message for about two and a half minutes; one still queued long
+#: after that was never picked up - the broker lost it after the commit
+#: (ADR 0012) - and nothing else would ever send it.
+STALE_AFTER = timedelta(minutes=15)
 
 #: What each content is, as the DPO reads it and as a refusal names it.
 LABELS: dict[str, str] = {
@@ -150,7 +158,8 @@ async def send(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
         )
     notice_id = int(notice["notice_id"])
     states = await repo.latest_states(conn, breach_id, notice_id)
-    written = queued = retried = 0
+    written = queued = retried = requeued = 0
+    stale_before = datetime.now(UTC) - STALE_AFTER
     for person in people:
         pid = int(person["person_id"])
         if (pid, "portal") not in states and await repo.add_delivery(
@@ -175,8 +184,18 @@ async def send(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
                 attempt = 1
             elif last["status"] == "failed":
                 attempt = int(last["attempt"]) + 1
+            elif last["status"] == "queued" and last["recorded_at"] <= stale_before:
+                # Lost before the worker: queue the same delivery again. Its
+                # task checks the attempt has no outcome yet before sending.
+                again = await repo.queued_delivery(
+                    conn, notice_id, pid, channel=channel, attempt=int(last["attempt"])
+                )
+                if again:
+                    requeued += 1
+                    dispatch_optional(send_breach_notice, str(again["delivery_uuid"]))
+                continue
             else:
-                continue  # queued, or delivered: nothing to add
+                continue  # queued recently, or delivered: nothing to add
             row = await repo.add_delivery(
                 conn, notice_id, pid, channel=channel, attempt=attempt, status="queued"
             )
@@ -194,6 +213,7 @@ async def send(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
             "accounts": written,
             "queued": queued,
             "retried": retried,
+            "requeued": requeued,
         },
     )
     await settle(conn, breach, actor_id=actor_id)

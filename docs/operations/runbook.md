@@ -309,7 +309,9 @@ cannot fail; email and SMS are sent by the worker.
 
 - **Queued and not moving.** The worker is down, or not listening on the
   `notifications` queue: see "The worker is running but nothing happens". A
-  queued delivery is sent when it comes back.
+  queued delivery is sent when it comes back. One queued for more than fifteen
+  minutes with the worker running was lost before the worker saw it: press
+  **Send** again, and it is queued again - the same delivery, sent once.
 - **Failed - `DkmsUnavailable`, `ConnectionError`, `TimeoutError`.** The key
   service or the transport was away for longer than the worker's retries (about
   two and a half minutes). Bring it back and press **Send** again: each failed
