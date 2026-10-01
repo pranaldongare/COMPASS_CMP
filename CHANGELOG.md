@@ -585,6 +585,11 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **A failed request no longer reads as an answer on My consents.** The
+  disclosures panel turned a failed request into "Not shared with anyone" - a
+  false statement about her data under s.11(1)(b) - and the record trail into
+  "Nothing recorded yet"; the purposes list and the served notice vanished.
+  Each now says it could not load and offers Try again (review UX-2).
 - **A notice with a mandatory purpose can be declined.** Decline everything
   answers every purpose No, and the server read that as refusing the mandatory
   purpose and turned it away - so the refusal the form recommended was

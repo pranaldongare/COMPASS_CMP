@@ -69,4 +69,24 @@ describe("My consents", () => {
     expect(await screen.findByText(/withdrawn/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /withdraw everything/i })).not.toBeInTheDocument();
   });
+
+  it("says it could not load who her data was shared with, never that it was shared with nobody", async () => {
+    serve(consent({}));
+    let calls = 0;
+    server.use(
+      http.get(`${API}/me/disclosures`, () => {
+        calls += 1;
+        return calls === 1
+          ? HttpResponse.json({ error: { code: "internal_error", message: "Down" } }, { status: 500 })
+          : HttpResponse.json([]);
+      }),
+    );
+    const { user } = page();
+    expect(await screen.findByText(/could not load who your data has been shared with/i)).toBeInTheDocument();
+    expect(screen.queryByText("Not shared with anyone")).not.toBeInTheDocument();
+
+    // Asked again, and answered: only now may it say nobody.
+    await user.click(screen.getByRole("button", { name: /try again/i }));
+    expect(await screen.findByText("Not shared with anyone")).toBeInTheDocument();
+  });
 });

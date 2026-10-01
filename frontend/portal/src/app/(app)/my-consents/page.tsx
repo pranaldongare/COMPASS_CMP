@@ -15,12 +15,7 @@
  */
 "use client";
 
-import {
-  History,
-  MessageSquarePlus,
-  Share2,
-  ShieldOff,
-} from "lucide-react";
+import { History, MessageSquarePlus, Share2, ShieldOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
@@ -50,6 +45,7 @@ import {
 import { HomeStrip } from "@/features/rights/components/home-strip";
 import { MyRequestForm } from "@/features/rights/components/request-form";
 import type { MyConsent } from "@/types";
+import { ApiError } from "@/lib/errors";
 import { formatDateTime, formatDuration, humanise, shortHash } from "@/lib/format";
 import { useToast } from "@/providers";
 import { ActivityFeed } from "@/components/data-display/activity-feed";
@@ -133,9 +129,7 @@ function ConsentCard({
       );
       toast.success(
         "Withdrawal recorded",
-        result.stopped.length
-          ? `Stopped: ${result.stopped.join(", ")}.`
-          : undefined,
+        result.stopped.length ? `Stopped: ${result.stopped.join(", ")}.` : undefined,
       );
       setConfirming(null);
     } catch (err) {
@@ -230,25 +224,32 @@ function ConsentCard({
           <div className="rounded-lg border border-border bg-bg-subtle p-4">
             <h3 className="mb-1 text-sm font-medium">What was recorded</h3>
             <p className="mb-3 text-xs text-text-muted">
-              The same record the Privacy Office sees, for this consent and every
-              change to it. Oldest first.
+              The same record the Privacy Office sees, for this consent and every change to
+              it. Oldest first.
             </p>
-            <ActivityFeed
-              entries={trail.data}
-              isLoading={trail.isLoading}
-              order="oldest"
-              emptyTitle="Nothing recorded yet"
-              emptyDescription="Entries appear here as things happen to this record."
-            />
+            {trail.error ? (
+              <LoadFailed
+                what="the record of this consent"
+                error={trail.error}
+                retry={trail.refetch}
+              />
+            ) : (
+              <ActivityFeed
+                entries={trail.data}
+                isLoading={trail.isLoading}
+                order="oldest"
+                emptyTitle="Nothing recorded yet"
+                emptyDescription="Entries appear here as things happen to this record."
+              />
+            )}
           </div>
         )}
 
         {confirming === "all" && (
           <Alert tone="warning" title="Withdraw all purposes?">
             <p>
-              Processing for these purposes will stop. Data already collected is
-              not deleted by a withdrawal — if you want it erased, make a rights
-              request.
+              Processing for these purposes will stop. Data already collected is not deleted
+              by a withdrawal — if you want it erased, make a rights request.
             </p>
             <div className="mt-3 flex gap-2">
               <Button
@@ -270,6 +271,12 @@ function ConsentCard({
           <div className="space-y-4 border-t border-border pt-4">
             {grants.isLoading ? (
               <Skeleton className="h-24" />
+            ) : grants.error ? (
+              <LoadFailed
+                what="your choices for each purpose"
+                error={grants.error}
+                retry={grants.refetch}
+              />
             ) : (
               <ul className="space-y-2">
                 {grants.data?.map((grant) => (
@@ -340,6 +347,15 @@ function ServedNotice({ consentUuid }: { consentUuid: string }) {
   }
 
   if (served.isLoading) return <Skeleton className="h-32" />;
+  if (served.error) {
+    return (
+      <LoadFailed
+        what="the notice you were given"
+        error={served.error}
+        retry={served.refetch}
+      />
+    );
+  }
 
   const data = served.data as
     | {
@@ -356,7 +372,7 @@ function ServedNotice({ consentUuid }: { consentUuid: string }) {
   return (
     <div className="rounded-md border border-border bg-bg-subtle p-4">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-text-subtle">
+        <p className="text-xs font-medium tracking-wide text-text-subtle uppercase">
           Served {formatDateTime(data.served_at)}
         </p>
         <span
@@ -369,7 +385,7 @@ function ServedNotice({ consentUuid }: { consentUuid: string }) {
         </span>
       </div>
 
-      <div className="max-h-72 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed">
+      <div className="max-h-72 overflow-y-auto text-sm leading-relaxed whitespace-pre-wrap">
         {data.rendered_text}
       </div>
 
@@ -406,14 +422,21 @@ function Disclosures() {
           Who your data has been shared with
         </CardTitle>
         <p className="mt-1 text-xs text-text-muted">
-          Section 11(1)(b). Answered from the disclosure record, not from an
-          archived file.
+          Section 11(1)(b). Answered from the disclosure record, not from an archived file.
         </p>
       </CardHeader>
 
       {disclosures.isLoading ? (
         <CardBody>
           <Skeleton className="h-20" />
+        </CardBody>
+      ) : disclosures.error ? (
+        <CardBody>
+          <LoadFailed
+            what="who your data has been shared with"
+            error={disclosures.error}
+            retry={disclosures.refetch}
+          />
         </CardBody>
       ) : items.length === 0 ? (
         <EmptyState
@@ -435,5 +458,29 @@ function Disclosures() {
         </ul>
       )}
     </Card>
+  );
+}
+
+/**
+ * A panel whose request failed. It says so, and offers to ask again, rather
+ * than falling through to its empty state: "Not shared with anyone" read after
+ * a failed request is a false statement about her data (review UX-2).
+ */
+function LoadFailed({
+  what,
+  error,
+  retry,
+}: {
+  what: string;
+  error: unknown;
+  retry: () => unknown;
+}) {
+  return (
+    <Alert tone="danger" title={`Could not load ${what}`}>
+      <p>{error instanceof ApiError ? error.userMessage() : "The request did not complete."}</p>
+      <Button variant="secondary" size="sm" className="mt-2" onClick={() => void retry()}>
+        Try again
+      </Button>
+    </Alert>
   );
 }
