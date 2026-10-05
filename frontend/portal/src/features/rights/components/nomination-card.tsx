@@ -9,6 +9,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { UserRoundCheck, UserRoundX } from "lucide-react";
 import * as React from "react";
 
@@ -39,7 +40,10 @@ import { useToast } from "@/providers";
 import type { Nomination } from "@/types";
 import { RIGHTS_REQUEST_TYPES } from "@/types";
 
-const STATUS: Record<Nomination["status"], { label: string; tone: "neutral" | "info" | "success" | "warning" | "danger" }> = {
+const STATUS: Record<
+  Nomination["status"],
+  { label: string; tone: "neutral" | "info" | "success" | "warning" | "danger" }
+> = {
   pending: { label: "Waiting for the nominee to accept", tone: "warning" },
   active: { label: "In place", tone: "success" },
   declined: { label: "Declined by the nominee", tone: "neutral" },
@@ -48,7 +52,9 @@ const STATUS: Record<Nomination["status"], { label: string; tone: "neutral" | "i
 
 export function NominationCard() {
   const nominations = useMyNominations();
-  const live = nominations.data?.find((n) => n.status === "pending" || n.status === "active");
+  const live = nominations.data?.find(
+    (n) => n.status === "pending" || n.status === "active",
+  );
   const past = (nominations.data ?? []).filter((n) => n !== live);
 
   return (
@@ -60,8 +66,8 @@ export function NominationCard() {
         </CardTitle>
         <p className="mt-1 text-xs text-text-muted">
           Section 14. A person you name, while you are well, to exercise these rights if you
-          die or cannot act. Nothing is in effect until they accept, and you can revoke it at
-          any time.
+          die or cannot act. Nothing is in effect until they accept, and you can revoke it
+          at any time.
         </p>
       </CardHeader>
       <CardBody className="space-y-4">
@@ -69,13 +75,22 @@ export function NominationCard() {
         {nominations.error && (
           <Alert tone="danger">{nominations.error.userMessage()}</Alert>
         )}
-        {live ? <LiveNomination nomination={live} /> : nominations.data && <NominationForm />}
+        {live ? (
+          <LiveNomination nomination={live} />
+        ) : (
+          nominations.data && <NominationForm />
+        )}
         {past.length > 0 && (
           <details className="text-sm">
-            <summary className="cursor-pointer text-text-muted">Earlier nominations</summary>
+            <summary className="cursor-pointer text-text-muted">
+              Earlier nominations
+            </summary>
             <ul className="mt-2 space-y-1">
               {past.map((n) => (
-                <li key={n.nomination_uuid} className="flex flex-wrap items-center gap-2 text-xs text-text-muted">
+                <li
+                  key={n.nomination_uuid}
+                  className="flex flex-wrap items-center gap-2 text-xs text-text-muted"
+                >
                   <span className="font-medium text-text">{n.nominee_name}</span>
                   <Badge tone={STATUS[n.status].tone} dot={false}>
                     {STATUS[n.status].label}
@@ -122,7 +137,10 @@ function LiveNomination({ nomination: n }: { nomination: Nomination }) {
       </p>
 
       {n.invoked_at && (
-        <Alert tone={n.invoked_event === "death" ? "danger" : "warning"} title={`${n.nominee_name} acted for you on ${formatDate(n.invoked_at)}`}>
+        <Alert
+          tone={n.invoked_event === "death" ? "danger" : "warning"}
+          title={`${n.nominee_name} acted for you on ${formatDate(n.invoked_at)}`}
+        >
           <p className="text-sm">
             {n.invoked_event === "death"
               ? "They reported that you have died. Once the Privacy Office finds that evidenced, this account is closed."
@@ -130,10 +148,18 @@ function LiveNomination({ nomination: n }: { nomination: Nomination }) {
             {n.invoked_reference && (
               <>
                 {" "}
-                Their request is <Mono>{n.invoked_reference}</Mono>, under your requests above.
+                Their request is <Mono>{n.invoked_reference}</Mono>, under{" "}
+                <Link
+                  href="/my-requests"
+                  className="text-accent-text underline underline-offset-2"
+                >
+                  My requests
+                </Link>
+                .
               </>
             )}
-            {n.invoked_evidenced_at && ` The Privacy Office found the event evidenced on ${formatDate(n.invoked_evidenced_at)}.`}
+            {n.invoked_evidenced_at &&
+              ` The Privacy Office found the event evidenced on ${formatDate(n.invoked_evidenced_at)}.`}
           </p>
         </Alert>
       )}
@@ -155,7 +181,8 @@ function LiveNomination({ nomination: n }: { nomination: Nomination }) {
           {/* Shown here too: the nominee was sent it on acceptance, and this is
               the place the nominee page tells them to ask if they lost it. */}
           <p className="mt-2 text-xs text-text-muted">
-            Their nomination reference: <Mono className="break-all">{n.nomination_uuid}</Mono>
+            Their nomination reference:{" "}
+            <Mono className="break-all">{n.nomination_uuid}</Mono>
           </p>
         </Alert>
       )}
@@ -191,7 +218,11 @@ function NominationForm() {
   return (
     <form method="post" onSubmit={submit} noValidate className="space-y-4">
       <FormError message={form.formError} />
-      <Field label="Their name" required error={form.formState.errors.nominee_name?.message}>
+      <Field
+        label="Their name"
+        required
+        error={form.formState.errors.nominee_name?.message}
+      >
         {(p) => <Input {...p} autoComplete="off" {...form.register("nominee_name")} />}
       </Field>
       <Field
@@ -200,14 +231,28 @@ function NominationForm() {
         required
         error={form.formState.errors.nominee_mobile?.message}
       >
-        {(p) => <Input {...p} type="tel" autoComplete="off" {...form.register("nominee_mobile")} />}
+        {(p) => (
+          <Input
+            {...p}
+            type="tel"
+            autoComplete="off"
+            {...form.register("nominee_mobile")}
+          />
+        )}
       </Field>
       <Field
         label="Their email"
         hint="Optional. The link goes here too, and they may prove either contact."
         error={form.formState.errors.nominee_email?.message}
       >
-        {(p) => <Input {...p} type="email" autoComplete="off" {...form.register("nominee_email")} />}
+        {(p) => (
+          <Input
+            {...p}
+            type="email"
+            autoComplete="off"
+            {...form.register("nominee_email")}
+          />
+        )}
       </Field>
       <CheckboxGroup
         label="Which of your rights they may exercise"
@@ -219,7 +264,9 @@ function NominationForm() {
         }))}
         value={rights}
         onChange={(next) =>
-          form.setValue("rights", next as NominationFormValues["rights"], { shouldValidate: true })
+          form.setValue("rights", next as NominationFormValues["rights"], {
+            shouldValidate: true,
+          })
         }
       />
       <Button type="submit" variant="primary" loading={nominate.isPending}>
