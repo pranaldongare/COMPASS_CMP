@@ -86,8 +86,9 @@ export default function SitesPage() {
               )}
             </Td>
             <Td>
+              {/* A site's project opens on its sites, where this row's controls are. */}
               <Link
-                href={`/projects/${s.project_uuid}`}
+                href={`/projects/${s.project_uuid}#sites`}
                 className="text-text-muted hover:text-text hover:underline"
               >
                 {s.project_name}

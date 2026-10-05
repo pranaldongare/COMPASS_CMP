@@ -118,8 +118,9 @@ function LinksPageView() {
           <Tr>
             <Td className="font-medium">{l.site_label}</Td>
             <Td>
+              {/* A link's project opens on its consent links. */}
               <Link
-                href={`/projects/${l.project_uuid}`}
+                href={`/projects/${l.project_uuid}#links`}
                 className="text-text-muted hover:text-text hover:underline"
               >
                 {l.project_name}
