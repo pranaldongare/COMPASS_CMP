@@ -182,8 +182,13 @@ jobs:
 
       # The production build fails on a type or lint error the dev server
       # tolerates, so it is part of the gate rather than of the deploy.
+      # A production build must be told the other portal's address; it is
+      # inlined into the bundle and the build refuses to guess it (ARCH-6).
       - name: Build
         run: npm run build
+        env:
+          NEXT_PUBLIC_SUBJECT_PORTAL_URL: https://portal.ci.invalid
+          NEXT_PUBLIC_STAFF_PORTAL_URL: https://console.ci.invalid
 
   security:
     name: Dependency and secret scan

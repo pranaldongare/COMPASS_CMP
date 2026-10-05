@@ -1,4 +1,7 @@
 import type { NextConfig } from "next";
+import { PHASE_PRODUCTION_BUILD } from "next/constants";
+
+import { deploymentProblems, deploymentWarnings } from "./src/lib/config/deployment";
 
 /**
  * Where the API actually listens. Server-side only - it is never inlined into
@@ -110,4 +113,25 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * The other portal's address, which a production build must be given.
+ *
+ * It is inlined into the bundle, and it used to default to localhost: a
+ * deployment that forgot it built cleanly and sent people to their own
+ * computers (review ARCH-6). Checked at `next build` only - `next dev` keeps
+ * its local default and `next start` serves what was built.
+ */
+const CROSS_PORTAL = ["NEXT_PUBLIC_STAFF_PORTAL_URL"] as const;
+
+export default function config(phase: string): NextConfig {
+  if (phase === PHASE_PRODUCTION_BUILD) {
+    const problems = deploymentProblems(process.env, CROSS_PORTAL);
+    if (problems.length > 0) {
+      throw new Error(`This build is missing what a deployment needs:\n- ${problems.join("\n- ")}`);
+    }
+    for (const warning of deploymentWarnings(process.env, CROSS_PORTAL)) {
+      console.warn(`[config] ${warning}`);
+    }
+  }
+  return nextConfig;
+}

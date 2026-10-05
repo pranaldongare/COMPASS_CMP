@@ -139,8 +139,8 @@ starts, so a change needs a restart.
 | `NEXT_PUBLIC_API_URL` | both | `/api` | Leave unset. Set, every request is cross-origin and the session cookie is dropped |
 | `NEXT_PUBLIC_APP_NAME` | both | per portal | |
 | `NEXT_PUBLIC_CSRF_HEADER`, `NEXT_PUBLIC_CSRF_COOKIE` | both | `X-CSRF-Token`, `cmp_csrf` | Must match the API's `CSRF_HEADER_NAME` and `CSRF_COOKIE_NAME` |
-| `NEXT_PUBLIC_SUBJECT_PORTAL_URL` | console | `http://localhost:3001` | Where a data principal who lands on the console is sent |
-| `NEXT_PUBLIC_STAFF_PORTAL_URL` | portal | `http://localhost:3000` | Where staff who land on the portal are sent |
+| `NEXT_PUBLIC_SUBJECT_PORTAL_URL` | console | `http://localhost:3001` in development; **none for `next build`** | Where a data principal who lands on the console is sent, and the origin of every consent link the console shows. Inlined at build time: `next build` refuses to run without it, and warns when it points at localhost or plain http (`src/lib/config/deployment.ts`). Until 2026-10-05 a build without it defaulted to localhost and sent people to their own computers (review ARCH-6) |
+| `NEXT_PUBLIC_STAFF_PORTAL_URL` | portal | `http://localhost:3000` in development; **none for `next build`** | Where staff who land on the portal are sent. The same build-time check |
 | `DEV_ORIGINS` | both, development | empty | Extra origins the dev server serves its assets to, comma-separated |
 
 ## Transports default to not delivering
