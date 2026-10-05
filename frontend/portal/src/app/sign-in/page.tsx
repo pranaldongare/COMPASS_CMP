@@ -11,6 +11,13 @@
  * Every failure message is identical by design. The server refuses to say
  * whether a contact is registered, and repeating a friendlier message here
  * would undo that.
+ *
+ * A failure to *send* is not such a message, and is shown. The server answers
+ * a registered contact and a stranger alike - the same sentence on success,
+ * a rate limit counted before anybody is looked up, a 503 for everybody when
+ * the broker is down - so saying "we could not send a code" tells nobody who
+ * is registered, and saying nothing left people waiting for a code that was
+ * never coming (review UX-3).
  */
 "use client";
 
@@ -113,6 +120,7 @@ function SubjectForm() {
   const params = useSearchParams();
   const [sent, setSent] = React.useState(false);
   const [contact, setContact] = React.useState("");
+  const [failed, setFailed] = React.useState<string | null>(null);
   // Mobile first: it is where her sign-in codes go by default. An email that
   // arrived in the URL from sign-up switches the choice for her.
   const [medium, setMedium] = React.useState<"mobile" | "email">(() =>
@@ -131,14 +139,17 @@ function SubjectForm() {
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
-    // Deliberately ignores the outcome: the endpoint answers identically whether
-    // or not the contact is registered, so that this form cannot be used to
-    // discover who consented to a project.
+    // Success says nothing about the contact: the endpoint answers identically
+    // whether or not it is registered. A failure says nothing either - see the
+    // file comment - so it is shown, and she can try again.
+    setFailed(null);
     try {
       await requestOtp(values);
-    } catch {
-      // Even a failure must not distinguish. A network error still shows the
-      // same screen; the code simply will not arrive.
+    } catch (err) {
+      setFailed(
+        err instanceof ApiError ? err.userMessage() : "We could not send a code just now.",
+      );
+      return;
     }
     setContact(values.contact);
     setSent(true);
@@ -164,6 +175,7 @@ function SubjectForm() {
     // browser would perform a native GET submission, putting the contact in
     // the URL, the access log and the next Referer header.
     <form method="post" onSubmit={onSubmit} className="space-y-4" noValidate>
+      {failed && <Alert tone="danger">{failed}</Alert>}
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">Sign in with</legend>
         <div className="flex gap-4 text-sm">

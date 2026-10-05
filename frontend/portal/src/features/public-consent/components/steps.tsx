@@ -13,9 +13,13 @@ import { Pipeline } from "@/components/ui/charts";
 export type Step =
   | "loading"
   | "invalid"
+  /** The link could not be checked - an outage, not a bad link. */
+  | "unavailable"
   | "identify"
   | "verify"
   | "age"
+  /** Her code was accepted and spent; the notice is on its way. */
+  | "opening"
   | "notice"
   | "done";
 
@@ -34,7 +38,7 @@ export const STEP_LABELS: Array<{ key: Step; label: string }> = [
 export function Steps({ current }: { current: Step }) {
   // Asking for a date of birth is part of confirming who she is, not a stop of
   // its own: most people never see it.
-  const shown = current === "age" ? "verify" : current;
+  const shown = current === "age" ? "verify" : current === "opening" ? "notice" : current;
   const index = STEP_LABELS.findIndex((s) => s.key === shown);
   return (
     <div className="mb-5">

@@ -18,7 +18,7 @@ import {
   Field,
   Input,
 } from "@/components/ui/primitives";
-import { verifyOtp } from "@/features/public-consent/api";
+import { requestOtp, verifyOtp } from "@/features/public-consent/api";
 import { ApiError } from "@/lib/errors";
 
 export function VerifyStep({
@@ -26,16 +26,41 @@ export function VerifyStep({
   contact,
   onDone,
   onError,
+  onChangeContact,
 }: {
   token: string;
   /** The one contact she chose, and the only one this flow asks about. */
   contact: string;
   onDone: () => void;
   onError: (message: string | null) => void;
+  /** Back to the first step, the link still open. */
+  onChangeContact: () => void;
 }) {
   const [code, setCode] = React.useState("");
   const [busy, setBusy] = React.useState(false);
+  const [resending, setResending] = React.useState(false);
+  const [resent, setResent] = React.useState(false);
   const isEmail = contact.includes("@");
+
+  /**
+   * Another code to the same contact. The server's answer is the same
+   * sentence whoever she is, and its quota - five an hour - is per contact;
+   * a 429 is shown in its own words, which name no account.
+   */
+  async function resend() {
+    setResending(true);
+    setResent(false);
+    onError(null);
+    try {
+      await requestOtp(token, contact);
+      setCode("");
+      setResent(true);
+    } catch (err) {
+      onError(err instanceof ApiError ? err.userMessage() : "Could not send a new code.");
+    } finally {
+      setResending(false);
+    }
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -98,6 +123,19 @@ export function VerifyStep({
             Confirm and read the notice
           </Button>
         </form>
+        {resent && (
+          <p className="mt-3 text-sm text-text-muted" role="status">
+            A new code is on its way. The earlier one no longer works.
+          </p>
+        )}
+        <div className="mt-4 flex flex-wrap justify-between gap-2 border-t border-border-subtle pt-4">
+          <Button type="button" variant="ghost" loading={resending} onClick={resend}>
+            Send a new code
+          </Button>
+          <Button type="button" variant="ghost" onClick={onChangeContact}>
+            Use a different contact
+          </Button>
+        </div>
       </CardBody>
     </Card>
   );

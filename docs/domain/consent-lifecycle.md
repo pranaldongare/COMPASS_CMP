@@ -44,12 +44,19 @@ for a collection site by its owner, on the data-principal portal, at
 `/c/{token}`. The link resolves to the site, its project and the notice in
 force - the one it was minted for, or the one that replaced it; an invalid,
 expired, exhausted or revoked link says only that it is not valid, and never
-why.
+why. A link the page could not check - no answer, a 5xx, a 429 - is not called
+invalid: the page says the service did not answer and offers to try again,
+since sending somebody away for a new link because the API blinked loses the
+consent for good (review UX-3).
 
 ## 3. Who is signing
 
 **The link authenticates; it does not enrol.** She gives one contact, her
 mobile by default or her email instead, and confirms it with a six-digit code.
+The code step offers another code and a way back to choose a different
+contact, both without leaving the link. Once the code is accepted it is spent,
+so if her profile or the notice then fails to load she is told her contact is
+confirmed and offered "Try again" - never the code box again.
 The artefact is then bound to an account that already exists, which is what
 lets her find it, read it and withdraw it afterwards. A set of details typed
 once at a collection site could not do any of that.

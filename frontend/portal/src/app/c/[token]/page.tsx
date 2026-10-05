@@ -28,14 +28,21 @@
  * would tell somebody guessing tokens which of their guesses was structurally
  * valid, and the page offers every possibility at once instead — which helps a
  * legitimate visitor and tells an attacker nothing.
+ *
+ * **An outage is not an invalid link.** Only the API's 404 means the link is
+ * no good; anything else - no answer, a 5xx, a 429 - says so and offers to try
+ * again, rather than sending somebody away to ask for a new link because the
+ * service blinked. **A spent code is not asked for again.** Once the code is
+ * accepted the flow is past it: if her profile or the notice then fails to
+ * load, the `opening` step retries that alone (review UX-3).
  */
 "use client";
 
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import * as React from "react";
 
-import { Alert, Card, CardBody, Skeleton } from "@/components/ui/primitives";
+import { Alert, Button, Card, CardBody, Skeleton } from "@/components/ui/primitives";
 import { DateOfBirthPrompt } from "@/components/security";
 import { getMe } from "@/features/auth/api";
 import { getLink, serveNotice } from "@/features/public-consent/api";
@@ -63,6 +70,12 @@ export default function ConsentPage() {
     null,
   );
   const [error, setError] = React.useState<string | null>(null);
+  /** Bumped by "Try again" on an outage, to check the link once more. */
+  const [attempt, setAttempt] = React.useState(0);
+  const [opening, setOpening] = React.useState<{ busy: boolean; failed: string | null }>({
+    busy: false,
+    failed: null,
+  });
 
   React.useEffect(() => {
     let cancelled = false;
@@ -73,13 +86,15 @@ export default function ConsentPage() {
         setLanguage(data.available_languages[0] ?? "english");
         setStep("identify");
       })
-      .catch(() => {
-        if (!cancelled) setStep("invalid");
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        // Only the API's own "no such link" means the link is no good.
+        setStep(err instanceof ApiError && err.isNotFound ? "invalid" : "unavailable");
       });
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, attempt]);
 
   /**
    * Serve the notice in a language, and record which one was served.
@@ -106,6 +121,58 @@ export default function ConsentPage() {
             <Skeleton className="h-6 w-2/3" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-5/6" />
+          </CardBody>
+        </Card>
+      </Shell>
+    );
+  }
+
+  /**
+   * Past the code: her age if the account has none, then the notice. Run
+   * again by "Try again" without asking for a code - the one she typed is
+   * spent.
+   */
+  async function proceed() {
+    setOpening({ busy: true, failed: null });
+    setError(null);
+    try {
+      const me = await getMe();
+      if (me.is_minor === null) {
+        setStep("age");
+        return;
+      }
+      await serve(language);
+      setStep("notice");
+    } catch (err) {
+      setOpening({
+        busy: false,
+        failed: err instanceof ApiError ? err.userMessage() : "Could not load the notice.",
+      });
+      return;
+    }
+    setOpening({ busy: false, failed: null });
+  }
+
+  if (step === "unavailable") {
+    return (
+      <Shell>
+        <Card>
+          <CardBody className="py-10 text-center">
+            <AlertCircle className="mx-auto size-8 text-text-subtle" aria-hidden="true" />
+            <h1 className="mt-4 text-lg font-semibold">We could not open this link just now</h1>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-text-muted">
+              The service did not answer. Your link may be fine - try again in a moment.
+            </p>
+            <Button
+              variant="primary"
+              className="mt-6"
+              onClick={() => {
+                setStep("loading");
+                setAttempt((n) => n + 1);
+              }}
+            >
+              Try again
+            </Button>
           </CardBody>
         </Card>
       </Shell>
@@ -161,36 +228,46 @@ export default function ConsentPage() {
           token={token}
           contact={contact}
           onDone={async () => {
-            setError(null);
-            try {
-              const me = await getMe();
-              if (me.is_minor === null) {
-                setStep("age");
-                return;
-              }
-              await serve(language);
-              setStep("notice");
-            } catch (err) {
-              setError(
-                err instanceof ApiError ? err.userMessage() : "Could not load the notice.",
-              );
-            }
+            setStep("opening");
+            await proceed();
           }}
           onError={setError}
+          onChangeContact={() => {
+            setError(null);
+            setContact("");
+            setStep("identify");
+          }}
         />
+      )}
+
+      {step === "opening" && (
+        <Card>
+          <CardBody className="space-y-4 py-8 text-center">
+            <CheckCircle2 className="mx-auto size-8 text-success-text" aria-hidden="true" />
+            <h2 className="text-lg font-semibold">Your contact is confirmed</h2>
+            {opening.failed ? (
+              <>
+                <p className="text-sm text-text-muted" role="alert">
+                  {opening.failed} You do not need a new code.
+                </p>
+                <Button variant="primary" loading={opening.busy} onClick={proceed}>
+                  Try again
+                </Button>
+              </>
+            ) : (
+              <p className="text-sm text-text-muted" role="status">
+                Opening the notice…
+              </p>
+            )}
+          </CardBody>
+        </Card>
       )}
 
       {step === "age" && (
         <DateOfBirthPrompt
           onSaved={async () => {
-            try {
-              await serve(language);
-              setStep("notice");
-            } catch (err) {
-              setError(
-                err instanceof ApiError ? err.userMessage() : "Could not load the notice.",
-              );
-            }
+            setStep("opening");
+            await proceed();
           }}
         />
       )}
