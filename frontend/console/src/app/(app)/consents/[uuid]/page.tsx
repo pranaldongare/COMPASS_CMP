@@ -68,7 +68,7 @@ export default function ConsentDetailPage() {
         <PageHeader title="Consent record" breadcrumb={<BackLink />} />
         <Alert tone="danger" title="Could not load this record">
           {consent.error.isForbidden
-            ? "Your role does not permit this record. The attempt has been recorded in the audit trail."
+            ? "You don't have access to this record. Go back to your dashboard, or ask your administrator if you need it."
             : consent.error.userMessage()}
         </Alert>
       </>

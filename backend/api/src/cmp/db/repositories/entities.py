@@ -158,8 +158,9 @@ _SPECS: dict[str, _Spec] = {
                WHERE ca.consent_id = ANY(%s)""",
         href="/consents/{uuid}",
         # The staff register, versus her own record. Same event, two readers,
-        # two pages - and only one of them will open for her.
-        subject_href="/my-consents",
+        # two pages - and only one of them will open for her. Hers opens on the
+        # card (UX review); a superseded record's uuid simply opens the list.
+        subject_href="/my-consents?consent={uuid}",
         noun="Consent record",
     ),
     "import_batch": _Spec(

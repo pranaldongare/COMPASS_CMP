@@ -109,3 +109,6 @@ src/types/exchange.ts
 src/types/meta.ts
 src/types/primitives.ts
 src/styles/contrast.test.ts
+src/components/layout/help-link.tsx
+src/components/layout/help-link.test.ts
+src/components/ui/dialog.test.tsx

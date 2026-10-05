@@ -26,6 +26,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
 
+import { HelpLink } from "@/components/layout/help-link";
 import { useDrawer } from "@/components/layout/use-drawer";
 import { UserMenu } from "@/components/layout/user-menu";
 import { BrandMark } from "@/components/ui/graphics";
@@ -157,9 +158,9 @@ function Header({
         <div className="flex-1" />
 
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/help" aria-label="Help manual" title="Help manual">
+          <HelpLink aria-label="Help manual" title="Help manual">
             <CircleHelp />
-          </Link>
+          </HelpLink>
         </Button>
 
         <div className="ml-1 border-l border-border pl-2">

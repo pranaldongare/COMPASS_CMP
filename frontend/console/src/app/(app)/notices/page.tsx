@@ -8,13 +8,12 @@
  */
 "use client";
 
-import {
-  AlertTriangle,
-} from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
+import { useHere, withFrom } from "@/lib/navigation/return-to";
 import {
   FilterBar,
   FilterSelect,
@@ -32,6 +31,7 @@ import { formatDateTime } from "@/lib/format";
 
 function NoticesPageView() {
   const stack = useCursorStack();
+  const here = useHere();
   const [status, setStatus] = useFilterParam("status");
   const [languages, setLanguages] = useFilterParam("languages");
 
@@ -89,7 +89,7 @@ function NoticesPageView() {
           <Tr>
             <Td>
               <Link
-                href={`/notices/${n.notice_uuid}`}
+                href={withFrom(`/notices/${n.notice_uuid}`, here)}
                 className="font-medium text-accent-text hover:underline"
               >
                 {n.notice_code}

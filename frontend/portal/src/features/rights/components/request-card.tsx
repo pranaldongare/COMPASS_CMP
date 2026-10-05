@@ -164,7 +164,10 @@ export function RequestCard({
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
             <ShieldCheck className="size-4 text-accent-text" aria-hidden="true" />
             <span className="font-medium">About one consent only:</span>
-            <Link href="/my-consents" className="text-accent-text hover:underline">
+            <Link
+              href={`/my-consents?consent=${r.consent_uuid}`}
+              className="text-accent-text hover:underline"
+            >
               {[
                 r.consent_project,
                 r.consent_notice_code &&

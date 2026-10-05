@@ -55,7 +55,7 @@ export default function ImportDetailPage() {
         <PageHeader title="Import batch" breadcrumb={<BackLink />} />
         <Alert tone="danger" title="Could not load this batch">
           {batch.error.isForbidden
-            ? "Your role does not permit this. The attempt has been recorded in the audit trail."
+            ? "You don't have access to this record. Go back to your dashboard, or ask your administrator if you need it."
             : batch.error.userMessage()}
         </Alert>
       </>

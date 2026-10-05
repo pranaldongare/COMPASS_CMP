@@ -16,7 +16,7 @@
 "use client";
 
 import { History, MessageSquarePlus, Share2, ShieldOff } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
@@ -53,7 +53,19 @@ import { ActivityFeed } from "@/components/data-display/activity-feed";
 
 export default function MyConsentsPage() {
   const consents = useMyConsents();
-  const [open, setOpen] = React.useState<string | null>(null);
+  // A link may name one consent (`?consent=`): a request "about one consent
+  // only" used to link to the top of this page (UX review). It starts open,
+  // and is brought into view once its card exists.
+  const named = useSearchParams().get("consent");
+  const [open, setOpen] = React.useState<string | null>(named);
+  const scrollTo = React.useRef<string | null>(named);
+  React.useEffect(() => {
+    if (!scrollTo.current) return;
+    const card = document.getElementById(`consent-${scrollTo.current}`);
+    if (!card) return;
+    card.scrollIntoView({ behavior: "smooth", block: "start" });
+    scrollTo.current = null;
+  });
 
   return (
     <>
@@ -143,7 +155,7 @@ function ConsentCard({
   }
 
   return (
-    <Card>
+    <Card id={`consent-${consent.consent_uuid}`} className="scroll-mt-20">
       <CardHeader className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <CardTitle>{consent.project_name}</CardTitle>
@@ -177,7 +189,7 @@ function ConsentCard({
         </p>
 
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" size="sm" onClick={onToggle}>
+          <Button variant="secondary" size="sm" onClick={onToggle} aria-expanded={expanded}>
             {expanded
               ? "Hide details"
               : consent.granted_count === 0
@@ -213,9 +225,10 @@ function ConsentCard({
           >
             <MyRequestForm
               consent={consent}
-              onDone={() => {
+              onDone={(created) => {
                 setAsking(false);
-                router.push("/my-requests");
+                // The request just made, opened - not the top of the list.
+                router.push(`/my-requests?request=${created.request_uuid}`);
               }}
             />
           </DialogContent>

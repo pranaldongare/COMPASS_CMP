@@ -30,6 +30,7 @@ import { useParams } from "next/navigation";
 import * as React from "react";
 
 import { AuditTrailLink } from "@/components/data-display/audit-link";
+import { useReturnTo } from "@/lib/navigation/return-to";
 import { PageHeader } from "@/components/layout/app-shell";
 import {
   LanguageForm,
@@ -92,6 +93,9 @@ function sectionFor(item: string): string | null {
 export default function NoticeDetailPage() {
   const { uuid } = useParams<{ uuid: string }>();
   const toast = useToast();
+  // Opened from the notices register: offer that list back, as it was filtered.
+  // Opened from the project, the hierarchy below already leads there.
+  const fromRegister = useReturnTo(["/notices"]);
   const { me } = useAuth();
 
   const notice = useNotice(uuid);
@@ -175,16 +179,40 @@ export default function NoticeDetailPage() {
   return (
     <>
       <PageHeader
-        // Back to the project, not to the list of every notice. The reader came
-        // from a project, and the rest of the work is there.
+        // Where it sits - Projects, its project, the project's notices - and,
+        // when the notices register opened it, a way back to that list as it
+        // was filtered. The two are different places (UX review).
         breadcrumb={
-          <Link
-            href={`/projects/${n.project_uuid}`}
-            className="inline-flex items-center gap-1 hover:text-text"
+          <nav
+            aria-label="Breadcrumb"
+            className="flex flex-wrap items-center gap-x-1.5 gap-y-1"
           >
-            <ArrowLeft className="size-3.5" aria-hidden="true" />
-            {n.project_name}
-          </Link>
+            {fromRegister && (
+              <>
+                <Link
+                  href={fromRegister}
+                  className="inline-flex items-center gap-1 hover:text-text"
+                >
+                  <ArrowLeft className="size-3.5" aria-hidden="true" />
+                  Back to notices
+                </Link>
+                <span aria-hidden="true" className="mx-1 text-text-subtle">
+                  ·
+                </span>
+              </>
+            )}
+            <Link href="/projects" className="hover:text-text">
+              Projects
+            </Link>
+            <span aria-hidden="true">/</span>
+            <Link href={`/projects/${n.project_uuid}`} className="hover:text-text">
+              {n.project_name}
+            </Link>
+            <span aria-hidden="true">/</span>
+            <Link href={`/projects/${n.project_uuid}#notices`} className="hover:text-text">
+              Notices
+            </Link>
+          </nav>
         }
         title={`${n.notice_code} · version ${n.version}`}
         description={

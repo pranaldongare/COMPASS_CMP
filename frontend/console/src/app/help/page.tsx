@@ -6,14 +6,28 @@
  */
 "use client";
 
+import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import { ContactPanel } from "@/features/help/components/contact-panel";
 import { HelpHeader } from "@/features/help/components/help-header";
 import { HelpManual } from "@/features/help/components/help-manual";
 import { INTRO, ROLES, SECTIONS } from "@/features/help/content";
+import { helpReturn } from "@/components/layout/help-link";
+import { safeRedirectPath } from "@/lib/security";
 import { useSessionState } from "@/providers";
 
 export default function HelpPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <Help />
+    </React.Suspense>
+  );
+}
+
+function Help() {
   const session = useSessionState();
+  // The page Help was opened from, if it is one of ours (`HelpLink`).
+  const from = helpReturn(useSearchParams().get("from"), (v) => safeRedirectPath(v, ""));
   const me = session.status === "full" ? session.me : null;
   // A member of staff reading the console's manual reads their staff role's
   // sections, not the principal role a portal session would carry.
@@ -24,7 +38,9 @@ export default function HelpPage() {
       <HelpHeader
         back={
           me
-            ? { href: "/dashboard", label: "Back to the console" }
+            ? from
+              ? { href: from, label: "Back to where you were" }
+              : { href: "/dashboard", label: "Back to the console" }
             : { href: "/sign-in", label: "Sign in" }
         }
       />

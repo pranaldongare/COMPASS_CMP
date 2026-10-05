@@ -117,7 +117,7 @@ export const SECTIONS: HelpSection[] = [
         items: [
           "The sidebar lists only the sections your role has, grouped under Overview, Governance, Consent, Registry, Data movement, Oversight and You. [[Collapse sidebar]] at its foot folds it to icons; your choice is remembered.",
           "The breadcrumb beside the logo shows where you are, for example [[Oversight › Rights requests]]. Click the second part to go back to the list.",
-          "[[Search or jump to…]] in the header - or ⌘K on a Mac, Ctrl+K elsewhere - opens the command palette. Type a few letters of a page and press Enter. It also offers your recent pages, the theme switch and [[Sign out]].",
+          "[[Jump to page…]] in the header - or ⌘K on a Mac, Ctrl+K elsewhere - opens the command palette. Type a few letters of a page and press Enter. It also offers your recent pages, the theme switch and [[Sign out]].",
           "The bell opens [[Notifications]]: events on the records you can see, each linking to the page it is about.",
           "Lists search as you type. Each filter you set shows as a chip under the toolbar; its × removes just that filter.",
         ],

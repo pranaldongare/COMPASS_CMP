@@ -31,6 +31,7 @@ import { useParams } from "next/navigation";
 import * as React from "react";
 
 import { AuditTrailLink } from "@/components/data-display/audit-link";
+import { useReturnTo, withFrom } from "@/lib/navigation/return-to";
 import { PageHeader } from "@/components/layout/app-shell";
 import { CollapsibleCard } from "@/components/ui/collapsible";
 import { TransitionControls } from "@/features/projects/components/transition-controls";
@@ -96,6 +97,11 @@ export default function ProjectDetailPage() {
   const params = useParams<{ uuid: string }>();
   const uuid = params.uuid;
   const { me } = useAuth();
+  // The list this project was opened from, as it was filtered; a link from
+  // anywhere else falls back to every project.
+  const fromList = useReturnTo(["/projects"]);
+  const allProjects =
+    fromList && !fromList.startsWith("/projects/") ? fromList : "/projects";
   const [sheet, setSheet] = React.useState<Sheet | null>(null);
   const close = () => setSheet(null);
 
@@ -274,7 +280,10 @@ export default function ProjectDetailPage() {
     <>
       <PageHeader
         breadcrumb={
-          <Link href="/projects" className="inline-flex items-center gap-1 hover:text-text">
+          <Link
+            href={allProjects}
+            className="inline-flex items-center gap-1 hover:text-text"
+          >
             <ArrowLeft className="size-3.5" aria-hidden="true" />
             All projects
           </Link>
@@ -303,7 +312,8 @@ export default function ProjectDetailPage() {
             canDecide={isDpo}
           />
 
-          <Card>
+          {/* `#notices`: where a notice opened from this project comes back to. */}
+          <Card id="notices" className="scroll-mt-20">
             {/* The controls sit here as well as in the page header. A person
                 looking for how to add a notice looks at the card that says
                 there is not one, not at a row of buttons above the title — the
@@ -374,7 +384,10 @@ export default function ProjectDetailPage() {
                 {notices.data.map((notice) => (
                   <li key={notice.notice_uuid}>
                     <Link
-                      href={`/notices/${notice.notice_uuid}`}
+                      href={withFrom(
+                        `/notices/${notice.notice_uuid}`,
+                        `/projects/${uuid}#notices`,
+                      )}
                       className="flex items-center justify-between gap-4 px-5 py-3 hover:bg-surface-hover"
                     >
                       <div className="min-w-0">

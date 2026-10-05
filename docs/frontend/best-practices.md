@@ -587,6 +587,34 @@ a permission.
 
 Parallel and intercepting routes are not used; nothing needs them yet.
 
+### The navigation contract
+
+From the October 2026 UX review: a link opens what its label names, and going
+back returns you to where you were.
+
+- **Two kinds of back.** "Back to the list I was using" and "go to this
+  record's parent" are different places. A link that opens a record from a
+  list carries the list, `?from=` (`withFrom`, `lib/navigation/return-to.ts`);
+  the record's page offers it back (`useReturnTo`) and falls back to the
+  parent. A notice reached from the register offers "Back to notices" as
+  filtered; its breadcrumb is always Projects / project / Notices.
+  `from` is checked to be one of this site's paths under the expected prefix.
+- **Lists own their state in the URL** (§14), and coming back to a list
+  focuses and scrolls to the row you opened (`useReturnToRow` in
+  `resource-list.tsx`, per tab, per exact URL).
+- **Help returns to the page that opened it.** `HelpLink` and `helpHref()`
+  carry the page; the manual's back link uses it when it is one of ours.
+- **A link names its destination exactly.** Dashboard rows open the filtered
+  subset they count; a row about a collection or a site opens it; a person's
+  name opens that person (`/users?person=`); in the portal a request or a
+  consent opens its own card (`?request=`, `?consent=`, `?view=ready`).
+- **Dialogs keep typing.** One somebody has typed in asks "Keep editing /
+  Discard changes" when dismissed by Escape, a click outside or its close
+  button; a form's own Cancel and a successful save close it directly.
+- **An unknown address** shows a page with a way back (`app/not-found.tsx`),
+  and a refusal says what to do next rather than that the attempt was
+  recorded.
+
 ### Who lands where: the auth routing
 
 Signed-in-ness is decided by the API, answered through `GET /auth/me`, and

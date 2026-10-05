@@ -18,6 +18,7 @@ import { BookOpen, CornerDownLeft, History, LogOut, Moon, Search, Sun } from "lu
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 
+import { helpHref } from "@/components/layout/help-link";
 import { labelFor, sectionsFor, type NavItem } from "@/components/layout/nav";
 import { cn } from "@/lib/format";
 import { useAuth, useTheme } from "@/providers";
@@ -99,7 +100,7 @@ export function CommandPalette({
           )}
         >
           <DialogPrimitive.Title className="sr-only">
-            Search or jump to
+            Jump to a page
           </DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">
             Type to filter pages and actions. Use the arrow keys to choose and Enter to
@@ -156,7 +157,7 @@ function PaletteBody({ close }: { close: () => void }) {
         label: "Open the help manual",
         keywords: "help guide manual how instructions",
         icon: BookOpen,
-        run: () => router.push("/help"),
+        run: () => router.push(helpHref()),
       },
       {
         id: "action:theme",

@@ -9,7 +9,9 @@
 "use client";
 
 import { BookOpen, ChevronDown, LogOut, Moon, Sun, UserRound } from "lucide-react";
+import { useRouter } from "next/navigation";
 
+import { helpHref } from "@/components/layout/help-link";
 import { Menu, MenuItem, MenuLabel, MenuSeparator } from "@/components/ui/menu";
 import { StatusBadge } from "@/components/ui/status";
 import { initials } from "@/lib/format";
@@ -18,6 +20,7 @@ import { useAuth, useTheme } from "@/providers";
 export function UserMenu() {
   const { me, signOut } = useAuth();
   const { resolved, setTheme } = useTheme();
+  const router = useRouter();
   if (!me) return null;
   const next = resolved === "dark" ? "light" : "dark";
 
@@ -54,7 +57,7 @@ export function UserMenu() {
           Your profile
         </MenuItem>
       )}
-      <MenuItem href="/help" icon={BookOpen}>
+      <MenuItem onSelect={() => router.push(helpHref())} icon={BookOpen}>
         Help manual
       </MenuItem>
       <MenuItem onSelect={() => setTheme(next)} icon={resolved === "dark" ? Sun : Moon}>

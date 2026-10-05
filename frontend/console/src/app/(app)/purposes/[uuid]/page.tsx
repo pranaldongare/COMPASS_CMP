@@ -52,7 +52,7 @@ export default function PurposeDetailPage() {
         <PageHeader title="Purpose" breadcrumb={<BackLink />} />
         <Alert tone="danger" title="Could not load this purpose">
           {purpose.error.isForbidden
-            ? "Your role does not permit this. The attempt has been recorded in the audit trail."
+            ? "You don't have access to this record. Go back to your dashboard, or ask your administrator if you need it."
             : purpose.error.userMessage()}
         </Alert>
       </>

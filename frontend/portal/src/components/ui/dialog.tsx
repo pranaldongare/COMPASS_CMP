@@ -26,12 +26,28 @@ export function DialogContent({
   title,
   description,
   size = "md",
+  onEscapeKeyDown,
+  onInteractOutside,
+  onInput,
   ...props
 }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
   title: string;
   description?: string;
   size?: "sm" | "md" | "lg";
 }) {
+  // Typed in since it opened? The content mounts afresh each time the dialog
+  // opens, so this starts false every time. A dialog nobody has typed in
+  // closes as it always did; one somebody has asks before its typing is
+  // thrown away (UX review 2026-10-05: a project draft vanished on Escape).
+  // A form's own Cancel, and a save that closes it, are not dismissals and do
+  // not ask.
+  const [dirty, setDirty] = React.useState(false);
+  const [asking, setAsking] = React.useState(false);
+  const guard = (event: { preventDefault: () => void }) => {
+    if (!dirty) return;
+    event.preventDefault();
+    setAsking(true);
+  };
   const widths = {
     sm: "max-w-md",
     md: "max-w-xl",
@@ -52,6 +68,18 @@ export function DialogContent({
           "max-h-[calc(100dvh-4rem)] overflow-y-auto",
           className,
         )}
+        onInput={(event) => {
+          setDirty(true);
+          onInput?.(event);
+        }}
+        onEscapeKeyDown={(event) => {
+          onEscapeKeyDown?.(event);
+          if (!event.defaultPrevented) guard(event);
+        }}
+        onInteractOutside={(event) => {
+          onInteractOutside?.(event);
+          if (!event.defaultPrevented) guard(event);
+        }}
         {...props}
       >
         <div className="glass sticky top-0 z-10 flex items-start justify-between gap-4 rounded-t-2xl border-b border-border px-5 py-4">
@@ -74,10 +102,30 @@ export function DialogContent({
           <DialogPrimitive.Close
             className="shrink-0 rounded-lg p-1.5 text-text-subtle transition-colors hover:bg-bg-inset hover:text-text"
             aria-label="Close"
+            onClick={guard}
           >
             <X className="size-4" />
           </DialogPrimitive.Close>
         </div>
+
+        {asking && (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-2 border-b border-warning-border bg-warning-subtle px-5 py-3 text-sm text-warning-text"
+          >
+            <span>You have changes that are not saved.</span>
+            <span className="flex gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setAsking(false)}>
+                Keep editing
+              </Button>
+              <DialogPrimitive.Close asChild>
+                <Button variant="danger" size="sm">
+                  Discard changes
+                </Button>
+              </DialogPrimitive.Close>
+            </span>
+          </div>
+        )}
 
         <div className="px-5 py-4">{children}</div>
       </DialogPrimitive.Content>

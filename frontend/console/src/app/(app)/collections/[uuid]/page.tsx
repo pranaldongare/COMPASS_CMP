@@ -57,7 +57,7 @@ export default function CollectionDetailPage() {
         <PageHeader title="Collection" breadcrumb={<BackLink />} />
         <Alert tone="danger" title="Could not load this collection">
           {collection.error.isForbidden
-            ? "Your role does not permit this. The attempt has been recorded in the audit trail."
+            ? "You don't have access to this record. Go back to your dashboard, or ask your administrator if you need it."
             : collection.error.userMessage()}
         </Alert>
       </>

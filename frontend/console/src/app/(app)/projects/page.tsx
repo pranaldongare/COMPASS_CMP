@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
+import { useHere, withFrom } from "@/lib/navigation/return-to";
 import { ActiveFilters } from "@/components/data-display/active-filters";
 import {
   FilterBar,
@@ -43,6 +44,9 @@ import { useAuth } from "@/providers";
 
 function ProjectsPageView() {
   const { me } = useAuth();
+  // Recorded on each project link, so the project's "All projects" comes back
+  // to this list as filtered, not to every project (UX review).
+  const here = useHere();
   const [status, setStatus] = useFilterParam("status");
   // Seeded from the URL for the same reason `status` is: a filtered list should
   // be a link somebody can send. It also means arriving here from a search
@@ -185,7 +189,7 @@ function ProjectsPageView() {
                 <Tr key={project.project_uuid}>
                   <Td>
                     <Link
-                      href={`/projects/${project.project_uuid}`}
+                      href={withFrom(`/projects/${project.project_uuid}`, here)}
                       className="font-medium text-accent-text hover:underline"
                     >
                       {project.project_name}

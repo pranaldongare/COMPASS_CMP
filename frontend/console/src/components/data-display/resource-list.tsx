@@ -289,6 +289,64 @@ export function FilterBar({ children }: { children: React.ReactNode }) {
 }
 
 /**
+ * Coming back to a list lands on the row you opened (UX review 2026-10-05).
+ *
+ * The URL already brings back the filter and the page; this brings back the
+ * place in it. A click inside a row records that row's key for this exact
+ * URL, in the tab's session storage; when the list next renders at that URL
+ * with that row on it, the row is scrolled into view and its first link
+ * focused - so a keyboard user returns to the row they left, not to the top.
+ */
+const RETURN_KEY = "cmp:list-return";
+
+function useReturnToRow(
+  keys: string[],
+): [
+  React.RefObject<HTMLTableSectionElement | null>,
+  (event: React.MouseEvent, keys: string[]) => void,
+] {
+  const ref = React.useRef<HTMLTableSectionElement | null>(null);
+  const joined = keys.join("|");
+
+  React.useEffect(() => {
+    if (!joined) return;
+    let saved: { url: string; key: string } | null = null;
+    try {
+      saved = JSON.parse(window.sessionStorage.getItem(RETURN_KEY) ?? "null");
+    } catch {
+      return;
+    }
+    const here = `${window.location.pathname}${window.location.search}`;
+    if (!saved || saved.url !== here || !joined.split("|").includes(saved.key)) return;
+    // Rows are the body's direct children, in the order of the keys.
+    const row = ref.current?.children[joined.split("|").indexOf(saved.key)];
+    const target = row?.querySelector<HTMLElement>("a, button") ?? null;
+    target?.scrollIntoView({ block: "center" });
+    target?.focus({ preventScroll: true });
+    window.sessionStorage.removeItem(RETURN_KEY);
+  }, [joined]);
+
+  const remember = (event: React.MouseEvent, rowKeys: string[]) => {
+    const body = ref.current;
+    const row = (event.target as HTMLElement).closest("tr");
+    if (!body || !row || row.parentElement !== body) return;
+    const key = rowKeys[Array.prototype.indexOf.call(body.children, row)];
+    if (!key) return;
+    try {
+      window.sessionStorage.setItem(
+        RETURN_KEY,
+        JSON.stringify({ url: `${window.location.pathname}${window.location.search}`, key }),
+      );
+    } catch {
+      // Storage refused (private mode, quota): the list still works, it just
+      // will not return to the row.
+    }
+  };
+
+  return [ref, remember];
+}
+
+/**
  * Renders the four states of a paginated list.
  *
  * `columns` and `row` stay with the caller: a shared component that also owned
@@ -323,11 +381,15 @@ export function ResourceList<T>({
   stack: ReturnType<typeof useCursorStack>;
   keyOf: (item: T) => string;
 }) {
+  const items = query.data?.items ?? [];
+  const rowKeys = items.map(keyOf);
+  const [bodyRef, rememberRow] = useReturnToRow(rowKeys);
+
   if (query.error) {
     return (
       <Alert tone="danger" title="Could not load this list">
         {query.error.isForbidden
-          ? "Your role does not permit this. The attempt has been recorded in the audit trail."
+          ? "You don't have access to this list. Go back to your dashboard, or ask your administrator if you need it."
           : query.error.userMessage()}
       </Alert>
     );
@@ -340,8 +402,6 @@ export function ResourceList<T>({
       </Card>
     );
   }
-
-  const items = query.data?.items ?? [];
 
   if (items.length === 0) {
     return (
@@ -362,7 +422,7 @@ export function ResourceList<T>({
             ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody ref={bodyRef} onClickCapture={(event) => rememberRow(event, rowKeys)}>
           {items.map((item) => (
             <React.Fragment key={keyOf(item)}>{row(item)}</React.Fragment>
           ))}

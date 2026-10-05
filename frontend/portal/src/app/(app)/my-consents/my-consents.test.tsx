@@ -14,7 +14,7 @@ import type { MyConsent } from "@/types";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => new URLSearchParams(window.location.search),
   usePathname: () => "/my-consents",
 }));
 
@@ -88,5 +88,20 @@ describe("My consents", () => {
     // Asked again, and answered: only now may it say nobody.
     await user.click(screen.getByRole("button", { name: /try again/i }));
     expect(await screen.findByText("No sharing recorded here")).toBeInTheDocument();
+  });
+
+  it("opens the consent a link names (UX review 2026-10-05)", async () => {
+    // A request "about one consent only" linked to the top of this page.
+    const named = consent({});
+    serve(named);
+    Element.prototype.scrollIntoView = vi.fn();
+    window.history.replaceState(null, "", `/my-consents?consent=${named.consent_uuid}`);
+    page();
+    expect(await screen.findByRole("button", { name: /hide details/i })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+    window.history.replaceState(null, "", "/");
   });
 });

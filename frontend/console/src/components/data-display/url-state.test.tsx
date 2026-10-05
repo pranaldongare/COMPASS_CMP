@@ -72,3 +72,47 @@ describe("useCursorStack", () => {
     expect(result.current.status[0]).toBe("approved");
   });
 });
+
+describe("coming back to a list", () => {
+  it("scrolls to and focuses the row that was opened", async () => {
+    const { ResourceList } = await import("@/components/data-display/resource-list");
+    const { render, screen } = await import("@/test/render");
+    window.history.replaceState(null, "", "/notices?status=published");
+    const page = {
+      items: [{ id: "a" }, { id: "b" }, { id: "c" }],
+      next_cursor: null,
+      total: 3,
+    };
+    function List() {
+      const stack = useCursorStack();
+      return (
+        <ResourceList<{ id: string }>
+          query={{ data: page, isLoading: false, isFetching: false, error: null }}
+          columns={["Id"]}
+          caption="Rows"
+          empty={{ title: "None" }}
+          stack={stack}
+          keyOf={(r) => r.id}
+          row={(r) => (
+            <tr>
+              <td>
+                <a href={`#${r.id}`} onClick={(e) => e.preventDefault()}>
+                  Row {r.id}
+                </a>
+              </td>
+            </tr>
+          )}
+        />
+      );
+    }
+    Element.prototype.scrollIntoView = vi.fn();
+    const first = render(<List />);
+    await first.user.click(screen.getByRole("link", { name: "Row b" }));
+    first.unmount();
+
+    // The list is shown again at the same address: the opened row has focus.
+    render(<List />);
+    expect(screen.getByRole("link", { name: "Row b" })).toHaveFocus();
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+  });
+});

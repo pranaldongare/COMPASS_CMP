@@ -34,6 +34,7 @@ import {
   useCommandPaletteShortcut,
 } from "@/components/layout/command-palette";
 import { labelFor, locate, sectionsFor, type NavSection } from "@/components/layout/nav";
+import { HelpLink } from "@/components/layout/help-link";
 import { useDrawer } from "@/components/layout/use-drawer";
 import { UserMenu } from "@/components/layout/user-menu";
 import { useCollapsed } from "@/components/ui/collapsible";
@@ -224,7 +225,9 @@ function Header({
           )}
         >
           <Search className="size-4" aria-hidden="true" />
-          <span className="flex-1 text-left">Search or jump to…</span>
+          {/* It finds pages and actions, not records: the name promised a search
+              of projects and people that it does not do (UX review). */}
+          <span className="flex-1 text-left">Jump to page…</span>
           <kbd className="rounded-md border border-border bg-bg-inset px-1.5 py-0.5 font-sans text-2xs font-medium">
             {apple ? "⌘K" : "Ctrl K"}
           </kbd>
@@ -234,15 +237,15 @@ function Header({
           size="icon"
           className="md:hidden"
           onClick={onSearch}
-          aria-label="Search or jump to"
+          aria-label="Jump to page"
         >
           <Search />
         </Button>
 
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/help" aria-label="Help manual" title="Help manual">
+          <HelpLink aria-label="Help manual" title="Help manual">
             <CircleHelp />
-          </Link>
+          </HelpLink>
         </Button>
 
         {me?.nav.includes("notifications") && (

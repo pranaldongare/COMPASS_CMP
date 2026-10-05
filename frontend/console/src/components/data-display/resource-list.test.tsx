@@ -86,11 +86,11 @@ describe("ResourceList", () => {
     expect(screen.queryByText("No notices yet")).not.toBeInTheDocument();
   });
 
-  it("explains a 403 in terms of the role, and says it was recorded", () => {
-    // A DPO looking at a forbidden list needs to know it is a permission
-    // boundary and not an outage, and that the attempt is in the trail - which
-    // is true, and is the sort of thing people would rather learn here than in
-    // an audit review.
+  it("explains a 403 as access, not an outage, with a way back", () => {
+    // A person looking at a forbidden list needs to know it is a permission
+    // boundary and not an outage, and what to do next. It used to lead with
+    // the attempt being recorded, which is true and helps nobody act (UX
+    // review 2026-10-05).
     renderList({
       error: new ApiError(403, {
         code: "forbidden",
@@ -99,8 +99,8 @@ describe("ResourceList", () => {
       }),
     });
 
-    expect(screen.getByText(/role does not permit this/i)).toBeInTheDocument();
-    expect(screen.getByText(/recorded in the audit trail/i)).toBeInTheDocument();
+    expect(screen.getByText(/don't have access to this list/i)).toBeInTheDocument();
+    expect(screen.getByText(/back to your dashboard|ask your administrator/i)).toBeInTheDocument();
     expect(screen.queryByText("No notices yet")).not.toBeInTheDocument();
   });
 });

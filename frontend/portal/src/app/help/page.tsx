@@ -4,25 +4,42 @@
  */
 "use client";
 
+import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 import { ContactPanel } from "@/features/help/components/contact-panel";
 import { HelpHeader } from "@/features/help/components/help-header";
 import { HelpManual } from "@/features/help/components/help-manual";
 import { INTRO, SECTIONS } from "@/features/help/content";
+import { helpReturn } from "@/components/layout/help-link";
+import { safeRedirectPath } from "@/lib/security";
 import { useSessionState } from "@/providers";
 
 export default function HelpPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <Help />
+    </React.Suspense>
+  );
+}
+
+function Help() {
   const session = useSessionState();
   const signedIn = session.status === "full";
+  // The page Help was opened from, if it is one of ours (`HelpLink`). A
+  // consent link is a page too: somebody reading Help mid-consent goes back to it.
+  const from = helpReturn(useSearchParams().get("from"), (v) => safeRedirectPath(v, ""));
 
   return (
     <div id="top" className="min-h-dvh">
       <HelpHeader
         back={
-          signedIn
-            ? { href: "/my-consents", label: "Back to your consents" }
-            : { href: "/sign-in", label: "Sign in" }
+          from
+            ? { href: from, label: "Back to where you were" }
+            : signedIn
+              ? { href: "/my-consents", label: "Back to your consents" }
+              : { href: "/sign-in", label: "Sign in" }
         }
       />
       <main id="main">
