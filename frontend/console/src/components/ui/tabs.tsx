@@ -197,11 +197,17 @@ export function TabPanel({
 /**
  * The selected tab, kept in the address's `#fragment` so a tab can be linked
  * to and survives a reload. Only values in `allowed` are adopted.
+ *
+ * `sections` names anchors *inside* a tab: `#sites` opens the tab holding the
+ * sites card. Addresses that predate the tabs keep working that way, and a
+ * link can name the record it means rather than the tab it happens to sit in.
+ * The fragment itself comes back third, for a page that scrolls to it.
  */
 export function useHashTab<T extends string>(
   allowed: readonly T[],
   fallback: T,
-): [T, (v: string) => void] {
+  sections: Readonly<Record<string, T>> = {},
+): [T, (v: string) => void, string] {
   const hash = React.useSyncExternalStore(
     (notify) => {
       window.addEventListener("hashchange", notify);
@@ -210,7 +216,11 @@ export function useHashTab<T extends string>(
     () => window.location.hash.slice(1),
     () => "",
   );
-  const value = (allowed as readonly string[]).includes(hash) ? (hash as T) : fallback;
+  const value = (allowed as readonly string[]).includes(hash)
+    ? (hash as T)
+    : Object.hasOwn(sections, hash)
+      ? sections[hash]
+      : fallback;
   const set = React.useCallback(
     (next: string) => {
       if (!(allowed as readonly string[]).includes(next)) return;
@@ -220,5 +230,5 @@ export function useHashTab<T extends string>(
     },
     [allowed],
   );
-  return [value, set];
+  return [value, set, hash];
 }

@@ -108,8 +108,10 @@ test.describe("DCO Admin on an approved project", () => {
 
     const firstProject = page.locator("table a").first();
     await firstProject.click();
+    // Sites and their links sit under Consent on the project workspace.
+    await page.getByRole("tab", { name: /^consent/i }).click();
 
-    // The header's, the first: the page repeats its actions at the foot.
+    // On the sites card, or in its empty state when there is none yet.
     await expect(page.getByRole("button", { name: /add site/i }).first()).toBeVisible();
   });
 
@@ -120,6 +122,8 @@ test.describe("DCO Admin on an approved project", () => {
     // processor, fed by another's rig, is three claims and at most one is right.
     await page.goto("/projects?status=approved");
     await page.locator("table a").first().click();
+    // Sites and their links sit under Consent on the project workspace.
+    await page.getByRole("tab", { name: /^consent/i }).click();
 
     await page
       .getByRole("button", { name: /add site/i })
@@ -137,6 +141,8 @@ test.describe("DCO Admin on an approved project", () => {
   test("naming who runs a site says it will not move the data source", async ({ page }) => {
     await page.goto("/projects?status=approved");
     await page.locator("table a").first().click();
+    // Sites and their links sit under Consent on the project workspace.
+    await page.getByRole("tab", { name: /^consent/i }).click();
 
     const namer = page.getByRole("button", { name: /who runs it/i }).first();
     await expect(namer).toBeVisible();
@@ -160,6 +166,8 @@ test.describe("DCO Admin on an approved project", () => {
     // button, the one that moves every project wins by accident.
     await page.goto("/projects?status=approved");
     await page.locator("table a").first().click();
+    // Sites and their links sit under Consent on the project workspace.
+    await page.getByRole("tab", { name: /^consent/i }).click();
 
     await expect(
       page.getByRole("button", { name: /attach source|change source/i }).first(),
@@ -213,6 +221,8 @@ test.describe("adding a collector after approval", () => {
       // outright left a study expanding to a second campus with nowhere to go.
       await page.goto("/projects?status=approved");
       await page.locator("table a").first().click();
+      // Who is collecting sits under Setup on the project workspace.
+      await page.getByRole("tab", { name: "Setup" }).click();
 
       await expect(page.getByRole("heading", { name: /who is collecting/i })).toBeVisible();
       await page.getByRole("button", { name: /request a collector/i }).click();
@@ -229,6 +239,8 @@ test.describe("adding a collector after approval", () => {
       // and a request.
       await page.goto("/projects?status=approved");
       await page.locator("table a").first().click();
+      // Who is collecting sits under Setup on the project workspace.
+      await page.getByRole("tab", { name: "Setup" }).click();
 
       const card = page.locator("section, div").filter({
         has: page.getByRole("heading", { name: /who is collecting/i }),

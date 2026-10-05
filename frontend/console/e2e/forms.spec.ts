@@ -157,6 +157,8 @@ test.describe("DCO", () => {
     await expect(project).toBeVisible({ timeout: 15_000 });
     await project.click();
     await page.waitForURL(/\/projects\//);
+    // Sites and their links sit under Consent on the project workspace.
+    await page.getByRole("tab", { name: /^consent/i }).click();
 
     // Either control, because which one appears depends on whether the site
     // already has a live link — "Create link" when it does not, "Replace link"

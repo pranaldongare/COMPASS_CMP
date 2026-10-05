@@ -68,6 +68,8 @@ test.describe("consent links", () => {
     await expect(toProject).toBeVisible({ timeout: 15_000 });
     await toProject.click();
     await page.waitForURL(/\/projects\//);
+    // Sites and their links sit under Consent on the project workspace.
+    await page.getByRole("tab", { name: /^consent/i }).click();
 
     const create = page.getByRole("button", { name: /^create link$/i });
     const replace = page.getByRole("button", { name: /^replace link$/i });

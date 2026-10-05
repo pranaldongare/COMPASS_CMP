@@ -43,6 +43,7 @@ import {
   useCollectionExceptions,
 } from "@/features/exchange";
 import { formatDate, formatDateTime, humanise } from "@/lib/format";
+import { useReturnTo } from "@/lib/navigation/return-to";
 
 export default function CollectionDetailPage() {
   const { uuid } = useParams<{ uuid: string }>();
@@ -294,10 +295,17 @@ export default function CollectionDetailPage() {
 }
 
 function BackLink() {
+  // Opened from its project's page, it goes back there; otherwise to the
+  // register, as filtered when it was left.
+  const from = useReturnTo(["/collections", "/projects"]);
+  const toProject = from?.startsWith("/projects/");
   return (
-    <Link href="/collections" className="inline-flex items-center gap-1.5 hover:text-text">
+    <Link
+      href={from ?? "/collections"}
+      className="inline-flex items-center gap-1.5 hover:text-text"
+    >
       <ArrowLeft className="size-3.5" aria-hidden="true" />
-      All collections
+      {toProject ? "Back to the project" : "All collections"}
     </Link>
   );
 }

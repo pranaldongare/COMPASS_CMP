@@ -8,3 +8,7 @@
 
 export { ImportWizard } from "@/features/exchange/components/import-wizard";
 export { ExportForm } from "@/features/exchange/components/export-form";
+export {
+  ProjectCollectionsCard,
+  ProjectExportsCard,
+} from "@/features/exchange/components/project-exchanges";

@@ -91,6 +91,8 @@ test.describe("R&D User", () => {
     await firstProject.click();
 
     await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}/, { timeout: 15_000 });
+    // The notices card sits under Setup on the project workspace.
+    await page.getByRole("tab", { name: "Setup" }).click();
 
     const noticesCard = page.locator("section, div").filter({
       has: page.getByRole("heading", { name: /^notices$/i }),
@@ -100,9 +102,8 @@ test.describe("R&D User", () => {
     });
     await expectNoSidewaysScroll(page);
 
-    // From the card, not the page header. The header carries one too, and this
-    // test is about the other one — the control on the card that says there is
-    // no notice yet, which is where somebody looking for it actually looks.
+    // From the card that says there is no notice yet, which is where somebody
+    // looking for it actually looks - and, since the workspace, the only place.
     const fromCard = noticesCard
       .getByRole("button", { name: /upload a notice document/i })
       .last();
@@ -137,6 +138,8 @@ test.describe("R&D User", () => {
     await ensureDraftProject(page);
     await page.locator('a[href^="/projects/"]').first().click();
     await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}/, { timeout: 15_000 });
+    // The notices card sits under Setup on the project workspace.
+    await page.getByRole("tab", { name: "Setup" }).click();
 
     await page
       .getByRole("button", { name: /upload a notice document/i })

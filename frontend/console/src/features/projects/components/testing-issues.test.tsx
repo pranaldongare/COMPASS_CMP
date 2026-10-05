@@ -23,8 +23,8 @@ vi.mock("@/providers", () => ({
 const PROJECT = "11111111-2222-4333-8444-555555555555";
 const NOTICE = "66666666-7777-4888-8999-000000000000";
 
-describe("the project's next move, at the top and at the foot", () => {
-  it("renders twice with its own ids, and carries the page's other actions at the foot", async () => {
+describe("the project's next move", () => {
+  it("keeps its ids per instance, so two copies never share a description", async () => {
     server.use(
       http.get(`${API}/projects/${PROJECT}/transitions`, () =>
         HttpResponse.json({
@@ -47,7 +47,6 @@ describe("the project's next move, at the top and at the foot", () => {
           projectUuid={PROJECT}
           currentStatus="in_draft"
           heading="Next steps"
-          footer={<button type="button">Upload approval</button>}
         />
       </>,
     );
@@ -63,8 +62,6 @@ describe("the project's next move, at the top and at the foot", () => {
     for (const id of described)
       expect(document.getElementById(id as string)).not.toBeNull();
 
-    expect(screen.getByText("Other actions")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Upload approval" })).toBeInTheDocument();
   });
 });
 

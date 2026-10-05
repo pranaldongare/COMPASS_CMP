@@ -18,10 +18,10 @@
  * - A transition that **publishes the notice** says so before it runs, because
  *   publication freezes the text permanently.
  *
- * The project page renders it twice: under the header, and again at the foot
- * of the page with the header's other actions (`footer`), so somebody who has
- * read to the bottom does not scroll back up to act. Each copy keeps its own
- * confirmation state; the server decides either way.
+ * The project page renders it once, at the top, as the one next move. It used
+ * to be repeated at the foot with every other action on the page, which made
+ * the page's primary action two places at once (UX review 2026-10-05). Ids
+ * stay per instance all the same, so a second copy elsewhere stays valid.
  */
 "use client";
 
@@ -66,7 +66,6 @@ export function TransitionControls({
   currentStatus,
   noticeUuid,
   heading = "What happens next",
-  footer,
 }: {
   projectUuid: string;
   currentStatus: ProjectStatus;
@@ -77,11 +76,9 @@ export function TransitionControls({
    *  is done on the notice, not here. */
   noticeUuid?: string | null;
   heading?: string;
-  /** More actions under the moves - the page header's, repeated at the foot. */
-  footer?: React.ReactNode;
 }) {
   const toast = useToast();
-  // Unique per copy: the page renders this component twice.
+  // Unique per instance, so two on one page never share a description.
   const idBase = React.useId();
   const { data, isLoading, error } = useTransitions(projectUuid);
   const transition = useTransition(projectUuid);
@@ -104,12 +101,6 @@ export function TransitionControls({
 
   const available = data?.available ?? [];
 
-  const footerBlock = footer ? (
-    <div className="border-t border-border px-5 py-4">
-      <p className="mb-2 text-xs font-medium text-text-muted">Other actions</p>
-      {footer}
-    </div>
-  ) : null;
 
   if (!available.length) {
     return (
@@ -122,7 +113,6 @@ export function TransitionControls({
               : "There is nothing for your role to do at this stage."}
           </p>
         </CardBody>
-        {footerBlock}
       </Card>
     );
   }
@@ -321,7 +311,6 @@ export function TransitionControls({
           </div>
         )}
       </CardBody>
-      {footerBlock}
     </Card>
   );
 }

@@ -33,7 +33,7 @@ import * as React from "react";
 import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { useReturnTo, withFrom } from "@/lib/navigation/return-to";
 import { PageHeader } from "@/components/layout/app-shell";
-import { CollapsibleCard } from "@/components/ui/collapsible";
+import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
 import { TransitionControls } from "@/features/projects/components/transition-controls";
 import {
   AgentForm,
@@ -49,6 +49,10 @@ import {
 import type { ConsentLink, SiteWithOwner } from "@/types";
 import { ExportForm } from "@/features/exchange/components/export-form";
 import {
+  ProjectCollectionsCard as CollectionsCard,
+  ProjectExportsCard as ExportsCard,
+} from "@/features/exchange/components/project-exchanges";
+import {
   NoticeCopyForm,
   NoticeForm,
   NoticeImportForm,
@@ -56,7 +60,6 @@ import {
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Alert,
-  Badge,
   Button,
   Card,
   CardBody,
@@ -92,6 +95,35 @@ type Sheet =
   | { kind: "approval" }
   | { kind: "export" }
   | { kind: "agent"; siteUuid: string; siteLabel: string };
+
+/**
+ * The project as one workspace (UX review 2026-10-05). The fragment names the
+ * tab, so a tab can be linked to and survives a reload; the anchors of the
+ * cards inside a tab open it too, which keeps every `#notices` and `#sites`
+ * written before the tabs - the dashboard's rows, a notice's way back -
+ * landing on the card they meant.
+ */
+const TABS = ["overview", "setup", "consent", "exchanges", "activity"] as const;
+type ProjectTab = (typeof TABS)[number];
+const SECTIONS: Record<string, ProjectTab> = {
+  notices: "setup",
+  approvals: "setup",
+  sites: "consent",
+  links: "consent",
+  collections: "exchanges",
+  exports: "exchanges",
+  history: "activity",
+};
+/** Where each "At a glance" figure's records are. */
+const COUNT_SECTION: Record<string, string> = {
+  notices: "notices",
+  purposes: "notices",
+  approvals: "approvals",
+  sites: "sites",
+  active_links: "links",
+  collections: "collections",
+  exports: "exports",
+};
 
 export default function ProjectDetailPage() {
   const params = useParams<{ uuid: string }>();
@@ -130,6 +162,15 @@ export default function ProjectDetailPage() {
   const [assigning, setAssigning] = React.useState<SiteWithOwner | null>(null);
   const [namingDco, setNamingDco] = React.useState<SiteWithOwner | null>(null);
   const [replacing, setReplacing] = React.useState<ConsentLink | null>(null);
+
+  const [tab, setTab, hash] = useHashTab(TABS, "overview", SECTIONS);
+  const loaded = Boolean(project.data);
+  // A fragment naming a card, not a tab: the tab is open by now, so bring the
+  // card itself into view - the browser's own jump ran before it existed.
+  React.useEffect(() => {
+    if (!loaded || !Object.hasOwn(SECTIONS, hash)) return;
+    document.getElementById(hash)?.scrollIntoView?.({ block: "start" });
+  }, [hash, loaded]);
 
   if (project.isLoading) return <DetailSkeleton />;
 
@@ -188,15 +229,20 @@ export default function ProjectDetailPage() {
   const canAssignSiteOwner =
     isDpo || me?.role === "admin" || me?.role === "dco_admin" || isOwner;
   const canExport = isDpo || isCollectionOwner;
+  // An R&D User reads their own project's collections; `nav` is the server's
+  // word on it, as `writes` is for links above.
+  const canReadCollections = me?.nav.includes("collections") ?? false;
   // The R&D User writes the notice now: they are the one who knows what the
   // study collects and why. The DPO keeps the same control and reviews it.
   const canAuthorNotice = isDpo || isOwner;
   const noticePublished = Boolean(p.current_notice_uuid);
 
-  // The page's actions, shown under the title and again at the foot of the
-  // page with the next move, so somebody who has read to the bottom does not
-  // scroll back up to act.
-  const headerActions = (
+  // Only the project's own controls sit under the title. Every other action
+  // lives on the card it changes - a notice upload on the notices card, a site
+  // on the sites card - and nowhere else: the page used to carry each one up to
+  // three times (header, card, and a repeat at the foot), which read as three
+  // different things to choose between (UX review 2026-10-05).
+  const projectActions = (
     <div className="flex flex-wrap items-center gap-2">
       <StatusBadge kind="project" value={p.project_status} />
       <AuditTrailLink entityType="project" uuid={p.project_uuid} label={p.project_name} />
@@ -206,75 +252,60 @@ export default function ProjectDetailPage() {
           Edit
         </Button>
       )}
-      {canAuthorNotice && (
-        <>
-          {/* First of the three because it is how a notice actually
-              arrives. The wording is drafted in Word by the people whose
-              job that is; typing it in again is where the notice and the
-              document it was approved as start to differ. */}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setSheet({ kind: "notice-import" })}
-          >
-            <Upload className="size-4" />
-            Upload a notice document
-          </Button>
-          {/* Most projects are a variation on one that already exists. The
-              server copies rather than shares — a notice belongs to one
-              project — so this is a starting point, not a link. */}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setSheet({ kind: "notice-copy" })}
-          >
-            <Copy className="size-4" />
-            Copy an existing notice
-          </Button>
-          {/* Composing one from nothing is the Privacy Office's. An author
-              brings a notice as a filled-in document or picks one the
-              office has approved; the wording itself is not theirs to
-              invent, and the API refuses it either way. */}
-          {isDpo && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setSheet({ kind: "notice" })}
-            >
-              <ScrollText className="size-4" />
-              New notice
-            </Button>
-          )}
-        </>
-      )}
-      {/* Gated on the project's state as well as the role. The API
-          refuses an approval once the project is approved, and offering a
-          control that 409s teaches people to distrust the ones that
-          work. */}
-      {isOwner && canUploadApproval && (
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => setSheet({ kind: "approval" })}
-        >
-          <FileCheck className="size-4" />
-          Upload approval
-        </Button>
-      )}
-      {canAddSite && (
-        <Button variant="secondary" size="sm" onClick={() => setSheet({ kind: "site" })}>
-          <MapPin className="size-4" />
-          Add site
-        </Button>
-      )}
-      {canExport && p.project_status === "approved" && (
-        <Button variant="secondary" size="sm" onClick={() => setSheet({ kind: "export" })}>
-          <Upload className="size-4" />
-          Generate export
+    </div>
+  );
+
+  // How a notice arrives, in the order it usually does. The first is how one
+  // actually comes: drafted in Word by the people whose job that is; typing it
+  // in again is where the notice and the document it was approved as start to
+  // differ. Most projects are a variation on one that already exists, and the
+  // server copies rather than shares - a notice belongs to one project.
+  // Composing one from nothing is the Privacy Office's alone; the API refuses
+  // it to anybody else either way.
+  const noticeActions = (primary: boolean) => (
+    <div className={`flex flex-wrap items-center gap-2 ${primary ? "justify-center" : ""}`}>
+      <Button
+        variant={primary ? "primary" : "secondary"}
+        size="sm"
+        onClick={() => setSheet({ kind: "notice-import" })}
+      >
+        <Upload className="size-4" />
+        Upload a notice document
+      </Button>
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={() => setSheet({ kind: "notice-copy" })}
+      >
+        <Copy className="size-4" />
+        Copy an existing notice
+      </Button>
+      {isDpo && (
+        <Button variant="secondary" size="sm" onClick={() => setSheet({ kind: "notice" })}>
+          <ScrollText className="size-4" />
+          New notice
         </Button>
       )}
     </div>
   );
+
+  const addSite = (
+    <Button variant="secondary" size="sm" onClick={() => setSheet({ kind: "site" })}>
+      <MapPin className="size-4" />
+      Add site
+    </Button>
+  );
+
+  // Which "At a glance" figures lead somewhere this person can see. A count
+  // whose records sit in a card their role does not get stays a number.
+  const reachable = new Set<string>([
+    "notices",
+    "approvals",
+    "sites",
+    ...(canReadLinks ? ["links"] : []),
+    ...(canReadCollections ? ["collections"] : []),
+    ...(canExport ? ["exports"] : []),
+  ]);
 
   return (
     <>
@@ -290,21 +321,123 @@ export default function ProjectDetailPage() {
         }
         title={p.project_name}
         description={p.description ?? undefined}
-        actions={headerActions}
+        actions={projectActions}
       />
 
       <div className="mb-6">
         <ProjectProgress status={p.project_status} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="min-w-0 space-y-6 lg:col-span-2">
+      {/* Where it stands before anything else: the move this person can make
+          next, or exactly what blocks it, beside who is accountable. Everything
+          under the tabs is the detail behind it. */}
+      <div className="mb-6 grid gap-6 lg:grid-cols-3">
+        <div className="min-w-0 lg:col-span-2">
           <TransitionControls
             projectUuid={uuid}
             currentStatus={p.project_status}
             noticeUuid={p.current_notice_uuid ?? notices.data?.[0]?.notice_uuid}
           />
+        </div>
+        <div className="min-w-0">
+          <Card>
+            <CardHeader>
+              <CardTitle>Details</CardTitle>
+            </CardHeader>
+            <CardBody>
+              <DescriptionList>
+                <DescriptionItem term="Internal name">
+                  {p.internal_project_name ?? "—"}
+                </DescriptionItem>
+                <DescriptionItem term="Requesting team">
+                  {p.requesting_team ?? "—"}
+                </DescriptionItem>
+                <DescriptionItem term="Data Collection Owner">
+                  {p.dco_name ?? "Not assigned"}
+                </DescriptionItem>
+                <DescriptionItem term="Created by">
+                  {p.created_by_name ?? "—"}
+                </DescriptionItem>
+                <DescriptionItem term="Created">
+                  {formatDateTime(p.created_at)}
+                </DescriptionItem>
+                <DescriptionItem term="Reference">
+                  <Mono>{p.project_uuid}</Mono>
+                </DescriptionItem>
+              </DescriptionList>
+            </CardBody>
+          </Card>
+        </div>
+      </div>
 
+      <Tabs value={tab} onValueChange={setTab} label="Project sections">
+        <TabList>
+          <Tab value="overview">Overview</Tab>
+          <Tab value="setup">Setup</Tab>
+          <Tab value="consent" count={sites.data?.length}>
+            Consent
+          </Tab>
+          <Tab value="exchanges">Collections &amp; exchanges</Tab>
+          <Tab value="activity" count={history.data?.length}>
+            Activity
+          </Tab>
+        </TabList>
+
+        <TabPanel value="overview" className="space-y-6">
+          {summary.isLoading ? (
+            <Skeleton className="h-40" />
+          ) : summary.data ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>At a glance</CardTitle>
+              </CardHeader>
+              <CardBody className="space-y-4">
+                {/* Each figure opens the records it counts (UX review
+                    2026-10-05); a number that goes nowhere invites a search. */}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {Object.entries(summary.data.counts).map(([key, value]) => {
+                    const section = COUNT_SECTION[key];
+                    const figure = (
+                      <>
+                        <span className="block text-xs text-text-subtle">
+                          {humanise(key)}
+                        </span>
+                        <span className="tabular block text-lg font-semibold">{value}</span>
+                      </>
+                    );
+                    return section && reachable.has(section) ? (
+                      <a
+                        key={key}
+                        href={`#${section}`}
+                        className="-m-1.5 rounded-lg p-1.5 hover:bg-surface-hover"
+                      >
+                        {figure}
+                      </a>
+                    ) : (
+                      <div key={key}>{figure}</div>
+                    );
+                  })}
+                </div>
+
+                <div className="border-t border-border pt-3">
+                  <p className="mb-2 text-xs font-medium tracking-wide text-text-subtle uppercase">
+                    Consent
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                    {Object.entries(summary.data.consents).map(([key, value]) => (
+                      <div key={key}>
+                        <p className="text-xs text-text-subtle">{humanise(key)}</p>
+                        <p className="tabular text-lg font-semibold">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          ) : null}
+        </TabPanel>
+
+        <TabPanel value="setup" className="space-y-6">
           <ProjectProcessors
             projectUuid={uuid}
             projectStatus={p.project_status}
@@ -314,23 +447,12 @@ export default function ProjectDetailPage() {
 
           {/* `#notices`: where a notice opened from this project comes back to. */}
           <Card id="notices" className="scroll-mt-20">
-            {/* The controls sit here as well as in the page header. A person
-                looking for how to add a notice looks at the card that says
-                there is not one, not at a row of buttons above the title — the
-                approvals card has worked that way all along, and this one was
-                the odd exception. */}
-            <CardHeader className="flex items-center justify-between">
+            <CardHeader className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle>Notices</CardTitle>
-              {canAuthorNotice && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSheet({ kind: "notice-import" })}
-                >
-                  <Upload className="size-4" />
-                  Upload
-                </Button>
-              )}
+              {/* Once there is a notice, a new version starts here. Before
+                  that the empty state below offers the same, and one place to
+                  start is enough. */}
+              {canAuthorNotice && Boolean(notices.data?.length) && noticeActions(false)}
             </CardHeader>
             {notices.isLoading ? (
               <CardBody>
@@ -354,30 +476,7 @@ export default function ProjectDetailPage() {
                     ? "Upload the filled-in notice document and its purposes are created with it. A project cannot leave draft without a notice carrying at least one purpose and every Rule 3 element."
                     : "A project cannot leave draft without a notice carrying at least one purpose and every Rule 3 element."
                 }
-                action={
-                  canAuthorNotice ? (
-                    <div className="flex flex-wrap items-center justify-center gap-2">
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => setSheet({ kind: "notice-import" })}
-                      >
-                        <Upload className="size-4" />
-                        Upload a notice document
-                      </Button>
-                      {/* Second, and quieter: starting from one the Privacy
-                          Office has already approved, for when there is no
-                          document yet. Writing one from nothing is theirs. */}
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setSheet({ kind: "notice-copy" })}
-                      >
-                        Copy an existing notice
-                      </Button>
-                    </div>
-                  ) : undefined
-                }
+                action={canAuthorNotice ? noticeActions(true) : undefined}
               />
             ) : (
               <ul className="divide-y divide-border">
@@ -396,7 +495,8 @@ export default function ProjectDetailPage() {
                           <span className="text-text-subtle">v{notice.version}</span>
                         </p>
                         <p className="mt-0.5 text-xs text-text-muted">
-                          {notice.purpose_count ?? 0} {notice.purpose_count === 1 ? "purpose" : "purposes"} ·{" "}
+                          {notice.purpose_count ?? 0}{" "}
+                          {notice.purpose_count === 1 ? "purpose" : "purposes"} ·{" "}
                           {notice.language_count ?? 0} language(s)
                           {notice.published_at &&
                             ` · published ${formatDateTime(notice.published_at)}`}
@@ -419,11 +519,28 @@ export default function ProjectDetailPage() {
             projectStatus={p.project_status}
             onUpload={() => setSheet({ kind: "approval" })}
           />
+        </TabPanel>
+
+        <TabPanel value="consent" className="space-y-6">
+          {/* Said where a site is added, which is the moment it matters. */}
+          {p.project_status === "approved" && canAddSite && (
+            <Alert tone="info">
+              <p className="flex items-start gap-2">
+                <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                <span>
+                  Adding a site now is a material change: it adds a recipient to a published
+                  notice, so it requires a new notice version before collection starts
+                  there.
+                </span>
+              </p>
+            </Alert>
+          )}
 
           {/* `#sites`: where a dashboard row about a site lands. */}
           <Card id="sites" className="scroll-mt-20">
-            <CardHeader>
+            <CardHeader className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle>Collection sites</CardTitle>
+              {canAddSite && Boolean(sites.data?.length) && addSite}
             </CardHeader>
             {sites.isLoading ? (
               <CardBody>
@@ -433,18 +550,7 @@ export default function ProjectDetailPage() {
               <EmptyState
                 title="No sites yet"
                 description="Sites are the recipients named in the notice. Collection cannot start at a site that is not registered here, and a notice with none says so in its recipient line."
-                action={
-                  canAddSite ? (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setSheet({ kind: "site" })}
-                    >
-                      <MapPin className="size-4" />
-                      Add site
-                    </Button>
-                  ) : undefined
-                }
+                action={canAddSite ? addSite : undefined}
               />
             ) : (
               <ul className="divide-y divide-border">
@@ -570,15 +676,74 @@ export default function ProjectDetailPage() {
             )}
           </Card>
 
-          <CollapsibleCard
-            title="History"
-            description="Append-only. Every transition, who made it, and why."
-            icon={HistoryIcon}
-            badge={
-              history.data ? <Badge tone="neutral">{history.data.length}</Badge> : undefined
-            }
-            storageKey="project.history"
-          >
+          {canReadLinks && (
+            <Card id="links" className="scroll-mt-20">
+              <CardHeader>
+                <CardTitle>Consent links</CardTitle>
+              </CardHeader>
+              {links.isLoading ? (
+                <CardBody>
+                  <Skeleton className="h-16" />
+                </CardBody>
+              ) : !links.data?.length ? (
+                <CardBody className="text-sm text-text-muted">
+                  {p.project_status === "approved"
+                    ? "No link yet. Create one from a site above."
+                    : "A link can only be created once the project is approved."}
+                </CardBody>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {links.data.map((link) => (
+                    <li key={link.link_uuid} className="px-5 py-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium">{link.site_label}</p>
+                        <StatusBadge kind="link" value={link.status} />
+                      </div>
+                      <p className="mt-1 text-xs text-text-muted">
+                        {link.use_count}
+                        {link.max_uses !== null && ` of ${link.max_uses}`} used · expires{" "}
+                        {formatDateTime(link.expires_at)}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+          )}
+        </TabPanel>
+
+        <TabPanel value="exchanges" className="space-y-6">
+          {canReadCollections && (
+            <CollectionsCard projectUuid={uuid} from={`/projects/${uuid}#collections`} />
+          )}
+          {canExport && (
+            <ExportsCard
+              projectUuid={uuid}
+              canGenerate={p.project_status === "approved"}
+              onGenerate={() => setSheet({ kind: "export" })}
+            />
+          )}
+          {!canReadCollections && !canExport && (
+            <Card>
+              <CardBody className="text-sm text-text-muted">
+                Collections and exports are handled by the collection owners for this
+                project.
+              </CardBody>
+            </Card>
+          )}
+        </TabPanel>
+
+        <TabPanel value="activity">
+          <Card id="history" className="scroll-mt-20">
+            <CardHeader className="flex items-center justify-between">
+              <div>
+                <CardTitle>History</CardTitle>
+                <p className="mt-0.5 text-xs text-text-muted">
+                  Append-only. Every transition, who made it, and why.
+                </p>
+              </div>
+              <HistoryIcon className="size-4 text-text-subtle" aria-hidden="true" />
+            </CardHeader>
             {history.isLoading ? (
               <CardBody>
                 <Skeleton className="h-24" />
@@ -617,119 +782,9 @@ export default function ProjectDetailPage() {
                 ))}
               </ol>
             )}
-          </CollapsibleCard>
-        </div>
-
-        <div className="min-w-0 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Details</CardTitle>
-            </CardHeader>
-            <CardBody>
-              <DescriptionList>
-                <DescriptionItem term="Internal name">
-                  {p.internal_project_name ?? "—"}
-                </DescriptionItem>
-                <DescriptionItem term="Requesting team">
-                  {p.requesting_team ?? "—"}
-                </DescriptionItem>
-                <DescriptionItem term="Data Collection Owner">
-                  {p.dco_name ?? "Not assigned"}
-                </DescriptionItem>
-                <DescriptionItem term="Created by">
-                  {p.created_by_name ?? "—"}
-                </DescriptionItem>
-                <DescriptionItem term="Created">
-                  {formatDateTime(p.created_at)}
-                </DescriptionItem>
-                <DescriptionItem term="Reference">
-                  <Mono>{p.project_uuid}</Mono>
-                </DescriptionItem>
-              </DescriptionList>
-            </CardBody>
           </Card>
-
-          {summary.data && (
-            <Card>
-              <CardHeader>
-                <CardTitle>At a glance</CardTitle>
-              </CardHeader>
-              <CardBody className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  {Object.entries(summary.data.counts).map(([key, value]) => (
-                    <div key={key}>
-                      <p className="text-xs text-text-subtle">{humanise(key)}</p>
-                      <p className="tabular text-lg font-semibold">{value}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="border-t border-border pt-3">
-                  <p className="mb-2 text-xs font-medium tracking-wide text-text-subtle uppercase">
-                    Consent
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {Object.entries(summary.data.consents).map(([key, value]) => (
-                      <div key={key}>
-                        <p className="text-xs text-text-subtle">{humanise(key)}</p>
-                        <p className="tabular text-lg font-semibold">{value}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-          )}
-
-          {links.data && links.data.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Consent links</CardTitle>
-              </CardHeader>
-              <ul className="divide-y divide-border">
-                {links.data.map((link) => (
-                  <li key={link.link_uuid} className="px-5 py-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium">{link.site_label}</p>
-                      <StatusBadge kind="link" value={link.status} />
-                    </div>
-                    <p className="mt-1 text-xs text-text-muted">
-                      {link.use_count}
-                      {link.max_uses !== null && ` of ${link.max_uses}`} used · expires{" "}
-                      {formatDateTime(link.expires_at)}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          )}
-
-          {p.project_status === "approved" && (
-            <Alert tone="info">
-              <p className="flex items-start gap-2">
-                <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                <span>
-                  Adding a site now is a material change: it adds a recipient to a published
-                  notice, so it requires a new notice version before collection starts
-                  there.
-                </span>
-              </p>
-            </Alert>
-          )}
-        </div>
-      </div>
-
-      {/* The same moves and actions as the top of the page, for whoever has
-          read to the bottom. */}
-      <section aria-label="Next steps" className="mt-6">
-        <TransitionControls
-          projectUuid={uuid}
-          currentStatus={p.project_status}
-          noticeUuid={p.current_notice_uuid ?? notices.data?.[0]?.notice_uuid}
-          heading="Next steps"
-          footer={headerActions}
-        />
-      </section>
+        </TabPanel>
+      </Tabs>
 
       <Dialog open={sheet?.kind === "edit"} onOpenChange={(o) => !o && close()}>
         <DialogContent title="Edit project" description="Drafts only.">
@@ -892,7 +947,8 @@ function ApprovalsCard({
           <span className="tabular rounded-full bg-bg-inset px-2.5 py-0.5 text-xs font-medium text-text-muted">
             {items.length}
           </span>
-          {canUpload && (
+          {/* With none yet, the empty state below offers it instead. */}
+          {canUpload && items.length > 0 && (
             <Button variant="ghost" size="sm" onClick={onUpload}>
               <FileCheck className="size-4" />
               Upload
