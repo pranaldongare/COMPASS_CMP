@@ -157,8 +157,8 @@ Both portals share one shape:
 
 | Portal | Routes |
 |---|---|
-| `frontend/console` | dashboard, projects, approvals, notices, purposes, sites, sources, processors, links, consents, exports, imports, collections, requests, tickets, users, audit, cover, notifications, account; sign-in with MFA and reset |
-| `frontend/portal` | `c/[token]` (the consent flow), sign-up, sign-in, rights, rights/nominee, rights/nominations/[token]; signed in: my-consents, my-requests, notifications, account |
+| `frontend/console` | dashboard, projects, approvals, notices, purposes, sites, sources, processors, links, consents, exports, imports, collections, requests, breaches, tickets, users, messages, audit, delegate (cover), notifications, account, help; sign-in with MFA and reset |
+| `frontend/portal` | `c/[token]` (the consent flow), sign-up, sign-in, rights, rights/nominee, rights/nominations/[token]; signed in: my-consents, my-requests, my-nominations, breach-notices, notifications (Updates), account; help |
 
 ## Where to find a thing
 

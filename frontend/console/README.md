@@ -64,11 +64,14 @@ src/
     dkms/decrypt/         route handler: opens sealed values through the key
                           service, for a request carrying a session cookie
     (app)/                authenticated — RequireAuth, AppShell, RequireSection
-                          dashboard, projects, approvals, notices, purposes,
-                          processors, sources, sites, links, consents, exports,
-                          imports, collections, requests (the rights queue),
-                          tickets (a respondent's own), users, audit, cover,
-                          notifications, profile
+                          dashboard, projects (one workspace in tabs),
+                          approvals, notices, purposes, processors, sources,
+                          sites, links, consents, exports, imports,
+                          collections, requests (the rights queue), breaches,
+                          tickets (a respondent's own), users, messages, audit,
+                          delegate (cover), notifications, account
+    help/                 the manual, open without signing in
+    not-found.tsx         an unknown address, with a way back
     sign-in/              staff password + MFA step-up, reset; each page
                           behind AuthPageGate
   features/<name>/        one folder per business area:

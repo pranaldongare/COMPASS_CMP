@@ -61,11 +61,13 @@ src/app/
   rights/nominee/       a nominee acting under s.14
   rights/nominations/   the nominee's accept / decline link
   (app)/my-consents/    her consents, the frozen notice text, withdrawal
-  (app)/my-requests/    her rights requests, the files released with a
-                        response, nominations (hers and those naming her),
-                        disputes
+  (app)/my-requests/    her rights requests - a summary each until opened -
+                        the files released with a response, disputes
+  (app)/my-nominations/ who she has named to act for her, and who has named her
+  (app)/breach-notices/ notices about a breach that may affect her data (Rule 7)
   (app)/account/        her profile and sessions
-  (app)/notifications/  her own events
+  (app)/notifications/  her own events ("Updates" in the sidebar)
+  help/                 the manual, open without signing in
 src/features/
   public-consent/       the consent flow's steps
   my-consents/          /me/consents*, /me/disclosures
@@ -80,7 +82,7 @@ A staff account that signs in here is told where the console is
 already signed in goes where she was going, and a member of staff goes to
 the console, or to its code step when the code is outstanding. `RequireAge`
 asks an account with no date of birth for one at its next sign-in, before any
-page but consents and requests, and the consent-link page asks between the
+page but consents, requests and nominations, and the consent-link page asks between the
 code and the notice - the server records no consent from an unknown age. Those
 are courtesies, not boundaries: the permission matrix and the consent service
 on the server are what protect the data.

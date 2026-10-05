@@ -26,7 +26,7 @@ you need. **Every document is in this tree.** The one exception is a
 - [API](architecture/api.md): route families, the error contract, pagination, identifiers
 - [Frontend](frontend/README.md): what is written about the two portals beyond how to run them. Chiefly [best practices](frontend/best-practices.md): the React and Next.js standard — each rule, how the portals meet it and where, what is deliberately different, and the decision matrix a pull request answers
 - [Testing](operations/testing.md): what each suite proves and how to run it without fighting the rate limiter
-- [User acceptance testing](uat/): the first cycle's runbook and 130 step-by-step test cases (Word), and the workbook testers record results and defects in (Excel), for the build at `14576a2`
+- [User acceptance testing](uat/): the first cycle's runbook and 130 step-by-step test cases (Word), and the workbook testers record results and defects in (Excel), for the build at `ce91d31` (pack v1.5)
 - [Contributing](../CONTRIBUTING.md): the checks a change must pass and how commits are written
 
 **Running it somewhere**
