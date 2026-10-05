@@ -6,10 +6,10 @@
  * an adult from a child, and the server refuses a new consent from either
  * (`age_required`). The decision taken for those accounts is to ask at the next
  * sign-in rather than wait until a consent fails, so every page here holds for
- * the answer - except the two a person must always be able to reach.
+ * the answer - except the ones a person must always be able to reach.
  * Withdrawing a consent is not a consent, and neither is exercising a right, so
- * `/my-consents` and `/my-requests` stay open without it and carry a reminder
- * instead.
+ * `/my-consents`, `/my-requests` and `/my-nominations` stay open without it and
+ * carry a reminder instead.
  *
  * `is_minor` is the server's answer, derived from `minor_until`: **null means
  * unknown, not adult**. A known child is not held here - the server refuses
@@ -37,7 +37,10 @@ import { useAuth } from "@/providers";
 import { EARLIEST_DOB, dateOfBirth, today } from "@/schemas/primitives";
 
 /** The pages that never wait for a date of birth. */
-const ALWAYS_OPEN = ["/my-consents", "/my-requests"] as const;
+// My nominations too: the nomination cards lived on My requests until October
+// 2026, and acting for someone, or arranging who acts for you, must not wait
+// on a date of birth any more than a request does.
+const ALWAYS_OPEN = ["/my-consents", "/my-requests", "/my-nominations"] as const;
 
 function alwaysOpen(pathname: string): boolean {
   return ALWAYS_OPEN.some((p) => pathname === p || pathname.startsWith(`${p}/`));

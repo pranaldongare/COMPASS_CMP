@@ -139,7 +139,7 @@ test.describe("consent journey", () => {
     await page.getByRole("button", { name: /send the code/i }).click();
 
     await page.getByLabel(/six-digit code/i).fill("000000");
-    await page.getByRole("button", { name: /confirm and read the notice/i }).click();
+    await page.getByRole("button", { name: /verify and continue/i }).click();
 
     // Scoped to main: Next appends its own role="alert" route announcer to the
     // body, so an unscoped getByRole("alert") matches two elements and fails
@@ -165,7 +165,7 @@ test.describe("consent journey", () => {
     await page.getByLabel(/email address/i).fill(contact);
     await page.getByRole("button", { name: /send the code/i }).click();
     await page.getByLabel(/six-digit code/i).fill(await freshCode(contact, before));
-    await page.getByRole("button", { name: /confirm and read the notice/i }).click();
+    await page.getByRole("button", { name: /verify and continue/i }).click();
 
     const prompt = page.getByRole("heading", { name: /your date of birth/i });
     const notice = page.getByRole("button", { name: /decline everything/i });

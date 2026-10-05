@@ -328,6 +328,7 @@ test.describe("nominee", () => {
     );
 
     // It is their request, not his: his own list stays empty.
+    await page.goto("/my-requests");
     await expect(page.getByText(/no requests yet/i)).toBeVisible();
   });
 });
