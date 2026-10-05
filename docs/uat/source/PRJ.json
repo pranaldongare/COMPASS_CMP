@@ -49,12 +49,12 @@
         "expected": "The project's own page opens with the heading 'UAT Study 01', status badge 'In Draft', and the progress bar showing In Draft > Pending Approval > Approved."
       },
       {
-        "action": "Look at the 'Details' card on the right.",
+        "action": "Look at the 'Details' card at the top right, beside 'What happens next'.",
         "expected": "Internal name 'UAT-01', Requesting team 'Computer Vision', Data Collection Owner 'Not assigned', Created by 'Kavya Rao'."
       },
       {
-        "action": "Look at the 'Who is collecting' card.",
-        "expected": "SEED and SRIB are both listed with the chip 'approved'; SEED says 'collected by a third party' and SRIB says 'collected in-house'."
+        "action": "Look at the tabs under it, then click 'Setup' and look at the 'Who is collecting' card.",
+        "expected": "The tabs read 'Overview' (selected), 'Setup', 'Consent', 'Collections & exchanges' and 'Activity'. In 'Setup', SEED and SRIB are both listed with the chip 'approved'; SEED says 'collected by a third party' and SRIB says 'collected in-house'."
       },
       {
         "action": "Click 'All projects' at the top of the page.",
@@ -137,8 +137,8 @@
         "expected": "The button is greyed out (disabled); nothing happens and the status stays 'In Draft'."
       },
       {
-        "action": "Look at the 'Notices' card.",
-        "expected": "It shows 'No notice yet' with the buttons 'Upload a notice document' and 'Copy an existing notice'."
+        "action": "Click the 'Setup' tab and look at the 'Notices' card.",
+        "expected": "It shows 'No notice yet' with the buttons 'Upload a notice document' and 'Copy an existing notice'. There is NO 'New notice' button."
       },
       {
         "action": "Look at the 'Approvals' card.",
@@ -146,7 +146,7 @@
       },
       {
         "action": "Look at the buttons at the top of the page.",
-        "expected": "'Edit', 'Upload a notice document', 'Copy an existing notice', 'Upload approval' and 'Add site' are shown. There is NO 'New notice' button."
+        "expected": "Only the status badge 'In Draft' and 'Edit' are shown. Adding a notice, an approval or a site is done on its own card in the tabs, not here."
       }
     ],
     "pass_criteria": "The submit button is disabled and every one of the six missing prerequisites is named together, not one at a time."
@@ -174,7 +174,7 @@
         "expected": "The project page opens, status 'In Draft'."
       },
       {
-        "action": "In the 'Notices' card click 'Upload a notice document'.",
+        "action": "Click the 'Setup' tab, then 'Upload a notice document' in the 'Notices' card.",
         "expected": "A dialog 'Upload a notice document' opens: 'The filled-in .docx template. Its purpose table becomes the notice's purposes, which the DPO then activates.' It shows 'Need the template? Download it', a 'Notice document' file chooser, a disabled 'Check the document' button and a disabled 'Create the notice' button."
       },
       {
@@ -221,7 +221,7 @@
     ],
     "steps": [
       {
-        "action": "Open project 'UAT Study 01' and in the 'Notices' card click 'Upload a notice document'.",
+        "action": "Open project 'UAT Study 01', click the 'Setup' tab and in the 'Notices' card click 'Upload a notice document'.",
         "expected": "The 'Upload a notice document' dialog opens with 'Check the document' and 'Create the notice' disabled."
       },
       {
@@ -284,7 +284,7 @@
         "expected": "Toast 'Project registered'; the 'UAT Study 02' page opens with status 'In Draft'."
       },
       {
-        "action": "In the 'Notices' card click 'Copy an existing notice'.",
+        "action": "Click the 'Setup' tab, then 'Copy an existing notice' in the 'Notices' card.",
         "expected": "A dialog 'Copy an existing notice' opens: 'Copies the wording, the purposes and every language rendition into this project as a fresh draft.' with a 'Notice to copy' list and a disabled 'Copy into this project' button."
       },
       {
@@ -329,7 +329,7 @@
     ],
     "steps": [
       {
-        "action": "Open project 'UAT Study 01' and look at the buttons at the top of the page.",
+        "action": "Open project 'UAT Study 01', click the 'Setup' tab and look at the buttons on the 'Notices' card.",
         "expected": "'Upload a notice document' and 'Copy an existing notice' are shown; there is NO 'New notice' button."
       },
       {
@@ -376,7 +376,7 @@
     ],
     "steps": [
       {
-        "action": "Open project 'UAT Study 01' and click 'Upload approval' at the top of the page.",
+        "action": "Open project 'UAT Study 01', click the 'Setup' tab and click 'Upload an approval' in the 'Approvals' card.",
         "expected": "A dialog 'Upload an approval' opens: 'The proof file is mandatory - an approval without one does not unlock the transition.' Fields: 'Type' (preset to Security), 'Reference number', 'Approved on', 'Proof document'."
       },
       {
@@ -401,14 +401,14 @@
       },
       {
         "action": "Scroll to the bottom of the page.",
-        "expected": "A 'Next steps' card repeats 'Moves the project to Pending Approval' with the same active 'Submit for approval' button, and under 'Other actions' the buttons from the top of the page (for example 'Upload approval') with the status badge. Nothing at the top of the page has gone."
+        "expected": "The page ends with the tabbed sections. The move is not repeated at the foot: 'Submit for approval' is only in 'What happens next' at the top."
       },
       {
-        "action": "Click 'Submit for approval' (at the top or in 'Next steps' - either one).",
+        "action": "Click 'Submit for approval'.",
         "expected": "Toast 'Moved to Pending Approval'. The status badge changes to 'Pending Approval' and the progress bar moves to its second step."
       },
       {
-        "action": "Look at 'What happens next' again, and at the 'History' card.",
+        "action": "Look at 'What happens next' again, then click the 'Activity' tab and look at the 'History' card.",
         "expected": "'What happens next' reads 'There is nothing for your role to do at this stage.' History shows 'In Draft → Pending Approval' by 'Kavya Rao (Rnd user)' with the time. The 'Edit' button is no longer shown in the page header."
       }
     ],
@@ -603,16 +603,16 @@
         "expected": "Status badge 'Approved'; progress bar at the last step."
       },
       {
-        "action": "Look at the 'Notices' card.",
+        "action": "Click the 'Setup' tab and look at the 'Notices' card.",
         "expected": "'NTC-UAT-STUDY-01-2026 v1' shows the badge 'Published' and '· published <date/time>'."
       },
       {
-        "action": "Look at the 'History' card.",
+        "action": "Click the 'Activity' tab and look at the 'History' card.",
         "expected": "The newest entry is 'Pending Approval → Approved' by 'Priya Menon (Dpo)' with the note shown in quotes."
       },
       {
-        "action": "Look at the right-hand column.",
-        "expected": "An info note reads 'Adding a site now is a material change: it adds a recipient to a published notice, so it requires a new notice version before collection starts there.'"
+        "action": "Click the 'Consent' tab.",
+        "expected": "Above 'Collection sites' an info note reads 'Adding a site now is a material change: it adds a recipient to a published notice, so it requires a new notice version before collection starts there.'"
       }
     ],
     "pass_criteria": "The project is Approved and, in the same step, its notice becomes Published with a timestamp."
@@ -653,7 +653,7 @@
         "expected": "It shows the recipient text fixed at publication (no longer 'Generated from the project's sites at publication')."
       },
       {
-        "action": "Sign out and sign in as rnd@cmp.local. Open project 'UAT Study 01' and click 'Upload a notice document'.",
+        "action": "Sign out and sign in as rnd@cmp.local. Open project 'UAT Study 01', click the 'Setup' tab and click 'Upload a notice document' in the 'Notices' card.",
         "expected": "The 'Upload a notice document' dialog opens."
       },
       {
@@ -692,11 +692,11 @@
         "expected": "The project is visible to the DCO Admin (it names a third-party processor). Status 'Approved'."
       },
       {
-        "action": "Look at the 'Who is collecting' card.",
+        "action": "Click the 'Setup' tab and look at the 'Who is collecting' card.",
         "expected": "SEED shows 'approved', 'collected by a third party' and '· no collection set up yet'."
       },
       {
-        "action": "Click 'Add site' at the top of the page.",
+        "action": "Click the 'Consent' tab, then 'Add site' in the 'Collection sites' card.",
         "expected": "A dialog 'Add a collection site' opens with a yellow note that the notice is already published and adding a site is a material change requiring a new notice version; fields 'Data source' and 'Location'. There is no site-name or processor field."
       },
       {
@@ -716,7 +716,7 @@
         "expected": "A row 'CIT' with 'CIT campus, Coimbatore · operated by SEED', owner line 'CIT · Arun Shetty' with a 'decides' tag, status 'Active', and the buttons 'Change source' and 'Who runs it'."
       },
       {
-        "action": "Look at 'Details' on the right.",
+        "action": "Look at 'Details' at the top right.",
         "expected": "'Data Collection Owner' now reads 'Arun Shetty'."
       },
       {
@@ -752,10 +752,10 @@
     "steps": [
       {
         "action": "As Kavya Rao open project 'UAT Study 01'.",
-        "expected": "Status 'Approved'. 'What happens next' says 'There is nothing for your role to do at this stage.' The 'Who is collecting' button now reads 'Request a collector'."
+        "expected": "Status 'Approved'. 'What happens next' says 'There is nothing for your role to do at this stage.' In the 'Setup' tab, the 'Who is collecting' button now reads 'Request a collector'."
       },
       {
-        "action": "Click 'Add site'.",
+        "action": "Click the 'Consent' tab, then 'Add site'.",
         "expected": "The 'Add a collection site' dialog opens with the material-change note."
       },
       {
@@ -776,7 +776,7 @@
       },
       {
         "action": "Click 'UAT Study 01' on the SE row.",
-        "expected": "The project page opens. In 'Collection sites', the SE row shows a 'Create link' button; Meera has no link control for CIT."
+        "expected": "The project page opens on its 'Consent' tab. In 'Collection sites', the SE row shows a 'Create link' button; Meera has no link control for CIT."
       }
     ],
     "pass_criteria": "The in-house site is set up by the R&D owner and is visible to (and actionable by) the RCO only, separate from the third-party site."
@@ -865,7 +865,7 @@
       },
       {
         "action": "Click 'UAT Study 01' on the CIT row.",
-        "expected": "The project page opens. The CIT site row shows a 'Create link' button."
+        "expected": "The project page opens on its 'Consent' tab. The CIT site row shows a 'Create link' button."
       },
       {
         "action": "Click 'Create link'.",
@@ -911,7 +911,7 @@
     ],
     "steps": [
       {
-        "action": "On project 'UAT Study 01' click 'Create link' on the CIT row.",
+        "action": "On project 'UAT Study 01' click the 'Consent' tab, then 'Create link' on the CIT row.",
         "expected": "Dialog 'Consent link for CIT' opens."
       },
       {
@@ -931,7 +931,7 @@
         "expected": "The dialog closes. The CIT row now shows '1 active link(s)', 'Copy link' and 'Replace link' instead of 'Create link' (refresh the page if the count has not updated)."
       },
       {
-        "action": "Look at the 'Consent links' card on the right.",
+        "action": "Look at the 'Consent links' card under 'Collection sites'.",
         "expected": "A row 'CIT' with the badge 'Active' and '0 of 50 used · expires <date/time>'."
       },
       {
@@ -1103,7 +1103,7 @@
     ],
     "steps": [
       {
-        "action": "Open project 'UAT Study 01'. In the header click 'Copy an existing notice', choose 'NTC-GAIT-2026 v1 — Gait Identification Study 2026' and click 'Copy into this project'.",
+        "action": "Open project 'UAT Study 01', click the 'Setup' tab and in the 'Notices' card click 'Copy an existing notice', choose 'NTC-GAIT-2026 v1 — Gait Identification Study 2026' and click 'Copy into this project'.",
         "expected": "A toast 'Copied into NTC-UAT-STUDY-01-2026-2' (the code may end differently) says it is a fresh draft. The 'Notices' card now lists it as 'Draft' beside v2 'Published'."
       },
       {

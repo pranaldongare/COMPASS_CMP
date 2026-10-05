@@ -174,7 +174,7 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "list",
         items: [
-          "[[Show progress]] on a request shows its clock and each step of its path.",
+          "Each request is a short summary until you click [[Show details]], which shows our response, its clock and each step of its path. A response ready to download is shown either way.",
           "[[Show what was recorded]] lists everything that happened to it.",
           "With several requests, [[All]], [[Open]] and [[Closed]] and the search box above the list narrow it down.",
         ],

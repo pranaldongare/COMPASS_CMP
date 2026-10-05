@@ -445,6 +445,16 @@ as a release yet.
 - `CONTRIBUTING.md`.
 
 ### Changed
+- **The UX review of 2026-10-05, package 4: records lead with where they
+  stand.** The project page is one workspace - the next move and its blockers
+  beside the project's details, then tabs for Overview, Setup, Consent,
+  Collections & exchanges (new: the project's collections and exports) and
+  Activity; each action once, on its card; old `#sites`/`#notices` links still
+  land, and register rows open the project at their card. A rights request
+  opens on its due date, current step, who has it and the next move, with the
+  cards grouped beneath and Clock and path folded. On the portal, My requests
+  cards are summaries until "Show details", a response ready to download
+  showing either way.
 - **The UX review of 2026-10-05, packages 1-3 and 5.** Truthful states (four
   consent states counted apart; subtle text at 4.5:1 in both themes; buttons
   that name the act); links that open what they name (filtered dashboard

@@ -265,7 +265,7 @@ export const SECTIONS: HelpSection[] = [
       },
       {
         kind: "p",
-        text: "The project page shows its progress (In Draft › Pending Approval › Approved), a [[What happens next]] card listing anything still missing, and its notices, approvals, sites and history.",
+        text: "The project page leads with its progress (In Draft › Pending Approval › Approved) and a [[What happens next]] card - the one next move, or everything still missing - beside its [[Details]]. The rest is in tabs: [[Overview]], [[Setup]] (who is collecting, notices, approvals), [[Consent]] (sites and consent links), [[Collections & exchanges]] and [[Activity]] (history). Each button sits on the card it changes, and the [[At a glance]] figures open the records they count.",
       },
     ],
   },
@@ -279,7 +279,7 @@ export const SECTIONS: HelpSection[] = [
         kind: "steps",
         title: "Upload the filled notice template (R&D User)",
         items: [
-          "On the project, in the [[Notices]] card, click [[Upload a notice document]].",
+          "On the project, open [[Setup]] and in the [[Notices]] card click [[Upload a notice document]].",
           "Choose the filled DPDP notice template (.docx) and click [[Check the document]]. Nothing is written yet: you see the purposes and data categories it found, and any warnings.",
           "Click [[Create the notice]]. It is created as [[Draft]] with its purposes.",
         ],
@@ -336,7 +336,7 @@ export const SECTIONS: HelpSection[] = [
         title: "Add a site",
         items: [
           "Third-party collection: the DCO Admin opens the approved project. In-house collection: the project's R&D User does.",
-          "Click [[Add site]], choose the [[Data source]] (only sources under the project's processors are offered) and type the [[Location]].",
+          "Open the project's [[Consent]] tab, click [[Add site]], choose the [[Data source]] (only sources under the project's processors are offered) and type the [[Location]].",
           "Click [[Add collection site]]. The source's owner runs the site; [[Who runs it]] changes that for this project only.",
         ],
       },
@@ -388,7 +388,7 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "steps",
         items: [
-          "On an approved project click [[Generate export]]. Read the warning: the file holds names and contacts, and each row is recorded as a disclosure.",
+          "On an approved project open [[Collections & exchanges]] and click [[Generate export]]. Read the warning: the file holds names and contacts, and each row is recorded as a disclosure.",
           "Click [[Generate the export]].",
           "Open [[Exports]] and click [[Download]]. Downloading again gives the same file and creates no new export.",
         ],
@@ -434,7 +434,7 @@ export const SECTIONS: HelpSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "[[Rights requests]] lists every request with its clock. Filter by [[Status]], [[Kind]], [[Clock]] and [[Tickets]]. A request that arrived by email is logged with [[Log a request received by email]]. Open a request to work through its numbered path; [[What happens next]] always says what may be done now and what blocks the rest.",
+        text: "[[Rights requests]] lists every request with its clock. Filter by [[Status]], [[Kind]], [[Clock]] and [[Tickets]]. A request that arrived by email is logged with [[Log a request received by email]]. A request opens on where it stands - when it is due, its current step, who has it and the next move or what blocks it. [[Clock and path]] opens the full checkpoints and steps. Work through the path below; [[What happens next]] always says what may be done now and what blocks the rest.",
       },
       {
         kind: "steps",

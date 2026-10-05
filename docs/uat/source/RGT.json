@@ -45,11 +45,11 @@
       },
       {
         "action": "Look at the lower half of the card (it opens already expanded after sending).",
-        "expected": "Two columns are shown: 'Clock' with the checkpoints, and 'The path' with steps including 'Request received', 'Acknowledge', 'Identity verified?', 'A valid access request?' and 'The CMP answers its own records'. The button reads 'Hide progress'."
+        "expected": "Two columns are shown: 'Clock' with the checkpoints, and 'The path' with steps including 'Request received', 'Acknowledge', 'Identity verified?', 'A valid access request?' and 'The CMP answers its own records'. The button reads 'Hide details'."
       },
       {
-        "action": "Click 'Hide progress', then 'Show progress'.",
-        "expected": "The Clock and path collapse and open again."
+        "action": "Click 'Hide details', then 'Show details'.",
+        "expected": "The card folds to a summary - reference, badges, dates and the first lines of your request - and opens again."
       },
       {
         "action": "Click 'Show what was recorded' on the card.",
@@ -508,7 +508,7 @@
         "expected": "A mail telling her the response to RR-A is ready is in the outbox, with a summary including what SEED returned."
       },
       {
-        "action": "In Browser A reload 'My requests' and look at RR-A.",
+        "action": "In Browser A reload 'My requests'. RR-A's folded card shows 'Our response is ready' with 'Download the file'; click 'Show details' on it.",
         "expected": "The badge reads 'Complete'. A box 'Our response · <date>' shows the text. 'Files released with this response' lists access-extract.pdf with 'Download'. Buttons 'Download the file' (with 'until <date>') and 'Dispute this response' are shown, with the note about the Data Protection Board."
       },
       {
@@ -580,7 +580,7 @@
         "expected": "The message 'Handled as withdrawal' appears. The header badge reads 'Handled as withdrawal'. A 'Response' card shows the explanation starting 'Withdrawing consent stops future processing for the purposes withdrawn. It does not delete data already collected...'"
       },
       {
-        "action": "In Browser A reload 'My requests' and look at RR-W, then open 'My consents'.",
+        "action": "In Browser A reload 'My requests', click 'Show details' on RR-W, then open 'My consents'.",
         "expected": "RR-W shows 'Handled as withdrawal' with 'Our response' giving the same explanation and a 'Dispute this response' button. Her consents are NOT changed - withdrawing stays her own step."
       }
     ],
@@ -911,7 +911,7 @@
         "expected": "It has a section 'WHAT WAS DONE WITH EACH ITEM' with '- <asset A>: Erased.' and '- <asset B>: Redacted: your part removed; the material holds other people and was kept.', followed by 'Kept, because they are the record of what happened and are never rewritten: your consent records, the audit trail, the files of data sent to processors before your request, and earlier responses given to you.' There is no 'NOT YET DONE' section."
       },
       {
-        "action": "In Browser A reload 'My requests' and look at RR-E.",
+        "action": "In Browser A reload 'My requests' and click 'Show details' on RR-E.",
         "expected": "RR-E shows 'Complete', 'Our response' with the text, 'Download the file' and 'Dispute this response'."
       },
       {
@@ -1116,7 +1116,7 @@
         "expected": "The hint reads 'What the requester is being given, and what could not be provided.' 'Released and closed' appears and the badge reads 'Partial'."
       },
       {
-        "action": "In Browser A reload 'My requests' and look at RR-C.",
+        "action": "In Browser A reload 'My requests' and click 'Show details' on RR-C.",
         "expected": "RR-C shows 'Partial' with the response and a 'Dispute this response' button."
       }
     ],
@@ -1146,7 +1146,7 @@
     ],
     "steps": [
       {
-        "action": "In Browser A on 'My requests' click 'Dispute this response' on RR-A.",
+        "action": "In Browser A on 'My requests' click 'Show details' on RR-A, then 'Dispute this response'.",
         "expected": "A dialog 'Dispute RR-A' opens: 'A grievance under section 13. Say what was wrong with the handling - late, incomplete, sent the wrong way, or the outcome itself.' with 'What was wrong', the checkbox 'This is about the Data Protection Officer's own decisions.', 'Cancel' and 'Raise the grievance'."
       },
       {
@@ -1158,12 +1158,12 @@
         "expected": "'Grievance recorded as RR-...' with 'It is linked to the original request.' appears. Note RR-G."
       },
       {
-        "action": "Look at the RR-G and RR-A cards.",
-        "expected": "RR-G shows 'Complaint (grievance) · s.13', 'Received' and a box 'What you disputed' naming RR-A with 'Complete: <start of the answer>' and 'See RR-A in full'. RR-A shows 'You disputed this in RR-G' with 'See it'."
+        "action": "Click 'Show details' on the RR-G card.",
+        "expected": "RR-G shows 'Complaint (grievance) · s.13', 'Received' and a box 'What you disputed' naming RR-A with 'Complete: <start of the answer>' and 'See RR-A in full'."
       },
       {
         "action": "Click 'See RR-A in full'.",
-        "expected": "The page scrolls to RR-A and briefly highlights it."
+        "expected": "The page scrolls to RR-A, opens it and briefly highlights it. RR-A shows 'You disputed this in RR-G' with 'See it'."
       },
       {
         "action": "In Browser B open RR-G from 'Rights requests'.",
@@ -1182,7 +1182,7 @@
         "expected": "'Remedy' and the re-run checkbox disappear. After the click, 'Not upheld' appears and the header badge reads 'Not upheld'."
       },
       {
-        "action": "In Browser A reload 'My requests' and look at RR-G.",
+        "action": "In Browser A reload 'My requests' and click 'Show details' on RR-G.",
         "expected": "RR-G shows 'Not upheld', 'Our response' with the finding and the Data Protection Board note. There is no 'Dispute this response' button on a grievance."
       }
     ],
@@ -1259,7 +1259,7 @@
         "expected": "'Upheld' appears and the header badge reads 'Upheld'."
       },
       {
-        "action": "In Browser A reload 'My requests' and look at RR-D.",
+        "action": "In Browser A reload 'My requests' and click 'Show details' on RR-D.",
         "expected": "RR-D shows 'Upheld', 'Our response' with the finding and a line 'Remedy: <remedy>'."
       }
     ],
@@ -1502,8 +1502,8 @@
         "expected": "Only RR-A remains. Typing 'grievance' instead shows only grievances; typing 'zzz' shows 'No requests match' with a 'Show all requests' button."
       },
       {
-        "action": "Click 'Show all requests'. Type 'grievance' in the search box, so that only grievances remain, and on RR-G (RGT-20) click 'See RR-A in full'.",
-        "expected": "RR-A was hidden by the search, so the search is cleared and 'All' selected; the page scrolls to RR-A and briefly highlights it."
+        "action": "Click 'Show all requests'. Type 'grievance' in the search box, so that only grievances remain. On RR-G (RGT-20) click 'Show details', then 'See RR-A in full'.",
+        "expected": "RR-A was hidden by the search, so the search is cleared and 'All' selected; the page scrolls to RR-A, opens it and briefly highlights it."
       }
     ],
     "pass_criteria": "A principal with several requests can show only open or only closed ones and find one by reference, kind or words; nothing is lost - 'Show all requests' and links between requests always bring the right card into view.",

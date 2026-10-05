@@ -82,7 +82,7 @@ ws.column_dimensions["A"].width = 26
 ws.column_dimensions["B"].width = 110
 rows = [
     ("COMPASS CMP - User Acceptance Testing", None),
-    ("Build under test", "Branch sprint-3/breach-and-correction, commit ebac9f4 - 5 October 2026"),
+    ("Build under test", "Branch sprint-3/breach-and-correction, commit ce91d31 - 5 October 2026"),
     ("Read first", "COMPASS-CMP-UAT-Runbook-and-Test-Cases.docx, Part A (the runbook). It explains the system, the accounts, the test outbox for one-time codes, and how to record results."),
     ("Where to record results", "Test Cases sheet: one row per case - fill in Tester, Date, Status, Actual result / notes, Defect IDs. Test Steps sheet: optional, one row per step, for a failed or complex case. Defect Log: one row per defect."),
     ("Cells you fill in", "Only the pale yellow cells. Everything else is the test definition - do not edit it; tell the coordinator if a step is wrong."),

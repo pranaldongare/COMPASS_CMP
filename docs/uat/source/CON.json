@@ -707,7 +707,7 @@
         "expected": "None of the CIT test people are listed (the RCO runs only the SE site); the list is empty ('No consent records yet') unless someone consented at SE."
       },
       {
-        "action": "As the RCO click 'My projects', type 'Gait Identification' in 'Search' (the list updates as you type), open 'Gait Identification Study 2026', click 'Generate export' and then 'Generate the export'.",
+        "action": "As the RCO click 'My projects', type 'Gait Identification' in 'Search' (the list updates as you type), open 'Gait Identification Study 2026', click the 'Collections & exchanges' tab, then 'Generate export' and 'Generate the export'.",
         "expected": "The notice 'Export generated' says 'Nobody has consented on this project yet, so the file carries the project details only.' — the RCO's export contains none of the CIT people."
       },
       {
@@ -750,10 +750,10 @@
       },
       {
         "action": "Click 'Projects', type 'Gait Identification' in 'Search' (the list updates as you type) and open 'Gait Identification Study 2026'.",
-        "expected": "The project page opens with the status approved and a 'Generate export' button in the header."
+        "expected": "The project page opens with the status approved."
       },
       {
-        "action": "Click 'Generate export'.",
+        "action": "Click the 'Collections & exchanges' tab, then 'Generate export' on the 'Exports' card.",
         "expected": "A dialog 'Generate an export' opens with a warning ('This CSV contains personal data — name, email and mobile number for every person who consented. Generating it writes one disclosure row each…'), an information box ('One row per consent… People who have withdrawn are included and marked…') and the buttons 'Cancel' and 'Generate the export'. There is nothing to choose."
       },
       {
@@ -825,7 +825,7 @@
         "expected": "'Restrict' is greyed out until both boxes are filled. After clicking, the notice 'Country restricted' ('Exports whose rows would go there are refused from now on.') appears and the list shows 'SG UAT-TEST-NOTIF-01 since <today>' with a 'Lift' button."
       },
       {
-        "action": "Open 'Projects' > 'Gait Identification Study 2026', click 'Generate export', then 'Generate the export'.",
+        "action": "Open 'Projects' > 'Gait Identification Study 2026', click the 'Collections & exchanges' tab, then 'Generate export' and 'Generate the export'.",
         "expected": "A red message appears inside the dialog: 'This export cannot go: SEED is in SG, restricted by UAT-TEST-NOTIF-01.' The dialog stays open and there is no 'Export generated' notice."
       },
       {
@@ -872,7 +872,7 @@
         "expected": "SG is not listed."
       },
       {
-        "action": "Open 'Gait Identification Study 2026', click 'Generate export', then 'Generate the export'.",
+        "action": "Open 'Gait Identification Study 2026', click the 'Collections & exchanges' tab, then 'Generate export' and 'Generate the export'.",
         "expected": "A red message in the dialog: 'This export cannot go: SEED is in SG, and PUR-GAIT-TRAIN, PUR-QUALITY does not permit a transfer outside India.' (it names the purposes people agreed to at CIT). No 'Export generated' notice."
       },
       {
@@ -884,7 +884,7 @@
         "expected": "SEED shows IN."
       },
       {
-        "action": "Open the project again, click 'Generate export', then 'Generate the export'.",
+        "action": "Open the project again, click the 'Collections & exchanges' tab, then 'Generate export' and 'Generate the export'.",
         "expected": "'Export generated' appears with the number of consents."
       },
       {
@@ -921,7 +921,7 @@
         "expected": "Its Country also shows 'not recorded'."
       },
       {
-        "action": "Open the prepared project, click 'Generate export', then 'Generate the export'.",
+        "action": "Open the prepared project, click the 'Collections & exchanges' tab, then 'Generate export' and 'Generate the export'.",
         "expected": "A red message in the dialog: 'This export cannot go: <processor name> has no recorded location - record its country first.' No 'Export generated' notice."
       },
       {
@@ -933,7 +933,7 @@
         "expected": "'Processor updated' appears and the row shows IN."
       },
       {
-        "action": "Open the prepared project again and click 'Generate export', then 'Generate the export'.",
+        "action": "Open the prepared project again, click the 'Collections & exchanges' tab, then 'Generate export' and 'Generate the export'.",
         "expected": "'Export generated' appears and a new 'Project export' row is listed on 'Exports'."
       },
       {

@@ -611,6 +611,18 @@ back returns you to where you were.
 - **Dialogs keep typing.** One somebody has typed in asks "Keep editing /
   Discard changes" when dismissed by Escape, a click outside or its close
   button; a form's own Cancel and a successful save close it directly.
+- **A tab is an address, and so is a card in it.** A page split into tabs
+  keeps the tab in the fragment (`useHashTab`), and the anchors of the cards
+  inside a tab open it too (`useHashTab(tabs, fallback, sections)`): the
+  project page's `#sites` opens Consent and scrolls to the sites card, so a
+  link written before the tabs, or one that names a record rather than a tab,
+  still lands. Prefer linking to the card (`#sites`, `#notices`, `#exports`).
+- **The top of a record says where it stands.** The project page leads with
+  the one next move (or its blockers) and who is accountable; a request leads
+  with its due date, current step, who has it and the next move. Each action
+  sits once, on the card it changes - not in the header as well, nor again at
+  the foot. Long reference material (a request's full clock and path) starts
+  folded.
 - **An unknown address** shows a page with a way back (`app/not-found.tsx`),
   and a refusal says what to do next rather than that the attempt was
   recorded.

@@ -761,8 +761,8 @@ case(
          "expected": "The first click folds away 'Approval documents' and 'Purposes'; the second brings them back. The group holding the page you are on cannot be folded away."},
         {"action": "Click 'Collapse sidebar' at the bottom of the sidebar, then reload the page.",
          "expected": "The sidebar becomes a narrow strip of icons (hovering an icon shows its name) and stays that way after the reload. Click 'Expand sidebar' to restore it."},
-        {"action": "Open 'Rights requests', open any request, and click the card 'Clock and path'.",
-         "expected": "The card folds to its heading, so the working cards below move up. Clicking it again unfolds it. On a project page, the 'History' card folds the same way and shows its number of entries."},
+        {"action": "Open 'Rights requests', open any request, look at the top of the page, then click the card 'Clock and path'.",
+         "expected": "The page opens on a summary: 'Due' with the date and days left, 'Current step', 'With' and 'Next'. 'Clock and path' starts folded to its heading; clicking it opens the checkpoints and the path, and clicking again folds it. On a project page the sections are tabs - 'Overview', 'Setup', 'Consent', 'Collections & exchanges' and 'Activity' (which holds 'History', with its number of entries on the tab)."},
     ],
     pass_criteria="Pages can be reached from the keyboard through the command palette; the breadcrumb shows where you are; the account menu offers profile, help, theme and sign-out; sidebar groups and the long reference cards fold away and are remembered.",
 )
