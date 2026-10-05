@@ -90,6 +90,9 @@ const ROLES = [
       "/exports",
       "/imports",
       "/requests",
+      // The breach register (S3-01) is the DPO's alone; every other role is
+      // told it is not there.
+      "/breaches",
       "/audit",
       "/users",
       "/delegate",

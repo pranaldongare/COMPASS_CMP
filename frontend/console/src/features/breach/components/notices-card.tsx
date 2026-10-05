@@ -115,7 +115,11 @@ export function NoticesCard({ breach }: { breach: Breach }) {
   const query = useQuery<BreachNotices>({
     queryKey: keys.breach.notices(breach.breach_uuid),
     queryFn: () => getNotices(breach.breach_uuid),
-    refetchInterval: 15_000,
+    // While deliveries are on their way, look again soon: the worker sends in
+    // well under a second, and somebody who has just pressed Send should not
+    // wait a quarter of a minute to see that it went. Otherwise every 15 s.
+    refetchInterval: (q) =>
+      q.state.data?.account.some((a) => a.status === "queued" && a.people > 0) ? 2_000 : 15_000,
   });
   const data = query.data;
   const draft = data?.versions.find((v) => v.state === "draft") ?? null;
