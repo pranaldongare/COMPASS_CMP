@@ -33,7 +33,8 @@ export interface paths {
         };
         /**
          * Readiness
-         * @description Database reachable, migrations current, Redis reachable, key service reachable.
+         * @description Database reachable, migrations current, Redis reachable, key service
+         *     reachable, storage writable.
          */
         get: operations["ready_ready_get"];
         put?: never;
@@ -732,7 +733,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The staff and subject register */
+        /**
+         * The staff and subject register
+         * @description `person` is one account by uuid: the destination of a link that names someone.
+         */
         get: operations["list_users_users_get"];
         put?: never;
         /**
@@ -762,11 +766,6 @@ export interface paths {
          *     Needed because the invitation is dispatched optionally - the account is
          *     created whether or not the message could be queued - and a message nobody
          *     received is invisible to everybody except the person waiting for it.
-         *
-         *     Only for an account that has not been activated. Sending one to an active
-         *     account would be an administrator resetting a colleague's password from a
-         *     distance; that is a different act, and its owner already has "Forgotten
-         *     your password?".
          */
         post: operations["resend_invitation_users__user_uuid__invite_post"];
         delete?: never;
@@ -791,8 +790,7 @@ export interface paths {
         head?: never;
         /**
          * Update User
-         * @description Name, mobile, organisation id. A mobile that changes is unconfirmed
-         *     again and is sent a code, as it would be had the person typed it.
+         * @description Name, mobile, organisation id. A changed mobile is sent a code.
          */
         patch: operations["update_user_users__user_uuid__patch"];
         trace?: never;
@@ -827,11 +825,8 @@ export interface paths {
          * Deactivate
          * @description End a member of staff's access, or switch a data principal's account off.
          *
-         *     Two different acts behind one button, and the row's role says which. For
-         *     staff the role and the password go and the person stays, active, as a data
-         *     principal - the consents they gave and the rights they hold are theirs
-         *     under the Act whether or not they still work here. For a data principal
-         *     there is nothing to keep them as, and the account is switched off.
+         *     For staff the role and the password go and the person stays as a data
+         *     principal; a data principal's account is switched off (`users.deactivate`).
          */
         post: operations["deactivate_users__user_uuid__deactivate_post"];
         delete?: never;
@@ -1583,10 +1578,7 @@ export interface paths {
         put?: never;
         /**
          * Retire Purpose
-         * @description Blocked while the purpose is attached to a published notice.
-         *
-         *     Retiring it would leave a live notice offering a purpose the registry says
-         *     no longer exists, and the consents already given against it unexplainable.
+         * @description Blocked while the purpose is attached to a published notice (409 `purpose_in_use`).
          */
         post: operations["retire_purpose_purposes__purpose_uuid__retire_post"];
         delete?: never;
@@ -1662,18 +1654,10 @@ export interface paths {
         put?: never;
         /**
          * Name a respondent for this processor
-         * @description A respondent is how a holder's ticket gets answered.
+         * @description An account answers on the portal; a name and an address are mailed.
          *
-         *     An account answers on the portal: the ticket is in front of them when they
-         *     sign in, and they return it there. A name and an address are mailed, and
-         *     the Privacy Office tracks the exchange by hand.
-         *
-         *     An in-house processor's respondent must be an account - our own team has
-         *     no reason to be reached by mail. A third party's may be either. Usually it
-         *     is somebody at the third party, reached by mail; sometimes one of our own
-         *     people represents that third party here, and naming their account puts the
-         *     ticket on the portal like any internal one. The rule is held here rather
-         *     than left to whoever fills the form.
+         *     The rules - an in-house processor's respondent must be an account - are the
+         *     service's (`registry.add_respondent`).
          */
         post: operations["add_respondent_processors__processor_uuid__respondents_post"];
         delete?: never;
@@ -1765,15 +1749,9 @@ export interface paths {
          * Create Source
          * @description `is_authoritative_for` lists the data elements this source owns.
          *
-         *     Without it, a nightly identity sync will overwrite a value corrected under a
-         *     rights request and nobody will notice.
-         *
-         *     **A collection owner may only register under their own kind of processor.**
-         *     A DCO is accountable for what a third party collects and an RCO for what the
-         *     R&D team collects itself, so a DCO registering an in-house rig - or the
-         *     reverse - would be creating a source they could never be given. Everyone
-         *     else (DPO, administrator, DCO Admin, R&D User) is unconstrained: they are
-         *     registering on somebody's behalf rather than for themselves.
+         *     **A collection owner may only register under their own kind of processor**
+         *     (`registry.refuse_foreign_processor`): a DCO under a third party's, an RCO
+         *     under an in-house one. Everyone else registers on somebody's behalf.
          */
         post: operations["create_source_sources_post"];
         delete?: never;
@@ -1814,18 +1792,7 @@ export interface paths {
          *
          *     This is where a person is named, and it is the *only* place. Everywhere else
          *     - registering a site, routing an approved project - picks a source, and the
-         *     owner comes with it. One answer to "who is accountable for CIT", recorded
-         *     once, rather than one per project that used it.
-         *
-         *     Which role fits which source is checked, because the distinction carries
-         *     meaning: an RCO is accountable for collection the R&D team does itself, a
-         *     DCO for a third party's. Assigning an RCO to a third-party source would
-         *     record that in-house staff are answerable for work they are not doing.
-         *
-         *     `trg_source_owner` re-derives the routing of every project deploying this
-         *     source, so this one write is the whole change. `projects_moved` says how many
-         *     that was - reassigning a rig used by three studies moves three studies, and
-         *     somebody should see that before they close the dialog.
+         *     owner comes with it. `projects_moved` says how many projects followed.
          */
         put: operations["assign_source_owner_sources__source_uuid__owner_put"];
         post?: never;
@@ -2342,7 +2309,7 @@ export interface paths {
         };
         /**
          * All notices in scope
-         * @description Cross-project notice list.
+         * @description Cross-project notice list. `languages=unapproved`: text awaiting approval.
          *
          *     The per-project route answers "what does this project have". The console's
          *     Notices section asks "what is outstanding anywhere", which cannot be
@@ -3394,7 +3361,7 @@ export interface paths {
          * What the office has not read
          * @description The number on the office's bell: every open ticket whose team has
          *     written - a message, a return - and nobody in the office has opened yet.
-         *     The respondent's side has the same count on "Tickets for you"; without
+         *     The respondent's side has the same count on "My tasks"; without
          *     this one the conversation rang on one end only.
          */
         get: operations["requests_attention_requests_attention_get"];
@@ -3416,6 +3383,8 @@ export interface paths {
         /**
          * Every request in scope
          * @description The register. Soonest due is the sort that matters; newest first is the default.
+         *
+         *     `due_soon` is open and due within seven days - the window the dashboard counts.
          */
         get: operations["list_requests_requests_get"];
         put?: never;
@@ -10852,6 +10821,7 @@ export interface operations {
                 status?: string | null;
                 person_type?: string | null;
                 q?: string | null;
+                person?: string | null;
                 limit?: number | null;
                 cursor?: string | null;
                 sort?: string | null;
@@ -13840,6 +13810,7 @@ export interface operations {
             query?: {
                 status?: string | null;
                 project?: string | null;
+                languages?: string | null;
                 limit?: number | null;
                 cursor?: string | null;
                 sort?: string | null;
@@ -15714,6 +15685,7 @@ export interface operations {
                 overdue?: boolean;
                 q?: string | null;
                 unread?: boolean;
+                due_soon?: boolean;
                 limit?: number | null;
                 cursor?: string | null;
                 sort?: string | null;

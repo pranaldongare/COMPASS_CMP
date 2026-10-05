@@ -20,7 +20,7 @@ test.describe("messages", () => {
     page,
   }) => {
     await page.goto("/messages");
-    await expect(page.getByRole("heading", { name: "Messages", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Message templates", level: 1 })).toBeVisible();
 
     const card = page.locator("#message-login_code");
     await expect(card.getByText("Data principal sign-in code")).toBeVisible();

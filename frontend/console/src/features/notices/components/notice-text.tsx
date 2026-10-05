@@ -32,7 +32,7 @@ import {
   Mono,
   Skeleton,
 } from "@/components/ui/primitives";
-import { formatDateTime, shortHash } from "@/lib/format";
+import { formatDateTime, humanise, shortHash } from "@/lib/format";
 import type { NoticeLanguage } from "@/types";
 
 export function NoticeText({
@@ -87,7 +87,7 @@ export function NoticeText({
         {canEdit && showing && (
           <Button variant="secondary" size="sm" onClick={() => onEdit(showing)}>
             <Pencil className="size-4" />
-            Edit this rendition
+            Edit {humanise(showing.language_code)} text
           </Button>
         )}
       </CardHeader>

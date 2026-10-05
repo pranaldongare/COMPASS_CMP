@@ -71,8 +71,8 @@ export default function CoverPage() {
   return (
     <>
       <PageHeader
-        title="Delegate"
-        description="Delegate your work to somebody while you are away. A delegation grants access for a period and transfers nothing — it ends on its own."
+        title="Delegations"
+        description="Choose who can cover your work and for how long. A delegation grants access for a period and transfers nothing — it ends on its own."
         actions={
           canArrange ? (
             <Button variant="primary" onClick={() => setArranging(true)}>

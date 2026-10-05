@@ -32,7 +32,7 @@ export const COUNT_LABELS: Record<string, string> = {
   pending_processors: "Collectors awaiting your decision",
   projects: "Third-party projects",
   sites_awaiting_source: "Sites awaiting a data source",
-  sources_without_owner: "Sources with nobody accountable",
+  sources_without_owner: "Sources without an owner",
   active_links: "Active links",
   consents: "Consents",
   exports: "Exports",

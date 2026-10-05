@@ -67,8 +67,8 @@ function TicketsInner() {
     <>
       <PageHeader
         eyebrow="Rights requests"
-        title="Tickets for you"
-        description="A person has asked what we hold about them, or for it to be corrected or erased, and the Privacy Office has asked your team to answer for the data it holds. Return each ticket here with what was done."
+        title="My tasks"
+        description="Respond to requests assigned to your team. Check each deadline and record what you found or changed."
       />
 
       {tickets.isLoading && <Skeleton className="h-40" />}

@@ -61,7 +61,7 @@ For each operation the information is deliberately ordered as **API → Validati
 
 The number on the office's bell: every open ticket whose team has
 written - a message, a return - and nobody in the office has opened yet.
-The respondent's side has the same count on "Tickets for you"; without
+The respondent's side has the same count on "My tasks"; without
 this one the conversation rang on one end only.
 
 ### Validation
@@ -96,6 +96,8 @@ No request body.
 
 The register. Soonest due is the sort that matters; newest first is the default.
 
+`due_soon` is open and due within seven days - the window the dashboard counts.
+
 ### Validation
 
 | Parameter | Location | Required | Type | Constraints | Description |
@@ -105,6 +107,7 @@ The register. Soonest due is the sort that matters; newest first is the default.
 | `overdue` | query | No | `boolean` | default: `False` | — |
 | `q` | query | No | `string` or `null` | max length: `120` | — |
 | `unread` | query | No | `boolean` | default: `False` | — |
+| `due_soon` | query | No | `boolean` | default: `False` | — |
 | `limit` | query | No | `integer` or `null` | minimum: `1`; maximum: `200` | — |
 | `cursor` | query | No | `string` or `null` | max length: `512` | — |
 | `sort` | query | No | `string` or `null` | max length: `64` | — |

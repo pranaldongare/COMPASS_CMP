@@ -36,7 +36,7 @@ export function DoneStep({ receipt }: { receipt: { uuid: string; declined: boole
         <p className="mx-auto mt-2 max-w-md text-sm text-text-muted">
           {receipt.declined
             ? "Nothing will be collected from you for this project. You can come back to this link if you change your mind."
-            : "We have sent you a receipt. You can review or withdraw your consent at any time - withdrawing is as easy as this was."}
+            : "A receipt is on its way to you. You can review or withdraw your consent at any time - withdrawing is as easy as this was."}
         </p>
 
         <p className="mt-4 text-xs text-text-subtle">

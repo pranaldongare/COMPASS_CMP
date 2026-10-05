@@ -146,7 +146,7 @@ export function RequestCard({
           <CardTitle className="flex flex-wrap items-center gap-2">
             <Mono>{r.reference}</Mono>
             <RequestTypeBadge type={r.request_type} />
-            <RequestStatusBadge status={r.status} outcome={r.outcome} />
+            <RequestStatusBadge status={r.status} outcome={r.outcome} voice="self" />
           </CardTitle>
           <p className="mt-1 text-xs text-text-muted">
             Received {formatDateTime(r.received_at)} · you will hear by{" "}
@@ -351,7 +351,7 @@ function AboutBlock({
       <p className="mt-1 flex flex-wrap items-center gap-2 text-sm">
         <Mono>{about.reference}</Mono>
         <RequestTypeBadge type={about.request_type} />
-        <RequestStatusBadge status={about.status} outcome={about.outcome} />
+        <RequestStatusBadge status={about.status} outcome={about.outcome} voice="self" />
         {about.responded_at && (
           <span className="text-xs text-text-muted">
             answered {formatDate(about.responded_at)}
@@ -397,7 +397,7 @@ function FollowedBy({
             {f.request_type === "grievance" ? "You disputed this in" : "Re-run as"}
           </span>
           <Mono>{f.reference}</Mono>
-          <RequestStatusBadge status={f.status} outcome={f.outcome} />
+          <RequestStatusBadge status={f.status} outcome={f.outcome} voice="self" />
           <Button variant="ghost" size="sm" onClick={() => onJump(f.request_uuid)}>
             <ArrowDownRight className="size-4" />
             See it

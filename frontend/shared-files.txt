@@ -14,7 +14,6 @@
 #
 # Moving them into one package both portals import is the better end state; it
 # changes how both apps install and build, and CI, so it waits on that decision.
-src/app/(app)/notifications/page.tsx
 src/app/dkms/decrypt/route.ts
 src/app/favicon.ico
 src/app/globals.css

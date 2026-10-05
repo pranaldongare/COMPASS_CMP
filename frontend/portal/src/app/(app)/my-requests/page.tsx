@@ -80,8 +80,8 @@ export default function MyRequestsPage() {
   return (
     <>
       <PageHeader
-        title="Your requests"
-        description="Ask for access to your data, a correction, erasure, or raise a grievance. Every request runs on a published clock, and you can see where it is."
+        title="My requests"
+        description="Ask for access to your data, a correction or erasure, or raise a complaint. Every request runs on a published clock, and you can see where it is."
         actions={
           <Button variant="primary" onClick={() => setAsking(true)}>
             <Plus className="size-4" />

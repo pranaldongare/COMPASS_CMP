@@ -27,7 +27,7 @@ export const SECTIONS: HelpSection[] = [
           "Withdraw your consent at any time - as easily as you gave it.",
           "Ask for a summary of your data, what is done with it and who it was shared with (section 11).",
           "Ask for your data to be corrected, completed or erased (section 12).",
-          "Raise a grievance if you are not satisfied with how we handled something (section 13).",
+          "Raise a complaint (a grievance, section 13) if you are not satisfied with how we handled something.",
           "Name someone to act for you if you die or cannot act yourself (section 14).",
         ],
       },
@@ -44,7 +44,7 @@ export const SECTIONS: HelpSection[] = [
           "On the [[Sign in]] page click [[Create an account]].",
           "Fill in [[Full name]], [[Mobile number]], [[Email address]] (optional) and [[Date of birth]], then click [[Create account]].",
           "On [[Confirm your contacts]], type the code sent to your mobile and, if you gave one, the code sent to your email.",
-          "Click [[Confirm and sign in]]. You land on [[Your consents]].",
+          "Click [[Confirm and sign in]]. You land on [[My consents]].",
         ],
       },
       {
@@ -91,7 +91,7 @@ export const SECTIONS: HelpSection[] = [
         items: [
           "Open the link you were given. The page names the study and the place, with four steps: [[Your details]], [[Confirm]], [[The notice]], [[Done]].",
           "Choose where to send your code under [[Send my code to]], type your mobile or email and click [[Send the code]]. New here? Use [[Create one]] and come back to the link.",
-          "Type the code and click [[Confirm and read the notice]].",
+          "Type the code and click [[Verify and continue]].",
           "Read the notice. [[Read this in]] changes the language when there is a choice.",
           "Under [[What are you agreeing to?]], choose [[I agree]] or [[I do not agree]] for every purpose. Nothing is chosen for you.",
           "Click [[Record my choices]] - or [[Decline everything]] to say no to all of it.",
@@ -107,7 +107,7 @@ export const SECTIONS: HelpSection[] = [
   },
   {
     id: "your-consents",
-    title: "Your consents",
+    title: "My consents",
     summary: "What you agreed to, the exact notice you were shown, and the record.",
     blocks: [
       {
@@ -278,7 +278,7 @@ export const SECTIONS: HelpSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "[[Notifications]] lists events about you - a consent recorded, a request received or answered - each linking to your own page about it.",
+        text: "[[Updates]] lists events about you - a consent recorded, a request received or answered - each linking to your own page about it.",
       },
     ],
   },

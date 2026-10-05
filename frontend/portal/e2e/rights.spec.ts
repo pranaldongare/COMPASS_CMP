@@ -124,7 +124,7 @@ test.describe("data principal", () => {
 
   test("makes a request from her dashboard and sees its clock", async ({ page }) => {
     await page.goto("/my-requests");
-    await expect(page.getByRole("heading", { name: /your requests/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /my requests/i })).toBeVisible();
 
     await page.getByRole("button", { name: /make a request/i }).click();
     const dialog = page.getByRole("dialog");

@@ -152,7 +152,7 @@ export function UserForm({ user, onDone }: { user?: User; onDone: () => void }) 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
             label="Role"
-            hint="Authorisation. What this person may do."
+            hint="Controls which pages and actions this person can access. Their person type is separate and does not change."
             error={form.formState.errors.role?.message}
             required
           >

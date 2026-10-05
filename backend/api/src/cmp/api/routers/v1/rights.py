@@ -646,7 +646,7 @@ class AttentionOut(Out):
 async def requests_attention(principal: RightsReader) -> dict[str, Any]:
     """The number on the office's bell: every open ticket whose team has
     written - a message, a return - and nobody in the office has opened yet.
-    The respondent's side has the same count on "Tickets for you"; without
+    The respondent's side has the same count on "My tasks"; without
     this one the conversation rang on one end only."""
     async with connection() as conn:
         return {"threads_unread": await repo.count_awaiting_office(conn)}

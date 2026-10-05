@@ -112,7 +112,7 @@ export function LanguageForm({
           Cancel
         </Button>
         <Button type="submit" variant="primary" loading={save.isPending}>
-          Save rendition
+          Save text
         </Button>
       </DialogFooter>
     </form>

@@ -65,7 +65,7 @@ async function confirm(user: ReturnType<typeof render>["user"]) {
   await user.type(await screen.findByLabelText(/mobile number/i), "+919876500001");
   await user.click(screen.getByRole("button", { name: /send the code/i }));
   await user.type(await screen.findByLabelText(/six-digit code/i), "123456");
-  await user.click(screen.getByRole("button", { name: /confirm and read the notice/i }));
+  await user.click(screen.getByRole("button", { name: /verify and continue/i }));
 }
 
 describe("opening the link", () => {

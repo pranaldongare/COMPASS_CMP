@@ -105,3 +105,15 @@ describe("My consents", () => {
     window.history.replaceState(null, "", "/");
   });
 });
+
+describe("agreedSentence", () => {
+  it("reads naturally for every count (UX review 2026-10-05)", async () => {
+    const { agreedSentence } = await import("@/app/(app)/my-consents/page");
+    expect(agreedSentence(2, 2)).toBe("You agreed to both purposes.");
+    expect(agreedSentence(1, 1)).toBe("You agreed to the purpose you were asked about.");
+    expect(agreedSentence(3, 3)).toBe("You agreed to all 3 purposes.");
+    expect(agreedSentence(1, 3)).toBe("You agreed to 1 of 3 purposes.");
+    expect(agreedSentence(0, 1)).toBe("You were asked about 1 purpose and did not agree to it.");
+    expect(agreedSentence(0, 4)).toBe("You were asked about 4 purposes and agreed to none.");
+  });
+});

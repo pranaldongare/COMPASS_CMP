@@ -466,7 +466,7 @@ export default function NoticeDetailPage() {
                             title="State Rule 3(b) more narrowly on this notice"
                           >
                             <SlidersHorizontal className="size-4" />
-                            Narrow for this notice
+                            Customise for this notice
                           </Button>
                         )}
                       </div>
@@ -525,7 +525,7 @@ export default function NoticeDetailPage() {
                   onClick={() => setLanguageSheet({})}
                 >
                   <Plus className="size-4" />
-                  Add a rendition
+                  Add language
                 </Button>
               )}
             </CardHeader>
@@ -545,7 +545,7 @@ export default function NoticeDetailPage() {
                       onClick={() => setLanguageSheet({})}
                     >
                       <Plus className="size-4" />
-                      Add a rendition
+                      Add language
                     </Button>
                   ) : undefined
                 }
@@ -759,7 +759,7 @@ export default function NoticeDetailPage() {
         onOpenChange={(o) => !o && setLanguageSheet(null)}
       >
         <DialogContent
-          title={languageSheet?.code ? `Edit ${languageSheet.code}` : "Add a rendition"}
+          title={languageSheet?.code ? `Edit ${humanise(languageSheet.code)} text` : "Add language"}
           description="This exact text is hashed at publication and becomes the record of what was agreed to."
           size="lg"
         >

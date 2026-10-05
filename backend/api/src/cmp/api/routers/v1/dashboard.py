@@ -228,7 +228,7 @@ _ATTENTION: dict[str, list[dict[str, Any]]] = {
         },
         {
             "count": "sources_without_owner",
-            "label": "Sources with nobody accountable",
+            "label": "Sources without an owner",
             "severity": "warning",
             "href": "/sources?unowned=1",
         },

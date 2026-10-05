@@ -60,7 +60,7 @@ export default function ApprovalsPage() {
   return (
     <>
       <PageHeader
-        title="Approvals"
+        title="Approval documents"
         description="Security and legal sign-off, each with the proof document that makes it real. A project cannot reach pending approval without one."
       />
 

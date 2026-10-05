@@ -35,6 +35,17 @@ export const config = {
   csrfHeader: process.env.NEXT_PUBLIC_CSRF_HEADER ?? "X-CSRF-Token",
   csrfCookie: process.env.NEXT_PUBLIC_CSRF_COOKIE ?? "cmp_csrf",
 
+  /** The sign-in panel: what a person can do here, not how the system works. */
+  pitch: {
+    heading: "Manage how your data is used.",
+    lede: "Review your choices, withdraw consent, or make a request.",
+    assurances: [
+      "See exactly what you agreed to, and when",
+      "Withdraw at any time, as easily as you agreed",
+      "Ask what is held about you, or have it corrected or erased",
+    ],
+  },
+
   isProduction: process.env.NODE_ENV === "production",
 
   /** How long TanStack Query treats a response as fresh. Short, because this is

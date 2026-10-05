@@ -54,7 +54,7 @@ export default function AccountPage() {
   return (
     <>
       <PageHeader
-        title="Your account"
+        title="My profile"
         description="Who you are signed in as, and where else you are signed in."
       />
 
@@ -65,7 +65,7 @@ export default function AccountPage() {
             panned the whole page. Only with a minimum of zero can `truncate`
             below actually truncate. */}
         <div className="min-w-0 lg:col-span-2">
-          <Tabs value={tab} onValueChange={setTab} label="Your account">
+          <Tabs value={tab} onValueChange={setTab} label="My profile">
             <TabList>
               <Tab value="contacts" icon={Mail}>
                 Contacts

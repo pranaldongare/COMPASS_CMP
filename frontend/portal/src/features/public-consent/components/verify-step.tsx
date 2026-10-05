@@ -120,7 +120,7 @@ export function VerifyStep({
             loading={busy}
             disabled={code.length !== 6}
           >
-            Confirm and read the notice
+            Verify and continue
           </Button>
         </form>
         {resent && (

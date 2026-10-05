@@ -89,8 +89,7 @@ export function IdentifyStep({
       <CardHeader>
         <CardTitle>Your details</CardTitle>
         <p className="mt-1 text-sm text-text-muted">
-          Consent is recorded against your account, so that you can read it, and withdraw
-          it, whenever you like. Confirm one contact and we will show you the notice.
+          Confirm your mobile number or email to read the notice and make your choices.
         </p>
       </CardHeader>
       <CardBody>

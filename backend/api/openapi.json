@@ -38,7 +38,7 @@
           "system"
         ],
         "summary": "Readiness",
-        "description": "Database reachable, migrations current, Redis reachable, key service reachable.",
+        "description": "Database reachable, migrations current, Redis reachable, key service\nreachable, storage writable.",
         "operationId": "ready_ready_get",
         "responses": {
           "200": {
@@ -1469,6 +1469,7 @@
           "users"
         ],
         "summary": "The staff and subject register",
+        "description": "`person` is one account by uuid: the destination of a link that names someone.",
         "operationId": "list_users_users_get",
         "parameters": [
           {
@@ -1534,6 +1535,23 @@
                 }
               ],
               "title": "Q"
+            }
+          },
+          {
+            "name": "person",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Person"
             }
           },
           {
@@ -1659,7 +1677,7 @@
           "users"
         ],
         "summary": "Send the invitation again",
-        "description": "Write to somebody again about the account waiting for them.\n\nNeeded because the invitation is dispatched optionally - the account is\ncreated whether or not the message could be queued - and a message nobody\nreceived is invisible to everybody except the person waiting for it.\n\nOnly for an account that has not been activated. Sending one to an active\naccount would be an administrator resetting a colleague's password from a\ndistance; that is a different act, and its owner already has \"Forgotten\nyour password?\".",
+        "description": "Write to somebody again about the account waiting for them.\n\nNeeded because the invitation is dispatched optionally - the account is\ncreated whether or not the message could be queued - and a message nobody\nreceived is invisible to everybody except the person waiting for it.",
         "operationId": "resend_invitation_users__user_uuid__invite_post",
         "parameters": [
           {
@@ -1744,7 +1762,7 @@
           "users"
         ],
         "summary": "Update User",
-        "description": "Name, mobile, organisation id. A mobile that changes is unconfirmed\nagain and is sent a code, as it would be had the person typed it.",
+        "description": "Name, mobile, organisation id. A changed mobile is sent a code.",
         "operationId": "update_user_users__user_uuid__patch",
         "parameters": [
           {
@@ -1851,7 +1869,7 @@
           "users"
         ],
         "summary": "Deactivate",
-        "description": "End a member of staff's access, or switch a data principal's account off.\n\nTwo different acts behind one button, and the row's role says which. For\nstaff the role and the password go and the person stays, active, as a data\nprincipal - the consents they gave and the rights they hold are theirs\nunder the Act whether or not they still work here. For a data principal\nthere is nothing to keep them as, and the account is switched off.",
+        "description": "End a member of staff's access, or switch a data principal's account off.\n\nFor staff the role and the password go and the person stays as a data\nprincipal; a data principal's account is switched off (`users.deactivate`).",
         "operationId": "deactivate_users__user_uuid__deactivate_post",
         "parameters": [
           {
@@ -3630,7 +3648,7 @@
           "registry"
         ],
         "summary": "Retire Purpose",
-        "description": "Blocked while the purpose is attached to a published notice.\n\nRetiring it would leave a live notice offering a purpose the registry says\nno longer exists, and the consents already given against it unexplainable.",
+        "description": "Blocked while the purpose is attached to a published notice (409 `purpose_in_use`).",
         "operationId": "retire_purpose_purposes__purpose_uuid__retire_post",
         "parameters": [
           {
@@ -3969,7 +3987,7 @@
           "registry"
         ],
         "summary": "Name a respondent for this processor",
-        "description": "A respondent is how a holder's ticket gets answered.\n\nAn account answers on the portal: the ticket is in front of them when they\nsign in, and they return it there. A name and an address are mailed, and\nthe Privacy Office tracks the exchange by hand.\n\nAn in-house processor's respondent must be an account - our own team has\nno reason to be reached by mail. A third party's may be either. Usually it\nis somebody at the third party, reached by mail; sometimes one of our own\npeople represents that third party here, and naming their account puts the\nticket on the portal like any internal one. The rule is held here rather\nthan left to whoever fills the form.",
+        "description": "An account answers on the portal; a name and an address are mailed.\n\nThe rules - an in-house processor's respondent must be an account - are the\nservice's (`registry.add_respondent`).",
         "operationId": "add_respondent_processors__processor_uuid__respondents_post",
         "parameters": [
           {
@@ -4399,7 +4417,7 @@
           "registry"
         ],
         "summary": "Create Source",
-        "description": "`is_authoritative_for` lists the data elements this source owns.\n\nWithout it, a nightly identity sync will overwrite a value corrected under a\nrights request and nobody will notice.\n\n**A collection owner may only register under their own kind of processor.**\nA DCO is accountable for what a third party collects and an RCO for what the\nR&D team collects itself, so a DCO registering an in-house rig - or the\nreverse - would be creating a source they could never be given. Everyone\nelse (DPO, administrator, DCO Admin, R&D User) is unconstrained: they are\nregistering on somebody's behalf rather than for themselves.",
+        "description": "`is_authoritative_for` lists the data elements this source owns.\n\n**A collection owner may only register under their own kind of processor**\n(`registry.refuse_foreign_processor`): a DCO under a third party's, an RCO\nunder an in-house one. Everyone else registers on somebody's behalf.",
         "operationId": "create_source_sources_post",
         "requestBody": {
           "required": true,
@@ -4535,7 +4553,7 @@
           "registry"
         ],
         "summary": "Assign the person accountable for a source",
-        "description": "Hand a source to a DCO or an RCO. Every project using it follows.\n\nThis is where a person is named, and it is the *only* place. Everywhere else\n- registering a site, routing an approved project - picks a source, and the\nowner comes with it. One answer to \"who is accountable for CIT\", recorded\nonce, rather than one per project that used it.\n\nWhich role fits which source is checked, because the distinction carries\nmeaning: an RCO is accountable for collection the R&D team does itself, a\nDCO for a third party's. Assigning an RCO to a third-party source would\nrecord that in-house staff are answerable for work they are not doing.\n\n`trg_source_owner` re-derives the routing of every project deploying this\nsource, so this one write is the whole change. `projects_moved` says how many\nthat was - reassigning a rig used by three studies moves three studies, and\nsomebody should see that before they close the dialog.",
+        "description": "Hand a source to a DCO or an RCO. Every project using it follows.\n\nThis is where a person is named, and it is the *only* place. Everywhere else\n- registering a site, routing an approved project - picks a source, and the\nowner comes with it. `projects_moved` says how many projects followed.",
         "operationId": "assign_source_owner_sources__source_uuid__owner_put",
         "parameters": [
           {
@@ -6239,7 +6257,7 @@
           "notices"
         ],
         "summary": "All notices in scope",
-        "description": "Cross-project notice list.\n\nThe per-project route answers \"what does this project have\". The console's\nNotices section asks \"what is outstanding anywhere\", which cannot be\nassembled client-side without one request per project.",
+        "description": "Cross-project notice list. `languages=unapproved`: text awaiting approval.\n\nThe per-project route answers \"what does this project have\". The console's\nNotices section asks \"what is outstanding anywhere\", which cannot be\nassembled client-side without one request per project.",
         "operationId": "list_all_notices_notices_get",
         "parameters": [
           {
@@ -6273,6 +6291,22 @@
                 }
               ],
               "title": "Project"
+            }
+          },
+          {
+            "name": "languages",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Languages"
             }
           },
           {
@@ -9408,7 +9442,7 @@
           "rights"
         ],
         "summary": "What the office has not read",
-        "description": "The number on the office's bell: every open ticket whose team has\nwritten - a message, a return - and nobody in the office has opened yet.\nThe respondent's side has the same count on \"Tickets for you\"; without\nthis one the conversation rang on one end only.",
+        "description": "The number on the office's bell: every open ticket whose team has\nwritten - a message, a return - and nobody in the office has opened yet.\nThe respondent's side has the same count on \"My tasks\"; without\nthis one the conversation rang on one end only.",
         "operationId": "requests_attention_requests_attention_get",
         "responses": {
           "200": {
@@ -9430,7 +9464,7 @@
           "rights"
         ],
         "summary": "Every request in scope",
-        "description": "The register. Soonest due is the sort that matters; newest first is the default.",
+        "description": "The register. Soonest due is the sort that matters; newest first is the default.\n\n`due_soon` is open and due within seven days - the window the dashboard counts.",
         "operationId": "list_requests_requests_get",
         "parameters": [
           {
@@ -9500,6 +9534,16 @@
               "type": "boolean",
               "default": false,
               "title": "Unread"
+            }
+          },
+          {
+            "name": "due_soon",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Due Soon"
             }
           },
           {

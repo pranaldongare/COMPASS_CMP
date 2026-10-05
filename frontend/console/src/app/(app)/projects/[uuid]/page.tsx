@@ -229,7 +229,7 @@ export default function ProjectDetailPage() {
             onClick={() => setSheet({ kind: "notice-copy" })}
           >
             <Copy className="size-4" />
-            Use an existing notice
+            Copy an existing notice
           </Button>
           {/* Composing one from nothing is the Privacy Office's. An author
               brings a notice as a filled-in document or picks one the
@@ -373,7 +373,7 @@ export default function ProjectDetailPage() {
                         size="sm"
                         onClick={() => setSheet({ kind: "notice-copy" })}
                       >
-                        Use an existing notice
+                        Copy an existing notice
                       </Button>
                     </div>
                   ) : undefined
@@ -396,7 +396,7 @@ export default function ProjectDetailPage() {
                           <span className="text-text-subtle">v{notice.version}</span>
                         </p>
                         <p className="mt-0.5 text-xs text-text-muted">
-                          {notice.purpose_count ?? 0} purpose(s) ·{" "}
+                          {notice.purpose_count ?? 0} {notice.purpose_count === 1 ? "purpose" : "purposes"} ·{" "}
                           {notice.language_count ?? 0} language(s)
                           {notice.published_at &&
                             ` · published ${formatDateTime(notice.published_at)}`}
@@ -765,7 +765,7 @@ export default function ProjectDetailPage() {
 
       <Dialog open={sheet?.kind === "notice-copy"} onOpenChange={(o) => !o && close()}>
         <DialogContent
-          title="Use an existing notice"
+          title="Copy an existing notice"
           description="Copies the wording, the purposes and every language rendition into this project as a fresh draft."
         >
           <NoticeCopyForm projectUuid={uuid} onDone={close} />

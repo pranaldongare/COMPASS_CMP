@@ -118,7 +118,7 @@ export function TransitionControls({
           <Lock className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <p>
             {currentStatus === "closed"
-              ? "This project is closed. Closed is terminal - there is no transition out of it."
+              ? "This project is closed and cannot be reopened."
               : "There is nothing for your role to do at this stage."}
           </p>
         </CardBody>

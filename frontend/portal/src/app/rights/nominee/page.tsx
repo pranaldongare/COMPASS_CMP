@@ -139,7 +139,7 @@ function NomineeForm() {
                   {error && !started && <Alert tone="danger">{error}</Alert>}
                   <Field
                     label="The nomination reference"
-                    hint="It was shown when you accepted, and sent to your recorded contacts in the message titled “keep this message”. The person who nominated you can also see it on their account. You do not sign in anywhere: this page is where you act."
+                    hint="Find this reference in your nomination message, or under My nominations if you have an account here. You do not need to sign in to act."
                     required
                   >
                     {(p) => (

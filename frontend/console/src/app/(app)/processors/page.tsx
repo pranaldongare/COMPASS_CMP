@@ -73,7 +73,7 @@ export default function ProcessorsPage() {
     <>
       <PageHeader
         title="Processors"
-        description="Third parties that process personal data on our behalf. Each needs a contract reference and a confirmed security assessment before it can operate a site."
+        description="Who processes personal data: our own teams (in-house) and outside organisations (external). Each needs a contract reference and a confirmed security assessment before it can operate a site."
         actions={
           canSuspend ? (
             <Button variant="primary" onClick={() => setCreating(true)}>

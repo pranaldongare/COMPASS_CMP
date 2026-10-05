@@ -49,7 +49,7 @@ export default function MessagesPage() {
     <>
       <PageHeader
         eyebrow="Oversight"
-        title="Messages"
+        title="Message templates"
         description="The words of every email and SMS the platform sends. Change them here; the default is what goes out until you do, and is one click away if you change your mind."
       />
 

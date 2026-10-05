@@ -35,12 +35,12 @@ export default function NotificationsPage() {
   return (
     <>
       <PageHeader
-        title="Notifications"
+        title="Updates"
         description="What has happened that concerns you, taken from the audit trail itself."
       />
 
       {query.error && (
-        <Alert tone="danger" title="Could not load notifications">
+        <Alert tone="danger" title="Could not load your updates">
           {query.error.userMessage()}
         </Alert>
       )}

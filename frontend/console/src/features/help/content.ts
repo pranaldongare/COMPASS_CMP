@@ -288,7 +288,7 @@ export const SECTIONS: HelpSection[] = [
         kind: "list",
         items: [
           "A template with placeholders still in it is refused.",
-          "[[Use an existing notice]] starts from any notice the Privacy Office has approved or published, on any project - it arrives as a draft, and each language must be approved again.",
+          "[[Copy an existing notice]] starts from any notice the Privacy Office has approved or published, on any project - it arrives as a draft, and each language must be approved again.",
           "Only the DPO writes or approves notice wording, purposes and translations.",
         ],
       },
@@ -314,7 +314,7 @@ export const SECTIONS: HelpSection[] = [
         items: [
           "Open the project from [[Needs attention]] › [[Projects pending approval]].",
           "[[What happens next]] lists what still blocks approval, with links: activate each purpose the notice carries, and legally approve each language.",
-          "On the notice, [[Edit this rendition]] to correct the wording, [[Add a rendition]] for another language, then [[Approve]] each language. The approved text is hashed; consent is matched against it.",
+          "On the notice, [[Edit English text]] (or the language shown) to correct the wording, [[Add language]] for another language, then [[Approve]] each language. The approved text is hashed; consent is matched against it.",
           "Back on the project click [[Approved]], add an optional note and [[Confirm]]. The notice is published and frozen.",
           "To send it back instead, click [[In Draft]] - a reason is required and kept in the history.",
         ],
@@ -466,13 +466,13 @@ export const SECTIONS: HelpSection[] = [
   },
   {
     id: "tickets",
-    title: "Tickets for you",
+    title: "My tasks",
     summary: "Answering the Privacy Office when a request needs your team's records.",
     blocks: [
       {
         kind: "steps",
         items: [
-          "[[Tickets for you]] in the sidebar shows a count of tickets with something unread.",
+          "[[My tasks]] in the sidebar shows a count of tickets with something unread.",
           "Click [[Respond]] on a ticket. It shows what the platform already knows and the messages so far.",
           "Ask a question or say what you hold in [[Message]], attach a file if needed, and [[Send]].",
           "When your work is done, tick [[This is my return - close the ticket with it]] and click [[Return the ticket]].",
@@ -537,7 +537,7 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "steps",
         items: [
-          "Click [[Delegate]], then [[Delegate my work]].",
+          "Click [[Delegations]], then [[Delegate my work]].",
           "Choose [[Who takes over]] - colleagues in your role are listed - set [[Until]] and say [[Why]].",
           "Click [[Delegate]]. Your colleague sees it under [[Work delegated to me]] and can act on your records until the end date.",
           "[[End now]] ends it early.",
@@ -558,7 +558,7 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "steps",
         items: [
-          "Click [[Messages]]. Messages are grouped under Sign-in, Consent, Rights and Staff.",
+          "Click [[Message templates]]. They are grouped under Sign-in, Consent, Rights and Staff.",
           "Edit a message's [[Subject]] and [[Body]]. Click a variable chip, such as {full_name}, to insert it where the cursor is.",
           "Click [[Preview]] to see it with sample values, then [[Save]].",
           "[[Reset to default]] brings back the original words.",
@@ -577,7 +577,7 @@ export const SECTIONS: HelpSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "The bell in the header and [[Notifications]] in the sidebar list recent events on records your role can see - a notice published, a consent withdrawn, an export generated. Each links to the page it is about, and only where your role can open that page.",
+        text: "The bell in the header opens [[Notifications]], which lists recent events on records your role can see - a notice published, a consent withdrawn, an export generated. Each links to the page it is about, and only where your role can open that page.",
       },
     ],
   },

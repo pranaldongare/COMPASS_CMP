@@ -38,22 +38,27 @@ export const REQUEST_TYPE_COPY: Record<
       "Erase personal data that is no longer needed. Consent records are kept as evidence of what was agreed; withdrawing consent is a separate, quicker step you can take yourself.",
   },
   grievance: {
-    label: "Grievance",
+    // The plain word first, the Act's term beside it (s.13 says grievance).
+    label: "Complaint (grievance)",
     section: "s.13",
     blurb:
       "Complain about how a request, or your data, was handled - late, incomplete, or wrong. Disagreement with an outcome counts.",
   },
 };
 
-export const STATUS_COPY: Record<RightsRequestStatus, { label: string; tone: BadgeTone }> = {
-  received: { label: "Received", tone: "warning" },
-  in_progress: { label: "In progress", tone: "info" },
-  awaiting_holders: { label: "Awaiting holders", tone: "warning" },
-  collating: { label: "Collating", tone: "info" },
-  closed: { label: "Closed", tone: "neutral" },
-};
+export const STATUS_COPY: Record<RightsRequestStatus, { label: string; tone: BadgeTone }> =
+  {
+    received: { label: "Received", tone: "warning" },
+    in_progress: { label: "In progress", tone: "info" },
+    awaiting_holders: { label: "Awaiting holders", tone: "warning" },
+    collating: { label: "Collating", tone: "info" },
+    closed: { label: "Closed", tone: "neutral" },
+  };
 
-export const OUTCOME_COPY: Record<RightsRequestOutcome, { label: string; tone: BadgeTone }> = {
+export const OUTCOME_COPY: Record<
+  RightsRequestOutcome,
+  { label: string; tone: BadgeTone }
+> = {
   complete: { label: "Complete", tone: "success" },
   partial: { label: "Partial", tone: "warning" },
   no_records: { label: "No records held", tone: "success" },
@@ -83,12 +88,25 @@ export function RequestTypeBadge({ type }: { type: RightsRequestType }) {
   );
 }
 
+/**
+ * The same statuses in the words of the person whose request it is. Staff keep
+ * the working terms - holders, collating - and the portal says what is
+ * happening (UX review 2026-10-05).
+ */
+const SELF_STATUS: Partial<Record<RightsRequestStatus, string>> = {
+  awaiting_holders: "Waiting for responses",
+  collating: "Preparing your response",
+};
+
 export function RequestStatusBadge({
   status,
   outcome,
+  voice = "staff",
 }: {
   status: RightsRequestStatus;
   outcome: RightsRequestOutcome | null;
+  /** `self` on the portal, read by the person whose request it is. */
+  voice?: "staff" | "self";
 }) {
   // A closed request reads as its outcome, not as "closed": the outcome is the
   // answer she was given, and "closed" says nothing about it.
@@ -97,7 +115,8 @@ export function RequestStatusBadge({
     return <Badge tone={copy.tone}>{copy.label}</Badge>;
   }
   const copy = STATUS_COPY[status];
-  return <Badge tone={copy.tone}>{copy.label}</Badge>;
+  const label = (voice === "self" && SELF_STATUS[status]) || copy.label;
+  return <Badge tone={copy.tone}>{label}</Badge>;
 }
 
 export function TicketBadge({ status }: { status: RightsTicketStatus }) {

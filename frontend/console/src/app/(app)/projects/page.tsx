@@ -89,7 +89,7 @@ function ProjectsPageView() {
     <>
       <PageHeader
         title="Projects"
-        description="Every collection begins here and moves through four states. Only a DPO can publish the notice that unlocks collection."
+        description="Manage projects and track their progress from setup to approval."
         actions={
           canCreate ? (
             <Button variant="primary" onClick={() => setCreating(true)}>
@@ -244,7 +244,7 @@ function ProjectsPageView() {
       <Dialog open={creating} onOpenChange={setCreating}>
         <DialogContent
           title="Register a project"
-          description="A name, a description and at least one processor. Who is accountable follows later, from the data sources."
+          description="Add the project details and select the teams involved. You can set up collection sites next."
         >
           <ProjectForm
             onDone={(created) => {

@@ -70,7 +70,7 @@ export default function MyConsentsPage() {
   return (
     <>
       <PageHeader
-        title="Your consents"
+        title="My consents"
         description="Everything you have agreed to, the exact wording you were shown, and who it has been shared with. You can withdraw at any time."
       />
 
@@ -184,8 +184,8 @@ function ConsentCard({
             ? // A refusal is a decision, not an absence, and the wording says so.
               // s.6(1) protects the freedom to refuse; a record that reads like a
               // failure teaches people that refusing was a mistake.
-              `You were asked about ${consent.purpose_count} purpose(s) and agreed to none.`
-            : `You agreed to ${consent.granted_count} of ${consent.purpose_count} purpose(s).`}
+              agreedSentence(0, consent.purpose_count)
+            : agreedSentence(consent.granted_count, consent.purpose_count)}
         </p>
 
         <div className="flex flex-wrap gap-2">
@@ -510,4 +510,23 @@ function LoadFailed({
       </Button>
     </Alert>
   );
+}
+
+/**
+ * What she agreed to, in a sentence that reads naturally - "both purposes",
+ * not "2 of 2 purpose(s)" (UX review 2026-10-05).
+ */
+export function agreedSentence(granted: number, total: number): string {
+  const purposes = (n: number) => (n === 1 ? "1 purpose" : `${n} purposes`);
+  if (granted === 0) {
+    return total === 1
+      ? "You were asked about 1 purpose and did not agree to it."
+      : `You were asked about ${purposes(total)} and agreed to none.`;
+  }
+  if (granted === total) {
+    if (total === 1) return "You agreed to the purpose you were asked about.";
+    if (total === 2) return "You agreed to both purposes.";
+    return `You agreed to all ${purposes(total)}.`;
+  }
+  return `You agreed to ${granted} of ${purposes(total)}.`;
 }

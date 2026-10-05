@@ -38,7 +38,7 @@ For each operation the information is deliberately ordered as **API → Validati
 - **Operation ID:** `list_all_notices_notices_get`
 - **Access:** Role-controlled `notices` operation. See [`../../roles/README.md`](../../roles/README.md).
 
-Cross-project notice list.
+Cross-project notice list. `languages=unapproved`: text awaiting approval.
 
 The per-project route answers "what does this project have". The console's
 Notices section asks "what is outstanding anywhere", which cannot be
@@ -50,6 +50,7 @@ assembled client-side without one request per project.
 |---|---|---:|---|---|---|
 | `status` | query | No | `string` or `null` | — | — |
 | `project` | query | No | `string` or `null` | format: `uuid` | — |
+| `languages` | query | No | `string` or `null` | — | — |
 | `limit` | query | No | `integer` or `null` | minimum: `1`; maximum: `200` | — |
 | `cursor` | query | No | `string` or `null` | max length: `512` | — |
 | `sort` | query | No | `string` or `null` | max length: `64` | — |

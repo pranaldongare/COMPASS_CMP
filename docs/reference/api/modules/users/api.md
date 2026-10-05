@@ -113,6 +113,8 @@ No request body.
 - **Operation ID:** `list_users_users_get`
 - **Access:** Role-controlled `users` operation. See [`../../roles/README.md`](../../roles/README.md).
 
+`person` is one account by uuid: the destination of a link that names someone.
+
 ### Validation
 
 | Parameter | Location | Required | Type | Constraints | Description |
@@ -121,6 +123,7 @@ No request body.
 | `status` | query | No | `string` or `null` | — | — |
 | `person_type` | query | No | `string` or `null` | — | — |
 | `q` | query | No | `string` or `null` | max length: `100` | — |
+| `person` | query | No | `string` or `null` | format: `uuid` | — |
 | `limit` | query | No | `integer` or `null` | minimum: `1`; maximum: `200` | — |
 | `cursor` | query | No | `string` or `null` | max length: `512` | — |
 | `sort` | query | No | `string` or `null` | max length: `64` | — |
@@ -275,11 +278,6 @@ Needed because the invitation is dispatched optionally - the account is
 created whether or not the message could be queued - and a message nobody
 received is invisible to everybody except the person waiting for it.
 
-Only for an account that has not been activated. Sending one to an active
-account would be an administrator resetting a colleague's password from a
-distance; that is a different act, and its owner already has "Forgotten
-your password?".
-
 ### Validation
 
 | Parameter | Location | Required | Type | Constraints | Description |
@@ -396,8 +394,7 @@ No request body.
 - **Operation ID:** `update_user_users__user_uuid__patch`
 - **Access:** Role-controlled `users` operation. See [`../../roles/README.md`](../../roles/README.md).
 
-Name, mobile, organisation id. A mobile that changes is unconfirmed
-again and is sent a code, as it would be had the person typed it.
+Name, mobile, organisation id. A changed mobile is sent a code.
 
 ### Validation
 
@@ -538,11 +535,8 @@ Request body required: **yes**.
 
 End a member of staff's access, or switch a data principal's account off.
 
-Two different acts behind one button, and the row's role says which. For
-staff the role and the password go and the person stays, active, as a data
-principal - the consents they gave and the rights they hold are theirs
-under the Act whether or not they still work here. For a data principal
-there is nothing to keep them as, and the account is switched off.
+For staff the role and the password go and the person stays as a data
+principal; a data principal's account is switched off (`users.deactivate`).
 
 ### Validation
 

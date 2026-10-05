@@ -53,7 +53,7 @@ export default function ImportsPage() {
     <>
       <PageHeader
         title="Imports"
-        description="Manifests received from labs and tools. Validate first - it is a dry run that writes nothing - because a third-party manifest is the input you trust least."
+        description="Upload collection records and review the results. Validate your file before importing."
         actions={
           me?.writes.includes("import") ? (
             <Button variant="primary" onClick={() => setImporting(true)}>
@@ -147,7 +147,7 @@ export default function ImportsPage() {
       <Dialog open={importing} onOpenChange={setImporting}>
         <DialogContent
           title="Import a manifest"
-          description="Validate first. The dry run parses and checks everything without writing a row."
+          description="Check your file for errors before importing. Validation does not save any records."
           size="lg"
         >
           <ImportWizard onDone={() => setImporting(false)} />

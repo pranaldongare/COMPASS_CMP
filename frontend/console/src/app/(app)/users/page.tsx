@@ -123,7 +123,7 @@ function UsersPageView() {
     <>
       <PageHeader
         title="Users"
-        description="Staff accounts and registered data subjects. Role is authorisation; person type is identity - changing one never changes the other."
+        description="Manage accounts, roles, and invitations."
         actions={
           isAdmin ? (
             <Button variant="primary" onClick={() => setCreating(true)}>

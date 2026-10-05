@@ -20,7 +20,7 @@ test.describe("data subject", () => {
 
   test("her notifications link to her own pages, never a console", async ({ page }) => {
     await page.goto("/notifications");
-    await expect(page.getByRole("heading", { name: /notifications/i }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: /updates/i }).first()).toBeVisible();
 
     // Every link on the page has to be somewhere she can go. Asserted over all
     // of them rather than the first: the bug was one entity type among several.
