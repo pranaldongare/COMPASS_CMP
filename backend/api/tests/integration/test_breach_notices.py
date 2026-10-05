@@ -277,6 +277,14 @@ async def test_nobody_listed_nothing_to_send(
     conn: Any, seeded: dict[str, Any], queued: list[Any]
 ) -> None:
     uuid = await _breach(conn, seeded)
+    await service.determine(
+        conn,
+        breach_uuid=uuid,
+        outcome="yes",
+        reasoning="Recorded, and nobody listed yet",
+        became_aware_at=datetime.now(UTC) - timedelta(hours=1),
+        actor_id=int(seeded["users"]["dpo"]["id"]),
+    )
     await _approved(conn, seeded, uuid)
     with pytest.raises(Conflict, match="Nobody is listed"):
         await notices.send(conn, breach_uuid=uuid, actor_id=int(seeded["users"]["dpo"]["id"]))

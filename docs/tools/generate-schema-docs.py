@@ -77,6 +77,7 @@ MODULES: dict[str, list[str]] = {
     ],
     "breach": [
         "breach",
+        "breach_recording",
         "breach_status_history",
         "breach_determination",
         "breach_assessment",

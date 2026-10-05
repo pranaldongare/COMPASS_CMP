@@ -1,9 +1,10 @@
 /**
- * The breach register, as the DPO (S3-01).
+ * Incidents and breaches, as the DPO (S3-01, S3-06).
  *
- * One journey: record a breach noticed five hours ago, mark it reportable to
- * CERT-In and read the hour that is left, determine it a personal data breach
- * and see the three DPDP duties appear, and find the breach refusing to close
+ * One journey: log an incident noticed five hours ago, mark it reportable to
+ * CERT-In and read the hour that is left, validate it as a personal data
+ * breach - which records it with a BR reference - and see the three DPDP
+ * duties appear, and find the breach refusing to close
  * while they are outstanding. Then a collection owner, who is told the page
  * is not part of their account - the server answers them 404.
  */
@@ -23,19 +24,22 @@ function hoursAgo(hours: number): string {
 test.describe("the DPO", () => {
   test.use({ storageState: statePath("dpo") });
 
-  test("records a breach, starts the CERT-In clock, determines it and cannot yet close it", async ({ page }) => {
+  test("logs an incident, starts the CERT-In clock, records it as a breach and cannot yet close it", async ({
+    page,
+  }) => {
     await page.goto("/breaches");
-    await expect(page.getByRole("heading", { name: "Personal data breaches", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Incidents and personal data breaches", level: 1 })).toBeVisible();
 
-    await page.getByRole("button", { name: "Record a breach" }).click();
+    await page.getByRole("button", { name: "Log an incident" }).click();
     const title = `E2E breach ${Date.now()}`;
     await page.getByLabel(/^Title/).fill(title);
     await page.getByLabel(/^First noticed/).fill(hoursAgo(5));
-    await page.getByRole("button", { name: "Record the breach" }).click();
+    await page.getByRole("button", { name: "Log the incident" }).click();
 
-    // Lands on the breach itself, titled by its reference.
-    await expect(page.getByText("Personal data breach", { exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^BR-\d{4}-\d{4}$/);
+    // Lands on the incident itself, titled by its incident reference.
+    await expect(page.getByText("Incident, being validated", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^INC-\d{4}-\d{4}$/);
+    const incident = (await page.getByRole("heading", { level: 1 }).textContent()) ?? "";
     await expect(page.getByText(title)).toBeVisible();
 
     await page.getByRole("button", { name: "Mark reportable to CERT-In" }).click();
@@ -46,7 +50,11 @@ test.describe("the DPO", () => {
 
     await page.getByLabel(/^Became aware at/).fill(hoursAgo(4));
     await page.getByLabel(/^Reasoning/).fill("Names and mobile numbers were on the copy");
-    await page.getByRole("button", { name: "Record the determination" }).click();
+    await page.getByRole("button", { name: "Record the validation" }).click();
+    // The yes records it: a BR reference, with the INC it was logged as kept.
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^BR-\d{4}-\d{4}$/);
+    await expect(page.getByText("Personal data breach", { exact: true })).toBeVisible();
+    await expect(page.getByText(incident, { exact: true })).toBeVisible();
     await expect(page.getByRole("row", { name: /Board - initial intimation/ })).toBeVisible();
     await expect(page.getByRole("row", { name: /Board - detailed report/ })).toBeVisible();
     await expect(page.getByRole("row", { name: /Principals notified/ })).toBeVisible();

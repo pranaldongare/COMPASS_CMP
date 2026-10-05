@@ -57,6 +57,8 @@ No request body.
     {
       "breach_uuid": "00000000-0000-4000-8000-000000000000",
       "reference": "string",
+      "incident_reference": "string",
+      "breach_reference": "…",
       "title": "string",
       "status": "string",
       "detected_at": "2026-09-17T12:00:00Z",
@@ -234,6 +236,8 @@ and where to act on it. Rows with nothing to count are not sent.
 |---|---|---:|---|---|
 | `breach_uuid` | `string` | Yes | format: `uuid` | — |
 | `reference` | `string` | Yes | — | — |
+| `incident_reference` | `string` | Yes | — | — |
+| `breach_reference` | `string` or `null` | Yes | — | — |
 | `title` | `string` | Yes | — | — |
 | `status` | `string` | Yes | — | — |
 | `detected_at` | `string` | Yes | format: `date-time` | — |

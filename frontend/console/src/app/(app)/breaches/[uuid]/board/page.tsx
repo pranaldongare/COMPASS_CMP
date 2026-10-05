@@ -53,7 +53,7 @@ function Missing({ items }: { items: string[] }) {
 }
 
 function DutyLine({ duty }: { duty: BreachDuty | null }) {
-  if (!duty) return <p className="text-sm text-text-muted">This duty arises with a determination of yes.</p>;
+  if (!duty) return <p className="text-sm text-text-muted">This duty arises with a validation of yes.</p>;
   return (
     <p className="text-sm">
       <strong>{duty.label}</strong> ({duty.basis}):{" "}

@@ -11961,7 +11961,7 @@
         "tags": [
           "breaches"
         ],
-        "summary": "The register, open first",
+        "summary": "Every incident and breach, open first",
         "operationId": "list_breaches_breaches_get",
         "parameters": [
           {
@@ -12014,7 +12014,7 @@
         "tags": [
           "breaches"
         ],
-        "summary": "Record a breach as it was noticed",
+        "summary": "Log an incident as it was noticed",
         "operationId": "record_breach_breaches_post",
         "requestBody": {
           "required": true,
@@ -12055,7 +12055,7 @@
         "tags": [
           "breaches"
         ],
-        "summary": "One breach, with every duty",
+        "summary": "One incident or breach, with every duty",
         "operationId": "get_breach_breaches__breach_uuid__get",
         "parameters": [
           {
@@ -12098,7 +12098,7 @@
         "tags": [
           "breaches"
         ],
-        "summary": "Record whether it is a personal data breach",
+        "summary": "Validate: is it a personal data breach? The first yes records it",
         "operationId": "determine_breaches__breach_uuid__determinations_post",
         "parameters": [
           {
@@ -12877,7 +12877,7 @@
         "tags": [
           "breaches"
         ],
-        "summary": "Send the approved notice to everyone listed who lacks it; never twice",
+        "summary": "Send the approved notice to everyone listed who lacks it; never twice, never before the breach is recorded",
         "operationId": "send_notice_breaches__breach_uuid__notices_send_post",
         "parameters": [
           {
@@ -16603,6 +16603,21 @@
             "type": "string",
             "title": "Reference"
           },
+          "incident_reference": {
+            "type": "string",
+            "title": "Incident Reference"
+          },
+          "breach_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breach Reference"
+          },
           "title": {
             "type": "string",
             "title": "Title"
@@ -16704,6 +16719,8 @@
           "document",
           "basis",
           "reference",
+          "incident_reference",
+          "breach_reference",
           "title",
           "generated_at",
           "determination",
@@ -17126,6 +17143,17 @@
           "duty": {
             "type": "string",
             "title": "Duty"
+          },
+          "send_blocked_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Send Blocked By"
           }
         },
         "type": "object",
@@ -17136,7 +17164,8 @@
           "listed",
           "unnotified",
           "contents",
-          "duty"
+          "duty",
+          "send_blocked_by"
         ],
         "title": "BreachNoticesOut"
       },
@@ -17150,6 +17179,44 @@
           "reference": {
             "type": "string",
             "title": "Reference"
+          },
+          "incident_reference": {
+            "type": "string",
+            "title": "Incident Reference"
+          },
+          "breach_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breach Reference"
+          },
+          "breach_recorded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breach Recorded At"
+          },
+          "breach_recorded_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breach Recorded By Name"
           },
           "title": {
             "type": "string",
@@ -17281,6 +17348,10 @@
         "required": [
           "breach_uuid",
           "reference",
+          "incident_reference",
+          "breach_reference",
+          "breach_recorded_at",
+          "breach_recorded_by_name",
           "title",
           "status",
           "detected_at",
@@ -17404,6 +17475,21 @@
             "type": "string",
             "title": "Reference"
           },
+          "incident_reference": {
+            "type": "string",
+            "title": "Incident Reference"
+          },
+          "breach_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breach Reference"
+          },
           "title": {
             "type": "string",
             "title": "Title"
@@ -17510,6 +17596,8 @@
           "document",
           "basis",
           "reference",
+          "incident_reference",
+          "breach_reference",
           "title",
           "generated_at",
           "determination",
@@ -17665,6 +17753,21 @@
             "type": "string",
             "title": "Reference"
           },
+          "incident_reference": {
+            "type": "string",
+            "title": "Incident Reference"
+          },
+          "breach_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breach Reference"
+          },
           "title": {
             "type": "string",
             "title": "Title"
@@ -17697,6 +17800,8 @@
         "required": [
           "breach_uuid",
           "reference",
+          "incident_reference",
+          "breach_reference",
           "title",
           "status",
           "detected_at",

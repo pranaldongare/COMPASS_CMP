@@ -147,6 +147,8 @@ async def send(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
     from cmp.tasks.notifications.breach import send_breach_notice
 
     breach = await service.locked_open(conn, breach_uuid)
+    # Drafting and approving may run during validation; telling anyone may not.
+    service.require_recorded(breach, "anyone is notified")
     breach_id = int(breach["breach_id"])
     notice = await repo.latest_approved(conn, breach_id)
     if notice is None:
@@ -318,6 +320,8 @@ async def overview(conn: Conn, *, breach_uuid: str) -> Row:
         "unnotified": await repo.unnotified(conn, breach_id),
         "contents": [{"key": c, "label": LABELS[c]} for c in CONTENTS],
         "duty": clock.LABELS[Duty.PRINCIPALS],
+        # The server's word on why Send must wait, for the console to show.
+        "send_blocked_by": service.not_recorded_reason(breach, "anyone is notified"),
     }
 
 

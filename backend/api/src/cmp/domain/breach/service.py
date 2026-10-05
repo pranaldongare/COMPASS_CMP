@@ -1,4 +1,9 @@
-"""The breach register's only writer (S3-01).
+"""The breach register's only writer (S3-01, S3-06).
+
+An incident is logged first, with its own reference (`INC-`); the first
+determination of *yes* records it as a personal data breach and issues the
+breach reference (`BR-`), in the same transaction as the duties it starts
+(ADR 0022).
 
 Every change takes the breach row first (`repo.lock`), so two people acting on
 one breach at once are made to act one after the other, and writes the audit
@@ -120,11 +125,12 @@ async def record(
     location_detail: str | None,
     actor_id: int,
 ) -> Row:
-    """Open a breach. Nothing about it is known yet but that it was noticed."""
+    """Log an incident. Nothing about it is known yet but that it was noticed,
+    and whether it is a personal data breach is for validation to say."""
     kind = choice(LocationKind, location_kind, field="location_kind")
     title = (title or "").strip()
     if not title:
-        raise ValidationFailed("Give the breach a short title", field="title")
+        raise ValidationFailed("Give the incident a short title", field="title")
     _not_future(detected_at, "detected_at")
     if began_at is not None:
         _not_future(began_at, "began_at")
@@ -196,10 +202,12 @@ async def determine(
     became_aware_at: datetime | None,
     actor_id: int,
 ) -> Row:
-    """Record whether this is a personal data breach under s.2(u).
+    """Validation: record whether this is a personal data breach under s.2(u).
 
-    *Yes* creates the three DPDP duties, or reinstates any a previous *no* set
-    aside, with clocks from `became_aware_at`. *No* sets aside those not yet
+    The first *yes* records the incident as a breach and issues its breach
+    reference; a later one issues none. *Yes* creates the three DPDP duties,
+    or reinstates any a previous *no* set aside, with clocks from
+    `became_aware_at`. *No* sets aside those not yet
     done, citing this determination. *Pending* changes no duty. CERT-In stands
     on its own test and is untouched by all three.
     """
@@ -244,10 +252,51 @@ async def determine(
     determination_id = int(made["determination_id"])
     if decided == Outcome.YES:
         assert became_aware_at is not None
+        if breach["breach_reference"] is None:
+            breach = await _record_as_breach(conn, breach, determination_id, actor_id=actor_id)
         await _apply_yes(conn, breach, determination_id, became_aware_at, actor_id=actor_id)
     elif decided == Outcome.NO:
         await _apply_no(conn, breach, determination_id, actor_id=actor_id)
     return await detail(conn, breach_uuid)
+
+
+async def _record_as_breach(
+    conn: Conn, breach: Row, determination_id: int, *, actor_id: int
+) -> Row:
+    """The first *yes*: issue the breach reference, once and for good.
+
+    There is no separate "record" step to press: it would only be a way to
+    hold back duties due without delay (ADR 0022). The breach row is held by
+    the caller, so a second *yes* arriving at once waits and then sees this.
+    """
+    made = await repo.record_as_breach(
+        conn, int(breach["breach_id"]), determination_id=determination_id, recorded_by=actor_id
+    )
+    recorded = await require(conn, str(breach["breach_uuid"]))
+    if made is not None:
+        await record_event(
+            conn,
+            recorded,
+            Event.BREACH_CONFIRMED,
+            actor_id=actor_id,
+            detail={"reference": made["reference"]},
+        )
+    return recorded
+
+
+def not_recorded_reason(breach: Row, action: str) -> str | None:
+    """Why `action` must wait, while the incident is not yet a breach."""
+    if breach["breach_reference"] is not None:
+        return None
+    return f"Record the breach before {action}: validate it as a personal data breach first"
+
+
+def require_recorded(breach: Row, action: str) -> None:
+    """What waits for the recording: anything that reaches a person on the
+    breach's account. Drafting does not (ADR 0022)."""
+    reason = not_recorded_reason(breach, action)
+    if reason:
+        raise Conflict(reason, code="breach_not_recorded")
 
 
 async def duties_of(conn: Conn, breach_id: int) -> dict[str, tuple[Row, dict[str, Any]]]:
@@ -620,6 +669,16 @@ async def _duty_views(conn: Conn, breach_ids: list[int]) -> dict[int, list[Row]]
     return out
 
 
+def _references(row: Row) -> Row:
+    """`reference` is what it is quoted by - the breach reference once recorded,
+    the incident's until then - kept for every caller that reads one."""
+    return {
+        "reference": row["reference"],
+        "incident_reference": row["incident_reference"],
+        "breach_reference": row["breach_reference"],
+    }
+
+
 def _location(row: Row) -> Row:
     return {
         "kind": row["location_kind"],
@@ -646,7 +705,9 @@ async def detail(conn: Conn, breach_uuid: str) -> Row:
     facts = await _facts(conn, breach_id)
     return {
         "breach_uuid": breach["breach_uuid"],
-        "reference": breach["reference"],
+        **_references(breach),
+        "breach_recorded_at": breach["breach_recorded_at"],
+        "breach_recorded_by_name": breach["breach_recorded_by_name"],
         "title": breach["title"],
         "status": breach["status"],
         "detected_at": breach["detected_at"],
@@ -682,7 +743,7 @@ async def register(conn: Conn, *, status: str | None) -> list[Row]:
         out.append(
             {
                 "breach_uuid": r["breach_uuid"],
-                "reference": r["reference"],
+                **_references(r),
                 "title": r["title"],
                 "status": r["status"],
                 "detected_at": r["detected_at"],

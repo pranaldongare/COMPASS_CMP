@@ -4156,10 +4156,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The register, open first */
+        /** Every incident and breach, open first */
         get: operations["list_breaches_breaches_get"];
         put?: never;
-        /** Record a breach as it was noticed */
+        /** Log an incident as it was noticed */
         post: operations["record_breach_breaches_post"];
         delete?: never;
         options?: never;
@@ -4174,7 +4174,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** One breach, with every duty */
+        /** One incident or breach, with every duty */
         get: operations["get_breach_breaches__breach_uuid__get"];
         put?: never;
         post?: never;
@@ -4193,7 +4193,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Record whether it is a personal data breach */
+        /** Validate: is it a personal data breach? The first yes records it */
         post: operations["determine_breaches__breach_uuid__determinations_post"];
         delete?: never;
         options?: never;
@@ -4400,7 +4400,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Send the approved notice to everyone listed who lacks it; never twice */
+        /** Send the approved notice to everyone listed who lacks it; never twice, never before the breach is recorded */
         post: operations["send_notice_breaches__breach_uuid__notices_send_post"];
         delete?: never;
         options?: never;
@@ -5554,6 +5554,10 @@ export interface components {
             basis: string;
             /** Reference */
             reference: string;
+            /** Incident Reference */
+            incident_reference: string;
+            /** Breach Reference */
+            breach_reference: string | null;
             /** Title */
             title: string;
             /**
@@ -5701,6 +5705,8 @@ export interface components {
             contents: components["schemas"]["BreachNoticeContentOut"][];
             /** Duty */
             duty: string;
+            /** Send Blocked By */
+            send_blocked_by: string | null;
         };
         /** BreachOut */
         BreachOut: {
@@ -5711,6 +5717,14 @@ export interface components {
             breach_uuid: string;
             /** Reference */
             reference: string;
+            /** Incident Reference */
+            incident_reference: string;
+            /** Breach Reference */
+            breach_reference: string | null;
+            /** Breach Recorded At */
+            breach_recorded_at: string | null;
+            /** Breach Recorded By Name */
+            breach_recorded_by_name: string | null;
             /** Title */
             title: string;
             /** Status */
@@ -5790,6 +5804,10 @@ export interface components {
             basis: string;
             /** Reference */
             reference: string;
+            /** Incident Reference */
+            incident_reference: string;
+            /** Breach Reference */
+            breach_reference: string | null;
             /** Title */
             title: string;
             /**
@@ -5863,6 +5881,10 @@ export interface components {
             breach_uuid: string;
             /** Reference */
             reference: string;
+            /** Incident Reference */
+            incident_reference: string;
+            /** Breach Reference */
+            breach_reference: string | null;
             /** Title */
             title: string;
             /** Status */

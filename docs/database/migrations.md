@@ -83,6 +83,7 @@ the [runbook](../operations/runbook.md).
 | `0035` | Who a breach touched (S3-02): `breach_affected_revision`, one per confirmation, with its scopes, counts and a sealed note; `breach_affected`, one row per person per breach (`breach_affected_once`) naming the revision that first listed them. Both append-only. Raw SQL; nothing to backfill |
 | `0036` | Notices to the people a breach touched (S3-03): `breach_notice`, versions of the five Rule 7(1) contents, sealed, a draft editable and an approved one frozen (`cmp_breach_notice_frozen`), refused approval with any content NULL (`breach_notice_complete`), one draft per breach; `breach_notice_delivery`, append-only, one row per state per attempt per channel per person, `breach_notice_delivery_once` making a resend and a repeated outcome idempotent. Raw SQL; nothing to backfill |
 | `0037` | What a returned ticket says was done (review DPDP-1): `rights_request_holder.return_outcome`, `done`, `partial` or `failed` by CHECK. NULL is a return from before 0037, read as done; nothing backfilled. Raw SQL |
+| `0038` | An incident first; a breach recorded on a yes (S3-06, ADR 0022): `breach_incident_ref_seq` (logging issues `INC-`); `breach_recording`, one per breach, carrying the `BR-` reference from `breach_ref_seq`, the yes that recorded it, who and when - append-only by trigger and grant. Backfills a recording for each existing breach with a yes, from the first, carrying its existing `BR-` string; no `breach` row is touched. Downgrade drops the table and the sequence. Raw SQL |
 
 ## What 0004 fixed
 

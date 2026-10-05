@@ -256,7 +256,8 @@ export function NoticesCard({ breach }: { breach: Breach }) {
               <Button
                 variant="primary"
                 size="sm"
-                disabled={data.listed === 0}
+                disabled={data.listed === 0 || data.send_blocked_by !== null}
+                title={data.send_blocked_by ?? undefined}
                 loading={send.isPending}
                 onClick={() =>
                   act(() => send.mutateAsync(), `Version ${approved.version} sent`, "Each email and SMS is sent by the worker.")
@@ -267,6 +268,13 @@ export function NoticesCard({ breach }: { breach: Breach }) {
               </Button>
             )}
           </div>
+        )}
+        {/* The server's reason, in its words: an incident still being
+            validated may have its notice drafted and approved, not sent. */}
+        {data?.send_blocked_by && open && (
+          <Alert tone="info" title="Not sent before the breach is recorded">
+            {data.send_blocked_by}
+          </Alert>
         )}
         {data && data.listed === 0 && open && (
           <Alert tone="info" title="Confirm who it touched first">

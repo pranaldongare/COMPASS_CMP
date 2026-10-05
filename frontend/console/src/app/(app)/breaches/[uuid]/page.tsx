@@ -1,6 +1,7 @@
 /**
- * One breach: when it was noticed and where, its duties and their clocks, the
- * determination, the assessment, and closing it.
+ * One incident or breach: when it was noticed and where, its duties and their
+ * clocks, validation, the assessment, and closing it. It is quoted by its
+ * incident reference until a yes records it as a breach (S3-06).
  *
  * Duties come first because they are what runs out. Nothing on this page
  * decides what is due or whether the breach may close; every card renders the
@@ -42,7 +43,7 @@ export default function BreachPage() {
   if (breach.isLoading) return <Skeleton className="h-96" />;
   if (breach.error) {
     return (
-      <Alert tone="danger" title="Could not load this breach">
+      <Alert tone="danger" title="Could not load this incident">
         {breach.error.userMessage()}
       </Alert>
     );
@@ -53,11 +54,11 @@ export default function BreachPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Personal data breach"
+        eyebrow={b.breach_reference ? "Personal data breach" : "Incident, being validated"}
         breadcrumb={
           <Link href="/breaches" className="inline-flex items-center gap-1 hover:underline">
             <ArrowLeft className="size-3.5" aria-hidden="true" />
-            Breaches
+            Incidents and breaches
           </Link>
         }
         title={b.reference}
@@ -81,16 +82,24 @@ export default function BreachPage() {
         <Card>
           <CardBody>
             <DescriptionList>
+              {b.breach_reference && b.incident_reference !== b.breach_reference && (
+                <DescriptionItem term="Logged as">{b.incident_reference}</DescriptionItem>
+              )}
+              <DescriptionItem term="Recorded as a breach">
+                {b.breach_recorded_at
+                  ? `${formatDateTime(b.breach_recorded_at)} by ${b.breach_recorded_by_name ?? "unknown"}`
+                  : "Not yet: a validation of yes records it"}
+              </DescriptionItem>
               <DescriptionItem term="First noticed">{formatDateTime(b.detected_at)}</DescriptionItem>
               <DescriptionItem term="Became aware">
-                {b.became_aware_at ? formatDateTime(b.became_aware_at) : "Set with a determination of yes"}
+                {b.became_aware_at ? formatDateTime(b.became_aware_at) : "Set with a validation of yes"}
               </DescriptionItem>
               <DescriptionItem term="Began">{b.began_at ? formatDateTime(b.began_at) : "Not known"}</DescriptionItem>
               <DescriptionItem term="Where">
                 {locationText(b.location)}
                 {b.location.detail && <span className="block whitespace-pre-wrap text-sm">{b.location.detail}</span>}
               </DescriptionItem>
-              <DescriptionItem term="Recorded">
+              <DescriptionItem term="Logged">
                 {formatDateTime(b.recorded_at)} by {b.recorded_by_name ?? "unknown"}
               </DescriptionItem>
             </DescriptionList>

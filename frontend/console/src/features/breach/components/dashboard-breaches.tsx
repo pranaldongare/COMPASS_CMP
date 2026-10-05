@@ -30,7 +30,7 @@ export function OpenBreaches({ breaches }: { breaches: BreachSummary[] }) {
               </Link>
               <span className="ml-2 text-sm">{b.title}</span>
               {b.obligations.length === 0 ? (
-                <p className="mt-1 text-xs text-text-muted">No duty yet: record the determination.</p>
+                <p className="mt-1 text-xs text-text-muted">No duty yet: validate it.</p>
               ) : (
                 <ul className="mt-2 grid gap-1 sm:grid-cols-2">
                   {b.obligations.map((d) => (

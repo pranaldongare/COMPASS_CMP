@@ -121,7 +121,12 @@ export interface BreachTransition {
 
 export interface BreachSummary {
   breach_uuid: Uuid;
+  /** What it is quoted by: the breach reference once recorded, the incident's until then. */
   reference: string;
+  /** INC-YYYY-NNNN from logging onwards (a row logged before 0038 carries BR-). */
+  incident_reference: string;
+  /** BR-YYYY-NNNN, issued by the first determination of yes. Null until then. */
+  breach_reference: string | null;
   title: string;
   status: BreachStatus;
   detected_at: Timestamp;
@@ -131,6 +136,9 @@ export interface BreachSummary {
 }
 
 export interface Breach extends Omit<BreachSummary, "obligations"> {
+  /** When the first yes recorded it as a breach, and who made it. */
+  breach_recorded_at: Timestamp | null;
+  breach_recorded_by_name: string | null;
   became_aware_at: Timestamp | null;
   began_at: Timestamp | null;
   began_at_recorded: Timestamp | null;
@@ -287,6 +295,8 @@ export interface BreachNotices {
   unnotified: number;
   contents: { key: keyof BreachNoticeWords; label: string }[];
   duty: string;
+  /** Why nothing may be sent yet - not recorded as a breach - or null. */
+  send_blocked_by: string | null;
 }
 
 /* ----------------------------------------------- the Board's documents (S3-04) */
@@ -295,6 +305,8 @@ interface BoardDocument {
   document: "initial_intimation" | "detailed_report";
   basis: string;
   reference: string;
+  incident_reference: string;
+  breach_reference: string | null;
   title: string;
   generated_at: Timestamp;
   determination: BreachOutcome;

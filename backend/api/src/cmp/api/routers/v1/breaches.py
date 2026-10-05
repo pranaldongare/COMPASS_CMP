@@ -1,5 +1,7 @@
-"""Personal data breaches: the register and its duties (S3-01).
+"""Incidents and personal data breaches: the register and its duties (S3-01, S3-06).
 
+An incident is logged first (`POST /breaches`); validation records whether it
+is a personal data breach, and the first *yes* records it as one (ADR 0022).
 The DPO's alone, and hidden: any other role is answered 404 on every route
 here, not 403 (`BreachReader`, `BreachWriter`). The platform records, derives
 and tracks; people contain, determine and submit. Nothing here talks to the
@@ -215,7 +217,13 @@ class BreachTransitionsOut(Out):
 
 class BreachSummaryOut(Out):
     breach_uuid: UUID
+    #: What it is quoted by: the breach reference once recorded, the incident's
+    #: until then.
     reference: str
+    #: INC-YYYY-NNNN, from logging onwards (a row logged before 0038 carries BR-).
+    incident_reference: str
+    #: BR-YYYY-NNNN, issued by the first determination of yes. None until then.
+    breach_reference: str | None
     title: str
     status: str
     detected_at: datetime
@@ -226,7 +234,16 @@ class BreachSummaryOut(Out):
 
 class BreachOut(Out):
     breach_uuid: UUID
+    #: What it is quoted by: the breach reference once recorded, the incident's
+    #: until then.
     reference: str
+    #: INC-YYYY-NNNN, from logging onwards (a row logged before 0038 carries BR-).
+    incident_reference: str
+    #: BR-YYYY-NNNN, issued by the first determination of yes. None until then.
+    breach_reference: str | None
+    #: When the first yes recorded it as a breach, and who made it.
+    breach_recorded_at: datetime | None
+    breach_recorded_by_name: str | None
     title: str
     status: str
     detected_at: datetime
@@ -251,7 +268,9 @@ class BreachOut(Out):
 # -------------------------------------------------------------------- routes
 
 
-@router.get("", response_model=list[BreachSummaryOut], summary="The register, open first")
+@router.get(
+    "", response_model=list[BreachSummaryOut], summary="Every incident and breach, open first"
+)
 async def list_breaches(
     principal: BreachReader,
     status_: Annotated[str | None, Query(alias="status", description="open or closed")] = None,
@@ -264,7 +283,7 @@ async def list_breaches(
     "",
     response_model=BreachOut,
     status_code=status.HTTP_201_CREATED,
-    summary="Record a breach as it was noticed",
+    summary="Log an incident as it was noticed",
 )
 async def record_breach(body: BreachIn, principal: BreachWriter) -> dict[str, Any]:
     async with transaction() as conn:
@@ -281,7 +300,9 @@ async def record_breach(body: BreachIn, principal: BreachWriter) -> dict[str, An
         )
 
 
-@router.get("/{breach_uuid}", response_model=BreachOut, summary="One breach, with every duty")
+@router.get(
+    "/{breach_uuid}", response_model=BreachOut, summary="One incident or breach, with every duty"
+)
 async def get_breach(breach_uuid: UUID, principal: BreachReader) -> dict[str, Any]:
     async with connection() as conn:
         return await service.detail(conn, str(breach_uuid))
@@ -290,7 +311,7 @@ async def get_breach(breach_uuid: UUID, principal: BreachReader) -> dict[str, An
 @router.post(
     "/{breach_uuid}/determinations",
     response_model=BreachOut,
-    summary="Record whether it is a personal data breach",
+    summary="Validate: is it a personal data breach? The first yes records it",
 )
 async def determine(
     breach_uuid: UUID, body: BreachDeterminationIn, principal: BreachWriter
@@ -620,6 +641,9 @@ class BreachNoticesOut(Out):
     unnotified: int
     contents: list[BreachNoticeContentOut]
     duty: str
+    #: Why nothing may be sent yet - the incident is not recorded as a breach -
+    #: or None. Approval and who is listed are said by the fields above.
+    send_blocked_by: str | None
 
 
 @router.get(
@@ -685,7 +709,10 @@ async def approve_notice(
 @router.post(
     "/{breach_uuid}/notices/send",
     response_model=BreachNoticesOut,
-    summary="Send the approved notice to everyone listed who lacks it; never twice",
+    summary=(
+        "Send the approved notice to everyone listed who lacks it; never twice, "
+        "never before the breach is recorded"
+    ),
 )
 async def send_notice(breach_uuid: UUID, principal: BreachWriter) -> dict[str, Any]:
     async with transaction() as conn:
@@ -701,6 +728,8 @@ class BreachIntimationOut(Out):
     document: str
     basis: str
     reference: str
+    incident_reference: str
+    breach_reference: str | None
     title: str
     generated_at: datetime
     determination: str
@@ -753,6 +782,8 @@ class BreachReportOut(Out):
     document: str
     basis: str
     reference: str
+    incident_reference: str
+    breach_reference: str | None
     title: str
     generated_at: datetime
     determination: str

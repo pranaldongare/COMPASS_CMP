@@ -29,7 +29,7 @@ For each operation the information is deliberately ordered as **API → Validati
 21. [`GET /breaches/{breach_uuid}/board/report`](#21_get_breaches_breach_uuid_board_report)
 
 <a id="1_get_breaches"></a>
-## 1. `GET /breaches` — The register, open first
+## 1. `GET /breaches` — Every incident and breach, open first
 
 ### API
 
@@ -60,6 +60,8 @@ No request body.
   {
     "breach_uuid": "00000000-0000-4000-8000-000000000000",
     "reference": "string",
+    "incident_reference": "string",
+    "breach_reference": "string",
     "title": "string",
     "status": "string",
     "detected_at": "2026-09-17T12:00:00Z",
@@ -113,7 +115,7 @@ No request body.
 ```
 
 <a id="2_post_breaches"></a>
-## 2. `POST /breaches` — Record a breach as it was noticed
+## 2. `POST /breaches` — Log an incident as it was noticed
 
 ### API
 
@@ -156,6 +158,10 @@ Request body required: **yes**.
 {
   "breach_uuid": "00000000-0000-4000-8000-000000000000",
   "reference": "string",
+  "incident_reference": "string",
+  "breach_reference": "string",
+  "breach_recorded_at": "2026-09-17T12:00:00Z",
+  "breach_recorded_by_name": "string",
   "title": "string",
   "status": "string",
   "detected_at": "2026-09-17T12:00:00Z",
@@ -266,7 +272,7 @@ Request body required: **yes**.
 ```
 
 <a id="3_get_breaches_breach_uuid"></a>
-## 3. `GET /breaches/{breach_uuid}` — One breach, with every duty
+## 3. `GET /breaches/{breach_uuid}` — One incident or breach, with every duty
 
 ### API
 
@@ -296,6 +302,10 @@ No request body.
 {
   "breach_uuid": "00000000-0000-4000-8000-000000000000",
   "reference": "string",
+  "incident_reference": "string",
+  "breach_reference": "string",
+  "breach_recorded_at": "2026-09-17T12:00:00Z",
+  "breach_recorded_by_name": "string",
   "title": "string",
   "status": "string",
   "detected_at": "2026-09-17T12:00:00Z",
@@ -406,7 +416,7 @@ No request body.
 ```
 
 <a id="4_post_breaches_breach_uuid_determinations"></a>
-## 4. `POST /breaches/{breach_uuid}/determinations` — Record whether it is a personal data breach
+## 4. `POST /breaches/{breach_uuid}/determinations` — Validate: is it a personal data breach? The first yes records it
 
 ### API
 
@@ -447,6 +457,10 @@ Request body required: **yes**.
 {
   "breach_uuid": "00000000-0000-4000-8000-000000000000",
   "reference": "string",
+  "incident_reference": "string",
+  "breach_reference": "string",
+  "breach_recorded_at": "2026-09-17T12:00:00Z",
+  "breach_recorded_by_name": "string",
   "title": "string",
   "status": "string",
   "detected_at": "2026-09-17T12:00:00Z",
@@ -685,6 +699,10 @@ Request body required: **yes**.
 {
   "breach_uuid": "00000000-0000-4000-8000-000000000000",
   "reference": "string",
+  "incident_reference": "string",
+  "breach_reference": "string",
+  "breach_recorded_at": "2026-09-17T12:00:00Z",
+  "breach_recorded_by_name": "string",
   "title": "string",
   "status": "string",
   "detected_at": "2026-09-17T12:00:00Z",
@@ -825,6 +843,10 @@ No request body.
 {
   "breach_uuid": "00000000-0000-4000-8000-000000000000",
   "reference": "string",
+  "incident_reference": "string",
+  "breach_reference": "string",
+  "breach_recorded_at": "2026-09-17T12:00:00Z",
+  "breach_recorded_by_name": "string",
   "title": "string",
   "status": "string",
   "detected_at": "2026-09-17T12:00:00Z",
@@ -977,6 +999,10 @@ Request body required: **yes**.
 {
   "breach_uuid": "00000000-0000-4000-8000-000000000000",
   "reference": "string",
+  "incident_reference": "string",
+  "breach_reference": "string",
+  "breach_recorded_at": "2026-09-17T12:00:00Z",
+  "breach_recorded_by_name": "string",
   "title": "string",
   "status": "string",
   "detected_at": "2026-09-17T12:00:00Z",
@@ -1129,6 +1155,10 @@ Request body required: **yes**.
 {
   "breach_uuid": "00000000-0000-4000-8000-000000000000",
   "reference": "string",
+  "incident_reference": "string",
+  "breach_reference": "string",
+  "breach_recorded_at": "2026-09-17T12:00:00Z",
+  "breach_recorded_by_name": "string",
   "title": "string",
   "status": "string",
   "detected_at": "2026-09-17T12:00:00Z",
@@ -1341,6 +1371,10 @@ Request body required: **yes**.
 {
   "breach_uuid": "00000000-0000-4000-8000-000000000000",
   "reference": "string",
+  "incident_reference": "string",
+  "breach_reference": "string",
+  "breach_recorded_at": "2026-09-17T12:00:00Z",
+  "breach_recorded_by_name": "string",
   "title": "string",
   "status": "string",
   "detected_at": "2026-09-17T12:00:00Z",
@@ -1809,7 +1843,8 @@ No request body.
       "label": "string"
     }
   ],
-  "duty": "string"
+  "duty": "string",
+  "send_blocked_by": "string"
 }
 ```
 
@@ -1919,7 +1954,8 @@ Request body required: **yes**.
       "label": "string"
     }
   ],
-  "duty": "string"
+  "duty": "string",
+  "send_blocked_by": "string"
 }
 ```
 
@@ -2030,7 +2066,8 @@ Request body required: **yes**.
       "label": "string"
     }
   ],
-  "duty": "string"
+  "duty": "string",
+  "send_blocked_by": "string"
 }
 ```
 
@@ -2128,7 +2165,8 @@ No request body.
       "label": "string"
     }
   ],
-  "duty": "string"
+  "duty": "string",
+  "send_blocked_by": "string"
 }
 ```
 
@@ -2151,7 +2189,7 @@ No request body.
 ```
 
 <a id="19_post_breaches_breach_uuid_notices_send"></a>
-## 19. `POST /breaches/{breach_uuid}/notices/send` — Send the approved notice to everyone listed who lacks it; never twice
+## 19. `POST /breaches/{breach_uuid}/notices/send` — Send the approved notice to everyone listed who lacks it; never twice, never before the breach is recorded
 
 ### API
 
@@ -2225,7 +2263,8 @@ No request body.
       "label": "string"
     }
   ],
-  "duty": "string"
+  "duty": "string",
+  "send_blocked_by": "string"
 }
 ```
 
@@ -2279,6 +2318,8 @@ No request body.
   "document": "string",
   "basis": "string",
   "reference": "string",
+  "incident_reference": "string",
+  "breach_reference": "string",
   "title": "string",
   "generated_at": "2026-09-17T12:00:00Z",
   "determination": "string",
@@ -2370,6 +2411,8 @@ No request body.
   "document": "string",
   "basis": "string",
   "reference": "string",
+  "incident_reference": "string",
+  "breach_reference": "string",
   "title": "string",
   "generated_at": "2026-09-17T12:00:00Z",
   "determination": "string",
@@ -2583,6 +2626,8 @@ Rule 7(2)(a), drafted from the register. The platform never submits it.
 | `document` | `string` | Yes | — | — |
 | `basis` | `string` | Yes | — | — |
 | `reference` | `string` | Yes | — | — |
+| `incident_reference` | `string` | Yes | — | — |
+| `breach_reference` | `string` or `null` | Yes | — | — |
 | `title` | `string` | Yes | — | — |
 | `generated_at` | `string` | Yes | format: `date-time` | — |
 | `determination` | `string` | Yes | — | — |
@@ -2622,6 +2667,7 @@ approval may not. Written to be sent to everyone listed: name nobody.
 | `unnotified` | `integer` | Yes | — | — |
 | `contents` | array of [`BreachNoticeContentOut`](#schema-breachnoticecontentout) | Yes | — | — |
 | `duty` | `string` | Yes | — | — |
+| `send_blocked_by` | `string` or `null` | Yes | — | — |
 
 <a id="schema-breachout"></a>
 #### `BreachOut`
@@ -2630,6 +2676,10 @@ approval may not. Written to be sent to everyone listed: name nobody.
 |---|---|---:|---|---|
 | `breach_uuid` | `string` | Yes | format: `uuid` | — |
 | `reference` | `string` | Yes | — | — |
+| `incident_reference` | `string` | Yes | — | — |
+| `breach_reference` | `string` or `null` | Yes | — | — |
+| `breach_recorded_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `breach_recorded_by_name` | `string` or `null` | Yes | — | — |
 | `title` | `string` | Yes | — | — |
 | `status` | `string` | Yes | — | — |
 | `detected_at` | `string` | Yes | format: `date-time` | — |
@@ -2676,6 +2726,8 @@ Rule 7(2)(b), all six items, drafted from the register.
 | `document` | `string` | Yes | — | — |
 | `basis` | `string` | Yes | — | — |
 | `reference` | `string` | Yes | — | — |
+| `incident_reference` | `string` | Yes | — | — |
+| `breach_reference` | `string` or `null` | Yes | — | — |
 | `title` | `string` | Yes | — | — |
 | `generated_at` | `string` | Yes | format: `date-time` | — |
 | `determination` | `string` | Yes | — | — |

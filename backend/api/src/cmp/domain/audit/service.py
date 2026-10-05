@@ -243,7 +243,10 @@ class Event:
     TRANSFER_COUNTRY_RESTRICTED = "transfer.country_restricted"
     TRANSFER_COUNTRY_LIFTED = "transfer.country_lifted"
     # breach (S3-01): what the office recorded, never what it wrote.
+    #: An incident logged. The key predates the incident-first order (ADR 0022)
+    #: and rows already carry it; `breach.confirmed` is the breach recorded.
     BREACH_RECORDED = "breach.recorded"
+    BREACH_CONFIRMED = "breach.confirmed"
     BREACH_DETERMINED = "breach.determined"
     BREACH_ASSESSED = "breach.assessed"
     BREACH_CERT_IN_MARKED = "breach.cert_in_marked"

@@ -51,6 +51,21 @@ def _duty(detail: Row, duty: Duty) -> Row | None:
     return next((d for d in detail["obligations"] if d["duty"] == duty), None)
 
 
+#: Said in `missing` while the incident is still being validated: both
+#: documents may be drafted then, and say what they are not yet.
+NOT_RECORDED = "Not yet recorded as a personal data breach"
+
+
+def _references(detail: Row) -> Row:
+    """The breach reference is what the Board is given; before a *yes* there is
+    none, and the document is quoted by the incident's."""
+    return {
+        "reference": detail["reference"],
+        "incident_reference": detail["incident_reference"],
+        "breach_reference": detail["breach_reference"],
+    }
+
+
 def _timing(detail: Row) -> Row:
     return {
         "detected_at": detail["detected_at"],
@@ -63,7 +78,8 @@ async def intimation(conn: Conn, *, breach_uuid: str) -> Row:
     """Rule 7(2)(a): the initial intimation, as the register now stands."""
     detail = await service.detail(conn, breach_uuid)
     latest = detail["assessment"] or {}
-    missing = [
+    missing = [NOT_RECORDED] if detail["breach_reference"] is None else []
+    missing += [
         label
         for key, label in INTIMATION
         if (key == "timing" and detail["became_aware_at"] is None)
@@ -72,7 +88,7 @@ async def intimation(conn: Conn, *, breach_uuid: str) -> Row:
     return {
         "document": "initial_intimation",
         "basis": "Rule 7(2)(a)",
-        "reference": detail["reference"],
+        **_references(detail),
         "title": detail["title"],
         "generated_at": datetime.now(UTC),
         "determination": detail["determination"],
@@ -91,7 +107,7 @@ async def report(conn: Conn, *, breach_uuid: str) -> Row:
     detail = await service.detail(conn, breach_uuid)
     latest = detail["assessment"] or {}
     account = await notices.account_for_report(conn, breach_uuid=breach_uuid)
-    missing: list[str] = []
+    missing = [NOT_RECORDED] if detail["breach_reference"] is None else []
     if not latest:
         missing.append("(i) No assessment has been recorded")
     facts = []
@@ -103,7 +119,7 @@ async def report(conn: Conn, *, breach_uuid: str) -> Row:
     return {
         "document": "detailed_report",
         "basis": "Rule 7(2)(b)",
-        "reference": detail["reference"],
+        **_references(detail),
         "title": detail["title"],
         "generated_at": datetime.now(UTC),
         "determination": detail["determination"],

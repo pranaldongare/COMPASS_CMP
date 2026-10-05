@@ -2,10 +2,17 @@
 
 What the platform does when personal data it is responsible for is breached:
 section 8(6) of the Act, Rule 7 of the DPDP Rules, and the CERT-In Directions
-of 2022. The decision behind the shape is
-[ADR 0021](../decisions/0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md);
-the code is `cmp.domain.breach`, the routes are under `/breaches`, and the
-console's pages are **Breaches** in the DPO's menu.
+of 2022. The decisions behind the shape are
+[ADR 0021](../decisions/0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md)
+and [ADR 0022](../decisions/0022-an-incident-first-and-a-breach-on-a-yes.md),
+which puts the incident first; the code is `cmp.domain.breach`, the routes are
+under `/breaches`, and the console's pages are **Breaches** in the DPO's menu,
+headed **Incidents and personal data breaches**.
+
+In order: an **incident** is logged as it was noticed; the DPO team
+**validates** whether it is a personal data breach under s.2(u); the first
+*yes* **records the breach** and starts the DPDP duties. CERT-In runs from the
+moment of noticing whatever validation says.
 
 ## Where the platform ends
 
@@ -24,12 +31,13 @@ every other role **404**, not 403 - on the register, on a breach that exists,
 and on a write alike - so that a breach being handled is not itself disclosed
 to a colleague walking uuids ([ADR 0004](../decisions/0004-scope-in-the-where-clause.md)).
 The administrator, who reads the audit trail, sees that breach events occurred
-and their reference (`Breach BR-2026-0001`), never a title or a reason, and
-cannot follow the link.
+and their reference (`Incident INC-2026-0001`, then `Breach BR-2026-0001
+(INC-2026-0001)` once recorded), never a title or a reason, and cannot follow
+the link.
 
-## Recording a breach
+## Logging an incident
 
-**Breaches → Record a breach.** Three things are asked for, and every time is
+**Breaches → Log an incident.** Three things are asked for, and every time is
 typed in, never filled with "now":
 
 | Field | Means | Anchors |
@@ -38,19 +46,23 @@ typed in, never filled with "now":
 | Began (`began_at`) | When it started, if known. An assessment may revise it | the timing in 7(1)(a), 7(2)(a) |
 | Where it occurred | The platform's own database, a processor, a data source, or elsewhere (in words) | 7(2)(a); S3-02 derives who was touched from it |
 
-A breach recorded five hours after it was noticed has one hour of CERT-In time
+An incident logged five hours after it was noticed has one hour of CERT-In time
 left, and the register says so. A time in the future is refused, and so is a
 start after detection.
 
-The breach gets a reference, `BR-<year>-<n>`, which is what the office quotes
-to the Board and to CERT-In. Its title and the words describing where it
-occurred are sealed like every other narrative the office writes.
+The incident gets a reference, `INC-<year>-<n>`, from its own sequence
+(`breach_incident_ref_seq`), and is quoted by it until it is recorded as a
+breach. Its title and the words describing where it occurred are sealed like
+every other narrative the office writes. The table and the routes keep the
+name `breach`: an incident is a breach row that has not been recorded as one.
 
-## The determination
+## Validation
 
-Whether the event is a personal data breach under s.2(u) - *pending*, *yes* or
-*no* - with the reasoning and who made it. **The platform records it and never
-computes it.** Nothing infers *no* from encryption: DPDP has no encryption
+Whether the event is a personal data breach under s.2(u) - *pending* (still
+validating; the clocks already running keep running), *yes* or *no* (not a
+breach; the reasoning is kept) - with the reasoning and who made it. In the
+code and the database it is still the *determination*. **The platform records
+it and never computes it.** Nothing infers *no* from encryption: DPDP has no encryption
 exemption and no severity threshold, and whether exposed data was sealed bears
 only on this judgement, which is a person's. Whether a leak of sealed data whose
 key was not exposed is a breach at all is Legal's question, not the code's.
@@ -60,12 +72,47 @@ the report.
 
 - **Yes** carries `became_aware_at`: when the organisation became aware a
   personal data breach had occurred. It anchors every DPDP duty and cannot come
-  before detection. It creates the three DPDP duties below, or reinstates any a
-  previous *no* set aside, with clocks from this time.
+  before detection. The first *yes* records the breach (below). It creates the
+  three DPDP duties, or reinstates any a previous *no* set aside, with clocks
+  from this time.
 - **No** marks those three duties not applicable, citing this determination.
   A duty already done stays done.
 - **Pending** changes no duty.
 - **CERT-In** is untouched by all three: it stands on its own test.
+
+## Recording the breach
+
+The **first** validation of *yes* records the incident as a personal data
+breach, in the same transaction as the duties it starts. There is no separate
+button: one would only be a way to hold back duties due without delay.
+
+- It issues the **breach reference**, `BR-<year>-<n>`, from `breach_ref_seq`,
+  so BR numbers count recorded breaches and nothing else. It is what principals
+  and the Board are given - the notice's email and SMS, the delivery in her
+  account, both Board documents.
+- The recording is one row in `breach_recording`: the BR, the *yes* that
+  caused it, who made it and when. **One per breach, never withdrawn.** A later
+  *no* sets the outstanding DPDP duties aside and the recording stays; a later
+  *yes* reinstates them and issues no second number. Two *yes* sent at once
+  issue one.
+- From then on the breach is quoted by its BR, with the INC it was logged as
+  beside it. The read model carries `incident_reference`, `breach_reference`
+  (null until recorded) and `reference` - the BR once recorded, the INC until
+  then.
+
+**What waits for the recording.** Sending the notice to principals is refused
+before it (409 `breach_not_recorded`, "Record the breach before anyone is
+notified"), and the notices card shows the same words. Deriving who it touched,
+drafting and approving the notice, and drafting either Board document stay
+open during validation; a Board document drafted then lists *Not yet recorded
+as a personal data breach* in what it does not yet hold, and is quoted by the
+incident reference.
+
+**Incidents logged before this order** (migration 0038) keep the `BR-` string
+they were given as their incident reference. Where one of their
+determinations is a *yes*, the migration recorded the breach from the first of
+them, carrying the same string, so a breach already quoted to the Board keeps
+its number.
 
 ## The assessment
 
@@ -101,9 +148,9 @@ their own clocks; nothing waits for the assessment.
 | Duty | Created when | Due | Basis |
 |---|---|---|---|
 | Report to CERT-In | **Mark reportable to CERT-In** | 6 hours from first noticed | CERT-In Directions 2022, IT Act s.70B |
-| Board - initial intimation | determination *yes* | without delay | Rule 7(2)(a) |
-| Board - detailed report | determination *yes* | 72 hours from awareness, or the date the Board allows | Rule 7(2)(b) |
-| Principals notified | determination *yes* | without delay | Rule 7(1) |
+| Board - initial intimation | validation *yes* | without delay | Rule 7(2)(a) |
+| Board - detailed report | validation *yes* | 72 hours from awareness, or the date the Board allows | Rule 7(2)(b) |
+| Principals notified | validation *yes* | without delay | Rule 7(1) |
 
 - **A due time is stored when the duty is created and never recomputed.** A
   change of configuration - or of the code's hours - moves nothing already
@@ -262,7 +309,8 @@ nothing about it can be recorded.
 
 | Table | Holds |
 |---|---|
-| `breach` | The breach as recorded. Only its `status` may change, by trigger (`cmp_breach_status_only`) |
+| `breach` | The incident as logged; `reference` is its INC. Only its `status` may change, by trigger (`cmp_breach_status_only`) |
+| `breach_recording` | The incident recorded as a breach by the first *yes*: its BR, that determination, who and when. One per breach; append-only |
 | `breach_status_history` | Every open and close, with the reason for a reopening. Append-only |
 | `breach_determination` | Every determination, with its reasoning and, for *yes*, the time of awareness. Append-only |
 | `breach_assessment` | Every revision of the facts. Append-only |
@@ -275,14 +323,15 @@ nothing about it can be recorded.
 
 Every write takes the breach row first (`FOR UPDATE`), so two people recording
 at once act one after the other: two determinations of *yes* sent together
-create each duty once.
+create each duty once and issue one breach reference.
 
 ## The trail
 
-Every change writes an audit row against `breach`: `breach.recorded`,
-`.determined`, `.assessed`, `.cert_in_marked`, `.obligation_created`,
+Every change writes an audit row against `breach`: `breach.recorded` (an
+incident logged - the key predates the incident-first order), `.determined`,
+`.confirmed` (recorded as a breach, with its BR), `.assessed`, `.cert_in_marked`, `.obligation_created`,
 `.obligation_completed`, `.obligation_not_applicable`,
-`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.obligation_reopened`, `.notice_drafted`, `.notice_edited`, `.notice_approved`, `.notice_sent` (with counts), `.closed`, `.reopened`. Each person whose account a notice is written to gets `breach_notice.delivered` against her, naming the breach's reference and the version: that is her portal's notification, and the only breach event she is shown. The
+`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.obligation_reopened`, `.notice_drafted`, `.notice_edited`, `.notice_approved`, `.notice_sent` (with counts), `.closed`, `.reopened`. Each person whose account a notice is written to gets `breach_notice.delivered` against her, naming the breach reference (the BR) and the version: that is her portal's notification, and the only breach event she is shown. The
 detail carries the reference, the outcome, which duty, a due time and that a
 reason was given - never the office's words, which are sealed on their rows
 ([ADR 0015](../decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md)).

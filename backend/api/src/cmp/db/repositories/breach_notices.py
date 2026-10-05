@@ -167,7 +167,8 @@ async def job(conn: Conn, delivery_uuid: str) -> Row | None:
     return await fetch_one(
         conn,
         f"""SELECT d.delivery_uuid, d.notice_id, d.auth_user_id, d.channel, d.attempt, d.status,
-                   n.breach_id, b.reference, {", ".join("n." + c for c in CONTENTS)},
+                   n.breach_id, coalesce(rec.reference, b.reference) AS reference,
+                   {", ".join("n." + c for c in CONTENTS)},
                    u.email, u.mobile,
                    EXISTS (SELECT 1 FROM breach_notice_delivery o
                             WHERE o.notice_id = d.notice_id AND o.auth_user_id = d.auth_user_id
@@ -176,6 +177,7 @@ async def job(conn: Conn, delivery_uuid: str) -> Row | None:
               FROM breach_notice_delivery d
               JOIN breach_notice n ON n.notice_id = d.notice_id
               JOIN breach b        ON b.breach_id = n.breach_id
+              LEFT JOIN breach_recording rec ON rec.breach_id = b.breach_id
               JOIN auth_user u     ON u.id = d.auth_user_id
              WHERE d.delivery_uuid = %s""",
         (delivery_uuid,),
@@ -238,10 +240,12 @@ async def for_person(conn: Conn, person_id: int) -> list[Row]:
     return await fetch_all(
         conn,
         f"""SELECT n.notice_uuid, n.version, {", ".join("n." + c for c in CONTENTS)},
-                   b.reference, d.recorded_at AS delivered_at
+                   coalesce(rec.reference, b.reference) AS reference,
+                   d.recorded_at AS delivered_at
               FROM breach_notice_delivery d
               JOIN breach_notice n ON n.notice_id = d.notice_id
               JOIN breach b        ON b.breach_id = n.breach_id
+              LEFT JOIN breach_recording rec ON rec.breach_id = b.breach_id
              WHERE d.auth_user_id = %s AND d.channel = 'portal'
              ORDER BY d.recorded_at DESC, n.version DESC""",
         (person_id,),

@@ -1,7 +1,9 @@
 /**
- * The breach register (S3-01).
+ * Incidents and personal data breaches (S3-01, S3-06).
  *
- * The question this page answers first is "which duty is due soonest, and
+ * An incident is logged first; validation says whether it is a personal data
+ * breach, and the first yes records it with its own reference. The question
+ * this page answers first is "which duty is due soonest, and
  * which is already late", so each open breach lists its outstanding duties
  * with the server's clock. The DPO's alone: the server answers anyone else
  * 404, and the menu never offers them the page.
@@ -47,12 +49,12 @@ export default function BreachesPage() {
   return (
     <>
       <PageHeader
-        title="Personal data breaches"
-        description="Section 8(6) and Rule 7, and CERT-In. The platform records, derives and tracks every clock; people contain the breach, determine it, and submit to the Board and CERT-In through their own channels."
+        title="Incidents and personal data breaches"
+        description="Section 8(6) and Rule 7, and CERT-In. Log an incident as it is noticed; the team validates whether it is a personal data breach, and a yes records it. The platform tracks every clock; people contain it, validate it, and submit to the Board and CERT-In through their own channels."
         actions={
           <Button variant="primary" onClick={() => setRecording(true)}>
             <Plus className="size-4" />
-            Record a breach
+            Log an incident
           </Button>
         }
       />
@@ -82,18 +84,18 @@ export default function BreachesPage() {
       ) : !query.data || query.data.length === 0 ? (
         <EmptyState
           illustration={<EmptyRecords />}
-          title={status === "open" ? "No open breach" : "No breach recorded"}
-          description="A breach is recorded here as it is noticed, with the time it was first noticed."
+          title={status === "open" ? "No open incident" : "No incident logged"}
+          description="An incident is logged here as it is noticed, with the time it was first noticed."
         />
       ) : (
         <Card>
           <Table>
-            <caption className="sr-only">Breaches, open first, with every outstanding duty</caption>
+            <caption className="sr-only">Incidents and breaches, open first, with every outstanding duty</caption>
             <thead>
               <tr>
                 <Th>Reference</Th>
                 <Th>Where</Th>
-                <Th>Determination</Th>
+                <Th>Validation</Th>
                 <Th>Outstanding duties</Th>
                 <Th>First noticed</Th>
               </tr>
@@ -108,6 +110,11 @@ export default function BreachesPage() {
                       <Link href={`/breaches/${b.breach_uuid}`} className="font-medium text-accent-text hover:underline">
                         <Mono>{b.reference}</Mono>
                       </Link>
+                      {/* A recorded breach is quoted by its BR; the INC it was
+                          logged as stays findable beside it. */}
+                      {b.breach_reference && b.incident_reference !== b.breach_reference && (
+                        <span className="block text-xs text-text-subtle">logged as {b.incident_reference}</span>
+                      )}
                       <span className="block text-sm">{b.title}</span>
                       <BreachStatusBadge status={b.status} />
                     </Td>
@@ -147,7 +154,7 @@ export default function BreachesPage() {
 
       <Dialog open={recording} onOpenChange={setRecording}>
         <DialogContent
-          title="Record a breach"
+          title="Log an incident"
           description="As it was noticed. Every time is entered, not filled in: the clocks run from what you type."
           size="lg"
         >

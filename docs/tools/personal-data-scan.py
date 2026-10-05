@@ -48,7 +48,8 @@ IDENTITY = {
     "overridden_by_name", "owner_name", "placed_by_name", "principal_name",
     "released_by_name", "reviewer_name",
     "subject_name", "updated_by_name", "uploaded_by_name", "verified_by_name",
-    "recorded_by_name", "determined_by_name", "revised_by_name", "confirmed_by_name",
+    "recorded_by_name", "breach_recorded_by_name", "determined_by_name", "revised_by_name",
+    "confirmed_by_name",
     "approved_by_name",
     "username",
 }

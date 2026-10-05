@@ -269,16 +269,24 @@ _SPECS: dict[str, _Spec] = {
     "breach": _Spec(
         # The reference, never the title: the title is the office's words, and
         # the administrator reads this trail without reaching the register.
-        sql="""SELECT breach_id AS id, breach_uuid::text AS uuid,
-                      'Breach ' || reference AS label
-               FROM breach WHERE breach_id = ANY(%s)""",
+        # An incident until a *yes* records it as a breach (ADR 0022); a row
+        # logged before that order carries one reference for both.
+        sql="""SELECT b.breach_id AS id, b.breach_uuid::text AS uuid,
+                      CASE WHEN rec.reference IS NULL THEN 'Incident ' || b.reference
+                           WHEN rec.reference = b.reference THEN 'Breach ' || rec.reference
+                           ELSE 'Breach ' || rec.reference || ' (' || b.reference || ')'
+                      END AS label
+               FROM breach b LEFT JOIN breach_recording rec ON rec.breach_id = b.breach_id
+               WHERE b.breach_id = ANY(%s)""",
         href="/breaches/{uuid}",
-        noun="Personal data breach",
+        noun="Incident or breach",
     ),
     "breach_notice": _Spec(
         sql="""SELECT n.notice_id AS id, b.breach_uuid::text AS uuid,
-                      'Notice about personal data breach ' || b.reference AS label
+                      'Notice about personal data breach '
+                        || coalesce(rec.reference, b.reference) AS label
                FROM breach_notice n JOIN breach b ON b.breach_id = n.breach_id
+               LEFT JOIN breach_recording rec ON rec.breach_id = b.breach_id
                WHERE n.notice_id = ANY(%s)""",
         href="/breaches/{uuid}",
         # Her own page of the notices written to her account.

@@ -21,16 +21,23 @@ from cmp.infrastructure.dkms import seal
 
 Row = dict[str, Any]
 
+#: `reference` is what the record is quoted by: the breach reference once it is
+#: recorded as a breach, the incident's until then. Both are carried apart.
 _BREACH = """
-  b.breach_id, b.breach_uuid, b.reference, b.title, b.detected_at, b.began_at,
+  b.breach_id, b.breach_uuid, coalesce(rec.reference, b.reference) AS reference,
+  b.reference AS incident_reference, rec.reference AS breach_reference,
+  rec.recorded_at AS breach_recorded_at, rbb.full_name AS breach_recorded_by_name,
+  b.title, b.detected_at, b.began_at,
   b.location_kind, b.location_detail, b.status, b.recorded_at,
   pr.processor_uuid AS location_processor_uuid, pr.legal_name AS location_processor_name,
   ds.source_uuid AS location_source_uuid, ds.name AS location_source_name,
   rb.full_name AS recorded_by_name
   FROM breach b
-  LEFT JOIN processor pr  ON pr.processor_id = b.location_processor_id
-  LEFT JOIN data_source ds ON ds.source_id = b.location_source_id
-  JOIN auth_user rb       ON rb.id = b.recorded_by
+  LEFT JOIN breach_recording rec ON rec.breach_id = b.breach_id
+  LEFT JOIN auth_user rbb        ON rbb.id = rec.recorded_by
+  LEFT JOIN processor pr         ON pr.processor_id = b.location_processor_id
+  LEFT JOIN data_source ds       ON ds.source_id = b.location_source_id
+  JOIN auth_user rb              ON rb.id = b.recorded_by
 """
 
 ASSESSMENT_TEXT = (
@@ -65,8 +72,8 @@ async def create(
         INSERT INTO breach (reference, title, detected_at, began_at, location_kind,
                             location_processor_id, location_source_id, location_detail,
                             recorded_by)
-        VALUES ('BR-' || to_char(now(), 'YYYY') || '-'
-                  || lpad(nextval('breach_ref_seq')::text, 4, '0'),
+        VALUES ('INC-' || to_char(now(), 'YYYY') || '-'
+                  || lpad(nextval('breach_incident_ref_seq')::text, 4, '0'),
                 %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING breach_id, breach_uuid
         """,
@@ -83,6 +90,24 @@ async def create(
     )
     assert row is not None
     return row
+
+
+async def record_as_breach(
+    conn: Conn, breach_id: int, *, determination_id: int, recorded_by: int
+) -> Row | None:
+    """Issue the breach reference, once. The caller holds the breach row, so a
+    second *yes* sees the first one's recording; `ON CONFLICT` is the second
+    line, and a number drawn by a losing insert is simply never used."""
+    return await fetch_one(
+        conn,
+        """INSERT INTO breach_recording (breach_id, reference, determination_id, recorded_by)
+           VALUES (%s, 'BR-' || to_char(now(), 'YYYY') || '-'
+                         || lpad(nextval('breach_ref_seq')::text, 4, '0'),
+                   %s, %s)
+           ON CONFLICT (breach_id) DO NOTHING
+           RETURNING recording_uuid, reference""",
+        (breach_id, determination_id, recorded_by),
+    )
 
 
 async def by_uuid(conn: Conn, breach_uuid: str) -> Row | None:

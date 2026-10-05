@@ -4,7 +4,7 @@
 
 21 operations; 21 appear in the existing OpenAPI/API docs. Added with S3-01 to S3-04; evidence links point at `HEAD`.
 
-Every route is the DPO's and **hidden**: any other role - staff or principal - is answered **404**, on the register, on a breach that exists and on a write alike, where other DPO-only modules answer 403. That a breach is being handled is itself withheld.
+An incident is logged first (`POST /breaches`); the first validation of *yes* records it as a breach ([ADR 0022](../../../decisions/0022-an-incident-first-and-a-breach-on-a-yes.md)). Every route is the DPO's and **hidden**: any other role - staff or principal - is answered **404**, on the register, on a breach that exists and on a write alike, where other DPO-only modules answer 403. That a breach is being handled is itself withheld.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
@@ -32,7 +32,7 @@ Every route is the DPO's and **hidden**: any other role - staff or principal - i
 
 ## GET /breaches
 
-The register, open first.
+Every incident and breach, open first.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -46,7 +46,7 @@ The register, open first.
 
 ## POST /breaches
 
-Record a breach as it was noticed.
+Log an incident as it was noticed.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -60,7 +60,7 @@ Record a breach as it was noticed.
 
 ## GET /breaches/{breach_uuid}
 
-One breach, with every duty.
+One incident or breach, with every duty.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -74,7 +74,7 @@ One breach, with every duty.
 
 ## POST /breaches/{breach_uuid}/determinations
 
-Record whether it is a personal data breach.
+Validate: is it a personal data breach? The first yes records it.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -270,7 +270,7 @@ Approve the words; refused while any of the five is empty.
 
 ## POST /breaches/{breach_uuid}/notices/send
 
-Send the approved notice to everyone listed who lacks it; never twice.
+Send the approved notice to everyone listed who lacks it; never twice, never before the breach is recorded.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- |

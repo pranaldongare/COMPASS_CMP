@@ -60,6 +60,16 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **An incident first; a breach is recorded on a yes (S3-06,
+  [ADR 0022](docs/decisions/0022-an-incident-first-and-a-breach-on-a-yes.md)).**
+  "Record a breach" is now **Log an incident**, with an `INC-` reference from
+  its own sequence; the determination is presented as **validation**; and the
+  first *yes* records the breach - a `BR-` reference in `breach_recording`,
+  once, never withdrawn - in the same transaction as the duties it starts.
+  Sending the principals' notice is refused until then
+  (`breach_not_recorded`); deriving, drafting and the Board's documents are
+  not. Principals and the Board are given the BR. Migration 0038 backfills
+  existing breaches with a *yes* under their existing `BR-` string.
 - **My nominations** has its own page on the portal, and the console's
   navigation opens each role's sidebar with **Your work** - its daily
   destinations in order. Dashboards gained **Approved projects ready to

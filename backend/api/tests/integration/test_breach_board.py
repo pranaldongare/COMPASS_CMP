@@ -28,13 +28,14 @@ pytestmark = pytest.mark.integration
 HOUR = timedelta(hours=1)
 
 
-async def test_both_documents_can_be_drafted_the_moment_a_breach_is_recorded(
+async def test_both_documents_can_be_drafted_the_moment_an_incident_is_logged(
     conn: Any, seeded: dict[str, Any]
 ) -> None:
     uuid = await _breach(conn, seeded)
     intimation = await board.intimation(conn, breach_uuid=uuid)
     assert intimation["basis"] == "Rule 7(2)(a)" and intimation["determination"] == "pending"
     assert intimation["missing"] == [
+        "Not yet recorded as a personal data breach",
         "The nature and extent of the breach",
         "Its timing",
         "Its likely impact",
@@ -43,7 +44,10 @@ async def test_both_documents_can_be_drafted_the_moment_a_breach_is_recorded(
     assert report["notices"]["sent"] is False
     assert report["notices"]["statement"].startswith("No notice has yet been sent")
     assert [f["item"] for f in report["facts"]] == ["ii", "iii", "iv", "v"]
-    assert report["missing"][0] == "(i) No assessment has been recorded"
+    assert report["missing"][:2] == [
+        "Not yet recorded as a personal data breach",
+        "(i) No assessment has been recorded",
+    ]
 
 
 async def test_the_detailed_report_carries_all_six_items_and_the_account_of_notices(

@@ -16,7 +16,7 @@ import type {
 } from "@/types";
 
 export const OUTCOME_COPY: Record<BreachOutcome, string> = {
-  pending: "Not yet determined",
+  pending: "Still validating",
   yes: "A personal data breach",
   no: "Not a personal data breach",
 };

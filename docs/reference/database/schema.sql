@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict dfJ7I40xfK11LSLLZZvIAmtpIsKDhUtH6jCO14dcKytOzPkAGlyiHKPVRTzwNci
+\restrict imrbAeE8wBvGfvu8UfvPVd6ADFzygvW0cbVv6YfNNWbRB6btcIhg0byTAYOJYD9
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -1417,6 +1417,13 @@ COMMENT ON TABLE public.breach IS 'A suspected or confirmed personal data breach
 
 
 --
+-- Name: COLUMN breach.reference; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach.reference IS 'The incident reference, INC-YYYY-NNNN, quoted from logging onwards. A row logged before 0038 carries the BR- string it was given. The breach reference is in breach_recording';
+
+
+--
 -- Name: COLUMN breach.detected_at; Type: COMMENT; Schema: public; Owner: -
 --
 
@@ -1613,6 +1620,18 @@ ALTER SEQUENCE public.breach_determination_determination_id_seq OWNED BY public.
 
 
 --
+-- Name: breach_incident_ref_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_incident_ref_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
 -- Name: breach_notice; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1792,6 +1811,76 @@ CREATE SEQUENCE public.breach_obligation_obligation_id_seq
 --
 
 ALTER SEQUENCE public.breach_obligation_obligation_id_seq OWNED BY public.breach_obligation.obligation_id;
+
+
+--
+-- Name: breach_recording; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_recording (
+    recording_id integer NOT NULL,
+    recording_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    breach_id integer NOT NULL,
+    reference character varying(24) NOT NULL,
+    determination_id integer NOT NULL,
+    recorded_by integer NOT NULL,
+    recorded_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: TABLE breach_recording; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.breach_recording IS 'An incident recorded as a personal data breach, by the first determination of yes. One per breach; never withdrawn (ADR 0022)';
+
+
+--
+-- Name: COLUMN breach_recording.reference; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_recording.reference IS 'The breach reference, BR-YYYY-NNNN, from breach_ref_seq: what principals and the Board are given. BR numbers count recorded breaches only';
+
+
+--
+-- Name: COLUMN breach_recording.determination_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_recording.determination_id IS 'The determination of yes that recorded it. A later no sets the DPDP duties aside and leaves this row';
+
+
+--
+-- Name: COLUMN breach_recording.recorded_by; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_recording.recorded_by IS 'Who made that determination';
+
+
+--
+-- Name: COLUMN breach_recording.recorded_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_recording.recorded_at IS 'When it was recorded: the moment of that determination';
+
+
+--
+-- Name: breach_recording_recording_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_recording_recording_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_recording_recording_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_recording_recording_id_seq OWNED BY public.breach_recording.recording_id;
 
 
 --
@@ -3513,6 +3602,13 @@ ALTER TABLE ONLY public.breach_obligation_event ALTER COLUMN event_id SET DEFAUL
 
 
 --
+-- Name: breach_recording recording_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_recording ALTER COLUMN recording_id SET DEFAULT nextval('public.breach_recording_recording_id_seq'::regclass);
+
+
+--
 -- Name: breach_status_history history_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3981,6 +4077,38 @@ ALTER TABLE ONLY public.breach_obligation
 
 ALTER TABLE ONLY public.breach
     ADD CONSTRAINT breach_pkey PRIMARY KEY (breach_id);
+
+
+--
+-- Name: breach_recording breach_recording_breach_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_recording
+    ADD CONSTRAINT breach_recording_breach_id_key UNIQUE (breach_id);
+
+
+--
+-- Name: breach_recording breach_recording_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_recording
+    ADD CONSTRAINT breach_recording_pkey PRIMARY KEY (recording_id);
+
+
+--
+-- Name: breach_recording breach_recording_recording_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_recording
+    ADD CONSTRAINT breach_recording_recording_uuid_key UNIQUE (recording_uuid);
+
+
+--
+-- Name: breach_recording breach_recording_reference_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_recording
+    ADD CONSTRAINT breach_recording_reference_key UNIQUE (reference);
 
 
 --
@@ -5255,6 +5383,13 @@ CREATE TRIGGER trg_breach_obligation_event_append_only BEFORE DELETE OR UPDATE O
 
 
 --
+-- Name: breach_recording trg_breach_recording_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_recording_append_only BEFORE DELETE OR UPDATE ON public.breach_recording FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
 -- Name: breach_status_history trg_breach_status_history_append_only; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -5664,6 +5799,30 @@ ALTER TABLE ONLY public.breach_obligation_event
 
 ALTER TABLE ONLY public.breach
     ADD CONSTRAINT breach_recorded_by_fkey FOREIGN KEY (recorded_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_recording breach_recording_breach_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_recording
+    ADD CONSTRAINT breach_recording_breach_id_fkey FOREIGN KEY (breach_id) REFERENCES public.breach(breach_id);
+
+
+--
+-- Name: breach_recording breach_recording_determination_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_recording
+    ADD CONSTRAINT breach_recording_determination_id_fkey FOREIGN KEY (determination_id) REFERENCES public.breach_determination(determination_id);
+
+
+--
+-- Name: breach_recording breach_recording_recorded_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_recording
+    ADD CONSTRAINT breach_recording_recorded_by_fkey FOREIGN KEY (recorded_by) REFERENCES public.auth_user(id);
 
 
 --
@@ -6470,5 +6629,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict dfJ7I40xfK11LSLLZZvIAmtpIsKDhUtH6jCO14dcKytOzPkAGlyiHKPVRTzwNci
+\unrestrict imrbAeE8wBvGfvu8UfvPVd6ADFzygvW0cbVv6YfNNWbRB6btcIhg0byTAYOJYD9
 

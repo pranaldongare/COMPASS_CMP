@@ -10,7 +10,7 @@
 <title>Schema</title>
 <polygon fill="#f7fafc" stroke="none" points="-36,36 -36,-995.8 888.75,-995.8 888.75,36 -36,36"/>
 <text xml:space="preserve" text-anchor="start" x="8" y="-929.8" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="30.00" fill="#142c44">COMPASS / IDENTITY</text>
-<text xml:space="preserve" text-anchor="start" x="8" y="-914.2" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0037 / full module tables with outgoing references / source 705bf21</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-914.2" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0038 / full module tables with outgoing references / source adf96f4</text>
 <text xml:space="preserve" text-anchor="start" x="8" y="-888" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">FK arrow: child column to referenced key &#160;&#160;| &#160;&#160;Solid = required FK; dashed = nullable FK; dotted = view dependency</text>
 <text xml:space="preserve" text-anchor="start" x="13.43" y="-876" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">PK = primary key; FK = foreign key; UQ = member of unique constraint (possibly composite); ? = nullable column</text>
 <g id="clust1" class="cluster">
@@ -19,81 +19,81 @@
 <text xml:space="preserve" text-anchor="middle" x="52.45" y="-776.6" font-family="Helvetica,sans-Serif" font-size="16.00" fill="#174e82">IDENTITY</text>
 </g>
 <!-- auth_user&#45;&gt;consent_link -->
-<g id="FK062" class="edge">
+<g id="FK065" class="edge">
 <title>auth_user:e&#45;&gt;consent_link:w</title>
-<g id="a_FK062"><a xlink:title="FK062 / fk_user_link / auth_user(registered_via_link_id) to consent_link(link_id) / FOREIGN KEY (registered_via_link_id) REFERENCES consent_link(link_id)">
+<g id="a_FK065"><a xlink:title="FK065 / fk_user_link / auth_user(registered_via_link_id) to consent_link(link_id) / FOREIGN KEY (registered_via_link_id) REFERENCES consent_link(link_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M501.11,-423.4C501.11,-423.4 664,-741.59 690.72,-793.79"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="688.67,-794.77 693.65,-799.52 692.72,-792.7 688.67,-794.77"/>
 </a>
 </g>
 </g>
 <!-- person_type_history&#45;&gt;auth_user -->
-<g id="FK082" class="edge">
+<g id="FK085" class="edge">
 <title>person_type_history:e&#45;&gt;auth_user:w</title>
-<g id="a_FK082"><a xlink:title="FK082 / person_type_history_auth_user_id_fkey / person_type_history(auth_user_id) to auth_user(id) / FOREIGN KEY (auth_user_id) REFERENCES auth_user(id)">
+<g id="a_FK085"><a xlink:title="FK085 / person_type_history_auth_user_id_fkey / person_type_history(auth_user_id) to auth_user(id) / FOREIGN KEY (auth_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M149.08,-260.2C149.08,-260.2 225.47,-395 225.47,-395 225.47,-395 319.51,-623.31 337.88,-667.9"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="335.75,-668.72 340.33,-673.86 339.96,-666.98 335.75,-668.72"/>
 </a>
 </g>
 </g>
 <!-- person_type_history&#45;&gt;auth_user -->
-<g id="FK083" class="edge">
+<g id="FK086" class="edge">
 <title>person_type_history:e&#45;&gt;auth_user:w</title>
-<g id="a_FK083"><a xlink:title="FK083 / person_type_history_changed_by_fkey / person_type_history(changed_by) to auth_user(id) / FOREIGN KEY (changed_by) REFERENCES auth_user(id)">
+<g id="a_FK086"><a xlink:title="FK086 / person_type_history_changed_by_fkey / person_type_history(changed_by) to auth_user(id) / FOREIGN KEY (changed_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M149.08,-159.4C149.08,-159.4 314.93,-605.39 338.25,-668.11"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="335.99,-668.54 340.39,-673.84 340.25,-666.95 335.99,-668.54"/>
 </a>
 </g>
 </g>
 <!-- delegation&#45;&gt;auth_user -->
-<g id="FK049" class="edge">
+<g id="FK052" class="edge">
 <title>delegation:e&#45;&gt;auth_user:w</title>
-<g id="a_FK049"><a xlink:title="FK049 / delegation_created_by_fkey / delegation(created_by) to auth_user(id) / FOREIGN KEY (created_by) REFERENCES auth_user(id)">
+<g id="a_FK052"><a xlink:title="FK052 / delegation_created_by_fkey / delegation(created_by) to auth_user(id) / FOREIGN KEY (created_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M159.56,-448.6C159.56,-448.6 307.27,-633.27 336.11,-669.33"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="334.09,-670.44 339.93,-674.1 337.64,-667.6 334.09,-670.44"/>
 </a>
 </g>
 </g>
 <!-- delegation&#45;&gt;auth_user -->
-<g id="FK050" class="edge">
+<g id="FK053" class="edge">
 <title>delegation:e&#45;&gt;auth_user:w</title>
-<g id="a_FK050"><a xlink:title="FK050 / delegation_delegate_user_id_fkey / delegation(delegate_user_id) to auth_user(id) / FOREIGN KEY (delegate_user_id) REFERENCES auth_user(id)">
+<g id="a_FK053"><a xlink:title="FK053 / delegation_delegate_user_id_fkey / delegation(delegate_user_id) to auth_user(id) / FOREIGN KEY (delegate_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M159.56,-599.8C159.56,-599.8 299.69,-658.2 333.63,-672.34"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="332.55,-674.36 339.43,-674.76 334.3,-670.16 332.55,-674.36"/>
 </a>
 </g>
 </g>
 <!-- delegation&#45;&gt;auth_user -->
-<g id="FK051" class="edge">
+<g id="FK054" class="edge">
 <title>delegation:e&#45;&gt;auth_user:w</title>
-<g id="a_FK051"><a xlink:title="FK051 / delegation_delegator_user_id_fkey / delegation(delegator_user_id) to auth_user(id) / FOREIGN KEY (delegator_user_id) REFERENCES auth_user(id)">
+<g id="a_FK054"><a xlink:title="FK054 / delegation_delegator_user_id_fkey / delegation(delegator_user_id) to auth_user(id) / FOREIGN KEY (delegator_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M159.56,-625C159.56,-625 298.45,-663.59 333.17,-673.23"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="332.49,-675.41 339.36,-674.95 333.71,-671.02 332.49,-675.41"/>
 </a>
 </g>
 </g>
 <!-- delegation&#45;&gt;auth_user -->
-<g id="FK052" class="edge">
+<g id="FK055" class="edge">
 <title>delegation:e&#45;&gt;auth_user:w</title>
-<g id="a_FK052"><a xlink:title="FK052 / delegation_revoked_by_fkey / delegation(revoked_by) to auth_user(id) / FOREIGN KEY (revoked_by) REFERENCES auth_user(id)">
+<g id="a_FK055"><a xlink:title="FK055 / delegation_revoked_by_fkey / delegation(revoked_by) to auth_user(id) / FOREIGN KEY (revoked_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M159.56,-473.8C159.56,-473.8 305.99,-636.53 335.73,-669.58"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="333.81,-670.85 339.85,-674.16 337.2,-667.81 333.81,-670.85"/>
 </a>
 </g>
 </g>
 <!-- consent_link&#45;&gt;auth_user -->
-<g id="FK039" class="edge">
+<g id="FK042" class="edge">
 <title>consent_link:e&#45;&gt;auth_user:w</title>
-<g id="a_FK039"><a xlink:title="FK039 / consent_link_created_by_fkey / consent_link(created_by) to auth_user(id) / FOREIGN KEY (created_by) REFERENCES auth_user(id)">
+<g id="a_FK042"><a xlink:title="FK042 / consent_link_created_by_fkey / consent_link(created_by) to auth_user(id) / FOREIGN KEY (created_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M778.51,-675C778.51,-675 409.93,-675.34 350.9,-675.39"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="351.13,-673.12 344.63,-675.4 351.13,-677.67 351.13,-673.12"/>
 </a>
 </g>
 </g>
 <!-- consent_link&#45;&gt;auth_user -->
-<g id="FK041" class="edge">
+<g id="FK044" class="edge">
 <title>consent_link:e&#45;&gt;auth_user:w</title>
-<g id="a_FK041"><a xlink:title="FK041 / consent_link_revoked_by_fkey / consent_link(revoked_by) to auth_user(id) / FOREIGN KEY (revoked_by) REFERENCES auth_user(id)">
+<g id="a_FK044"><a xlink:title="FK044 / consent_link_revoked_by_fkey / consent_link(revoked_by) to auth_user(id) / FOREIGN KEY (revoked_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M778.51,-649.8C778.51,-649.8 409.93,-671.46 350.9,-674.93"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="350.98,-672.65 344.63,-675.3 351.25,-677.19 350.98,-672.65"/>
 </a>

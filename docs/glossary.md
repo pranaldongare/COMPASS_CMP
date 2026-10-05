@@ -179,13 +179,26 @@ Named in every response that does not uphold what was asked.
 personal data, or accidental disclosure, acquisition, sharing, use,
 alteration, destruction or loss of access to it, that compromises its
 confidentiality, integrity or availability. Whether an event is one is a
-person's **determination** - *pending*, *yes* or *no*, with reasoning - which
-the platform records and never computes, least of all from encryption.
+person's **validation** (the *determination* in the code) - *pending*, *yes* or
+*no*, with reasoning - which the platform records and never computes, least of
+all from encryption.
+
+**Incident.** An event logged on the register as it was noticed, before anyone
+has validated whether it is a personal data breach. It becomes a recorded
+breach on the first validation of *yes* ([ADR 0022](decisions/0022-an-incident-first-and-a-breach-on-a-yes.md)).
+
+**Incident reference.** `INC-YYYY-NNNN`, issued when an incident is logged and
+quoted until it is recorded as a breach. An incident logged before October
+2026 carries the `BR-` string it was given.
+
+**Breach reference.** `BR-YYYY-NNNN`, issued once by the first validation of
+*yes* and never withdrawn. It is what principals and the Board are given, and
+BR numbers count recorded breaches only.
 
 **Detected, became aware, began.** Three times on a breach, kept apart and
 entered by the DPO. *Detected* is when it was first noticed and starts the
 CERT-In clock; *became aware* is when the organisation knew a personal data
-breach had occurred, is recorded with a determination of *yes*, and starts
+breach had occurred, is recorded with a validation of *yes*, and starts
 every DPDP clock; *began* is when it started, if known.
 
 **Duty (obligation).** One statutory obligation a breach creates, with its own

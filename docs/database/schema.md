@@ -109,7 +109,15 @@ exactly when the outcome is *yes* (`breach_determination_aware_when_yes`).
 its `due_at` stored when it is created - NULL is "without delay" - and never
 updated; `breach_obligation_event` carries what happens to it afterwards, and a
 duty's state is read by folding those events in order. `breach.reference` is
-`BR-<year>-<seq>`, minted from `breach_ref_seq` at insert.
+the incident reference, `INC-<year>-<seq>`, minted from
+`breach_incident_ref_seq` at insert (a row logged before 0038 carries the
+`BR-` string it was given).
+
+**A breach is recorded once, since 0038.** `breach_recording` holds the breach
+reference, `BR-<year>-<seq>` from `breach_ref_seq`, written by the first
+determination of *yes*: one row per breach (`UNIQUE (breach_id)`), the
+reference unique, the row append-only by trigger and grant. A later *no* leaves
+it; nothing withdraws it.
 
 **Who a breach touched is only ever added to, since 0035.** Each
 confirmation is a `breach_affected_revision` with its scopes and counts; each

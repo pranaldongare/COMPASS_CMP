@@ -266,32 +266,39 @@ export files processors were sent and the response packages she was given
 Backups are not covered yet: there are none (P-03), and whether one holding an
 erased item is scrubbed or left to expire is waiting on Legal.
 
-## A breach is suspected
+## An incident is reported
 
-The platform records the breach and tracks every duty; people contain it,
-decide it and submit to the regulators ([breaches.md](../domain/breaches.md)).
+The platform logs the incident, records whether it is a breach and tracks
+every duty; people contain it, validate it and submit to the regulators
+([breaches.md](../domain/breaches.md), [ADR 0022](../decisions/0022-an-incident-first-and-a-breach-on-a-yes.md)).
 Who may declare a breach, how evidence is preserved and whom to escalate to
 belong to the manual breach procedure (backlog P-06, with Legal); this entry is
 only the platform's part. Only the DPO can see or use the register.
 
-1. **Record it at once** - **Breaches → Record a breach** - with the time it
-   was *first noticed*, not the time you are typing. If it may be a reportable
-   cyber incident, press **Mark reportable to CERT-In**: the six hours run from
-   the time you entered, and the page shows what is left.
-2. **Record the determination** as soon as it is made. *Yes* needs the time the
-   organisation became aware, and creates the Board and principals duties with
-   their clocks. *No* marks them not applicable. Revise it as a new
-   determination if it changes; nothing is edited.
+1. **Log it at once** - **Breaches → Log an incident** - with the time it was
+   *first noticed*, not the time you are typing. It gets an `INC-` reference.
+   If it may be a reportable cyber incident, press **Mark reportable to
+   CERT-In**: the six hours run from the time you entered, and the page shows
+   what is left.
+2. **Record the validation** as soon as it is made: is it a personal data
+   breach under s.2(u)? The first *yes* needs the time the organisation became
+   aware, **records the breach** with a `BR-` reference - quote that one from
+   now on - and creates the Board and principals duties with their clocks. *No*
+   marks them not applicable and keeps the reasoning. Revise it as a new
+   validation if it changes; nothing is edited, and a breach reference once
+   issued stays.
 3. **Keep the assessment current** - each revision is a new row - with the
    categories exposed and, per category, whether it was sealed and whether its
-   key was exposed. None of that delays or removes a duty.
+   key was exposed. None of that delays or removes a duty. Who it touched and
+   the notice may be prepared while validation is pending; **Send** waits until
+   the breach is recorded.
 4. **Draft the Board's documents** - **Documents for the Board** on the
    breach's page - and check what they say is not yet recorded. **Submit
    through the regulator's own channel**, then **Record submission**
    on the duty with when it was made and the reference returned. The platform
    never submits. If the Board allows longer for the detailed report, record
    the **Extension**; its due time moves, the intimation's does not.
-5. **Close it** once determined and every duty is done or not applicable. The
+5. **Close it** once validated and every duty is done or not applicable. The
    page lists what is in the way. Reopen it with a reason if more is found.
 
 If a duty shows overdue, it is overdue: the due time was stored when the duty

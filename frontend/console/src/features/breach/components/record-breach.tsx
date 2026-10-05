@@ -1,7 +1,8 @@
 /**
- * Recording a breach as it was noticed.
+ * Logging an incident as it was noticed (S3-06: an incident first, a breach
+ * on a yes).
  *
- * Every time here is typed in - never filled with "now". A breach recorded
+ * Every time here is typed in - never filled with "now". An incident logged
  * five hours after it was noticed has one hour of CERT-In time left, and the
  * register must show that rather than hide it; a field that defaulted to the
  * moment of saving would hide it.
@@ -129,11 +130,11 @@ export function RecordBreachForm({ onDone }: { onDone: () => void }) {
         location_detail: detail.trim() || null,
       });
       await qc.invalidateQueries({ queryKey: keys.breach.list() });
-      toast.success(`${made.reference} recorded`, "Record the determination next.");
+      toast.success(`${made.reference} logged`, "Validate it next: is it a personal data breach?");
       onDone();
       router.push(`/breaches/${made.breach_uuid}`);
     } catch (err) {
-      toast.error("Not recorded", messageOf(err, "The server refused."));
+      toast.error("Not logged", messageOf(err, "The server refused."));
     }
   }
 
@@ -184,7 +185,7 @@ export function RecordBreachForm({ onDone }: { onDone: () => void }) {
           Cancel
         </Button>
         <Button type="submit" variant="primary" disabled={!ready} loading={record.isPending}>
-          Record the breach
+          Log the incident
         </Button>
       </div>
     </form>

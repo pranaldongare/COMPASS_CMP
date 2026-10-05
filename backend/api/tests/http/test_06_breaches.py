@@ -1,10 +1,12 @@
-"""The breach register over HTTP (S3-01).
+"""The breach register over HTTP (S3-01, S3-06).
 
-The DPO walks every route: record, determine, assess, mark CERT-In, record a
-submission, extend the report, close refused and allowed. Every other role is
-answered 404 - on the register, on a breach that exists, and on a write - so a
-caller cannot tell a breach from a uuid that was never one. Two determinations
-sent at once create each duty once.
+An incident is logged with an `INC-` reference; the first determination of
+*yes* records it as a breach with a `BR-` one, and two sent at once issue one.
+Nothing is sent to anyone before that. The DPO walks every route: log,
+validate, assess, mark CERT-In, record a submission, extend the report, close
+refused and allowed. Every other role is answered 404 - on the register, on a
+breach that exists, and on a write - so a caller cannot tell a breach from a
+uuid that was never one. Two determinations sent at once create each duty once.
 
 Everything the office writes about a breach is sealed. `title` and `note` are
 generic names the contract cannot check by name alone, so they are checked
@@ -83,6 +85,10 @@ class TestTheRegister:
         uuid = breach["breach_uuid"]
         path = f"/breaches/{uuid}"
         assert breach["location"]["processor_uuid"] == world.processor_uuid
+        # An incident until validation says otherwise.
+        assert breach["incident_reference"].startswith("INC-")
+        assert breach["breach_reference"] is None
+        assert breach["reference"] == breach["incident_reference"]
 
         marked = await call(
             http, "POST", f"{path}/cert-in", template=f"{B}/cert-in", session=world.dpo
@@ -315,6 +321,25 @@ class TestTellingThePeople:
             template=f"{B}/notices/{{notice_uuid}}/approve",
             session=world.dpo,
         )
+        # Approved, people listed - and still an incident: nobody is told yet.
+        refused = await call(
+            http,
+            "POST",
+            f"{path}/notices/send",
+            template=f"{B}/notices/send",
+            session=world.dpo,
+            expect=409,
+        )
+        assert refused.json()["error"]["code"] == "breach_not_recorded"
+        recorded = await call(
+            http,
+            "POST",
+            f"{path}/determinations",
+            template=f"{B}/determinations",
+            session=world.dpo,
+            json={"outcome": "yes", "reasoning": "Her number left", "became_aware_at": _at(1)},
+        )
+        breach = recorded.json()
         await asyncio.gather(
             call(
                 http,
@@ -338,7 +363,8 @@ class TestTellingThePeople:
         assert sum(r["people"] for r in portal) == 1, "two sends at once wrote her account once"
         assert len([q for q in queued if q[0].endswith("send_breach_notice")]) >= 1
         mine = await call(http, "GET", "/me/breach-notices", session=world.principal)
-        assert [n["reference"] for n in mine.json()] == [breach["reference"]]
+        # She is given the breach reference, never the incident's.
+        assert [n["reference"] for n in mine.json()] == [breach["breach_reference"]]
         assert str(mine.json()[0]["contact"]).startswith("SE::"), "sealed, opened by her portal"
         assert plain(mine.json()[0]["contact"]) == "privacy@example.org"
 
@@ -444,3 +470,11 @@ class TestTheRace:
         duties = [d["duty"] for d in final.json()["obligations"]]
         assert sorted(duties) == ["board_intimation", "board_report", "principals"]
         assert len(final.json()["determinations"]) == 2
+        # One recording and one number, whichever *yes* arrived first.
+        issued = {first.json()["breach_reference"], second.json()["breach_reference"]}
+        assert len(issued) == 1 and str(final.json()["breach_reference"]).startswith("BR-")
+        assert final.json()["breach_reference"] in issued
+        register = await call(http, "GET", "/breaches", session=world.dpo)
+        assert [b["breach_reference"] for b in register.json()].count(
+            final.json()["breach_reference"]
+        ) == 1

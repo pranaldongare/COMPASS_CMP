@@ -1,6 +1,8 @@
 # 0021. A breach is recorded and its duties tracked; the platform never submits
 
 **Status:** accepted · 2026-09-30. Migration 0034, backlog items S3-01 to S3-04.
+Amended 2026-10-05: an incident is logged first and a breach is recorded on a
+*yes* - see [ADR 0022](0022-an-incident-first-and-a-breach-on-a-yes.md).
 
 ## Context
 
@@ -108,3 +110,14 @@ Legal sets the internal target for "without delay"; decides who files with
 CERT-In (the DPO or corporate security - today only the DPO can record it); or a
 regulator offers an interface the platform could submit through, which this
 decision would then have to weigh against keeping a person in the loop.
+
+## Amended · 2026-10-05
+
+[ADR 0022](0022-an-incident-first-and-a-breach-on-a-yes.md) puts the incident
+first. What this record calls recording a breach is now **logging an
+incident**, with an `INC-` reference; the determination is presented as
+**validation**; and the first determination of *yes* records the breach and
+issues the `BR-` reference (`breach_recording`, migration 0038). Sending the
+principals' notice waits for that recording. Everything else here stands: the
+duties, their stored clocks, the determination recorded and never computed,
+the evidence never edited, the register hidden, and nothing submitted.

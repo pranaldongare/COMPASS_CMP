@@ -1,5 +1,5 @@
 /**
- * The cards on one breach: its duties and their clocks, the determination, the
+ * The cards on one breach: its duties and their clocks, validation, the
  * assessment, and closing or reopening it.
  *
  * Every control renders the server's answer. Which duties exist, when each is
@@ -208,8 +208,8 @@ export function DutiesCard({ breach }: { breach: Breach }) {
       <CardBody className="space-y-4">
         {breach.obligations.length === 0 ? (
           <p className="text-sm text-text-muted">
-            No duty yet. A determination that this is a personal data breach creates the Board and principals duties;
-            marking a reportable cyber incident creates CERT-In.
+            No duty yet. A validation of yes records it as a personal data breach and creates the Board and principals
+            duties; marking a reportable cyber incident creates CERT-In.
           </p>
         ) : (
           <Table>
@@ -270,7 +270,7 @@ export function DutiesCard({ breach }: { breach: Breach }) {
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-3 text-sm">
             <span>
               Is this a reportable cyber incident under the CERT-In Directions? CERT-In stands on its own test, apart
-              from the DPDP determination.
+              from the DPDP validation.
             </span>
             <Button variant="secondary" size="sm" loading={certIn.isPending} onClick={mark}>
               <AlertTriangle className="size-4" />
@@ -290,6 +290,7 @@ export function DutiesCard({ breach }: { breach: Breach }) {
 export function DeterminationCard({ breach }: { breach: Breach }) {
   const toast = useToast();
   const [outcome, setOutcome] = React.useState<BreachOutcome>("yes");
+  const recorded = breach.breach_reference !== null;
   const [reasoning, setReasoning] = React.useState("");
   const [aware, setAware] = React.useState("");
   const write = useBreachWrite(
@@ -302,14 +303,19 @@ export function DeterminationCard({ breach }: { breach: Breach }) {
 
   async function save() {
     try {
-      await write.mutateAsync({
+      const fresh = await write.mutateAsync({
         outcome,
         reasoning: reasoning.trim(),
         became_aware_at: outcome === "yes" ? awareAt : null,
       });
       setReasoning("");
       setAware("");
-      toast.success("Determination recorded", OUTCOME_COPY[outcome]);
+      // The first yes records the breach and issues its number; say so.
+      if (!recorded && fresh.breach_reference) {
+        toast.success(`Recorded as ${fresh.breach_reference}`, "The DPDP duties have started.");
+      } else {
+        toast.success("Validation recorded", OUTCOME_COPY[outcome]);
+      }
     } catch (err) {
       toast.error("Not recorded", messageOf(err, "The server refused."));
     }
@@ -318,11 +324,11 @@ export function DeterminationCard({ breach }: { breach: Breach }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Determination - s.2(u)</CardTitle>
+        <CardTitle>Validation - is it a personal data breach under s.2(u)?</CardTitle>
         <p className="mt-1 text-xs text-text-muted">
-          Whether the event is a personal data breach is a person&apos;s judgement, recorded with its reasoning. The
-          platform never infers it - not from encryption, not from anything. A revision is a new row; the latest is
-          current.
+          A person&apos;s judgement, recorded with its reasoning. The platform never infers it - not from encryption,
+          not from anything. The first yes records the incident as a personal data breach and starts the DPDP duties;
+          a later no sets them aside and keeps the breach reference. A revision is a new row; the latest is current.
         </p>
       </CardHeader>
       <CardBody className="space-y-4">
@@ -343,15 +349,17 @@ export function DeterminationCard({ breach }: { breach: Breach }) {
             ))}
           </ol>
         ) : (
-          <p className="text-sm text-text-muted">Not yet determined.</p>
+          <p className="text-sm text-text-muted">Still validating. The clocks already running keep running.</p>
         )}
         {breach.status === "open" && (
           <div className="space-y-3 border-t border-border pt-4">
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Determination" required>
+              <Field label="Validation" required>
                 {(p) => (
                   <Select {...p} value={outcome} onChange={(e) => setOutcome(e.target.value as BreachOutcome)}>
-                    <option value="yes">{OUTCOME_COPY.yes}</option>
+                    <option value="yes">
+                      {recorded ? OUTCOME_COPY.yes : "Yes, record it as a personal data breach"}
+                    </option>
                     <option value="no">{OUTCOME_COPY.no}</option>
                     <option value="pending">{OUTCOME_COPY.pending}</option>
                   </Select>
@@ -368,7 +376,7 @@ export function DeterminationCard({ breach }: { breach: Breach }) {
             </Field>
             <div className="flex justify-end">
               <Button variant="primary" disabled={!ready} loading={write.isPending} onClick={save}>
-                Record the determination
+                Record the validation
               </Button>
             </div>
           </div>
