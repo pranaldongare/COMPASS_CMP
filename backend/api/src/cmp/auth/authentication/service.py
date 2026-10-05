@@ -33,6 +33,7 @@ from cmp.core.errors import (
     RateLimited,
     Unauthenticated,
     ValidationFailed,
+    with_evidence,
 )
 from cmp.core.logging import get_logger
 from cmp.core.permissions import ROLE_TITLES, Role, nav_for, writes_for
@@ -93,7 +94,9 @@ async def authenticate(
                 actor_user_id=user["id"],
                 detail={"failures": fails},
             )
-        raise Unauthenticated(_GENERIC_FAILURE)
+        # The rows above are the durable record of the guess; the raise must
+        # not roll them back with the request (SEC-3).
+        raise with_evidence(Unauthenticated(_GENERIC_FAILURE))
 
     # Status is checked only after the password is known to be correct. Checking
     # first would tell an unauthenticated caller that an account exists.
@@ -107,7 +110,7 @@ async def authenticate(
             actor_user_id=user["id"],
             detail={"cause": f"status_{user['status']}"},
         )
-        raise Unauthenticated(_GENERIC_FAILURE)
+        raise with_evidence(Unauthenticated(_GENERIC_FAILURE))
 
     if user["role"] == Role.DATA_SUBJECT.value:
         # Data subjects have no password path. If one somehow has a hash, the
@@ -170,7 +173,7 @@ async def verify_mfa(conn: Conn, *, user_uuid: str, code: str, token: str) -> di
     """
     try:
         await otp.require(otp.Scope.STAFF_MFA, user_uuid, code)
-    except (BadRequest, RateLimited):
+    except (BadRequest, RateLimited) as refused:
         user = await _user_by_uuid_id(conn, user_uuid)
         if user:
             await audit.record(
@@ -181,7 +184,7 @@ async def verify_mfa(conn: Conn, *, user_uuid: str, code: str, token: str) -> di
                 subject_user_id=user["id"],
                 actor_user_id=user["id"],
             )
-        raise
+        raise with_evidence(refused) from None
 
     session = await sessions.promote(token)
     if session is None:

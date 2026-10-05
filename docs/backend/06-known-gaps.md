@@ -12,7 +12,6 @@ Paths are under `backend/api/src/cmp/`.
 | Gap | Where | Why it matters |
 |---|---|---|
 | `POST /c/{token}/consent` does not check the CSRF header | `api/routers/public/consent.py` loads the session itself with `sessions.load()` instead of `session_from_request` | The `SameSite=Lax` cookie keeps a cross-site POST from carrying the session, so the practical exposure is small - but it is the one cookie-authenticated write without the second layer [csrf](../security/csrf.md) promises |
-| Refusals are not audited | `domain/audit` `record_denial()` and `auth/authorization/policy.authorize()` exist and are never called | [authorization](../security/authorization.md) and [audit](../security/audit.md) say every denial writes an `auth.access_denied` row; today a 403 leaves only a `request.failed` log line |
 | `verify_csrf()` is unused | `api/dependencies/csrf.py` | The real check is in `api/dependencies/sessions.py`; the helper suggests a second path that does not exist |
 | Lockout counts the typed login, not the account | `auth/rate_limit/service.py` | Email and username count separately for one account; the docs say "keyed on the account" |
 | No per-address limit on `/auth/login`, `/auth/otp/verify`, `/auth/password/reset/confirm` | `auth/authentication/service.py` | Only the per-login lockout and the per-code attempt cap apply |

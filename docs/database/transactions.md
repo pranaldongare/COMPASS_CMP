@@ -6,7 +6,12 @@
 
 * `connection()` — a connection for reads.
 * `transaction()` — a connection inside a transaction, committed on clean exit
-  and rolled back on any exception.
+  and rolled back on any exception - except one marked `with_evidence`
+  (`core/errors.py`), which commits first and is raised after. That is for a
+  refusal whose only write is the record of itself: a failed sign-in, a wrong
+  second-factor code. Without it the raise rolled the audit row back
+  (review 2026-10-01, SEC-3). Every other refusal is recorded by the error
+  handler on its own connection; see [audit](../security/audit.md#denials-are-events-too).
 
 A router that writes opens `transaction()` and hands the connection to a service.
 The service does everything inside it.

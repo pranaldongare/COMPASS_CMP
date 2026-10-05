@@ -22,16 +22,16 @@ from fastapi import Depends
 
 from cmp.api.dependencies.authentication import current_principal
 from cmp.auth.identity import Principal
-from cmp.core.errors import Forbidden, NotFound
+from cmp.core.errors import Forbidden, HiddenFromRole
 from cmp.core.permissions import Role, Scope, can_write, scope_of
 
 
 class RequireRole:
     """Role gate for a route.
 
-    Denials are audited by the router that raises them - the dependency itself
-    has no database connection, and opening one here would put a write outside
-    the transaction the service is about to start.
+    Denials are audited by the error handler, on a connection of its own, once
+    the request's transaction is over - the dependency has no connection, and
+    a row written in the request's transaction would roll back with it.
     """
 
     def __init__(self, *roles: Role) -> None:
@@ -72,7 +72,7 @@ class RequireResource:
         grant = scope_of(self.resource, principal.role)
         if grant is Scope.NONE:
             if self.hidden:
-                raise NotFound()
+                raise HiddenFromRole()
             raise Forbidden("Your role does not permit this action")
         if self.write and not can_write(self.resource, principal.role):
             raise Forbidden("Your role may read this but not change it")

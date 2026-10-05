@@ -17,6 +17,9 @@ class CmpError(Exception):
 
     status_code: int = 500
     code: str = "internal_error"
+    #: The unit of work commits before this error is raised, instead of
+    #: rolling back. Set by `with_evidence`, and only there.
+    keeps_evidence: bool = False
 
     def __init__(
         self,
@@ -32,6 +35,23 @@ class CmpError(Exception):
             self.code = code
         self.field = field
         self.details = details or {}
+
+
+def with_evidence[E: CmpError](error: E) -> E:
+    """A refusal whose record of itself must survive it.
+
+    A raise rolls back the transaction the request ran in, and every row the
+    request wrote with it. For most refusals that is the point. For a failed
+    sign-in it destroyed the only durable record of who was being guessed at
+    (review 2026-10-01, SEC-3): the audit row was written, then rolled back by
+    the raise that followed it.
+
+    An error marked here makes `cmp.db.pool.transaction` commit first and raise
+    after. Mark one only where the refusal has written nothing but its
+    evidence - whatever else the transaction holds is committed with it.
+    """
+    error.keeps_evidence = True
+    return error
 
 
 class BadRequest(CmpError):
@@ -76,6 +96,15 @@ class NotFound(CmpError):
 
     def __init__(self, entity: str = "Resource", **kw: Any) -> None:
         super().__init__(f"{entity} not found", **kw)
+
+
+class HiddenFromRole(NotFound):
+    """A role without the grant, told the thing is not there.
+
+    Identical to `NotFound` in what the caller receives. It is its own class
+    only so the refusal is recorded as one - the trail knows what the response
+    does not say.
+    """
 
 
 class Conflict(CmpError):

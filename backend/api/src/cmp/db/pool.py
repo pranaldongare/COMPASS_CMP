@@ -20,7 +20,7 @@ from psycopg_pool import AsyncConnectionPool
 
 from cmp.core import after_commit
 from cmp.core.config import settings
-from cmp.core.errors import ServiceUnavailable
+from cmp.core.errors import CmpError, ServiceUnavailable
 from cmp.core.logging import get_logger
 
 log = get_logger("cmp.db")
@@ -120,7 +120,11 @@ async def transaction() -> AsyncIterator[psycopg.AsyncConnection[Any]]:
 
     Keep the body short: a transaction that awaits an HTTP call holds a row lock
     for the duration of somebody else's outage.
+
+    An error marked `with_evidence` is the one exception that commits: the
+    transaction ends cleanly, and the error is raised once it has.
     """
+    kept: CmpError | None = None
     try:
         async with get_pool().connection() as conn:
             await conn.set_autocommit(False)
@@ -129,12 +133,19 @@ async def transaction() -> AsyncIterator[psycopg.AsyncConnection[Any]]:
                 # has committed, and are dropped if it rolled back.
                 with after_commit.unit_of_work():
                     async with conn.transaction():
-                        yield conn
+                        try:
+                            yield conn
+                        except CmpError as exc:
+                            if not exc.keeps_evidence:
+                                raise
+                            kept = exc
             finally:
                 await conn.set_autocommit(True)
     except psycopg.OperationalError as exc:
         log.error("db.unavailable", error=str(exc))
         raise ServiceUnavailable("Database is unavailable") from exc
+    if kept is not None:
+        raise kept
 
 
 async def healthcheck() -> bool:

@@ -31,8 +31,10 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from cmp.api.errors.responses import response
 from cmp.api.middleware.request_context import safe_path
 from cmp.core.constants import REQUEST_ID_HEADER
-from cmp.core.errors import CmpError, RateLimited
+from cmp.core.errors import CmpError, Forbidden, HiddenFromRole, RateLimited
 from cmp.core.logging import get_logger
+from cmp.db.pool import transaction
+from cmp.domain.audit import service as audit
 
 log = get_logger("cmp.api.errors")
 
@@ -51,6 +53,8 @@ async def cmp_error_handler(request: Request, exc: Exception) -> ORJSONResponse:
         status=exc.status_code,
         error_code=exc.code,
     )
+    if isinstance(exc, (Forbidden, HiddenFromRole)):
+        await _record_denial(request, exc)
     return response(
         exc.status_code,
         exc.code,
@@ -60,6 +64,29 @@ async def cmp_error_handler(request: Request, exc: Exception) -> ORJSONResponse:
         headers=headers,
         request_id=_request_id(request),
     )
+
+
+async def _record_denial(request: Request, exc: CmpError) -> None:
+    """Every refusal is audited - on a connection of its own (SEC-3).
+
+    The request's transaction has already rolled back by the time its error
+    reaches here, which is why the row cannot be written there, and why it
+    can be written here without waiting on a lock the request still holds.
+    The route's template names what was refused, never the identifiers in
+    the path. A refusal that cannot be recorded is logged, not turned into a
+    500: the caller's answer does not depend on the trail.
+    """
+    route = request.scope.get("route")
+    template = getattr(route, "path", None) or safe_path(request.url.path)
+    try:
+        async with transaction() as conn:
+            await audit.record_denial(
+                conn,
+                resource=f"{request.method} {template}",
+                reason="hidden" if isinstance(exc, HiddenFromRole) else exc.code,
+            )
+    except Exception:  # the response must not depend on the trail
+        log.exception("audit.denial_unrecorded", endpoint=template)
 
 
 async def validation_handler(request: Request, exc: Exception) -> ORJSONResponse:

@@ -64,8 +64,16 @@ table; `auth` holds everything you do with it.
 
 ## Denials are recorded
 
-`authorize()` logs before it raises, and the service turns that into an
-`auth.access_denied` audit row. An access-control system that refuses correctly
+Every 403, and every 404 that stands in for one on a hidden resource
+(`HiddenFromRole`, raised by `RequireResource(..., hidden=True)`), writes an
+`auth.access_denied` audit row. The API's error handler writes it, on a
+connection of its own, once the request's transaction has rolled back - a row
+written in that transaction would roll back with it. `detail.resource` is the
+method and route template (`GET /audit`, never a uuid from the path),
+`detail.cause` the error's code (`forbidden`, `csrf_failed`) or `hidden`, and
+`detail.role` the caller's role. A caller told "not found" is still recorded as
+refused: the trail knows what the response does not say. An access-control
+system that refuses correctly
 but silently is half a system: the refusal is what tells an operator that
 somebody is probing, or that a role was provisioned wrongly, or that a permission
 change broke a legitimate workflow.

@@ -96,6 +96,19 @@ the system's own sentence, never a person's words). An access-control
 system that refuses correctly but silently tells an operator nothing about
 somebody probing, or a role provisioned wrongly.
 
+A refusal rolls back the transaction its request ran in, so the evidence of
+it is written where the rollback cannot reach it:
+
+- **A refused request** (403, or a hidden 404) is recorded by the API's error
+  handler on its own connection, after the request's transaction is over.
+- **A failed sign-in and a wrong second-factor code** (`auth.login_failed`,
+  `auth.login_locked_out`, `auth.mfa_failed`) are raised `with_evidence`
+  (`core/errors.py`): the unit of work commits, then the error is raised. A
+  refusal is marked so only where it has written nothing but its evidence.
+
+Before 2026-10-01 both were lost: the failed sign-in's row was rolled back by
+the raise that followed it, and no 403 was recorded at all (review SEC-3).
+
 ## What is not in it
 
 Credentials, one-time codes, consent link tokens, and the contents of a data
