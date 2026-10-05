@@ -8,6 +8,21 @@ as a release yet.
 ## [Unreleased]
 
 ### Security
+- **A refused request keeps its evidence.** A failed sign-in's audit row was
+  rolled back by the raise that followed it, and no 403 was ever recorded.
+  Failed sign-ins and second-factor codes now commit their record before
+  refusing (`with_evidence`), and every 403 - and the 404 a hidden breach
+  answers with - is recorded as `auth.access_denied` (review 2026-10-01, SEC-3).
+- **Guessing is counted by account and by address.** The lockout counts the
+  account however it is named, not the text typed; failed attempts at sign-in,
+  code sign-in and password reset also count against the address
+  (`AUTH_FAILURES_PER_ADDRESS`); a code's failure count lives as long as the
+  code; a password reset lifts the lockout.
+- **A broker outage answers every code request alike.** Only a registered
+  contact's request reached the queue, so an outage was a 503 for her and a 200
+  for a stranger. The three neutral forms check the broker first.
+- **The consent submission checks CSRF, and the body limit counts what
+  arrives** - a chunked body is measured too (SEC-4).
 - **One phone is one quota, however it is typed.** The sign-in code and
   public rights form throttles were keyed on the contact as typed while the
   lookup normalised it, so "+91 98765 00001", "+919876500001" and two other
@@ -45,6 +60,13 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **My nominations** has its own page on the portal, and the console's
+  navigation opens each role's sidebar with **Your work** - its daily
+  destinations in order. Dashboards gained **Approved projects ready to
+  collect** (DCO, RCO) and **Waiting for DPO review** (R&D User) (UX review
+  2026-10-05).
+- Filters the dashboard links need: `GET /requests?due_soon=1`,
+  `GET /notices?languages=unapproved`, `GET /users?person=<uuid>`.
 - **A person corrects their own name from the profile**, on the portal and
   the console (**Change** beside the name). `PATCH /me` already accepted it; the
   pages now offer it. The name is sealed, stays searchable by part, and the
@@ -423,6 +445,21 @@ as a release yet.
 - `CONTRIBUTING.md`.
 
 ### Changed
+- **The UX review of 2026-10-05, packages 1-3 and 5.** Truthful states (four
+  consent states counted apart; subtle text at 4.5:1 in both themes; buttons
+  that name the act); links that open what they name (filtered dashboard
+  rows, a requester's account, a request's or consent's own card); back that
+  returns where you were (`?from=`, the row you opened, Help's way back);
+  dialogs that keep typing; per-role navigation and urgency-ordered queues;
+  and the wording table - see `docs/frontend/best-practices.md` §18 and
+  `docs/domain/roles-and-access.md`.
+- **Routers no longer write or audit.** Writes and audit rows moved into
+  domain services and SQL into repositories; `test_layer_boundaries.py`
+  holds the line (review ARCH-5).
+- **Lists keep their filters and page in the URL** (UX-5); a transition
+  refreshes the notice it published (ARCH-3); the type contract catches
+  removed and newly nullable fields (ARCH-2); the 93 files the portals share
+  cannot drift apart (ARCH-4, the guard; the package is a tooling decision).
 - **"Use an existing notice" offers every approved notice.** An R&D User was
   offered only notices on projects they had created, so a researcher's first
   study could never start from text the Privacy Office had approved for a
@@ -592,6 +629,15 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **Storage is checked before use.** `STORAGE_BACKEND=object` (a stub) is
+  refused at start-up and `/ready` checks that storage can be written (SCALE-5).
+- **A refused decrypt batch is narrowed down**, not retried value by value,
+  and a throttled or failing key service is not asked again (SCALE-4).
+- **Lists of people sort by the names people read**, not the ciphertext.
+- **A production build must be told the other portal's address** (ARCH-6).
+- **The consent link keeps a person's progress**: an outage is not an invalid
+  link, a spent code is not asked for again, and the code step offers another
+  code and another contact (UX-3); focus, the phone drawer and `lang=` (UX-4).
 - **A breach notice lost before the worker saw it is sent again.** An email
   or SMS whose task the broker dropped after the commit stayed queued for ever,
   and Send skipped anything queued, so *Principals notified* could never
