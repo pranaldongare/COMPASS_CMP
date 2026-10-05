@@ -171,3 +171,97 @@ describe("a key service that writes a different envelope", () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe("decryptDeep when the service refuses a batch (review SCALE-4)", () => {
+  // Distinct values with a real NAME header: typeOf reads only the header.
+  const values = (n: number) => Array.from({ length: n }, (_, i) => `${NAME}${i}`);
+
+  /** A route that answers like ours: 502 naming the key service's status. */
+  function route(answer: (data: Record<string, string>[]) => number | null) {
+    return vi.fn(async (_url: string, init: RequestInit) => {
+      const { data } = JSON.parse(init.body as string) as { data: Record<string, string>[] };
+      const status = answer(data);
+      if (status === null) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ data: data.map((r) => ({ NAME: `open:${r.NAME}` })) }),
+        } as unknown as Response;
+      }
+      return {
+        ok: false,
+        status: status === 413 || status === 401 || status === 503 ? status : 502,
+        json: async () => ({ error: "x", service: "dkms:32688", status }),
+      } as unknown as Response;
+    });
+  }
+
+  it("narrows down one bad value in a large page instead of asking value by value", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const sealed = values(600);
+    const bad = sealed[123];
+    const fetchMock = route((data) => (data.some((r) => r.NAME === bad) ? 422 : null));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const out = await decryptDeep({ items: sealed.map((full_name) => ({ full_name })) });
+
+    expect(out.items[123]?.full_name).toBe(bad);
+    expect(out.items[0]?.full_name).toBe(`open:${sealed[0]}`);
+    expect(out.items[599]?.full_name).toBe(`open:${sealed[599]}`);
+    // Splitting in halves finds one bad value in about 2·log2(600) calls;
+    // asking one by one was 601.
+    expect(fetchMock.mock.calls.length).toBeLessThan(30);
+    error.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it.each([
+    [429, "throttled"],
+    [500, "failing"],
+    [503, "unreachable"],
+    [401, "signed out"],
+  ])("asks once and stops when the service answers %s (%s)", async (status) => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const fetchMock = route(() => status);
+    vi.stubGlobal("fetch", fetchMock);
+    const sealed = values(50);
+
+    const out = await decryptDeep({ items: sealed.map((full_name) => ({ full_name })) });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(out.items.map((i) => i.full_name)).toEqual(sealed);
+    error.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it("splits a batch the route says is too large", async () => {
+    const fetchMock = route((data) => (data.length > 100 ? 413 : null));
+    vi.stubGlobal("fetch", fetchMock);
+    const sealed = values(250);
+
+    const out = await decryptDeep({ items: sealed.map((full_name) => ({ full_name })) });
+
+    expect(out.items.every((i, n) => i.full_name === `open:${sealed[n]}`)).toBe(true);
+    expect(fetchMock.mock.calls.length).toBeLessThan(10);
+    vi.unstubAllGlobals();
+  });
+
+  it("stops narrowing when the service starts throttling part-way", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const sealed = values(64);
+    let calls = 0;
+    const fetchMock = route(() => {
+      calls += 1;
+      if (calls === 1) return 422; // the whole batch: one bad value somewhere
+      return 429; // then the service is busy
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const out = await decryptDeep({ items: sealed.map((full_name) => ({ full_name })) });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(out.items.map((i) => i.full_name)).toEqual(sealed);
+    error.mockRestore();
+    vi.unstubAllGlobals();
+  });
+});

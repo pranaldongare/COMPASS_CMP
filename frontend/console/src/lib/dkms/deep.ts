@@ -22,7 +22,7 @@
  * columns each is one round trip.
  */
 
-import { decryptRecords, isEncrypted, type DataType } from "@/lib/dkms/api";
+import { DecryptError, decryptRecords, isEncrypted, type DataType } from "@/lib/dkms/api";
 import { TYPE_BY_FIELD } from "@/lib/dkms/field-types";
 
 /** Byte 3 of the envelope, mirroring TYPE_IDS in the key service. */
@@ -140,23 +140,21 @@ export async function decryptDeep<T>(body: T): Promise<T> {
     string,
     DataType
   >;
-  let opened: Record<string, string>[];
-  try {
-    opened = await decryptRecords(records, key);
-  } catch (cause) {
-    if (isUnreachable(cause)) {
-      // Nothing to retry against. The page still renders - with `SE::...`
-      // where the values are, which is visibly wrong and therefore reported -
-      // rather than failing on every screen at once. One line, never a value.
-      console.error(`[dkms] ${found.length} value(s) left sealed: ${describe(cause)}`);
-      return body;
-    }
-    // The service refused the batch: one value in it is not something it can
-    // open - a blob that was cut short, glued to other text, or sealed under
-    // a key it does not hold. The other values are fine, and a page should
-    // not lose two hundred names to one bad one. Each is asked for alone;
-    // the bad ones stay as they arrived and are counted, not quoted.
-    opened = await oneByOne(records, key);
+  // The service may refuse the batch because one value in it is not something
+  // it can open - a blob cut short, glued to other text, sealed under a key it
+  // does not hold. A page should not lose two hundred names to one bad one, so
+  // a refused batch is split in halves until the bad ones are alone. Anything
+  // else - throttled, unreachable, signed out, failing - is not asked again:
+  // the page renders with `SE::...` where the values are, visibly wrong and
+  // therefore reported, rather than failing on every screen at once.
+  const run: Narrowing = { calls: 0, refused: 0, stopped: null };
+  const opened = await narrow(records, key, run);
+  if (run.stopped) {
+    // One line, never a value.
+    console.error(`[dkms] value(s) left sealed: ${describe(run.stopped)}`);
+  }
+  if (run.refused > 0) {
+    console.error(`[dkms] ${run.refused} of ${records.length} value(s) could not be opened`);
   }
 
   found.forEach((f, i) => {
@@ -170,27 +168,57 @@ function describe(cause: unknown): string {
   return cause instanceof Error ? cause.message : "unknown error";
 }
 
-function isUnreachable(cause: unknown): boolean {
-  return cause instanceof Error && /could not reach|session has ended/i.test(cause.message);
+/**
+ * The most calls one response may cost while narrowing down refused values.
+ * Halving finds one bad value among n in about 2·log2(n) calls - 20 for a
+ * page of 600 - and the cap bounds a page where many are bad. Before
+ * October 2026 a refused batch was retried one value per request, all at
+ * once: 601 requests for a page of 600 (review SCALE-4).
+ */
+const MAX_CALLS = 48;
+
+interface Narrowing {
+  calls: number;
+  refused: number;
+  stopped: unknown;
 }
 
-async function oneByOne(
+/**
+ * Open `records`, halving a batch the service refuses or finds too large.
+ *
+ * One call at a time, never in parallel, and the first failure that is not
+ * about the values themselves stops the whole run: a throttled or failing
+ * service is not asked again. Whatever is not opened comes back as it
+ * arrived, and setAt leaves the sealed value in place.
+ */
+async function narrow(
   records: Record<string, string>[],
   key: Record<string, DataType>,
+  run: Narrowing,
 ): Promise<Record<string, string>[]> {
-  const out = await Promise.all(
-    records.map(async (record) => {
-      const [type] = Object.keys(record) as DataType[];
-      try {
-        const [one] = await decryptRecords([record], { [type]: key[type] });
-        return one ?? record;
-      } catch {
-        return record; // as it arrived; setAt keeps the sealed value in place
-      }
-    }),
-  );
-  const refused = out.filter((r, i) => r === records[i]).length;
-  if (refused > 0)
-    console.error(`[dkms] ${refused} of ${records.length} value(s) could not be opened`);
-  return out;
+  if (run.stopped || records.length === 0) return records;
+  if (run.calls >= MAX_CALLS) {
+    run.stopped = new Error(`gave up after ${MAX_CALLS} calls`);
+    return records;
+  }
+  run.calls += 1;
+  try {
+    return await decryptRecords(records, key);
+  } catch (cause) {
+    const splittable =
+      cause instanceof DecryptError &&
+      (cause.failure === "refused" || cause.failure === "too_large");
+    if (!splittable) {
+      run.stopped = cause;
+      return records;
+    }
+    if (records.length === 1) {
+      run.refused += 1;
+      return records;
+    }
+    const half = Math.ceil(records.length / 2);
+    const left = await narrow(records.slice(0, half), key, run);
+    const right = await narrow(records.slice(half), key, run);
+    return [...left, ...right];
+  }
 }

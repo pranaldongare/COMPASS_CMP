@@ -24,6 +24,38 @@ export type DataType =
 /** Which fields of a record to decrypt, and what each was written as. */
 export type KeyMap = Record<string, DataType>;
 
+/**
+ * Why a decrypt call failed, as something a caller can act on.
+ *
+ * - `refused`: the key service answered 400 or 422 - something in the batch
+ *   is not a value it can open. The rest of the batch may be fine.
+ * - `too_large`: more records than the route takes in one call (413).
+ * - `throttled`: the service said 429. Asking again now makes it worse.
+ * - `unreachable`: no answer from the service, or from this route (503, or
+ *   the fetch itself failed).
+ * - `signed_out`: the route answered 401.
+ * - `failed`: anything else - the service erred, or the request was wrong.
+ *
+ * Only the first two are worth another, smaller request (review SCALE-4).
+ */
+export type DecryptFailure =
+  | "refused"
+  | "too_large"
+  | "throttled"
+  | "unreachable"
+  | "signed_out"
+  | "failed";
+
+export class DecryptError extends Error {
+  constructor(
+    message: string,
+    readonly failure: DecryptFailure,
+  ) {
+    super(message);
+    this.name = "DecryptError";
+  }
+}
+
 /** Is this value DKMS ciphertext? Cheap, and the reason a page can skip a call. */
 export function isEncrypted(value: unknown): value is string {
   return typeof value === "string" && value.startsWith("SE::");
@@ -49,15 +81,23 @@ export async function decryptRecords<T extends Record<string, unknown>>(
     records.some((record) => fields.some((field) => isEncrypted(record[field])));
   if (!needed) return [...records];
 
-  const response = await fetch("/dkms/decrypt", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ data: records, key, method }),
-  });
+  let response: Response;
+  try {
+    response = await fetch("/dkms/decrypt", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ data: records, key, method }),
+    });
+  } catch {
+    throw new DecryptError("Could not reach the encryption service.", "unreachable");
+  }
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error("Your session has ended — sign in again to read these.");
+      throw new DecryptError(
+        "Your session has ended — sign in again to read these.",
+        "signed_out",
+      );
     }
     const detail = (await response.json().catch(() => ({}))) as {
       service?: string;
@@ -65,13 +105,24 @@ export async function decryptRecords<T extends Record<string, unknown>>(
     };
     const where = detail.service ? ` (${detail.service}` : "";
     const upstream = detail.status ? `, answered ${detail.status})` : where ? ")" : "";
-    throw new Error(
+    throw new DecryptError(
       response.status === 503
         ? `Could not reach the encryption service${where}${upstream}.`
         : `Could not decrypt these values${where}${upstream}.`,
+      failureOf(response.status, detail.status),
     );
   }
 
   const body = (await response.json()) as { data: T[] };
   return body.data;
+}
+
+function failureOf(status: number, upstream: number | undefined): DecryptFailure {
+  if (status === 503) return "unreachable";
+  if (status === 413) return "too_large";
+  if (status !== 502 || upstream === undefined) return "failed";
+  if (upstream === 400 || upstream === 422) return "refused";
+  if (upstream === 413) return "too_large";
+  if (upstream === 429) return "throttled";
+  return "failed";
 }
