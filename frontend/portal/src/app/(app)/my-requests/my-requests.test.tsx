@@ -61,3 +61,39 @@ describe("My requests opened from a link", () => {
     expect(screen.queryByText(NEWER.reference)).not.toBeInTheDocument();
   });
 });
+
+describe("a folded request card", () => {
+  const ANSWERED = { ...READY, response_text: "Here is everything we hold about you." };
+
+  beforeEach(() => {
+    window.history.replaceState(null, "", "/my-requests");
+    server.use(http.get(`${API}/me/requests`, () => HttpResponse.json([NEWER, ANSWERED])));
+  });
+
+  it("is a summary, with the details one click away", async () => {
+    // 48 requests used to be 48 full cards, every response written out (UX
+    // review 2026-10-05). Folded, a card says what it is and where it stands.
+    const { user } = render(<MyRequestsPage />);
+    await screen.findByText(ANSWERED.reference);
+
+    expect(screen.queryByText(ANSWERED.response_text)).not.toBeInTheDocument();
+    expect(screen.queryByText(/the path/i)).not.toBeInTheDocument();
+
+    const card = screen.getByText(ANSWERED.reference).closest("[id^='request-']") as HTMLElement;
+    const toggle = card.querySelector("button[aria-expanded]") as HTMLButtonElement;
+    expect(toggle).toHaveTextContent("Show details");
+    await user.click(toggle);
+
+    expect(screen.getByText(ANSWERED.response_text)).toBeInTheDocument();
+    expect(toggle).toHaveTextContent("Hide details");
+  });
+
+  it("still offers a response that is ready to download", async () => {
+    // The download window closes; folding must not hide it.
+    render(<MyRequestsPage />);
+    await screen.findByText(ANSWERED.reference);
+
+    expect(screen.getByText(/our response is ready/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /download the file/i })).toBeInTheDocument();
+  });
+});

@@ -12,6 +12,11 @@
  * holder tickets are ours, and the holders themselves are in the response,
  * which is where they belong.
  *
+ * Folded, a card is a summary: what it is, where it stands, a line of what was
+ * asked, and only what needs the reader - a code to confirm, a response to
+ * download. Everything else opens on demand. An account with 48 requests was
+ * 48 full cards, each with its whole response, before (UX review 2026-10-05).
+ *
  * Disputing is the one thing a nominee does not get from here. A dispute makes
  * a new request in her name, which is acting rather than reading, and acting
  * keeps its own door: the nominee page and a code to the contact she recorded.
@@ -154,40 +159,21 @@ export function RequestCard({
             {r.linked_reference && !about && ` · about ${r.linked_reference}`}
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={onToggle} aria-expanded={expanded}>
-          {expanded ? "Hide" : "Show"} progress
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          aria-controls={`${cardId(r.request_uuid)}-details`}
+        >
+          {expanded ? "Hide" : "Show"} details
         </Button>
       </CardHeader>
 
       <CardBody className="space-y-4">
-        {r.consent_uuid && (
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-            <ShieldCheck className="size-4 text-accent-text" aria-hidden="true" />
-            <span className="font-medium">About one consent only:</span>
-            <Link
-              href={`/my-consents?consent=${r.consent_uuid}`}
-              className="text-accent-text hover:underline"
-            >
-              {[
-                r.consent_project,
-                r.consent_notice_code &&
-                  `${r.consent_notice_code} v${r.consent_notice_version ?? ""}`,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-              {r.consent_at && ` · given ${formatDate(r.consent_at)}`}
-            </Link>
-            <span className="text-text-muted">
-              {r.consent_purposes && r.consent_purposes.length
-                ? r.consent_purposes.join(", ")
-                : "no purpose granted"}
-            </span>
-          </p>
+        {!expanded && (
+          <p className="line-clamp-2 text-sm text-text-muted">{r.request_text}</p>
         )}
-        <p className="text-sm whitespace-pre-wrap text-text-muted">{r.request_text}</p>
-
-        {about && <AboutBlock request={r} about={about} onJump={onJump} />}
-        {followedBy.length > 0 && <FollowedBy followedBy={followedBy} onJump={onJump} />}
 
         {r.verification_status === "pending" && (
           <Alert tone="warning">
@@ -198,123 +184,182 @@ export function RequestCard({
           </Alert>
         )}
 
-        {closed && (r.response_text || r.refusal_reason) && (
-          <div className="rounded-md border border-border bg-bg-inset p-4">
-            <p className="text-2xs font-semibold tracking-wide text-text-subtle uppercase">
-              Our response{r.responded_at && ` · ${formatDateTime(r.responded_at)}`}
-            </p>
-            <p className="mt-1 text-sm whitespace-pre-wrap">
-              {r.response_text ?? r.refusal_reason}
-            </p>
-            {r.remedy_text && (
-              <p className="mt-2 text-sm">
-                <span className="font-medium">Remedy: </span>
-                {r.remedy_text}
-              </p>
-            )}
-            {r.response_files.length > 0 && (
-              <div className="mt-3">
-                <p className="text-2xs font-semibold tracking-wide text-text-subtle uppercase">
-                  Files released with this response
-                </p>
-                <ul className="mt-1 space-y-1">
-                  {r.response_files.map((f) => (
-                    <li
-                      key={f.file_uuid}
-                      className="flex flex-wrap items-center gap-2 text-sm"
-                    >
-                      <Paperclip className="size-3.5 text-text-subtle" aria-hidden="true" />
-                      <span>{f.file_name}</span>
-                      {r.download_available ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          loading={fetching === f.file_uuid}
-                          onClick={() => downloadFile(f.file_uuid, f.file_name)}
-                        >
-                          <Download className="size-4" />
-                          Download
-                        </Button>
-                      ) : (
-                        <span className="text-xs text-text-subtle">
-                          download window closed
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <div className="mt-3 flex flex-wrap gap-2">
-              {r.download_available && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  loading={downloading}
-                  onClick={download}
-                >
-                  <Download className="size-4" />
-                  Download the file
-                  {r.download_expires_at && (
-                    <span className="text-xs opacity-80">
-                      until {formatDate(r.download_expires_at)}
-                    </span>
-                  )}
-                </Button>
+        {/* A response waiting to be downloaded is the one thing a folded card
+            must not hide: the window closes. */}
+        {!expanded && closed && r.download_available && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-bg-inset px-4 py-3">
+            <p className="text-sm">
+              <span className="font-medium">Our response is ready.</span>{" "}
+              {r.download_expires_at && (
+                <span className="text-text-muted">
+                  Download it by {formatDate(r.download_expires_at)}.
+                </span>
               )}
-              {canDispute && r.request_type !== "grievance" && (
-                <Button variant="secondary" size="sm" onClick={() => setDisputing(true)}>
-                  <MessageSquareWarning className="size-4" />
-                  Dispute this response
-                </Button>
-              )}
-            </div>
-            <p className="mt-3 text-xs text-text-subtle">
-              If you remain unsatisfied you may complain to the Data Protection Board of
-              India. The route to the Board is independent of ours, and the link is in every
-              notice you were served.
             </p>
+            <Button variant="primary" size="sm" loading={downloading} onClick={download}>
+              <Download className="size-4" />
+              Download the file
+            </Button>
           </div>
         )}
 
         {expanded && (
-          <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-            <div>
-              <p className="mb-2 text-2xs font-semibold tracking-wide text-text-subtle uppercase">
-                Clock
+          <div id={`${cardId(r.request_uuid)}-details`} className="space-y-4">
+            {r.consent_uuid && (
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                <ShieldCheck className="size-4 text-accent-text" aria-hidden="true" />
+                <span className="font-medium">About one consent only:</span>
+                <Link
+                  href={`/my-consents?consent=${r.consent_uuid}`}
+                  className="text-accent-text hover:underline"
+                >
+                  {[
+                    r.consent_project,
+                    r.consent_notice_code &&
+                      `${r.consent_notice_code} v${r.consent_notice_version ?? ""}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  {r.consent_at && ` · given ${formatDate(r.consent_at)}`}
+                </Link>
+                <span className="text-text-muted">
+                  {r.consent_purposes && r.consent_purposes.length
+                    ? r.consent_purposes.join(", ")
+                    : "no purpose granted"}
+                </span>
               </p>
-              <ClockColumn clock={r.clock} closed={closed} compact voice="self" />
+            )}
+            <p className="text-sm whitespace-pre-wrap text-text-muted">{r.request_text}</p>
+
+            {about && <AboutBlock request={r} about={about} onJump={onJump} />}
+            {followedBy.length > 0 && (
+              <FollowedBy followedBy={followedBy} onJump={onJump} />
+            )}
+
+            {closed && (r.response_text || r.refusal_reason) && (
+              <div className="rounded-md border border-border bg-bg-inset p-4">
+                <p className="text-2xs font-semibold tracking-wide text-text-subtle uppercase">
+                  Our response{r.responded_at && ` · ${formatDateTime(r.responded_at)}`}
+                </p>
+                <p className="mt-1 text-sm whitespace-pre-wrap">
+                  {r.response_text ?? r.refusal_reason}
+                </p>
+                {r.remedy_text && (
+                  <p className="mt-2 text-sm">
+                    <span className="font-medium">Remedy: </span>
+                    {r.remedy_text}
+                  </p>
+                )}
+                {r.response_files.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-2xs font-semibold tracking-wide text-text-subtle uppercase">
+                      Files released with this response
+                    </p>
+                    <ul className="mt-1 space-y-1">
+                      {r.response_files.map((f) => (
+                        <li
+                          key={f.file_uuid}
+                          className="flex flex-wrap items-center gap-2 text-sm"
+                        >
+                          <Paperclip
+                            className="size-3.5 text-text-subtle"
+                            aria-hidden="true"
+                          />
+                          <span>{f.file_name}</span>
+                          {r.download_available ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              loading={fetching === f.file_uuid}
+                              onClick={() => downloadFile(f.file_uuid, f.file_name)}
+                            >
+                              <Download className="size-4" />
+                              Download
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-text-subtle">
+                              download window closed
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {r.download_available && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      loading={downloading}
+                      onClick={download}
+                    >
+                      <Download className="size-4" />
+                      Download the file
+                      {r.download_expires_at && (
+                        <span className="text-xs opacity-80">
+                          until {formatDate(r.download_expires_at)}
+                        </span>
+                      )}
+                    </Button>
+                  )}
+                  {canDispute && r.request_type !== "grievance" && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setDisputing(true)}
+                    >
+                      <MessageSquareWarning className="size-4" />
+                      Dispute this response
+                    </Button>
+                  )}
+                </div>
+                <p className="mt-3 text-xs text-text-subtle">
+                  If you remain unsatisfied you may complain to the Data Protection Board of
+                  India. The route to the Board is independent of ours, and the link is in
+                  every notice you were served.
+                </p>
+              </div>
+            )}
+
+            <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+              <div>
+                <p className="mb-2 text-2xs font-semibold tracking-wide text-text-subtle uppercase">
+                  Clock
+                </p>
+                <ClockColumn clock={r.clock} closed={closed} compact voice="self" />
+              </div>
+              <div>
+                <p className="mb-2 text-2xs font-semibold tracking-wide text-text-subtle uppercase">
+                  The path
+                </p>
+                <Path request={r} voice="self" />
+              </div>
             </div>
+
             <div>
-              <p className="mb-2 text-2xs font-semibold tracking-wide text-text-subtle uppercase">
-                The path
-              </p>
-              <Path request={r} voice="self" />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setTrailOpen((v) => !v)}
+                aria-expanded={trailOpen}
+              >
+                <History className="size-4" />
+                {trailOpen ? "Hide" : "Show"} what was recorded
+              </Button>
+              {trailOpen && (
+                <div className="mt-2">
+                  <ActivityFeed
+                    entries={trail.data}
+                    isLoading={trail.isLoading}
+                    order="oldest"
+                    emptyTitle="Nothing recorded yet"
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}
-
-        <div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setTrailOpen((v) => !v)}
-            aria-expanded={trailOpen}
-          >
-            <History className="size-4" />
-            {trailOpen ? "Hide" : "Show"} what was recorded
-          </Button>
-          {trailOpen && (
-            <div className="mt-2">
-              <ActivityFeed
-                entries={trail.data}
-                isLoading={trail.isLoading}
-                order="oldest"
-                emptyTitle="Nothing recorded yet"
-              />
-            </div>
-          )}
-        </div>
       </CardBody>
 
       <Dialog open={disputing} onOpenChange={(next) => !next && setDisputing(false)}>

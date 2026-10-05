@@ -154,10 +154,10 @@ test.describe("data principal", () => {
     // The session verified her, so the clock started and the path shows it.
     // A request opens expanded the moment it is made; open it only if it is not.
     await expect(card.getByText(/received/i).first()).toBeVisible();
-    const collapsed = page.getByRole("button", { name: /show progress/i }).first();
+    const collapsed = page.getByRole("button", { name: /show details/i }).first();
     if (
       !(await page
-        .getByRole("button", { name: /hide progress/i })
+        .getByRole("button", { name: /hide details/i })
         .first()
         .isVisible()
         .catch(() => false))
