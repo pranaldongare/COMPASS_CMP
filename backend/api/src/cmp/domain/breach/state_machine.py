@@ -3,8 +3,9 @@
 The duties run in parallel on their own clocks, so the state machine does not
 walk a breach through them - `reported → assessed → notified` would have put
 assessment in front of duties due without delay. It gates one thing: a breach
-closes only when it has been determined one way or the other and every duty
-that applies is done. Reopening is always allowed, with a reason, and recorded.
+closes only when it has been determined one way or the other, every duty
+that applies is done, and no breach ticket is still open (S3-08). Reopening is
+always allowed, with a reason, and recorded.
 
 Pure, like the project and rights machines: a status, and a snapshot of facts.
 """
@@ -28,6 +29,8 @@ class BreachFacts:
     determination: str = "pending"
     #: Duties created and neither done nor not applicable, by label.
     outstanding: tuple[str, ...] = ()
+    #: Breach tickets issued or returned: still owed something (S3-08, BD-17).
+    open_tickets: int = 0
 
 
 def blockers(current: str, target: str, facts: BreachFacts) -> list[str]:
@@ -37,6 +40,9 @@ def blockers(current: str, target: str, facts: BreachFacts) -> list[str]:
         if facts.determination == "pending":
             out.append("Record whether this is a personal data breach before closing it")
         out.extend(f"{label} is outstanding" for label in facts.outstanding)
+        if facts.open_tickets:
+            n = facts.open_tickets
+            out.append(f"{n} breach ticket{'s are' if n != 1 else ' is'} still open")
         return out
     if current == Status.CLOSED and target == Status.OPEN:
         return []

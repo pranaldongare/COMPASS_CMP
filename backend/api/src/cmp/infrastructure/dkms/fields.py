@@ -172,6 +172,18 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
     "breach_affected_revision": {
         "note": DataType.FREE_TEXT,
     },
+    # Breach tickets (S3-08): what a holder is asked, what they say, the thread.
+    "breach_ticket": {
+        "instruction": DataType.FREE_TEXT,
+    },
+    "breach_ticket_event": {
+        "summary": DataType.FREE_TEXT,
+        "reason": DataType.FREE_TEXT,
+    },
+    "breach_ticket_message": {
+        "body": DataType.FREE_TEXT,
+        "evidence_name": DataType.FILE_NAME,
+    },
     # What every affected person is told (S3-03). Sealed with the rest: it
     # repeats the assessment, and a draft may name somebody before it is fixed.
     "breach_notice": {

@@ -7,6 +7,7 @@
  */
 
 import { apiGet, apiPost, apiPut, queryString } from "@/lib/api";
+import { config } from "@/lib/config";
 import type {
   Breach,
   BreachAffected,
@@ -23,7 +24,12 @@ import type {
   BreachScope,
   BreachStatus,
   BreachSummary,
+  BreachTicket,
+  BreachTicketDetail,
+  MyBreachTicket,
+  MyBreachTicketDetail,
   OrgBoardBrief,
+  ReturnOutcome,
   Timestamp,
   Uuid,
 } from "@/types";
@@ -144,3 +150,86 @@ export function getReport(uuid: Uuid): Promise<BreachReport> {
 export function getOrgBoardBrief(uuid: Uuid): Promise<OrgBoardBrief> {
   return apiGet<OrgBoardBrief>(`/breaches/${uuid}/org-board/brief`);
 }
+
+/* -------------------------------------------------- breach tickets (S3-08) */
+
+export interface TicketMessageInput {
+  body: string;
+  evidence: File | null;
+}
+
+function messageForm(input: TicketMessageInput): FormData {
+  const form = new FormData();
+  form.set("body", input.body);
+  if (input.evidence) form.set("evidence", input.evidence);
+  return form;
+}
+
+const tickets = (uuid: Uuid) => `/breaches/${uuid}/tickets`;
+
+export function listBreachTickets(uuid: Uuid): Promise<BreachTicket[]> {
+  return apiGet<BreachTicket[]>(tickets(uuid));
+}
+
+export function assignBreachTicket(
+  uuid: Uuid,
+  body: { user_uuid: Uuid; instruction: string; answer_by?: string | null },
+): Promise<BreachTicketDetail> {
+  return apiPost<BreachTicketDetail>(tickets(uuid), body);
+}
+
+export function getBreachTicket(uuid: Uuid, ticketUuid: Uuid): Promise<BreachTicketDetail> {
+  return apiGet<BreachTicketDetail>(`${tickets(uuid)}/${ticketUuid}`);
+}
+
+export function messageBreachHolder(
+  uuid: Uuid,
+  ticketUuid: Uuid,
+  input: TicketMessageInput,
+): Promise<BreachTicketDetail> {
+  return apiPost<BreachTicketDetail>(`${tickets(uuid)}/${ticketUuid}/messages`, messageForm(input));
+}
+
+/** send_back, close, withdraw or reopen: the path is the move, hyphenated. */
+export function moveBreachTicket(
+  uuid: Uuid,
+  ticketUuid: Uuid,
+  move: "send_back" | "close" | "withdraw" | "reopen",
+  reason?: string,
+): Promise<BreachTicketDetail> {
+  return apiPost<BreachTicketDetail>(
+    `${tickets(uuid)}/${ticketUuid}/${move.replace("_", "-")}`,
+    move === "close" ? {} : { reason },
+  );
+}
+
+/** Where the office downloads a file on a ticket's thread. */
+export const breachTicketFileUrl = (uuid: Uuid, ticketUuid: Uuid, messageUuid: Uuid) =>
+  `${config.apiUrl}${tickets(uuid)}/${ticketUuid}/messages/${messageUuid}/evidence`;
+
+export function myBreachTickets(): Promise<MyBreachTicket[]> {
+  return apiGet<MyBreachTicket[]>("/breach-tickets");
+}
+
+export function myBreachTicket(ticketUuid: Uuid): Promise<MyBreachTicketDetail> {
+  return apiGet<MyBreachTicketDetail>(`/breach-tickets/${ticketUuid}`);
+}
+
+export function messageBreachOffice(ticketUuid: Uuid, input: TicketMessageInput): Promise<MyBreachTicketDetail> {
+  return apiPost<MyBreachTicketDetail>(`/breach-tickets/${ticketUuid}/messages`, messageForm(input));
+}
+
+export function returnBreachTicket(
+  ticketUuid: Uuid,
+  input: { summary: string; outcome: ReturnOutcome; evidence: File | null },
+): Promise<MyBreachTicketDetail> {
+  const form = new FormData();
+  form.set("summary", input.summary);
+  form.set("outcome", input.outcome);
+  if (input.evidence) form.set("evidence", input.evidence);
+  return apiPost<MyBreachTicketDetail>(`/breach-tickets/${ticketUuid}/return`, form);
+}
+
+/** Where a holder downloads a file on their breach ticket's thread. */
+export const myBreachTicketFileUrl = (ticketUuid: Uuid, messageUuid: Uuid) =>
+  `${config.apiUrl}/breach-tickets/${ticketUuid}/messages/${messageUuid}/evidence`;

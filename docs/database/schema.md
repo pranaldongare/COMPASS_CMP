@@ -124,6 +124,14 @@ is a duty kind like the others, created on every incident at logging;
 `trg_breach_org_board_reported_to` refuses a `completed` event on it without
 `reported_to`, which is sealed.
 
+**A breach ticket changes only its read markers, since 0040.**
+`cmp_breach_ticket_read_only` refuses any other change to a `breach_ticket` row
+and any delete; `breach_ticket_once` is one ticket per person per breach.
+`breach_ticket_event` is append-only and its CHECKs tie each kind to what it
+must carry - a return its outcome and summary, a send-back, withdrawal or
+reopening its reason. `breach_ticket_message`, the thread, is append-only like
+`rights_ticket_message`. A ticket's state is folded from its events.
+
 **Who a breach touched is only ever added to, since 0035.** Each
 confirmation is a `breach_affected_revision` with its scopes and counts; each
 person is a `breach_affected` row, once per breach (`breach_affected_once`),

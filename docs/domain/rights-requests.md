@@ -123,6 +123,13 @@ fell short is asked again; a ticket can be **reassigned** to another respondent,
 or **withdrawn**. The last ticket to come back moves the request off
 `awaiting_holders`.
 
+**Breach tickets follow this model** ([breaches.md](breaches.md#breach-tickets),
+ADR 0023): an instruction, a thread with files, a return saying done, partial or
+failed, the office sending back or closing. They differ in four ways: they go to
+internal staff only, by email domain; one person holds one ticket per breach;
+their state is folded from append-only events rather than a status column; and
+only the DPO closes one. They appear on the same **Tickets** page.
+
 ## Erasure scope
 
 For an erasure, the office builds the **scope**: one item per appearance of

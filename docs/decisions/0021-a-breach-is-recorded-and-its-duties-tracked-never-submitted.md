@@ -2,7 +2,8 @@
 
 **Status:** accepted · 2026-09-30. Migration 0034, backlog items S3-01 to S3-04.
 Amended 2026-10-05: an incident is logged first and a breach is recorded on a
-*yes* - see [ADR 0022](0022-an-incident-first-and-a-breach-on-a-yes.md).
+*yes* - see [ADR 0022](0022-an-incident-first-and-a-breach-on-a-yes.md); breach tickets
+and breach-only logins - see [ADR 0023](0023-breach-tickets-and-breach-only-logins.md).
 
 ## Context
 
@@ -121,3 +122,7 @@ issues the `BR-` reference (`breach_recording`, migration 0038). Sending the
 principals' notice waits for that recording. Everything else here stands: the
 duties, their stored clocks, the determination recorded and never computed,
 the evidence never edited, the register hidden, and nothing submitted.
+
+[ADR 0023](0023-breach-tickets-and-breach-only-logins.md) adds breach tickets:
+the DPO asks internal staff to act, on a recorded breach, and a breach does not
+close while one is open (migration 0040; temporary logins, migration 0041).

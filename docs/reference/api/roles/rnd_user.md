@@ -12,6 +12,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `notices`, `processo
 | `asset` | Yes | No | `own` | Own or addressed rows |
 | `audit` | No | No | `none` | Denied |
 | `breach` | No | No | `none` | Denied |
+| `breach_ticket` | Yes | Yes | `own` | Own or addressed rows |
 | `collection` | Yes | No | `own` | Own or addressed rows |
 | `consent` | Yes | No | `own` | Own or addressed rows |
 | `data_source` | Yes | No | `all` | All rows |

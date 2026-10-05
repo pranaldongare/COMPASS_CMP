@@ -293,6 +293,18 @@ _SPECS: dict[str, _Spec] = {
         subject_href="/breach-notices",
         noun="Breach notice",
     ),
+    "breach_ticket": _Spec(
+        # The breach reference and nothing more: the administrator reads this
+        # trail without reaching the register, and a holder reads their bell
+        # without reaching the breach (BD-13).
+        sql="""SELECT t.ticket_id AS id, b.breach_uuid::text AS uuid,
+                      'Breach ticket on ' || coalesce(rec.reference, b.reference) AS label
+               FROM breach_ticket t JOIN breach b ON b.breach_id = t.breach_id
+               LEFT JOIN breach_recording rec ON rec.breach_id = b.breach_id
+               WHERE t.ticket_id = ANY(%s)""",
+        href="/breaches/{uuid}#tickets",
+        noun="Breach ticket",
+    ),
     "restricted_country": _Spec(
         sql="""SELECT country_id AS id, country_uuid::text AS uuid,
                       'Restricted country ' || country_code AS label

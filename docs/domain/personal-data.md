@@ -234,6 +234,9 @@ register is the DPO's alone, hidden from every other role (404).
 
 **`breach`** — `title`, `location_detail` (sealed), `recorded_by`.
 **`breach_recording`** — `recorded_by`: who made the *yes* that recorded it as a breach (S3-06).
+**`breach_ticket`** — `holder_user_id` (a member of staff, who is a data principal too), `assigned_by`, `instruction` (sealed).
+**`breach_ticket_event`** — `summary`, `reason` (sealed), `actor_user_id`.
+**`breach_ticket_message`** — `body`, `evidence_name` (sealed), `author_user_id` (S3-08).
 **`breach_status_history`** — `reason` (sealed), `changed_by`.
 **`breach_determination`** — `reasoning` (sealed), `determined_by`.
 **`breach_assessment`** — nine sealed facts: `nature_extent`,
@@ -334,7 +337,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-189 of 277 operations accept or return personal data. Each table gives the
+201 of 291 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -481,7 +484,7 @@ selected.
 
 ### Personal data breaches — `/breaches/*`
 
-21 operations carry personal data.
+29 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
@@ -505,7 +508,26 @@ selected.
 | POST | `/breaches/{breach_uuid}/obligations/board_report/extension` | DPO every row | — | `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name` |
 | POST | `/breaches/{breach_uuid}/obligations/{duty}/complete` | DPO every row | `reported_to` | `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name` |
 | GET | `/breaches/{breach_uuid}/org-board/brief` | DPO every row | — | `document` |
+| GET | `/breaches/{breach_uuid}/tickets` | DPO every row | — | `actor_name`, `added_by_name`, `assigned_by_name`, `holder_name`, `reason` |
+| POST | `/breaches/{breach_uuid}/tickets` | DPO every row | `instruction`, `user_uuid` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
+| GET | `/breaches/{breach_uuid}/tickets/{ticket_uuid}` | DPO every row | — | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/close` | DPO every row | — | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/messages` | DPO every row | `body`, `evidence` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen` | DPO every row | `reason` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/send-back` | DPO every row | `reason` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw` | DPO every row | `reason` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
 | POST | `/breaches/{breach_uuid}/transition` | DPO every row | `reason` | `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name` |
+
+### Breach tickets a holder answers — `/breach-tickets/*`
+
+4 operations carry personal data.
+
+| Method | Endpoint | Who may call it | Personal data in | Personal data out |
+|---|---|---|---|---|
+| GET | `/breach-tickets` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows | — | `instruction` |
+| GET | `/breach-tickets/{ticket_uuid}` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows | — | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
+| POST | `/breach-tickets/{ticket_uuid}/messages` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows | `body`, `evidence` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
+| POST | `/breach-tickets/{ticket_uuid}/return` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows | `evidence` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
 
 ### Cross-border transfers — `/restricted-countries/*`
 
@@ -673,7 +695,7 @@ selected.
 |---|---|---|---|---|
 | GET | `/dashboard` | any signed-in session, conditionally | — | `reported_to`, `role` |
 
-<!-- 189 of 277 operations carry personal data; 20 of them need no session. -->
+<!-- 201 of 291 operations carry personal data; 20 of them need no session. -->
 
 ## The public surface
 

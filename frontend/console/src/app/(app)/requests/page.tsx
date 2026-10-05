@@ -27,7 +27,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyRecords } from "@/components/ui/graphics";
 import { Button, Mono, Td, Tr } from "@/components/ui/primitives";
 import { REQUEST_TYPE_COPY, RequestStatusBadge, RequestTypeBadge } from "@/features/rights/components/copy";
-import { UnreadBadge } from "@/features/rights/components/thread";
+import { UnreadBadge } from "@/components/data-display/thread";
 import { LogRequestForm } from "@/features/rights/components/log-request-form";
 import { useRequests } from "@/features/rights/queries";
 import { cn, formatDate, formatDateTime } from "@/lib/format";

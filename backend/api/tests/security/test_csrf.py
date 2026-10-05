@@ -146,6 +146,7 @@ class TestProductionStartupGuards:
             # through it rather than in the clear.
             "dkms_enabled": True,
             "blind_index_key": SecretStr("a-real-blind-index-key-of-thirty-two-bytes"),
+            "breach_ticket_email_domains": ("organisation.example",),
             # Stated, not left to the developer's .env: a machine running with
             # the code popup on would otherwise fail this for the right reason.
             "dev_show_codes": False,

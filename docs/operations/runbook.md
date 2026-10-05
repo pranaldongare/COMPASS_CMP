@@ -313,6 +313,22 @@ submission with its real time. A time mistyped at recording cannot be edited -
 the clocks were stored from it; note the correct time on the duty's submission
 and in the next assessment revision.
 
+
+## A breach ticket is not being answered
+
+A ticket past its answer-by shows on the DPO's dashboard and in red on the
+breach's **Tickets** card.
+
+1. **Open it** and read the thread: a question the holder asked may be waiting
+   on you.
+2. **Write on the thread** - the holder is not emailed the words, so tell them
+   in person too if it is urgent. Sending back or reopening a ticket emails them
+   that a ticket is waiting.
+3. **Check it reached them.** The email says only that a ticket is waiting and
+   goes to the address on their account; look in the outbox locally, or ask the
+   holder whether they received it.
+4. **Withdraw it** with a reason if the wrong person was asked, and assign the
+   right one. The breach cannot close while a ticket is issued or returned.
 ## A breach notice did not reach somebody
 
 **Telling the people it touched** on the breach's page shows, per version and

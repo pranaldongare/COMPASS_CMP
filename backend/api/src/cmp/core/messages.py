@@ -72,6 +72,7 @@ class Message(StrEnum):
     OFFICE_NOTE = "office_note"
     # breach
     BREACH_NOTICE = "breach_notice"
+    BREACH_TICKET_WAITING = "breach_ticket_waiting"
 
 
 @dataclass(frozen=True, slots=True)
@@ -852,6 +853,34 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "What happened, what it means and what you can do are in your account: "
             "{portal_url} Questions: {contact}"
         ),
+    ),
+    Junction(
+        key=Message.BREACH_TICKET_WAITING,
+        title="A ticket from the Privacy Office is waiting",
+        description=(
+            "Tells a member of staff that the Privacy Office has a ticket waiting for them in "
+            "the console - when one is assigned, sent back or reopened (S3-08). It never names "
+            "the breach: no reference, no title, no words from it (BD-18). Email only."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("full_name", "The person the ticket is addressed to.", "Asha Rao"),
+            Variable(
+                "console_url",
+                "Their tickets in the console (CONSOLE_BASE_URL).",
+                "https://console.example.org/tickets",
+            ),
+            ORGANISATION,
+        ),
+        email_subject="A ticket from the {organisation} Privacy Office is waiting for you",
+        email_body=(
+            "{full_name}, the {organisation} Privacy Office has a ticket waiting for you in "
+            "the console. Sign in to read it and answer:\n\n{console_url}\n\n"
+            "Please do not reply to this email: what the ticket is about is in the console "
+            "only." + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
     ),
 )
 

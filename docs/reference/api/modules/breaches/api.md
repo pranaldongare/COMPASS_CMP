@@ -1,6 +1,6 @@
 # Breaches API
 
-Generated from `backend/api/openapi.json`. **22 operations.**
+Generated from `backend/api/openapi.json`. **31 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -28,6 +28,15 @@ For each operation the information is deliberately ordered as **API → Validati
 20. [`GET /breaches/{breach_uuid}/board/intimation`](#20_get_breaches_breach_uuid_board_intimation)
 21. [`GET /breaches/{breach_uuid}/board/report`](#21_get_breaches_breach_uuid_board_report)
 22. [`GET /breaches/{breach_uuid}/org-board/brief`](#22_get_breaches_breach_uuid_org_board_brief)
+23. [`GET /breaches/{breach_uuid}/tickets`](#23_get_breaches_breach_uuid_tickets)
+24. [`POST /breaches/{breach_uuid}/tickets`](#24_post_breaches_breach_uuid_tickets)
+25. [`GET /breaches/{breach_uuid}/tickets/{ticket_uuid}`](#25_get_breaches_breach_uuid_tickets_ticket_uuid)
+26. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages`](#26_post_breaches_breach_uuid_tickets_ticket_uuid_messages)
+27. [`GET /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages/{message_uuid}/evidence`](#27_get_breaches_breach_uuid_tickets_ticket_uuid_messages_message_uuid_evidence)
+28. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/send-back`](#28_post_breaches_breach_uuid_tickets_ticket_uuid_send_back)
+29. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/close`](#29_post_breaches_breach_uuid_tickets_ticket_uuid_close)
+30. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw`](#30_post_breaches_breach_uuid_tickets_ticket_uuid_withdraw)
+31. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen`](#31_post_breaches_breach_uuid_tickets_ticket_uuid_reopen)
 
 <a id="1_get_breaches"></a>
 ## 1. `GET /breaches` — Every incident and breach, open first
@@ -2648,7 +2657,792 @@ No request body.
 }
 ```
 
+<a id="23_get_breaches_breach_uuid_tickets"></a>
+## 23. `GET /breaches/{breach_uuid}/tickets` — Every ticket on a breach: holder, state, answer-by, unread, who added whom
+
+### API
+
+- **Operation ID:** `list_tickets_breaches__breach_uuid__tickets_get`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | array of [`BreachTicketOut`](#schema-breachticketout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+[
+  {
+    "ticket_uuid": "00000000-0000-4000-8000-000000000000",
+    "holder_uuid": "00000000-0000-4000-8000-000000000000",
+    "holder_name": "string",
+    "assigned_by_name": "string",
+    "parent_ticket_uuid": "00000000-0000-4000-8000-000000000000",
+    "added_by_name": "string",
+    "state": "string",
+    "answer_by": "2026-09-17",
+    "overdue": true,
+    "created_at": "2026-09-17T12:00:00Z",
+    "unread": 1,
+    "last_activity_at": "2026-09-17T12:00:00Z",
+    "events": [
+      {
+        "event_uuid": "…",
+        "kind": "…",
+        "outcome": "…",
+        "summary": "…",
+        "reason": "…",
+        "occurred_at": "…",
+        "actor_name": "…"
+      }
+    ],
+    "moves": [
+      {
+        "move": "…",
+        "reason_required": "…"
+      }
+    ],
+    "may_write": true
+  }
+]
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="24_post_breaches_breach_uuid_tickets"></a>
+## 24. `POST /breaches/{breach_uuid}/tickets` — Assign a ticket to a member of staff; only on a recorded breach
+
+### API
+
+- **Operation ID:** `assign_ticket_breaches__breach_uuid__tickets_post`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`BreachTicketIn`](#schema-breachticketin)
+
+```json
+{
+  "user_uuid": "00000000-0000-4000-8000-000000000000",
+  "instruction": "string",
+  "answer_by": "2026-09-17"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `201` | Successful Response | `application/json` | [`BreachTicketDetailOut`](#schema-breachticketdetailout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `201` `application/json` response:**
+
+```json
+{
+  "ticket": {
+    "ticket_uuid": "00000000-0000-4000-8000-000000000000",
+    "holder_uuid": "00000000-0000-4000-8000-000000000000",
+    "holder_name": "string",
+    "assigned_by_name": "string",
+    "parent_ticket_uuid": "00000000-0000-4000-8000-000000000000",
+    "added_by_name": "string",
+    "state": "string",
+    "answer_by": "2026-09-17",
+    "overdue": true,
+    "created_at": "2026-09-17T12:00:00Z",
+    "unread": 1,
+    "last_activity_at": "2026-09-17T12:00:00Z",
+    "events": [
+      "…"
+    ],
+    "moves": [
+      "…"
+    ],
+    "may_write": true
+  },
+  "instruction": "string",
+  "messages": [
+    {
+      "message_uuid": "00000000-0000-4000-8000-000000000000",
+      "author_side": "string",
+      "author_name": "…",
+      "kind": "string",
+      "body": "string",
+      "evidence_hash": "…",
+      "evidence_name": "…",
+      "created_at": "2026-09-17T12:00:00Z"
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="25_get_breaches_breach_uuid_tickets_ticket_uuid"></a>
+## 25. `GET /breaches/{breach_uuid}/tickets/{ticket_uuid}` — One ticket, its thread, and the moves the server allows
+
+### API
+
+- **Operation ID:** `get_ticket_breaches__breach_uuid__tickets__ticket_uuid__get`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+Reading it marks the holder's messages read.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `ticket_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachTicketDetailOut`](#schema-breachticketdetailout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "ticket": {
+    "ticket_uuid": "00000000-0000-4000-8000-000000000000",
+    "holder_uuid": "00000000-0000-4000-8000-000000000000",
+    "holder_name": "string",
+    "assigned_by_name": "string",
+    "parent_ticket_uuid": "00000000-0000-4000-8000-000000000000",
+    "added_by_name": "string",
+    "state": "string",
+    "answer_by": "2026-09-17",
+    "overdue": true,
+    "created_at": "2026-09-17T12:00:00Z",
+    "unread": 1,
+    "last_activity_at": "2026-09-17T12:00:00Z",
+    "events": [
+      "…"
+    ],
+    "moves": [
+      "…"
+    ],
+    "may_write": true
+  },
+  "instruction": "string",
+  "messages": [
+    {
+      "message_uuid": "00000000-0000-4000-8000-000000000000",
+      "author_side": "string",
+      "author_name": "…",
+      "kind": "string",
+      "body": "string",
+      "evidence_hash": "…",
+      "evidence_name": "…",
+      "created_at": "2026-09-17T12:00:00Z"
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="26_post_breaches_breach_uuid_tickets_ticket_uuid_messages"></a>
+## 26. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages` — Write to the holder on the ticket, with a file if it helps
+
+### API
+
+- **Operation ID:** `message_holder_breaches__breach_uuid__tickets__ticket_uuid__messages_post`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `ticket_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `multipart/form-data`  
+**Schema:** [`Body_message_holder_breaches__breach_uuid__tickets__ticket_uuid__messages_post`](#schema-body_message_holder_breaches_breach_uuid_tickets_ticket_uuid_messages_post)
+
+```json
+{
+  "body": "string",
+  "evidence": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachTicketDetailOut`](#schema-breachticketdetailout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "ticket": {
+    "ticket_uuid": "00000000-0000-4000-8000-000000000000",
+    "holder_uuid": "00000000-0000-4000-8000-000000000000",
+    "holder_name": "string",
+    "assigned_by_name": "string",
+    "parent_ticket_uuid": "00000000-0000-4000-8000-000000000000",
+    "added_by_name": "string",
+    "state": "string",
+    "answer_by": "2026-09-17",
+    "overdue": true,
+    "created_at": "2026-09-17T12:00:00Z",
+    "unread": 1,
+    "last_activity_at": "2026-09-17T12:00:00Z",
+    "events": [
+      "…"
+    ],
+    "moves": [
+      "…"
+    ],
+    "may_write": true
+  },
+  "instruction": "string",
+  "messages": [
+    {
+      "message_uuid": "00000000-0000-4000-8000-000000000000",
+      "author_side": "string",
+      "author_name": "…",
+      "kind": "string",
+      "body": "string",
+      "evidence_hash": "…",
+      "evidence_name": "…",
+      "created_at": "2026-09-17T12:00:00Z"
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="27_get_breaches_breach_uuid_tickets_ticket_uuid_messages_message_uuid_evidence"></a>
+## 27. `GET /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages/{message_uuid}/evidence` — Download a file attached to a message on the ticket
+
+### API
+
+- **Operation ID:** `ticket_file_breaches__breach_uuid__tickets__ticket_uuid__messages__message_uuid__evidence_get`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `ticket_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `message_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | `object` |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+"string"
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="28_post_breaches_breach_uuid_tickets_ticket_uuid_send_back"></a>
+## 28. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/send-back` — Send a returned ticket back to its holder, saying why
+
+### API
+
+- **Operation ID:** `send_back_ticket_breaches__breach_uuid__tickets__ticket_uuid__send_back_post`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `ticket_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`BreachTicketReasonIn`](#schema-breachticketreasonin)
+
+```json
+{
+  "reason": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachTicketDetailOut`](#schema-breachticketdetailout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "ticket": {
+    "ticket_uuid": "00000000-0000-4000-8000-000000000000",
+    "holder_uuid": "00000000-0000-4000-8000-000000000000",
+    "holder_name": "string",
+    "assigned_by_name": "string",
+    "parent_ticket_uuid": "00000000-0000-4000-8000-000000000000",
+    "added_by_name": "string",
+    "state": "string",
+    "answer_by": "2026-09-17",
+    "overdue": true,
+    "created_at": "2026-09-17T12:00:00Z",
+    "unread": 1,
+    "last_activity_at": "2026-09-17T12:00:00Z",
+    "events": [
+      "…"
+    ],
+    "moves": [
+      "…"
+    ],
+    "may_write": true
+  },
+  "instruction": "string",
+  "messages": [
+    {
+      "message_uuid": "00000000-0000-4000-8000-000000000000",
+      "author_side": "string",
+      "author_name": "…",
+      "kind": "string",
+      "body": "string",
+      "evidence_hash": "…",
+      "evidence_name": "…",
+      "created_at": "2026-09-17T12:00:00Z"
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="29_post_breaches_breach_uuid_tickets_ticket_uuid_close"></a>
+## 29. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/close` — Close a returned ticket: the DPO's alone
+
+### API
+
+- **Operation ID:** `close_ticket_breaches__breach_uuid__tickets__ticket_uuid__close_post`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `ticket_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachTicketDetailOut`](#schema-breachticketdetailout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "ticket": {
+    "ticket_uuid": "00000000-0000-4000-8000-000000000000",
+    "holder_uuid": "00000000-0000-4000-8000-000000000000",
+    "holder_name": "string",
+    "assigned_by_name": "string",
+    "parent_ticket_uuid": "00000000-0000-4000-8000-000000000000",
+    "added_by_name": "string",
+    "state": "string",
+    "answer_by": "2026-09-17",
+    "overdue": true,
+    "created_at": "2026-09-17T12:00:00Z",
+    "unread": 1,
+    "last_activity_at": "2026-09-17T12:00:00Z",
+    "events": [
+      "…"
+    ],
+    "moves": [
+      "…"
+    ],
+    "may_write": true
+  },
+  "instruction": "string",
+  "messages": [
+    {
+      "message_uuid": "00000000-0000-4000-8000-000000000000",
+      "author_side": "string",
+      "author_name": "…",
+      "kind": "string",
+      "body": "string",
+      "evidence_hash": "…",
+      "evidence_name": "…",
+      "created_at": "2026-09-17T12:00:00Z"
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="30_post_breaches_breach_uuid_tickets_ticket_uuid_withdraw"></a>
+## 30. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw` — Withdraw a ticket, saying why
+
+### API
+
+- **Operation ID:** `withdraw_ticket_breaches__breach_uuid__tickets__ticket_uuid__withdraw_post`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `ticket_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`BreachTicketReasonIn`](#schema-breachticketreasonin)
+
+```json
+{
+  "reason": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachTicketDetailOut`](#schema-breachticketdetailout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "ticket": {
+    "ticket_uuid": "00000000-0000-4000-8000-000000000000",
+    "holder_uuid": "00000000-0000-4000-8000-000000000000",
+    "holder_name": "string",
+    "assigned_by_name": "string",
+    "parent_ticket_uuid": "00000000-0000-4000-8000-000000000000",
+    "added_by_name": "string",
+    "state": "string",
+    "answer_by": "2026-09-17",
+    "overdue": true,
+    "created_at": "2026-09-17T12:00:00Z",
+    "unread": 1,
+    "last_activity_at": "2026-09-17T12:00:00Z",
+    "events": [
+      "…"
+    ],
+    "moves": [
+      "…"
+    ],
+    "may_write": true
+  },
+  "instruction": "string",
+  "messages": [
+    {
+      "message_uuid": "00000000-0000-4000-8000-000000000000",
+      "author_side": "string",
+      "author_name": "…",
+      "kind": "string",
+      "body": "string",
+      "evidence_hash": "…",
+      "evidence_name": "…",
+      "created_at": "2026-09-17T12:00:00Z"
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="31_post_breaches_breach_uuid_tickets_ticket_uuid_reopen"></a>
+## 31. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen` — Reopen a closed or withdrawn ticket, saying why
+
+### API
+
+- **Operation ID:** `reopen_ticket_breaches__breach_uuid__tickets__ticket_uuid__reopen_post`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `ticket_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`BreachTicketReasonIn`](#schema-breachticketreasonin)
+
+```json
+{
+  "reason": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachTicketDetailOut`](#schema-breachticketdetailout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "ticket": {
+    "ticket_uuid": "00000000-0000-4000-8000-000000000000",
+    "holder_uuid": "00000000-0000-4000-8000-000000000000",
+    "holder_name": "string",
+    "assigned_by_name": "string",
+    "parent_ticket_uuid": "00000000-0000-4000-8000-000000000000",
+    "added_by_name": "string",
+    "state": "string",
+    "answer_by": "2026-09-17",
+    "overdue": true,
+    "created_at": "2026-09-17T12:00:00Z",
+    "unread": 1,
+    "last_activity_at": "2026-09-17T12:00:00Z",
+    "events": [
+      "…"
+    ],
+    "moves": [
+      "…"
+    ],
+    "may_write": true
+  },
+  "instruction": "string",
+  "messages": [
+    {
+      "message_uuid": "00000000-0000-4000-8000-000000000000",
+      "author_side": "string",
+      "author_name": "…",
+      "kind": "string",
+      "body": "string",
+      "evidence_hash": "…",
+      "evidence_name": "…",
+      "created_at": "2026-09-17T12:00:00Z"
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
 # Referenced schemas
+
+<a id="schema-body_message_holder_breaches_breach_uuid_tickets_ticket_uuid_messages_post"></a>
+#### `Body_message_holder_breaches__breach_uuid__tickets__ticket_uuid__messages_post`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `body` | `string` | Yes | min length: `1`; max length: `20000` | — |
+| `evidence` | `string` or `null` | No | — | Optional file, max 25 MB |
 
 <a id="schema-breachaffectedin"></a>
 #### `BreachAffectedIn`
@@ -2857,6 +3651,31 @@ Rule 7(2)(b), all six items, drafted from the register.
 | `missing` | array of `string` | Yes | — | — |
 | `duty` | [`BreachDutyOut`](#schema-breachdutyout) or `null` | Yes | — | — |
 | `duties` | array of [`BreachDutyOut`](#schema-breachdutyout) | Yes | — | — |
+
+<a id="schema-breachticketdetailout"></a>
+#### `BreachTicketDetailOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `ticket` | [`BreachTicketOut`](#schema-breachticketout) | Yes | — | — |
+| `instruction` | `string` | Yes | — | — |
+| `messages` | array of [`BreachTicketMessageOut`](#schema-breachticketmessageout) | Yes | — | — |
+
+<a id="schema-breachticketin"></a>
+#### `BreachTicketIn`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `user_uuid` | `string` | Yes | format: `uuid` | — |
+| `instruction` | `string` | Yes | min length: `1`; max length: `20000` | — |
+| `answer_by` | `string` or `null` | No | format: `date` | — |
+
+<a id="schema-breachticketreasonin"></a>
+#### `BreachTicketReasonIn`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `reason` | `string` | Yes | min length: `1`; max length: `8000` | — |
 
 <a id="schema-breachtransitionin"></a>
 #### `BreachTransitionIn`
@@ -3135,6 +3954,43 @@ Rule 7(2)(b)(vi). Present whether or not anything was sent.
 | `notified` | `integer` | Yes | — | — |
 | `versions` | array of [`BreachNoticeVersionCountOut`](#schema-breachnoticeversioncountout) | Yes | — | — |
 
+<a id="schema-breachticketout"></a>
+#### `BreachTicketOut`
+
+A breach ticket as the office reads it.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `ticket_uuid` | `string` | Yes | format: `uuid` | — |
+| `holder_uuid` | `string` | Yes | format: `uuid` | — |
+| `holder_name` | `string` or `null` | Yes | — | — |
+| `assigned_by_name` | `string` or `null` | Yes | — | — |
+| `parent_ticket_uuid` | `string` or `null` | Yes | format: `uuid` | — |
+| `added_by_name` | `string` or `null` | Yes | — | — |
+| `state` | `string` | Yes | — | — |
+| `answer_by` | `string` or `null` | Yes | format: `date` | — |
+| `overdue` | `boolean` | Yes | — | — |
+| `created_at` | `string` | Yes | format: `date-time` | — |
+| `unread` | `integer` | Yes | — | — |
+| `last_activity_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `events` | array of [`BreachTicketEventOut`](#schema-breachticketeventout) | Yes | — | — |
+| `moves` | array of [`BreachTicketMoveOut`](#schema-breachticketmoveout) | Yes | — | — |
+| `may_write` | `boolean` | Yes | — | — |
+
+<a id="schema-breachticketmessageout"></a>
+#### `BreachTicketMessageOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `message_uuid` | `string` | Yes | format: `uuid` | — |
+| `author_side` | `string` | Yes | — | — |
+| `author_name` | `string` or `null` | Yes | — | — |
+| `kind` | `string` | Yes | — | — |
+| `body` | `string` | Yes | — | — |
+| `evidence_hash` | `string` or `null` | Yes | — | — |
+| `evidence_name` | `string` or `null` | Yes | — | — |
+| `created_at` | `string` | Yes | format: `date-time` | — |
+
 <a id="schema-validationerror"></a>
 #### `ValidationError`
 
@@ -3225,6 +4081,27 @@ A duty as the brief carries it: its clock, and nobody's name.
 | `version` | `integer` | Yes | — | — |
 | `approved_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `channels` | array of [`BreachChannelCountOut`](#schema-breachchannelcountout) | Yes | — | — |
+
+<a id="schema-breachticketeventout"></a>
+#### `BreachTicketEventOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `event_uuid` | `string` | Yes | format: `uuid` | — |
+| `kind` | `string` | Yes | — | — |
+| `outcome` | `string` or `null` | Yes | — | — |
+| `summary` | `string` or `null` | Yes | — | — |
+| `reason` | `string` or `null` | Yes | — | — |
+| `occurred_at` | `string` | Yes | format: `date-time` | — |
+| `actor_name` | `string` or `null` | Yes | — | — |
+
+<a id="schema-breachticketmoveout"></a>
+#### `BreachTicketMoveOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `move` | `string` | Yes | — | — |
+| `reason_required` | `boolean` | Yes | — | — |
 
 <a id="schema-breachchannelcountout"></a>
 #### `BreachChannelCountOut`

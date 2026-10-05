@@ -50,6 +50,9 @@ COLUMNS: list[tuple[str, list[str]]] = [
     # What every affected person is told, and whether it reached her (S3-03).
     ("breach_notice", ["what_happened", "consequences", "measures", "protective_steps", "contact"]),
     ("breach_notice_delivery", ["auth_user_id"]),
+    ("breach_ticket", ["holder_user_id", "instruction"]),
+    ("breach_ticket_event", ["summary", "reason"]),
+    ("breach_ticket_message", ["body", "evidence_name"]),
     ("consent_artefact", ["ip_address", "auth_user_id"]),
     ("consent_purpose_grant", ["granted"]),
     ("consent_link", ["token", "token_sealed"]),

@@ -74,6 +74,10 @@ LegalHoldWriter = Annotated[Principal, Depends(RequireResource("legal_hold", wri
 #: The breach register. Hidden: any other role is answered 404, not 403.
 BreachReader = Annotated[Principal, Depends(RequireResource("breach", hidden=True))]
 BreachWriter = Annotated[Principal, Depends(RequireResource("breach", write=True, hidden=True))]
+#: A breach ticket addressed to me (S3-08). Not hidden: the resource is the
+#: holder's own ticket, and a ticket that is not theirs is 404 by its WHERE.
+BreachTicketReader = Annotated[Principal, Depends(RequireResource("breach_ticket"))]
+BreachTicketWriter = Annotated[Principal, Depends(RequireResource("breach_ticket", write=True))]
 TransferListReader = Annotated[Principal, Depends(RequireResource("restricted_country"))]
 TransferListWriter = Annotated[
     Principal, Depends(RequireResource("restricted_country", write=True))

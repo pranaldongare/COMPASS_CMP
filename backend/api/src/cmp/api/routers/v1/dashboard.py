@@ -25,6 +25,7 @@ from cmp.db.repositories import projects as project_repo
 from cmp.db.repositories import rights as rights_repo
 from cmp.db.repositories import users as user_repo
 from cmp.domain.breach import service as breach_service
+from cmp.domain.breach import tickets as breach_tickets
 from cmp.schemas.common import Acknowledged, Out
 
 router = APIRouter(tags=["dashboard"])
@@ -98,6 +99,20 @@ _ATTENTION: dict[str, list[dict[str, Any]]] = {
             "count": "breach_duties_outstanding",
             "label": "Breach duties outstanding",
             "severity": "warning",
+            "href": "/breaches",
+        },
+        # Breach tickets (S3-08): a holder has answered and waits on the
+        # office, or has not answered by the date asked.
+        {
+            "count": "breach_tickets_returned",
+            "label": "Breach tickets returned",
+            "severity": "warning",
+            "href": "/breaches",
+        },
+        {
+            "count": "breach_tickets_overdue",
+            "label": "Breach tickets past their answer-by",
+            "severity": "critical",
             "href": "/breaches",
         },
         {
@@ -320,6 +335,28 @@ async def _tickets_for_me(conn: Any, user_id: int) -> tuple[int, list[dict[str, 
         }
         for r in rows
     ]
+    # Breach tickets addressed to me (S3-08): the reference and nothing else
+    # about the breach (BD-13). Open ones only: issued, or returned and waiting.
+    for t in await breach_tickets.mine(conn, user_id=user_id):
+        if t["state"] not in ("issued", "returned"):
+            continue
+        answer_by = t["answer_by"]
+        items.append(
+            {
+                "reference": t["breach_reference"],
+                "subject_name": "Breach ticket",
+                "action": (
+                    "Answer the Privacy Office's breach ticket"
+                    if t["state"] == "issued"
+                    else "Returned - waiting on the Privacy Office"
+                )
+                + (f" · {int(t['unread'])} new" if int(t["unread"]) else ""),
+                "due_at": answer_by.isoformat() if answer_by else None,
+                "overdue": bool(t["state"] == "issued" and answer_by and answer_by < _today()),
+                "ticket": True,
+                "href": f"/tickets?breach_ticket={t['ticket_uuid']}",
+            }
+        )
     return len(items), items
 
 
@@ -524,6 +561,7 @@ async def _dpo(conn: Any) -> dict[str, Any]:
     )
     breaches = await breach_service.register(conn, status="open")
     duties = [d for b in breaches for d in b["obligations"] if d["state"] == "outstanding"]
+    ticket_counts = await breach_tickets.dashboard_counts(conn)
     return {
         "role": "dpo",
         "counts": {
@@ -536,6 +574,7 @@ async def _dpo(conn: Any) -> dict[str, Any]:
             "breach_duties_late": sum(
                 1 for d in duties if d["clock"]["overdue"] or d["clock"]["past_target"]
             ),
+            **ticket_counts,
         },
         "breaches": breaches,
         # Most urgent first: work already late, then the statutory clock, then
@@ -712,9 +751,19 @@ async def notifications(
                 if principal.role is Role.DPO
                 else []
             )
+            # Breach tickets (S3-08): the same two halves.
+            held = await audit_repo.breach_ticket_events_for_holder(
+                conn, principal.user_id, limit=limit
+            )
+            answered = (
+                await audit_repo.breach_ticket_events_for_office(conn, limit=limit)
+                if principal.role is Role.DPO
+                else []
+            )
             seen: set[str] = set()
             merged: list[dict[str, Any]] = []
-            for r in sorted([*rows, *mine, *office], key=lambda r: r["occurred_at"], reverse=True):
+            everything = [*rows, *mine, *office, *held, *answered]
+            for r in sorted(everything, key=lambda r: r["occurred_at"], reverse=True):
                 if str(r["log_uuid"]) in seen:
                     continue
                 seen.add(str(r["log_uuid"]))
@@ -739,6 +788,11 @@ async def notifications(
             for r in rows:
                 if r.get("holder_uuid"):
                     r["entity_href"] = f"/tickets?ticket={r['holder_uuid']}"
+        # A breach ticket's holder - the DPO included, when one is addressed to
+        # them - opens their ticket, never the register (BD-13).
+        for r in rows:
+            if r.get("breach_ticket_uuid"):
+                r["entity_href"] = f"/tickets?breach_ticket={r['breach_ticket_uuid']}"
     return {"items": rows, "next_cursor": None, "total": len(rows)}
 
 

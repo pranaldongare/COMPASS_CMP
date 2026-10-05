@@ -12,6 +12,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `approvals`, `notice
 | `asset` | Yes | No | `all` | All rows |
 | `audit` | Yes | No | `all` | All rows |
 | `breach` | Yes | Yes | `all` | All rows |
+| `breach_ticket` | Yes | Yes | `own` | Own or addressed rows |
 | `collection` | Yes | No | `all` | All rows |
 | `consent` | Yes | No | `all` | All rows |
 | `data_source` | Yes | Yes | `all` | All rows |

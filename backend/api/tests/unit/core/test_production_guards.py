@@ -26,6 +26,7 @@ PRODUCTION: dict[str, Any] = {
     "sms_http_url": "https://sms-gateway.example.org/send",
     "dkms_enabled": True,
     "blind_index_key": "a-real-blind-index-key-of-thirty-two-bytes",
+    "breach_ticket_email_domains": ("organisation.example",),
 }
 
 
@@ -85,3 +86,19 @@ class TestOutsideProduction:
             email_transport="console",
         )
         assert settings.sms_transport == "console"
+
+
+class TestBreachTicketDomainsInProduction:
+    """ "Internal" is only as good as the list (BD-12, ADR 0023)."""
+
+    def test_an_empty_list_is_refused(self) -> None:
+        with pytest.raises(ValueError, match="BREACH_TICKET_EMAIL_DOMAINS"):
+            _settings(breach_ticket_email_domains=())
+
+    def test_the_development_domain_alone_is_refused(self) -> None:
+        with pytest.raises(ValueError, match="BREACH_TICKET_EMAIL_DOMAINS"):
+            _settings(breach_ticket_email_domains=("cmp.local",))
+
+    def test_a_comma_separated_value_is_read_as_a_list(self) -> None:
+        settings = _settings(breach_ticket_email_domains="organisation.example, lab.example")
+        assert settings.breach_ticket_email_domains == ("organisation.example", "lab.example")

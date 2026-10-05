@@ -12,6 +12,7 @@ messages complete.
 
 from cmp.tasks.notifications.batch import send_office_note
 from cmp.tasks.notifications.breach import send_breach_notice
+from cmp.tasks.notifications.breach_tickets import send_breach_ticket_waiting
 from cmp.tasks.notifications.consent import send_consent_receipt
 from cmp.tasks.notifications.rights import (
     send_holder_instruction,
@@ -34,6 +35,7 @@ from cmp.tasks.notifications.withdrawal import send_withdrawal_confirmation
 # lost quietly. `tests/unit/tasks/test_registry.py` checks the roster.
 __all__ = [
     "send_breach_notice",
+    "send_breach_ticket_waiting",
     "send_consent_receipt",
     "send_contact_added_for_you",
     "send_holder_instruction",

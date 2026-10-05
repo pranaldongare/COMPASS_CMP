@@ -57,6 +57,8 @@ import type {
   BreachAffected,
   BreachNotices,
   BreachSummary,
+  BreachTicket,
+  MyBreachTicket,
   CollectionListRow,
   ConsentListRow,
   ConsentRow,
@@ -182,6 +184,8 @@ export type _Breach = Covers<"Breach", Schemas["BreachOut"], Breach>;
 export type _BreachSummary = Covers<"BreachSummary", Schemas["BreachSummaryOut"], BreachSummary>;
 export type _BreachAffected = Covers<"BreachAffected", Schemas["BreachAffectedOut"], BreachAffected>;
 export type _BreachNotices = Covers<"BreachNotices", Schemas["BreachNoticesOut"], BreachNotices>;
+export type _BreachTicket = Covers<"BreachTicket", Schemas["BreachTicketOut"], BreachTicket>;
+export type _MyBreachTicket = Covers<"MyBreachTicket", Schemas["MyBreachTicketOut"], MyBreachTicket>;
 
 /**
  * The check itself.
@@ -214,6 +218,8 @@ const _contractHolds: {
   BreachSummary: _BreachSummary;
   BreachAffected: _BreachAffected;
   BreachNotices: _BreachNotices;
+  BreachTicket: _BreachTicket;
+  MyBreachTicket: _MyBreachTicket;
 } = {
   Me: true,
   MeProfile: true,
@@ -239,6 +245,8 @@ const _contractHolds: {
   BreachSummary: true,
   BreachAffected: true,
   BreachNotices: true,
+  BreachTicket: true,
+  MyBreachTicket: true,
 };
 
 void _contractHolds;

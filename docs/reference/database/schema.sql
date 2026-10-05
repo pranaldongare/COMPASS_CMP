@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict hhI8yqZLKi8JQ0XirPaIiPLsxNmrFcYHI5EMDqQdCtCuaxEF5GdWJLsEcwPMYOJ
+\restrict hbIvSuVESX3zC9y1H0RXBfLcoILTCz4NZI1tg3BiQORft7hZ5xsgAYZTB2yQQDw
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -712,6 +712,34 @@ BEGIN
      OR NEW.recorded_by IS DISTINCT FROM OLD.recorded_by
      OR NEW.recorded_at IS DISTINCT FROM OLD.recorded_at THEN
     RAISE EXCEPTION 'only the status of a breach may change' USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: cmp_breach_ticket_read_only(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_breach_ticket_read_only() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    RAISE EXCEPTION 'breach tickets are never deleted' USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF NEW.ticket_id IS DISTINCT FROM OLD.ticket_id
+     OR NEW.ticket_uuid IS DISTINCT FROM OLD.ticket_uuid
+     OR NEW.breach_id IS DISTINCT FROM OLD.breach_id
+     OR NEW.holder_user_id IS DISTINCT FROM OLD.holder_user_id
+     OR NEW.assigned_by IS DISTINCT FROM OLD.assigned_by
+     OR NEW.parent_ticket_id IS DISTINCT FROM OLD.parent_ticket_id
+     OR NEW.instruction IS DISTINCT FROM OLD.instruction
+     OR NEW.answer_by IS DISTINCT FROM OLD.answer_by
+     OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
+    RAISE EXCEPTION 'only the read markers of a breach ticket may change'
+      USING ERRCODE = 'restrict_violation';
   END IF;
   RETURN NEW;
 END;
@@ -1955,6 +1983,176 @@ CREATE SEQUENCE public.breach_status_history_history_id_seq
 --
 
 ALTER SEQUENCE public.breach_status_history_history_id_seq OWNED BY public.breach_status_history.history_id;
+
+
+--
+-- Name: breach_ticket; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_ticket (
+    ticket_id integer NOT NULL,
+    ticket_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    breach_id integer NOT NULL,
+    holder_user_id integer NOT NULL,
+    assigned_by integer NOT NULL,
+    parent_ticket_id integer,
+    instruction text NOT NULL,
+    answer_by date,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    office_read_at timestamp with time zone,
+    holder_read_at timestamp with time zone
+);
+
+
+--
+-- Name: TABLE breach_ticket; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.breach_ticket IS 'A breach ticket: one person asked to act on one breach (S3-08, ADR 0023). Only the read markers change';
+
+
+--
+-- Name: COLUMN breach_ticket.instruction; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_ticket.instruction IS 'What the ticket opened with: the DPO''s instruction, or the adding colleague''s note. Sealed (FREE_TEXT)';
+
+
+--
+-- Name: COLUMN breach_ticket.answer_by; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_ticket.answer_by IS 'Optional date the holder is asked to answer by (BD-20). Shown to both sides; counted on the DPO''s dashboard';
+
+
+--
+-- Name: breach_ticket_event; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_ticket_event (
+    event_id integer NOT NULL,
+    event_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    ticket_id integer NOT NULL,
+    kind character varying(12) NOT NULL,
+    outcome character varying(8),
+    summary text,
+    reason text,
+    actor_user_id integer NOT NULL,
+    occurred_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT breach_ticket_event_kind CHECK (((kind)::text = ANY ((ARRAY['returned'::character varying, 'sent_back'::character varying, 'closed'::character varying, 'withdrawn'::character varying, 'reopened'::character varying])::text[]))),
+    CONSTRAINT breach_ticket_event_outcome CHECK (((((kind)::text = 'returned'::text) = (outcome IS NOT NULL)) AND ((outcome IS NULL) OR ((outcome)::text = ANY ((ARRAY['done'::character varying, 'partial'::character varying, 'failed'::character varying])::text[]))))),
+    CONSTRAINT breach_ticket_event_reason CHECK ((((kind)::text <> ALL ((ARRAY['sent_back'::character varying, 'withdrawn'::character varying, 'reopened'::character varying])::text[])) OR (reason IS NOT NULL))),
+    CONSTRAINT breach_ticket_event_summary CHECK ((((kind)::text <> 'returned'::text) OR (summary IS NOT NULL)))
+);
+
+
+--
+-- Name: TABLE breach_ticket_event; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.breach_ticket_event IS 'What happened to a breach ticket after it was assigned. Append-only; its state is read by folding these';
+
+
+--
+-- Name: COLUMN breach_ticket_event.summary; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_ticket_event.summary IS 'The holder''s account of what was done, with a return. Sealed (FREE_TEXT)';
+
+
+--
+-- Name: COLUMN breach_ticket_event.reason; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_ticket_event.reason IS 'Why the DPO sent it back, withdrew or reopened it. Sealed (FREE_TEXT)';
+
+
+--
+-- Name: breach_ticket_event_event_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_ticket_event_event_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_ticket_event_event_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_ticket_event_event_id_seq OWNED BY public.breach_ticket_event.event_id;
+
+
+--
+-- Name: breach_ticket_message; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_ticket_message (
+    message_id integer NOT NULL,
+    message_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    ticket_id integer NOT NULL,
+    author_user_id integer,
+    author_side character varying(10) NOT NULL,
+    kind character varying(12) DEFAULT 'message'::character varying NOT NULL,
+    body text NOT NULL,
+    evidence_ref text,
+    evidence_hash text,
+    evidence_name text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT breach_ticket_message_kind CHECK (((kind)::text = ANY ((ARRAY['instruction'::character varying, 'message'::character varying, 'return'::character varying, 'status'::character varying])::text[]))),
+    CONSTRAINT breach_ticket_message_side CHECK (((author_side)::text = ANY ((ARRAY['office'::character varying, 'holder'::character varying, 'system'::character varying])::text[])))
+);
+
+
+--
+-- Name: TABLE breach_ticket_message; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.breach_ticket_message IS 'A breach ticket''s thread. Append-only by trigger and grant; body and evidence_name sealed';
+
+
+--
+-- Name: breach_ticket_message_message_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_ticket_message_message_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_ticket_message_message_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_ticket_message_message_id_seq OWNED BY public.breach_ticket_message.message_id;
+
+
+--
+-- Name: breach_ticket_ticket_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_ticket_ticket_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_ticket_ticket_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_ticket_ticket_id_seq OWNED BY public.breach_ticket.ticket_id;
 
 
 --
@@ -3643,6 +3841,27 @@ ALTER TABLE ONLY public.breach_status_history ALTER COLUMN history_id SET DEFAUL
 
 
 --
+-- Name: breach_ticket ticket_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket ALTER COLUMN ticket_id SET DEFAULT nextval('public.breach_ticket_ticket_id_seq'::regclass);
+
+
+--
+-- Name: breach_ticket_event event_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket_event ALTER COLUMN event_id SET DEFAULT nextval('public.breach_ticket_event_event_id_seq'::regclass);
+
+
+--
+-- Name: breach_ticket_message message_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket_message ALTER COLUMN message_id SET DEFAULT nextval('public.breach_ticket_message_message_id_seq'::regclass);
+
+
+--
 -- Name: collection collection_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4152,6 +4371,62 @@ ALTER TABLE ONLY public.breach
 
 ALTER TABLE ONLY public.breach_status_history
     ADD CONSTRAINT breach_status_history_pkey PRIMARY KEY (history_id);
+
+
+--
+-- Name: breach_ticket_event breach_ticket_event_event_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket_event
+    ADD CONSTRAINT breach_ticket_event_event_uuid_key UNIQUE (event_uuid);
+
+
+--
+-- Name: breach_ticket_event breach_ticket_event_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket_event
+    ADD CONSTRAINT breach_ticket_event_pkey PRIMARY KEY (event_id);
+
+
+--
+-- Name: breach_ticket_message breach_ticket_message_message_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket_message
+    ADD CONSTRAINT breach_ticket_message_message_uuid_key UNIQUE (message_uuid);
+
+
+--
+-- Name: breach_ticket_message breach_ticket_message_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket_message
+    ADD CONSTRAINT breach_ticket_message_pkey PRIMARY KEY (message_id);
+
+
+--
+-- Name: breach_ticket breach_ticket_once; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket
+    ADD CONSTRAINT breach_ticket_once UNIQUE (breach_id, holder_user_id);
+
+
+--
+-- Name: breach_ticket breach_ticket_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket
+    ADD CONSTRAINT breach_ticket_pkey PRIMARY KEY (ticket_id);
+
+
+--
+-- Name: breach_ticket breach_ticket_ticket_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket
+    ADD CONSTRAINT breach_ticket_ticket_uuid_key UNIQUE (ticket_uuid);
 
 
 --
@@ -4906,6 +5181,27 @@ CREATE INDEX idx_breach_status_history ON public.breach_status_history USING btr
 
 
 --
+-- Name: idx_breach_ticket_event; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_breach_ticket_event ON public.breach_ticket_event USING btree (ticket_id, event_id);
+
+
+--
+-- Name: idx_breach_ticket_holder; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_breach_ticket_holder ON public.breach_ticket USING btree (holder_user_id);
+
+
+--
+-- Name: idx_breach_ticket_message; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_breach_ticket_message ON public.breach_ticket_message USING btree (ticket_id, message_id);
+
+
+--
 -- Name: idx_collection_batch; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5438,6 +5734,27 @@ CREATE TRIGGER trg_breach_status_only BEFORE DELETE OR UPDATE ON public.breach F
 
 
 --
+-- Name: breach_ticket_event trg_breach_ticket_event_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_ticket_event_append_only BEFORE DELETE OR UPDATE ON public.breach_ticket_event FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: breach_ticket_message trg_breach_ticket_message_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_ticket_message_append_only BEFORE DELETE OR UPDATE ON public.breach_ticket_message FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: breach_ticket trg_breach_ticket_read_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_ticket_read_only BEFORE DELETE OR UPDATE ON public.breach_ticket FOR EACH ROW EXECUTE FUNCTION public.cmp_breach_ticket_read_only();
+
+
+--
 -- Name: consent_artefact trg_consent_append_only; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -5873,6 +6190,70 @@ ALTER TABLE ONLY public.breach_status_history
 
 ALTER TABLE ONLY public.breach_status_history
     ADD CONSTRAINT breach_status_history_changed_by_fkey FOREIGN KEY (changed_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_ticket breach_ticket_assigned_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket
+    ADD CONSTRAINT breach_ticket_assigned_by_fkey FOREIGN KEY (assigned_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_ticket breach_ticket_breach_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket
+    ADD CONSTRAINT breach_ticket_breach_id_fkey FOREIGN KEY (breach_id) REFERENCES public.breach(breach_id);
+
+
+--
+-- Name: breach_ticket_event breach_ticket_event_actor_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket_event
+    ADD CONSTRAINT breach_ticket_event_actor_user_id_fkey FOREIGN KEY (actor_user_id) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_ticket_event breach_ticket_event_ticket_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket_event
+    ADD CONSTRAINT breach_ticket_event_ticket_id_fkey FOREIGN KEY (ticket_id) REFERENCES public.breach_ticket(ticket_id);
+
+
+--
+-- Name: breach_ticket breach_ticket_holder_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket
+    ADD CONSTRAINT breach_ticket_holder_user_id_fkey FOREIGN KEY (holder_user_id) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_ticket_message breach_ticket_message_author_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket_message
+    ADD CONSTRAINT breach_ticket_message_author_user_id_fkey FOREIGN KEY (author_user_id) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_ticket_message breach_ticket_message_ticket_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket_message
+    ADD CONSTRAINT breach_ticket_message_ticket_id_fkey FOREIGN KEY (ticket_id) REFERENCES public.breach_ticket(ticket_id);
+
+
+--
+-- Name: breach_ticket breach_ticket_parent_ticket_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_ticket
+    ADD CONSTRAINT breach_ticket_parent_ticket_id_fkey FOREIGN KEY (parent_ticket_id) REFERENCES public.breach_ticket(ticket_id);
 
 
 --
@@ -6663,5 +7044,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict hhI8yqZLKi8JQ0XirPaIiPLsxNmrFcYHI5EMDqQdCtCuaxEF5GdWJLsEcwPMYOJ
+\unrestrict hbIvSuVESX3zC9y1H0RXBfLcoILTCz4NZI1tg3BiQORft7hZ5xsgAYZTB2yQQDw
 

@@ -465,9 +465,42 @@ export const SECTIONS: HelpSection[] = [
     ],
   },
   {
+    id: "breaches",
+    title: "Incidents and personal data breaches",
+    summary:
+      "From an incident's first minutes to closing it: validation, the duties and their clocks, the notices, the tickets.",
+    roles: ["dpo"],
+    blocks: [
+      {
+        kind: "p",
+        text: "[[Breaches]] is the Privacy Office's alone; every other role is told it is not there. The platform logs, records, drafts and tracks every clock. It never reports to the organisation's board, the Data Protection Board or CERT-In: a person does, through their own channel, and you record it.",
+      },
+      {
+        kind: "steps",
+        title: "From incident to close",
+        items: [
+          "[[Log an incident]] with the time it was [[First noticed]] - not now. It gets an INC reference, and the [[Organisation's board]] duty starts: thirty minutes from first noticed.",
+          "Tell the board now: [[Brief for the organisation's board]] drafts what to say and prints. Then [[Record the report]] on the duty, with when and to whom.",
+          "If it may be a reportable cyber incident, [[Mark reportable to CERT-In]]: six hours from first noticed.",
+          "Record the [[Validation]]: is it a personal data breach under s.2(u)? The first yes records it with a BR reference and starts the Board and principals duties. No sets them aside; the reasoning is kept.",
+          "Derive [[Who it touched]], keep the assessment current, and draft the notice. [[Send version 1]] waits until the breach is recorded.",
+          "Ask the people who must act: [[Assign a ticket]] to a member of staff, with what you need and an optional [[Answer by]]. Read their answers on the ticket; [[Send back]] or [[Close the ticket]] once it is returned.",
+          "Draft [[Documents for the Board]], submit through the Board's own channel, and [[Record submission]] on each duty with the reference returned.",
+          "Close it once validated, every duty is done or not applicable, and no ticket is open. The page lists what is in the way.",
+        ],
+      },
+      {
+        kind: "note",
+        title: "What a ticket holder sees",
+        text: "The breach reference, your instruction, the thread and their ticket's state - nothing else from the register. Their email says only that a ticket from the Privacy Office is waiting; it names no breach.",
+      },
+    ],
+  },
+  {
     id: "tickets",
     title: "My tasks",
-    summary: "Answering the Privacy Office when a request needs your team's records.",
+    summary:
+      "Answering the Privacy Office when a rights request needs your team's records, or a breach needs you to act.",
     blocks: [
       {
         kind: "steps",
@@ -476,6 +509,15 @@ export const SECTIONS: HelpSection[] = [
           "Click [[Respond]] on a ticket. It shows what the platform already knows and the messages so far.",
           "Ask a question or say what you hold in [[Message]], attach a file if needed, and [[Send]].",
           "When your work is done, tick [[This is my return - close the ticket with it]] and click [[Return the ticket]].",
+        ],
+      },
+      {
+        kind: "list",
+        title: "Breach tickets",
+        items: [
+          "A breach ticket is the Privacy Office asking for your help with a personal data breach. It shows the breach reference, what you are asked and the date to answer by, if there is one - nothing else about the breach.",
+          "Answer the same way: write on the thread, attach a file, and when you are done choose what was done and tick [[This is my return]].",
+          "Only the Privacy Office closes a breach ticket. They may [[Send back]] a return with a question; it comes back to you, and you are emailed that a ticket is waiting.",
         ],
       },
     ],

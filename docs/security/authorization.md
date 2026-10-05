@@ -23,7 +23,7 @@ A `Scope`, which a repository turns into a WHERE predicate.
 |---|---|
 | `ALL` | every row |
 | `SCOPED` | rows assigned to them — for a collection owner, the projects and sites they own, plus a colleague's for a period of cover; for the administrator on `rights_request`, escalated grievances only |
-| `OWN` | rows they created, or that are about them — for `ticket`, every staff role, since a respondent answers only the tickets addressed to them |
+| `OWN` | rows they created, or that are about them — for `ticket` and `breach_ticket`, every staff role, since a respondent or a breach ticket's holder answers only the tickets addressed to them |
 | `NONE` | no rows |
 
 **Never a filter applied after the fetch.** A row already in the response has
@@ -45,6 +45,9 @@ them. For `breach` that answer would itself say something: a 403 on
 `RequireResource("breach", hidden=True)`, which raises `NotFound` instead, and
 every other role reads the register, a real breach and a made-up uuid exactly
 alike. `tests/security/test_breach_is_hidden.py` and the HTTP suite hold it.
+A breach ticket's holder (S3-08) is no exception: `breach_ticket` gives them
+their own ticket on `/breach-tickets`, scoped OWN in the `WHERE` clause, and
+the register still answers them 404.
 
 ## Where it lives
 

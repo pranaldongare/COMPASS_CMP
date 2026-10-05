@@ -87,6 +87,7 @@ def test_the_setting_is_refused_outside_local_development(environment: str) -> N
             DKMS_ENABLED=True,
             BLIND_INDEX_KEY="y" * 40,
             CORS_ORIGINS="https://console.example.org",
+            BREACH_TICKET_EMAIL_DOMAINS="organisation.example",
         )
 
 

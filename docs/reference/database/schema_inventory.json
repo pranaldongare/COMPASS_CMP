@@ -1,6 +1,6 @@
 {
-  "commit": "4bddceb3389a8cfb6a23b8ea0e2f9e3ff349237e",
-  "migration_head": "0039",
+  "commit": "b0adf6ef538aca743f5f1df1ba07ba05d9dcf00a",
+  "migration_head": "0040",
   "migrations": [
     {
       "revision": "0001",
@@ -157,6 +157,10 @@
     {
       "revision": "0039",
       "source": "backend/api/migrations/versions/0039_org_board_duty.py"
+    },
+    {
+      "revision": "0040",
+      "source": "backend/api/migrations/versions/0040_breach_tickets.py"
     }
   ],
   "postgres_version": "16.15",
@@ -240,6 +244,21 @@
       "name": "breach_status_history",
       "kind": "r",
       "comment": null
+    },
+    {
+      "name": "breach_ticket",
+      "kind": "r",
+      "comment": "A breach ticket: one person asked to act on one breach (S3-08, ADR 0023). Only the read markers change"
+    },
+    {
+      "name": "breach_ticket_event",
+      "kind": "r",
+      "comment": "What happened to a breach ticket after it was assigned. Append-only; its state is read by folding these"
+    },
+    {
+      "name": "breach_ticket_message",
+      "kind": "r",
+      "comment": "A breach ticket's thread. Append-only by trigger and grant; body and evidence_name sealed"
     },
     {
       "name": "collection",
@@ -1838,6 +1857,285 @@
       "table_name": "breach_status_history",
       "name": "changed_at",
       "position": 7,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "ticket_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_ticket_ticket_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "ticket_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "breach_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "holder_user_id",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "assigned_by",
+      "position": 5,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "parent_ticket_id",
+      "position": 6,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "instruction",
+      "position": 7,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": "What the ticket opened with: the DPO's instruction, or the adding colleague's note. Sealed (FREE_TEXT)"
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "answer_by",
+      "position": 8,
+      "type": "date",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Optional date the holder is asked to answer by (BD-20). Shown to both sides; counted on the DPO's dashboard"
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "created_at",
+      "position": 9,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "office_read_at",
+      "position": 10,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "holder_read_at",
+      "position": 11,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "event_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_ticket_event_event_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "event_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "ticket_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "kind",
+      "position": 4,
+      "type": "character varying(12)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "outcome",
+      "position": 5,
+      "type": "character varying(8)",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "summary",
+      "position": 6,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The holder's account of what was done, with a return. Sealed (FREE_TEXT)"
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "reason",
+      "position": 7,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Why the DPO sent it back, withdrew or reopened it. Sealed (FREE_TEXT)"
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "actor_user_id",
+      "position": 8,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "occurred_at",
+      "position": 9,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "message_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_ticket_message_message_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "message_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "ticket_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "author_user_id",
+      "position": 4,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "author_side",
+      "position": 5,
+      "type": "character varying(10)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "kind",
+      "position": 6,
+      "type": "character varying(12)",
+      "not_null": true,
+      "default_value": "'message'::character varying",
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "body",
+      "position": 7,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "evidence_ref",
+      "position": 8,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "evidence_hash",
+      "position": 9,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "evidence_name",
+      "position": 10,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "created_at",
+      "position": 11,
       "type": "timestamp with time zone",
       "not_null": true,
       "default_value": "now()",
@@ -7278,6 +7576,341 @@
       "initially_deferred": false
     },
     {
+      "table_name": "breach_ticket",
+      "name": "breach_ticket_assigned_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (assigned_by) REFERENCES auth_user(id)",
+      "columns": [
+        "assigned_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "breach_ticket_breach_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (breach_id) REFERENCES breach(breach_id)",
+      "columns": [
+        "breach_id"
+      ],
+      "referenced_table": "breach",
+      "referenced_columns": [
+        "breach_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "breach_ticket_holder_user_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (holder_user_id) REFERENCES auth_user(id)",
+      "columns": [
+        "holder_user_id"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "breach_ticket_once",
+      "kind": "u",
+      "definition": "UNIQUE (breach_id, holder_user_id)",
+      "columns": [
+        "breach_id",
+        "holder_user_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "breach_ticket_parent_ticket_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (parent_ticket_id) REFERENCES breach_ticket(ticket_id)",
+      "columns": [
+        "parent_ticket_id"
+      ],
+      "referenced_table": "breach_ticket",
+      "referenced_columns": [
+        "ticket_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "breach_ticket_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (ticket_id)",
+      "columns": [
+        "ticket_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "breach_ticket_ticket_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (ticket_uuid)",
+      "columns": [
+        "ticket_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "breach_ticket_event_actor_user_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (actor_user_id) REFERENCES auth_user(id)",
+      "columns": [
+        "actor_user_id"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "breach_ticket_event_event_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (event_uuid)",
+      "columns": [
+        "event_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "breach_ticket_event_kind",
+      "kind": "c",
+      "definition": "CHECK (((kind)::text = ANY ((ARRAY['returned'::character varying, 'sent_back'::character varying, 'closed'::character varying, 'withdrawn'::character varying, 'reopened'::character varying])::text[])))",
+      "columns": [
+        "kind"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "breach_ticket_event_outcome",
+      "kind": "c",
+      "definition": "CHECK (((((kind)::text = 'returned'::text) = (outcome IS NOT NULL)) AND ((outcome IS NULL) OR ((outcome)::text = ANY ((ARRAY['done'::character varying, 'partial'::character varying, 'failed'::character varying])::text[])))))",
+      "columns": [
+        "kind",
+        "outcome"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "breach_ticket_event_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (event_id)",
+      "columns": [
+        "event_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "breach_ticket_event_reason",
+      "kind": "c",
+      "definition": "CHECK ((((kind)::text <> ALL ((ARRAY['sent_back'::character varying, 'withdrawn'::character varying, 'reopened'::character varying])::text[])) OR (reason IS NOT NULL)))",
+      "columns": [
+        "kind",
+        "reason"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "breach_ticket_event_summary",
+      "kind": "c",
+      "definition": "CHECK ((((kind)::text <> 'returned'::text) OR (summary IS NOT NULL)))",
+      "columns": [
+        "kind",
+        "summary"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "breach_ticket_event_ticket_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (ticket_id) REFERENCES breach_ticket(ticket_id)",
+      "columns": [
+        "ticket_id"
+      ],
+      "referenced_table": "breach_ticket",
+      "referenced_columns": [
+        "ticket_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "breach_ticket_message_author_user_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (author_user_id) REFERENCES auth_user(id)",
+      "columns": [
+        "author_user_id"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "breach_ticket_message_kind",
+      "kind": "c",
+      "definition": "CHECK (((kind)::text = ANY ((ARRAY['instruction'::character varying, 'message'::character varying, 'return'::character varying, 'status'::character varying])::text[])))",
+      "columns": [
+        "kind"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "breach_ticket_message_message_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (message_uuid)",
+      "columns": [
+        "message_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "breach_ticket_message_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (message_id)",
+      "columns": [
+        "message_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "breach_ticket_message_side",
+      "kind": "c",
+      "definition": "CHECK (((author_side)::text = ANY ((ARRAY['office'::character varying, 'holder'::character varying, 'system'::character varying])::text[])))",
+      "columns": [
+        "author_side"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "breach_ticket_message_ticket_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (ticket_id) REFERENCES breach_ticket(ticket_id)",
+      "columns": [
+        "ticket_id"
+      ],
+      "referenced_table": "breach_ticket",
+      "referenced_columns": [
+        "ticket_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "collection",
       "name": "collection_batch_id_fkey",
       "kind": "f",
@@ -10987,6 +11620,56 @@
       "definition": "CREATE INDEX idx_breach_status_history ON public.breach_status_history USING btree (breach_id, history_id)"
     },
     {
+      "table_name": "breach_ticket",
+      "name": "breach_ticket_once",
+      "definition": "CREATE UNIQUE INDEX breach_ticket_once ON public.breach_ticket USING btree (breach_id, holder_user_id)"
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "breach_ticket_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_ticket_pkey ON public.breach_ticket USING btree (ticket_id)"
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "breach_ticket_ticket_uuid_key",
+      "definition": "CREATE UNIQUE INDEX breach_ticket_ticket_uuid_key ON public.breach_ticket USING btree (ticket_uuid)"
+    },
+    {
+      "table_name": "breach_ticket",
+      "name": "idx_breach_ticket_holder",
+      "definition": "CREATE INDEX idx_breach_ticket_holder ON public.breach_ticket USING btree (holder_user_id)"
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "breach_ticket_event_event_uuid_key",
+      "definition": "CREATE UNIQUE INDEX breach_ticket_event_event_uuid_key ON public.breach_ticket_event USING btree (event_uuid)"
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "breach_ticket_event_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_ticket_event_pkey ON public.breach_ticket_event USING btree (event_id)"
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "idx_breach_ticket_event",
+      "definition": "CREATE INDEX idx_breach_ticket_event ON public.breach_ticket_event USING btree (ticket_id, event_id)"
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "breach_ticket_message_message_uuid_key",
+      "definition": "CREATE UNIQUE INDEX breach_ticket_message_message_uuid_key ON public.breach_ticket_message USING btree (message_uuid)"
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "breach_ticket_message_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_ticket_message_pkey ON public.breach_ticket_message USING btree (message_id)"
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "idx_breach_ticket_message",
+      "definition": "CREATE INDEX idx_breach_ticket_message ON public.breach_ticket_message USING btree (ticket_id, message_id)"
+    },
+    {
       "table_name": "collection",
       "name": "collection_collection_uuid_key",
       "definition": "CREATE UNIQUE INDEX collection_collection_uuid_key ON public.collection USING btree (collection_uuid)"
@@ -12099,6 +12782,21 @@
       "definition": "CREATE TRIGGER trg_breach_status_history_append_only BEFORE DELETE OR UPDATE ON public.breach_status_history FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
     },
     {
+      "table_name": "breach_ticket",
+      "name": "trg_breach_ticket_read_only",
+      "definition": "CREATE TRIGGER trg_breach_ticket_read_only BEFORE DELETE OR UPDATE ON public.breach_ticket FOR EACH ROW EXECUTE FUNCTION cmp_breach_ticket_read_only()"
+    },
+    {
+      "table_name": "breach_ticket_event",
+      "name": "trg_breach_ticket_event_append_only",
+      "definition": "CREATE TRIGGER trg_breach_ticket_event_append_only BEFORE DELETE OR UPDATE ON public.breach_ticket_event FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
+      "table_name": "breach_ticket_message",
+      "name": "trg_breach_ticket_message_append_only",
+      "definition": "CREATE TRIGGER trg_breach_ticket_message_append_only BEFORE DELETE OR UPDATE ON public.breach_ticket_message FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
       "table_name": "consent_artefact",
       "name": "trg_consent_append_only",
       "definition": "CREATE TRIGGER trg_consent_append_only BEFORE DELETE OR UPDATE ON public.consent_artefact FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
@@ -12291,6 +12989,15 @@
       "name": "breach_status_history_history_id_seq"
     },
     {
+      "name": "breach_ticket_event_event_id_seq"
+    },
+    {
+      "name": "breach_ticket_message_message_id_seq"
+    },
+    {
+      "name": "breach_ticket_ticket_id_seq"
+    },
+    {
       "name": "collection_collection_id_seq"
     },
     {
@@ -12410,6 +13117,9 @@
       "name": "cmp_breach_status_only"
     },
     {
+      "name": "cmp_breach_ticket_read_only"
+    },
+    {
       "name": "cmp_consent_coherent"
     },
     {
@@ -12468,13 +13178,13 @@
     }
   ],
   "counts": {
-    "application_tables": 46,
+    "application_tables": 49,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 574,
-    "foreign_keys": 130,
+    "table_columns": 605,
+    "foreign_keys": 138,
     "enums": 39,
-    "triggers": 42,
-    "checks": 72
+    "triggers": 45,
+    "checks": 78
   }
 }

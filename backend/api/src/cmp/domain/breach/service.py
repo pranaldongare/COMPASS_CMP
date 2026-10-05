@@ -31,12 +31,13 @@ from typing import Any
 
 from cmp.core.config import settings
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
+from cmp.db.repositories import breach_tickets as ticket_repo
 from cmp.db.repositories import breaches as repo
 from cmp.db.repositories import registry as registry_repo
 from cmp.db.sql import Conn
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
-from cmp.domain.breach import clock, state_machine
+from cmp.domain.breach import clock, state_machine, ticket_state
 from cmp.domain.breach.clock import DPDP_DUTIES, Duty, EventKind, State
 from cmp.domain.breach.state_machine import BreachFacts, Status
 from cmp.validation.choices import choice
@@ -629,6 +630,17 @@ async def _outstanding(conn: Conn, breach: Row, duty: Duty) -> tuple[Row, dict[s
 # ------------------------------------------------------------- open, closed
 
 
+async def _open_tickets(conn: Conn, breach_id: int) -> int:
+    """Tickets issued or returned on this breach (S3-08, BD-17)."""
+    ids = await ticket_repo.ids_on(conn, breach_id)
+    if not ids:
+        return 0
+    events: dict[int, list[Row]] = defaultdict(list)
+    for e in await ticket_repo.events_for(conn, ids):
+        events[int(e["ticket_id"])].append(e)
+    return sum(1 for i in ids if ticket_state.fold(events[i]) in ticket_state.OPEN)
+
+
 async def _facts(conn: Conn, breach_id: int) -> BreachFacts:
     latest = await repo.latest_determinations(conn, [breach_id])
     duties = await duties_of(conn, breach_id)
@@ -637,6 +649,7 @@ async def _facts(conn: Conn, breach_id: int) -> BreachFacts:
         outstanding=tuple(
             clock.LABELS[kind] for kind, (_, s) in duties.items() if s["state"] == State.OUTSTANDING
         ),
+        open_tickets=await _open_tickets(conn, breach_id),
     )
 
 

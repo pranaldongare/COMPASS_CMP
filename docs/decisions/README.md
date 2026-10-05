@@ -29,6 +29,7 @@ one stays and points forward.
 | [0020](0020-cross-border-transfer-checked-at-export.md) | A transfer is checked at export, and an unknown place is refused | accepted |
 | [0021](0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md) | A breach is recorded and its duties tracked; the platform never submits | accepted; amended 2026-10-05 |
 | [0022](0022-an-incident-first-and-a-breach-on-a-yes.md) | An incident is logged first, and a breach is recorded on a yes; the organisation's board is told within 30 minutes | accepted |
+| [0023](0023-breach-tickets-and-breach-only-logins.md) | Breach tickets reach internal staff only, through breach-only temporary logins that end with the breach | accepted |
 
 ## Writing one
 

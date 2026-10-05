@@ -9,10 +9,14 @@
  * Only what is addressed to this account, and only what the instruction says.
  * The request itself - its verification, its scope, the other holders - is the
  * Privacy Office's, and stays on its own page.
+ *
+ * Breach tickets (S3-08) sit above them: the Privacy Office asking for help
+ * with a personal data breach, which runs on a clock of its own. They carry
+ * the breach reference and nothing else from the register.
  */
 "use client";
 
-import { AlertTriangle, CheckCircle2, Inbox, MessageSquareReply } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Inbox, MessageSquareReply, ShieldAlert } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
 
@@ -34,7 +38,10 @@ import {
 import { ConsentScope } from "@/features/rights/components/consent-scope";
 import { RequestTypeBadge, TicketBadge, dueCopy } from "@/features/rights/components/copy";
 import { myMessageAttachmentUrl } from "@/features/rights/api";
-import { BriefPanel, ReplyBox, Thread, UnreadBadge } from "@/features/rights/components/thread";
+import { BreachTicketCard } from "@/features/breach/components/my-breach-tickets";
+import { useMyBreachTickets } from "@/features/breach/queries";
+import { ReplyBox, Thread, UnreadBadge } from "@/components/data-display/thread";
+import { BriefPanel } from "@/features/rights/components/thread";
 import { useMessageOffice, useReturnMyTicket } from "@/features/rights/mutations";
 import { useMyTicket, useMyTickets } from "@/features/rights/queries";
 import { formatDate, formatDateTime } from "@/lib/format";
@@ -53,8 +60,13 @@ export default function TicketsPage() {
 
 function TicketsInner() {
   const tickets = useMyTickets();
-  // A link from the dashboard queue or from a mail opens the ticket it names.
-  const wanted = useSearchParams().get("ticket");
+  const breach = useMyBreachTickets();
+  // A link from the dashboard queue, the bell or a mail opens the ticket it names.
+  const params = useSearchParams();
+  const wanted = params.get("ticket");
+  const wantedBreach = params.get("breach_ticket");
+  const breachOpen = (breach.data ?? []).filter((t) => t.state === "issued" || t.state === "returned");
+  const breachDone = (breach.data ?? []).filter((t) => !breachOpen.includes(t));
   // Open ones first, the most pressing at the top: overdue, then soonest due.
   const open = (tickets.data ?? [])
     .filter((t) => t.ticket_status === "issued" || t.ticket_status === "escalated")
@@ -68,8 +80,20 @@ function TicketsInner() {
       <PageHeader
         eyebrow="Rights requests"
         title="My tasks"
-        description="Respond to requests assigned to your team. Check each deadline and record what you found or changed."
+        description="Respond to what the Privacy Office has asked of you: tickets on rights requests and on personal data breaches. Check each date and record what you found or changed."
       />
+
+      {breach.data && breach.data.length > 0 && (
+        <section className="mb-8 space-y-3" aria-label="Breach tickets">
+          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-text-subtle">
+            <ShieldAlert className="size-4" aria-hidden="true" />
+            Breach tickets · {breachOpen.length} open
+          </h2>
+          {[...breachOpen, ...breachDone].map((t) => (
+            <BreachTicketCard key={t.ticket_uuid} ticket={t} openAtFirst={t.ticket_uuid === wantedBreach} />
+          ))}
+        </section>
+      )}
 
       {tickets.isLoading && <Skeleton className="h-40" />}
       {tickets.error && (
@@ -87,7 +111,7 @@ function TicketsInner() {
         </div>
       )}
 
-      {tickets.data && tickets.data.length === 0 && (
+      {tickets.data && tickets.data.length === 0 && (breach.data?.length ?? 0) === 0 && (
         <Card>
           <EmptyState
             illustration={<EmptyQueue />}

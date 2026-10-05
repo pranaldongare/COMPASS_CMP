@@ -200,7 +200,11 @@ def test_nothing_in_the_breach_code_can_reach_a_regulator() -> None:
         "cmp.infrastructure.sms",
         "cmp.infrastructure.messaging",
     }
-    files = [*sorted((src / "domain/breach").glob("*.py")), src / "api/routers/v1/breaches.py"]
+    files = [
+        *sorted((src / "domain/breach").glob("*.py")),
+        src / "api/routers/v1/breaches.py",
+        src / "api/routers/v1/breach_tickets.py",
+    ]
     found: list[str] = []
     for path in files:
         for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
@@ -223,3 +227,13 @@ def test_nothing_in_the_breach_code_can_reach_a_regulator() -> None:
         if isinstance(node, ast.Call) and getattr(node.func, "id", "") == "deliver"
     ]
     assert delivered == ["Message.BREACH_NOTICE"]
+
+    # Breach tickets (S3-08) tell a member of staff a ticket is waiting, from
+    # their own task, and nothing else.
+    task = (src / "tasks/notifications/breach_tickets.py").read_text(encoding="utf-8")
+    delivered = [
+        ast.unparse(node.args[0])
+        for node in ast.walk(ast.parse(task))
+        if isinstance(node, ast.Call) and getattr(node.func, "id", "") == "deliver"
+    ]
+    assert delivered == ["Message.BREACH_TICKET_WAITING"]

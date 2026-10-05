@@ -10,7 +10,7 @@
 <title>Schema</title>
 <polygon fill="#f7fafc" stroke="none" points="-36,36 -36,-2443 1730.99,-2443 1730.99,36 -36,36"/>
 <text xml:space="preserve" text-anchor="start" x="8" y="-2377" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="30.00" fill="#142c44">COMPASS / BREACH</text>
-<text xml:space="preserve" text-anchor="start" x="8" y="-2361.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0039 / full module tables with outgoing references / source 4bddceb</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-2361.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0040 / full module tables with outgoing references / source b0adf6e</text>
 <text xml:space="preserve" text-anchor="start" x="8" y="-2335.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">FK arrow: child column to referenced key &#160;&#160;| &#160;&#160;Solid = required FK; dashed = nullable FK; dotted = view dependency</text>
 <text xml:space="preserve" text-anchor="start" x="13.43" y="-2323.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">PK = primary key; FK = foreign key; UQ = member of unique constraint (possibly composite); ? = nullable column</text>
 <g id="clust1" class="cluster">
@@ -271,18 +271,18 @@
 </g>
 </g>
 <!-- data_source&#45;&gt;auth_user -->
-<g id="FK050" class="edge">
+<g id="FK058" class="edge">
 <title>data_source:e&#45;&gt;auth_user:w</title>
-<g id="a_FK050"><a xlink:title="FK050 / data_source_owner_user_id_fkey / data_source(owner_user_id) to auth_user(id) / FOREIGN KEY (owner_user_id) REFERENCES auth_user(id)">
+<g id="a_FK058"><a xlink:title="FK058 / data_source_owner_user_id_fkey / data_source(owner_user_id) to auth_user(id) / FOREIGN KEY (owner_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1341.92,-1219.4C1341.92,-1219.4 1409.81,-1174 1409.81,-1174 1409.81,-1174 1516.39,-497.07 1529.09,-416.42"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1531.3,-417.02 1530.06,-410.24 1526.8,-416.31 1531.3,-417.02"/>
 </a>
 </g>
 </g>
 <!-- data_source&#45;&gt;processor -->
-<g id="FK051" class="edge">
+<g id="FK059" class="edge">
 <title>data_source:e&#45;&gt;processor:w</title>
-<g id="a_FK051"><a xlink:title="FK051 / data_source_processor_id_fkey / data_source(processor_id) to processor(processor_id) / FOREIGN KEY (processor_id) REFERENCES processor(processor_id)">
+<g id="a_FK059"><a xlink:title="FK059 / data_source_processor_id_fkey / data_source(processor_id) to processor(processor_id) / FOREIGN KEY (processor_id) REFERENCES processor(processor_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1341.92,-1269.8C1341.92,-1269.8 1499.1,-1343.87 1534.71,-1360.65"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1533.47,-1362.58 1540.32,-1363.29 1535.41,-1358.46 1533.47,-1362.58"/>
 </a>

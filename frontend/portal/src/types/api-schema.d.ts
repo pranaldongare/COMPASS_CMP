@@ -4459,6 +4459,234 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/breaches/{breach_uuid}/tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every ticket on a breach: holder, state, answer-by, unread, who added whom */
+        get: operations["list_tickets_breaches__breach_uuid__tickets_get"];
+        put?: never;
+        /** Assign a ticket to a member of staff; only on a recorded breach */
+        post: operations["assign_ticket_breaches__breach_uuid__tickets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/tickets/{ticket_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One ticket, its thread, and the moves the server allows
+         * @description Reading it marks the holder's messages read.
+         */
+        get: operations["get_ticket_breaches__breach_uuid__tickets__ticket_uuid__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/tickets/{ticket_uuid}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Write to the holder on the ticket, with a file if it helps */
+        post: operations["message_holder_breaches__breach_uuid__tickets__ticket_uuid__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/tickets/{ticket_uuid}/messages/{message_uuid}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a file attached to a message on the ticket */
+        get: operations["ticket_file_breaches__breach_uuid__tickets__ticket_uuid__messages__message_uuid__evidence_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/tickets/{ticket_uuid}/send-back": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a returned ticket back to its holder, saying why */
+        post: operations["send_back_ticket_breaches__breach_uuid__tickets__ticket_uuid__send_back_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/tickets/{ticket_uuid}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close a returned ticket: the DPO's alone */
+        post: operations["close_ticket_breaches__breach_uuid__tickets__ticket_uuid__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Withdraw a ticket, saying why */
+        post: operations["withdraw_ticket_breaches__breach_uuid__tickets__ticket_uuid__withdraw_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reopen a closed or withdrawn ticket, saying why */
+        post: operations["reopen_ticket_breaches__breach_uuid__tickets__ticket_uuid__reopen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breach-tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Breach tickets addressed to me */
+        get: operations["my_breach_tickets_breach_tickets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breach-tickets/{ticket_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One breach ticket addressed to me, with its thread
+         * @description Reading it marks the Privacy Office's messages read.
+         */
+        get: operations["my_breach_ticket_breach_tickets__ticket_uuid__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breach-tickets/{ticket_uuid}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Write to the Privacy Office on my breach ticket, with a file if it helps */
+        post: operations["message_office_breach_tickets__ticket_uuid__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breach-tickets/{ticket_uuid}/messages/{message_uuid}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a file attached to a message on my breach ticket */
+        get: operations["my_ticket_file_breach_tickets__ticket_uuid__messages__message_uuid__evidence_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breach-tickets/{ticket_uuid}/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Return my breach ticket: what was done, and how it went */
+        post: operations["return_my_breach_ticket_breach_tickets__ticket_uuid__return_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tickets": {
         parameters: {
             query?: never;
@@ -5045,6 +5273,26 @@ export interface components {
              */
             document: string;
         };
+        /** Body_message_holder_breaches__breach_uuid__tickets__ticket_uuid__messages_post */
+        Body_message_holder_breaches__breach_uuid__tickets__ticket_uuid__messages_post: {
+            /** Body */
+            body: string;
+            /**
+             * Evidence
+             * @description Optional file, max 25 MB
+             */
+            evidence?: string | null;
+        };
+        /** Body_message_office_breach_tickets__ticket_uuid__messages_post */
+        Body_message_office_breach_tickets__ticket_uuid__messages_post: {
+            /** Body */
+            body: string;
+            /**
+             * Evidence
+             * @description Optional file, max 25 MB
+             */
+            evidence?: string | null;
+        };
         /** Body_message_office_tickets__holder_uuid__messages_post */
         Body_message_office_tickets__holder_uuid__messages_post: {
             /** Body */
@@ -5097,6 +5345,21 @@ export interface components {
              * @default []
              */
             files: string[];
+        };
+        /** Body_return_my_breach_ticket_breach_tickets__ticket_uuid__return_post */
+        Body_return_my_breach_ticket_breach_tickets__ticket_uuid__return_post: {
+            /** Summary */
+            summary: string;
+            /**
+             * Outcome
+             * @description done, partial or failed
+             */
+            outcome: string;
+            /**
+             * Evidence
+             * @description Optional evidence, max 25 MB
+             */
+            evidence?: string | null;
         };
         /** Body_return_my_ticket_tickets__holder_uuid__return_post */
         Body_return_my_ticket_tickets__holder_uuid__return_post: {
@@ -5922,6 +6185,131 @@ export interface components {
             determination: string;
             /** Obligations */
             obligations: components["schemas"]["BreachDutyOut"][];
+        };
+        /** BreachTicketDetailOut */
+        BreachTicketDetailOut: {
+            ticket: components["schemas"]["BreachTicketOut"];
+            /** Instruction */
+            instruction: string;
+            /** Messages */
+            messages: components["schemas"]["BreachTicketMessageOut"][];
+        };
+        /** BreachTicketEventOut */
+        BreachTicketEventOut: {
+            /**
+             * Event Uuid
+             * Format: uuid
+             */
+            event_uuid: string;
+            /** Kind */
+            kind: string;
+            /** Outcome */
+            outcome: string | null;
+            /** Summary */
+            summary: string | null;
+            /** Reason */
+            reason: string | null;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Actor Name */
+            actor_name: string | null;
+        };
+        /** BreachTicketIn */
+        BreachTicketIn: {
+            /**
+             * User Uuid
+             * Format: uuid
+             */
+            user_uuid: string;
+            /** Instruction */
+            instruction: string;
+            /** Answer By */
+            answer_by?: string | null;
+        };
+        /** BreachTicketMessageOut */
+        BreachTicketMessageOut: {
+            /**
+             * Message Uuid
+             * Format: uuid
+             */
+            message_uuid: string;
+            /** Author Side */
+            author_side: string;
+            /** Author Name */
+            author_name: string | null;
+            /** Kind */
+            kind: string;
+            /** Body */
+            body: string;
+            /** Evidence Hash */
+            evidence_hash: string | null;
+            /** Evidence Name */
+            evidence_name: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** BreachTicketMoveOut */
+        BreachTicketMoveOut: {
+            /** Move */
+            move: string;
+            /** Reason Required */
+            reason_required: boolean;
+        };
+        /**
+         * BreachTicketOut
+         * @description A breach ticket as the office reads it.
+         */
+        BreachTicketOut: {
+            /**
+             * Ticket Uuid
+             * Format: uuid
+             */
+            ticket_uuid: string;
+            /**
+             * Holder Uuid
+             * Format: uuid
+             */
+            holder_uuid: string;
+            /** Holder Name */
+            holder_name: string | null;
+            /** Assigned By Name */
+            assigned_by_name: string | null;
+            /** Parent Ticket Uuid */
+            parent_ticket_uuid: string | null;
+            /** Added By Name */
+            added_by_name: string | null;
+            /** State */
+            state: string;
+            /** Answer By */
+            answer_by: string | null;
+            /** Overdue */
+            overdue: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Unread */
+            unread: number;
+            /** Last Activity At */
+            last_activity_at: string | null;
+            /** Events */
+            events: components["schemas"]["BreachTicketEventOut"][];
+            /** Moves */
+            moves: components["schemas"]["BreachTicketMoveOut"][];
+            /** May Write */
+            may_write: boolean;
+        };
+        /** BreachTicketReasonIn */
+        BreachTicketReasonIn: {
+            /** Reason */
+            reason: string;
         };
         /** BreachTransitionIn */
         BreachTransitionIn: {
@@ -7553,6 +7941,42 @@ export interface components {
              * Format: date-time
              */
             delivered_at: string;
+        };
+        /** MyBreachTicketDetailOut */
+        MyBreachTicketDetailOut: {
+            ticket: components["schemas"]["MyBreachTicketOut"];
+            /** Messages */
+            messages: components["schemas"]["BreachTicketMessageOut"][];
+        };
+        /**
+         * MyBreachTicketOut
+         * @description Exactly what a holder is given (BD-13), and nothing else.
+         */
+        MyBreachTicketOut: {
+            /**
+             * Ticket Uuid
+             * Format: uuid
+             */
+            ticket_uuid: string;
+            /** Breach Reference */
+            breach_reference: string;
+            /** Instruction */
+            instruction: string;
+            /** State */
+            state: string;
+            /** Answer By */
+            answer_by: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Unread */
+            unread: number;
+            /** Last Activity At */
+            last_activity_at: string | null;
+            /** Moves */
+            moves: components["schemas"]["BreachTicketMoveOut"][];
         };
         /** NominationActIn */
         NominationActIn: {
@@ -18053,6 +18477,466 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrgBoardBriefOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tickets_breaches__breach_uuid__tickets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachTicketOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assign_ticket_breaches__breach_uuid__tickets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachTicketIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachTicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ticket_breaches__breach_uuid__tickets__ticket_uuid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                ticket_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachTicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    message_holder_breaches__breach_uuid__tickets__ticket_uuid__messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                ticket_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_message_holder_breaches__breach_uuid__tickets__ticket_uuid__messages_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachTicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ticket_file_breaches__breach_uuid__tickets__ticket_uuid__messages__message_uuid__evidence_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                ticket_uuid: string;
+                message_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_back_ticket_breaches__breach_uuid__tickets__ticket_uuid__send_back_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                ticket_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachTicketReasonIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachTicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_ticket_breaches__breach_uuid__tickets__ticket_uuid__close_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                ticket_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachTicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    withdraw_ticket_breaches__breach_uuid__tickets__ticket_uuid__withdraw_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                ticket_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachTicketReasonIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachTicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reopen_ticket_breaches__breach_uuid__tickets__ticket_uuid__reopen_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                ticket_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachTicketReasonIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachTicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_breach_tickets_breach_tickets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyBreachTicketOut"][];
+                };
+            };
+        };
+    };
+    my_breach_ticket_breach_tickets__ticket_uuid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticket_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyBreachTicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    message_office_breach_tickets__ticket_uuid__messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticket_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_message_office_breach_tickets__ticket_uuid__messages_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyBreachTicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_ticket_file_breach_tickets__ticket_uuid__messages__message_uuid__evidence_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticket_uuid: string;
+                message_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    return_my_breach_ticket_breach_tickets__ticket_uuid__return_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticket_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_return_my_breach_ticket_breach_tickets__ticket_uuid__return_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyBreachTicketDetailOut"];
                 };
             };
             /** @description Validation Error */

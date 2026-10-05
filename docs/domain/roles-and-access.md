@@ -46,6 +46,7 @@ denied: no wildcard, no inheritance.
 | restricted_country | all +w | all | | | | | |
 | breach | all +w | | | | | | |
 | ticket | own +w | own +w | own +w | own +w | own +w | own +w | |
+| breach_ticket | own +w | own +w | own +w | own +w | own +w | own +w | |
 | me | | | | | | | own +w |
 
 The R&D User's write on a notice is narrower than the row can say. They bring
@@ -87,6 +88,12 @@ on every breach route, not the 403 every other resource gives - the register,
 a breach that exists and a write all read as "not there" - because that a
 breach is being handled is itself what the grant withholds
 ([breaches.md](breaches.md), [ADR 0021](../decisions/0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md)).
+
+`breach_ticket` (S3-08) is the other side of that: a ticket addressed to me,
+OWN for every staff role like `ticket`, with the holder in the `WHERE` clause -
+another person's ticket is 404. Holding one opens the ticket and nothing of the
+register: the managing routes stay under `breach`, and answer every holder but
+the DPO 404 ([ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)).
 
 ## Navigation
 
@@ -218,7 +225,10 @@ overdue** (a duty past its due time, or past the internal target for "without
 delay" once one is set) and **Breach duties outstanding**, both opening the
 register. Below them, **Open breaches** lists each open breach with every
 duty's state and clock (S3-04). No other role's dashboard carries any of it:
-the server sends the list to the DPO alone.
+the server sends the list to the DPO alone. **Breach tickets returned** and
+**Breach tickets past their answer-by** (S3-08) follow, opening the register.
+Every staff dashboard's **Tickets addressed to you** lists its reader's open
+breach tickets beside their rights tickets, by the breach reference alone.
 
 The DPO's queues include one of draft projects, which is not a contradiction:
 it lists only the drafts whose purposes are waiting to be activated, which is
@@ -270,7 +280,9 @@ open.
 - **Tickets.** Every member of staff also sees what happened on the tickets
   addressed to them, and the DPO what respondents did on everyone's. A
   respondent's link opens the ticket, not the request page their role may
-  not reach.
+  not reach. Breach tickets (S3-08) the same: a holder hears what the office
+  did and wrote on theirs, linking to `/tickets?breach_ticket=`; the DPO hears
+  what holders wrote and returned, linking to the breach.
 
 The rule the bell keeps is the dashboard's: no link in it leads to a page
 that answers 403 or 404 for the person reading it. It is held where the link

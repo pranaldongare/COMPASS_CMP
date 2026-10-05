@@ -56,6 +56,8 @@ LEGAL_HOLD: Final = "legal_hold"
 RESTRICTED_COUNTRY: Final = "restricted_country"
 #: A personal data breach, its determination, assessment and duties.
 BREACH: Final = "breach"
+#: A breach ticket addressed to a member of staff (S3-08): their own only.
+BREACH_TICKET: Final = "breach_ticket"
 
 #: The words of a message the platform sends, per junction and channel.
 MESSAGE_TEMPLATE: Final = "message_template"
@@ -87,5 +89,6 @@ ALL: Final[frozenset[str]] = frozenset(
         LEGAL_HOLD,
         RESTRICTED_COUNTRY,
         BREACH,
+        BREACH_TICKET,
     }
 )

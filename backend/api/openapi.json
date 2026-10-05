@@ -13044,6 +13044,750 @@
         }
       }
     },
+    "/breaches/{breach_uuid}/tickets": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Every ticket on a breach: holder, state, answer-by, unread, who added whom",
+        "operationId": "list_tickets_breaches__breach_uuid__tickets_get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BreachTicketOut"
+                  },
+                  "title": "Response List Tickets Breaches  Breach Uuid  Tickets Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Assign a ticket to a member of staff; only on a recorded breach",
+        "operationId": "assign_ticket_breaches__breach_uuid__tickets_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachTicketIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachTicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/tickets/{ticket_uuid}": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "One ticket, its thread, and the moves the server allows",
+        "description": "Reading it marks the holder's messages read.",
+        "operationId": "get_ticket_breaches__breach_uuid__tickets__ticket_uuid__get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "ticket_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachTicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/tickets/{ticket_uuid}/messages": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Write to the holder on the ticket, with a file if it helps",
+        "operationId": "message_holder_breaches__breach_uuid__tickets__ticket_uuid__messages_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "ticket_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_message_holder_breaches__breach_uuid__tickets__ticket_uuid__messages_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachTicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/tickets/{ticket_uuid}/messages/{message_uuid}/evidence": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Download a file attached to a message on the ticket",
+        "operationId": "ticket_file_breaches__breach_uuid__tickets__ticket_uuid__messages__message_uuid__evidence_get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "ticket_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Uuid"
+            }
+          },
+          {
+            "name": "message_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/tickets/{ticket_uuid}/send-back": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Send a returned ticket back to its holder, saying why",
+        "operationId": "send_back_ticket_breaches__breach_uuid__tickets__ticket_uuid__send_back_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "ticket_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachTicketReasonIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachTicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/tickets/{ticket_uuid}/close": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Close a returned ticket: the DPO's alone",
+        "operationId": "close_ticket_breaches__breach_uuid__tickets__ticket_uuid__close_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "ticket_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachTicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Withdraw a ticket, saying why",
+        "operationId": "withdraw_ticket_breaches__breach_uuid__tickets__ticket_uuid__withdraw_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "ticket_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachTicketReasonIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachTicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Reopen a closed or withdrawn ticket, saying why",
+        "operationId": "reopen_ticket_breaches__breach_uuid__tickets__ticket_uuid__reopen_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "ticket_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachTicketReasonIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachTicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breach-tickets": {
+      "get": {
+        "tags": [
+          "breach tickets"
+        ],
+        "summary": "Breach tickets addressed to me",
+        "operationId": "my_breach_tickets_breach_tickets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MyBreachTicketOut"
+                  },
+                  "type": "array",
+                  "title": "Response My Breach Tickets Breach Tickets Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breach-tickets/{ticket_uuid}": {
+      "get": {
+        "tags": [
+          "breach tickets"
+        ],
+        "summary": "One breach ticket addressed to me, with its thread",
+        "description": "Reading it marks the Privacy Office's messages read.",
+        "operationId": "my_breach_ticket_breach_tickets__ticket_uuid__get",
+        "parameters": [
+          {
+            "name": "ticket_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyBreachTicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breach-tickets/{ticket_uuid}/messages": {
+      "post": {
+        "tags": [
+          "breach tickets"
+        ],
+        "summary": "Write to the Privacy Office on my breach ticket, with a file if it helps",
+        "operationId": "message_office_breach_tickets__ticket_uuid__messages_post",
+        "parameters": [
+          {
+            "name": "ticket_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_message_office_breach_tickets__ticket_uuid__messages_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyBreachTicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breach-tickets/{ticket_uuid}/messages/{message_uuid}/evidence": {
+      "get": {
+        "tags": [
+          "breach tickets"
+        ],
+        "summary": "Download a file attached to a message on my breach ticket",
+        "operationId": "my_ticket_file_breach_tickets__ticket_uuid__messages__message_uuid__evidence_get",
+        "parameters": [
+          {
+            "name": "ticket_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Uuid"
+            }
+          },
+          {
+            "name": "message_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breach-tickets/{ticket_uuid}/return": {
+      "post": {
+        "tags": [
+          "breach tickets"
+        ],
+        "summary": "Return my breach ticket: what was done, and how it went",
+        "operationId": "return_my_breach_ticket_breach_tickets__ticket_uuid__return_post",
+        "parameters": [
+          {
+            "name": "ticket_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_return_my_breach_ticket_breach_tickets__ticket_uuid__return_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyBreachTicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/tickets": {
       "get": {
         "tags": [
@@ -15051,6 +15795,62 @@
         ],
         "title": "Body_import_notice_document_projects__project_uuid__notices_import_post"
       },
+      "Body_message_holder_breaches__breach_uuid__tickets__ticket_uuid__messages_post": {
+        "properties": {
+          "body": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Body"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence",
+            "description": "Optional file, max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "Body_message_holder_breaches__breach_uuid__tickets__ticket_uuid__messages_post"
+      },
+      "Body_message_office_breach_tickets__ticket_uuid__messages_post": {
+        "properties": {
+          "body": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Body"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence",
+            "description": "Optional file, max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "Body_message_office_breach_tickets__ticket_uuid__messages_post"
+      },
       "Body_message_office_tickets__holder_uuid__messages_post": {
         "properties": {
           "body": {
@@ -15186,6 +15986,40 @@
           "response_text"
         ],
         "title": "Body_respond_requests__request_uuid__respond_post"
+      },
+      "Body_return_my_breach_ticket_breach_tickets__ticket_uuid__return_post": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Summary"
+          },
+          "outcome": {
+            "type": "string",
+            "title": "Outcome",
+            "description": "done, partial or failed"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence",
+            "description": "Optional evidence, max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "outcome"
+        ],
+        "title": "Body_return_my_breach_ticket_breach_tickets__ticket_uuid__return_post"
       },
       "Body_return_my_ticket_tickets__holder_uuid__return_post": {
         "properties": {
@@ -17894,6 +18728,381 @@
           "obligations"
         ],
         "title": "BreachSummaryOut"
+      },
+      "BreachTicketDetailOut": {
+        "properties": {
+          "ticket": {
+            "$ref": "#/components/schemas/BreachTicketOut"
+          },
+          "instruction": {
+            "type": "string",
+            "title": "Instruction"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/BreachTicketMessageOut"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticket",
+          "instruction",
+          "messages"
+        ],
+        "title": "BreachTicketDetailOut"
+      },
+      "BreachTicketEventOut": {
+        "properties": {
+          "event_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Event Uuid"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Occurred At"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_uuid",
+          "kind",
+          "outcome",
+          "summary",
+          "reason",
+          "occurred_at",
+          "actor_name"
+        ],
+        "title": "BreachTicketEventOut"
+      },
+      "BreachTicketIn": {
+        "properties": {
+          "user_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Uuid"
+          },
+          "instruction": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Instruction"
+          },
+          "answer_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer By"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "user_uuid",
+          "instruction"
+        ],
+        "title": "BreachTicketIn"
+      },
+      "BreachTicketMessageOut": {
+        "properties": {
+          "message_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Message Uuid"
+          },
+          "author_side": {
+            "type": "string",
+            "title": "Author Side"
+          },
+          "author_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Name"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "evidence_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Hash"
+          },
+          "evidence_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_uuid",
+          "author_side",
+          "author_name",
+          "kind",
+          "body",
+          "evidence_hash",
+          "evidence_name",
+          "created_at"
+        ],
+        "title": "BreachTicketMessageOut"
+      },
+      "BreachTicketMoveOut": {
+        "properties": {
+          "move": {
+            "type": "string",
+            "title": "Move"
+          },
+          "reason_required": {
+            "type": "boolean",
+            "title": "Reason Required"
+          }
+        },
+        "type": "object",
+        "required": [
+          "move",
+          "reason_required"
+        ],
+        "title": "BreachTicketMoveOut"
+      },
+      "BreachTicketOut": {
+        "properties": {
+          "ticket_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Ticket Uuid"
+          },
+          "holder_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Holder Uuid"
+          },
+          "holder_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holder Name"
+          },
+          "assigned_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned By Name"
+          },
+          "parent_ticket_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Ticket Uuid"
+          },
+          "added_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Added By Name"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "answer_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer By"
+          },
+          "overdue": {
+            "type": "boolean",
+            "title": "Overdue"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "unread": {
+            "type": "integer",
+            "title": "Unread"
+          },
+          "last_activity_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Activity At"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/BreachTicketEventOut"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "moves": {
+            "items": {
+              "$ref": "#/components/schemas/BreachTicketMoveOut"
+            },
+            "type": "array",
+            "title": "Moves"
+          },
+          "may_write": {
+            "type": "boolean",
+            "title": "May Write"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticket_uuid",
+          "holder_uuid",
+          "holder_name",
+          "assigned_by_name",
+          "parent_ticket_uuid",
+          "added_by_name",
+          "state",
+          "answer_by",
+          "overdue",
+          "created_at",
+          "unread",
+          "last_activity_at",
+          "events",
+          "moves",
+          "may_write"
+        ],
+        "title": "BreachTicketOut",
+        "description": "A breach ticket as the office reads it."
+      },
+      "BreachTicketReasonIn": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "BreachTicketReasonIn"
       },
       "BreachTransitionIn": {
         "properties": {
@@ -22261,6 +23470,101 @@
         ],
         "title": "MyBreachNoticeOut",
         "description": "A notice about a personal data breach, as written to her account (Rule 7(1))."
+      },
+      "MyBreachTicketDetailOut": {
+        "properties": {
+          "ticket": {
+            "$ref": "#/components/schemas/MyBreachTicketOut"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/BreachTicketMessageOut"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticket",
+          "messages"
+        ],
+        "title": "MyBreachTicketDetailOut"
+      },
+      "MyBreachTicketOut": {
+        "properties": {
+          "ticket_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Ticket Uuid"
+          },
+          "breach_reference": {
+            "type": "string",
+            "title": "Breach Reference"
+          },
+          "instruction": {
+            "type": "string",
+            "title": "Instruction"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "answer_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "unread": {
+            "type": "integer",
+            "title": "Unread"
+          },
+          "last_activity_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Activity At"
+          },
+          "moves": {
+            "items": {
+              "$ref": "#/components/schemas/BreachTicketMoveOut"
+            },
+            "type": "array",
+            "title": "Moves"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticket_uuid",
+          "breach_reference",
+          "instruction",
+          "state",
+          "answer_by",
+          "created_at",
+          "unread",
+          "last_activity_at",
+          "moves"
+        ],
+        "title": "MyBreachTicketOut",
+        "description": "Exactly what a holder is given (BD-13), and nothing else."
       },
       "NominationActIn": {
         "properties": {

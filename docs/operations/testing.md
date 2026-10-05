@@ -1,17 +1,17 @@
 # Testing
 
 Seven suites, each answering a different question. Counts are as of
-2026-09-24 and change with every feature; the commands do not.
+2026-10-05 (S3-08) and change with every feature; the commands do not.
 
 | Suite | Where | Runs against | Count |
 |---|---|---|---|
-| Backend unit | `backend/api/tests/unit` | nothing; pure functions | 511 |
-| Backend integration | `backend/api/tests/integration` | real PostgreSQL, Redis and key service | 296 |
-| Backend security | `backend/api/tests/security` | the ASGI app with real datastores | 367 |
-| Backend HTTP | `backend/api/tests/http` | the ASGI app over HTTP, real datastores and key service; **commits** | 69 |
-| Key service | `backend/dkms/tests` | the service in-process; nothing else | 55 |
-| Portal unit | `src/**/*.test.ts*` in each portal | vitest with MSW | 174 console, 133 portal |
-| Browser | `e2e/` in each portal | the running stack in a real browser | 190 console and 71 portal test runs across the Playwright projects |
+| Backend unit | `backend/api/tests/unit` | nothing; pure functions | 611 |
+| Backend integration | `backend/api/tests/integration` | real PostgreSQL, Redis and key service | 450 |
+| Backend security | `backend/api/tests/security` | the ASGI app with real datastores | 458 |
+| Backend HTTP | `backend/api/tests/http` | the ASGI app over HTTP, real datastores and key service; **commits** | 114 |
+| Key service | `backend/dkms/tests` | the service in-process; nothing else | 58 |
+| Portal unit | `src/**/*.test.ts*` in each portal | vitest with MSW | 327 console, 239 portal |
+| Browser | `e2e/` in each portal | the running stack in a real browser | 204 console and 78 portal test runs across the Playwright projects (setup included) |
 
 ### Which suites need the key service
 
@@ -173,6 +173,13 @@ her email and SMS delivered; the portal's `breach-notices.spec.ts` then reads
 that notice in her account. With no notice there it checks only the empty
 page. Each run leaves one breach behind in the development database, as the
 other specs leave their records.
+
+`breach-tickets.spec.ts` (S3-08) runs three roles in order: the DPO logs an
+incident, validates it a breach and assigns a ticket to the seeded DCO
+(`dco@cmp.local`, on `BREACH_TICKET_EMAIL_DOMAINS`' default `cmp.local`); the
+DCO returns it from **Tickets**; the DPO closes the ticket and then the breach.
+It closes the breach it made. The worker must have been restarted since
+`send_breach_ticket_waiting` was added, or the assignment email is dropped.
 
 | Variable | Suite | Default | Without it |
 |---|---|---|---|

@@ -122,6 +122,11 @@ somebody - whose laptop, which account, who caused it.
 | `breach_assessment` | `contact_point` | FREE_TEXT | Rule 7(1)(e): who answers questions |
 | `breach_obligation_event` | `note` | FREE_TEXT | A note on a duty's submission or extension |
 | `breach_obligation_event` | `reported_to` | FREE_TEXT | Whom the organisation's board was told through, on that duty's completion (S3-07) |
+| `breach_ticket` | `instruction` | FREE_TEXT | What the holder is asked, or the adding colleague's note (S3-08) |
+| `breach_ticket_event` | `summary` | FREE_TEXT | The holder's account of what was done, with a return |
+| `breach_ticket_event` | `reason` | FREE_TEXT | Why the DPO sent a ticket back, withdrew or reopened it |
+| `breach_ticket_message` | `body` | FREE_TEXT | A message on a breach ticket's thread |
+| `breach_ticket_message` | `evidence_name` | FILE_NAME | The name a file on the thread was uploaded with |
 | `breach_affected_revision` | `note` | FREE_TEXT | What a revision of who it touched is based on (S3-02) |
 | `breach_notice` | `what_happened` | FREE_TEXT | Rule 7(1)(a), as told to everyone it touched (S3-03) |
 | `breach_notice` | `consequences` | FREE_TEXT | Rule 7(1)(b) |

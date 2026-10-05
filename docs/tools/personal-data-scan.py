@@ -51,6 +51,8 @@ IDENTITY = {
     "recorded_by_name", "breach_recorded_by_name", "determined_by_name", "revised_by_name",
     "confirmed_by_name",
     "approved_by_name",
+    # Breach tickets (S3-08): the holder, who assigned it, who added them.
+    "holder_name", "assigned_by_name", "added_by_name",
     "username",
 }
 CONTACT = {
@@ -275,7 +277,7 @@ SHORT = {"dpo": "DPO", "admin": "Admin", "dco": "DCO", "dco_admin": "DCO Admin",
 VALUE = {"ALL": "every row", "SCOPED": "rows in scope", "OWN": "own rows",
          "COND": "conditional"}
 ORDER = ["auth", "me", "public consent", "public information", "rights", "legal holds", "breaches",
-         "cross-border transfers", "tickets",
+         "breach tickets", "cross-border transfers", "tickets",
          "consent", "exchange", "users", "delegations", "projects", "notices",
          "registry", "messages", "audit", "dashboard"]
 TITLE = {
@@ -286,6 +288,7 @@ TITLE = {
     "rights": "Rights requests, the office's side — `/requests/*`",
     "legal holds": "Legal holds — `/legal-holds/*`",
     "breaches": "Personal data breaches — `/breaches/*`",
+    "breach tickets": "Breach tickets a holder answers — `/breach-tickets/*`",
     "cross-border transfers": "Cross-border transfers — `/restricted-countries/*`",
     "tickets": "Tickets a holder answers — `/tickets/*`",
     "consent": "Consents and links, the office's side",

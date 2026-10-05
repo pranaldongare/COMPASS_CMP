@@ -59,6 +59,9 @@ PRIMARY_KEY = {
     "breach_obligation_event": "event_id",
     "breach_affected_revision": "revision_id",
     "breach_notice": "notice_id",
+    "breach_ticket": "ticket_id",
+    "breach_ticket_event": "event_id",
+    "breach_ticket_message": "message_id",
 }
 
 #: What kind of blind index each indexed column takes.
@@ -108,6 +111,11 @@ APPEND_ONLY = {
     "breach_obligation_event": "trg_breach_obligation_event_append_only",
     "breach_affected_revision": "trg_breach_affected_revision_append_only",
     "breach_notice": "trg_breach_notice_frozen",
+    # Breach tickets (0040): the ticket changes only its read markers; its
+    # events and thread are append-only. Sealed when written, like the rest.
+    "breach_ticket": "trg_breach_ticket_read_only",
+    "breach_ticket_event": "trg_breach_ticket_event_append_only",
+    "breach_ticket_message": "trg_breach_ticket_message_append_only",
 }
 
 

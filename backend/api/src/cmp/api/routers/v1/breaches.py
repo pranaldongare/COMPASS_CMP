@@ -11,16 +11,17 @@ with the reference the regulator returned.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, File, Form, Query, Response, UploadFile, status
 from pydantic import AwareDatetime, Field
 
+from cmp.api import uploads
 from cmp.api.dependencies import BreachReader, BreachWriter
 from cmp.db.pool import connection, transaction
-from cmp.domain.breach import affected, board, notices, service
+from cmp.domain.breach import affected, board, notices, service, tickets
 from cmp.schemas.common import Out, Schema
 
 router = APIRouter(prefix="/breaches", tags=["breaches"])
@@ -891,3 +892,230 @@ class OrgBoardBriefOut(Out):
 async def org_board_brief(breach_uuid: UUID, principal: BreachReader) -> dict[str, Any]:
     async with connection() as conn:
         return await board.org_board_brief(conn, breach_uuid=str(breach_uuid))
+
+
+# ------------------------------------------------------------ breach tickets (S3-08)
+
+
+class BreachTicketIn(Schema):
+    #: An active member of staff, on one of BREACH_TICKET_EMAIL_DOMAINS.
+    user_uuid: UUID
+    #: What they are asked to do. Sealed.
+    instruction: Annotated[str, Field(min_length=1, max_length=20_000)]
+    #: Optional date to answer by; shown to both sides.
+    answer_by: date | None = None
+
+
+class BreachTicketReasonIn(Schema):
+    #: Why. Sealed, and written on the thread for the holder to read.
+    reason: Annotated[str, Field(min_length=1, max_length=8000)]
+
+
+class BreachTicketMoveOut(Out):
+    #: send_back, close, withdraw or reopen (the office); return (the holder).
+    move: str
+    reason_required: bool
+
+
+class BreachTicketEventOut(Out):
+    event_uuid: UUID
+    #: returned, sent_back, closed, withdrawn or reopened.
+    kind: str
+    #: With a return: done, partial or failed.
+    outcome: str | None
+    summary: str | None
+    reason: str | None
+    occurred_at: datetime
+    actor_name: str | None
+
+
+class BreachTicketMessageOut(Out):
+    message_uuid: UUID
+    #: office, holder or system.
+    author_side: str
+    author_name: str | None
+    #: instruction, message, return or status.
+    kind: str
+    body: str
+    evidence_hash: str | None
+    evidence_name: str | None
+    created_at: datetime
+
+
+class BreachTicketOut(Out):
+    """A breach ticket as the office reads it."""
+
+    ticket_uuid: UUID
+    holder_uuid: UUID
+    holder_name: str | None
+    assigned_by_name: str | None
+    #: Set when a holder added this person as a colleague (S3-09).
+    parent_ticket_uuid: UUID | None
+    added_by_name: str | None
+    #: issued, returned, closed or withdrawn.
+    state: str
+    answer_by: date | None
+    #: Issued and past its answer-by date.
+    overdue: bool
+    created_at: datetime
+    #: The holder's messages the office has not read.
+    unread: int
+    last_activity_at: datetime | None
+    events: list[BreachTicketEventOut]
+    #: What the office may do now. None on a closed breach.
+    moves: list[BreachTicketMoveOut]
+    may_write: bool
+
+
+class BreachTicketDetailOut(Out):
+    ticket: BreachTicketOut
+    instruction: str
+    messages: list[BreachTicketMessageOut]
+
+
+_TICKET = "/{breach_uuid}/tickets/{ticket_uuid}"
+
+
+@router.get(
+    "/{breach_uuid}/tickets",
+    response_model=list[BreachTicketOut],
+    summary="Every ticket on a breach: holder, state, answer-by, unread, who added whom",
+)
+async def list_tickets(breach_uuid: UUID, principal: BreachReader) -> list[dict[str, Any]]:
+    async with connection() as conn:
+        return await tickets.for_breach(conn, breach_uuid=str(breach_uuid))
+
+
+@router.post(
+    "/{breach_uuid}/tickets",
+    response_model=BreachTicketDetailOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Assign a ticket to a member of staff; only on a recorded breach",
+)
+async def assign_ticket(
+    breach_uuid: UUID, body: BreachTicketIn, principal: BreachWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await tickets.assign(
+            conn,
+            breach_uuid=str(breach_uuid),
+            user_uuid=str(body.user_uuid),
+            instruction=body.instruction,
+            answer_by=body.answer_by,
+            actor_id=principal.user_id,
+        )
+
+
+@router.get(
+    _TICKET,
+    response_model=BreachTicketDetailOut,
+    summary="One ticket, its thread, and the moves the server allows",
+)
+async def get_ticket(
+    breach_uuid: UUID, ticket_uuid: UUID, principal: BreachReader
+) -> dict[str, Any]:
+    """Reading it marks the holder's messages read."""
+    async with transaction() as conn:
+        return await tickets.office_detail(
+            conn, breach_uuid=str(breach_uuid), ticket_uuid=str(ticket_uuid)
+        )
+
+
+@router.post(
+    f"{_TICKET}/messages",
+    response_model=BreachTicketDetailOut,
+    summary="Write to the holder on the ticket, with a file if it helps",
+)
+async def message_holder(
+    breach_uuid: UUID,
+    ticket_uuid: UUID,
+    principal: BreachWriter,
+    body: Annotated[str, Form(min_length=1, max_length=20_000)],
+    evidence: Annotated[UploadFile | None, File(description="Optional file, max 25 MB")] = None,
+) -> dict[str, Any]:
+    stored = await uploads.stored(evidence, subdir="breach")
+    async with transaction() as conn:
+        return await tickets.office_message(
+            conn,
+            breach_uuid=str(breach_uuid),
+            ticket_uuid=str(ticket_uuid),
+            body=body,
+            actor_id=principal.user_id,
+            evidence=stored,
+        )
+
+
+@router.get(
+    f"{_TICKET}/messages/{{message_uuid}}/evidence",
+    summary="Download a file attached to a message on the ticket",
+)
+async def ticket_file(
+    breach_uuid: UUID, ticket_uuid: UUID, message_uuid: UUID, principal: BreachReader
+) -> Response:
+    async with transaction() as conn:
+        payload, name, recorded = await tickets.office_attachment(
+            conn,
+            breach_uuid=str(breach_uuid),
+            ticket_uuid=str(ticket_uuid),
+            message_uuid=str(message_uuid),
+            actor_id=principal.user_id,
+        )
+    return uploads.download(payload, name, recorded)
+
+
+async def _move(
+    breach_uuid: UUID, ticket_uuid: UUID, move: str, reason: str | None, actor_id: int
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await tickets.office_move(
+            conn,
+            breach_uuid=str(breach_uuid),
+            ticket_uuid=str(ticket_uuid),
+            move=move,
+            reason=reason,
+            actor_id=actor_id,
+        )
+
+
+@router.post(
+    f"{_TICKET}/send-back",
+    response_model=BreachTicketDetailOut,
+    summary="Send a returned ticket back to its holder, saying why",
+)
+async def send_back_ticket(
+    breach_uuid: UUID, ticket_uuid: UUID, body: BreachTicketReasonIn, principal: BreachWriter
+) -> dict[str, Any]:
+    return await _move(breach_uuid, ticket_uuid, "send_back", body.reason, principal.user_id)
+
+
+@router.post(
+    f"{_TICKET}/close",
+    response_model=BreachTicketDetailOut,
+    summary="Close a returned ticket: the DPO's alone",
+)
+async def close_ticket(
+    breach_uuid: UUID, ticket_uuid: UUID, principal: BreachWriter
+) -> dict[str, Any]:
+    return await _move(breach_uuid, ticket_uuid, "close", None, principal.user_id)
+
+
+@router.post(
+    f"{_TICKET}/withdraw",
+    response_model=BreachTicketDetailOut,
+    summary="Withdraw a ticket, saying why",
+)
+async def withdraw_ticket(
+    breach_uuid: UUID, ticket_uuid: UUID, body: BreachTicketReasonIn, principal: BreachWriter
+) -> dict[str, Any]:
+    return await _move(breach_uuid, ticket_uuid, "withdraw", body.reason, principal.user_id)
+
+
+@router.post(
+    f"{_TICKET}/reopen",
+    response_model=BreachTicketDetailOut,
+    summary="Reopen a closed or withdrawn ticket, saying why",
+)
+async def reopen_ticket(
+    breach_uuid: UUID, ticket_uuid: UUID, body: BreachTicketReasonIn, principal: BreachWriter
+) -> dict[str, Any]:
+    return await _move(breach_uuid, ticket_uuid, "reopen", body.reason, principal.user_id)

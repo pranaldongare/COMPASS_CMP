@@ -411,6 +411,14 @@ PLATFORM_TABLES: dict[str, str] = {
                      SELECT delegate_user_id, created_at FROM delegation""",
     "audit_log": """SELECT subject_user_id, occurred_at FROM audit_log
                     WHERE subject_user_id IS NOT NULL""",
+    # Breach tickets (S3-08): the holder - a member of staff, and staff are
+    # data principals too - and what they and the office wrote to each other.
+    "breach_ticket": "SELECT holder_user_id, created_at FROM breach_ticket",
+    "breach_ticket_event": """SELECT t.holder_user_id, e.occurred_at FROM breach_ticket_event e
+                              JOIN breach_ticket t ON t.ticket_id = e.ticket_id""",
+    "breach_ticket_message": """SELECT t.holder_user_id, m.created_at
+                                FROM breach_ticket_message m
+                                JOIN breach_ticket t ON t.ticket_id = m.ticket_id""",
 }
 
 #: Sealed tables a database breach cannot trace to a data principal's account,

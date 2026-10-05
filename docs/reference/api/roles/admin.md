@@ -12,6 +12,7 @@ Navigation returned after sign-in: `dashboard`, `users`, `messages`, `processors
 | `asset` | No | No | `none` | Denied |
 | `audit` | Yes | No | `all` | All rows |
 | `breach` | No | No | `none` | Denied |
+| `breach_ticket` | Yes | Yes | `own` | Own or addressed rows |
 | `collection` | No | No | `none` | Denied |
 | `consent` | No | No | `none` | Denied |
 | `data_source` | Yes | Yes | `all` | All rows |

@@ -6,7 +6,8 @@
  * times stored when the duty was created; this module only describes it, and
  * nothing in the console adds hours to anything.
  */
-import type { Timestamp, Uuid } from "@/types/primitives";
+import type { DateOnly, Timestamp, Uuid } from "@/types/primitives";
+import type { TicketMessage } from "@/types/rights";
 
 export type BreachStatus = "open" | "closed";
 export type BreachOutcome = "pending" | "yes" | "no";
@@ -390,4 +391,69 @@ export interface OrgBoardBrief {
   touched: { listed: number; notified: number };
   missing: string[];
   duty: OrgBoardDuty | null;
+}
+
+/* -------------------------------------------------- breach tickets (S3-08) */
+
+export type BreachTicketState = "issued" | "returned" | "closed" | "withdrawn";
+export type BreachTicketMoveKind = "return" | "send_back" | "close" | "withdraw" | "reopen";
+
+/** A move this side may make now, as the server says. Neither side keeps the table. */
+export interface BreachTicketMove {
+  move: BreachTicketMoveKind;
+  reason_required: boolean;
+}
+
+export interface BreachTicketEvent {
+  event_uuid: Uuid;
+  kind: "returned" | "sent_back" | "closed" | "withdrawn" | "reopened";
+  outcome: "done" | "partial" | "failed" | null;
+  summary: string | null;
+  reason: string | null;
+  occurred_at: Timestamp;
+  actor_name: string | null;
+}
+
+/** A breach ticket as the office reads it. */
+export interface BreachTicket {
+  ticket_uuid: Uuid;
+  holder_uuid: Uuid;
+  holder_name: string | null;
+  assigned_by_name: string | null;
+  /** Set when a holder added this person as a colleague (S3-09). */
+  parent_ticket_uuid: Uuid | null;
+  added_by_name: string | null;
+  state: BreachTicketState;
+  answer_by: DateOnly | null;
+  overdue: boolean;
+  created_at: Timestamp;
+  unread: number;
+  last_activity_at: Timestamp | null;
+  events: BreachTicketEvent[];
+  moves: BreachTicketMove[];
+  may_write: boolean;
+}
+
+export interface BreachTicketDetail {
+  ticket: BreachTicket;
+  instruction: string;
+  messages: TicketMessage[];
+}
+
+/** Exactly what a holder is given (BD-13): nothing else from the register. */
+export interface MyBreachTicket {
+  ticket_uuid: Uuid;
+  breach_reference: string;
+  instruction: string;
+  state: BreachTicketState;
+  answer_by: DateOnly | null;
+  created_at: Timestamp;
+  unread: number;
+  last_activity_at: Timestamp | null;
+  moves: BreachTicketMove[];
+}
+
+export interface MyBreachTicketDetail {
+  ticket: MyBreachTicket;
+  messages: TicketMessage[];
 }

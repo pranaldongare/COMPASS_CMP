@@ -47,6 +47,18 @@ Roles refer to the **effective session role**. A staff account signed in through
 
 
 
+## Breach tickets
+
+[Conditions and source evidence](modules/breach_tickets.md)
+
+| Method | Endpoint | Anonymous | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GET | `/breach-tickets` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO |
+| GET | `/breach-tickets/{ticket_uuid}` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO |
+| POST | `/breach-tickets/{ticket_uuid}/messages` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO |
+| GET | `/breach-tickets/{ticket_uuid}/messages/{message_uuid}/evidence` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO |
+| POST | `/breach-tickets/{ticket_uuid}/return` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO |
+
 ## Breaches
 
 [Conditions and source evidence](modules/breaches.md)
@@ -75,6 +87,15 @@ Roles refer to the **effective session role**. A staff account signed in through
 | GET | `/breaches/{breach_uuid}/board/report` | NO | ALL | NO | NO | NO | NO | NO | NO |
 | POST | `/breaches/{breach_uuid}/affected` | NO | ALL | NO | NO | NO | NO | NO | NO |
 | GET | `/breaches/{breach_uuid}/org-board/brief` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| GET | `/breaches/{breach_uuid}/tickets` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/tickets` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| GET | `/breaches/{breach_uuid}/tickets/{ticket_uuid}` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/messages` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| GET | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/messages/{message_uuid}/evidence` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/send-back` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/close` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen` | NO | ALL | NO | NO | NO | NO | NO | NO |
 
 ## Consent
 

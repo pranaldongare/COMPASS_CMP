@@ -316,11 +316,52 @@ state and time remaining or elapsed, and its **Needs attention** counts
 **Breach duties overdue** (critical) and **Breach duties outstanding**. No other
 role's dashboard carries any of it.
 
+## Breach tickets
+
+The people a breach needs - whoever runs the system that leaked, whoever holds
+the log, whoever can confirm a deletion - are asked through **tickets**, the
+rights request's model ([ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md),
+[rights-requests.md](rights-requests.md#holders-and-tickets)). **Tickets** on a
+breach's page.
+
+- **Assign a ticket** to a member of staff, with what you are asking and an
+  optional **answer-by** date. Refused before the breach is recorded (409
+  `breach_not_recorded`); refused for anyone whose address is not on
+  `BREACH_TICKET_EMAIL_DOMAINS` - internal staff only - without repeating the
+  address; one ticket per person per breach (409 `ticket_exists`).
+- **The holder** finds it on **Tickets** in the console, beside their rights
+  tickets. They see the breach reference, the instruction, the thread, the
+  state and the answer-by date - nothing else from the register, which still
+  answers them 404. Their email says only that a ticket from the Privacy Office
+  is waiting; it names no breach.
+- **Both sides write** on the thread, with a file if it helps; files are kept
+  like a rights ticket's, with their hash and sealed name, and every download is
+  on the trail. The holder **returns** it - *done*, *partial* or *failed*, with a
+  summary - and the DPO **sends it back** with a reason or **closes** it. Only the
+  DPO closes a ticket, **withdraws** one, or **reopens** a closed or withdrawn
+  one. The moves come from the server with each ticket.
+
+| From | Event | To | Who |
+|---|---|---|---|
+| (assignment) | | issued | DPO |
+| issued | returned (outcome, summary, optional file) | returned | holder |
+| returned | sent back (reason) | issued | DPO |
+| returned | closed | closed | **DPO only** |
+| issued, returned | withdrawn (reason) | withdrawn | DPO |
+| closed, withdrawn | reopened (reason) | issued | DPO |
+
+The holder is emailed when a ticket is assigned, sent back or reopened. The
+bell tells them what the office did and wrote, linking to their ticket; it tells
+the DPO what holders wrote and returned. The DPO's **Needs you today** counts
+**Breach tickets returned** and **Breach tickets past their answer-by**, and
+every staff dashboard lists the breach tickets addressed to its reader.
+
 ## Open and closed
 
 A breach is open or closed, and nothing else: the duties carry the rest. It
-**closes** only when it has been determined and every applicable duty is done
-or not applicable - the page lists what is still in the way. It **reopens** with
+**closes** only when it has been determined, every applicable duty is done or
+not applicable, and **no breach ticket is issued or returned** - the page lists
+what is still in the way. It **reopens** with
 a reason, recorded in its history, when something new is found. While closed,
 nothing about it can be recorded.
 
@@ -338,6 +379,9 @@ nothing about it can be recorded.
 | `breach_affected_revision` | Each confirmation of who it touched: the scopes, the counts, a sealed note. Append-only |
 | `breach_notice` | Each version of the five Rule 7(1) contents, sealed. A draft is editable; an approved one is frozen by trigger (`cmp_breach_notice_frozen`) |
 | `breach_notice_delivery` | Every state of every attempt on every channel for every person. Append-only; `breach_notice_delivery_once` makes resends idempotent |
+| `breach_ticket` | One per person per breach: the holder, who assigned it, what it opened with (sealed), the answer-by date. Only the read markers change, by trigger (`cmp_breach_ticket_read_only`) |
+| `breach_ticket_event` | What happened to a ticket: returned (outcome, sealed summary), sent back, closed, withdrawn, reopened (each but close with a sealed reason). Append-only |
+| `breach_ticket_message` | The ticket's thread: office, holder or platform; sealed body and file name. Append-only |
 | `breach_affected` | Each person listed, once per breach (`breach_affected_once`), with the revision that first listed them and what put them there - exports, assets or tables, never a value. Append-only |
 
 Every write takes the breach row first (`FOR UPDATE`), so two people recording
@@ -350,7 +394,7 @@ Every change writes an audit row against `breach`: `breach.recorded` (an
 incident logged - the key predates the incident-first order), `.determined`,
 `.confirmed` (recorded as a breach, with its BR), `.assessed`, `.cert_in_marked`, `.obligation_created`,
 `.obligation_completed`, `.obligation_not_applicable`,
-`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.obligation_reopened`, `.notice_drafted`, `.notice_edited`, `.notice_approved`, `.notice_sent` (with counts), `.closed`, `.reopened`. Each person whose account a notice is written to gets `breach_notice.delivered` against her, naming the breach reference (the BR) and the version: that is her portal's notification, and the only breach event she is shown. The
+`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.obligation_reopened`, `.notice_drafted`, `.notice_edited`, `.notice_approved`, `.notice_sent` (with counts), `.closed`, `.reopened`. A breach ticket's events are against `breach_ticket`, with the holder as subject: `breach_ticket.assigned`, `.message`, `.returned` (with the outcome), `.sent_back`, `.closed`, `.withdrawn`, `.reopened`, `.file_read`; the administrator's trail names them by the breach reference only. Each person whose account a notice is written to gets `breach_notice.delivered` against her, naming the breach reference (the BR) and the version: that is her portal's notification, and the only breach event she is shown. The
 detail carries the reference, the outcome, which duty, a due time and that a
 reason was given - never the office's words, which are sealed on their rows
 ([ADR 0015](../decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md)).

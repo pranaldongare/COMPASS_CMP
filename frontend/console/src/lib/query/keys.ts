@@ -180,6 +180,10 @@ export const keys = {
     affected: (uuid: Uuid) => ["breach", uuid, "affected"] as const,
     notices: (uuid: Uuid) => ["breach", uuid, "notices"] as const,
     orgBoard: (uuid: Uuid) => ["breach", uuid, "org-board"] as const,
+    tickets: (uuid: Uuid) => ["breach", uuid, "tickets"] as const,
+    ticket: (uuid: Uuid, ticketUuid: Uuid) => ["breach", uuid, "tickets", ticketUuid] as const,
+    mine: () => ["breach-tickets"] as const,
+    myTicket: (ticketUuid: Uuid) => ["breach-tickets", ticketUuid] as const,
   },
 
   users: {

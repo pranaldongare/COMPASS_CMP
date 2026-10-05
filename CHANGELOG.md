@@ -60,6 +60,19 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **Breach tickets (S3-08,
+  [ADR 0023](docs/decisions/0023-breach-tickets-and-breach-only-logins.md)).**
+  The DPO asks the people who must act on a recorded breach: **Assign a
+  ticket** to a member of staff on `BREACH_TICKET_EMAIL_DOMAINS`, with an
+  instruction and an optional answer-by date. They find it on **Tickets** - the
+  breach reference, the instruction and the thread, nothing else from the
+  register - write and return it (done, partial or failed); only the DPO closes,
+  sends back, withdraws or reopens one, and a breach does not close while a
+  ticket is open. Their email names no breach (`breach_ticket_waiting`). One
+  ticket per person per breach; every word sealed; the trail carries no words.
+  Dashboards count returned and overdue breach tickets and list each holder's
+  own. Migration 0040; routes `/breaches/{uuid}/tickets/*` (DPO, hidden) and
+  `/breach-tickets/*` (resource `breach_ticket`, OWN).
 - **The organisation's board within thirty minutes of first noticed (S3-07,
   [ADR 0022](docs/decisions/0022-an-incident-first-and-a-breach-on-a-yes.md)).**
   Every incident logged now owes the organisation's board a report: a duty

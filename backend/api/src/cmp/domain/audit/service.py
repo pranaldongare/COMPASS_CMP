@@ -78,6 +78,8 @@ ENTITY_TYPES: Final[frozenset[str]] = frozenset(
         # A notice to the people a breach touched (S3-03). Her notification
         # names this, not the breach, which is the office's alone.
         "breach_notice",
+        # A breach ticket (S3-08): named by the breach reference only.
+        "breach_ticket",
         # The office's replacement words for a message junction.
         "message_template",
     }
@@ -268,6 +270,16 @@ class Event:
     BREACH_NOTICE_SENT = "breach.notice_sent"
     #: Written against her: the notice is in her account. Her portal's bell.
     BREACH_NOTICE_DELIVERED = "breach_notice.delivered"
+    # Breach tickets (S3-08), against `breach_ticket`, subject the holder.
+    BREACH_TICKET_ASSIGNED = "breach_ticket.assigned"
+    BREACH_TICKET_MESSAGE = "breach_ticket.message"
+    BREACH_TICKET_RETURNED = "breach_ticket.returned"
+    BREACH_TICKET_SENT_BACK = "breach_ticket.sent_back"
+    BREACH_TICKET_CLOSED = "breach_ticket.closed"
+    BREACH_TICKET_WITHDRAWN = "breach_ticket.withdrawn"
+    BREACH_TICKET_REOPENED = "breach_ticket.reopened"
+    #: A file on a ticket's thread was read: every read is audited.
+    BREACH_TICKET_FILE_READ = "breach_ticket.file_read"
     RIGHTS_RESPONDED = "rights.responded"
     RIGHTS_RESPONSE_DOWNLOADED = "rights.response_downloaded"
     RIGHTS_CLOSED = "rights.closed"

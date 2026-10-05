@@ -35,7 +35,8 @@ import { useProcessors, useRespondents } from "@/features/registry";
 import { ConfinedNote } from "@/features/rights/components/consent-scope";
 import { TicketBadge, dueCopy } from "@/features/rights/components/copy";
 import { holderMessageAttachmentUrl } from "@/features/rights/api";
-import { BriefPanel, ReplyBox, Thread, UnreadBadge } from "@/features/rights/components/thread";
+import { ReplyBox, Thread, UnreadBadge } from "@/components/data-display/thread";
+import { BriefPanel } from "@/features/rights/components/thread";
 import {
   useAddHolder,
   useConfirmHolder,

@@ -12,7 +12,7 @@ This folder answers: **which role can call each API, on which records, and under
 - [Implementation notes](implementation_notes.md): places where generic documentation and implemented controls differ.
 - [Machine-readable endpoint inventory](endpoint_permissions.json): guards, roles, conditions and source references.
 
-**Coverage: 20 modules, 277 documented operations over 241 OpenAPI paths, plus 3 registered system operations excluded from OpenAPI (280 total operations).** The breach module (S3-01 onward) is recorded in `endpoint_permissions.json`'s `amended` list; its evidence links point at `HEAD`. No framework-generated Swagger/ReDoc/OpenAPI routes or middleware-generated OPTIONS responses are counted.
+**Coverage: 21 modules, 291 documented operations over 254 OpenAPI paths, plus 3 registered system operations excluded from OpenAPI (294 total operations).** The breach module (S3-01 onward) is recorded in `endpoint_permissions.json`'s `amended` list; its evidence links point at `HEAD`. No framework-generated Swagger/ReDoc/OpenAPI routes or middleware-generated OPTIONS responses are counted.
 
 ## Module details
 
@@ -20,7 +20,8 @@ This folder answers: **which role can call each API, on which records, and under
 | --- | --- | --- |
 | Audit | 7 | [Open module](modules/audit.md) |
 | Auth | 14 | [Open module](modules/auth.md) |
-| Breaches | 21 | [Open module](modules/breaches.md) |
+| Breach tickets | 5 | [Open module](modules/breach_tickets.md) |
+| Breaches | 31 | [Open module](modules/breaches.md) |
 | Consent | 12 | [Open module](modules/consent.md) |
 | Cross-border transfers | 3 | [Open module](modules/cross_border_transfers.md) |
 | Dashboard | 3 | [Open module](modules/dashboard.md) |

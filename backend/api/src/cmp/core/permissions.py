@@ -321,6 +321,17 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.RCO: Grant(Scope.OWN, write=True),
         Role.RND_USER: Grant(Scope.OWN, write=True),
     },
+    # A breach ticket addressed to me (S3-08): the same rows as `ticket`. OWN
+    # is "the holder is this account", in the WHERE clause; anything else is
+    # 404. Managing tickets - assigning, closing - is `breach`, the DPO's.
+    "breach_ticket": {
+        Role.DPO: Grant(Scope.OWN, write=True),
+        Role.ADMIN: Grant(Scope.OWN, write=True),
+        Role.DCO: Grant(Scope.OWN, write=True),
+        Role.DCO_ADMIN: Grant(Scope.OWN, write=True),
+        Role.RCO: Grant(Scope.OWN, write=True),
+        Role.RND_USER: Grant(Scope.OWN, write=True),
+    },
 }
 
 

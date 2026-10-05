@@ -199,6 +199,11 @@ class Settings(BaseSettings):
     # an incident is logged and stored as its duty's due time; changing it
     # moves no clock already running.
     breach_org_board_minutes: int = Field(default=30, gt=0)
+    # Who a breach ticket may be assigned to: an address on one of these
+    # domains, checked on the server for every assignee and every colleague
+    # (BD-12, ADR 0023). `cmp.local` is the seeded accounts' domain; production
+    # refuses to start with the list empty or holding only that.
+    breach_ticket_email_domains: Annotated[tuple[str, ...], NoDecode] = ("cmp.local",)
 
     # ---------------------------------------------------------------- external
     #: How the organisation names itself in messages ({organisation}).
@@ -246,6 +251,7 @@ class Settings(BaseSettings):
         "mfa_required_roles",
         "allowed_proof_mime",
         "allowed_manifest_mime",
+        "breach_ticket_email_domains",
         mode="before",
     )
     @classmethod
@@ -289,6 +295,14 @@ class Settings(BaseSettings):
             # the key service exists to prevent.
             if not self.dkms_enabled:
                 raise ValueError("DKMS_ENABLED must be true in production")
+            # "Internal" is only as good as this list: empty, nobody could be
+            # asked; the development domain alone, nobody real could.
+            domains = {d.lower() for d in self.breach_ticket_email_domains}
+            if not domains or domains == {"cmp.local"}:
+                raise ValueError(
+                    "BREACH_TICKET_EMAIL_DOMAINS must name the organisation's own domains "
+                    "in production"
+                )
             bik = self.blind_index_key.get_secret_value()
             if bik.startswith("dev-only") or len(bik) < 32:
                 raise ValueError("BLIND_INDEX_KEY must be a real 32+ byte secret in production")

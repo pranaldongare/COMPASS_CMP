@@ -32,6 +32,7 @@ import {
   DutiesCard,
 } from "@/features/breach/components/cards";
 import { NoticesCard } from "@/features/breach/components/notices-card";
+import { TicketsCard } from "@/features/breach/components/tickets-card";
 import { BreachStatusBadge, OutcomeBadge, locationText } from "@/features/breach/components/copy";
 import { useBreach } from "@/features/breach/queries";
 import { formatDateTime } from "@/lib/format";
@@ -116,6 +117,7 @@ export default function BreachPage() {
         <DeterminationCard breach={b} />
         <AffectedCard breach={b} />
         <NoticesCard breach={b} />
+        <TicketsCard breach={b} />
         <AssessmentCard breach={b} />
         <BreachTransitions breach={b} />
       </div>
