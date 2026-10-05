@@ -1,7 +1,7 @@
 // The runbook: what a first-time tester needs before the first test case.
 // Plain data, rendered by build_docx.js (and summarised in the workbook).
 
-const BUILD = { version: "1.3", date: "29 September 2026", commit: "3024848", branch: "refactor/frontend-architecture" };
+const BUILD = { version: "1.4", date: "5 October 2026", commit: "ebac9f4", branch: "sprint-3/breach-and-correction" };
 
 const ACCOUNTS = [
   ["Priya Menon", "dpo@cmp.local", "DPO (Data Protection Officer)", "Staff console", "Runs the Privacy Office: purposes, notices, approvals, rights requests, audit, legal holds, restricted countries."],
@@ -32,7 +32,7 @@ const GLOSSARY = [
   ["Legal hold", "A DPO record that stops erasure of an asset or a person until released (new)."],
   ["Restricted country", "A country the Government has notified under s.16 that personal data may not go to (new)."],
   ["Audit trail", "The tamper-evident log of everything done on the platform. Holds ids and facts, never personal words."],
-  ["Command palette", "The search box Ctrl+K (⌘K) opens on the console: type part of a page's name and press Enter to go there."],
+  ["Command palette", "The 'Jump to page…' box Ctrl+K (⌘K) opens on the console: type part of a page's name and press Enter to go there."],
   ["Help manual", "The guide at /help on each site, open without signing in; the console's opens on the sections for your role."],
   ["One-time code", "A six-digit code sent by SMS or email to prove a contact. In this test environment it goes to the test outbox."],
 ];
@@ -51,10 +51,10 @@ const NEW_IN_RELEASE = [
   ["S2-02", "A closed request never claims what did not happen", "An erasure or correction request can close as Complete only when the work is evidenced. Otherwise the Privacy Office must respond Partial, and the response says what remains. The console holds Complete back and says why."],
   ["S2-03", "Erasure that actually erases", "Applying an erasure quarantines the item at once; it is marked erased only when the holder confirms its copy is gone and the platform's pointer is cleared. Each store's status is shown; failures are retried and can be retried on demand. The DPO can place a legal hold on an asset or a person."],
   ["S2-04", "Cross-border control at export", "Every processor has a country. An export is refused if any row would go to a processor with no country, to a restricted country, or abroad for a purpose that does not permit it. The DPO keeps the restricted-country list."],
-  ["UI", "Finding your way", "Ctrl+K (⌘K on a Mac) opens a search box that jumps to any page your role has. A breadcrumb shows where you are. Your name at the top right opens an account menu - profile, help manual, theme, sign out. Sidebar groups, a request's 'Clock and path' and a project's 'History' fold away. Lists search as you type (OVS-21)."],
-  ["UI", "Your account in tabs", "'Your account' has tabs - Contacts, Active sessions, and on the console Password. Sessions are a table naming the device, with 'Show all' and 'End all other sessions' (ACC-08)."],
+  ["UI", "Finding your way", "Ctrl+K (⌘K on a Mac), or 'Jump to page…' in the header, opens a box that jumps to any page your role has. Each role's sidebar starts with its daily work under 'Your work'. A breadcrumb shows where you are. Your name at the top right opens an account menu - 'My profile', help manual, theme, sign out; notifications open from the bell. Sidebar groups, a request's 'Clock and path' and a project's 'History' fold away. Lists search as you type (OVS-21)."],
+  ["UI", "My profile in tabs", "'My profile' has tabs - Contacts, Active sessions, and on the console Password. Sessions are a table naming the device, with 'Show all' and 'End all other sessions' (ACC-08)."],
   ["HELP", "Help manual", "Both sites have a manual at /help, open without signing in: numbered sections with the screen's own words, a search, and on the console a choice of role (OVS-22)."],
-  ["NTC", "Start a notice from any approved one", "'Use an existing notice' offers every approved or published notice, whichever project it is on and whoever wrote it. The copy is still a draft without the original's legal approval (PRJ-06)."],
+  ["NTC", "Start a notice from any approved one", "'Copy an existing notice' offers every approved or published notice, whichever project it is on and whoever wrote it. The copy is still a draft without the original's legal approval (PRJ-06)."],
   ["RGT", "Narrowing your requests", "On the portal, a person with six or more requests can show All, Open or Closed ones and search them (RGT-25)."],
   ["NTC", "One notice in force per project", "Publishing a notice supersedes whichever other is published on the project, whatever its code, so a project never has two. Consent links already handed out keep working and show the new notice; consents already given keep the notice they were given under. Another project's notice code is refused (PRJ-16, PRJ-22)."],
   ["UI", "Next steps at the foot of a project", "The moves in 'What happens next' and the header's buttons are repeated in a 'Next steps' card at the bottom of the project page, so you need not scroll back up (PRJ-08)."],

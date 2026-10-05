@@ -21,7 +21,7 @@
     "steps": [
       {
         "action": "Open the CIT consent link.",
-        "expected": "The page opens with a coloured banner showing 'Gait Identification Study 2026' and 'CIT'. A step bar shows 'Your details', 'Confirm', 'The notice', 'Done' with 'Your details' current. A card 'Your details' says consent is recorded against your account so you can read and withdraw it."
+        "expected": "The page opens with a coloured banner showing 'Gait Identification Study 2026' and 'CIT'. A step bar shows 'Your details', 'Confirm', 'The notice', 'Done' with 'Your details' current. A card 'Your details' says 'Confirm your mobile number or email to read the notice and make your choices.' Because this notice is in more than one language, a 'Read the notice in' drop-down showing 'English' is above 'Send my code to'."
       },
       {
         "action": "Look at the form before typing anything.",
@@ -29,14 +29,14 @@
       },
       {
         "action": "Type +91 90000 00001 in 'Mobile number' and click 'Send the code'.",
-        "expected": "The card changes to 'Confirm your mobile': 'We have sent a six-digit code to +91 90000 00001. It expires in ten minutes.' The step bar moves to 'Confirm'."
+        "expected": "The card changes to 'Confirm your mobile': 'We have sent a six-digit code to +91 90000 00001. It expires in ten minutes.' Below the code box are 'Send a new code' and 'Use a different contact'. The step bar moves to 'Confirm'."
       },
       {
         "action": "Type only five digits in 'Six-digit code'.",
-        "expected": "The box accepts digits only, and 'Confirm and read the notice' stays greyed out."
+        "expected": "The box accepts digits only, and 'Verify and continue' stays greyed out."
       },
       {
-        "action": "Complete the code with the one the coordinator relays and click 'Confirm and read the notice'.",
+        "action": "Complete the code with the one the coordinator relays and click 'Verify and continue'.",
         "expected": "No date-of-birth question appears (Anjali already gave one). The step bar moves to 'The notice'. A 'Read this in' dropdown shows 'English'. A card 'The notice' shows the notice text (starting 'NOTICE UNDER SECTION 5, DIGITAL PERSONAL DATA PROTECTION ACT 2023'), then 'Data Protection Officer:', 'Who else sees your data:', the links 'Exercise your rights', 'Withdraw consent', 'Complain to the Data Protection Board', and 'Version 1 · content hash …'."
       },
       {
@@ -53,7 +53,7 @@
       },
       {
         "action": "Click 'Record my choices'.",
-        "expected": "The step bar moves to 'Done'. A green tick and the heading 'Your choices are recorded' appear, with 'We have sent you a receipt. You can review or withdraw your consent at any time - withdrawing is as easy as this was.' Below: 'Your reference:' followed by a long code (write it down), and the links 'Review your consents' and 'Your rights'."
+        "expected": "The step bar moves to 'Done'. A green tick and the heading 'Your choices are recorded' appear, with 'A receipt is on its way to you. You can review or withdraw your consent at any time - withdrawing is as easy as this was.' Below: 'Your reference:' followed by a long code (write it down), and the links 'Review your consents' and 'Your rights'."
       },
       {
         "action": "Ask the coordinator to look in the test outbox for +91 90000 00001.",
@@ -61,7 +61,7 @@
       },
       {
         "action": "Click 'Review your consents'.",
-        "expected": "The portal page 'Your consents' opens, signed in as Anjali, with a card 'Gait Identification Study 2026', status 'Consented' and the line 'You agreed to 2 of 2 purpose(s).'"
+        "expected": "The portal page 'My consents' opens, signed in as Anjali, with a card 'Gait Identification Study 2026', status 'Consented' and the line 'You agreed to both purposes.'"
       }
     ],
     "pass_criteria": "Only one contact and a code were asked for; no purpose was pre-selected; the consent could only be recorded once every purpose was answered; the Done step shows 'Your choices are recorded' with a reference; a receipt was sent; the record shows as Consented, 2 of 2."
@@ -101,7 +101,7 @@
         "expected": "No message was sent to that number."
       },
       {
-        "action": "Type 123456 in 'Six-digit code' and click 'Confirm and read the notice'.",
+        "action": "Type 123456 in 'Six-digit code' and click 'Verify and continue'.",
         "expected": "A red message 'Invalid or expired code' appears. The page stays on 'Confirm your mobile' with the code box; no notice is shown."
       },
       {
@@ -113,11 +113,11 @@
         "expected": "The screen and wording are exactly the same as in step 2; only the number differs. A visitor cannot tell a registered number from an unregistered one."
       },
       {
-        "action": "Type 123456 (not the code that was sent) and click 'Confirm and read the notice'.",
+        "action": "Type 123456 (not the code that was sent) and click 'Verify and continue'.",
         "expected": "The red message 'Invalid or expired code' appears and the page stays on the code step."
       },
       {
-        "action": "Clear the box, type the correct code relayed by the coordinator and click 'Confirm and read the notice'.",
+        "action": "Clear the box, type the correct code relayed by the coordinator and click 'Verify and continue'.",
         "expected": "The notice opens, proving the earlier wrong attempt did not break the flow. Close the browser tab WITHOUT clicking 'Record my choices' or 'Decline everything'."
       }
     ],
@@ -168,7 +168,7 @@
         "expected": "The card changes to 'Confirm your email' and says 'We have sent a six-digit code to tester01@example.org. It expires in ten minutes.' The step bar at the top moves from 'Your details' to 'Confirm'."
       },
       {
-        "action": "Type the code the coordinator relays and click 'Confirm and read the notice'.",
+        "action": "Type the code the coordinator relays and click 'Verify and continue'.",
         "expected": "The notice opens directly. No 'Your date of birth' question appears, because it was given at sign-up."
       },
       {
@@ -185,7 +185,7 @@
       },
       {
         "action": "Click 'Review your consents'.",
-        "expected": "'Your consents' opens with a card 'Gait Identification Study 2026' whose small line reads 'NTC-GAIT-2026 v1 · hindi · <date and time>', status 'Partial', and 'You agreed to 1 of 2 purpose(s).'"
+        "expected": "'My consents' opens with a card 'Gait Identification Study 2026' whose small line reads 'NTC-GAIT-2026 v1 · hindi · <date and time>', status 'Partial', and 'You agreed to 1 of 2 purposes.'"
       }
     ],
     "pass_criteria": "'Create one' leads to sign-up and back to the same link; the link still asks for one contact and a code; the notice can be read in Hindi; a partial answer is recorded as Partial, 1 of 2, in Hindi."
@@ -226,10 +226,10 @@
       },
       {
         "action": "Type the code the coordinator relays and click 'Confirm and sign in'.",
-        "expected": "You are signed in and 'Your consents' opens with the empty message 'No consent records' / 'When you agree to a notice, it will appear here.'"
+        "expected": "You are signed in and 'My consents' opens with the empty message 'No consent records' / 'When you agree to a notice, it will appear here.'"
       },
       {
-        "action": "In the same browser window open the CIT consent link. Leave 'Mobile' selected, type +91 98100 00022, click 'Send the code', type the relayed code and click 'Confirm and read the notice'.",
+        "action": "In the same browser window open the CIT consent link. Leave 'Mobile' selected, type +91 98100 00022, click 'Send the code', type the relayed code and click 'Verify and continue'.",
         "expected": "The notice opens with the two purposes, neither pre-selected."
       },
       {
@@ -238,7 +238,7 @@
       },
       {
         "action": "Click 'Review your consents'.",
-        "expected": "The card 'Gait Identification Study 2026' shows status 'Declined' and 'You were asked about 2 purpose(s) and agreed to none.' The first button reads 'See what you were asked'. There is no 'Withdraw everything' button."
+        "expected": "The card 'Gait Identification Study 2026' shows status 'Declined' and 'You were asked about 2 purposes and agreed to none.' The first button reads 'See what you were asked'. There is no 'Withdraw everything' button."
       },
       {
         "action": "Click 'See what you were asked'.",
@@ -274,7 +274,7 @@
         "expected": "The card changes to 'Confirm your email' and says 'We have sent a six-digit code to dcoadmin@cmp.local. It expires in ten minutes.' The step bar at the top moves from 'Your details' to 'Confirm'."
       },
       {
-        "action": "Type the code the coordinator relays and click 'Confirm and read the notice'.",
+        "action": "Type the code the coordinator relays and click 'Verify and continue'.",
         "expected": "Instead of the notice, a card 'Your date of birth' appears: 'The law protects people under 18 differently, and we do not have your date of birth yet. We need it before you can give a new consent.' with a 'Date of birth' field and a 'Save and continue' button. The step bar still shows 'Confirm'. No notice text is visible yet."
       },
       {
@@ -295,10 +295,10 @@
       },
       {
         "action": "Click 'Review your consents'.",
-        "expected": "'Your consents' shows the card 'Gait Identification Study 2026' with status 'Consented' and 'You agreed to 2 of 2 purpose(s).'"
+        "expected": "'My consents' shows the card 'Gait Identification Study 2026' with status 'Consented' and 'You agreed to both purposes.'"
       },
       {
-        "action": "Open the CIT consent link again in a new private window, identify with dcoadmin@cmp.local and the new code, and click 'Confirm and read the notice'.",
+        "action": "Open the CIT consent link again in a new private window, identify with dcoadmin@cmp.local and the new code, and click 'Verify and continue'.",
         "expected": "The notice opens directly; the date-of-birth question is NOT asked again. Close the tab without recording anything."
       }
     ],
@@ -380,7 +380,7 @@
         "expected": "The card changes to 'Confirm your email' and says 'We have sent a six-digit code to tester07@example.org. It expires in ten minutes.' The step bar at the top moves from 'Your details' to 'Confirm'."
       },
       {
-        "action": "Type the relayed code and click 'Confirm and read the notice'.",
+        "action": "Type the relayed code and click 'Verify and continue'.",
         "expected": "The card 'Your date of birth' appears (the account has no date of birth)."
       },
       {
@@ -401,10 +401,10 @@
       },
       {
         "action": "Open http://localhost:3001/my-consents in the same window.",
-        "expected": "'Your consents' shows 'No consent records'."
+        "expected": "'My consents' shows 'No consent records'."
       },
       {
-        "action": "Click 'Your profile' in the sidebar and look at 'Date of birth'.",
+        "action": "Click your name at the top right to open the account menu, click 'My profile' and look at 'Date of birth'.",
         "expected": "It shows the date entered, marked as under 18. Nothing on the page offers a way for a parent or guardian to consent. The badge reads 'Under 18 — we cannot record consent from you'."
       },
       {
@@ -481,11 +481,11 @@
     "steps": [
       {
         "action": "Open http://localhost:3001/sign-in. Under 'Sign in with' select 'Email', type tester01@example.org in 'Email address' and click 'Send me a code'. Then type the code the coordinator relays into 'Six-digit code' and click 'Verify'.",
-        "expected": "After 'Send me a code' a blue box 'Check your messages' says 'If tester01@example.org is registered with us, a six-digit code is on its way. It expires in ten minutes.' After 'Verify' the page 'Your consents' opens and 'My consents' is highlighted in the sidebar."
+        "expected": "After 'Send me a code' a blue box 'Check your messages' says 'If tester01@example.org is registered with us, a six-digit code is on its way. It expires in ten minutes.' After 'Verify' the page 'My consents' opens and 'My consents' is highlighted in the sidebar."
       },
       {
         "action": "Read the page header and the card for 'Gait Identification Study 2026'.",
-        "expected": "Description: 'Everything you have agreed to, the exact wording you were shown, and who it has been shared with. You can withdraw at any time.' The card shows 'NTC-GAIT-2026 v1 · hindi · <date and time>', status 'Partial', 'You agreed to 1 of 2 purpose(s).' and the buttons 'See what you agreed to', 'What was recorded', 'Withdraw everything' and 'Ask about this consent'."
+        "expected": "Description: 'Everything you have agreed to, the exact wording you were shown, and who it has been shared with. You can withdraw at any time.' The card shows 'NTC-GAIT-2026 v1 · hindi · <date and time>', status 'Partial', 'You agreed to 1 of 2 purposes.' and the buttons 'See what you agreed to', 'What was recorded', 'Withdraw everything' and 'Ask about this consent'."
       },
       {
         "action": "Click 'See what you agreed to'.",
@@ -501,7 +501,7 @@
       },
       {
         "action": "Scroll to 'Who your data has been shared with'.",
-        "expected": "Before any export (CON-14): 'Not shared with anyone' / 'No export containing your record has been generated.' After CON-14: an entry naming the processor 'SEED' with the project name and date."
+        "expected": "Before any export (CON-14): 'No sharing recorded here' / 'This lists every file of your details this platform has sent to a processor. None has been sent.' After CON-14: an entry naming the processor 'SEED' with the project name and date."
       },
       {
         "action": "Click 'Hide details' and 'Hide the record'.",
@@ -530,10 +530,10 @@
     "steps": [
       {
         "action": "Open http://localhost:3001/sign-in. Under 'Sign in with' select 'Email', type dcoadmin@cmp.local in 'Email address' and click 'Send me a code'. Then type the code the coordinator relays into 'Six-digit code' and click 'Verify'.",
-        "expected": "After 'Send me a code' a blue box 'Check your messages' says 'If dcoadmin@cmp.local is registered with us, a six-digit code is on its way. It expires in ten minutes.' After 'Verify' the page 'Your consents' opens and 'My consents' is highlighted in the sidebar."
+        "expected": "After 'Send me a code' a blue box 'Check your messages' says 'If dcoadmin@cmp.local is registered with us, a six-digit code is on its way. It expires in ten minutes.' After 'Verify' the page 'My consents' opens and 'My consents' is highlighted in the sidebar."
       },
       {
-        "action": "On the card 'Gait Identification Study 2026' (status 'Consented', 'You agreed to 2 of 2 purpose(s).') click 'Withdraw everything'.",
+        "action": "On the card 'Gait Identification Study 2026' (status 'Consented', 'You agreed to both purposes.') click 'Withdraw everything'.",
         "expected": "A warning 'Withdraw all purposes?' appears: 'Processing for these purposes will stop. Data already collected is not deleted by a withdrawal — if you want it erased, make a rights request.' with the buttons 'Withdraw' and 'Keep my consent'."
       },
       {
@@ -546,7 +546,7 @@
       },
       {
         "action": "Look at the card.",
-        "expected": "The status is 'Withdrawn' and the text reads 'You were asked about 2 purpose(s) and agreed to none.' The 'Withdraw everything' button is gone."
+        "expected": "The status is 'Withdrawn' and the text reads 'You were asked about 2 purposes and agreed to none.' The 'Withdraw everything' button is gone."
       },
       {
         "action": "Click 'See what you were asked', then 'Show the exact notice I was given'.",
@@ -584,7 +584,7 @@
     "steps": [
       {
         "action": "Open http://localhost:3001/sign-in. Under 'Sign in with' select 'Email', type admin@cmp.local in 'Email address' and click 'Send me a code'. Then type the code the coordinator relays into 'Six-digit code' and click 'Verify'.",
-        "expected": "'Your consents' opens — it is NOT replaced by a date-of-birth question. A blue note 'We need your date of birth' reads 'You can withdraw a consent or make a request without it, but we need it before you give a new consent.' with a link 'Add it now'."
+        "expected": "'My consents' opens — it is NOT replaced by a date-of-birth question. A blue note 'We need your date of birth' reads 'You can withdraw a consent or make a request without it, but we need it before you give a new consent.' with a link 'Add it now'."
       },
       {
         "action": "Look below the note.",
@@ -592,19 +592,19 @@
       },
       {
         "action": "Click 'Add it now' in the note.",
-        "expected": "'Your profile' opens and shows the card 'Your date of birth' with 'Save and continue'. Do not enter a date."
+        "expected": "'My profile' opens and shows the card 'Your date of birth' with 'Save and continue'. Do not enter a date."
       },
       {
         "action": "Click 'My requests' in the sidebar.",
         "expected": "The requests page opens normally, with the same 'We need your date of birth' note."
       },
       {
-        "action": "Click 'Your profile' in the sidebar.",
+        "action": "Click your name at the top right to open the account menu, then click 'My profile'.",
         "expected": "The page is replaced by the card 'Your date of birth' with 'Save and continue', and the line 'You can still withdraw a consent or make a request without it.'"
       },
       {
         "action": "Click the 'withdraw a consent' link on that card.",
-        "expected": "'Your consents' opens again, with the note."
+        "expected": "'My consents' opens again, with the note."
       },
       {
         "action": "Do not enter a date. Click 'Sign out'.",
@@ -707,7 +707,7 @@
         "expected": "None of the CIT test people are listed (the RCO runs only the SE site); the list is empty ('No consent records yet') unless someone consented at SE."
       },
       {
-        "action": "As the RCO click 'Projects', type 'Gait Identification' in 'Search' (the list updates as you type), open 'Gait Identification Study 2026', click 'Generate export' and then 'Generate the export'.",
+        "action": "As the RCO click 'My projects', type 'Gait Identification' in 'Search' (the list updates as you type), open 'Gait Identification Study 2026', click 'Generate export' and then 'Generate the export'.",
         "expected": "The notice 'Export generated' says 'Nobody has consented on this project yet, so the file carries the project details only.' — the RCO's export contains none of the CIT people."
       },
       {
@@ -1150,7 +1150,7 @@
     "steps": [
       {
         "action": "Open http://localhost:3001/sign-in. Under 'Sign in with' select 'Mobile', type +91 90000 00001 in 'Mobile number' and click 'Send me a code'. Then type the code the coordinator relays into 'Six-digit code' and click 'Verify'.",
-        "expected": "After 'Send me a code' a blue box 'Check your messages' says 'If +91 90000 00001 is registered with us, a six-digit code is on its way. It expires in ten minutes.' After 'Verify' the page 'Your consents' opens and 'My consents' is highlighted in the sidebar."
+        "expected": "After 'Send me a code' a blue box 'Check your messages' says 'If +91 90000 00001 is registered with us, a six-digit code is on its way. It expires in ten minutes.' After 'Verify' the page 'My consents' opens and 'My consents' is highlighted in the sidebar."
       },
       {
         "action": "Scroll to 'Who your data has been shared with'.",
@@ -1166,7 +1166,7 @@
       },
       {
         "action": "Look at the card.",
-        "expected": "The line reads 'You agreed to 1 of 2 purpose(s).' 'Recording quality assurance' now shows 'Declined' and 'Gait model training' still shows 'Consented'. The status badge reads 'Partial', not 'Withdrawn'."
+        "expected": "The line reads 'You agreed to 1 of 2 purposes.' 'Recording quality assurance' now shows 'Declined' and 'Gait model training' still shows 'Consented'. The status badge reads 'Partial', not 'Withdrawn'."
       },
       {
         "action": "Look for a way to withdraw the remaining purpose, 'Gait model training'.",

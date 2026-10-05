@@ -65,7 +65,7 @@ add(
     steps=[
         sign_in("admin@cmp.local"),
         {
-            "action": "In the left-hand sidebar, under 'Oversight', click 'Users'.",
+            "action": "In the left-hand sidebar, under 'Your work', click 'Users'.",
             "expected": "The 'Users' page opens with the register of accounts (columns Name, Role, Person type, Status, Registered, Action) and a 'Provision account' button at the top right.",
         },
         {
@@ -129,7 +129,7 @@ add(
         sign_in("uat.dco01@cmp.local", "UatPassw0rd!2026", "UAT DCO 01", "Data Collection Owner"),
         {
             "action": "Look at the left-hand sidebar.",
-            "expected": "The sidebar shows the Data Collection Owner's sections (for example 'Projects', 'Collection sites', 'Data sources', 'Delegate') and does NOT show 'Users'.",
+            "expected": "The sidebar shows the Data Collection Owner's pages (for example 'My projects', 'Collection sites', 'Data sources', 'Delegations') and does NOT show 'Users'.",
         },
         SIGN_OUT,
         sign_in("admin@cmp.local"),
@@ -188,7 +188,7 @@ add(
 
 add(
     title="Roles that may not administer users cannot provision or manage accounts",
-    feature="Users - access by role; Messages - access by role",
+    feature="Users - access by role; Message templates - access by role",
     role="DPO, Data Collection Owner, R&D User",
     priority="High",
     type="Negative",
@@ -205,7 +205,7 @@ add(
         sign_in("dco@cmp.local"),
         {
             "action": "Look through the left-hand sidebar.",
-            "expected": "There is no 'Users' entry and no 'Messages' entry.",
+            "expected": "There is no 'Users' entry and no 'Message templates' entry.",
         },
         {
             "action": "Type http://localhost:3000/users in the browser address bar and press Enter.",
@@ -222,7 +222,7 @@ add(
             "expected": "No 'Users' entry in the sidebar; the address shows 'Not part of your account'.",
         },
     ],
-    pass_criteria="Only the Administrator can provision or change accounts; the DPO sees a read-only register; DCO and R&D User have no Users or Messages section and are turned away if they type the address.",
+    pass_criteria="Only the Administrator can provision or change accounts; the DPO sees a read-only register; DCO and R&D User have no Users or Message templates page and are turned away if they type the address.",
 )
 
 # ---------------------------------------------------------------- purposes
@@ -723,7 +723,7 @@ add(
 # ---------------------------------------------------------------- messages
 add(
     title="The office rewords the staff invitation email, previews, saves and resets it",
-    feature="Messages - edit the words of a message",
+    feature="Message templates - edit the words of a message",
     role="Administrator (admin@cmp.local)",
     priority="Medium",
     type="Positive",
@@ -733,8 +733,8 @@ add(
     steps=[
         sign_in("admin@cmp.local"),
         {
-            "action": "In the sidebar under 'Oversight' click 'Messages'.",
-            "expected": "The 'Messages' page opens with messages grouped under headings such as 'Sign-in', 'Consent', 'Rights' and 'Staff'.",
+            "action": "In the sidebar under 'Your work' click 'Message templates'.",
+            "expected": "The 'Message templates' page opens with messages grouped under headings such as 'Sign-in', 'Consent', 'Rights' and 'Staff'.",
         },
         {
             "action": "Under 'Sign-in' find the card 'Staff account invitation'.",
@@ -766,7 +766,7 @@ add(
 
 add(
     title="A message that uses a variable it does not provide is refused",
-    feature="Messages - variable check",
+    feature="Message templates - variable check",
     role="DPO (dpo@cmp.local)",
     priority="Medium",
     type="Negative",
@@ -775,7 +775,7 @@ add(
     test_data=["Body: 'Dear {full_name}, your code is {code}.'"],
     steps=[
         {
-            "action": "Click 'Messages' and find the card 'Staff sign-in code' under 'Sign-in'.",
+            "action": "In the sidebar under 'Oversight' click 'Message templates' and find the card 'Staff sign-in code' under 'Sign-in'.",
             "expected": "The card shows its 'Subject', 'Body' and the variables it can use. {full_name} is NOT in its variable list.",
         },
         {
@@ -797,7 +797,7 @@ add(
 # ---------------------------------------------------------------- delegation
 add(
     title="A Data Collection Owner delegates their work to a colleague for a period and ends it",
-    feature="Delegate - Delegate my work",
+    feature="Delegations - Delegate my work",
     role="Data Collection Owner (dco@cmp.local), colleague UAT DCO 01, DPO",
     priority="Medium",
     type="Positive",
@@ -814,8 +814,8 @@ add(
     steps=[
         sign_in("dco@cmp.local"),
         {
-            "action": "In the sidebar under 'Oversight' click 'Delegate'.",
-            "expected": "The 'Delegate' page opens with a 'Delegate my work' button and the cards 'My delegations' ('You have not delegated your work to anybody') and 'Work delegated to me'.",
+            "action": "In the sidebar under 'Oversight' click 'Delegations'.",
+            "expected": "The 'Delegations' page opens with a 'Delegate my work' button and the cards 'My delegations' ('You have not delegated your work to anybody') and 'Work delegated to me'.",
         },
         {
             "action": "Click 'Delegate my work' and open the 'Who takes over' drop-down.",
@@ -828,13 +828,13 @@ add(
         SIGN_OUT,
         sign_in("uat.dco01@cmp.local", "UatPassw0rd!2026", "UAT DCO 01", "Data Collection Owner"),
         {
-            "action": "Click 'Delegate'.",
+            "action": "Click 'Delegations' in the sidebar.",
             "expected": "'Work delegated to me' lists Arun Shetty with the end date.",
         },
         SIGN_OUT,
         sign_in("dco@cmp.local"),
         {
-            "action": "Click 'Delegate' and click 'End now' on the UAT DCO 01 arrangement.",
+            "action": "Click 'Delegations' and click 'End now' on the UAT DCO 01 arrangement.",
             "expected": "'Delegation ended' appears. The arrangement is no longer live (marked 'ended' or removed, with no 'End now' button).",
         },
     ],
@@ -843,7 +843,7 @@ add(
 
 add(
     title="Delegation is not offered where it does not apply",
-    feature="Delegate - access by role",
+    feature="Delegations - access by role",
     role="R&D User, Administrator, DPO",
     priority="Low",
     type="Negative",
@@ -854,22 +854,22 @@ add(
         sign_in("rnd@cmp.local"),
         {
             "action": "Look through the sidebar, then open http://localhost:3000/delegate directly.",
-            "expected": "There is no 'Delegate' entry; the address shows 'Not part of your account' with 'Back to your dashboard'.",
+            "expected": "There is no 'Delegations' entry; the address shows 'Not part of your account' with 'Back to your dashboard'.",
         },
         SIGN_OUT,
         sign_in("admin@cmp.local"),
         {
-            "action": "Click 'Delegate'.",
+            "action": "Under 'Oversight' click 'Delegations'.",
             "expected": "The page shows NO 'Delegate my work' button; a blue note explains delegation applies to roles whose access is defined by assignment. An 'Everyone, right now' card shows live arrangements across the organisation (or 'No delegation is in place').",
         },
         SIGN_OUT,
         sign_in("dpo@cmp.local"),
         {
-            "action": "Click 'Delegate', then 'Delegate my work'.",
+            "action": "Under 'Oversight' click 'Delegations', then 'Delegate my work'.",
             "expected": "The dialog shows 'There is nobody else in your role to delegate to…'. 'Who takes over' is disabled and the 'Delegate' button cannot be clicked.",
         },
     ],
-    pass_criteria="R&D Users cannot reach Delegate, the Administrator can only oversee (not arrange), and a DPO with no same-role colleague cannot delegate.",
+    pass_criteria="R&D Users cannot reach Delegations, the Administrator can only oversee (not arrange), and a DPO with no same-role colleague cannot delegate.",
 )
 
 for i, c in enumerate(cases, 1):

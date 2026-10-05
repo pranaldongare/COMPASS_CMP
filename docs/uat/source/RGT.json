@@ -25,7 +25,7 @@
       },
       {
         "action": "In the sidebar click 'My requests'.",
-        "expected": "The page 'Your requests' opens with the text 'Ask for access to your data, a correction, erasure, or raise a grievance...' and a 'Make a request' button at the top right. Lower down is the card 'Somebody to act for you'."
+        "expected": "The page 'My requests' opens with the text 'Ask for access to your data, a correction or erasure, or raise a complaint...' and a 'Make a request' button at the top right. At the foot of the page a line says naming someone to act for you is under 'My nominations'."
       },
       {
         "action": "Click 'Make a request'.",
@@ -179,7 +179,7 @@
         "expected": "The dialog stays open with the error 'Say what you are asking for, in a sentence or two.' under 'Your request'. No new card appears."
       },
       {
-        "action": "In the same dialog change 'What are you asking for' to 'Grievance (s.13)'.",
+        "action": "In the same dialog change 'What are you asking for' to 'Complaint (grievance) (s.13)'.",
         "expected": "The 'About' field disappears and a checkbox appears: 'This complaint is about the Data Protection Officer's own decisions.' with 'It will be reviewed by somebody independent of the DPO.' Close the dialog with Esc."
       },
       {
@@ -348,7 +348,7 @@
     "steps": [
       {
         "action": "In Browser B open http://localhost:3000. Type dpo@cmp.local in 'Email or username' and SeedPassw0rd!2026 in 'Password' and click 'Sign in'. If the 'Verify it is you' page appears, ask the coordinator for the code, type it in '6-digit code' and click 'Verify and continue'.",
-        "expected": "The Dashboard opens, signed in as Priya Menon (DPO). The sidebar shows 'Rights requests' under 'Oversight'."
+        "expected": "The Dashboard opens, signed in as Priya Menon (DPO). The sidebar shows 'Rights requests' under 'Your work'."
       },
       {
         "action": "Click 'Rights requests'.",
@@ -485,7 +485,7 @@
     "steps": [
       {
         "action": "Open RR-A and find the card '9–10 · Collate, review, release'.",
-        "expected": "It reads 'Third-party data removed. The DPO signs off - nothing releases automatically. An access response is a file she downloads from her own account.' There is no yellow warning, and 'Outcome' shows 'Complete'."
+        "expected": "It reads 'Third-party data removed. The DPO signs off - nothing releases automatically. An access response is a file the requester downloads from their own account.' There is no yellow warning, and 'Outcome' shows 'Complete'."
       },
       {
         "action": "Without typing a response, look at 'Release and close'.",
@@ -497,7 +497,7 @@
       },
       {
         "action": "Click 'Release and close'.",
-        "expected": "The message 'Released and closed' with 'She has been told; 1 file released with the response.' appears. The header badge reads 'Complete'. A 'Response' card shows 'Complete · <date> · downloadable by her until <date>', the response text, a 'Download the file' button and 'Released with the response' listing access-extract.pdf."
+        "expected": "The message 'Released and closed' with 'The requester has been told; 1 file released with the response.' appears. The header badge reads 'Complete'. A 'Response' card shows 'Complete · <date> · downloadable by the requester until <date>', the response text, a 'Download the file' button and 'Released with the response' listing access-extract.pdf."
       },
       {
         "action": "Look at 'What happens next'.",
@@ -553,7 +553,7 @@
       },
       {
         "action": "In '4 · Withdrawal, or erasure?' read the yellow box.",
-        "expected": "It is headed 'Does she mean erasure, or withdrawal?' and explains 'Withdrawal stops future processing and is hers to do from her consent record... Confirm which before anything is deleted.' with buttons 'She means erasure' and 'She meant withdrawal'."
+        "expected": "It is headed 'Does the requester mean erasure, or withdrawal?' and explains 'Withdrawal stops future processing, and the requester can do it from their consent record... Confirm which before anything is deleted.' with buttons 'They mean erasure' and 'They meant withdrawal'."
       },
       {
         "action": "Check 'This is a request for' shows 'Erasure (s.12(3))' and click 'Confirm classification'.",
@@ -564,7 +564,7 @@
         "expected": "'Move to in progress' carries the warning 'Whether she means withdrawal or erasure is not yet confirmed' and 'In progress' is greyed out."
       },
       {
-        "action": "Click 'She means erasure'.",
+        "action": "Click 'They mean erasure'.",
         "expected": "The message 'Erasure confirmed' appears, the yellow box disappears and the card reads 'Erasure confirmed on <date>.'"
       },
       {
@@ -576,7 +576,7 @@
         "expected": "'Recorded as RR-...' appears."
       },
       {
-        "action": "In Browser B open RR-W and click 'She meant withdrawal'.",
+        "action": "In Browser B open RR-W and click 'They meant withdrawal'.",
         "expected": "The message 'Handled as withdrawal' appears. The header badge reads 'Handled as withdrawal'. A 'Response' card shows the explanation starting 'Withdrawing consent stops future processing for the purposes withdrawn. It does not delete data already collected...'"
       },
       {
@@ -584,7 +584,7 @@
         "expected": "RR-W shows 'Handled as withdrawal' with 'Our response' giving the same explanation and a 'Dispute this response' button. Her consents are NOT changed - withdrawing stays her own step."
       }
     ],
-    "pass_criteria": "Work on an erasure cannot start until the DPO confirms intent; 'She means erasure' unblocks it; 'She meant withdrawal' closes the request as 'Handled as withdrawal' with the explanation, without touching her consents.",
+    "pass_criteria": "Work on an erasure cannot start until the DPO confirms intent; 'They mean erasure' unblocks it; 'They meant withdrawal' closes the request as 'Handled as withdrawal' with the explanation, without touching her consents.",
     "area": "Rights requests"
   },
   {
@@ -662,15 +662,15 @@
     "steps": [
       {
         "action": "Open RR-E and find '5–6 · Scope determined; inside the one-year floor?'.",
-        "expected": "A blue note reads 'Consent artefacts are never erased. They are the evidence that past processing was lawful...' and the card says 'No scope yet. Derive it from the records she appears in.' with a button 'Derive from asset_consent'."
+        "expected": "A blue note reads 'Consent artefacts are never erased. They are the evidence that past processing was lawful...' and the card says 'No scope yet. Derive it from the records the requester appears in.' with a button 'Derive from asset_consent'."
       },
       {
         "action": "Click 'Derive from asset_consent'.",
-        "expected": "'Scope derived' with '2 appearances of her in collected assets.' appears. Two rows show: asset A with its type badge and 'only her', and asset B with a warning badge 'holds 1 other person'. Each row names the project, source (SRC-SRIB-SE), 'held by SRIB' and the collection date."
+        "expected": "'Scope derived' with '2 appearances of the requester in collected assets.' appears. Two rows show: asset A with its type badge and 'only the requester', and asset B with a warning badge 'holds 1 other person'. Each row names the project, source (SRC-SRIB-SE), 'held by SRIB' and the collection date."
       },
       {
         "action": "On asset A look at 'Decision', 'Basis' and 'Record the decision'.",
-        "expected": "'Decision' shows 'Erase - the asset holds only her'. 'Basis' is empty and 'Record the decision' is greyed out."
+        "expected": "'Decision' shows 'Erase - the asset holds only the requester'. 'Basis' is empty and 'Record the decision' is greyed out."
       },
       {
         "action": "Change 'Decision' to 'Retain - a floor binds, erased when it passes'. Set 'Until' to yesterday, type the retain basis and click 'Record the decision'.",
@@ -685,12 +685,12 @@
         "expected": "The message 'Not applied' with 'Retained until <date>. The floor binds even against her request; it is applied when it passes.' appears. The row still shows 'decided: retain' and nothing is quarantined."
       },
       {
-        "action": "Change 'Decision' to 'Erase - the asset holds only her', replace the basis with the erase basis and click 'Record the decision'.",
+        "action": "Change 'Decision' to 'Erase - the asset holds only the requester', replace the basis with the erase basis and click 'Record the decision'.",
         "expected": "The 'Until' field disappears. 'Decision recorded' appears and the row shows 'decided: erase' with the new basis. Do not click 'Apply' yet (RGT-14)."
       },
       {
         "action": "Open 'Decision' on asset A once more without changing it.",
-        "expected": "The four options are 'Erase - the asset holds only her', 'Redact - remove her, keep the others', 'Retain - a floor binds, erased when it passes' and 'Quarantine - removal cannot be assured; the DPO decides'."
+        "expected": "The four options are 'Erase - the asset holds only the requester', 'Redact - remove the requester, keep the others', 'Retain - a floor binds, erased when it passes' and 'Quarantine - removal cannot be assured; the DPO decides'."
       }
     ],
     "pass_criteria": "The scope lists each appearance of her with how many others share the asset; every decision needs a basis; a retention floor in the past is refused and one in the future cannot be applied early.",
@@ -715,14 +715,14 @@
     "steps": [
       {
         "action": "On the asset B row look at the badges, the 'Decision' field and the text beside 'Record the decision'.",
-        "expected": "The row carries the warning badge 'holds 1 other person'. 'Decision' is preset to 'Redact - remove her, keep the others'. Beside the button: 'Erase is not offered: deleting this asset would erase the other people's validly given consent.'"
+        "expected": "The row carries the warning badge 'holds 1 other person'. 'Decision' is preset to 'Redact - remove the requester, keep the others'. Beside the button: 'Erase is not offered: deleting this asset would erase the other people's validly given consent.'"
       },
       {
-        "action": "Open 'Decision' and try to choose 'Erase - the asset holds only her'.",
+        "action": "Open 'Decision' and try to choose 'Erase - the asset holds only the requester'.",
         "expected": "The Erase option is greyed out and cannot be chosen."
       },
       {
-        "action": "Keep 'Redact - remove her, keep the others', type the redact basis and click 'Record the decision'.",
+        "action": "Keep 'Redact - remove the requester, keep the others', type the redact basis and click 'Record the decision'.",
         "expected": "'Decision recorded' appears; the row shows 'decided: redact' and an 'Apply' button."
       },
       {
@@ -786,7 +786,7 @@
       },
       {
         "action": "In Browser A (Anjali) reload 'My requests' and look at RR-E.",
-        "expected": "RR-E shows 'Awaiting holders'. Nothing on her card says her data has been erased."
+        "expected": "RR-E shows 'Waiting for responses'. Nothing on her card says her data has been erased."
       }
     ],
     "pass_criteria": "Apply quarantines at once and shows each store as it stands - the holder's copy waiting for its ticket, the pointer cleared - and nothing claims 'erased' while a store is outstanding; 'Try again now' re-checks without changing the truth.",
@@ -794,8 +794,8 @@
   },
   {
     "id": "RGT-15",
-    "title": "In-house respondent answers the ticket on 'Tickets for you' (thread, attach file, return)",
-    "feature": "Console - Tickets for you; request detail - ticket thread",
+    "title": "In-house respondent answers the ticket on 'My tasks' (thread, attach file, return)",
+    "feature": "Console - My tasks; request detail - ticket thread",
     "role": "Respondent (Meera Iyer, rco@cmp.local); DPO",
     "priority": "High",
     "type": "Positive",
@@ -816,15 +816,15 @@
     "steps": [
       {
         "action": "In Browser C sign in to http://localhost:3000 as rco@cmp.local with password SeedPassw0rd!2026 (enter the relayed code if 'Verify it is you' appears).",
-        "expected": "Meera Iyer's dashboard opens. Under 'You' the sidebar shows 'Tickets for you' with a count; there is no 'Rights requests' link."
+        "expected": "Meera Iyer's dashboard opens. Under 'Your work' the sidebar shows 'My tasks' with a count; there is no 'Rights requests' link."
       },
       {
         "action": "Type http://localhost:3000/requests in the address bar.",
         "expected": "A box 'Not part of your account' says 'This section belongs to a different role, so there is nothing here for you...' with a 'Back to your dashboard' button. No requests are shown."
       },
       {
-        "action": "Click 'Tickets for you'.",
-        "expected": "The page 'Tickets for you' shows tiles 'Open', 'Overdue', 'Due within 7 days', 'Unread from the Privacy Office' and a section 'Open · 1'. The ticket card shows RR-E, 'Erasure · s.12(3)', 'Issued', 'For SRIB · about Anjali Verma · issued <date>', the due date and an 'Instruction'."
+        "action": "Click 'My tasks'.",
+        "expected": "The page 'My tasks' shows tiles 'Open', 'Overdue', 'Due within 7 days', 'Unread from the Privacy Office' and a section 'Open · 1'. The ticket card shows RR-E, 'Erasure · s.12(3)', 'Issued', 'For SRIB · about Anjali Verma · issued <date>', the due date and an 'Instruction'."
       },
       {
         "action": "Click 'Respond'.",
@@ -847,7 +847,7 @@
         "expected": "The reply appears in the thread."
       },
       {
-        "action": "In Browser C reload 'Tickets for you'.",
+        "action": "In Browser C reload 'My tasks'.",
         "expected": "'Unread from the Privacy Office' shows 1 and the card shows '1 new'. Clicking 'Respond' shows the DPO's reply."
       },
       {
@@ -900,7 +900,7 @@
       },
       {
         "action": "Type the response and click 'Release and close'.",
-        "expected": "'Released and closed' with 'She has been told the response is ready.' appears. The header badge reads 'Complete' and a 'Response' card shows 'Complete · <date> ...'."
+        "expected": "'Released and closed' with 'The requester has been told the response is ready.' appears. The header badge reads 'Complete' and a 'Response' card shows 'Complete · <date> ...'."
       },
       {
         "action": "Look at the scope card.",
@@ -955,7 +955,7 @@
         "expected": "'Recorded as RR-...' appears."
       },
       {
-        "action": "In Browser B open RR-H: click 'Confirm classification', then 'She means erasure', then 'In progress' in 'What happens next'.",
+        "action": "In Browser B open RR-H: click 'Confirm classification', then 'They mean erasure', then 'In progress' in 'What happens next'.",
         "expected": "'Classified', 'Erasure confirmed' and 'Moved to In progress' appear in turn."
       },
       {
@@ -963,8 +963,8 @@
         "expected": "SRIB shows 'confirmed', 'on the portal' and 'Issued'. The request is 'Awaiting holders'."
       },
       {
-        "action": "In the scope card click 'Derive from asset_consent'. On asset H keep 'Erase - the asset holds only her', type the erase basis and click 'Record the decision'.",
-        "expected": "'Scope derived' shows 1 appearance; asset H shows 'only her' and 'decided: erase'."
+        "action": "In the scope card click 'Derive from asset_consent'. On asset H keep 'Erase - the asset holds only the requester', type the erase basis and click 'Record the decision'.",
+        "expected": "'Scope derived' shows 1 appearance; asset H shows 'only the requester' and 'decided: erase'."
       },
       {
         "action": "On asset H click 'Place a legal hold'.",
@@ -979,7 +979,7 @@
         "expected": "'Quarantined' appears. The row shows a red badge 'legal hold' with a lock and the line 'Legal hold: stopped until the hold is released'. There is no 'Try again now' and no 'erased' badge; a 'Release hold' button is offered."
       },
       {
-        "action": "In Browser C (Meera) open 'Tickets for you', click 'Respond' on RR-H, type the return text, tick 'This is my return - close the ticket with it' and click 'Return the ticket'.",
+        "action": "In Browser C (Meera) open 'My tasks', click 'Respond' on RR-H, type the return text, tick 'This is my return - close the ticket with it' and click 'Return the ticket'.",
         "expected": "'Ticket returned' appears and the ticket moves to 'Returned'."
       },
       {
@@ -1033,12 +1033,12 @@
         "expected": "'Recorded as RR-...' appears."
       },
       {
-        "action": "In Browser B open RR-P, click 'Confirm classification', 'She means erasure' and then 'In progress'. Do NOT derive or add holders.",
+        "action": "In Browser B open RR-P, click 'Confirm classification', 'They mean erasure' and then 'In progress'. Do NOT derive or add holders.",
         "expected": "The request is 'In progress'; the holders card reads 'No holders yet...'."
       },
       {
         "action": "In the scope card click 'Derive from asset_consent'.",
-        "expected": "One row, asset P, 'only her', undecided."
+        "expected": "One row, asset P, 'only the requester', undecided."
       },
       {
         "action": "In 'What happens next' look at both rows, then click 'Collating'.",
@@ -1113,7 +1113,7 @@
       },
       {
         "action": "Read the hint under 'The response', type the response and click 'Release and close'.",
-        "expected": "The hint reads 'What she is being given, and what could not be provided.' 'Released and closed' appears and the badge reads 'Partial'."
+        "expected": "The hint reads 'What the requester is being given, and what could not be provided.' 'Released and closed' appears and the badge reads 'Partial'."
       },
       {
         "action": "In Browser A reload 'My requests' and look at RR-C.",
@@ -1159,7 +1159,7 @@
       },
       {
         "action": "Look at the RR-G and RR-A cards.",
-        "expected": "RR-G shows 'Grievance · s.13', 'Received' and a box 'What you disputed' naming RR-A with 'Complete: <start of the answer>' and 'See RR-A in full'. RR-A shows 'You disputed this in RR-G' with 'See it'."
+        "expected": "RR-G shows 'Complaint (grievance) · s.13', 'Received' and a box 'What you disputed' naming RR-A with 'Complete: <start of the answer>' and 'See RR-A in full'. RR-A shows 'You disputed this in RR-G' with 'See it'."
       },
       {
         "action": "Click 'See RR-A in full'.",
@@ -1167,14 +1167,14 @@
       },
       {
         "action": "In Browser B open RR-G from 'Rights requests'.",
-        "expected": "The line under the heading reads 'Grievance · s.13 · Portal'. 'About' shows RR-A with 'the request under dispute, shown below', and a card 'The request under dispute' shows RR-A's dates, what was asked and its answer."
+        "expected": "The line under the heading reads 'Complaint (grievance) · s.13 · Portal'. 'About' shows RR-A with 'the request under dispute, shown below', and a card 'The request under dispute' shows RR-A's dates, what was asked and its answer."
       },
       {
         "action": "Look at '4 · Linked, and about whom?'.",
         "expected": "It contains 'Is the complaint about the DPO?' with the text '...Recuse if this concerns your handling.' and a button 'This is about me - escalate' (do not click it)."
       },
       {
-        "action": "Click 'Confirm classification' (Grievance (s.13)) and then 'In progress'.",
+        "action": "Click 'Confirm classification' (Complaint (grievance) (s.13)) and then 'In progress'.",
         "expected": "The request is 'In progress' and a card '6 · Is it upheld?' appears with 'Decision' ('Upheld'), 'What was found, and why', 'Remedy' and a ticked checkbox 'Re-run RR-A as a new request linked to this decision.' 'Decide and close' is greyed out."
       },
       {
@@ -1206,7 +1206,7 @@
       "RGT-09 has been run (the URL of RR-A is known from the DPO's browser)."
     ],
     "test_data": [
-      "What are you asking for: Grievance (s.13)",
+      "What are you asking for: Complaint (grievance) (s.13)",
       "Your request: The DPO refused my request without explaining why. I want somebody else to review it.",
       "Tick: This complaint is about the Data Protection Officer's own decisions.",
       "Reviewer: System Admin · admin@cmp.local",
@@ -1215,7 +1215,7 @@
     ],
     "steps": [
       {
-        "action": "In Browser A click 'Make a request', choose 'Grievance (s.13)', type the text, tick 'This complaint is about the Data Protection Officer's own decisions.' and click 'Send the request'.",
+        "action": "In Browser A click 'Make a request', choose 'Complaint (grievance) (s.13)', type the text, tick 'This complaint is about the Data Protection Officer's own decisions.' and click 'Send the request'.",
         "expected": "There is no 'About' field for a grievance. 'Recorded as RR-...' appears. Note RR-D."
       },
       {
@@ -1269,7 +1269,7 @@
   {
     "id": "RGT-22",
     "title": "Principal names a nominee, who accepts with a code",
-    "feature": "Portal - 'Somebody to act for you'; nomination acceptance link",
+    "feature": "Portal - My nominations - 'Somebody to act for you'; nomination acceptance link",
     "role": "Data principal; nominee",
     "priority": "High",
     "type": "Positive",
@@ -1285,16 +1285,16 @@
       "Their name: Rahul Verma",
       "Their mobile: +91 90000 00077",
       "Their email: rahul.nominee@example.org",
-      "Rights: keep 'Access (s.11)' and 'Erasure (s.12(3))' ticked; untick 'Correction (s.12)' and 'Grievance (s.13)'",
+      "Rights: keep 'Access (s.11)' and 'Erasure (s.12(3))' ticked; untick 'Correction (s.12)' and 'Complaint (grievance) (s.13)'",
       "Wrong code: 000000"
     ],
     "steps": [
       {
-        "action": "In Browser A on 'My requests' scroll to 'Somebody to act for you'.",
+        "action": "In Browser A click 'My nominations' in the sidebar and find the card 'Somebody to act for you'.",
         "expected": "The card explains 'Section 14. A person you name, while you are well, to exercise these rights if you die or cannot act. Nothing is in effect until they accept...' and shows 'Their name', 'Their mobile', 'Their email', 'Which of your rights they may exercise' (four boxes, all ticked) and 'Nominate'."
       },
       {
-        "action": "Fill in the test data, untick 'Correction (s.12)' and 'Grievance (s.13)', and click 'Nominate'.",
+        "action": "Fill in the test data, untick 'Correction (s.12)' and 'Complaint (grievance) (s.13)', and click 'Nominate'.",
         "expected": "'Nomination recorded' with 'We have asked Rahul Verma to accept. It is not usable until they do.' appears."
       },
       {
@@ -1322,7 +1322,7 @@
         "expected": "The button briefly reads 'Copied'. Keep the reference for RGT-23."
       },
       {
-        "action": "In Browser A reload 'My requests'.",
+        "action": "In Browser A reload 'My nominations'.",
         "expected": "The card shows the badge 'In place' and 'In place. If the time comes, Rahul Verma will identify themselves with the contact you recorded, evidence the event, and the request will run as normal.' with 'Their nomination reference: <same reference>'."
       },
       {
@@ -1395,11 +1395,11 @@
         "expected": "'Moved to In progress' appears."
       },
       {
-        "action": "In Browser A (Anjali) reload 'My requests'.",
-        "expected": "The nomination card shows 'Rahul Verma acted for you on <date>' with 'They reported that you cannot act for yourself. You keep this account and can follow the request they made. Their request is RR-N, under your requests above. The Privacy Office found the event evidenced on <date>.'"
+        "action": "In Browser A (Anjali) open 'My nominations'.",
+        "expected": "The nomination card shows 'Rahul Verma acted for you on <date>' with 'They reported that you cannot act for yourself. You keep this account and can follow the request they made. Their request is RR-N, under My requests. The Privacy Office found the event evidenced on <date>.'"
       },
       {
-        "action": "In Browser D sign in at http://localhost:3001/sign-in with 'Mobile' and +91 90000 00077 (code from the coordinator), then open 'My requests'.",
+        "action": "In Browser D sign in at http://localhost:3001/sign-in with 'Mobile' and +91 90000 00077 (code from the coordinator), then open 'My nominations'.",
         "expected": "A card 'Somebody has named you to act for them' shows Anjali Verma, 'In place' and 'You acted on <date>', with a 'Show the request' button."
       },
       {
@@ -1445,7 +1445,7 @@
         "expected": "A red box reads 'That right was not included in the nomination'. Nothing is recorded."
       },
       {
-        "action": "In Browser A on 'My requests' click 'Revoke this nomination'.",
+        "action": "In Browser A on 'My nominations' click 'Revoke this nomination'.",
         "expected": "'Nomination revoked' with 'Rahul Verma can no longer act for you.' appears. The nomination form is shown again, and 'Earlier nominations' lists Rahul Verma as 'Revoked'."
       },
       {
@@ -1457,7 +1457,7 @@
         "expected": "The neutral note appears, but the coordinator finds no code sent - the nomination is no longer in place."
       },
       {
-        "action": "In Browser D (signed in as the nominee) reload 'My requests'.",
+        "action": "In Browser D (signed in as the nominee) reload 'My nominations'.",
         "expected": "The 'Somebody has named you to act for them' card warns 'This nomination is no longer in effect, so you cannot make another request under it. The one you already made stays here until it is answered.' The badge does not say 'In place'. RR-N can still be opened with 'Show the request'."
       }
     ],

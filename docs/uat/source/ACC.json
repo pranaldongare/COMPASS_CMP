@@ -40,7 +40,7 @@
       },
       {
         "action": "Look at the left-hand sidebar.",
-        "expected": "The sidebar shows the sections Overview, Governance, Consent, Registry, Data movement, Oversight and You. Under Oversight there are 'Rights requests', 'Audit trail', 'Users', 'Delegate' and 'Messages'; under You there are 'Tickets for you', 'Notifications' and 'Your profile'. A 'Sign out' button is at the bottom of the sidebar."
+        "expected": "The sidebar starts with the group 'Your work' - 'Dashboard', 'Rights requests', 'Breaches', 'My tasks', 'Projects', 'Notices' - followed by the groups Governance, Consent, Registry, Data movement and Oversight. Under Oversight there are 'Audit trail', 'Users', 'Delegations' and 'Message templates'. 'My profile' is not in the sidebar (it is in the account menu under your name at the top right), and notifications open from the bell in the header. A 'Sign out' button is at the bottom of the sidebar."
       }
     ],
     "pass_criteria": "The DPO can sign in only after entering both the password and the emailed six-digit code, and then lands on the dashboard greeted by first name with the DPO role shown."
@@ -74,7 +74,7 @@
       },
       {
         "action": "Read the sidebar menu from top to bottom.",
-        "expected": "The menu shows exactly: Dashboard; Projects; Consents, Consent links, Collection sites; Data sources; Collections, Exports, Imports; Delegate; Tickets for you, Notifications, Your profile. There is no 'Approvals', 'Notices', 'Purposes', 'Audit trail', 'Users' or 'Messages'."
+        "expected": "The menu shows exactly: Your work - Dashboard, My projects, Collection sites, Consent links, My tasks, Collections; Consent - Consents; Registry - Data sources; Data movement - Exports, Imports; Oversight - Delegations. There is no 'Approval documents', 'Notices', 'Purposes', 'Audit trail', 'Users' or 'Message templates'."
       },
       {
         "action": "In the address bar, open http://localhost:3000/users.",
@@ -90,7 +90,7 @@
       },
       {
         "action": "Read the sidebar menu.",
-        "expected": "The menu shows: Dashboard; Processors, Data sources; Grievances about the DPO, Audit trail, Users, Delegate, Messages; Tickets for you, Notifications, Your profile. There is no 'Projects', 'Consents' or 'Consent links'. The rights item is labelled 'Grievances about the DPO', not 'Rights requests'."
+        "expected": "The menu shows: Your work - Dashboard, Users, Grievances about the DPO, Message templates, Processors, Data sources, Audit trail; Oversight - Delegations; You - My tasks. There is no 'Projects', 'Consents' or 'Consent links'. The rights item is labelled 'Grievances about the DPO', not 'Rights requests'."
       },
       {
         "action": "Click 'Sign out'.",
@@ -322,8 +322,8 @@
   {
     "id": "ACC-08",
     "area": "Access and accounts",
-    "title": "Add a personal email and end another session from Your profile",
-    "feature": "Staff account page (Your profile)",
+    "title": "Add a personal email and end another session from My profile",
+    "feature": "Staff account page (My profile)",
     "role": "R&D User on console",
     "priority": "Medium",
     "type": "Positive",
@@ -339,8 +339,8 @@
     ],
     "steps": [
       {
-        "action": "In browser 1, sign in to http://localhost:3000 as rnd@cmp.local with the password and code. Click 'Your profile' in the sidebar.",
-        "expected": "The page 'Your account' opens with three tabs - 'Contacts' (selected), 'Active sessions' with a count, and 'Password' - and the 'Identity' card beside them. Identity shows Name 'Kavya Rao', Role 'R&D User', Status 'Active' and a 'Session expires' time about 8 hours from now."
+        "action": "In browser 1, sign in to http://localhost:3000 as rnd@cmp.local with the password and code. Click your name at the top right to open the account menu, then click 'My profile'.",
+        "expected": "The page 'My profile' opens with three tabs - 'Contacts' (selected), 'Active sessions' with a count, and 'Password' - and the 'Identity' card beside them. Identity shows Name 'Kavya Rao', Role 'R&D User', Status 'Active' and a 'Session expires' time about 8 hours from now."
       },
       {
         "action": "On the 'Contacts' tab, look at the 'Work email' row.",
@@ -359,7 +359,7 @@
         "expected": "A green toast 'Confirmed' says 'tester01-kavya@example.org can now sign you in.' The row now shows a 'Confirmed' badge."
       },
       {
-        "action": "In browser 2, sign in to http://localhost:3000 as rnd@cmp.local with the password and a new code. Go back to browser 1 and refresh the 'Your account' page and click the 'Active sessions' tab.",
+        "action": "In browser 2, sign in to http://localhost:3000 as rnd@cmp.local with the password and a new code. Go back to browser 1 and refresh the 'My profile' page and click the 'Active sessions' tab.",
         "expected": "The tab's count is 2 or more, and a table lists the sessions with 'Device' (for example 'Chrome on Windows'), 'Address', 'Last active' and 'Expires'. The one for browser 1 is marked 'this device' and has no button; the other has an 'End session' button. 'End all other sessions' is shown above the table."
       },
       {
@@ -367,7 +367,7 @@
         "expected": "A green toast 'Session ended' appears; that row disappears from the table and the tab's count drops to 1."
       },
       {
-        "action": "In browser 2, click any sidebar item (for example 'Projects').",
+        "action": "In browser 2, click any sidebar item (for example 'My projects').",
         "expected": "Browser 2 is sent to the 'Sign in' page: its session was ended from browser 1."
       }
     ],
@@ -414,18 +414,18 @@
       },
       {
         "action": "Ask the test coordinator for the code sent to +91 98111 22301 and the code sent to tester01@example.org (both from the test outbox). Replace the digits in each box with the matching code and click 'Confirm and sign in'.",
-        "expected": "Both codes are accepted even though a wrong pair was tried first. You are signed in and land on the page headed 'Your consents'."
+        "expected": "Both codes are accepted even though a wrong pair was tried first. You are signed in and land on the page headed 'My consents'."
       },
       {
         "action": "Look at the header and the sidebar.",
-        "expected": "The header shows 'Tester One' with the role badge 'Data Subject'. The sidebar shows 'My consents', 'My requests', 'Notifications', 'Your profile' and 'Sign out'. There is no 'We need your date of birth' notice."
+        "expected": "The header shows 'Tester One' with the role badge 'Data Subject'. The sidebar shows 'My consents', 'My requests', 'My nominations', 'Updates' and 'Sign out'; 'My profile' is in the account menu under the name. There is no 'We need your date of birth' notice."
       },
       {
-        "action": "Click 'Your profile'.",
-        "expected": "'Your account' opens. Identity shows Name 'Tester One', Mobile and Email as entered, Role 'Data Subject', Status 'Active' and Date of birth 15 Aug 1990 (no under-18 badge). In Contacts, the mobile and email both show 'Confirmed'."
+        "action": "Click your name at the top right to open the account menu, then click 'My profile'.",
+        "expected": "'My profile' opens. Identity shows Name 'Tester One', Mobile and Email as entered, Role 'Data Subject', Status 'Active' and Date of birth 15 Aug 1990 (no under-18 badge). In Contacts, the mobile and email both show 'Confirmed'."
       }
     ],
-    "pass_criteria": "A new adult can register with a mobile, an optional email and a date of birth, must confirm every contact given with its own code, and is then signed in to 'Your consents'."
+    "pass_criteria": "A new adult can register with a mobile, an optional email and a date of birth, must confirm every contact given with its own code, and is then signed in to 'My consents'."
   },
   {
     "id": "ACC-10",
@@ -582,15 +582,15 @@
       },
       {
         "action": "Ask the test coordinator for the code sent to +91 90000 00001 (from the test outbox). Type it into 'Six-digit code' and click 'Verify'.",
-        "expected": "You land on the page headed 'Your consents'. The header shows 'Anjali Verma' with the role badge 'Data Subject'."
+        "expected": "You land on the page headed 'My consents'. The header shows 'Anjali Verma' with the role badge 'Data Subject'."
       },
       {
         "action": "Look at the sidebar.",
-        "expected": "Under 'Your data' are 'My consents' and 'My requests'; under 'You' are 'Notifications' and 'Your profile'; 'Sign out' is at the bottom. There is no staff menu and no staff-account notice."
+        "expected": "Under 'Your data' are 'My consents', 'My requests', 'My nominations' and 'Updates'; 'Sign out' is at the bottom. 'My profile' is in the account menu under her name at the top right. There is no staff menu and no staff-account notice."
       },
       {
         "action": "Click 'My requests'.",
-        "expected": "The page headed 'Your requests' opens."
+        "expected": "The page headed 'My requests' opens."
       },
       {
         "action": "Click 'Sign out' in the sidebar.",
@@ -601,7 +601,7 @@
         "expected": "You are sent to the 'Sign in' page instead of seeing the consents."
       }
     ],
-    "pass_criteria": "A registered data principal signs in with just the code sent to her mobile, lands on 'Your consents', and after 'Sign out' can no longer open her pages."
+    "pass_criteria": "A registered data principal signs in with just the code sent to her mobile, lands on 'My consents', and after 'Sign out' can no longer open her pages."
   },
   {
     "id": "ACC-14",
@@ -644,7 +644,7 @@
       },
       {
         "action": "Ask the test coordinator for the code sent to subject@cmp.local (from the test outbox). Replace the digits and click 'Verify'.",
-        "expected": "The correct code is accepted and you land on 'Your consents' as Anjali Verma."
+        "expected": "The correct code is accepted and you land on 'My consents' as Anjali Verma."
       },
       {
         "action": "Click 'Sign out'.",
@@ -676,43 +676,43 @@
     "steps": [
       {
         "action": "Open http://localhost:3001/sign-in, choose 'Email', type rco@cmp.local, click 'Send me a code', then enter the code the test coordinator gives you for rco@cmp.local (from the test outbox) and click 'Verify'.",
-        "expected": "You land on 'Your consents'. Above the list is a blue notice titled 'We need your date of birth' reading 'You can withdraw a consent or make a request without it, but we need it before you give a new consent.' with an 'Add it now' link."
+        "expected": "You land on 'My consents'. Above the list is a blue notice titled 'We need your date of birth' reading 'You can withdraw a consent or make a request without it, but we need it before you give a new consent.' with an 'Add it now' link."
       },
       {
         "action": "Click 'My requests' in the sidebar.",
-        "expected": "The page 'Your requests' opens normally, with the same 'We need your date of birth' notice above it. Nothing blocks this page."
+        "expected": "The page 'My requests' opens normally, with the same 'We need your date of birth' notice above it. Nothing blocks this page."
       },
       {
-        "action": "Click 'Notifications' in the sidebar.",
-        "expected": "Instead of the notifications, a card headed 'Your date of birth' appears: 'The law protects people under 18 differently, and we do not have your date of birth yet. We need it before you can give a new consent.' It has a 'Date of birth' field, a 'Save and continue' button and links 'withdraw a consent' and 'make a request'."
+        "action": "Click 'Updates' in the sidebar.",
+        "expected": "Instead of the updates, a card headed 'Your date of birth' appears: 'The law protects people under 18 differently, and we do not have your date of birth yet. We need it before you can give a new consent.' It has a 'Date of birth' field, a 'Save and continue' button and links 'withdraw a consent' and 'make a request'."
       },
       {
-        "action": "Click 'Your profile' in the sidebar.",
+        "action": "Click your name at the top right to open the account menu, then click 'My profile'.",
         "expected": "The same 'Your date of birth' card appears instead of the account page."
       },
       {
         "action": "Click the 'make a request' link on the card.",
-        "expected": "'Your requests' opens without answering the question."
+        "expected": "'My requests' opens without answering the question."
       },
       {
-        "action": "Go back to 'Your consents' and click 'Add it now' in the notice.",
-        "expected": "The 'Your date of birth' question is shown so the date can be added. (Record a defect if the link just reloads 'Your consents'.)"
+        "action": "Go back to 'My consents' and click 'Add it now' in the notice.",
+        "expected": "The 'Your date of birth' question is shown so the date can be added. (Record a defect if the link just reloads 'My consents'.)"
       },
       {
-        "action": "Click 'Your profile' to reach the 'Your date of birth' card. Type 1 January 2030 into 'Date of birth' and click 'Save and continue'.",
+        "action": "Open 'My profile' from the account menu to reach the 'Your date of birth' card. Type 1 January 2030 into 'Date of birth' and click 'Save and continue'.",
         "expected": "The date is refused with 'Date of birth must be in the past' under the field; the card stays."
       },
       {
         "action": "Change 'Date of birth' to 21 July 1985 and click 'Save and continue'.",
-        "expected": "The card disappears and the 'Your account' page opens. In Identity, 'Date of birth' shows 21 Jul 1985 with no under-18 badge."
+        "expected": "The card disappears and the 'My profile' page opens. In Identity, 'Date of birth' shows 21 Jul 1985 with no under-18 badge."
       },
       {
-        "action": "Click 'My consents' and then 'Notifications'.",
-        "expected": "The 'We need your date of birth' notice no longer appears on 'Your consents', and 'Notifications' opens normally."
+        "action": "Click 'My consents' and then 'Updates'.",
+        "expected": "The 'We need your date of birth' notice no longer appears on 'My consents', and 'Updates' opens normally."
       },
       {
         "action": "Click 'Sign out', sign in again with rco@cmp.local and a new code.",
-        "expected": "You land on 'Your consents' with no date-of-birth notice; the question is not asked again."
+        "expected": "You land on 'My consents' with no date-of-birth notice; the question is not asked again."
       }
     ],
     "pass_criteria": "An account with no date of birth is asked for one on every page except My consents and My requests, which stay usable with a reminder; a future date is refused and a valid date clears the prompt for good."
@@ -741,15 +741,15 @@
       },
       {
         "action": "Enter the code the test coordinator gives you for dpo@cmp.local (from the test outbox) and click 'Verify'.",
-        "expected": "You land on 'Your consents'. A line across the top reads 'You are signed in with your staff account, as a data principal. Only your own consents, requests and rights are here; your console is a separate site.'"
+        "expected": "You land on 'My consents'. A line across the top reads 'You are signed in with your staff account, as a data principal. Only your own consents, requests and rights are here; your console is a separate site.'"
       },
       {
         "action": "Look at the header and sidebar.",
-        "expected": "The header shows 'Priya Menon' with the role badge 'Data Subject' (not 'DPO'). The sidebar has only 'My consents', 'My requests', 'Notifications', 'Your profile' and 'Sign out'."
+        "expected": "The header shows 'Priya Menon' with the role badge 'Data Subject' (not 'DPO'). The sidebar has only 'My consents', 'My requests', 'My nominations', 'Updates' and 'Sign out'; 'My profile' is in the account menu."
       },
       {
-        "action": "Click 'Your profile'. If the 'Your date of birth' card appears, enter 21 July 1985 and click 'Save and continue'.",
-        "expected": "'Your account' opens. In Identity, Role shows 'Data Subject' and an 'Account' line reads 'Your staff account, used here as a data principal.' In Contacts, the 'Email' row shows dpo@cmp.local with the hint 'Your staff address, managed by your organisation. If you may lose it one day, add a personal one below.' and no 'Change' button."
+        "action": "Click your name at the top right to open the account menu, then click 'My profile'. If the 'Your date of birth' card appears, enter 21 July 1985 and click 'Save and continue'.",
+        "expected": "'My profile' opens. In Identity, Role shows 'Data Subject' and an 'Account' line reads 'Your staff account, used here as a data principal.' In Contacts, the 'Email' row shows dpo@cmp.local with the hint 'Your staff address, managed by your organisation. If you may lose it one day, add a personal one below.' and no 'Change' button."
       },
       {
         "action": "In the same window, open http://localhost:3000/users (the console).",
@@ -787,8 +787,8 @@
     ],
     "steps": [
       {
-        "action": "Click 'Your profile'.",
-        "expected": "'Your account' opens. Contacts lists 'Email' (tester01@example.org, 'Confirmed', no Change button), 'Mobile' (with 'Change') and 'Second email' ('None given', with 'Add'). Identity shows a 'Session expires' time about 8 hours after you signed in."
+        "action": "Click your name at the top right to open the account menu, then click 'My profile'.",
+        "expected": "'My profile' opens. Contacts lists 'Email' (tester01@example.org, 'Confirmed', no Change button), 'Mobile' (with 'Change') and 'Second email' ('None given', with 'Add'). Identity shows a 'Session expires' time about 8 hours after you signed in."
       },
       {
         "action": "In the 'Second email' row click 'Add', type tester01@example.org and click 'Save and send a code'.",
@@ -807,7 +807,7 @@
         "expected": "The neutral 'Check your messages' notice appears, but the test coordinator confirms that no sign-in code was sent to tester01-personal@example.org: an unconfirmed address cannot sign anyone in."
       },
       {
-        "action": "Click 'Use a different contact' and sign in with the mobile +91 98111 22301 and its code from the test coordinator. Open 'Your profile'.",
+        "action": "Click 'Use a different contact' and sign in with the mobile +91 98111 22301 and its code from the test coordinator. Open 'My profile' from the account menu.",
         "expected": "The 'Second email' row shows tester01-personal@example.org with 'Not confirmed' and a 'Send a code' button."
       },
       {
@@ -816,7 +816,7 @@
       },
       {
         "action": "Click 'Sign out'. Sign in with 'Email' tester01-personal@example.org and the code the test coordinator gives you for it.",
-        "expected": "You are signed in as Tester One and land on 'Your consents'."
+        "expected": "You are signed in as Tester One and land on 'My consents'."
       }
     ],
     "pass_criteria": "A second email is added only after its own code is confirmed, cannot sign in before that, can sign in afterwards, and duplicates of own or another account's address are refused."
@@ -842,7 +842,7 @@
     ],
     "steps": [
       {
-        "action": "Click 'Your profile'. In the 'Mobile' row click 'Change'.",
+        "action": "Click your name at the top right to open the account menu, then click 'My profile'. In the 'Mobile' row click 'Change'.",
         "expected": "A 'Mobile' box opens, already filled with the current number, with the buttons 'Save and send a code' and 'Cancel'."
       },
       {
@@ -871,7 +871,7 @@
       },
       {
         "action": "Click 'Sign out' and sign in with 'Mobile' +91 98111 22399 and the code the test coordinator gives you.",
-        "expected": "You are signed in as Tester One and land on 'Your consents'."
+        "expected": "You are signed in as Tester One and land on 'My consents'."
       }
     ],
     "pass_criteria": "A new mobile is refused if another account holds it, is not confirmed by a wrong code, is confirmed by the right code, and then signs the principal in."
@@ -905,19 +905,19 @@
       },
       {
         "action": "Choose 'Email', type subject@cmp.local, click 'Send me a code', enter the code the test coordinator gives you for subject@cmp.local (from the test outbox) and click 'Verify'.",
-        "expected": "You land on 'Your requests' (the page you asked for), not on 'Your consents'."
+        "expected": "You land on 'My requests' (the page you asked for), not on 'My consents'."
       },
       {
         "action": "While signed in, type http://localhost:3001/sign-in into the address bar and press Enter.",
-        "expected": "The sign-in form does not stay; you are sent to 'Your consents'."
+        "expected": "The sign-in form does not stay; you are sent to 'My consents'."
       },
       {
         "action": "Type http://localhost:3001/sign-up and press Enter.",
-        "expected": "The sign-up form does not stay; you are sent to 'Your consents'."
+        "expected": "The sign-up form does not stay; you are sent to 'My consents'."
       },
       {
         "action": "Type http://localhost:3001 and press Enter.",
-        "expected": "The portal home goes straight to 'Your consents'."
+        "expected": "The portal home goes straight to 'My consents'."
       },
       {
         "action": "Click 'Sign out'.",
@@ -945,20 +945,20 @@
     ],
     "steps": [
       {
-        "action": "Sign in to http://localhost:3001 with 'Mobile' +91 90000 00001 and the code the test coordinator gives you. Click 'Your profile' and note the 'Session expires' time in Identity.",
-        "expected": "'Your account' opens. 'Session expires' is about 8 hours after the sign-in time (the absolute limit)."
+        "action": "Sign in to http://localhost:3001 with 'Mobile' +91 90000 00001 and the code the test coordinator gives you. Open 'My profile' from the account menu (your name at the top right) and note the 'Session expires' time in Identity.",
+        "expected": "'My profile' opens. 'Session expires' is about 8 hours after the sign-in time (the absolute limit)."
       },
       {
         "action": "Click 'My consents'. Then leave the browser completely untouched (no clicks, no typing, do not switch to this window) for 31 minutes.",
         "expected": "Nothing visible happens while you wait."
       },
       {
-        "action": "After 31 minutes, return to the window and, if you are still on 'Your consents', click 'My requests'.",
+        "action": "After 31 minutes, return to the window and, if you are still on 'My consents', click 'My requests'.",
         "expected": "Your data is not shown any more. As soon as you return to the window, or at the latest when you click, you are taken to the portal 'Sign in' page (the address carries 'next='), because the session ended after 30 minutes without activity."
       },
       {
         "action": "Sign in again with the mobile and a new code from the test coordinator.",
-        "expected": "You are signed in again and land on the page named in the address ('Your consents' or 'Your requests'), not on a blank or error page."
+        "expected": "You are signed in again and land on the page named in the address ('My consents' or 'My requests'), not on a blank or error page."
       }
     ],
     "pass_criteria": "A portal session left unused for more than 30 minutes ends by itself and the next action leads to sign-in, well before the 8-hour absolute limit."

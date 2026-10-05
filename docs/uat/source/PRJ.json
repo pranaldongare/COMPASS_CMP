@@ -126,19 +126,19 @@
       },
       {
         "action": "Find the card titled 'What happens next'.",
-        "expected": "It reads 'Currently In Draft. These are the moves your role can make from here.' and shows one row 'Move to Pending Approval'."
+        "expected": "It reads 'Currently In Draft. These are the moves your role can make from here.' and shows one row 'Moves the project to Pending Approval' with a 'Submit for approval' button."
       },
       {
-        "action": "Read the warning lines under 'Move to Pending Approval'.",
+        "action": "Read the warning lines under 'Moves the project to Pending Approval'.",
         "expected": "All six missing items are listed at once, each with a warning icon: 'The project has no notice'; 'The notice has no purposes attached'; 'The notice is missing required Rule 3 elements'; 'The notice does not say who it applies to'; 'The notice has no text yet - add at least one language'; 'No approval with a proof file'."
       },
       {
-        "action": "Try to click the 'Pending Approval' button on that row.",
+        "action": "Try to click the 'Submit for approval' button on that row.",
         "expected": "The button is greyed out (disabled); nothing happens and the status stays 'In Draft'."
       },
       {
         "action": "Look at the 'Notices' card.",
-        "expected": "It shows 'No notice yet' with the buttons 'Upload a notice document' and 'Use an existing notice'."
+        "expected": "It shows 'No notice yet' with the buttons 'Upload a notice document' and 'Copy an existing notice'."
       },
       {
         "action": "Look at the 'Approvals' card.",
@@ -146,7 +146,7 @@
       },
       {
         "action": "Look at the buttons at the top of the page.",
-        "expected": "'Edit', 'Upload a notice document', 'Use an existing notice', 'Upload approval' and 'Add site' are shown. There is NO 'New notice' button."
+        "expected": "'Edit', 'Upload a notice document', 'Copy an existing notice', 'Upload approval' and 'Add site' are shown. There is NO 'New notice' button."
       }
     ],
     "pass_criteria": "The submit button is disabled and every one of the six missing prerequisites is named together, not one at a time."
@@ -246,11 +246,11 @@
       },
       {
         "action": "Look at the 'Notices' card.",
-        "expected": "It lists 'NTC-UAT-STUDY-01-2026 v1' with '9 purpose(s) · 1 language(s)' and the status badge 'Draft'."
+        "expected": "It lists 'NTC-UAT-STUDY-01-2026 v1' with '9 purposes · 1 language(s)' and the status badge 'Draft'."
       },
       {
         "action": "Look at the 'What happens next' card.",
-        "expected": "Under 'Move to Pending Approval' only one line remains: 'No approval with a proof file'. The 'Pending Approval' button is still disabled."
+        "expected": "Under 'Moves the project to Pending Approval' only one line remains: 'No approval with a proof file'. The 'Submit for approval' button is still disabled."
       },
       {
         "action": "Click 'NTC-UAT-STUDY-01-2026 v1' in the Notices card.",
@@ -263,7 +263,7 @@
     "id": "PRJ-06",
     "area": "Projects, notices and links",
     "title": "R&D User starts a second project's notice from an approved notice",
-    "feature": "Use an existing notice",
+    "feature": "Copy an existing notice",
     "role": "R&D User",
     "priority": "Medium",
     "type": "Positive",
@@ -284,8 +284,8 @@
         "expected": "Toast 'Project registered'; the 'UAT Study 02' page opens with status 'In Draft'."
       },
       {
-        "action": "In the 'Notices' card click 'Use an existing notice'.",
-        "expected": "A dialog 'Use an existing notice' opens: 'Copies the wording, the purposes and every language rendition into this project as a fresh draft.' with a 'Notice to copy' list and a disabled 'Copy into this project' button."
+        "action": "In the 'Notices' card click 'Copy an existing notice'.",
+        "expected": "A dialog 'Copy an existing notice' opens: 'Copies the wording, the purposes and every language rendition into this project as a fresh draft.' with a 'Notice to copy' list and a disabled 'Copy into this project' button."
       },
       {
         "action": "Open 'Notice to copy'.",
@@ -330,7 +330,7 @@
     "steps": [
       {
         "action": "Open project 'UAT Study 01' and look at the buttons at the top of the page.",
-        "expected": "'Upload a notice document' and 'Use an existing notice' are shown; there is NO 'New notice' button."
+        "expected": "'Upload a notice document' and 'Copy an existing notice' are shown; there is NO 'New notice' button."
       },
       {
         "action": "Click 'NTC-UAT-STUDY-01-2026 v1' in the 'Notices' card.",
@@ -342,15 +342,15 @@
       },
       {
         "action": "Look at the 'Notice text' card.",
-        "expected": "The English wording is displayed read-only with 'Not legally approved — the project cannot be approved until it is'. There is NO 'Edit this rendition' button."
+        "expected": "The English wording is displayed read-only with 'Not legally approved — the project cannot be approved until it is'. There is NO 'Edit English text' button."
       },
       {
         "action": "Look at the 'Purposes' card.",
-        "expected": "Each purpose shows the 'Draft' status. There is NO 'Manage', NO 'Activate' and NO 'Narrow for this notice' button."
+        "expected": "Each purpose shows the 'Draft' status. There is NO 'Manage', NO 'Activate' and NO 'Customise for this notice' button."
       },
       {
         "action": "Look at the 'Legal approval, per language' card.",
-        "expected": "The english row shows 'Not legally approved'. There is NO 'Add a rendition', NO 'Edit' and NO 'Approve' button."
+        "expected": "The english row shows 'Not legally approved'. There is NO 'Add language', NO 'Edit' and NO 'Approve' button."
       }
     ],
     "pass_criteria": "The R&D User can read the notice and its checklist but has no control to write wording, add/edit renditions, attach/activate purposes, approve text or publish."
@@ -397,14 +397,14 @@
       },
       {
         "action": "Look at 'What happens next'.",
-        "expected": "'Move to Pending Approval' has no warning lines and the 'Pending Approval' button is active (highlighted)."
+        "expected": "'Moves the project to Pending Approval' has no warning lines and the 'Submit for approval' button is active (highlighted)."
       },
       {
         "action": "Scroll to the bottom of the page.",
-        "expected": "A 'Next steps' card repeats 'Move to Pending Approval' with the same active 'Pending Approval' button, and under 'Other actions' the buttons from the top of the page (for example 'Upload approval') with the status badge. Nothing at the top of the page has gone."
+        "expected": "A 'Next steps' card repeats 'Moves the project to Pending Approval' with the same active 'Submit for approval' button, and under 'Other actions' the buttons from the top of the page (for example 'Upload approval') with the status badge. Nothing at the top of the page has gone."
       },
       {
-        "action": "Click 'Pending Approval' (at the top or in 'Next steps' - either one).",
+        "action": "Click 'Submit for approval' (at the top or in 'Next steps' - either one).",
         "expected": "Toast 'Moved to Pending Approval'. The status badge changes to 'Pending Approval' and the progress bar moves to its second step."
       },
       {
@@ -433,7 +433,7 @@
     ],
     "steps": [
       {
-        "action": "On the 'Dashboard' look at 'Needs you today'.",
+        "action": "On the 'Dashboard' look at 'Needs attention'.",
         "expected": "A row 'Projects pending approval' shows a count of 1 or more."
       },
       {
@@ -442,18 +442,18 @@
       },
       {
         "action": "Look at the 'What happens next' card.",
-        "expected": "It reads 'Currently Pending Approval.' and offers two rows: 'Move to Approved' (with the tag 'publishes the notice') and 'Move to In Draft'."
+        "expected": "It reads 'Currently Pending Approval.' and offers two rows: 'Moves the project to Approved' (with the tag 'publishes the notice' and an 'Approve project' button) and 'Moves the project to In Draft' (with a 'Return to draft' button)."
       },
       {
-        "action": "Read the warning lines under 'Move to Approved'.",
-        "expected": "Both DPO-side blockers are listed: 'The notice text is not legally approved - approve every language on the notice first' with a link 'Approve the notice', and 'The notice carries purposes that are not activated - activate them before approving' with a link 'Open the notice'. The 'Approved' button is disabled."
+        "action": "Read the warning lines under 'Moves the project to Approved'.",
+        "expected": "Both DPO-side blockers are listed: 'The notice text is not legally approved - approve every language on the notice first' with a link 'Approve the notice', and 'The notice carries purposes that are not activated - activate them before approving' with a link 'Open the notice'. The 'Approve project' button is disabled."
       },
       {
-        "action": "Under 'Move to In Draft' note the hint, then click the 'In Draft' button.",
-        "expected": "The hint reads 'A reason is required and is recorded in the history.' A panel 'Move to In Draft' opens with a required 'Reason' box."
+        "action": "Under 'Moves the project to In Draft' note the hint, then click the 'Return to draft' button.",
+        "expected": "The hint reads 'A reason is required and is recorded in the history.' A panel 'Return to draft' opens with a required 'Reason' box."
       },
       {
-        "action": "Leave 'Reason' empty and click 'Confirm'.",
+        "action": "Leave 'Reason' empty and click 'Return to draft' in the panel.",
         "expected": "The message 'A reason is required for this transition.' appears; the project stays 'Pending Approval'."
       },
       {
@@ -530,19 +530,19 @@
     ],
     "steps": [
       {
-        "action": "On notice NTC-UAT-STUDY-01-2026 v1, find the 'Notice text' card and click 'Edit this rendition'.",
-        "expected": "A dialog 'Edit english' opens: 'This exact text is hashed at publication and becomes the record of what was agreed to.' 'Language' is locked to English; 'Notice text' holds the current wording."
+        "action": "On notice NTC-UAT-STUDY-01-2026 v1, find the 'Notice text' card and click 'Edit English text'.",
+        "expected": "A dialog 'Edit English text' opens: 'This exact text is hashed at publication and becomes the record of what was agreed to.' 'Language' is locked to English; 'Notice text' holds the current wording."
       },
       {
-        "action": "Add the extra sentence at the end of the text and click 'Save rendition'.",
+        "action": "Add the extra sentence at the end of the text and click 'Save text'.",
         "expected": "Toast 'Rendition saved' says 'It must be legally approved before the notice can be published.' The new sentence is visible in the 'Notice text' card."
       },
       {
-        "action": "In the 'Legal approval, per language' card click 'Add a rendition'.",
-        "expected": "A dialog 'Add a rendition' opens with 'Language' and 'Notice text'."
+        "action": "In the 'Legal approval, per language' card click 'Add language'.",
+        "expected": "A dialog 'Add language' opens with 'Language' and 'Notice text'."
       },
       {
-        "action": "Choose Language 'Hindi', paste the Hindi text and click 'Save rendition'.",
+        "action": "Choose Language 'Hindi', paste the Hindi text and click 'Save text'.",
         "expected": "Toast 'Rendition saved'. The card now lists English and Hindi, both 'Not legally approved'. The 'Notice text' card shows language tabs (english / hindi)."
       },
       {
@@ -587,15 +587,15 @@
         "expected": "The project page opens with status 'Pending Approval'."
       },
       {
-        "action": "Look at 'Move to Approved' in 'What happens next'.",
-        "expected": "No warning lines remain; the 'Approved' button is active and the row carries the tag 'publishes the notice'."
+        "action": "Look at 'Moves the project to Approved' in 'What happens next'.",
+        "expected": "No warning lines remain; the 'Approve project' button is active and the row carries the tag 'publishes the notice'."
       },
       {
-        "action": "Click 'Approved'.",
-        "expected": "A panel 'Move to Approved' opens with a yellow warning: 'This publishes the project's notice. Its text and hash are frozen at that moment and cannot be edited afterwards - a correction requires a new version...' and an optional 'Note (optional)' box."
+        "action": "Click 'Approve project'.",
+        "expected": "A panel 'Approve project' opens with a yellow warning: 'This publishes the project's notice. Its text and hash are frozen at that moment and cannot be edited afterwards - a correction requires a new version...' and an optional 'Note (optional)' box."
       },
       {
-        "action": "Type the note and click 'Confirm'.",
+        "action": "Type the note and click 'Approve project' in the panel.",
         "expected": "Toast 'Moved to Approved' says 'The notice has been published and its text is now frozen.'"
       },
       {
@@ -642,7 +642,7 @@
       },
       {
         "action": "Look for editing controls across the page.",
-        "expected": "There is NO 'Edit' in the header, NO 'Edit this rendition', NO 'Manage', NO 'Activate', NO 'Narrow for this notice', NO 'Add a rendition' and NO 'Publish this notice'. The 'Publication checklist' card is not shown."
+        "expected": "There is NO 'Edit' in the header, NO 'Edit English text', NO 'Manage', NO 'Activate', NO 'Customise for this notice', NO 'Add language' and NO 'Publish this notice'. The 'Publication checklist' card is not shown."
       },
       {
         "action": "Read the info note in the right-hand column.",
@@ -1103,7 +1103,7 @@
     ],
     "steps": [
       {
-        "action": "Open project 'UAT Study 01'. In the header click 'Use an existing notice', choose 'NTC-GAIT-2026 v1 — Gait Identification Study 2026' and click 'Copy into this project'.",
+        "action": "Open project 'UAT Study 01'. In the header click 'Copy an existing notice', choose 'NTC-GAIT-2026 v1 — Gait Identification Study 2026' and click 'Copy into this project'.",
         "expected": "A toast 'Copied into NTC-UAT-STUDY-01-2026-2' (the code may end differently) says it is a fresh draft. The 'Notices' card now lists it as 'Draft' beside v2 'Published'."
       },
       {
@@ -1119,7 +1119,7 @@
         "expected": "The new notice shows 'Published'. NTC-UAT-STUDY-01-2026 v2 now shows 'Superseded', and v1 'Superseded'. Only one notice on the project is 'Published'."
       },
       {
-        "action": "In a private window open the CIT 'new URL' saved in PRJ-19. Send a code to +91 90000 00001, type the relayed code and click 'Confirm and read the notice'.",
+        "action": "In a private window open the CIT 'new URL' saved in PRJ-19. Send a code to +91 90000 00001, type the relayed code and click 'Verify and continue'.",
         "expected": "The link still works - it is not 'This link is not valid'. The notice shown is the new one's wording (the Gait notice, starting 'NOTICE UNDER SECTION 5'), not v2's. Close the window without recording a choice."
       },
       {

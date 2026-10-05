@@ -49,7 +49,7 @@ def case(**kw):
 case(
     id="OVS-01",
     title="DPO dashboard lists only work the DPO can act on",
-    feature="Dashboard - 'Needs you today', queues, recent activity",
+    feature="Dashboard - 'Needs attention', queues, recent activity",
     role="DPO on console",
     priority="High",
     type="Positive",
@@ -60,23 +60,24 @@ case(
         sign_in("dpo@cmp.local", "Priya", "DPO"),
         {"action": "Read the line under the heading.",
          "expected": "It reads 'Notices awaiting publication, projects awaiting your review, and the consent position across the platform.'"},
-        {"action": "Look at the first card, 'Needs you today'.",
-         "expected": ("Each row shows a number, a label and an arrow, and the card's top right says how many things there are (e.g. '3 things'). "
-                      "Every label is one of: 'Tickets past their date', 'Rights requests overdue', 'Rights requests due within 7 days', "
+        {"action": "Look at the first card, 'Needs attention'.",
+         "expected": ("Each row shows a number, a label and an arrow; the card's heading carries no overall count. "
+                      "Every label is one of: 'Breach duties overdue', 'Breach duties outstanding', 'Tickets past their date', 'Rights requests overdue', 'Rights requests due within 7 days', "
                       "'Requests awaiting verification', 'Teams have written on their tickets', 'Grievances about the DPO to escalate', "
                       "'Retention floors passed, erasure due', 'Tickets addressed to you', 'Notice text awaiting approval', "
                       "'Projects pending approval', 'New collectors awaiting your decision'. If nothing is waiting the card says "
-                      "'Nothing needs you today. The queues below are clear or waiting on somebody else.'")},
+                      "'Nothing needs your attention. The queues below are clear or waiting on somebody else.'")},
         {"action": "Check the card for rows that belong to other roles.",
          "expected": ("There is no row about lockouts, sign-ins, access denials, 'Staff invitations not yet accepted', "
-                      "'Sites awaiting a data source', 'Sources with nobody accountable' or 'Imports that did not reconcile'.")},
-        {"action": "Click one of the rows in 'Needs you today' (for example 'Projects pending approval' or 'Rights requests due within 7 days').",
+                      "'Sites awaiting a data source', 'Sources without an owner' or 'Imports that did not reconcile'.")},
+        {"action": "Click one of the rows in 'Needs attention' (for example 'Projects pending approval' or 'Rights requests due within 7 days').",
          "expected": ("The list behind that number opens already filtered (e.g. the Projects page showing only projects pending approval, or the "
                       "Rights requests page). The number of rows matches the count on the dashboard. Use the browser Back button to return.")},
-        {"action": "Scroll down past 'Needs you today' to the queue cards.",
-         "expected": ("Queues with work appear as cards named from: 'Rights requests, soonest due first', 'Tickets past their date', "
-                      "'Teams have written on their tickets', 'Drafts whose purposes are not activated', 'Pending Approval', "
-                      "'New collectors awaiting your decision', 'Retention floors passed - erasure due'. Each card shows a count badge. "
+        {"action": "Scroll down past 'Needs attention' to the queue cards.",
+         "expected": ("Queues with work appear as cards, in this order: 'Tickets past their date', 'Rights requests, soonest due first', "
+                      "'Teams have written on their tickets', 'Retention floors passed - erasure due', 'Pending Approval', "
+                      "'New collectors awaiting your decision', 'Drafts whose purposes are not activated'. Each card shows a count badge; "
+                      "a queue at its 25-row limit shows '25+' and a 'See all' link. "
                       "Empty queues are listed together in one grey line that starts 'Clear:'. People's names in queue rows are readable.")},
         {"action": "Scroll further to the cards 'Projects by stage' and 'Consent position'.",
          "expected": ("'Projects by stage' shows bars labelled 'In draft', 'Pending approval' and 'Approved' with numbers; "
@@ -88,14 +89,14 @@ case(
         {"action": "Click 'Full audit trail'.",
          "expected": "The 'Audit trail' page opens."},
     ],
-    pass_criteria=("'Needs you today' contains only DPO-actionable rows from the listed set, each row opens a filtered list that matches its count, "
+    pass_criteria=("'Needs attention' contains only DPO-actionable rows from the listed set, each row opens a filtered list that matches its count, "
                    "queues and position cards render, and Recent activity shows no sign-in events and links to the full audit trail."),
 )
 
 case(
     id="OVS-02",
     title="Administrator dashboard - lockouts are information, not tasks",
-    feature="Dashboard - 'Needs you today', queues, recent activity",
+    feature="Dashboard - 'Needs attention', queues, recent activity",
     role="Administrator on console",
     priority="High",
     type="Positive",
@@ -105,12 +106,12 @@ case(
     steps=[
         sign_in("admin@cmp.local", "System", "Administrator"),
         {"action": "Read the line under the heading.",
-         "expected": "It reads 'Accounts, lockouts, and the state of the processor and source registry.'"},
-        {"action": "Look at 'Needs you today'.",
+         "expected": "It reads 'Invitations waiting, access problems, grievances about the DPO, and the processor and source registry.'"},
+        {"action": "Look at 'Needs attention'.",
          "expected": ("Only these labels can appear (each only when its count is above zero): 'Staff invitations not yet accepted', "
                       "'Grievances about the DPO to review', 'Tickets addressed to you'. Otherwise the card says "
-                      "'Nothing needs you today. The queues below are clear or waiting on somebody else.'")},
-        {"action": "Check 'Needs you today' for rows the administrator cannot act on.",
+                      "'Nothing needs your attention. The queues below are clear or waiting on somebody else.'")},
+        {"action": "Check 'Needs attention' for rows the administrator cannot act on.",
          "expected": ("There is no row about lockouts, access denials, consent withdrawals, projects, notices, or rights requests overdue.")},
         {"action": "If 'Staff invitations not yet accepted' is shown, click it.",
          "expected": ("The 'Users' page opens filtered to pending accounts; it lists staff whose invitation is not yet accepted and no data principals. "
@@ -118,21 +119,21 @@ case(
         {"action": "Scroll to the queue cards and the 'Clear:' line.",
          "expected": ("The queues are 'Grievances about the DPO - yours to review', 'Lockouts (24h)' and 'Suspended sources and processors' "
                       "(as cards, or named in the 'Clear:' line when empty). A lockout from the last 24 hours appears as a row in 'Lockouts (24h)' "
-                      "with the person's readable name - here, and not in 'Needs you today'.")},
+                      "with the person's readable name - here, and not in 'Needs attention'.")},
         {"action": "Look for the cards 'Projects by stage' and 'Consent position'.",
          "expected": "Neither card is shown to the administrator."},
         {"action": "Look at 'Recent activity'.",
          "expected": ("Entries are refused requests - title 'Auth access denied' with the sentence 'A request was refused by the permission matrix.' - "
                       "each with who and when. A 'Full audit trail' link is at the card's top right.")},
     ],
-    pass_criteria=("Administrator 'Needs you today' holds only invitations, grievances about the DPO and own tickets; lockouts appear only in the "
+    pass_criteria=("Administrator 'Needs attention' holds only invitations, grievances about the DPO and own tickets; lockouts appear only in the "
                    "'Lockouts (24h)' queue; no project or consent charts; Recent activity shows access denials with a 'Full audit trail' link."),
 )
 
 case(
     id="OVS-03",
     title="DCO and RCO dashboards show their collection work and no audit link",
-    feature="Dashboard - 'Needs you today', queues, recent activity",
+    feature="Dashboard - 'Needs attention', queues, recent activity",
     role="DCO and RCO on console",
     priority="High",
     type="Positive",
@@ -140,23 +141,23 @@ case(
     test_data=["dco@cmp.local (Arun Shetty)", "rco@cmp.local (Meera Iyer)", f"Password: {PW}"],
     steps=[
         sign_in("dco@cmp.local", "Arun", "Data Collection Owner"),
-        {"action": "Read the line under the heading, then look at 'Needs you today'.",
+        {"action": "Read the line under the heading, then look at 'Needs attention'.",
          "expected": ("The line reads 'Your approved projects, the links collecting against them, and anything that failed to reconcile on import.' "
-                      "'Needs you today' holds only rows from: 'Tickets past their date', 'Tickets addressed to you', 'Imports that did not reconcile', "
-                      "'Assets with unmapped subjects' - or the sentence 'Nothing needs you today. ...'.")},
-        {"action": "Check 'Needs you today' for rows belonging to other roles.",
+                      "'Needs attention' holds only rows from: 'Tickets past their date', 'Tickets addressed to you', 'Imports that did not reconcile', "
+                      "'Assets with unmapped subjects' - or the sentence 'Nothing needs your attention. ...'.")},
+        {"action": "Check 'Needs attention' for rows belonging to other roles.",
          "expected": ("No 'Projects pending approval', 'Rights requests overdue', 'Notice text awaiting approval', 'Staff invitations not yet accepted', "
                       "lockout or 'Sites awaiting a data source' row appears.")},
         {"action": "Find the 'Import exceptions' queue (a card, or named in the 'Clear:' line). If it is a card, click its first row.",
-         "expected": ("A card row names a collection and a project and says '<n> declared, <m> mapped — <k> unaccounted for'. Clicking it opens that "
+         "expected": ("The queues are 'Import exceptions' and 'Approved projects ready to collect' (as cards, or named in the 'Clear:' line). An 'Import exceptions' row names a collection and a project and says '<n> declared, <m> mapped — <k> unaccounted for'. Clicking it opens that "
                       "collection's page (not 'Not part of your account'). Use Back to return.")},
         {"action": "Look at the 'Recent activity' card.",
          "expected": ("It lists events on Arun's own projects or done by him, with no sign-in ('Auth ...') events. There is NO 'Full audit trail' link "
                       "on the card, because a DCO has no audit page.")},
         sign_out_in("rco@cmp.local", "Meera", "R&D Collection Owner"),
-        {"action": "Read the line under the heading and 'Needs you today'.",
+        {"action": "Read the line under the heading and 'Needs attention'.",
          "expected": ("The line reads 'The collection your team runs itself — your approved projects, the links collecting against them, and anything that "
-                      "failed to reconcile on import.' 'Needs you today' uses the same four DCO labels only.")},
+                      "failed to reconcile on import.' 'Needs attention' uses the same four DCO labels only.")},
         {"action": "Look at the 'Recent activity' card.",
          "expected": "Events on Meera's projects only, no sign-in events, and no 'Full audit trail' link."},
     ],
@@ -166,7 +167,7 @@ case(
 case(
     id="OVS-04",
     title="DCO Admin and R&D User dashboards show only their own queues",
-    feature="Dashboard - 'Needs you today', queues, recent activity",
+    feature="Dashboard - 'Needs attention', queues, recent activity",
     role="DCO Admin and R&D User on console",
     priority="Medium",
     type="Positive",
@@ -174,26 +175,26 @@ case(
     test_data=["dcoadmin@cmp.local (Nikhil Bose)", "rnd@cmp.local (Kavya Rao)", f"Password: {PW}"],
     steps=[
         sign_in("dcoadmin@cmp.local", "Nikhil", "DCO Admin"),
-        {"action": "Read the line under the heading and look at 'Needs you today'.",
+        {"action": "Read the line under the heading and look at 'Needs attention'.",
          "expected": ("The line reads 'Projects collected by a third party: which sites are still waiting for a data source, and who picks them up when you "
-                      "attach one.' Rows come only from: 'Tickets past their date', 'Sites awaiting a data source', 'Sources with nobody accountable', "
+                      "attach one.' Rows come only from: 'Tickets past their date', 'Sites awaiting a data source', 'Sources without an owner', "
                       "'Processors with no collection set up', 'Tickets addressed to you'.")},
         {"action": "If 'Sites awaiting a data source' is listed, click it.",
          "expected": ("The page scrolls down to the 'Sites awaiting a data source' queue card on the same dashboard; each row names a project and says "
                       "'Attach the data source that will collect here'.")},
-        {"action": "If 'Sources with nobody accountable' is listed, click it.",
+        {"action": "If 'Sources without an owner' is listed, click it.",
          "expected": "The 'Data sources' page opens (not 'Not part of your account'). Use Back to return."},
         {"action": "Look at 'Recent activity'.",
          "expected": "No sign-in events and no 'Full audit trail' link."},
         sign_out_in("rnd@cmp.local", "Kavya", "R&D User"),
-        {"action": "Read the line under the heading and look at 'Needs you today'.",
+        {"action": "Read the line under the heading and look at 'Needs attention'.",
          "expected": ("The line reads 'Your projects and what each one needs from you before it can move forward.' Rows come only from "
                       "'Projects needing something from you' and 'Tickets addressed to you'.")},
         {"action": "If 'Projects needing something from you' is listed, click it, then click the first row of the queue it jumps to.",
          "expected": ("The page scrolls to the 'Needs your action' queue; rows name Kavya's draft projects with 'Upload a security approval with its proof file'. "
                       "Clicking a row opens that project's page.")},
         {"action": "Scroll to the bottom of the dashboard.",
-         "expected": ("'Projects by stage' is shown (counting only Kavya's projects); there is no 'Consent position' card; 'Recent activity' has no "
+         "expected": ("A 'Waiting for DPO review' queue lists Kavya's projects pending approval (or is named in the 'Clear:' line). 'Projects by stage' is shown (counting only Kavya's projects); there is no 'Consent position' card; 'Recent activity' has no "
                       "'Full audit trail' link.")},
     ],
     pass_criteria="Each role sees only its own attention rows and queues, links open pages the role can use, and neither role is offered the full audit trail.",
@@ -212,26 +213,27 @@ case(
     steps=[
         sign_in("dpo@cmp.local", "Priya", "DPO"),
         {"action": "Read the whole left-hand sidebar from top to bottom (section headings are shown in small capitals).",
-         "expected": ("In this order: OVERVIEW - Dashboard; GOVERNANCE - Projects, Approvals, Notices, Purposes; CONSENT - Consents, Consent links, "
-                      "Collection sites; REGISTRY - Processors, Data sources; DATA MOVEMENT - Collections, Exports, Imports; OVERSIGHT - Rights requests, "
-                      "Audit trail, Users, Delegate, Messages; YOU - Tickets for you, Notifications, Your profile. A 'Sign out' button sits at the bottom.")},
+         "expected": ("In this order: YOUR WORK - Dashboard, Rights requests, Breaches, My tasks, Projects, Notices; GOVERNANCE - Approval documents, Purposes; "
+                      "CONSENT - Consents, Consent links, Collection sites; REGISTRY - Processors, Data sources; DATA MOVEMENT - Collections, Exports, Imports; "
+                      "OVERSIGHT - Audit trail, Users, Delegations, Message templates. There is no 'My profile' or 'Notifications' entry: 'My profile' is in the "
+                      "account menu (click your name at the top right) and notifications open from the bell in the header. A 'Sign out' button sits at the bottom.")},
         {"action": "Click each sidebar link in turn.",
-         "expected": ("Every link opens a page with its own heading. None shows 'This page could not be found' or 'Not part of your account'. "
+         "expected": ("Every link opens a page with its own heading. None shows 'We can't find that page' or 'Not part of your account'. "
                       "The link for the open page is highlighted.")},
         sign_out_in("admin@cmp.local", "System", "Administrator"),
         {"action": "Read the whole sidebar.",
-         "expected": ("OVERVIEW - Dashboard; REGISTRY - Processors, Data sources; OVERSIGHT - Grievances about the DPO, Audit trail, Users, Delegate, "
-                      "Messages; YOU - Tickets for you, Notifications, Your profile.")},
+         "expected": ("YOUR WORK - Dashboard, Users, Grievances about the DPO, Message templates, Processors, Data sources, Audit trail; "
+                      "OVERSIGHT - Delegations; YOU - My tasks.")},
         {"action": "Check what is absent for the administrator.",
-         "expected": ("There are no GOVERNANCE, CONSENT or DATA MOVEMENT headings and no links to Projects, Approvals, Notices, Purposes, Consents, "
+         "expected": ("There are no GOVERNANCE, CONSENT, REGISTRY or DATA MOVEMENT headings and no links to Projects, Approval documents, Notices, Purposes, Consents, "
                       "Consent links, Collection sites, Collections, Exports or Imports. There is no 'Rights requests' link - that slot reads "
                       "'Grievances about the DPO'.")},
         {"action": "Click 'Grievances about the DPO'.",
          "expected": "A page headed 'Grievances about the DPO' opens."},
         {"action": "Click each remaining administrator link in turn.",
-         "expected": "Every link opens a page with its own heading; none shows 'This page could not be found' or 'Not part of your account'."},
+         "expected": "Every link opens a page with its own heading; none shows 'We can't find that page' or 'Not part of your account'."},
     ],
-    pass_criteria="The DPO sees all 21 links in 7 sections; the Administrator sees exactly the 11 links listed, with the rights link relabelled 'Grievances about the DPO', and every link opens.",
+    pass_criteria="The DPO sees the 20 links listed, starting with the 'Your work' group; the Administrator sees exactly the 9 links listed, with the rights link relabelled 'Grievances about the DPO', and every link opens.",
 )
 
 case(
@@ -246,21 +248,21 @@ case(
     steps=[
         sign_in("dco@cmp.local", "Arun", "Data Collection Owner"),
         {"action": "Read the whole sidebar.",
-         "expected": ("OVERVIEW - Dashboard; GOVERNANCE - Projects; CONSENT - Consents, Consent links, Collection sites; REGISTRY - Data sources; "
-                      "DATA MOVEMENT - Collections, Exports, Imports; OVERSIGHT - Delegate; YOU - Tickets for you, Notifications, Your profile.")},
+         "expected": ("YOUR WORK - Dashboard, My projects, Collection sites, Consent links, My tasks, Collections; CONSENT - Consents; REGISTRY - Data sources; "
+                      "DATA MOVEMENT - Exports, Imports; OVERSIGHT - Delegations. 'My profile' is in the account menu and notifications open from the bell in the header.")},
         {"action": "Look under OVERSIGHT and the rest of the sidebar for oversight and governance links.",
-         "expected": ("OVERSIGHT holds only 'Delegate'. There is no 'Audit trail', 'Users', 'Rights requests' or 'Messages', and no 'Approvals', "
+         "expected": ("OVERSIGHT holds only 'Delegations'. There is no 'Audit trail', 'Users', 'Rights requests' or 'Message templates', and no 'Approval documents', "
                       "'Notices', 'Purposes' or 'Processors' anywhere in the sidebar.")},
         {"action": "Click each sidebar link in turn.",
-         "expected": "Every link opens a page with its own heading; none shows 'This page could not be found' or 'Not part of your account'."},
+         "expected": "Every link opens a page with its own heading; none shows 'We can't find that page' or 'Not part of your account'."},
         sign_out_in("dcoadmin@cmp.local", "Nikhil", "DCO Admin"),
         {"action": "Read the whole sidebar and repeat the check for absent links.",
-         "expected": "Exactly the same links as the DCO; no 'Audit trail', 'Users', 'Rights requests', 'Messages', 'Approvals', 'Notices', 'Purposes' or 'Processors'."},
+         "expected": "YOUR WORK - Dashboard, Collection sites, Data sources, My tasks, Consent links, Projects; CONSENT - Consents; DATA MOVEMENT - Collections, Exports, Imports; OVERSIGHT - Delegations. These are the DCO's pages in a different order, and the projects link reads 'Projects' (not 'My projects'). No 'Audit trail', 'Users', 'Rights requests', 'Message templates', 'Approval documents', 'Notices', 'Purposes' or 'Processors'."},
         sign_out_in("rco@cmp.local", "Meera", "R&D Collection Owner"),
         {"action": "Read the whole sidebar and repeat the check for absent links.",
-         "expected": "Exactly the same links as the DCO; no 'Audit trail' and none of the other absent links."},
+         "expected": "Exactly the same links, in the same order, as the DCO (including 'My projects'); no 'Audit trail' and none of the other absent links."},
     ],
-    pass_criteria="All three collection roles see the same 13 links, OVERSIGHT contains only 'Delegate', and no audit, user, rights, message, approval, notice, purpose or processor link is offered.",
+    pass_criteria="All three collection roles see the same 11 pages, starting with their own 'Your work' group; OVERSIGHT contains only 'Delegations', and no audit, user, rights, message-template, approval, notice, purpose or processor link is offered.",
 )
 
 case(
@@ -275,17 +277,17 @@ case(
     steps=[
         sign_in("rnd@cmp.local", "Kavya", "R&D User"),
         {"action": "Read the whole sidebar.",
-         "expected": ("OVERVIEW - Dashboard; GOVERNANCE - Projects, Approvals, Notices; REGISTRY - Processors; DATA MOVEMENT - Collections, Imports; "
-                      "YOU - Tickets for you, Notifications, Your profile.")},
+         "expected": ("YOUR WORK - Dashboard, My projects, Approval documents, My tasks, Notices; REGISTRY - Processors; DATA MOVEMENT - Collections, Imports. "
+                      "'My profile' is in the account menu and notifications open from the bell in the header.")},
         {"action": "Check what is absent.",
          "expected": ("There is no CONSENT heading and no OVERSIGHT heading. There are no links to Purposes, Consents, Consent links, Collection sites, "
-                      "Data sources, Exports, Rights requests, Audit trail, Users, Delegate or Messages.")},
+                      "Data sources, Exports, Rights requests, Audit trail, Users, Delegations or Message templates.")},
         {"action": "Click 'Notices'.",
          "expected": "A page headed 'Notices' opens (the R&D User authors notices)."},
         {"action": "Click each remaining sidebar link in turn.",
-         "expected": "Every link opens a page with its own heading; none shows 'This page could not be found' or 'Not part of your account'."},
+         "expected": "Every link opens a page with its own heading; none shows 'We can't find that page' or 'Not part of your account'."},
     ],
-    pass_criteria="The R&D User sees exactly the 10 links listed, no Consent or Oversight section, and every link opens.",
+    pass_criteria="The R&D User sees exactly the 8 links listed, no Consent or Oversight section, and every link opens.",
 )
 
 # ---------------------------------------------------------------- not part of your account
@@ -339,7 +341,7 @@ case(
     test_data=["dpo@cmp.local (Priya Menon)", f"Password: {PW}"],
     steps=[
         sign_in("dpo@cmp.local", "Priya", "DPO"),
-        {"action": "In the sidebar under YOU, click 'Notifications' (the bell icon).",
+        {"action": "Click the bell icon at the top right of the header (its label is 'Notifications').",
          "expected": ("A page headed 'Notifications' opens with the text 'What has happened that concerns you, taken from the audit trail itself.' "
                       "Entries are listed newest first; each shows an event name, how long ago, a one-line explanation, the record it concerns as a link, "
                       "and 'by <name>'.")},
@@ -353,11 +355,11 @@ case(
                       "the note 'This entry is append-only and part of a hash chain. ...', and the buttons 'Open consent record' and 'Close'.")},
         {"action": "Click 'Open consent record'.",
          "expected": ("The consent record page opens, headed with the person's name and an 'All consents' back link - not 'Not part of your account' "
-                      "and not 'This page could not be found'.")},
+                      "and not 'We can't find that page'.")},
         {"action": "Go back to 'Notifications' and click the 'Account: ...' link on the lockout entry.",
          "expected": "The 'Users' page opens."},
         {"action": "Go back and click the record link on one entry of each other kind shown (e.g. 'Project transitioned', 'Notice published', 'Import rejected', 'Export generated', ticket events).",
-         "expected": "Each link opens a page the DPO can use; none shows 'Not part of your account' or 'This page could not be found'."},
+         "expected": "Each link opens a page the DPO can use; none shows 'Not part of your account' or 'We can't find that page'."},
     ],
     pass_criteria="The DPO's feed contains both consent withdrawals and lockouts, each entry opens a detail dialog, and every link opens a working page.",
 )
@@ -374,7 +376,7 @@ case(
     test_data=["admin@cmp.local (System Admin)", f"Password: {PW}"],
     steps=[
         sign_in("admin@cmp.local", "System", "Administrator"),
-        {"action": "In the sidebar under YOU, click 'Notifications'.",
+        {"action": "Click the bell icon at the top right of the header.",
          "expected": "The 'Notifications' page opens."},
         {"action": "Find the 'Auth login locked out' entry for the account locked in the precondition.",
          "expected": "It is listed with 'An account was locked after repeated failed sign-ins.' and the link 'Account: <name>'."},
@@ -402,20 +404,20 @@ case(
     test_data=["dco@cmp.local (Arun Shetty)", "rnd@cmp.local (Kavya Rao)", f"Password: {PW}"],
     steps=[
         sign_in("dco@cmp.local", "Arun", "Data Collection Owner"),
-        {"action": "Click 'Notifications' in the sidebar and read the list.",
+        {"action": "Click the bell icon in the header to open 'Notifications', and read the list.",
          "expected": ("Entries are only of these kinds: 'Project transitioned', 'Notice published', 'Import rejected', 'Export generated', plus events on "
                       "tickets addressed to Arun. Each names a project (or a notice, import or export on one).")},
         {"action": "Look for 'Consent withdrawn' and 'Auth login locked out' entries.",
          "expected": "Neither appears, although the DPO's feed shows both."},
-        {"action": "Note the project named on two entries, then click 'Projects' in the sidebar.",
-         "expected": "Both projects are in Arun's Projects list - no entry concerns a project he cannot see."},
+        {"action": "Note the project named on two entries, then click 'My projects' in the sidebar.",
+         "expected": "Both projects are in Arun's projects list - no entry concerns a project he cannot see."},
         {"action": "Back on 'Notifications', click a 'Project: <name>' link, then an 'Export' link on an 'Export generated' entry (if present).",
          "expected": "The project page and the 'Exports' page open normally."},
         {"action": "If a 'Notice published' entry is present, click its 'Notice: ...' link (or 'Open notice' in its dialog).",
          "expected": ("A page Arun can use opens. It must NOT show 'Not part of your account' (the rule is that no notification link leads to a page the "
                       "reader cannot open). If it does, record a defect.")},
         sign_out_in("rnd@cmp.local", "Kavya", "R&D User"),
-        {"action": "Click 'Notifications' and read the list.",
+        {"action": "Click the bell icon in the header and read the 'Notifications' list.",
          "expected": "Only events on projects Kavya created (and her tickets); no 'Consent withdrawn' and no 'Auth login locked out'."},
         {"action": "Click the record link on each entry shown, including any 'Export generated' entry's 'Export' link.",
          "expected": ("Each opens a page Kavya can use. None may show 'Not part of your account' (R&D Users have no Exports section, so an export link "
@@ -622,7 +624,7 @@ case(
         {"action": "Click 'Rights requests', open a request by its 'Reference' and click 'Audit trail'.",
          "expected": "The trail opens with the chip 'Rights request <reference>'."},
         sign_out_in("dco@cmp.local", "Arun", "Data Collection Owner"),
-        {"action": "Click 'Consents', open a record, then open a project from 'Projects'.",
+        {"action": "Click 'Consents', open a record, then open a project from 'My projects'.",
          "expected": "Both pages open, but neither shows an 'Audit trail' button (a DCO has no audit section)."},
         {"action": "Sign out, sign in as rnd@cmp.local and open one of Kavya's projects.",
          "expected": "The project page has no 'Audit trail' button."},
@@ -658,8 +660,8 @@ case(
         {"action": "Search for subject@cmp.local, then for @cmp.local.",
          "expected": "'Nothing matches these filters' both times - no contact is written into the trail."},
         {"action": "If entries exist, choose Area 'Delegation', Event 'Granted', open the newest row and click 'Open cover arrangement'.",
-         "expected": ("The details show 'Reason given' yes/no and no reason text. The button opens the 'Delegate' page. If it shows 'This page could not "
-                      "be found', record a defect.")},
+         "expected": ("The details show 'Reason given' yes/no and no reason text. The button opens the 'Delegations' page. If it shows 'We can't find that page', "
+                      "record a defect.")},
     ],
     pass_criteria="Entries from 21 September 2026 carry no reason text, no email or mobile, and no readable IP address; reasons appear only as 'Reason given' yes/no.",
 )
@@ -698,7 +700,7 @@ case(
 case(
     id="OVS-20",
     title="Data principal's portal notifications show only her own events and open her own pages",
-    feature="Notifications (data principal portal)",
+    feature="Updates - notifications (data principal portal)",
     role="Data principal on portal",
     priority="High",
     type="Positive",
@@ -710,10 +712,10 @@ case(
         {"action": (f"Open {PORTAL}/sign-in. Under 'Sign in with' choose 'Email', type subject@cmp.local in 'Email address' and click 'Send me a code'."),
          "expected": "A 'Check your messages' notice appears and a 'Six-digit code' box is shown."},
         {"action": "Type the code the test coordinator relays and click 'Verify'.",
-         "expected": ("The 'Your consents' page opens. The sidebar shows YOUR DATA - 'My consents', 'My requests' and YOU - 'Notifications', "
-                      "'Your profile', and nothing else.")},
-        {"action": "Click 'Notifications'.",
-         "expected": ("The page 'Notifications' opens with 'What has happened that concerns you, taken from the audit trail itself.' Entries are about "
+         "expected": ("The 'My consents' page opens. The sidebar shows YOUR DATA - 'My consents', 'My requests', 'My nominations' and 'Updates', "
+                      "and nothing else; 'My profile' is in the account menu under her name at the top right.")},
+        {"action": "Click 'Updates'.",
+         "expected": ("The page 'Updates' opens with 'What has happened that concerns you, taken from the audit trail itself.' Entries are about "
                       "Anjali only, e.g. 'Consent given', 'Consent withdrawn', 'Notice served', 'Subject registered', 'Rights request received'. "
                       "If there are none it says 'Nothing to report'.")},
         {"action": "Check the list for events that are not hers to see.",
@@ -723,12 +725,12 @@ case(
          "expected": ("A dialog shows 'What' ('Consent record: Anjali Verma — <project>'), 'When', 'Who', 'Event' (consent.given) and 'Record', with an "
                       "'Open consent record' button. All names are readable; no 'SE::' text.")},
         {"action": "Click 'Open consent record'.",
-         "expected": "The 'Your consents' page on the portal opens - not a staff page and not 'Not part of your account'."},
-        {"action": "Back on 'Notifications', click the record link on a rights request entry (if present) and on a 'Subject registered' entry ('Account: Anjali Verma' / 'Open account').",
-         "expected": ("The request link opens 'My requests'. The account link opens her own account page ('Your account'). If either shows 'This page "
-                      "could not be found', record a defect.")},
+         "expected": "The 'My consents' page on the portal opens - not a staff page and not 'Not part of your account'."},
+        {"action": "Back on 'Updates', click the record link on a rights request entry (if present) and on a 'Subject registered' entry ('Account: Anjali Verma' / 'Open account').",
+         "expected": ("The request link opens 'My requests'. The account link opens her own account page ('My profile'). If either shows 'We can't find "
+                      "that page', record a defect.")},
         {"action": f"Type {PORTAL}/users in the address bar, then {PORTAL}/audit.",
-         "expected": "Both show the '404 | This page could not be found.' page - no staff screen exists on the portal."},
+         "expected": "Both show the portal's 404 page, headed 'We can't find that page', with the buttons 'Go to My consents' and 'Your rights' - no staff screen exists on the portal."},
     ],
     pass_criteria="The data principal's feed contains only her own permitted events, entries open with readable details, every link lands on her own portal pages, and staff URLs do not exist on the portal.",
 )
@@ -746,17 +748,17 @@ case(
     steps=[
         sign_in("dpo@cmp.local", "Priya", "DPO"),
         {"action": "Click 'Projects' in the sidebar and look to the right of the logo in the header.",
-         "expected": "A breadcrumb reads 'Governance › Projects'. In the header are a box 'Search or jump to…' showing ⌘K (on a Mac) or Ctrl K, a help (?) button, a bell, and Priya's name with the 'DPO' badge and her initials."},
-        {"action": "Press Ctrl+K (⌘K on a Mac), or click 'Search or jump to…'. Type 'aud'.",
+         "expected": "A breadcrumb reads 'Governance › Projects'. In the header are a box 'Jump to page…' showing ⌘K (on a Mac) or Ctrl K, a help (?) button, a bell, and Priya's name with the 'DPO' badge and her initials."},
+        {"action": "Press Ctrl+K (⌘K on a Mac), or click 'Jump to page…'. Type 'aud'.",
          "expected": "A search box opens over the page ('Search pages and actions…'). Typing narrows the list to 'Audit trail' under the heading 'Oversight'. The footer reads '↑ ↓ to move', '↵ to open', 'Esc to close'."},
         {"action": "Press Enter.",
          "expected": "The 'Audit trail' page opens and the box closes. The breadcrumb reads 'Oversight › Audit trail'."},
         {"action": "Open the box again (Ctrl+K / ⌘K) without typing.",
          "expected": "A 'Recent' group lists the pages just visited (for example 'Projects'), but not the page you are on. An 'Actions' group offers 'Open the help manual', 'Switch to dark theme' and 'Sign out'. Type 'zzz': it says 'Nothing matches “zzz”'. Press Esc to close it."},
         {"action": "Click Priya's name at the top right of the header.",
-         "expected": "An account menu opens showing 'Priya Menon' and 'DPO', then 'Your profile', 'Help manual', 'Switch to dark theme' and 'Sign out'. Press Esc: it closes and nothing else changes."},
+         "expected": "An account menu opens showing 'Priya Menon' and 'DPO', then 'My profile', 'Help manual', 'Switch to dark theme' and 'Sign out'. Press Esc: it closes and nothing else changes."},
         {"action": "In the sidebar click the heading 'GOVERNANCE', then click it again.",
-         "expected": "The first click folds away Projects, Approvals, Notices and Purposes; the second brings them back. The group holding the page you are on cannot be folded away."},
+         "expected": "The first click folds away 'Approval documents' and 'Purposes'; the second brings them back. The group holding the page you are on cannot be folded away."},
         {"action": "Click 'Collapse sidebar' at the bottom of the sidebar, then reload the page.",
          "expected": "The sidebar becomes a narrow strip of icons (hovering an icon shows its name) and stays that way after the reload. Click 'Expand sidebar' to restore it."},
         {"action": "Open 'Rights requests', open any request, and click the card 'Clock and path'.",
@@ -784,8 +786,8 @@ case(
         {"action": "Scroll to the end of the manual.",
          "expected": "A panel 'Have any questions? Contact us' shows the Privacy Office's email address and response time, and says to ask your administrator about sign-in or role problems."},
         {"action": f"Sign in to the console as dco@cmp.local ({PW} and the relayed code). Click the help (?) button in the header.",
-         "expected": "The manual opens already set to 'For the DCO', reading '15 of 24 sections for the DCO'. Section numbers keep their places (for example 8, 12, 13, 14). The top-right button now reads 'Back to the console'."},
-        {"action": "Choose 'Every role' in the role box. Then click 'Back to the console', press Ctrl+K (⌘K) and choose 'Open the help manual'.",
+         "expected": "The manual opens already set to 'For the DCO', reading '15 of 24 sections for the DCO'. Section numbers keep their places (for example 8, 12, 13, 14). The top-right button now reads 'Back to where you were'."},
+        {"action": "Choose 'Every role' in the role box. Then click 'Back to where you were', press Ctrl+K (⌘K) and choose 'Open the help manual'.",
          "expected": "'Every role' shows all 24 sections. The command palette opens the manual again."},
         {"action": f"Open {PORTAL}/sign-in and click 'Help manual' next to 'Your rights and how to exercise them'.",
          "expected": "The page 'Consent Portal Manual' opens without signing in, with 15 sections written for data principals (creating an account, giving consent through a link, withdrawing, requests, nominations) and no role choice."},
