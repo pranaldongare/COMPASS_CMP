@@ -29,6 +29,7 @@ reaches a log line.
 | Rights requests past a checkpoint on the dashboard | The office is late; the response period is published and binding |
 | **Breach duties overdue** on the DPO's dashboard (`breach_duties_late`) | A breach duty is past its due time - CERT-In's six hours, the Board's 72 - or past the internal target for "without delay" once one is set. Statutory and the most urgent thing on the platform; wiring it to a page is part of P-08 |
 | `breach.notice_failed` in the worker log, or failed deliveries on a breach's notices card | A notice to a person the breach touched did not go by email or SMS after retrying. It is in her account regardless; see the [runbook](runbook.md#a-breach-notice-did-not-reach-somebody) |
+| `/ready` answering 503 with `storage` not ok | `UPLOAD_ROOT` cannot be written: approval proofs, manifests and export files would fail to save. Usually a volume not mounted, or mounted read-only, on this replica |
 | `/ready` answering 503 with `encryption` not ok | The API cannot reach the key service: writes of personal data answer 503, and no message can be addressed |
 | `message.not_sent` | The worker could not open a message's sealed recipient. The task retries five times, then the message is dropped; see the [runbook](runbook.md#no-message-of-any-kind-is-sent-and-the-request-said-one-was) |
 | `dkms.unreachable` or `dkms.error` (API or worker) | The key service did not answer, or answered non-2xx. The line names the URL, never a value |

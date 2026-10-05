@@ -291,6 +291,14 @@ class Settings(BaseSettings):
             # Not production-only: a staging deployment real people sign in
             # to must not print their codes on the screen either.
             raise ValueError("DEV_SHOW_CODES is for local development only")
+        if self.storage_backend == "object":
+            # Any environment: `ObjectStorage` is a stub that raises on the
+            # first save, so a deployment set this way started, said it was
+            # ready, and lost the first upload (review SCALE-5).
+            raise ValueError(
+                "STORAGE_BACKEND=object is not implemented yet. Use local, with "
+                "UPLOAD_ROOT on a durable volume every API and worker replica shares."
+            )
         if self.sms_transport == "http" and not self.sms_http_url.startswith("https://"):
             raise ValueError("SMS_HTTP_URL must be an https:// gateway when SMS_TRANSPORT=http")
         return self

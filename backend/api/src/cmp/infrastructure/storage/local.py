@@ -47,6 +47,21 @@ class LocalFileStorage:
         root.mkdir(parents=True, exist_ok=True)
         return root
 
+    def healthcheck(self) -> tuple[bool, str | None]:
+        """Can a file be written under the root, and removed again?
+
+        For `/ready`. A root that cannot be written answers ready to every
+        check but this one, and fails the first upload. The detail never
+        names the path: `/ready` is public.
+        """
+        try:
+            probe = self.root / f".ready-{new_token(6)}"
+            probe.write_bytes(b"")
+            probe.unlink()
+        except OSError:
+            return False, "upload root is not writable"
+        return True, None
+
     def save(self, payload: bytes, *, subdir: str, suggested_name: str) -> str:
         """Store bytes; return the reference recorded in the database.
 

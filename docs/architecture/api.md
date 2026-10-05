@@ -92,7 +92,8 @@ matches no name. See
 [ADR 0017](../decisions/0017-lookup-by-keyed-hash-and-name-ngrams.md).
 
 **Readiness is specific.** `GET /ready` checks PostgreSQL, Redis, the schema
-revision and the key service, one named check each, and answers 503 when any
+revision, the key service and that file storage can be written, one named
+check each, and answers 503 when any
 fails. It names the deployed schema revision and the one this build expects.
 
 ## The error contract

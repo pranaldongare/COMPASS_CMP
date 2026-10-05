@@ -1,8 +1,10 @@
 """Object storage.
 
-Not wired by default, and deliberately left as a stub rather than a half-working
-client: a storage backend that silently fails to persist an approval proof is
-worse than one that refuses to start.
+Not wired, and deliberately left as a stub rather than a half-working client: a
+storage backend that silently fails to persist an approval proof is worse than
+one that refuses to start - and this one does refuse: `Settings` will not load
+with `STORAGE_BACKEND=object` until it is built (since 2026-10-05; before that
+it started and failed the first upload).
 
 What a real implementation must keep, because the rest of the system assumes it:
 
@@ -44,6 +46,9 @@ class ObjectStorage:
             "Object storage is configured but not implemented. "
             "Set STORAGE_BACKEND=local, or implement ObjectStorage.",
         )
+
+    def healthcheck(self) -> tuple[bool, str | None]:
+        return False, "object storage is not implemented"
 
     def save(self, payload: bytes, *, subdir: str, suggested_name: str) -> str:
         raise self._unimplemented()

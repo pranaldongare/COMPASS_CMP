@@ -35,6 +35,10 @@ class FileStorage(Protocol):
         """Remove it. False if it was not there — deletion is idempotent."""
         ...
 
+    def healthcheck(self) -> tuple[bool, str | None]:
+        """For `/ready`: can it store a file now. A detail never names a path."""
+        ...
+
 
 #: The two subdirectories that exist. Named rather than passed as strings from
 #: the routers, so a typo cannot scatter proofs across `approval/`, `approvals/`

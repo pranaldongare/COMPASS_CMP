@@ -180,4 +180,4 @@ The API's `DKMS_URL` and each portal's server-only `DKMS_URL` must name the
 same key service: a value sealed under one key opens under no other.
 
 `GET /ready` on the API answers 503 when PostgreSQL, Redis, the schema
-revision or the key service is not as it should be.
+revision, the key service or file storage is not as it should be.

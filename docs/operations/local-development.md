@@ -91,7 +91,8 @@ Settings worth checking in `.env` for local work:
 | `BLIND_INDEX_KEY` | the `.env.example` value | must equal the key service's `DKMS_HASH_KEY` |
 
 `curl http://127.0.0.1:8000/ready` checks PostgreSQL, Redis, the migration
-head and the key service (`encryption`) in one call.
+head, the key service (`encryption`) and that `UPLOAD_ROOT` can be written
+(`storage`) in one call.
 
 The interactive API reference is at `http://127.0.0.1:8000/docs`.
 

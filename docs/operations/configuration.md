@@ -39,6 +39,10 @@ The API (`_production_guards` in `core/config.py`):
 | `DKMS_ENABLED` is false | Personal data would be written in the clear, and nothing would ever report it |
 | `BLIND_INDEX_KEY` starts `dev-only` or is under 32 bytes | Every lookup hash could be recomputed by anyone holding this repository |
 
+In any environment, the API and the worker also refuse `STORAGE_BACKEND=object`:
+the object backend is a stub, and a deployment set that way used to start,
+report ready and fail the first upload (review SCALE-5).
+
 The key service (`assert_shippable` in `backend/dkms/app/config.py`), in any
 `ENVIRONMENT` other than `local` or `test`:
 
@@ -69,7 +73,7 @@ boot: the second failure is loud and costs ten minutes.
 | API | 50 default page size, 200 max; public link 60/min |
 | Outbound HTTP | `EXTERNAL_HTTP_TIMEOUT_S` 10, `EXTERNAL_HTTP_RETRIES` 3 |
 | Logging | `LOG_LEVEL`, `LOG_JSON` (false for a terminal) |
-| Transports | `EMAIL_TRANSPORT` (`console`, `smtp`, `null`), `SMS_TRANSPORT` (`console`, `http`, `null`), `STORAGE_BACKEND` (`local`; `object` is a stub that refuses on use). The `http` SMS transport POSTs `{"to","body","from"}` as JSON with a bearer token to `SMS_HTTP_URL`; put a provider-specific adapter in front of it |
+| Transports | `EMAIL_TRANSPORT` (`console`, `smtp`, `null`), `SMS_TRANSPORT` (`console`, `http`, `null`), `STORAGE_BACKEND` (`local`; `object` is not built, and any environment refuses to start with it - until 2026-10-05 it started and failed the first upload). With more than one API or worker replica, `UPLOAD_ROOT` must be one durable volume they all mount: a proof saved by one replica is read back by another. The `http` SMS transport POSTs `{"to","body","from"}` as JSON with a bearer token to `SMS_HTTP_URL`; put a provider-specific adapter in front of it |
 | Key service | See below |
 
 ## The key service
