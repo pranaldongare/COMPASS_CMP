@@ -17,6 +17,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
 
@@ -24,8 +25,6 @@ import { PageHeader } from "@/components/layout/app-shell";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyRecords } from "@/components/ui/graphics";
 import { Alert, Button, Card, EmptyState, Skeleton } from "@/components/ui/primitives";
-import { NominationCard } from "@/features/rights/components/nomination-card";
-import { NomineeOfCard } from "@/features/rights/components/nominee-of-card";
 import { MyRequestForm } from "@/features/rights/components/request-form";
 import { useMyRequests } from "@/features/rights/queries";
 import { RequestCard, cardId } from "@/features/rights/components/request-card";
@@ -140,12 +139,18 @@ export default function MyRequestsPage() {
         ))}
       </div>
 
-      <div className="mt-8 space-y-6">
-        {/* First: something somebody else needs from her is more pressing
-            than something she may one day arrange. Absent when there is none. */}
-        <NomineeOfCard />
-        <NominationCard />
-      </div>
+      {/* Nominations have their own page (UX review): below every request
+          was the last place anybody looked for them. */}
+      <p className="mt-8 text-sm text-text-muted">
+        Naming someone to act for you, or acting for someone who named you, is under{" "}
+        <Link
+          href="/my-nominations"
+          className="font-medium text-accent-text underline underline-offset-2"
+        >
+          My nominations
+        </Link>
+        .
+      </p>
 
       <Dialog open={asking} onOpenChange={(next) => !next && setAsking(false)}>
         <DialogContent

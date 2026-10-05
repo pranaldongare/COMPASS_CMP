@@ -33,7 +33,7 @@ import {
   rememberVisit,
   useCommandPaletteShortcut,
 } from "@/components/layout/command-palette";
-import { labelFor, locate, sectionsFor, type NavSection } from "@/components/layout/nav";
+import { labelFor, locate, sectionsFor, sidebarFor, type NavSection } from "@/components/layout/nav";
 import { HelpLink } from "@/components/layout/help-link";
 import { useDrawer } from "@/components/layout/use-drawer";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -141,7 +141,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="mx-auto flex w-full max-w-[1600px]">
         <Sidebar
-          sections={sections}
+          sections={sidebarFor(me)}
           pathname={pathname}
           mobileOpen={mobileOpen}
           collapsed={collapsed}

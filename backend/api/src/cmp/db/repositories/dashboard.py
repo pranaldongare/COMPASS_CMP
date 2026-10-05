@@ -343,3 +343,33 @@ async def staff_feed(conn: Conn, role: Role, user_id: int, *, limit: int) -> lis
             limit,
         ),
     )
+
+
+async def rnd_waiting_on_dpo(conn: Conn, user_id: int) -> list[Row]:
+    """The author's projects that are with the DPO: nothing for them to do but wait."""
+    return await fetch_all(
+        conn,
+        """SELECT p.project_uuid, p.project_name, p.project_status, p.updated_at,
+                  'Waiting for the DPO to review' AS action
+           FROM project p
+           WHERE p.created_by = %s AND p.project_status = 'pending_approval'
+           ORDER BY p.updated_at DESC LIMIT 25""",
+        (user_id,),
+    )
+
+
+async def ready_to_collect(conn: Conn, role: Role, user_id: int) -> list[Row]:
+    """Approved projects in this collector's scope: work they can start today.
+
+    The register's own predicate, so the dashboard and the project list agree.
+    """
+    pred, pred_params = scope_predicate(role, user_id)
+    return await fetch_all(
+        conn,
+        f"""SELECT p.project_uuid, p.project_name, p.project_status, p.updated_at,
+                   'Open its sites to copy a consent link' AS action
+            FROM project p
+            WHERE {pred} AND p.project_status = 'approved'
+            ORDER BY p.updated_at DESC LIMIT 25""",
+        pred_params,
+    )

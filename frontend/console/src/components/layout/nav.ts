@@ -77,7 +77,8 @@ export const SECTIONS: NavSection[] = [
       {
         key: "approvals",
         href: "/approvals",
-        label: "Approvals",
+        // The stored proofs - not the queue of things awaiting a decision.
+        label: "Approval documents",
         icon: FileCheck,
         keywords: "review",
       },
@@ -175,7 +176,7 @@ export const SECTIONS: NavSection[] = [
       {
         key: "delegate",
         href: "/delegate",
-        label: "Delegate",
+        label: "Delegations",
         icon: HandHelping,
         keywords: "cover leave",
       },
@@ -183,7 +184,8 @@ export const SECTIONS: NavSection[] = [
       {
         key: "messages",
         href: "/messages",
-        label: "Messages",
+        // The words the platform sends; not an inbox.
+        label: "Message templates",
         icon: MessageSquareText,
         keywords: "email sms templates",
       },
@@ -194,12 +196,18 @@ export const SECTIONS: NavSection[] = [
     items: [
       // A rights request's holder that is one of our own teams is answered
       // here, by whoever that team named - whatever their role.
-      { key: "tickets", href: "/tickets", label: "Tickets for you", icon: Inbox },
+      {
+        key: "tickets",
+        href: "/tickets",
+        label: "My tasks",
+        icon: Inbox,
+        keywords: "tickets for you",
+      },
       { key: "notifications", href: "/notifications", label: "Notifications", icon: Bell },
       {
         key: "profile",
         href: "/account",
-        label: "Your profile",
+        label: "My profile",
         icon: UserRound,
         keywords: "account settings",
       },
@@ -211,7 +219,46 @@ export const SECTIONS: NavSection[] = [
  * the rights register is the grievances escalated away from the DPO. */
 export function labelFor(item: NavItem, role: string | undefined): string {
   if (item.key === "requests" && role === "admin") return "Grievances about the DPO";
+  // The register is scoped to their own for these roles, and says so.
+  if (item.key === "projects" && (role === "rnd_user" || role === "dco" || role === "rco"))
+    return "My projects";
   return item.label;
+}
+
+/**
+ * Each role's daily work, in the order it runs - the first group of its
+ * sidebar (UX review 2026-10-05). The sidebar used to list every section in
+ * one order for everybody, which put a DPO's rights requests below
+ * governance, consent, registry and data movement. Only keys the server
+ * granted are shown; what a role has beyond these follows in the usual groups.
+ */
+const DAILY_WORK: Record<string, string[]> = {
+  dpo: ["dashboard", "requests", "breaches", "tickets", "projects", "notices"],
+  rnd_user: ["dashboard", "projects", "approvals", "tickets", "notices"],
+  dco_admin: ["dashboard", "sites", "sources", "tickets", "links", "projects"],
+  dco: ["dashboard", "projects", "sites", "links", "tickets", "collections"],
+  rco: ["dashboard", "projects", "sites", "links", "tickets", "collections"],
+  admin: ["dashboard", "users", "requests", "messages", "processors", "sources", "audit"],
+};
+
+/** In the account menu and the header's bell, not the sidebar as well. */
+const NOT_IN_SIDEBAR = new Set(["profile", "notifications"]);
+
+/** The sidebar: this role's daily work first, then the rest in their groups. */
+export function sidebarFor(me: Me | null | undefined): NavSection[] {
+  const granted = sectionsFor(me);
+  const byKey = new Map(granted.flatMap((s) => s.items).map((item) => [item.key, item]));
+  const first = (DAILY_WORK[me?.role ?? ""] ?? ["dashboard"])
+    .map((key) => byKey.get(key))
+    .filter((item): item is NavItem => Boolean(item));
+  const taken = new Set(first.map((item) => item.key));
+  const rest = granted
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((i) => !taken.has(i.key) && !NOT_IN_SIDEBAR.has(i.key)),
+    }))
+    .filter((section) => section.items.length > 0);
+  return [{ title: "Your work", items: first }, ...rest];
 }
 
 /** The sections this person has, with only the destinations the server granted. */

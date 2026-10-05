@@ -54,7 +54,7 @@ export function UserMenu() {
       <MenuSeparator />
       {me.nav.includes("profile") && (
         <MenuItem href="/account" icon={UserRound}>
-          Your profile
+          My profile
         </MenuItem>
       )}
       <MenuItem onSelect={() => router.push(helpHref())} icon={BookOpen}>

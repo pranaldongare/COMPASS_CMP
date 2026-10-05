@@ -47,7 +47,7 @@ export function RecentCard({
           entries={items}
           isLoading={isLoading}
           emptyTitle="Nothing recorded yet"
-          emptyDescription="Activity appears here as soon as anything happens on your projects."
+          emptyDescription="Activity appears here as soon as anything happens on the records you can see."
         />
       </CardBody>
     </Card>

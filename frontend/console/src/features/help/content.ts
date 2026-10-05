@@ -147,14 +147,14 @@ export const SECTIONS: HelpSection[] = [
   },
   {
     id: "profile",
-    title: "Your profile and sessions",
+    title: "My profile and sessions",
     summary: "Contacts, a personal email, your active sessions and your password.",
     blocks: [
       {
         kind: "steps",
         title: "Add a personal email",
         items: [
-          "Click [[Your profile]] in the sidebar. The [[Contacts]] card shows your work email (it cannot be changed here).",
+          "Open the account menu (your name, top right) and click [[My profile]]. The [[Contacts]] card shows your work email (it cannot be changed here).",
           "In the [[Personal email]] row click [[Add]], type the address and click [[Save and send a code]].",
           "Type the code sent to that address in [[Six-digit code]] and click [[Confirm]]. It can now sign you in to the portal as a person.",
         ],

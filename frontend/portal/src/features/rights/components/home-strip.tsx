@@ -75,7 +75,7 @@ export function HomeStrip() {
         key: `inv-${n.nomination_uuid}`,
         icon: <UserRound className="size-4" aria-hidden="true" />,
         text: `${n.nominee_name} acted for you on ${formatDate(n.invoked_at)}, reporting ${n.invoked_event === "death" ? "that you have died" : "that you cannot act"}${n.invoked_reference ? ` (${n.invoked_reference})` : ""}.`,
-        href: "/my-requests",
+        href: "/my-nominations",
         tone: "attention",
       });
     }
@@ -86,7 +86,7 @@ export function HomeStrip() {
         key: `naming-${n.nomination_uuid}`,
         icon: <UserRound className="size-4" aria-hidden="true" />,
         text: `${n.principal_name} has named you to act for them; accept or decline from the link sent to ${n.contact}.`,
-        href: "/my-requests",
+        href: "/my-nominations",
         tone: "attention",
       });
     }

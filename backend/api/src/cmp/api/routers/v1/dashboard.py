@@ -67,6 +67,8 @@ _QUEUE_HREF = {
     "Tickets addressed to you": "/tickets",
     "Needs your action": "/projects",
     "Grievances about the DPO - yours to review": "/requests?type=grievance",
+    "Approved projects ready to collect": "/projects?status=approved",
+    "Waiting for DPO review": "/projects?status=pending_approval",
     "Sites awaiting a data source": "/sites",
     "Processors with no collection set up": "/projects",
     "Import exceptions": "/collections",
@@ -431,10 +433,16 @@ async def _rnd(conn: Any, user_id: int) -> dict[str, Any]:
         actor_id=user_id,
         role=Role.RND_USER,
     )
+    # Apart from what needs them: a project with the DPO is waiting, and
+    # listing it as their action would be wrong (UX review 2026-10-05).
+    waiting = await dashboard_repo.rnd_waiting_on_dpo(conn, user_id)
     return {
         "role": "rnd_user",
         "counts": _ints(counts),
-        "queues": [{"name": "Needs your action", "items": queue}],
+        "queues": [
+            {"name": "Needs your action", "items": queue},
+            {"name": "Waiting for DPO review", "items": waiting},
+        ],
         "recent": recent,
     }
 
@@ -530,14 +538,17 @@ async def _dpo(conn: Any) -> dict[str, Any]:
             ),
         },
         "breaches": breaches,
+        # Most urgent first: work already late, then the statutory clock, then
+        # what others are waiting on, then decisions, then work brought forward.
+        # Overdue tickets used to sit below the whole rights queue (UX review).
         "queues": [
-            {"name": "Rights requests, soonest due first", "items": rights_queue},
             {"name": "Tickets past their date", "items": overdue},
+            {"name": "Rights requests, soonest due first", "items": rights_queue},
             {"name": "Teams have written on their tickets", "items": replies},
-            {"name": "Drafts whose purposes are not activated", "items": draft_queue},
+            {"name": "Retention floors passed - erasure due", "items": floors},
             {"name": "Pending Approval", "items": approval_queue},
             {"name": "New collectors awaiting your decision", "items": amendments},
-            {"name": "Retention floors passed - erasure due", "items": floors},
+            {"name": "Drafts whose purposes are not activated", "items": draft_queue},
         ],
         "recent": recent,
     }
@@ -555,10 +566,16 @@ async def _dco(conn: Any, user_id: int, *, role: Role = Role.DCO) -> dict[str, A
     recent = await _recent_activity(
         conn, project_ids=[r["project_id"] for r in in_scope], actor_id=user_id, role=role
     )
+    # On a quiet day, the work they can start - not only a clear queue and an
+    # activity log (UX review 2026-10-05).
+    ready = await dashboard_repo.ready_to_collect(conn, role, user_id)
     return {
         "role": str(role),
         "counts": _ints(counts),
-        "queues": [{"name": "Import exceptions", "items": exceptions}],
+        "queues": [
+            {"name": "Import exceptions", "items": exceptions},
+            {"name": "Approved projects ready to collect", "items": ready},
+        ],
         "recent": recent,
     }
 
@@ -591,8 +608,9 @@ async def _dco_admin(conn: Any, user_id: int) -> dict[str, Any]:
         "role": "dco_admin",
         "counts": _ints(counts),
         "queues": [
-            {"name": "Processors with no collection set up", "items": fresh},
+            # The DCO Admin's core job first: sites waiting for their source.
             {"name": "Sites awaiting a data source", "items": awaiting},
+            {"name": "Processors with no collection set up", "items": fresh},
         ],
         "recent": recent,
     }

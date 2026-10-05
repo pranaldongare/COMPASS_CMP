@@ -170,7 +170,8 @@ test.describe("data principal", () => {
   });
 
   test("names a nominee, who is not usable until they accept", async ({ page }) => {
-    await page.goto("/my-requests");
+    // Nominations have their own page (UX review 2026-10-05).
+    await page.goto("/my-nominations");
     // The card loads after the page does. Wait for it to settle before deciding
     // whether a nomination from an earlier run has to be revoked first.
     await expect(page.getByText(/somebody to act for you/i)).toBeVisible();
@@ -196,7 +197,7 @@ test.describe("data principal", () => {
       timeout: 10_000,
     });
     await expect(page.getByText(/may ask for: access\./i)).toBeVisible();
-    await shot(page, "my-requests-nomination-pending");
+    await shot(page, "my-nominations-pending");
   });
 });
 
@@ -304,7 +305,7 @@ test.describe("nominee", () => {
     await page.getByRole("button", { name: /^verify$/i }).click();
     await page.waitForURL(/\/my-consents/, { timeout: 20_000 });
 
-    await page.goto("/my-requests");
+    await page.goto("/my-nominations");
     const card = page.getByTestId("nominee-of");
     await expect(card).toBeVisible({ timeout: 10_000 });
 

@@ -257,13 +257,13 @@ export const SECTIONS: HelpSection[] = [
   },
   {
     id: "profile",
-    title: "Your profile",
+    title: "My profile",
     summary: "Your contacts, a second email and your date of birth.",
     blocks: [
       {
         kind: "list",
         items: [
-          "[[Your profile]] shows your name, contacts, date of birth and status.",
+          "[[My profile]], in the account menu under your name, shows your name, contacts, date of birth and status.",
           "Changing your mobile, or adding a second email, is confirmed with a code sent to it; until then it cannot sign you in.",
           "Your date of birth, once given, cannot be changed here. If it is wrong, contact the Privacy Office.",
           "If you are under 18, your profile says so: we cannot record consent from you.",

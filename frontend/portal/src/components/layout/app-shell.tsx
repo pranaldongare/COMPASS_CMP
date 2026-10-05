@@ -57,13 +57,12 @@ const SECTIONS: NavSection[] = [
       // same keys lead to the registers; here they lead to her own records.
       { key: "consents", href: "/my-consents", label: "My consents", icon: FileText },
       { key: "requests", href: "/my-requests", label: "My requests", icon: Scale },
-    ],
-  },
-  {
-    title: "You",
-    items: [
-      { key: "notifications", href: "/notifications", label: "Notifications", icon: Bell },
-      { key: "profile", href: "/account", label: "Your profile", icon: UserRound },
+      // Granted with requests: a nomination is the right to have a request
+      // made for you (s.14). Its own page, not the foot of My requests.
+      { key: "requests", href: "/my-nominations", label: "My nominations", icon: UserRound },
+      // The full list behind the header's bell. "My profile" is in the
+      // account menu, with sign-out (UX review 2026-10-05).
+      { key: "notifications", href: "/notifications", label: "Updates", icon: Bell },
     ],
   },
 ];

@@ -76,7 +76,7 @@ export function roleBlurb(role: string | null | undefined): string {
     case "rnd_user":
       return "Your projects and what each one needs from you before it can move forward.";
     case "admin":
-      return "Accounts, lockouts, and the state of the processor and source registry.";
+      return "Invitations waiting, access problems, grievances about the DPO, and the processor and source registry.";
     default:
       return "What is waiting for you, and the state of the platform.";
   }

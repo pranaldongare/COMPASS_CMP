@@ -43,6 +43,7 @@ import { useAuth } from "@/providers";
 const SECTION_OF: ReadonlyArray<readonly [prefix: string, key: string]> = [
   ["/my-consents", "consents"],
   ["/my-requests", "requests"],
+  ["/my-nominations", "requests"],
 ];
 
 export function RequireSection({ children }: { children: React.ReactNode }) {

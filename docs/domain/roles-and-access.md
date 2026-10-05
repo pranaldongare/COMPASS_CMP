@@ -104,7 +104,27 @@ matrix, so it cannot drift into showing a button that answers 403.
 
 Tickets are in every staff role's navigation, because any staff account can
 be named a respondent; the page is empty until one is addressed to them.
-Since September 2026 the cover section is labelled **Delegate**.
+
+The server decides *which* sections a role has; the console decides their
+order. Since October 2026 each role's sidebar opens with **Your work** - its
+daily destinations in the order the work runs (`DAILY_WORK` in
+`components/layout/nav.ts`) - and the rest follow in their groups (UX review
+2026-10-05):
+
+| Role | Your work |
+|---|---|
+| DPO | Dashboard, Rights requests, Breaches, My tasks, Projects, Notices |
+| R&D User | Dashboard, My projects, Approval documents, My tasks, Notices |
+| DCO Admin | Dashboard, Collection sites, Data sources, My tasks, Consent links, Projects |
+| DCO, RCO | Dashboard, My projects, Collection sites, Consent links, My tasks, Collections |
+| Administrator | Dashboard, Users, Grievances about the DPO, Message templates, Processors, Data sources, Audit trail |
+
+Profile and notifications are not in the sidebar: the account menu holds
+**My profile** and sign-out, and the bell opens notifications. Pages are
+named by what they hold: **My tasks** (tickets), **Approval documents**,
+**Message templates**, **Delegations**. On the portal the menu is My
+consents, My requests, **My nominations** (its own page since October 2026,
+not the foot of My requests) and **Updates**.
 
 ## Staff are data principals too
 
@@ -206,6 +226,15 @@ the one thing on a draft that is theirs. Nobody is held up by it - the author
 submits when they are ready, and the activation gates the officer's own
 approval - so it is work brought forward, and it is a queue rather than a row in
 **Needs attention**.
+
+Each row opens the subset it counts - `/sources?unowned=1`,
+`/requests?due_soon=1`, `/notices?languages=unapproved` - and each queue is in
+order of urgency: the DPO's start with tickets already past their date, then
+the rights clock, then what others are waiting on, then decisions, then work
+brought forward. A queue at its 25-row limit says **25+**. A DCO or RCO also
+sees **Approved projects ready to collect**, so a quiet day shows what they
+can start; an R&D user's projects with the DPO are under **Waiting for DPO
+review**, apart from **Needs your action** (UX review 2026-10-05).
 
 | Role | Needs attention |
 |---|---|

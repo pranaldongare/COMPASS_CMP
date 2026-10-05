@@ -64,7 +64,7 @@ describe("CommandPalette", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     const names = optionNames();
     expect(names).toEqual(
-      expect.arrayContaining(["Dashboard", "Projects", "Consent links", "Your profile"]),
+      expect.arrayContaining(["Dashboard", "My projects", "Consent links", "My profile"]),
     );
     expect(names.join(" ")).not.toMatch(/Audit trail|Users|Rights requests/);
   });
@@ -88,7 +88,7 @@ describe("CommandPalette", () => {
     await user.keyboard("{Control>}k{/Control}");
 
     await user.type(screen.getByRole("combobox"), "study");
-    expect(optionNames()[0]).toMatch(/^Projects/);
+    expect(optionNames()[0]).toMatch(/^My projects/);
   });
 
   it("moves the highlight with the arrow keys without moving focus", async () => {
@@ -122,7 +122,7 @@ describe("CommandPalette", () => {
     await user.keyboard("{Control>}k{/Control}");
 
     const recent = screen.getByRole("group", { name: "Recent" });
-    expect(recent).toHaveTextContent("Projects");
+    expect(recent).toHaveTextContent("My projects");
     expect(recent).not.toHaveTextContent("Audit trail");
   });
 
