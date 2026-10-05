@@ -9,17 +9,17 @@
 | GET | `/delegations` | `dpo`, `admin` | Full session; anonymous NO |
 | GET | `/delegations/candidates` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
 | POST | `/delegations` | `dpo`, `admin`, `dco` | Full session; anonymous NO |
-| GET | `/delegations/held` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject` | Full session; anonymous NO |
-| GET | `/delegations/mine` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject` | Full session; anonymous NO |
+| GET | `/delegations/held` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | Full session; anonymous NO |
+| GET | `/delegations/mine` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | Full session; anonymous NO |
 | DELETE | `/delegations/{delegation_uuid}` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
 
 ## GET /delegations
 
 Every live arrangement.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RequireDPOorAdmin`.
@@ -31,9 +31,9 @@ Every live arrangement.
 
 Arrange cover.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| COND | COND | COND | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| COND | COND | COND | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`.
 - **Route guard:** `RequireStaff`.
@@ -45,11 +45,11 @@ Arrange cover.
 
 Cover I am providing.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | OWN |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder`.
 - **Route guard:** `CurrentUser`.
 - **Rules:** Any full session may list arrangements involving itself; data principals normally have none. Listing is not permission to create cover.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/delegations.py#L126).
@@ -58,11 +58,11 @@ Cover I am providing.
 
 Cover I have arranged.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | OWN |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder`.
 - **Route guard:** `CurrentUser`.
 - **Rules:** Any full session may list arrangements involving itself; data principals normally have none. Listing is not permission to create cover.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/delegations.py#L119).
@@ -71,9 +71,9 @@ Cover I have arranged.
 
 End cover now.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| COND | COND | COND | COND | COND | COND | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| COND | COND | COND | COND | COND | COND | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `RequireStaff`.
@@ -85,9 +85,9 @@ End cover now.
 
 Who I can hand my work to: the active accounts in my role.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | NO | NO |
 
 - **Who:** any staff role.
 - **Route guard:** `RequireStaff`.

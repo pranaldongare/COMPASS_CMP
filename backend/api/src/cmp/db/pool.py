@@ -144,6 +144,13 @@ async def transaction() -> AsyncIterator[psycopg.AsyncConnection[Any]]:
     except psycopg.OperationalError as exc:
         log.error("db.unavailable", error=str(exc))
         raise ServiceUnavailable("Database is unavailable") from exc
+    # Async side effects a committed hook handed back: awaited here, after the
+    # commit and before the caller carries on.
+    for late in after_commit.take_awaiting():
+        try:
+            await late
+        except Exception as exc:  # one failed side effect must not stop the rest
+            log.error("after_commit.async_hook_failed", error=str(exc), exc_info=True)
     if kept is not None:
         raise kept
 

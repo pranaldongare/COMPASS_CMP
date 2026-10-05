@@ -39,6 +39,8 @@ class UserRole(StrEnum):
     #: R&D Collection Owner. A DCO's accountability, for collection the R&D team
     #: does itself - where there is no external processor to route to.
     RCO = "rco"
+    #: A breach-only login (S3-09): its own breach tickets, nothing else.
+    BREACH_HOLDER = "breach_holder"
 
 
 class PersonType(StrEnum):

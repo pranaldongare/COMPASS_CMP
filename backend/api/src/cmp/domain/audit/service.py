@@ -106,6 +106,10 @@ class Event:
     USER_INVITED = "user.invited"
     USER_ACTIVATED = "user.activated"
     USER_STAFF_ACCESS_ENDED = "user.staff_access_ended"
+    #: A breach-only login granted, and ended (S3-09). Detail: the breach
+    #: reference and the cause - never a name or an address.
+    USER_TEMPORARY_ACCESS_GRANTED = "user.temporary_access_granted"
+    USER_TEMPORARY_ACCESS_ENDED = "user.temporary_access_ended"
     USER_CONTACT_CHANGED = "user.contact_changed"
 
     # authentication
@@ -280,6 +284,8 @@ class Event:
     BREACH_TICKET_REOPENED = "breach_ticket.reopened"
     #: A file on a ticket's thread was read: every read is audited.
     BREACH_TICKET_FILE_READ = "breach_ticket.file_read"
+    #: A holder added a colleague, who got their own ticket (S3-09).
+    BREACH_TICKET_COLLEAGUE_ADDED = "breach_ticket.colleague_added"
     RIGHTS_RESPONDED = "rights.responded"
     RIGHTS_RESPONSE_DOWNLOADED = "rights.response_downloaded"
     RIGHTS_CLOSED = "rights.closed"

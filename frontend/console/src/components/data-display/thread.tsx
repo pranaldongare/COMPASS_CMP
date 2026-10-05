@@ -45,8 +45,10 @@ export function Thread({
       {messages.map((m) => {
         const mine = m.author_side === you;
         const system = m.author_side === "system";
+        // A platform line may be signed: a colleague's ticket opens with the
+        // note of the holder who added them (S3-09).
         const who = system
-          ? "The platform"
+          ? (m.author_name ?? "The platform")
           : (m.author_name ?? (m.author_side === "office" ? "The Privacy Office" : "The team"));
         const Icon = system ? ShieldCheck : m.author_side === "office" ? FileText : Building2;
         const href = evidenceHref?.(m) ?? null;

@@ -234,7 +234,8 @@ register is the DPO's alone, hidden from every other role (404).
 
 **`breach`** — `title`, `location_detail` (sealed), `recorded_by`.
 **`breach_recording`** — `recorded_by`: who made the *yes* that recorded it as a breach (S3-06).
-**`breach_ticket`** — `holder_user_id` (a member of staff, who is a data principal too), `assigned_by`, `instruction` (sealed).
+**`breach_ticket`** — `holder_user_id` (a member of staff or a temporary ticket holder, who is a data principal too), `assigned_by`, `instruction` (sealed); `parent_ticket_id` says who added whom (S3-09).
+**`breach_temporary_access`** — `user_id`, `granted_by`, `ended_by`: whose breach-only login, and who gave and ended it, with the role the account held before (S3-09). No name and no address: a person without an account is made one in `auth_user`, sealed like every other.
 **`breach_ticket_event`** — `summary`, `reason` (sealed), `actor_user_id`.
 **`breach_ticket_message`** — `body`, `evidence_name` (sealed), `author_user_id` (S3-08).
 **`breach_status_history`** — `reason` (sealed), `changed_by`.
@@ -337,7 +338,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-201 of 291 operations accept or return personal data. Each table gives the
+202 of 292 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -361,16 +362,16 @@ selected.
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
 | POST | `/auth/login` | **public** — the request carries its own credential (password, link token, one-time code) | `login`, `password` | `mfa_required`, `user_uuid` |
-| GET | `/auth/me` | any signed-in session, own record | — | `account_role`, `dob`, `email`, `email_verified_at`, `full_name`, `is_minor`, `mfa_verified`, `mobile`, `mobile_verified_at`, `person_type`, `role`, `secondary_email`, `secondary_email_verified_at`, `session_expires_at` |
-| POST | `/auth/mfa/verify` | any signed-in session, conditionally | `code` | — |
+| GET | `/auth/me` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Principal own rows, Temporary holder own rows | — | `account_role`, `dob`, `email`, `email_verified_at`, `full_name`, `is_minor`, `mfa_verified`, `mobile`, `mobile_verified_at`, `person_type`, `role`, `secondary_email`, `secondary_email_verified_at`, `session_expires_at` |
+| POST | `/auth/mfa/verify` | DPO conditional, Admin conditional, DCO conditional, DCO Admin conditional, RCO conditional, R&D conditional, Principal conditional, Temporary holder conditional | `code` | — |
 | POST | `/auth/otp/request` | **public** — no session | `contact` | — |
 | POST | `/auth/otp/verify` | **public** — the request carries its own credential (password, link token, one-time code) | `code`, `contact` | — |
-| POST | `/auth/password/change` | any signed-in session, own record | `current_password`, `new_password` | — |
+| POST | `/auth/password/change` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Principal own rows, Temporary holder own rows | `current_password`, `new_password` | — |
 | POST | `/auth/password/reset/confirm` | **public** — the request carries its own credential (password, link token, one-time code) | `code`, `email`, `new_password` | — |
 | POST | `/auth/password/reset/request` | **public** — no session | `email` | — |
 | POST | `/auth/register` | **public** — no session | `dob`, `email`, `full_name`, `mobile` | — |
 | POST | `/auth/register/verify` | **public** — the request carries its own credential (password, link token, one-time code) | `email_code`, `mobile`, `mobile_code` | — |
-| GET | `/auth/sessions` | any signed-in session, own record | — | `ip_address`, `last_seen_at`, `mfa_verified`, `user_agent` |
+| GET | `/auth/sessions` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Principal own rows, Temporary holder own rows | — | `ip_address`, `last_seen_at`, `mfa_verified`, `user_agent` |
 
 ### The data principal's own records — `/me/*`
 
@@ -378,8 +379,8 @@ selected.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/me` | any signed-in session, own record | — | `dob`, `email`, `email_verified_at`, `full_name`, `is_minor`, `mobile`, `mobile_verified_at`, `organization_id`, `person_type`, `secondary_email`, `secondary_email_verified_at` |
-| PATCH | `/me` | any signed-in session, own record | `dob`, `full_name`, `mobile`, `secondary_email` | `dob`, `email`, `email_verified_at`, `full_name`, `is_minor`, `mobile`, `mobile_verified_at`, `organization_id`, `person_type`, `secondary_email`, `secondary_email_verified_at` |
+| GET | `/me` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Principal own rows, Temporary holder own rows | — | `dob`, `email`, `email_verified_at`, `full_name`, `is_minor`, `mobile`, `mobile_verified_at`, `organization_id`, `person_type`, `secondary_email`, `secondary_email_verified_at` |
+| PATCH | `/me` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Principal own rows, Temporary holder own rows | `dob`, `full_name`, `mobile`, `secondary_email` | `dob`, `email`, `email_verified_at`, `full_name`, `is_minor`, `mobile`, `mobile_verified_at`, `organization_id`, `person_type`, `secondary_email`, `secondary_email_verified_at` |
 | GET | `/me/breach-notices` | Principal own rows | — | `consequences`, `contact`, `protective_steps` |
 | GET | `/me/consents` | Principal own rows | — | `affirmative_action_at`, `consent_uuid`, `granted_count`, `is_withdrawal` |
 | GET | `/me/consents/{consent_uuid}` | Principal own rows | `consent_uuid` | — |
@@ -388,8 +389,8 @@ selected.
 | GET | `/me/consents/{consent_uuid}/notice` | Principal own rows | `consent_uuid` | — |
 | GET | `/me/consents/{consent_uuid}/trail` | Principal own rows | `consent_uuid` | — |
 | POST | `/me/consents/{consent_uuid}/withdraw` | Principal own rows | `consent_uuid` | — |
-| POST | `/me/contact/verify` | any signed-in session, own record | `code`, `contact` | — |
-| POST | `/me/contacts/code` | any signed-in session, own record | `contact` | — |
+| POST | `/me/contact/verify` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Principal own rows, Temporary holder own rows | `code`, `contact` | — |
+| POST | `/me/contacts/code` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Principal own rows, Temporary holder own rows | `contact` | — |
 | GET | `/me/nominations` | Principal own rows | — | `nominee_email`, `nominee_mobile`, `nominee_name` |
 | POST | `/me/nominations` | Principal own rows | `nominee_email`, `nominee_mobile`, `nominee_name` | `nominee_email`, `nominee_mobile`, `nominee_name` |
 | DELETE | `/me/nominations/{nomination_uuid}` | Principal own rows | — | `nominee_email`, `nominee_mobile`, `nominee_name` |
@@ -509,7 +510,7 @@ selected.
 | POST | `/breaches/{breach_uuid}/obligations/{duty}/complete` | DPO every row | `reported_to` | `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name` |
 | GET | `/breaches/{breach_uuid}/org-board/brief` | DPO every row | — | `document` |
 | GET | `/breaches/{breach_uuid}/tickets` | DPO every row | — | `actor_name`, `added_by_name`, `assigned_by_name`, `holder_name`, `reason` |
-| POST | `/breaches/{breach_uuid}/tickets` | DPO every row | `instruction`, `user_uuid` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
+| POST | `/breaches/{breach_uuid}/tickets` | DPO every row | `email`, `full_name`, `instruction`, `mobile`, `user_uuid` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
 | GET | `/breaches/{breach_uuid}/tickets/{ticket_uuid}` | DPO every row | — | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
 | POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/close` | DPO every row | — | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
 | POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/messages` | DPO every row | `body`, `evidence` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
@@ -524,10 +525,10 @@ selected.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/breach-tickets` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows | — | `instruction` |
-| GET | `/breach-tickets/{ticket_uuid}` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows | — | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
-| POST | `/breach-tickets/{ticket_uuid}/messages` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows | `body`, `evidence` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
-| POST | `/breach-tickets/{ticket_uuid}/return` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows | `evidence` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
+| GET | `/breach-tickets` | any signed-in session, own record | — | `instruction` |
+| GET | `/breach-tickets/{ticket_uuid}` | any signed-in session, own record | — | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
+| POST | `/breach-tickets/{ticket_uuid}/messages` | any signed-in session, own record | `body`, `evidence` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
+| POST | `/breach-tickets/{ticket_uuid}/return` | any signed-in session, own record | `evidence` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
 
 ### Cross-border transfers — `/restricted-countries/*`
 
@@ -545,10 +546,10 @@ selected.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/tickets` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows | — | `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
-| GET | `/tickets/{holder_uuid}` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows | — | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
-| POST | `/tickets/{holder_uuid}/messages` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows | `body`, `evidence` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
-| POST | `/tickets/{holder_uuid}/return` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows | `evidence` | `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
+| GET | `/tickets` | any signed-in session, own record | — | `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
+| GET | `/tickets/{holder_uuid}` | any signed-in session, own record | — | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
+| POST | `/tickets/{holder_uuid}/messages` | any signed-in session, own record | `body`, `evidence` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
+| POST | `/tickets/{holder_uuid}/return` | any signed-in session, own record | `evidence` | `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 
 ### Consents and links, the office's side
 
@@ -612,8 +613,8 @@ selected.
 | GET | `/delegations` | DPO every row, Admin every row | — | `delegate_email`, `delegate_name`, `delegate_role`, `delegate_uuid`, `delegator_email`, `delegator_name`, `delegator_role`, `delegator_uuid`, `reason` |
 | POST | `/delegations` | DPO conditional, Admin conditional, DCO conditional | `delegate_user_uuid`, `delegator_user_uuid`, `reason` | — |
 | GET | `/delegations/candidates` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows | — | `email`, `full_name` |
-| GET | `/delegations/held` | any signed-in session, own record | — | `delegate_email`, `delegate_name`, `delegate_role`, `delegate_uuid`, `delegator_email`, `delegator_name`, `delegator_role`, `delegator_uuid`, `reason` |
-| GET | `/delegations/mine` | any signed-in session, own record | — | `delegate_email`, `delegate_name`, `delegate_role`, `delegate_uuid`, `delegator_email`, `delegator_name`, `delegator_role`, `delegator_uuid`, `reason` |
+| GET | `/delegations/held` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Principal own rows, Temporary holder own rows | — | `delegate_email`, `delegate_name`, `delegate_role`, `delegate_uuid`, `delegator_email`, `delegator_name`, `delegator_role`, `delegator_uuid`, `reason` |
+| GET | `/delegations/mine` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Principal own rows, Temporary holder own rows | — | `delegate_email`, `delegate_name`, `delegate_role`, `delegate_uuid`, `delegator_email`, `delegator_name`, `delegator_role`, `delegator_uuid`, `reason` |
 
 ### Projects, approvals and sites
 
@@ -693,9 +694,17 @@ selected.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/dashboard` | any signed-in session, conditionally | — | `reported_to`, `role` |
+| GET | `/dashboard` | DPO conditional, Admin conditional, DCO conditional, DCO Admin conditional, RCO conditional, R&D conditional, Principal conditional, Temporary holder conditional | — | `reported_to`, `role` |
 
-<!-- 201 of 291 operations carry personal data; 20 of them need no session. -->
+### Breach_tickets
+
+1 operation carry personal data.
+
+| Method | Endpoint | Who may call it | Personal data in | Personal data out |
+|---|---|---|---|---|
+| POST | `/breach-tickets/{ticket_uuid}/colleagues` | any signed-in session, own record | `email`, `full_name`, `mobile` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
+
+<!-- 202 of 292 operations carry personal data; 20 of them need no session. -->
 
 ## The public surface
 

@@ -27,7 +27,11 @@ from cmp.tasks.notifications.rights import (
     send_ticket_message,
     send_ticket_reminder,
 )
-from cmp.tasks.notifications.staff import send_contact_added_for_you, send_staff_invitation
+from cmp.tasks.notifications.staff import (
+    send_breach_ticket_access,
+    send_contact_added_for_you,
+    send_staff_invitation,
+)
 from cmp.tasks.notifications.withdrawal import send_withdrawal_confirmation
 
 # A module not imported here is a task the worker never registers: the API
@@ -35,6 +39,7 @@ from cmp.tasks.notifications.withdrawal import send_withdrawal_confirmation
 # lost quietly. `tests/unit/tasks/test_registry.py` checks the roster.
 __all__ = [
     "send_breach_notice",
+    "send_breach_ticket_access",
     "send_breach_ticket_waiting",
     "send_consent_receipt",
     "send_contact_added_for_you",

@@ -38,6 +38,15 @@ def _known_role(role: str) -> None:
         raise ValidationFailed("Unknown role", field="role")
 
 
+def _not_by_hand(role: str) -> None:
+    """A breach-only login is given by a breach ticket and ends with the breach
+    (S3-09, ADR 0023); nobody hands it out from the staff register."""
+    if role == Role.BREACH_HOLDER.value:
+        raise ValidationFailed(
+            "A temporary ticket holder is made by a breach ticket, not by hand", field="role"
+        )
+
+
 async def create_staff(
     conn: Conn,
     *,
@@ -63,6 +72,7 @@ async def create_staff(
         raise ValidationFailed(
             "Data subjects register through a consent link, not here", field="role"
         )
+    _not_by_hand(role)
     if source_uuids and role not in SOURCE_OWNING_ROLES:
         raise ValidationFailed(
             "Only a Data Collection Owner or an R&D Collection Owner can be "
@@ -147,7 +157,11 @@ async def resend_invitation(conn: Conn, user_uuid: str) -> dict[str, Any]:
             'with "Forgotten your password?" on the sign-in page.',
             field="status",
         )
-    await auth_service.invite_staff(conn, user=user)
+    if user["role"] == Role.BREACH_HOLDER.value:
+        # A breach-only login is told what it is for, not welcomed as staff.
+        await auth_service.invite_breach_holder(conn, user=user)
+    else:
+        await auth_service.invite_staff(conn, user=user)
     return user
 
 
@@ -206,6 +220,7 @@ async def change_role(
     conn: Conn, user_uuid: str, *, role: str, reason: str | None, actor_id: int
 ) -> dict[str, Any]:
     _known_role(role)
+    _not_by_hand(role)
     user = await repo.require_by_uuid(conn, user_uuid)
     if user["role"] == role:
         raise Conflict("That user already holds this role", code="role_unchanged")
@@ -238,6 +253,16 @@ async def deactivate(conn: Conn, user_uuid: str, *, actor_id: int) -> tuple[dict
     user = await repo.require_by_uuid(conn, user_uuid)
     if user["id"] == actor_id:
         raise Conflict("You cannot deactivate your own account", code="self_deactivate")
+    if user["role"] == Role.BREACH_HOLDER.value:
+        # A breach-only login ends the way it was given (BD-15, BD-16): never
+        # through end_staff_access, which would mark the person an ex-employee.
+        from cmp.domain.breach import access
+
+        if not await access.end_for_account(conn, int(user["id"]), actor_id=actor_id):
+            # No grant left to end it by: switch it off as such an account ends.
+            await repo.set_status(conn, user["id"], "deactivated")
+        after = await repo.require_by_uuid(conn, user_uuid)
+        return user, after["status"] != "deactivated"
     if user["role"] != Role.DATA_SUBJECT.value:
         await auth_service.end_staff_access(conn, user=user, actor_user_id=actor_id)
         return user, True

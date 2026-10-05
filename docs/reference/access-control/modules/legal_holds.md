@@ -14,9 +14,9 @@
 
 Holds, active first.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `LegalHoldReader`.
@@ -28,9 +28,9 @@ Holds, active first.
 
 Stop erasure of an asset or a person.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `LegalHoldWriter`.
@@ -42,9 +42,9 @@ Stop erasure of an asset or a person.
 
 Release a hold; what it stopped carries on.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `LegalHoldWriter`.

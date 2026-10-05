@@ -329,6 +329,48 @@ breach's **Tickets** card.
    holder whether they received it.
 4. **Withdraw it** with a reason if the wrong person was asked, and assign the
    right one. The breach cannot close while a ticket is issued or returned.
+
+## A holder cannot sign in
+
+Somebody given a breach-only login (S3-09) says the console will not let them
+in. Their row on the breach's **Tickets** card says which state they are in.
+
+| Tickets card shows | Cause | Do |
+|---|---|---|
+| **Temporary login · not yet signed in** | They have not set a password: the email's code expired (`STAFF_INVITE_TTL_H`), went to spam, or was never sent | "Forgotten your password?" on the sign-in page sends a working code to the same address; an administrator can also **Resend invitation** while the account is pending. Locally the code is in `var/outbox.log`; otherwise check the worker and `/ready` as for any code |
+| **Temporary login**, but "Those credentials are not valid" | A wrong password, or the account is locked after five tries | As for staff: wait thirty minutes, or a reset |
+| **Temporary login ended** | Their ticket was withdrawn, the breach closed, or an administrator ended it; the password went with it | Intended. If they still need to act, **Reopen** their ticket: a new grant and a new email. A closed breach must be reopened first, and reopening it does not by itself give access back |
+| No badge, and they are not staff | The address belongs to an account that was not active staff when asked - a suspended account is refused at assignment | An administrator reactivates the account, then assign again |
+
+A code typed on the **portal** signs them in as a data principal, never to
+their ticket: the console is where a holder works.
+
+## Someone still has access after a breach closed
+
+Closing a breach ends every grant on it in the same transaction, so this
+should not happen. Check it:
+
+```sql
+SELECT a.access_uuid, b.reference, a.granted_at
+  FROM breach_temporary_access a JOIN breach b USING (breach_id)
+ WHERE a.ended_at IS NULL AND b.status = 'closed';
+```
+
+Any row is a **critical** finding ([monitoring](monitoring.md#what-to-alert-on)):
+somebody holds a breach-only login on a matter that is over.
+
+1. **End it from the register.** An administrator opens **Users**, finds the
+   person and chooses **End temporary access**. That ends every grant they
+   hold, puts the account back (switched off if it was made for a breach, back
+   to `data_subject` otherwise), clears the password and revokes every session.
+   Never edit `auth_user` by hand: the grant row would stay open.
+2. **If they are still signed in afterwards,** the post-commit revocation
+   failed: look for `after_commit.async_hook_failed` in the API log and revoke by hand -
+   `sessions.revoke_all` for that user id, or clear their `session:*` keys in
+   Redis. The cleared password already stops a new sign-in.
+3. **Find out how it stayed open** - the trail has `user.temporary_access_granted`
+   and, if anything ended it, `user.temporary_access_ended` with the cause - and
+   report it as a defect.
 ## A breach notice did not reach somebody
 
 **Telling the people it touched** on the breach's page shows, per version and

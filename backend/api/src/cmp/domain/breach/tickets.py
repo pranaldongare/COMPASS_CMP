@@ -40,7 +40,7 @@ from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
-from cmp.domain.breach import service
+from cmp.domain.breach import access, service
 from cmp.domain.breach.ticket_state import (
     EVENT,
     REASON_REQUIRED,
@@ -89,6 +89,8 @@ HOLDER_KEYS: frozenset[str] = frozenset(
         "unread",
         "last_activity_at",
         "moves",
+        # Whether they may add a colleague now (S3-09): while it is open.
+        "may_add_colleague",
     }
 )
 
@@ -168,32 +170,96 @@ async def assign(
     conn: Conn,
     *,
     breach_uuid: str,
-    user_uuid: str,
     instruction: str,
     answer_by: date | None,
     actor_id: int,
+    user_uuid: str | None = None,
+    full_name: str | None = None,
+    email: str | None = None,
+    mobile: str | None = None,
 ) -> Row:
-    """The DPO asks one member of staff to act on a recorded breach."""
+    """The DPO asks somebody to act on a recorded breach: a member of staff
+    picked by `user_uuid`, or - S3-09 - anybody internal named by an email, who
+    is given a breach-only login if they have no console account."""
     breach = await service.locked_open(conn, breach_uuid)
     service.require_recorded(breach, "a ticket is assigned")
     instruction = _text(instruction)
     if not instruction:
         raise ValidationFailed("Say what you are asking them to do", field="instruction")
     answer_by = _answer_by(answer_by)
-    user = await user_repo.by_uuid(conn, user_uuid)
-    if not user:
-        raise NotFound("Person")
-    _require_staff(user)
-    await _require_internal(user)
+    if user_uuid:
+        user = await user_repo.by_uuid(conn, user_uuid)
+        if not user:
+            raise NotFound("Person")
+        _require_staff(user)
+        await _require_internal(user)
+        made = await _open_ticket(
+            conn,
+            breach,
+            holder_id=int(user["id"]),
+            instruction=instruction,
+            answer_by=answer_by,
+            actor_id=actor_id,
+        )
+    else:
+        made = await _ask_by_email(
+            conn,
+            breach,
+            full_name=full_name,
+            email=email,
+            mobile=mobile,
+            opening=instruction,
+            answer_by=answer_by,
+            actor_id=actor_id,
+            cause="assigned",
+        )
+    return await office_detail(conn, breach_uuid=breach_uuid, ticket_uuid=str(made["ticket_uuid"]))
+
+
+async def _ask_by_email(
+    conn: Conn,
+    breach: Row,
+    *,
+    full_name: str | None,
+    email: str | None,
+    mobile: str | None,
+    opening: str,
+    answer_by: date | None,
+    actor_id: int,
+    cause: str,
+    parent_ticket_id: int | None = None,
+) -> Row:
+    """The three-way lookup (S3-09): staff get an ordinary ticket; anybody
+    else internal gets a breach-only login with it. The caller holds the
+    breach row."""
+    address = (email or "").strip().lower()
+    if not address or "@" not in address:
+        raise ValidationFailed("Give their email address", field="email")
+    if not access.internal(address):
+        access.refuse_external()
+    user, created = await access.resolve(conn, full_name=full_name, email=address, mobile=mobile)
+    temporary = access.needs_grant(user)
     made = await _open_ticket(
         conn,
         breach,
         holder_id=int(user["id"]),
-        instruction=instruction,
+        instruction=opening,
         answer_by=answer_by,
         actor_id=actor_id,
+        parent_ticket_id=parent_ticket_id,
+        notify=not temporary,
     )
-    return await office_detail(conn, breach_uuid=breach_uuid, ticket_uuid=str(made["ticket_uuid"]))
+    if temporary:
+        await access.grant(
+            conn,
+            breach=breach,
+            user=user,
+            ticket_id=int(made["ticket_id"]),
+            created=created,
+            actor_id=actor_id,
+            cause=cause,
+        )
+    return made
 
 
 async def _open_ticket(
@@ -205,9 +271,11 @@ async def _open_ticket(
     answer_by: date | None,
     actor_id: int,
     parent_ticket_id: int | None = None,
+    notify: bool = True,
 ) -> Row:
-    """Write the ticket, its opening message and its trail, and tell the holder.
-    The caller holds the breach row."""
+    """Write the ticket, its opening message and its trail, and tell the holder
+    - unless they are being given a login, whose email says it instead. The
+    caller holds the breach row."""
     if await repo.held_by(conn, int(breach["breach_id"]), holder_id):
         raise Conflict("This person already holds a ticket on this breach", code="ticket_exists")
     made = await repo.create(
@@ -224,7 +292,9 @@ async def _open_ticket(
     await repo.add_message(
         conn,
         int(made["ticket_id"]),
-        side="office" if parent_ticket_id is None else "holder",
+        # A colleague's ticket opens with the adder's note: from neither the
+        # office nor the colleague, so the platform's line, signed by the adder.
+        side="office" if parent_ticket_id is None else "system",
         kind="instruction",
         body=instruction,
         author_user_id=actor_id,
@@ -238,7 +308,8 @@ async def _open_ticket(
         actor_id=actor_id,
         detail={"answer_by": answer_by.isoformat() if answer_by else None},
     )
-    await _tell_holder(ticket)
+    if notify:
+        await _tell_holder(ticket)
     return ticket
 
 
@@ -252,7 +323,17 @@ async def _events_by_ticket(conn: Conn, ticket_ids: list[int]) -> dict[int, list
     return by
 
 
-def _office_view(row: Row, events: list[Row]) -> Row:
+def _access_state(grant: Row | None) -> str | None:
+    """A holder's breach-only login, as the office reads it: pending until
+    they set a password, active, or ended. None for a member of staff."""
+    if grant is None:
+        return None
+    if grant["ended_at"] is not None:
+        return "ended"
+    return "pending" if grant["user_status"] == "pending" else "active"
+
+
+def _office_view(row: Row, events: list[Row], grant: Row | None = None) -> Row:
     state = fold(events)
     breach_open = row["breach_status"] == "open"
     return {
@@ -273,6 +354,7 @@ def _office_view(row: Row, events: list[Row]) -> Row:
         "events": events,
         "moves": moves(state, side="office", breach_open=breach_open),
         "may_write": breach_open and may_write(state),
+        "temporary_access": _access_state(grant),
     }
 
 
@@ -288,6 +370,7 @@ def _holder_view(row: Row, events: list[Row]) -> Row:
         "unread": int(row["unread"] or 0),
         "last_activity_at": row["last_activity_at"],
         "moves": moves(state, side="holder", breach_open=row["breach_status"] == "open"),
+        "may_add_colleague": row["breach_status"] == "open" and may_write(state),
     }
     assert set(view) == HOLDER_KEYS
     return view
@@ -297,8 +380,12 @@ async def for_breach(conn: Conn, *, breach_uuid: str) -> list[Row]:
     """Every ticket on a breach, as the office reads them."""
     breach = await service.require(conn, breach_uuid)
     rows = await repo.for_breach(conn, int(breach["breach_id"]))
-    events = await _events_by_ticket(conn, [int(r["ticket_id"]) for r in rows])
-    return [_office_view(r, events[int(r["ticket_id"])]) for r in rows]
+    ids = [int(r["ticket_id"]) for r in rows]
+    events = await _events_by_ticket(conn, ids)
+    grants = {int(g["ticket_id"]): g for g in await repo.access_by_ticket(conn, ids)} if ids else {}
+    return [
+        _office_view(r, events[int(r["ticket_id"])], grants.get(int(r["ticket_id"]))) for r in rows
+    ]
 
 
 async def _office_row(conn: Conn, breach: Row, ticket_uuid: str) -> Row:
@@ -315,8 +402,11 @@ async def office_detail(conn: Conn, *, breach_uuid: str, ticket_uuid: str) -> Ro
     await repo.mark_read(conn, int(row["ticket_id"]), side="office")
     fresh = await _office_row(conn, breach, ticket_uuid)
     events = await _events_by_ticket(conn, [int(fresh["ticket_id"])])
+    grants = await repo.access_by_ticket(conn, [int(fresh["ticket_id"])])
     return {
-        "ticket": _office_view(fresh, events[int(fresh["ticket_id"])]),
+        "ticket": _office_view(
+            fresh, events[int(fresh["ticket_id"])], grants[0] if grants else None
+        ),
         "instruction": fresh["instruction"],
         "messages": await repo.messages_of(conn, int(fresh["ticket_id"])),
     }
@@ -522,9 +612,96 @@ async def office_move(
     )
     await repo.mark_read(conn, int(row["ticket_id"]), side="office")
     await _trail(conn, row, _TRAIL[chosen], actor_id=actor_id, detail={"reason_given": bool(text)})
-    if chosen in _WAITING_AFTER:
+    regranted = False
+    if chosen == Move.WITHDRAW:
+        # BD-15: a withdrawn ticket takes its breach-only login with it.
+        await access.end_for_ticket(
+            conn, int(breach["breach_id"]), int(row["holder_user_id"]), actor_id=actor_id
+        )
+    elif chosen == Move.REOPEN:
+        regranted = await _restore_access(conn, breach, row, actor_id=actor_id)
+    if chosen in _WAITING_AFTER and not regranted:
         await _tell_holder(row)
     return await office_detail(conn, breach_uuid=breach_uuid, ticket_uuid=ticket_uuid)
+
+
+async def _restore_access(conn: Conn, breach: Row, row: Row, *, actor_id: int) -> bool:
+    """Reopening a ticket whose holder's breach-only login has ended grants it
+    again: a new grant, and a new email. True if it did."""
+    last = await repo.latest_grant(conn, int(breach["breach_id"]), int(row["holder_user_id"]))
+    if last is None or last["ended_at"] is None:
+        return False
+    user = await user_repo.by_id(conn, int(row["holder_user_id"]))
+    assert user is not None
+    if not access.needs_grant(user):
+        return False  # an administrator has since given them a real role
+    await access.grant(
+        conn,
+        breach=breach,
+        user=user,
+        ticket_id=int(row["ticket_id"]),
+        created=bool(last["account_created"]),
+        actor_id=actor_id,
+        cause="reopened",
+    )
+    return True
+
+
+async def add_colleague(
+    conn: Conn,
+    *,
+    user_id: int,
+    ticket_uuid: str,
+    full_name: str | None,
+    email: str | None,
+    mobile: str | None,
+    note: str,
+) -> Row:
+    """A holder brings in a colleague, who follows the same flow (BD-05,
+    BD-14): their own ticket on this breach, opening with this note - not the
+    DPO's instruction - under the same domain check and the same lookup.
+
+    The answer is the adder's own ticket whatever happened to the colleague's
+    account, so nobody learns from it whether an address has one. Somebody who
+    already holds a ticket here is a neutral 409.
+    """
+    row = await _holder_row(conn, user_id, ticket_uuid)
+    breach = await service.locked_open(conn, str(row["breach_uuid"]))
+    events = (await _events_by_ticket(conn, [int(row["ticket_id"])]))[int(row["ticket_id"])]
+    if not may_write(fold(events)):
+        raise Conflict("This ticket is no longer open", code="ticket_not_open")
+    text = _text(note)
+    if not text:
+        raise ValidationFailed("Say what you are asking them to do", field="note")
+    try:
+        made = await _ask_by_email(
+            conn,
+            breach,
+            full_name=full_name,
+            email=email,
+            mobile=mobile,
+            opening=text,
+            answer_by=row["answer_by"],
+            actor_id=user_id,
+            cause="colleague",
+            parent_ticket_id=int(row["ticket_id"]),
+        )
+    except Conflict as exc:
+        if exc.code in ("ticket_exists", "access_exists"):
+            raise Conflict(
+                "That person cannot be added to this ticket", code="colleague_not_added"
+            ) from exc
+        raise
+    colleague = await repo.on_breach(conn, int(breach["breach_id"]), str(made["ticket_uuid"]))
+    assert colleague is not None
+    await _trail(
+        conn,
+        colleague,
+        Event.BREACH_TICKET_COLLEAGUE_ADDED,
+        actor_id=user_id,
+        detail={"parent": str(row["ticket_uuid"])},
+    )
+    return await my_detail(conn, user_id=user_id, ticket_uuid=ticket_uuid)
 
 
 async def return_ticket(

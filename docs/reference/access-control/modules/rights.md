@@ -55,9 +55,9 @@
 
 Every request in scope.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsReader`.
@@ -69,9 +69,9 @@ Every request in scope.
 
 Log a request received by email.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| YES | YES | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| YES | YES | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -84,9 +84,9 @@ Log a request received by email.
 
 What the office has not read.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsReader`.
@@ -98,9 +98,9 @@ What the office has not read.
 
 Get Request.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsReader`.
@@ -112,9 +112,9 @@ Get Request.
 
 Send (or re-send) the acknowledgement.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -126,9 +126,9 @@ Send (or re-send) the acknowledgement.
 
 Confirm, or reclassify, what this is.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -140,9 +140,9 @@ Confirm, or reclassify, what this is.
 
 Decide a grievance.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| COND | COND | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| COND | COND | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -155,9 +155,9 @@ Decide a grievance.
 
 The released response file.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsReader`.
@@ -169,9 +169,9 @@ The released response file.
 
 The complaint is about the DPO.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -183,9 +183,9 @@ The complaint is about the DPO.
 
 Is the triggering event evidenced?.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -197,9 +197,9 @@ Is the triggering event evidenced?.
 
 Download the triggering-event evidence.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsReader`.
@@ -211,9 +211,9 @@ Download the triggering-event evidence.
 
 A file released with the response.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsReader`.
@@ -225,9 +225,9 @@ A file released with the response.
 
 A holder the records missed.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -239,9 +239,9 @@ A holder the records missed.
 
 Holders derived from export_line and asset_consent.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -253,9 +253,9 @@ Holders derived from export_line and asset_consent.
 
 Confirm Holder.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -267,9 +267,9 @@ Confirm Holder.
 
 Record a mail sent, a chase, or a reply - and optionally send the mail.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -281,9 +281,9 @@ Record a mail sent, a chase, or a reply - and optionally send the mail.
 
 A holder missed its date - escalate once.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -295,9 +295,9 @@ A holder missed its date - escalate once.
 
 Download a holder's return evidence.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsReader`.
@@ -309,9 +309,9 @@ Download a holder's return evidence.
 
 Download a file attached to a message on the ticket.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsReader`.
@@ -323,9 +323,9 @@ Download a file attached to a message on the ticket.
 
 Send an open ticket to a different respondent.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -337,9 +337,9 @@ Send an open ticket to a different respondent.
 
 Send the respondent a reminder now.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -351,9 +351,9 @@ Send the respondent a reminder now.
 
 Record what the holder returned.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -365,9 +365,9 @@ Record what the holder returned.
 
 Send a returned ticket back to its holder.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -379,9 +379,9 @@ Send a returned ticket back to its holder.
 
 The ticket's thread, as the office reads it.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -393,9 +393,9 @@ The ticket's thread, as the office reads it.
 
 Write to the holder on the ticket, with a file if it helps.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -407,9 +407,9 @@ Write to the holder on the ticket, with a file if it helps.
 
 Withdraw a ticket issued in error.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -421,9 +421,9 @@ Withdraw a ticket issued in error.
 
 She means erasure - confirmed.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -435,9 +435,9 @@ She means erasure - confirmed.
 
 Everything recorded about the request this one is about.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsReader`.
@@ -449,9 +449,9 @@ Everything recorded about the request this one is about.
 
 Not a rights request, or refused - with reasons.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -463,9 +463,9 @@ Not a rights request, or refused - with reasons.
 
 Release and close.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -477,9 +477,9 @@ Release and close.
 
 Name the independent reviewer.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| NO | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `admin`.
 - **Route guard:** `RightsWriter`.
@@ -492,9 +492,9 @@ Name the independent reviewer.
 
 Every appearance of her in a collected asset.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -506,9 +506,9 @@ Every appearance of her in a collected asset.
 
 What can go, what must stay, and why.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -520,9 +520,9 @@ What can go, what must stay, and why.
 
 Quarantine her appearance, then carry the decision out.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -534,9 +534,9 @@ Quarantine her appearance, then carry the decision out.
 
 Try an applied item's stores again now.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -548,9 +548,9 @@ Try an applied item's stores again now.
 
 Issue a ticket to every confirmed holder.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -562,9 +562,9 @@ Issue a ticket to every confirmed holder.
 
 Everything recorded about this request.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsReader`.
@@ -576,9 +576,9 @@ Everything recorded about this request.
 
 Transition.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -591,9 +591,9 @@ Transition.
 
 Get Transitions.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsReader`.
@@ -606,9 +606,9 @@ Get Transitions.
 
 Send a code to the stored channel.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -620,9 +620,9 @@ Send a code to the stored channel.
 
 Enter the code she read back.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -634,9 +634,9 @@ Enter the code she read back.
 
 No match, or verification not satisfied.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -648,9 +648,9 @@ No match, or verification not satisfied.
 
 Verified by hand, with the reason recorded.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.
@@ -662,9 +662,9 @@ Verified by hand, with the reason recorded.
 
 She meant withdrawal, not erasure.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RightsWriter`.

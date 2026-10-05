@@ -61,5 +61,11 @@ def requires_mfa(role: Role | str, *, configured: tuple[str, ...] | None = None)
     """
     from cmp.core.config import settings
 
+    # A breach-only login (S3-09) always steps up, whatever a deployment lists:
+    # it is given to somebody the platform has never met, by email, and a
+    # configured list written before the role existed would otherwise leave it
+    # on a password alone.
+    if str(role) == Role.BREACH_HOLDER.value:
+        return True
     allowed = configured if configured is not None else settings.mfa_required_roles
     return str(role) in allowed

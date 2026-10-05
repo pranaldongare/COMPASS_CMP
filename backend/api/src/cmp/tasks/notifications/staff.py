@@ -58,6 +58,23 @@ def send_staff_invitation(
     )
 
 
+@shared_task(name="cmp.notifications.send_breach_ticket_access", **RETRY_KW)
+def send_breach_ticket_access(
+    user_uuid: str, email: str, full_name: str, code: str, reset_url: str, hours: int
+) -> dict[str, Any]:
+    """Tell somebody without a console login that they have one, for a breach
+    ticket only (S3-09). Sent from the sign-in side, like an invitation; it
+    names no breach (BD-18)."""
+    return deliver(
+        Message.BREACH_TICKET_ACCESS,
+        to=email,
+        full_name=full_name,
+        code=code,
+        reset_url=reset_url,
+        hours=hours,
+    )
+
+
 @shared_task(name="cmp.notifications.send_contact_added_for_you", **RETRY_KW)
 def send_contact_added_for_you(
     user_uuid: str, contact: str, code: str, hours: int

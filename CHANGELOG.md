@@ -60,6 +60,26 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **Breach-only logins, and colleagues who follow the same flow (S3-09,
+  [ADR 0023](docs/decisions/0023-breach-tickets-and-breach-only-logins.md)).**
+  A breach ticket can go to somebody with no console login: the DPO chooses
+  **Someone without a console login** and gives a name, an internal email and
+  optionally a mobile. Active staff get an ordinary ticket; a data principal's
+  account becomes `breach_holder` while the grant lasts; nobody at the address
+  gets a new pending account made for the breach. They are sent
+  `breach_ticket_access` (reset link and code, naming no breach), set a
+  password, sign in with the emailed second factor - always required for this
+  role - and land on **My tasks**: tickets, notifications and profile, nothing
+  else. A holder can **Add a colleague** with a note while their ticket is
+  open; the colleague gets their own ticket under the same domain check and
+  lookup, and the adder's answer never says whether an account existed. Access
+  ends when the breach closes, when the DPO withdraws the ticket, or when an
+  administrator chooses **End temporary access**; the account goes back to what
+  it was (or is switched off if made for the breach), the password is cleared,
+  `person_type` is never touched, and sessions are revoked after the commit.
+  The role is never given by hand. The Tickets card marks temporary logins and
+  their state. Migration 0041 (`breach_holder` enum value;
+  `breach_temporary_access`); route `POST /breach-tickets/{uuid}/colleagues`.
 - **Breach tickets (S3-08,
   [ADR 0023](docs/decisions/0023-breach-tickets-and-breach-only-logins.md)).**
   The DPO asks the people who must act on a recorded breach: **Assign a

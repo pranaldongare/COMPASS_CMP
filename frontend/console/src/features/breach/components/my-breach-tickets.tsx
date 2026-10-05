@@ -6,17 +6,40 @@
  * instruction, the thread, the state and the answer-by date. Nothing else
  * from the register - not its title, not who it touched - reaches this page,
  * and the register itself is not mine to open.
+ *
+ * While it is open I can bring in a colleague (S3-09), who gets their own
+ * ticket opening with my note. What comes back is my own ticket whatever
+ * happened to theirs, so this page never says whether they had an account.
  */
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, MessageSquareReply, ShieldAlert } from "lucide-react";
+import { AlertTriangle, MessageSquareReply, ShieldAlert, UserPlus } from "lucide-react";
 import * as React from "react";
 
 import { ReplyBox, Thread, UnreadBadge } from "@/components/data-display/thread";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Alert, Badge, Button, Card, CardBody, CardHeader, CardTitle, Field, Select, Skeleton } from "@/components/ui/primitives";
-import { messageBreachOffice, myBreachTicketFileUrl, returnBreachTicket } from "@/features/breach/api";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Field,
+  Input,
+  Select,
+  Skeleton,
+  Textarea,
+} from "@/components/ui/primitives";
+import {
+  addBreachColleague,
+  messageBreachOffice,
+  myBreachTicketFileUrl,
+  returnBreachTicket,
+} from "@/features/breach/api";
+import { messageOf } from "@/features/breach/components/record-breach";
 import { TicketStateBadge } from "@/features/breach/components/tickets-card";
 import { useMyBreachTicket } from "@/features/breach/queries";
 import { formatDate, formatDateTime } from "@/lib/format";
@@ -27,6 +50,7 @@ import { RETURN_OUTCOME_COPY } from "@/types";
 
 export function BreachTicketCard({ ticket: t, openAtFirst }: { ticket: MyBreachTicket; openAtFirst?: boolean }) {
   const [responding, setResponding] = React.useState(Boolean(openAtFirst));
+  const [adding, setAdding] = React.useState(false);
   const canReturn = t.moves.some((m) => m.move === "return");
   const overdue = t.state === "issued" && t.answer_by && new Date(t.answer_by) < new Date(new Date().toDateString());
   return (
@@ -56,11 +80,20 @@ export function BreachTicketCard({ ticket: t, openAtFirst }: { ticket: MyBreachT
           <p className="text-xs font-medium uppercase tracking-wider text-text-subtle">What you are asked</p>
           <p className="mt-1 whitespace-pre-wrap text-sm">{t.instruction}</p>
         </div>
-        <Button variant={canReturn ? "primary" : "secondary"} size="sm" onClick={() => setResponding(true)}>
-          <MessageSquareReply className="size-4" aria-hidden="true" />
-          {canReturn ? "Respond" : "Open"}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant={canReturn ? "primary" : "secondary"} size="sm" onClick={() => setResponding(true)}>
+            <MessageSquareReply className="size-4" aria-hidden="true" />
+            {canReturn ? "Respond" : "Open"}
+          </Button>
+          {t.may_add_colleague && (
+            <Button variant="secondary" size="sm" onClick={() => setAdding(true)}>
+              <UserPlus className="size-4" aria-hidden="true" />
+              Add a colleague
+            </Button>
+          )}
+        </div>
       </CardBody>
+      {adding && <AddColleague ticket={t} onClose={() => setAdding(false)} />}
       <Dialog open={responding} onOpenChange={(next) => !next && setResponding(false)}>
         <DialogContent
           title={`${t.breach_reference} · breach ticket`}
@@ -151,5 +184,74 @@ function Respond({ ticket: t, onReturned }: { ticket: MyBreachTicket; onReturned
         }}
       />
     </div>
+  );
+}
+
+function AddColleague({ ticket: t, onClose }: { ticket: MyBreachTicket; onClose: () => void }) {
+  const toast = useToast();
+  const qc = useQueryClient();
+  const [person, setPerson] = React.useState({ full_name: "", email: "", mobile: "", note: "" });
+  const add = useMutation({
+    mutationFn: () =>
+      addBreachColleague(t.ticket_uuid, {
+        full_name: person.full_name.trim(),
+        email: person.email.trim(),
+        mobile: person.mobile.trim() || null,
+        note: person.note.trim(),
+      }),
+    onSuccess: (fresh) => {
+      qc.setQueryData(keys.breach.myTicket(t.ticket_uuid), fresh);
+      void qc.invalidateQueries({ queryKey: keys.breach.mine() });
+    },
+  });
+  async function save() {
+    try {
+      await add.mutateAsync();
+      toast.success(
+        "Colleague added",
+        "They have their own ticket on this, opening with your note, and are emailed about it. The Privacy Office can see that you added them.",
+      );
+      onClose();
+    } catch (err) {
+      toast.error("Not added", messageOf(err, "The server refused."));
+    }
+  }
+  const set = (k: keyof typeof person) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setPerson({ ...person, [k]: e.target.value });
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent
+        title="Add a colleague"
+        description={`Somebody on the organisation's own email domains who can help with ${t.breach_reference}. They get their own ticket, which opens with your note rather than the Privacy Office's instruction. If they have no console login, they are given one for this breach only.`}
+      >
+        <div className="space-y-3">
+          <Field label="Their name" hint="Needed if they have no console login">
+            {(p) => <Input {...p} autoComplete="off" value={person.full_name} onChange={set("full_name")} />}
+          </Field>
+          <Field label="Their work email" required>
+            {(p) => <Input {...p} type="email" autoComplete="off" value={person.email} onChange={set("email")} />}
+          </Field>
+          <Field label="Their mobile" hint="Optional">
+            {(p) => <Input {...p} type="tel" autoComplete="off" value={person.mobile} onChange={set("mobile")} />}
+          </Field>
+          <Field label="What you are asking them to do" required hint="They read this, and so does the Privacy Office">
+            {(p) => <Textarea {...p} rows={4} value={person.note} onChange={set("note")} />}
+          </Field>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              disabled={!person.email.trim() || !person.note.trim()}
+              loading={add.isPending}
+              onClick={save}
+            >
+              Add
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

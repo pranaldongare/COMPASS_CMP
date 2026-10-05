@@ -239,6 +239,7 @@ const DAILY_WORK: Record<string, string[]> = {
   dco: ["dashboard", "projects", "sites", "links", "tickets", "collections"],
   rco: ["dashboard", "projects", "sites", "links", "tickets", "collections"],
   admin: ["dashboard", "users", "requests", "messages", "processors", "sources", "audit"],
+  breach_holder: ["tickets"],
 };
 
 /** In the account menu and the header's bell, not the sidebar as well. */

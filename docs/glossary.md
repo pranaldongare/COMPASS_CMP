@@ -34,8 +34,13 @@ does itself, in-house. Role `rco`.
 **R&D User.** Registers a project, states its purposes, names its collectors,
 authors its notice, and uploads approval proofs. Role `rnd_user`.
 
-**Staff.** Every role except the data principal. Staff sign in with a password
-and then a code sent to their email.
+**Staff.** Every role except the data principal and the temporary ticket
+holder. Staff sign in with a password and then a code sent to their email.
+
+**Temporary ticket holder (`breach_holder`).** Somebody inside the
+organisation with no console login, asked to act on a breach, who is given one
+for it: they sign in like staff, but reach only the tickets addressed to them,
+notifications and their profile. Never given by hand; see *temporary access*.
 
 **Nominee.** A person a data principal names, while well, to exercise her
 rights if she dies or cannot act (s.14). Named by mobile with an optional
@@ -218,6 +223,18 @@ says hears of every incident within 30 minutes of its being first noticed
 (`BREACH_ORG_BOARD_MINUTES`). A duty on every incident from logging; a person
 reports, and the DPO records when and to whom. Not a regulator, and not a DPDP
 duty: validation never touches it.
+
+**Breach ticket holder.** The person a breach ticket is addressed to: a member
+of staff, or a temporary ticket holder. They see the breach reference, what
+they are asked, the thread and the state - nothing else from the register -
+and can bring in a colleague, who gets a ticket of their own. Not a rights
+request's *holder*, which is a party holding the person's data.
+
+**Temporary access.** A breach-only login: one grant of the `breach_holder`
+role for one breach, to an address on the organisation's own domains. It ends
+when the breach closes, when the DPO withdraws that person's ticket, or when
+an administrator ends it; an account made for the breach is then switched off,
+and one that was a data principal's goes back to being one.
 
 **CERT-In.** The Indian Computer Emergency Response Team. Its Directions of
 April 2022, under IT Act s.70B, require a reportable cyber incident to be

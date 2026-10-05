@@ -671,6 +671,12 @@ async def transition(
     facts = await _facts(conn, int(breach["breach_id"]))
     state_machine.validate(current, to, facts, reason)
     await repo.set_status(conn, int(breach["breach_id"]), to=to)
+    if to == Status.CLOSED:
+        # Every breach-only login on it ends with it, in this transaction
+        # (S3-09, BD-04); reopening the breach restores none of them.
+        from cmp.domain.breach import access
+
+        await access.end_on_breach(conn, int(breach["breach_id"]), actor_id=actor_id)
     await repo.add_status_history(
         conn,
         int(breach["breach_id"]),

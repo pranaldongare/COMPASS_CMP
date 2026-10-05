@@ -38,9 +38,9 @@
 
 All approvals in scope.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -52,9 +52,9 @@ All approvals in scope.
 
 Get Approval.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -66,9 +66,9 @@ Get Approval.
 
 Download the proof file.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | OWN | NO | NO |
 
 - **Who:** `dpo`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -82,9 +82,9 @@ Download the proof file.
 
 List Projects.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -96,9 +96,9 @@ List Projects.
 
 Create Project.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | OWN | NO | NO |
 
 - **Who:** `rnd_user`.
 - **Route guard:** `CurrentUser`.
@@ -111,9 +111,9 @@ Create Project.
 
 Get Project.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -125,9 +125,9 @@ Get Project.
 
 Draft only.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | OWN | NO | NO |
 
 - **Who:** `rnd_user`.
 - **Route guard:** `CurrentUser`.
@@ -140,9 +140,9 @@ Draft only.
 
 List Approvals.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -154,9 +154,9 @@ List Approvals.
 
 Upload an approval - proof is mandatory (INV-8).
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | OWN | NO | NO |
 
 - **Who:** `rnd_user`.
 - **Route guard:** `CurrentUser`.
@@ -168,9 +168,9 @@ Upload an approval - proof is mandatory (INV-8).
 
 Close Project.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `ProjectReader`.
@@ -184,9 +184,9 @@ Close Project.
 
 Project History.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -198,9 +198,9 @@ Project History.
 
 List Project Processors.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -212,9 +212,9 @@ List Project Processors.
 
 Request Project Processor.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | OWN | NO | NO |
 
 - **Who:** `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -228,9 +228,9 @@ Request Project Processor.
 
 Draft only — replaces the set.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | OWN | NO | NO |
 
 - **Who:** `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -244,9 +244,9 @@ Draft only — replaces the set.
 
 Decide Project Processor.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -258,9 +258,9 @@ Decide Project Processor.
 
 List Sites.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -273,9 +273,9 @@ List Sites.
 
 Add Site.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -291,9 +291,9 @@ Add Site.
 
 Everything a dashboard needs, in one call.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -305,9 +305,9 @@ Everything a dashboard needs, in one call.
 
 Transition.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -321,9 +321,9 @@ Transition.
 
 What may happen next, and why not.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -335,9 +335,9 @@ What may happen next, and why not.
 
 All sites in scope.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -350,9 +350,9 @@ All sites in scope.
 
 Get Site.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -365,9 +365,9 @@ Get Site.
 
 Update Site.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
@@ -381,9 +381,9 @@ Update Site.
 
 Assign the Field Agent and mint the link.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `ProjectReader`.
@@ -398,9 +398,9 @@ Assign the Field Agent and mint the link.
 
 Deactivate Site.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -413,9 +413,9 @@ Deactivate Site.
 
 Name who runs this site, overriding its source.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | SCOPED | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | SCOPED | NO | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco_admin`, `rnd_user`.
 - **Route guard:** `CurrentUser`.
@@ -430,9 +430,9 @@ Name who runs this site, overriding its source.
 
 Attach the data source that stands here.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | SCOPED | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | SCOPED | NO | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco_admin`, `rnd_user`.
 - **Route guard:** `CurrentUser`.

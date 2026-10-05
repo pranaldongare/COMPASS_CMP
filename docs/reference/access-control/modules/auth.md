@@ -7,27 +7,27 @@
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
 | POST | `/auth/login` | Public; no role required | No session required; anonymous COND |
-| POST | `/auth/logout` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject` | Full session; anonymous NO |
-| GET | `/auth/me` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject` | Full session; anonymous NO |
-| POST | `/auth/mfa/resend` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject` | Valid session (partial or full) + CSRF; anonymous NO |
-| POST | `/auth/mfa/verify` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject` | Valid session (partial or full) + CSRF; anonymous NO |
+| POST | `/auth/logout` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | Full session; anonymous NO |
+| GET | `/auth/me` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | Full session; anonymous NO |
+| POST | `/auth/mfa/resend` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | Valid session (partial or full) + CSRF; anonymous NO |
+| POST | `/auth/mfa/verify` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | Valid session (partial or full) + CSRF; anonymous NO |
 | POST | `/auth/otp/request` | Public; no role required | No session required; anonymous YES |
 | POST | `/auth/otp/verify` | Public; no role required | No session required; anonymous COND |
-| POST | `/auth/password/change` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject` | Full session; anonymous NO |
+| POST | `/auth/password/change` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | Full session; anonymous NO |
 | POST | `/auth/password/reset/confirm` | Public; no role required | No session required; anonymous COND |
 | POST | `/auth/password/reset/request` | Public; no role required | No session required; anonymous YES |
 | POST | `/auth/register` | Public; no role required | No session required; anonymous YES |
 | POST | `/auth/register/verify` | Public; no role required | No session required; anonymous COND |
-| GET | `/auth/sessions` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject` | Full session; anonymous NO |
-| DELETE | `/auth/sessions/{session_uuid}` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject` | Full session; anonymous NO |
+| GET | `/auth/sessions` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | Full session; anonymous NO |
+| DELETE | `/auth/sessions/{session_uuid}` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | Full session; anonymous NO |
 
 ## POST /auth/login
 
 Staff sign-in.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
 
 - **Who:** Public; no role required.
 - **Route guard:** `Public; no session dependency`.
@@ -38,11 +38,11 @@ Staff sign-in.
 
 End this session.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | OWN |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder`.
 - **Route guard:** `CurrentUser`.
 - **Rules:** Ends the caller’s current session only.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L295), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/auth/authentication/service.py#L52), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/dependencies/authentication.py#L61).
@@ -51,11 +51,11 @@ End this session.
 
 Who is signed in.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | OWN |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder`.
 - **Route guard:** `CurrentUser`.
 - **Rules:** Returns the caller’s effective session role and navigation; account_role may differ after OTP portal sign-in.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L312), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/auth/authentication/service.py#L52), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/dependencies/authentication.py#L61).
@@ -64,11 +64,11 @@ Who is signed in.
 
 Resend the MFA code.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| COND | COND | COND | COND | COND | COND | COND |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| COND | COND | COND | COND | COND | COND | COND | COND |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder`.
 - **Route guard:** `PartialUser`.
 - **Rules:** A valid session cookie and CSRF token are required. Despite its name, PartialUser does not enforce session.partial or restrict roles; the handler loads the current account and requests its MFA code.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L198), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/auth/authentication/service.py#L52), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/dependencies/authentication.py#L61).
@@ -77,11 +77,11 @@ Resend the MFA code.
 
 Complete stepped-up sign-in.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| COND | COND | COND | COND | COND | COND | COND |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| COND | COND | COND | COND | COND | COND | COND | COND |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder`.
 - **Route guard:** `PartialUser`.
 - **Rules:** A valid session cookie and CSRF token plus the account MFA code are required. PartialUser accepts partial or full sessions; it has no role filter. Successful promotion requires an issued code.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L181), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/auth/authentication/service.py#L52), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/dependencies/authentication.py#L61).
@@ -90,9 +90,9 @@ Complete stepped-up sign-in.
 
 Data-subject sign-in code.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
 
 - **Who:** Public; no role required.
 - **Route guard:** `Public; no session dependency`.
@@ -103,9 +103,9 @@ Data-subject sign-in code.
 
 Data-subject sign-in.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
 
 - **Who:** Public; no role required.
 - **Route guard:** `Public; no session dependency`.
@@ -116,11 +116,11 @@ Data-subject sign-in.
 
 Password Change.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | OWN |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder`.
 - **Route guard:** `CurrentUser`.
 - **Rules:** Own account only; the current password must verify. No staff-only role guard exists; passwordless accounts cannot satisfy the password check.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L326), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/auth/authentication/service.py#L52), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/dependencies/authentication.py#L61).
@@ -129,9 +129,9 @@ Password Change.
 
 Password Reset Confirm.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
 
 - **Who:** Public; no role required.
 - **Route guard:** `Public; no session dependency`.
@@ -142,9 +142,9 @@ Password Reset Confirm.
 
 Password Reset Request.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
 
 - **Who:** Public; no role required.
 - **Route guard:** `Public; no session dependency`.
@@ -155,9 +155,9 @@ Password Reset Request.
 
 Data-subject self-registration.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
 
 - **Who:** Public; no role required.
 - **Route guard:** `Public; no session dependency`.
@@ -168,9 +168,9 @@ Data-subject self-registration.
 
 Finish sign-up: every medium given answers with its code.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
 
 - **Who:** Public; no role required.
 - **Route guard:** `Public; no session dependency`.
@@ -181,11 +181,11 @@ Finish sign-up: every medium given answers with its code.
 
 Your active sessions.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | OWN |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder`.
 - **Route guard:** `CurrentUser`.
 - **Rules:** Lists sessions belonging to the signed-in account only.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L354), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/auth/authentication/service.py#L52), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/dependencies/authentication.py#L61).
@@ -194,11 +194,11 @@ Your active sessions.
 
 Revoke one of your sessions.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | OWN |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder`.
 - **Route guard:** `CurrentUser`.
 - **Rules:** The target session must belong to the caller; another account’s session is not selectable.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L364), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/auth/authentication/service.py#L52), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/dependencies/authentication.py#L61).

@@ -344,7 +344,6 @@ async def _tickets_for_me(conn: Any, user_id: int) -> tuple[int, list[dict[str, 
         items.append(
             {
                 "reference": t["breach_reference"],
-                "subject_name": "Breach ticket",
                 "action": (
                     "Answer the Privacy Office's breach ticket"
                     if t["state"] == "issued"
@@ -381,6 +380,10 @@ async def dashboard(principal: CurrentUser) -> dict[str, Any]:
                 data = await _admin(conn)
             case Role.DATA_SUBJECT:
                 return await _subject(conn, principal.user_id)
+            case Role.BREACH_HOLDER:
+                # A breach-only login (S3-09): its open breach tickets, below,
+                # and nothing else.
+                data = {"role": "breach_holder", "counts": {}, "queues": [], "recent": []}
             case _:
                 raise Forbidden("No dashboard for this role")
         # Every member of staff, whatever their role: a rights request's

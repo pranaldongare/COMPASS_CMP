@@ -24,9 +24,9 @@
 
 The staff and subject register.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RequireDPOorAdmin`.
@@ -38,9 +38,9 @@ The staff and subject register.
 
 Create User.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| NO | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `admin`.
 - **Route guard:** `RequireAdmin`.
@@ -53,9 +53,9 @@ Create User.
 
 Active DCOs and RCOs, for source ownership.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | ALL | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | ALL | ALL | ALL | ALL | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `RequireStaff`.
@@ -68,9 +68,9 @@ Active DCOs and RCOs, for source ownership.
 
 Active staff, for naming a processor's respondent.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `Annotated[Any, Depends(RequireRole(Role.DPO, Role.ADMIN))]`.
@@ -81,9 +81,9 @@ Active staff, for naming a processor's respondent.
 
 Get User.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RequireDPOorAdmin`.
@@ -95,9 +95,9 @@ Get User.
 
 Update User.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| NO | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `admin`.
 - **Route guard:** `RequireAdmin`.
@@ -109,9 +109,9 @@ Update User.
 
 Deactivate.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| NO | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `admin`.
 - **Route guard:** `RequireAdmin`.
@@ -124,9 +124,9 @@ Deactivate.
 
 Send the invitation again.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| NO | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `admin`.
 - **Route guard:** `RequireAdmin`.
@@ -139,9 +139,9 @@ Send the invitation again.
 
 Reset Mfa.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| NO | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `admin`.
 - **Route guard:** `RequireAdmin`.
@@ -153,9 +153,9 @@ Reset Mfa.
 
 Person Type History.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RequireDPOorAdmin`.
@@ -167,9 +167,9 @@ Person Type History.
 
 Reactivate.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| NO | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `admin`.
 - **Route guard:** `RequireAdmin`.
@@ -181,9 +181,9 @@ Reactivate.
 
 Change a role.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| NO | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `admin`.
 - **Route guard:** `RequireAdmin`.
@@ -196,9 +196,9 @@ Change a role.
 
 Force logout.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| NO | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `admin`.
 - **Route guard:** `RequireAdmin`.

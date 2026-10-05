@@ -273,7 +273,8 @@ def unclassified(spec: dict, schema: dict) -> list[str]:
 
 # ---------------------------------------------------------------- rendering
 SHORT = {"dpo": "DPO", "admin": "Admin", "dco": "DCO", "dco_admin": "DCO Admin",
-         "rco": "RCO", "rnd_user": "R&D", "data_subject": "Principal"}
+         "rco": "RCO", "rnd_user": "R&D", "data_subject": "Principal",
+         "breach_holder": "Temporary holder"}
 VALUE = {"ALL": "every row", "SCOPED": "rows in scope", "OWN": "own rows",
          "COND": "conditional"}
 ORDER = ["auth", "me", "public consent", "public information", "rights", "legal holds", "breaches",

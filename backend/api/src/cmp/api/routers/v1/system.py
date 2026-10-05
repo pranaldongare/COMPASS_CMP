@@ -210,7 +210,16 @@ async def version() -> dict[str, Any]:
 _ENUMS: dict[str, list[str]] = {
     # Every role, as `Role` has them - a test holds the two together. DCO Admin
     # and RCO were missing, so the console could not provision either.
-    "user_role": ["dpo", "dco", "dco_admin", "rco", "rnd_user", "admin", "data_subject"],
+    "user_role": [
+        "dpo",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "admin",
+        "data_subject",
+        "breach_holder",
+    ],
     "person_type": ["external", "employee", "ex_employee", "vendor"],
     "user_status": ["pending", "active", "suspended", "deactivated"],
     # Reachable, not every value the type carries. `under_process` survives in
@@ -290,6 +299,7 @@ _LABELS: dict[str, str] = {
     "rnd_user": "R&D User",
     "admin": "Administrator",
     "data_subject": "Data Subject",
+    "breach_holder": "Temporary ticket holder",
     "in_draft": "In Draft",
     "under_process": "Under Process",
     "pending_approval": "Pending Approval",

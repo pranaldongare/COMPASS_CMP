@@ -23,9 +23,9 @@
 
 All consents in scope.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ConsentReader`.
@@ -38,9 +38,9 @@ All consents in scope.
 
 Get Consent.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ConsentReader`.
@@ -53,9 +53,9 @@ Get Consent.
 
 Which assets contain this person.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ConsentReader`.
@@ -68,9 +68,9 @@ Which assets contain this person.
 
 Consent Grants.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ConsentReader`.
@@ -83,9 +83,9 @@ Consent Grants.
 
 All links in scope.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `LinkReader`.
@@ -97,9 +97,9 @@ All links in scope.
 
 Get Link.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `LinkReader`.
@@ -111,9 +111,9 @@ Get Link.
 
 Replace a link with a fresh one.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `LinkReader`.
@@ -126,9 +126,9 @@ Replace a link with a fresh one.
 
 Revoke Link.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `LinkReader`.
@@ -141,9 +141,9 @@ Revoke Link.
 
 Link Stats.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `LinkReader`.
@@ -155,9 +155,9 @@ Link Stats.
 
 List Consents.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ConsentReader`.
@@ -170,9 +170,9 @@ List Consents.
 
 Consents Summary.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ConsentReader`.
@@ -186,9 +186,9 @@ Consents Summary.
 
 List Links.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `LinkReader`.

@@ -2716,7 +2716,8 @@ No request body.
         "reason_required": "…"
       }
     ],
-    "may_write": true
+    "may_write": true,
+    "temporary_access": "string"
   }
 ]
 ```
@@ -2763,6 +2764,9 @@ Request body required: **yes**.
 ```json
 {
   "user_uuid": "00000000-0000-4000-8000-000000000000",
+  "full_name": "string",
+  "email": "string",
+  "mobile": "string",
   "instruction": "string",
   "answer_by": "2026-09-17"
 }
@@ -2798,7 +2802,8 @@ Request body required: **yes**.
     "moves": [
       "…"
     ],
-    "may_write": true
+    "may_write": true,
+    "temporary_access": "string"
   },
   "instruction": "string",
   "messages": [
@@ -2885,7 +2890,8 @@ No request body.
     "moves": [
       "…"
     ],
-    "may_write": true
+    "may_write": true,
+    "temporary_access": "string"
   },
   "instruction": "string",
   "messages": [
@@ -2980,7 +2986,8 @@ Request body required: **yes**.
     "moves": [
       "…"
     ],
-    "may_write": true
+    "may_write": true,
+    "temporary_access": "string"
   },
   "instruction": "string",
   "messages": [
@@ -3125,7 +3132,8 @@ Request body required: **yes**.
     "moves": [
       "…"
     ],
-    "may_write": true
+    "may_write": true,
+    "temporary_access": "string"
   },
   "instruction": "string",
   "messages": [
@@ -3210,7 +3218,8 @@ No request body.
     "moves": [
       "…"
     ],
-    "may_write": true
+    "may_write": true,
+    "temporary_access": "string"
   },
   "instruction": "string",
   "messages": [
@@ -3304,7 +3313,8 @@ Request body required: **yes**.
     "moves": [
       "…"
     ],
-    "may_write": true
+    "may_write": true,
+    "temporary_access": "string"
   },
   "instruction": "string",
   "messages": [
@@ -3398,7 +3408,8 @@ Request body required: **yes**.
     "moves": [
       "…"
     ],
-    "may_write": true
+    "may_write": true,
+    "temporary_access": "string"
   },
   "instruction": "string",
   "messages": [
@@ -3664,9 +3675,16 @@ Rule 7(2)(b), all six items, drafted from the register.
 <a id="schema-breachticketin"></a>
 #### `BreachTicketIn`
 
+Either a member of staff, by `user_uuid`, or - S3-09 - somebody named by
+`email` (with `full_name`, and a `mobile` if known), who is given a
+breach-only login if they have no console account.
+
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
-| `user_uuid` | `string` | Yes | format: `uuid` | — |
+| `user_uuid` | `string` or `null` | No | format: `uuid` | — |
+| `full_name` | `string` or `null` | No | max length: `200` | — |
+| `email` | `string` or `null` | No | max length: `320` | — |
+| `mobile` | `string` or `null` | No | max length: `32` | — |
 | `instruction` | `string` | Yes | min length: `1`; max length: `20000` | — |
 | `answer_by` | `string` or `null` | No | format: `date` | — |
 
@@ -3976,6 +3994,7 @@ A breach ticket as the office reads it.
 | `events` | array of [`BreachTicketEventOut`](#schema-breachticketeventout) | Yes | — | — |
 | `moves` | array of [`BreachTicketMoveOut`](#schema-breachticketmoveout) | Yes | — | — |
 | `may_write` | `boolean` | Yes | — | — |
+| `temporary_access` | `string` or `null` | Yes | — | — |
 
 <a id="schema-breachticketmessageout"></a>
 #### `BreachTicketMessageOut`

@@ -4670,6 +4670,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/breach-tickets/{ticket_uuid}/colleagues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bring a colleague into my breach ticket: they get their own
+         * @description The answer is your own ticket whatever happened to theirs, so it says
+         *     nothing about whether an address has an account.
+         */
+        post: operations["add_colleague_breach_tickets__ticket_uuid__colleagues_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/breach-tickets/{ticket_uuid}/return": {
         parameters: {
             query?: never;
@@ -6217,13 +6238,21 @@ export interface components {
             /** Actor Name */
             actor_name: string | null;
         };
-        /** BreachTicketIn */
+        /**
+         * BreachTicketIn
+         * @description Either a member of staff, by `user_uuid`, or - S3-09 - somebody named by
+         *     `email` (with `full_name`, and a `mobile` if known), who is given a
+         *     breach-only login if they have no console account.
+         */
         BreachTicketIn: {
-            /**
-             * User Uuid
-             * Format: uuid
-             */
-            user_uuid: string;
+            /** User Uuid */
+            user_uuid?: string | null;
+            /** Full Name */
+            full_name?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Mobile */
+            mobile?: string | null;
             /** Instruction */
             instruction: string;
             /** Answer By */
@@ -6305,6 +6334,8 @@ export interface components {
             moves: components["schemas"]["BreachTicketMoveOut"][];
             /** May Write */
             may_write: boolean;
+            /** Temporary Access */
+            temporary_access: string | null;
         };
         /** BreachTicketReasonIn */
         BreachTicketReasonIn: {
@@ -6430,6 +6461,17 @@ export interface components {
         CodeIn: {
             /** Code */
             code: string;
+        };
+        /** ColleagueIn */
+        ColleagueIn: {
+            /** Full Name */
+            full_name?: string | null;
+            /** Email */
+            email: string;
+            /** Mobile */
+            mobile?: string | null;
+            /** Note */
+            note: string;
         };
         /** CollectionAssetOut */
         CollectionAssetOut: {
@@ -7977,6 +8019,8 @@ export interface components {
             last_activity_at: string | null;
             /** Moves */
             moves: components["schemas"]["BreachTicketMoveOut"][];
+            /** May Add Colleague */
+            may_add_colleague: boolean;
         };
         /** NominationActIn */
         NominationActIn: {
@@ -18902,6 +18946,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_colleague_breach_tickets__ticket_uuid__colleagues_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticket_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ColleagueIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyBreachTicketDetailOut"];
                 };
             };
             /** @description Validation Error */

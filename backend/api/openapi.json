@@ -13735,6 +13735,60 @@
         }
       }
     },
+    "/breach-tickets/{ticket_uuid}/colleagues": {
+      "post": {
+        "tags": [
+          "breach tickets"
+        ],
+        "summary": "Bring a colleague into my breach ticket: they get their own",
+        "description": "The answer is your own ticket whatever happened to theirs, so it says\nnothing about whether an address has an account.",
+        "operationId": "add_colleague_breach_tickets__ticket_uuid__colleagues_post",
+        "parameters": [
+          {
+            "name": "ticket_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ColleagueIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyBreachTicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/breach-tickets/{ticket_uuid}/return": {
       "post": {
         "tags": [
@@ -18830,9 +18884,52 @@
       "BreachTicketIn": {
         "properties": {
           "user_uuid": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "User Uuid"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 320
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "mobile": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mobile"
           },
           "instruction": {
             "type": "string",
@@ -18856,10 +18953,10 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "user_uuid",
           "instruction"
         ],
-        "title": "BreachTicketIn"
+        "title": "BreachTicketIn",
+        "description": "Either a member of staff, by `user_uuid`, or - S3-09 - somebody named by\n`email` (with `full_name`, and a `mobile` if known), who is given a\nbreach-only login if they have no console account."
       },
       "BreachTicketMessageOut": {
         "properties": {
@@ -19065,6 +19162,17 @@
           "may_write": {
             "type": "boolean",
             "title": "May Write"
+          },
+          "temporary_access": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temporary Access"
           }
         },
         "type": "object",
@@ -19083,7 +19191,8 @@
           "last_activity_at",
           "events",
           "moves",
-          "may_write"
+          "may_write",
+          "temporary_access"
         ],
         "title": "BreachTicketOut",
         "description": "A breach ticket as the office reads it."
@@ -19439,6 +19548,53 @@
           "code"
         ],
         "title": "CodeIn"
+      },
+      "ColleagueIn": {
+        "properties": {
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 320,
+            "minLength": 3,
+            "title": "Email"
+          },
+          "mobile": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mobile"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email",
+          "note"
+        ],
+        "title": "ColleagueIn"
       },
       "CollectionAssetOut": {
         "properties": {
@@ -23549,6 +23705,10 @@
             },
             "type": "array",
             "title": "Moves"
+          },
+          "may_add_colleague": {
+            "type": "boolean",
+            "title": "May Add Colleague"
           }
         },
         "type": "object",
@@ -23561,7 +23721,8 @@
           "created_at",
           "unread",
           "last_activity_at",
-          "moves"
+          "moves",
+          "may_add_colleague"
         ],
         "title": "MyBreachTicketOut",
         "description": "Exactly what a holder is given (BD-13), and nothing else."

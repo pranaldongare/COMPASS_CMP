@@ -4,8 +4,10 @@
  * The DPO asks the people who must act - whoever runs the system that leaked,
  * whoever holds the log - and they answer on a thread and return the ticket.
  * Only the DPO closes one. Tickets wait for the breach to be recorded, go to
- * internal staff only, and one person holds one ticket per breach; the server
- * refuses otherwise and says why. Every control here comes from the moves the
+ * internal people only, and one person holds one ticket per breach; the server
+ * refuses otherwise and says why. Somebody without a console login is named by
+ * their email and given a breach-only login for this breach (S3-09); the
+ * table shows whose login it is and whether it is waiting, in use or ended. Every control here comes from the moves the
  * server returns with each ticket: nothing in the console decides what may
  * happen next.
  */
@@ -48,7 +50,7 @@ import { useUsers } from "@/features/users";
 import { cn, formatDate, formatDateTime } from "@/lib/format";
 import { keys } from "@/lib/query";
 import { useToast } from "@/providers";
-import type { Breach, BreachTicket, BreachTicketMoveKind, BreachTicketState } from "@/types";
+import type { Breach, BreachTicket, BreachTicketMoveKind, BreachTicketState, TemporaryAccess } from "@/types";
 
 export const TICKET_STATE: Record<BreachTicketState, { label: string; tone: "info" | "warning" | "success" | "neutral" }> = {
   issued: { label: "Waiting on the holder", tone: "info" },
@@ -64,6 +66,27 @@ const MOVE_COPY: Record<Exclude<BreachTicketMoveKind, "return">, { label: string
   reopen: { label: "Reopen", ask: "Why is it reopened? The holder reads this.", done: "Ticket reopened" },
 };
 
+const ACCESS: Record<TemporaryAccess, { label: string; tone: "info" | "success" | "neutral"; hint: string }> = {
+  pending: {
+    label: "Temporary login · not yet signed in",
+    tone: "info",
+    hint: "Emailed a code to set a password; they have not done so yet.",
+  },
+  active: { label: "Temporary login", tone: "success", hint: "Signs in for this breach only." },
+  ended: { label: "Temporary login ended", tone: "neutral", hint: "Reopening the ticket gives it back, with a new email." },
+};
+
+/** A holder's breach-only login, if they have one (S3-09). */
+export function AccessBadge({ access }: { access: TemporaryAccess | null }) {
+  if (!access) return null;
+  const copy = ACCESS[access];
+  return (
+    <Badge tone={copy.tone} dot={false} title={copy.hint}>
+      {copy.label}
+    </Badge>
+  );
+}
+
 export function TicketStateBadge({ state }: { state: BreachTicketState }) {
   const copy = TICKET_STATE[state];
   return (
@@ -76,19 +99,24 @@ export function TicketStateBadge({ state }: { state: BreachTicketState }) {
 function AssignDialog({ breach, onClose }: { breach: Breach; onClose: () => void }) {
   const toast = useToast();
   const qc = useQueryClient();
+  const [byEmail, setByEmail] = React.useState(false);
   const [q, setQ] = React.useState("");
   const [picked, setPicked] = React.useState<string>("");
+  const [person, setPerson] = React.useState({ full_name: "", email: "", mobile: "" });
   const [instruction, setInstruction] = React.useState("");
   const [answerBy, setAnswerBy] = React.useState("");
   const search = q.trim();
   const people = useUsers(search.length >= 3 ? { q: search, status: "active" } : { status: "active" });
   // Staff only: the server refuses anyone else, and says so; offering them
   // would only invite the refusal.
-  const staff = (people.data?.items ?? []).filter((u) => u.role !== "data_subject");
+  const staff = (people.data?.items ?? []).filter((u) => u.role !== "data_subject" && u.role !== "breach_holder");
+  const named = byEmail ? person.email.trim() !== "" : picked !== "";
   const assign = useMutation({
     mutationFn: () =>
       assignBreachTicket(breach.breach_uuid, {
-        user_uuid: picked,
+        ...(byEmail
+          ? { full_name: person.full_name.trim(), email: person.email.trim(), mobile: person.mobile.trim() || null }
+          : { user_uuid: picked }),
         instruction: instruction.trim(),
         answer_by: answerBy || null,
       }),
@@ -100,7 +128,12 @@ function AssignDialog({ breach, onClose }: { breach: Breach; onClose: () => void
   async function save() {
     try {
       await assign.mutateAsync();
-      toast.success("Ticket assigned", "They are emailed that a ticket is waiting; the email names no breach.");
+      toast.success(
+        "Ticket assigned",
+        byEmail
+          ? "They are emailed how to sign in, or that a ticket is waiting if they already can; the email names no breach."
+          : "They are emailed that a ticket is waiting; the email names no breach.",
+      );
       onClose();
     } catch (err) {
       toast.error("Not assigned", messageOf(err, "The server refused."));
@@ -110,25 +143,80 @@ function AssignDialog({ breach, onClose }: { breach: Breach; onClose: () => void
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent
         title="Assign a ticket"
-        description="To a member of staff on the organisation's own email domains. They see the breach reference, your instruction and the thread - nothing else from the register."
+        description="To somebody on the organisation's own email domains. They see the breach reference, your instruction and the thread - nothing else from the register."
       >
         <div className="space-y-3">
-          <Field label="Find them" hint="Part of a name (three letters or more), or a whole email">
-            {(p) => <Input {...p} value={q} onChange={(e) => setQ(e.target.value)} />}
-          </Field>
-          <Field label="Who" required>
-            {(p) => (
-              <Select {...p} value={picked} onChange={(e) => setPicked(e.target.value)}>
-                <option value="">{people.isLoading ? "Looking…" : "Choose a member of staff"}</option>
-                {staff.map((u) => (
-                  <option key={u.uuid} value={u.uuid}>
-                    {u.full_name}
-                    {u.email ? ` · ${u.email}` : ""}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
+          <fieldset className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            <legend className="sr-only">Who are you asking?</legend>
+            <label className="flex items-center gap-2">
+              <input type="radio" name="assign-to" checked={!byEmail} onChange={() => setByEmail(false)} />
+              A member of staff
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="radio" name="assign-to" checked={byEmail} onChange={() => setByEmail(true)} />
+              Someone without a console login
+            </label>
+          </fieldset>
+          {byEmail ? (
+            <>
+              <p className="text-xs text-text-muted">
+                They are given a login for this breach only: they set a password from the email, sign in with a code
+                like all staff, and see only their ticket. It ends when you withdraw their ticket or the breach closes.
+                If the address already has a console login, the ticket goes to it as usual.
+              </p>
+              <Field label="Their name" hint="Needed when nobody has an account at this address">
+                {(p) => (
+                  <Input
+                    {...p}
+                    autoComplete="off"
+                    value={person.full_name}
+                    onChange={(e) => setPerson({ ...person, full_name: e.target.value })}
+                  />
+                )}
+              </Field>
+              <Field label="Their work email" required hint="On one of the organisation's own domains">
+                {(p) => (
+                  <Input
+                    {...p}
+                    type="email"
+                    autoComplete="off"
+                    value={person.email}
+                    onChange={(e) => setPerson({ ...person, email: e.target.value })}
+                  />
+                )}
+              </Field>
+              <Field label="Their mobile" hint="Optional">
+                {(p) => (
+                  <Input
+                    {...p}
+                    type="tel"
+                    autoComplete="off"
+                    value={person.mobile}
+                    onChange={(e) => setPerson({ ...person, mobile: e.target.value })}
+                  />
+                )}
+              </Field>
+            </>
+          ) : (
+            <>
+              <Field label="Find them" hint="Part of a name (three letters or more), or a whole email">
+                {(p) => <Input {...p} value={q} onChange={(e) => setQ(e.target.value)} />}
+              </Field>
+              <Field label="Who" required>
+                {(p) => (
+                  <Select {...p} value={picked} onChange={(e) => setPicked(e.target.value)}>
+                    <option value="">{people.isLoading ? "Looking…" : "Choose a member of staff"}</option>
+                    {staff.map((u) => (
+                      <option key={u.uuid} value={u.uuid}>
+                        {u.full_name}
+                        {u.email ? ` · ${u.email}` : ""}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </Field>
+            </>
+          )}
           <Field label="What you are asking them to do" required>
             {(p) => <Textarea {...p} rows={4} value={instruction} onChange={(e) => setInstruction(e.target.value)} />}
           </Field>
@@ -141,7 +229,7 @@ function AssignDialog({ breach, onClose }: { breach: Breach; onClose: () => void
             </Button>
             <Button
               variant="primary"
-              disabled={!picked || !instruction.trim()}
+              disabled={!named || !instruction.trim()}
               loading={assign.isPending}
               onClick={save}
             >
@@ -218,6 +306,7 @@ function TicketDialog({
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2 text-xs text-text-muted">
               <TicketStateBadge state={t.state} />
+              <AccessBadge access={t.temporary_access} />
               {t.answer_by && <span className={cn(t.overdue && "font-medium text-danger-text")}>Answer by {formatDate(t.answer_by)}</span>}
               {t.added_by_name && <span>Added by {t.added_by_name}</span>}
             </div>
@@ -319,8 +408,8 @@ export function TicketsCard({ breach }: { breach: Breach }) {
             Tickets
           </CardTitle>
           <p className="mt-1 text-xs text-text-muted">
-            Ask the people who must act. Internal staff only; they see the breach reference, your instruction and the
-            thread, nothing else. Only you close a ticket, and the breach closes only when none is open.
+            Ask the people who must act - staff, or anyone on the organisation&apos;s own domains, who is given a login
+            for this breach only. They see the breach reference, your instruction and the thread, nothing else. Only you close a ticket, and the breach closes only when none is open.
           </p>
         </div>
         {open && recorded && (
@@ -362,6 +451,11 @@ export function TicketsCard({ breach }: { breach: Breach }) {
                   <Td>
                     <span style={{ paddingLeft: `${depth(t) * 1.25}rem` }} className="block">
                       <span className="font-medium">{t.holder_name ?? "A member of staff"}</span>
+                      {t.temporary_access && (
+                        <span className="mt-0.5 block">
+                          <AccessBadge access={t.temporary_access} />
+                        </span>
+                      )}
                       {t.added_by_name && (
                         <span className="block text-xs text-text-subtle">added by {t.added_by_name}</span>
                       )}

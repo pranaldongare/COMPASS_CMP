@@ -131,9 +131,12 @@ class TestRoleListsAreDerivedRatherThanTyped:
     """
 
     def test_staff_is_everyone_who_is_not_a_data_principal(self) -> None:
+        """Less the breach-only login (S3-09): it signs in like staff but is not
+        staff for the staff-wide guards, which would open delegation and the
+        collection-owner lookup to somebody asked about one breach."""
         from cmp.api.dependencies.common import STAFF_ROLES
 
-        assert set(STAFF_ROLES) == set(Role) - {Role.DATA_SUBJECT}
+        assert set(STAFF_ROLES) == set(Role) - {Role.DATA_SUBJECT, Role.BREACH_HOLDER}
 
     def test_every_staff_role_has_navigation(self) -> None:
         """A role with an empty sidebar can sign in and reach nothing.

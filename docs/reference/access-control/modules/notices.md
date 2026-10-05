@@ -34,9 +34,9 @@
 
 All notices in scope.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
@@ -48,9 +48,9 @@ All notices in scope.
 
 Notices a new one may start from.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | ALL | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | ALL | NO | NO |
 
 - **Who:** `dpo`, `rnd_user`.
 - **Route guard:** `NoticeAuthor`.
@@ -63,9 +63,9 @@ Notices a new one may start from.
 
 The notice document to fill in.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
@@ -77,9 +77,9 @@ The notice document to fill in.
 
 Get Notice.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
@@ -91,9 +91,9 @@ Get Notice.
 
 Draft only.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -107,9 +107,9 @@ Draft only.
 
 Checklist.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
@@ -121,9 +121,9 @@ Checklist.
 
 List Languages.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
@@ -135,9 +135,9 @@ List Languages.
 
 Add Language.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -151,9 +151,9 @@ Add Language.
 
 Draft only.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -167,9 +167,9 @@ Draft only.
 
 Approve Language.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -182,9 +182,9 @@ Approve Language.
 
 Preview.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
@@ -196,9 +196,9 @@ Preview.
 
 Publish.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -211,9 +211,9 @@ Publish.
 
 List Notice Purposes.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
@@ -225,9 +225,9 @@ List Notice Purposes.
 
 Attach Purpose.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -241,9 +241,9 @@ Attach Purpose.
 
 Activate every draft purpose on this notice.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -256,9 +256,9 @@ Activate every draft purpose on this notice.
 
 Draft only.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -272,9 +272,9 @@ Draft only.
 
 Narrow Rule 3(b) for this notice.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -288,9 +288,9 @@ Narrow Rule 3(b) for this notice.
 
 Notice Versions.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
@@ -302,9 +302,9 @@ Notice Versions.
 
 List Notices.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
@@ -316,9 +316,9 @@ List Notices.
 
 Create Notice.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -332,9 +332,9 @@ Create Notice.
 
 Copy an existing notice into this project.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | OWN | NO | NO |
 
 - **Who:** `dpo`, `rnd_user`.
 - **Route guard:** `NoticeAuthor`.
@@ -348,9 +348,9 @@ Copy an existing notice into this project.
 
 Create the notice and its purposes from an uploaded document.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | OWN | NO | NO |
 
 - **Who:** `dpo`, `rnd_user`.
 - **Route guard:** `NoticeAuthor`.
@@ -363,9 +363,9 @@ Create the notice and its purposes from an uploaded document.
 
 Dry run - reports what the document says, writes nothing.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | OWN | NO | NO |
 
 - **Who:** `dpo`, `rnd_user`.
 - **Route guard:** `NoticeAuthor`.

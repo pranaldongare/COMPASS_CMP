@@ -15,35 +15,37 @@ Roles refer to the **effective session role**. A staff account signed in through
 | `rco` | Research Collection Owner |
 | `rnd_user` | R&D User |
 | `data_subject` | Data Subject |
+| `breach_holder` | Temporary ticket holder: a breach-only login (S3-09, [ADR 0023](../../decisions/0023-breach-tickets-and-breach-only-logins.md)). Never given by hand; set while the person holds a breach ticket and put back when the last one ends. Signs in to the console with a password and the emailed second factor; sees Tickets, Notifications and Profile, and nothing else. |
 
 ## Static resource matrix
 
 `R` = resource read grant; `RW` = read/write grant. This table alone is insufficient to determine endpoint access: handlers and services can narrow or bypass the matrix. The endpoint matrix records those differences.
 
-| Resource | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| user | R / ALL | RW / ALL | NO | NO | NO | NO | NO |
-| purpose | RW / ALL | R / ALL | R / ALL | R / ALL | R / ALL | R / ALL | NO |
-| processor | RW / ALL | RW / ALL | R / ALL | R / ALL | R / ALL | R / ALL | NO |
-| data_source | RW / ALL | RW / ALL | RW / ALL | RW / ALL | RW / ALL | R / ALL | NO |
-| project | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | RW / OWN | NO |
-| approval | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | RW / OWN | NO |
-| site | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | R / OWN | NO |
-| notice | RW / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | RW / OWN [^notice] | NO |
-| link | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | NO | NO |
-| consent | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO |
-| export | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | NO | NO |
-| import | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | R / OWN | NO |
-| collection | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO |
-| asset | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO |
-| audit | R / ALL | R / ALL | NO | NO | NO | NO | NO |
-| message_template | RW / ALL | RW / ALL | NO | NO | NO | NO | NO |
-| me | NO | NO | NO | NO | NO | NO | RW / OWN |
-| rights_request | RW / ALL | RW / SCOPED | NO | NO | NO | NO | NO |
-| legal_hold | RW / ALL | NO | NO | NO | NO | NO | NO |
-| breach | RW / ALL (others 404) | NO | NO | NO | NO | NO | NO |
-| restricted_country | RW / ALL | R / ALL | NO | NO | NO | NO | NO |
-| ticket | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | NO |
+| Resource | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| user | R / ALL | RW / ALL | NO | NO | NO | NO | NO | NO |
+| purpose | RW / ALL | R / ALL | R / ALL | R / ALL | R / ALL | R / ALL | NO | NO |
+| processor | RW / ALL | RW / ALL | R / ALL | R / ALL | R / ALL | R / ALL | NO | NO |
+| data_source | RW / ALL | RW / ALL | RW / ALL | RW / ALL | RW / ALL | R / ALL | NO | NO |
+| project | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | RW / OWN | NO | NO |
+| approval | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | RW / OWN | NO | NO |
+| site | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | R / OWN | NO | NO |
+| notice | RW / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | RW / OWN [^notice] | NO | NO |
+| link | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | NO | NO | NO |
+| consent | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO | NO |
+| export | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | NO | NO | NO |
+| import | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | R / OWN | NO | NO |
+| collection | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO | NO |
+| asset | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO | NO |
+| audit | R / ALL | R / ALL | NO | NO | NO | NO | NO | NO |
+| message_template | RW / ALL | RW / ALL | NO | NO | NO | NO | NO | NO |
+| me | NO | NO | NO | NO | NO | NO | RW / OWN | NO |
+| rights_request | RW / ALL | RW / SCOPED | NO | NO | NO | NO | NO | NO |
+| legal_hold | RW / ALL | NO | NO | NO | NO | NO | NO | NO |
+| breach | RW / ALL (others 404) | NO | NO | NO | NO | NO | NO | NO |
+| restricted_country | RW / ALL | R / ALL | NO | NO | NO | NO | NO | NO |
+| ticket | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | NO | RW / OWN |
+| breach_ticket | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | NO | RW / OWN |
 
 ## What scopes mean in this code
 
@@ -55,6 +57,8 @@ Roles refer to the **effective session role**. A staff account signed in through
 - **R&D:** own-created projects and related records; some endpoint behavior is broader than the static matrix comments imply.
 - **Data principal:** own consents, requests, disclosures and nominations through a session acting as `data_subject`. Shared profile/contact endpoints accept staff too; person-type change is an explicit exception.
 - **Tickets:** every staff role can answer tickets addressed to that specific account; that does not grant full request access.
+- **Breach tickets:** the same, for tickets on a breach (`breach_ticket`, S3-08): OWN is the holder in the `WHERE` clause. Holding one gives no access to the breach register, which answers everyone but the DPO 404.
+- **Temporary holder:** `breach_holder` holds `ticket` and `breach_ticket` OWN and the personal routes (profile, notifications, sessions) and nothing else; `RequireStaff` excludes it, so every staff-only route answers 403. MFA is always required for it, whatever `MFA_REQUIRED_ROLES` says.
 - **Imports without a project:** explicitly admitted by the repository predicate for every signed-in role. See implementation notes.
 
 ## Authentication and errors

@@ -18,6 +18,7 @@
 "use client";
 
 import { OpenBreaches } from "@/features/breach/components/dashboard-breaches";
+import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
@@ -42,6 +43,14 @@ import { useAuth } from "@/providers";
 
 export default function DashboardPage() {
   const { me } = useAuth();
+  const router = useRouter();
+  // An account the server gives no dashboard - a breach-only login (S3-09) -
+  // lands on its tickets instead. Every way home leads here, so this is the
+  // one place to send it on; the server's `nav` decides, not a role list.
+  const elsewhere = Boolean(me && !me.nav.includes("dashboard") && me.nav.includes("tickets"));
+  React.useEffect(() => {
+    if (elsewhere) router.replace("/tickets");
+  }, [elsewhere, router]);
   const { data, isLoading, error } = useDashboard();
 
   const counts = data?.counts ?? {};

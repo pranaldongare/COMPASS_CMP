@@ -5,10 +5,18 @@
  * the DCO finds the ticket on Tickets - the breach reference and the ask,
  * nothing else from the register - writes and returns it; the DPO closes the
  * ticket, and only then does the breach close.
+ *
+ * Then a temporary holder (S3-09): the DPO asks somebody with no console
+ * login by email; they set a password from the emailed code, sign in with the
+ * second factor, land on Tickets, bring in a colleague and return their
+ * ticket; when the breach closes their login ends. The codes are read from
+ * the dev outbox: the dev popup shows only the codes its own tab caused, and
+ * the invitation is caused by the DPO's.
  */
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
-import { statePath } from "./support/session";
+import { freshCode } from "./support/outbox";
+import { STATE_DIR, statePath } from "./support/session";
 
 test.describe.configure({ mode: "serial" });
 
@@ -122,5 +130,168 @@ test.describe("the DPO closes", () => {
     await close.focus();
     await page.keyboard.press("Enter");
     await expect(page.getByText("Breach closed")).toBeVisible();
+  });
+});
+
+const temp: { url: string; reference: string; title: string; stamp: string; email: string; password: string } = {
+  url: "",
+  reference: "",
+  title: "",
+  stamp: "",
+  email: "",
+  password: "",
+};
+const holderState = (project: string) => `${STATE_DIR}/temporary-holder-${project}.json`;
+
+async function signInAsHolder(page: Page): Promise<void> {
+  await page.goto("/sign-in");
+  await page.getByLabel(/email or username/i).fill(temp.email);
+  await page.getByLabel(/^password/i).fill(temp.password);
+  await page.getByRole("button", { name: /^sign in$/i }).click();
+}
+
+test.describe("a temporary holder", () => {
+  test("the DPO asks somebody without a console login, by email", async ({ browser }, info) => {
+    const context = await browser.newContext({ storageState: statePath("dpo") });
+    const page = await context.newPage();
+    temp.stamp = `${Date.now()}-${info.project.name}`;
+    temp.title = `E2E temporary holder ${temp.stamp}`;
+    temp.email = `holder.${temp.stamp}@cmp.local`.toLowerCase();
+    temp.password = `Holder-${temp.stamp}-Passw0rd!`;
+    await page.goto("/breaches");
+    await page.getByRole("button", { name: "Log an incident" }).click();
+    await page.getByLabel(/^Title/).fill(temp.title);
+    await page.getByLabel(/^First noticed/).fill(minutesAgo(20));
+    await page.getByRole("button", { name: "Log the incident" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^INC-/);
+    await page.getByLabel(/^Became aware at/).fill(minutesAgo(10));
+    await page.getByLabel(/^Reasoning/).fill("Contact details were on the drive");
+    await page.getByRole("button", { name: "Record the validation" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^BR-\d{4}-\d{4}$/);
+    temp.reference = ((await page.getByRole("heading", { level: 1 }).textContent()) ?? "").trim();
+    temp.url = page.url();
+
+    const orgBoard = page.getByRole("row", { name: /Organisation's board/ });
+    await orgBoard.getByRole("button", { name: "Record the report" }).click();
+    await page.getByLabel(/^Reported at/).fill(minutesAgo(5));
+    await page.getByLabel(/^Reported to/).fill("The chair, by phone");
+    await page.getByRole("dialog").getByRole("button", { name: "Record", exact: true }).click();
+    await expect(orgBoard.getByText("Done")).toBeVisible();
+
+    await page.getByRole("button", { name: "Assign a ticket" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Someone without a console login").check();
+    await dialog.getByLabel(/^Their name/).fill(`Holder ${temp.stamp}`);
+    await dialog.getByLabel(/^Their work email/).fill(temp.email);
+    await dialog.getByLabel(/^What you are asking them to do/).fill("Pull the badge log for the server room");
+    // On a phone the tall dialog's own body takes the pointer's hit-test at
+    // the foot of the viewport; the keyboard presses the same button.
+    await dialog.getByRole("button", { name: "Assign", exact: true }).focus();
+    await page.keyboard.press("Enter");
+    const row = page.locator("#tickets").getByRole("row", { name: new RegExp(`^Holder ${temp.stamp}`) });
+    await expect(row.getByText("Temporary login · not yet signed in")).toBeVisible();
+    await context.close();
+  });
+
+  test("sets a password, signs in with the second factor, adds a colleague and returns the ticket", async ({
+    browser,
+  }, info) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    // The invitation: the reset page, with the emailed code.
+    await page.goto(`/sign-in/reset?email=${encodeURIComponent(temp.email)}`);
+    await page.getByLabel(/^code/i).fill(await freshCode(temp.email, null));
+    await page.getByLabel(/^New password/).fill(temp.password);
+    await page.getByLabel(/^Confirm new password/).fill(temp.password);
+    await page.getByRole("button", { name: "Set the new password" }).click();
+    await page.waitForURL(/\/sign-in$/, { timeout: 15_000 });
+
+    // Signs in like all staff: a password, then a code.
+    await signInAsHolder(page);
+    await page.waitForURL(/verify/, { timeout: 20_000 });
+    await page.getByLabel(/digit code/i).fill(await freshCode(temp.email, null));
+    await page.getByRole("button", { name: /verify and continue/i }).click();
+    // Lands on its tickets: it has no dashboard.
+    await page.waitForURL(/\/tickets/, { timeout: 20_000 });
+
+    const card = page.getByTestId("breach-ticket").filter({ hasText: temp.reference });
+    await expect(card.getByText("Pull the badge log for the server room")).toBeVisible();
+    await expect(page.getByText(temp.title)).toHaveCount(0);
+
+    await card.getByRole("button", { name: "Add a colleague" }).click();
+    const add = page.getByRole("dialog");
+    await add.getByLabel(/^Their name/).fill(`Colleague ${temp.stamp}`);
+    await add.getByLabel(/^Their work email/).fill(`colleague.${temp.stamp}@cmp.local`.toLowerCase());
+    await add.getByLabel(/^What you are asking them to do/).fill("Check the door controller's own log");
+    await add.getByRole("button", { name: "Add", exact: true }).click();
+    await expect(page.getByText("Colleague added")).toBeVisible();
+
+    await card.getByRole("button", { name: "Respond" }).click();
+    const respond = page.getByRole("dialog");
+    await respond.getByLabel(/^When you return the ticket/).selectOption("done");
+    await respond.getByLabel("Message", { exact: true }).fill("Badge log exported to the evidence share.");
+    await respond.getByText("This is my return").click();
+    await respond.getByTestId("composer-send").click();
+    await expect(page.getByText("Ticket returned")).toBeVisible();
+
+    // Nothing else in the console is theirs.
+    await page.goto(temp.url);
+    await expect(page.getByText("Not part of your account")).toBeVisible();
+    await context.storageState({ path: holderState(info.project.name) });
+    await context.close();
+  });
+
+  test("the DPO sees who added whom, closes the breach, and the login ends", async ({ browser }, info) => {
+    const context = await browser.newContext({ storageState: statePath("dpo") });
+    const page = await context.newPage();
+    await page.goto(temp.url);
+    const tickets = page.locator("#tickets");
+    const holder = tickets.getByRole("row", { name: new RegExp(`^Holder ${temp.stamp}`) });
+    const colleague = tickets.getByRole("row", { name: new RegExp(`^Colleague ${temp.stamp}`) });
+    await expect(holder.getByText("Temporary login", { exact: true })).toBeVisible();
+    await expect(colleague.getByText(`added by Holder ${temp.stamp}`)).toBeVisible();
+
+    await colleague.getByRole("button", { name: "Open" }).click();
+    let dialog = page.getByRole("dialog");
+    await expect(dialog.getByText("Check the door controller's own log")).toBeVisible();
+    await dialog.getByRole("button", { name: "Withdraw" }).click();
+    await dialog.getByLabel(/Why is it withdrawn/).fill("Covered by the first return");
+    await dialog.getByRole("button", { name: "Withdraw" }).click();
+    await expect(page.getByText("Ticket withdrawn")).toBeVisible();
+    await expect(dialog.getByText("Temporary login ended")).toBeVisible();
+    // The reason typed into it marks the dialog unsaved; start the page afresh.
+    await page.goto(temp.url);
+    await expect(colleague.getByText("Temporary login ended")).toBeVisible();
+
+    await holder.getByRole("button", { name: "Open" }).click();
+    dialog = page.getByRole("dialog");
+    await dialog.getByRole("button", { name: "Close the ticket" }).click();
+    await expect(page.getByText("Ticket closed")).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await page.getByLabel(/^Validation/).selectOption("no");
+    await page.getByLabel(/^Reasoning/).fill("The drive held test accounts only");
+    await page.getByRole("button", { name: "Record the validation" }).click();
+    await expect(page.getByText("Validation recorded")).toBeVisible();
+    const close = page.getByRole("button", { name: "Close the breach" });
+    await expect(close).toBeEnabled({ timeout: 15_000 });
+    await expect(page.getByRole("region", { name: "Notifications" }).locator("p")).toHaveCount(0, {
+      timeout: 15_000,
+    });
+    await close.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByText("Breach closed")).toBeVisible();
+    await expect(holder.getByText("Temporary login ended")).toBeVisible();
+    await context.close();
+
+    // Their session is gone, and so is the password.
+    const gone = await browser.newContext({ storageState: holderState(info.project.name) });
+    const after = await gone.newPage();
+    await after.goto("/tickets");
+    await after.waitForURL(/sign-in/, { timeout: 20_000 });
+    await signInAsHolder(after);
+    await expect(after.getByText("Those credentials are not valid")).toBeVisible();
+    await expect(after).not.toHaveURL(/verify/);
+    await gone.close();
   });
 });

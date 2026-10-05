@@ -87,6 +87,10 @@ MODULES: dict[str, list[str]] = {
         "breach_affected",
         "breach_notice",
         "breach_notice_delivery",
+        "breach_ticket",
+        "breach_ticket_message",
+        "breach_ticket_event",
+        "breach_temporary_access",
     ],
     "platform": ["audit_log", "message_template", "restricted_country"],
 }

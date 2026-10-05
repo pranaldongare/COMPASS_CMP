@@ -11,6 +11,16 @@ internal role, because the others can still mint consent links, read consent
 records and move data. The list is `MFA_REQUIRED_ROLES`, derived from the role
 enum by default; a deployment may narrow it, and answers for that.
 
+A **temporary ticket holder** (`breach_holder`, S3-09) signs in the same way -
+a password set through the reset flow's code, then the emailed second factor -
+and needs the second factor whatever `MFA_REQUIRED_ROLES` says: `requires_mfa`
+answers yes for it before reading the list, because a breach-only login made
+by the platform rather than an administrator is not one a deployment should be
+able to leave on a password alone. It is not staff: `RequireStaff` excludes it.
+Its password is cleared when its last grant ends, so the account cannot sign
+in again until a new grant sends a new code
+([ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)).
+
 A **partial session** exists between password verification and MFA. It authorises
 exactly one route, the verify endpoint; every other endpoint answers 401 with
 `mfa_required` until it is promoted. It is a distinct dependency type

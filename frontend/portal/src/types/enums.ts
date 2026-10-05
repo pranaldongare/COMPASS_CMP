@@ -20,7 +20,11 @@ export type Role =
   | "rco"
   | "rnd_user"
   | "admin"
-  | "data_subject";
+  | "data_subject"
+  /** A breach-only login (S3-09): somebody with no console account, asked to
+   *  act on a breach. Reaches only the tickets addressed to it, and is never
+   *  given by hand. */
+  | "breach_holder";
 
 /** The roles that can be accountable for a data source.
  *

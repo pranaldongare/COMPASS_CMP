@@ -589,7 +589,8 @@ async def staff_directory(conn: Conn) -> list[Row]:
         conn,
         """SELECT u.uuid, u.full_name, u.email, u.role
            FROM auth_user u
-           WHERE u.role <> 'data_subject' AND u.status = 'active'
+           -- A breach-only login is nobody's respondent (S3-09, BD-19).
+           WHERE u.role NOT IN ('data_subject', 'breach_holder') AND u.status = 'active'
            -- Not by name: it is sealed. The console sorts the opened names.
            ORDER BY u.id""",
     )

@@ -261,3 +261,92 @@ async def on_open_breaches(conn: Conn) -> list[Row]:
              LEFT JOIN breach_ticket_event e ON e.ticket_id = t.ticket_id
             GROUP BY t.ticket_id, t.answer_by""",
     )
+
+
+# ------------------------------------------------- breach-only logins (S3-09)
+
+
+async def open_grant(conn: Conn, breach_id: int, user_id: int) -> Row | None:
+    return await fetch_one(
+        conn,
+        """SELECT * FROM breach_temporary_access
+            WHERE breach_id = %s AND user_id = %s AND ended_at IS NULL""",
+        (breach_id, user_id),
+    )
+
+
+async def open_grants_for_user(conn: Conn, user_id: int) -> list[Row]:
+    """Every grant this person still holds, on any breach, oldest first."""
+    return await fetch_all(
+        conn,
+        """SELECT a.*, coalesce(rec.reference, b.reference) AS breach_reference
+             FROM breach_temporary_access a
+             JOIN breach b ON b.breach_id = a.breach_id
+             LEFT JOIN breach_recording rec ON rec.breach_id = b.breach_id
+            WHERE a.user_id = %s AND a.ended_at IS NULL ORDER BY a.access_id""",
+        (user_id,),
+    )
+
+
+async def open_grants_on(conn: Conn, breach_id: int) -> list[Row]:
+    return await fetch_all(
+        conn,
+        """SELECT * FROM breach_temporary_access
+            WHERE breach_id = %s AND ended_at IS NULL ORDER BY access_id""",
+        (breach_id,),
+    )
+
+
+async def latest_grant(conn: Conn, breach_id: int, user_id: int) -> Row | None:
+    return await fetch_one(
+        conn,
+        """SELECT * FROM breach_temporary_access
+            WHERE breach_id = %s AND user_id = %s ORDER BY access_id DESC LIMIT 1""",
+        (breach_id, user_id),
+    )
+
+
+async def add_grant(
+    conn: Conn,
+    *,
+    breach_id: int,
+    user_id: int,
+    ticket_id: int,
+    account_created: bool,
+    previous_role: str | None,
+    granted_by: int,
+) -> Row | None:
+    """The grant, or None if one is already open for this person on this
+    breach - the partial unique index, behind the breach row's lock."""
+    return await fetch_one(
+        conn,
+        """INSERT INTO breach_temporary_access
+             (breach_id, user_id, ticket_id, account_created, previous_role, granted_by)
+           VALUES (%s, %s, %s, %s, %s::user_role, %s)
+           ON CONFLICT (breach_id, user_id) WHERE ended_at IS NULL DO NOTHING
+           RETURNING access_id, access_uuid""",
+        (breach_id, user_id, ticket_id, account_created, previous_role, granted_by),
+    )
+
+
+async def end_grant(conn: Conn, access_id: int, *, cause: str, ended_by: int | None) -> None:
+    await conn.execute(
+        """UPDATE breach_temporary_access
+              SET ended_at = now(), end_cause = %s, ended_by = %s
+            WHERE access_id = %s AND ended_at IS NULL""",
+        (cause, ended_by, access_id),
+    )
+
+
+async def access_by_ticket(conn: Conn, ticket_ids: list[int]) -> list[Row]:
+    """Each ticket's latest grant, for the office's list: who has a temporary
+    login, and whether it is pending, active or ended."""
+    return await fetch_all(
+        conn,
+        """SELECT DISTINCT ON (a.ticket_id) a.ticket_id, a.account_created, a.ended_at,
+                  a.end_cause, u.status::text AS user_status
+             FROM breach_temporary_access a JOIN auth_user u ON u.id = a.user_id
+            WHERE a.ticket_id = ANY(%s)
+            ORDER BY a.ticket_id, a.access_id DESC""",
+        (ticket_ids,),
+    )

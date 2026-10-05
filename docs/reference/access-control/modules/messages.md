@@ -16,9 +16,9 @@
 
 Every message, with the words in force.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `MessageReader`.
@@ -30,9 +30,9 @@ Every message, with the words in force.
 
 One message.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `MessageReader`.
@@ -44,9 +44,9 @@ One message.
 
 Back to the default.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `MessageWriter`.
@@ -58,9 +58,9 @@ Back to the default.
 
 Replace the words.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `MessageWriter`.
@@ -72,9 +72,9 @@ Replace the words.
 
 Render words with sample values, saving nothing.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `MessageReader`.

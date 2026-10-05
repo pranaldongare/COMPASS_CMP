@@ -81,3 +81,49 @@ async def test_a_holder_is_still_told_the_register_is_not_there(role: Role) -> N
     assert can_read(resources.BREACH_TICKET, role)
     with pytest.raises(NotFound):
         await RequireResource(resources.BREACH, hidden=True)(_principal(role))
+
+
+# ---------------------------------------------------- the breach-only login (S3-09)
+
+
+def test_the_breach_only_login_holds_its_tickets_and_nothing_else() -> None:
+    from cmp.core.permissions import MATRIX, nav_for
+
+    granted = sorted(r for r, grants in MATRIX.items() if Role.BREACH_HOLDER in grants)
+    assert granted == ["breach_ticket", "ticket"]
+    assert list(nav_for(Role.BREACH_HOLDER)) == ["tickets", "notifications", "profile"]
+
+
+@pytest.mark.parametrize("write", [False, True])
+async def test_the_breach_only_login_is_told_the_register_is_not_there(write: bool) -> None:
+    with pytest.raises(NotFound):
+        await RequireResource(resources.BREACH, write=write, hidden=True)(
+            _principal(Role.BREACH_HOLDER)
+        )
+
+
+async def test_the_breach_only_login_is_not_staff_for_staff_wide_routes() -> None:
+    """Delegation and the collection-owner lookup are behind RequireStaff."""
+    from cmp.api.dependencies.authorization import RequireRole
+    from cmp.api.dependencies.common import STAFF_ROLES
+
+    with pytest.raises(Forbidden):
+        await RequireRole(*STAFF_ROLES)(_principal(Role.BREACH_HOLDER))
+
+
+def test_the_breach_only_login_always_steps_up() -> None:
+    """Even under a configured list written before the role existed."""
+    from cmp.auth.authorization.roles import requires_mfa
+
+    assert requires_mfa(Role.BREACH_HOLDER, configured=("dpo", "admin"))
+
+
+async def test_no_picker_offers_a_breach_only_login(conn: Any, seeded: dict[str, Any]) -> None:
+    from cmp.db.repositories import users as user_repo
+
+    await conn.execute(
+        "UPDATE auth_user SET role = 'breach_holder' WHERE id = %s",
+        (seeded["users"]["rnd_user"]["id"],),
+    )
+    staff = await user_repo.staff_directory(conn)
+    assert str(seeded["users"]["rnd_user"]["uuid"]) not in {str(s["uuid"]) for s in staff}

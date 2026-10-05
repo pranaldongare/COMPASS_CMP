@@ -17,7 +17,7 @@ import pytest
 
 from cmp.core.config import settings
 from tests.conftest import plain
-from tests.http.conftest import DOMAIN, SessionFactory
+from tests.http.conftest import DOMAIN, SessionFactory, fresh_email, last_code
 from tests.http.contract import call
 from tests.http.world import World, build
 
@@ -334,3 +334,181 @@ class TestTheTicket:
             json={"user_uuid": world.dco.uuid, "instruction": "x"},
         )
         assert DOMAIN not in outside.text
+
+
+# ---------------------------------------------------- breach-only logins (S3-09)
+
+ACCESS = "cmp.notifications.send_breach_ticket_access"
+MFA = "cmp.notifications.send_mfa_code"
+
+
+async def _sign_in(http: httpx.AsyncClient, queued: Any, email: str, password: str) -> Any:
+    """Password, then the emailed second factor, as every member of staff."""
+    first = await call(http, "POST", "/auth/login", json={"login": email, "password": password})
+    assert first.json()["mfa_required"] is True, "a breach-only login steps up like staff"
+    partial = dict(first.cookies)
+    full = await call(
+        http,
+        "POST",
+        "/auth/mfa/verify",
+        cookies=partial,
+        headers={"X-CSRF-Token": partial["cmp_csrf"]},
+        json={"code": last_code(queued, MFA)},
+    )
+    cookies = {**partial, **dict(full.cookies)}
+
+    class _S:
+        pass
+
+    s = _S()
+    s.cookies = cookies  # type: ignore[attr-defined]
+    s.headers = {"X-CSRF-Token": cookies["cmp_csrf"]}  # type: ignore[attr-defined]
+    return s
+
+
+async def _set_password(http: httpx.AsyncClient, queued: Any, email: str, password: str) -> None:
+    """The access email's code, on the reset page, as an invitation's."""
+    assert plain(last_code(queued, ACCESS, position=1)) == email
+    await call(
+        http,
+        "POST",
+        "/auth/password/reset/confirm",
+        expect=(200, 204),
+        json={
+            "email": email,
+            "code": last_code(queued, ACCESS, position=3),
+            "new_password": password,
+        },
+    )
+
+
+class TestBreachOnlyLogins:
+    async def test_a_stranger_is_asked_adds_a_colleague_and_both_lose_access(
+        self, http: httpx.AsyncClient, world: World, queued: Any
+    ) -> None:
+        uuid = await _recorded(http, world)
+        engineer, colleague = fresh_email("eng"), fresh_email("col")
+
+        # 1. The DPO asks somebody with no account, by email.
+        made = await call(
+            http,
+            "POST",
+            f"/breaches/{uuid}/tickets",
+            template=f"{B}/tickets",
+            session=world.dpo,
+            expect=201,
+            json={
+                "full_name": "Http Engineer",
+                "email": engineer,
+                "instruction": "Pull the firewall log",
+            },
+        )
+        assert made.json()["ticket"]["temporary_access"] == "pending"
+
+        # 2. They set a password from the access email, sign in, and read it.
+        await _set_password(http, queued, engineer, "HttpSuite!Breach1")
+        eng = await _sign_in(http, queued, engineer, "HttpSuite!Breach1")
+        me = await call(http, "GET", "/auth/me", session=eng)
+        assert me.json()["role"] == "breach_holder"
+        assert me.json()["nav"] == ["tickets", "notifications", "profile"]
+        [mine] = (await call(http, "GET", "/breach-tickets", session=eng)).json()
+        ticket = str(mine["ticket_uuid"])
+        await call(http, "GET", f"/breaches/{uuid}", template=B, session=eng, expect=404)
+        await call(http, "GET", "/dashboard", session=eng)
+
+        # 3. They add a colleague, who signs in the same way and returns theirs.
+        added = await call(
+            http,
+            "POST",
+            f"/breach-tickets/{ticket}/colleagues",
+            template=f"{MINE}/colleagues",
+            session=eng,
+            json={"full_name": "Http Colleague", "email": colleague, "note": "Check the switch"},
+        )
+        assert added.json()["ticket"]["ticket_uuid"] == ticket, "the adder's own ticket back"
+        await _set_password(http, queued, colleague, "HttpSuite!Breach2")
+        col = await _sign_in(http, queued, colleague, "HttpSuite!Breach2")
+        [theirs] = (await call(http, "GET", "/breach-tickets", session=col)).json()
+        await call(
+            http,
+            "POST",
+            f"/breach-tickets/{theirs['ticket_uuid']}/return",
+            template=f"{MINE}/return",
+            session=col,
+            data={"summary": "Switch config exported", "outcome": "done"},
+        )
+        await call(
+            http,
+            "POST",
+            f"/breach-tickets/{ticket}/return",
+            template=f"{MINE}/return",
+            session=eng,
+            data={"summary": "Firewall log exported", "outcome": "done"},
+        )
+
+        # 4. The DPO closes every ticket, then the breach.
+        office = (
+            await call(
+                http, "GET", f"/breaches/{uuid}/tickets", template=f"{B}/tickets", session=world.dpo
+            )
+        ).json()
+        assert {t["temporary_access"] for t in office} == {"active"}
+        assert any(t["parent_ticket_uuid"] == ticket for t in office), "who added whom"
+        for t in office:
+            await call(
+                http,
+                "POST",
+                f"/breaches/{uuid}/tickets/{t['ticket_uuid']}/close",
+                template=f"{T}/close",
+                session=world.dpo,
+            )
+        await call(
+            http,
+            "POST",
+            f"/breaches/{uuid}/determinations",
+            template=f"{B}/determinations",
+            session=world.dpo,
+            json={"outcome": "no", "reasoning": "Contained"},
+        )
+        await call(
+            http,
+            "POST",
+            f"/breaches/{uuid}/obligations/org_board/complete",
+            template=f"{B}/obligations/{{duty}}/complete",
+            session=world.dpo,
+            json={"occurred_at": _at(0.5), "reported_to": "The chair"},
+        )
+        await call(
+            http,
+            "POST",
+            f"/breaches/{uuid}/transition",
+            template=f"{B}/transition",
+            session=world.dpo,
+            json={"to": "closed"},
+        )
+
+        # 5. Neither can sign in, and the sessions they held are gone.
+        for email, password, session in (
+            (engineer, "HttpSuite!Breach1", eng),
+            (colleague, "HttpSuite!Breach2", col),
+        ):
+            await call(
+                http,
+                "POST",
+                "/auth/login",
+                json={"login": email, "password": password},
+                expect=(401, 403),
+            )
+            await call(http, "GET", "/breach-tickets", session=session, expect=401)
+
+    async def test_the_role_is_never_granted_by_hand(
+        self, http: httpx.AsyncClient, world: World
+    ) -> None:
+        await call(
+            http,
+            "POST",
+            "/users",
+            session=world.admin,
+            expect=422,
+            json={"full_name": "X", "email": fresh_email("x"), "role": "breach_holder"},
+        )

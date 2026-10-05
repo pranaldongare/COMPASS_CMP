@@ -52,7 +52,10 @@ RequireDPOorAdmin = Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMI
 #: not have - but a new role is added deliberately, and every route behind this
 #: guard applies the permission matrix afterwards anyway. A role with no grants
 #: reaches nothing.
-STAFF_ROLES = tuple(r for r in Role if r is not Role.DATA_SUBJECT)
+#: Every role that is staff in full. A breach-only login (S3-09) signs in to
+#: the console like staff but is not staff for these guards: it reaches its own
+#: tickets and the personal pages, never the staff-wide routes.
+STAFF_ROLES = tuple(r for r in Role if r not in (Role.DATA_SUBJECT, Role.BREACH_HOLDER))
 
 RequireStaff = Annotated[Principal, Depends(RequireRole(*STAFF_ROLES))]
 RequireDataSubject = Annotated[Principal, Depends(RequireRole(Role.DATA_SUBJECT))]

@@ -244,7 +244,9 @@ async def dco_admin_fresh(conn: Conn) -> list[Row]:
 async def staff_invites_pending(conn: Conn) -> Row | None:
     return await fetch_one(
         conn,
-        "SELECT count(*) AS n FROM auth_user WHERE status = 'pending' AND role <> 'data_subject'",
+        "SELECT count(*) AS n FROM auth_user WHERE status = 'pending'"
+        # A breach-only login is set up by its breach, not by the administrator.
+        " AND role NOT IN ('data_subject', 'breach_holder')",
     )
 
 

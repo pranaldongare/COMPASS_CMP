@@ -59,3 +59,12 @@ step-up and an operator following the audit trail sees one session, not two.
 `revoke_by_sid` for one, `revoke_all` for every session a user holds. The second
 is what makes "sign out everywhere" real, and it is also what an admin uses when
 an account is suspended.
+
+**When a breach-only login ends** (S3-09) - the breach closes, the DPO
+withdraws the ticket, an administrator ends it - `revoke_all` runs for that
+person **after the transaction commits**, never inside it: a session revoked
+in a transaction that then rolls back would have ended access that was never
+ended. `after_commit.defer_async` queues the revocation, and the pool's
+`transaction()` awaits it once the commit has landed; a failure there is
+logged and does not undo the commit. The cleared password stops a new
+sign-in either way.

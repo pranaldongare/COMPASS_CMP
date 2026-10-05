@@ -20,7 +20,7 @@ of the architecture is
 [docs/architecture/system-overview.md](docs/architecture/system-overview.md);
 the vocabulary is in [docs/glossary.md](docs/glossary.md). The endpoint-by-endpoint
 request, validation and response reference, followed by access details for all
-seven roles, starts at [docs/reference/api/README.md](docs/reference/api/README.md). The database
+eight roles, starts at [docs/reference/api/README.md](docs/reference/api/README.md). The database
 is drawn and listed, table by table, in
 [docs/reference/database/README.md](docs/reference/database/README.md). Which role may call
 each endpoint, on which rows and under what conditions, is

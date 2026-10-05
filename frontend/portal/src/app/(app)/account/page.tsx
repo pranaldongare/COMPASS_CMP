@@ -112,7 +112,9 @@ export default function AccountPage() {
                   {/* The session acts as a data principal whatever the row says;
                       the row's role is shown so the person knows which account
                       this is, and decides nothing here. */}
-                  Your staff account, used here as a data principal.
+                  {me.account_role === "breach_holder"
+                    ? "The account you hold a breach ticket with, used here as a data principal."
+                    : "Your staff account, used here as a data principal."}
                 </DescriptionItem>
               )}
               <DescriptionItem term="Person type">

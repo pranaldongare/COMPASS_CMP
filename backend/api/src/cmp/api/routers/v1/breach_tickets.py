@@ -17,13 +17,14 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, File, Form, Response, UploadFile
+from pydantic import Field
 
 from cmp.api import uploads
 from cmp.api.dependencies import BreachTicketReader, BreachTicketWriter
 from cmp.api.routers.v1.breaches import BreachTicketMessageOut, BreachTicketMoveOut
 from cmp.db.pool import connection, transaction
 from cmp.domain.breach import tickets
-from cmp.schemas.common import Out
+from cmp.schemas.common import Out, Schema
 
 router = APIRouter(prefix="/breach-tickets", tags=["breach tickets"])
 
@@ -45,6 +46,8 @@ class MyBreachTicketOut(Out):
     last_activity_at: datetime | None
     #: What they may do now: return, while it is issued.
     moves: list[BreachTicketMoveOut]
+    #: Whether they may bring in a colleague now (S3-09): while it is open.
+    may_add_colleague: bool
 
 
 class MyBreachTicketDetailOut(Out):
@@ -108,6 +111,36 @@ async def my_ticket_file(
             message_uuid=str(message_uuid),
         )
     return uploads.download(payload, name, recorded)
+
+
+class ColleagueIn(Schema):
+    full_name: Annotated[str, Field(max_length=200)] | None = None
+    email: Annotated[str, Field(min_length=3, max_length=320)]
+    mobile: Annotated[str, Field(max_length=32)] | None = None
+    #: What you are asking them; their ticket opens with it. Sealed.
+    note: Annotated[str, Field(min_length=1, max_length=20_000)]
+
+
+@router.post(
+    "/{ticket_uuid}/colleagues",
+    response_model=MyBreachTicketDetailOut,
+    summary="Bring a colleague into my breach ticket: they get their own",
+)
+async def add_colleague(
+    ticket_uuid: UUID, body: ColleagueIn, principal: BreachTicketWriter
+) -> dict[str, Any]:
+    """The answer is your own ticket whatever happened to theirs, so it says
+    nothing about whether an address has an account."""
+    async with transaction() as conn:
+        return await tickets.add_colleague(
+            conn,
+            user_id=principal.user_id,
+            ticket_uuid=str(ticket_uuid),
+            full_name=body.full_name,
+            email=body.email,
+            mobile=body.mobile,
+            note=body.note,
+        )
 
 
 @router.post(

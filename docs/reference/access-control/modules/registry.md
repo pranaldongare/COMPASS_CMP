@@ -34,9 +34,9 @@
 
 List Processors.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | ALL | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | ALL | ALL | ALL | ALL | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('processor'))]`.
@@ -48,9 +48,9 @@ List Processors.
 
 Create Processor.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('processor', write=True))]`.
@@ -62,9 +62,9 @@ Create Processor.
 
 Get Processor.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | ALL | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | ALL | ALL | ALL | ALL | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('processor'))]`.
@@ -76,9 +76,9 @@ Get Processor.
 
 Update Processor.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('processor', write=True))]`.
@@ -90,9 +90,9 @@ Update Processor.
 
 Who answers a rights-request ticket for this processor.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | ALL | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | ALL | ALL | ALL | ALL | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('processor'))]`.
@@ -104,9 +104,9 @@ Who answers a rights-request ticket for this processor.
 
 Name a respondent for this processor.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `Annotated[Any, Depends(RequireRole(Role.DPO, Role.ADMIN))]`.
@@ -117,9 +117,9 @@ Name a respondent for this processor.
 
 Remove a respondent.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `Annotated[Any, Depends(RequireRole(Role.DPO, Role.ADMIN))]`.
@@ -130,9 +130,9 @@ Remove a respondent.
 
 Suspend Processor.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('processor', write=True))]`.
@@ -144,9 +144,9 @@ Suspend Processor.
 
 List Purposes.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | ALL | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | ALL | ALL | ALL | ALL | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ReadRegistry`.
@@ -158,9 +158,9 @@ List Purposes.
 
 Create Purpose.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -172,9 +172,9 @@ Create Purpose.
 
 Get Purpose.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | ALL | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | ALL | ALL | ALL | ALL | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `ReadRegistry`.
@@ -186,9 +186,9 @@ Get Purpose.
 
 Draft only.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -200,9 +200,9 @@ Draft only.
 
 Activate Purpose.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -214,9 +214,9 @@ Activate Purpose.
 
 Retire Purpose.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -228,9 +228,9 @@ Retire Purpose.
 
 Notices referencing this purpose.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RequireDPOorAdmin`.
@@ -242,9 +242,9 @@ Notices referencing this purpose.
 
 Purpose Versions.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `RequireDPOorAdmin`.
@@ -256,9 +256,9 @@ Purpose Versions.
 
 List Sources.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | ALL | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | ALL | ALL | ALL | ALL | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('data_source'))]`.
@@ -270,9 +270,9 @@ List Sources.
 
 Create Source.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | ALL | ALL | ALL | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('data_source', write=True))]`.
@@ -285,9 +285,9 @@ Create Source.
 
 Get Source.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | ALL | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | ALL | ALL | ALL | ALL | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('data_source'))]`.
@@ -299,9 +299,9 @@ Get Source.
 
 Update Source.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | ALL | ALL | ALL | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('data_source', write=True))]`.
@@ -314,9 +314,9 @@ Update Source.
 
 Source Batches.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| COND | COND | COND | COND | COND | COND | COND |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| COND | COND | COND | COND | COND | COND | COND | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`.
 - **Route guard:** `CurrentUser`.
@@ -328,9 +328,9 @@ Source Batches.
 
 Assign the person accountable for a source.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | ALL | ALL | ALL | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('data_source', write=True))]`.
@@ -343,9 +343,9 @@ Assign the person accountable for a source.
 
 Suspend Source.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | ALL | ALL | ALL | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('data_source', write=True))]`.

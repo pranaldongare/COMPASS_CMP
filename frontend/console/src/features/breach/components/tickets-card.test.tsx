@@ -4,6 +4,9 @@
  * Every control comes from the server: the card offers assigning only once
  * the breach is recorded, a ticket's moves are the ones the server returned,
  * and a holder is offered the return only while the server says so.
+ *
+ * S3-09: the office can ask somebody with no console login by email, sees
+ * whose login is temporary, and a holder can bring in a colleague.
  */
 import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
@@ -50,6 +53,7 @@ const ticket = (over: Partial<BreachTicket> = {}): BreachTicket => ({
     { move: "withdraw", reason_required: true },
   ],
   may_write: true,
+  temporary_access: null,
   ...over,
 });
 
@@ -83,6 +87,54 @@ describe("TicketsCard", () => {
     }
     expect(within(dialog).queryByRole("button", { name: "Reopen" })).not.toBeInTheDocument();
   });
+
+  it("marks a temporary login and its state", async () => {
+    server.use(
+      http.get(`${API}/breaches/${BREACH}/tickets`, () =>
+        HttpResponse.json([
+          ticket({ temporary_access: "pending" }),
+          ticket({ ticket_uuid: BREACH, holder_name: "Meera Iyer", temporary_access: "ended" }),
+        ]),
+      ),
+    );
+    render(<TicketsCard breach={breach(true)} />);
+
+    const pending = (await screen.findByText("Arun Shetty")).closest("tr") as HTMLElement;
+    expect(within(pending).getByText("Temporary login · not yet signed in")).toBeInTheDocument();
+    const ended = screen.getByText("Meera Iyer").closest("tr") as HTMLElement;
+    expect(within(ended).getByText("Temporary login ended")).toBeInTheDocument();
+  });
+
+  it("asks somebody without a console login by name and email", async () => {
+    let sent: unknown = null;
+    server.use(
+      http.get(`${API}/breaches/${BREACH}/tickets`, () => HttpResponse.json([])),
+      http.get(`${API}/users`, () => HttpResponse.json({ items: [], total: 0, page: 1, page_size: 25 })),
+      http.post(`${API}/breaches/${BREACH}/tickets`, async ({ request }) => {
+        sent = await request.json();
+        return HttpResponse.json({ ticket: ticket({ temporary_access: "pending" }), instruction: "x", messages: [] });
+      }),
+    );
+    const { user } = render(<TicketsCard breach={breach(true)} />);
+
+    await user.click(await screen.findByRole("button", { name: /assign a ticket/i }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByLabelText("Someone without a console login"));
+    await user.type(within(dialog).getByLabelText(/their name/i), "Meera Iyer");
+    await user.type(within(dialog).getByLabelText(/their work email/i), "meera@cmp.local");
+    await user.type(within(dialog).getByLabelText(/what you are asking/i), "Pull the badge log");
+    await user.click(within(dialog).getByRole("button", { name: "Assign" }));
+
+    await vi.waitFor(() =>
+      expect(sent).toEqual({
+        full_name: "Meera Iyer",
+        email: "meera@cmp.local",
+        mobile: null,
+        instruction: "Pull the badge log",
+        answer_by: null,
+      }),
+    );
+  });
 });
 
 const mine = (over: Partial<MyBreachTicket> = {}): MyBreachTicket => ({
@@ -95,6 +147,7 @@ const mine = (over: Partial<MyBreachTicket> = {}): MyBreachTicket => ({
   unread: 1,
   last_activity_at: null,
   moves: [{ move: "return", reason_required: false }],
+  may_add_colleague: true,
   ...over,
 });
 
@@ -123,5 +176,31 @@ describe("BreachTicketCard", () => {
     const dialog = await screen.findByRole("dialog");
     expect(await within(dialog).findByText(/nothing further is needed from you/i)).toBeInTheDocument();
     expect(within(dialog).queryByText("This is my return")).not.toBeInTheDocument();
+  });
+
+  it("brings in a colleague with a note, while the server allows it", async () => {
+    let sent: unknown = null;
+    server.use(
+      http.post(`${API}/breach-tickets/${TICKET}/colleagues`, async ({ request }) => {
+        sent = await request.json();
+        return HttpResponse.json({ ticket: mine(), messages: [] });
+      }),
+    );
+    const { user } = render(<BreachTicketCard ticket={mine()} />);
+
+    await user.click(screen.getByRole("button", { name: /add a colleague/i }));
+    const dialog = await screen.findByRole("dialog");
+    await user.type(within(dialog).getByLabelText(/their work email/i), "ravi@cmp.local");
+    await user.type(within(dialog).getByLabelText(/what you are asking/i), "Check the VPN logs");
+    await user.click(within(dialog).getByRole("button", { name: "Add" }));
+
+    await vi.waitFor(() =>
+      expect(sent).toEqual({ full_name: "", email: "ravi@cmp.local", mobile: null, note: "Check the VPN logs" }),
+    );
+  });
+
+  it("offers no colleague once the server says the ticket is not open", () => {
+    render(<BreachTicketCard ticket={mine({ state: "closed", moves: [], may_add_colleague: false })} />);
+    expect(screen.queryByRole("button", { name: /add a colleague/i })).not.toBeInTheDocument();
   });
 });

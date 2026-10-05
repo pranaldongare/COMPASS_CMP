@@ -14,6 +14,7 @@ export const ROLES: RoleOption[] = [
   { value: "dco_admin", label: "DCO Admin" },
   { value: "dco", label: "DCO" },
   { value: "rco", label: "RCO" },
+  { value: "breach_holder", label: "Temporary ticket holder" },
 ];
 
 const COLLECTORS = ["dco_admin", "dco", "rco"];
@@ -484,7 +485,7 @@ export const SECTIONS: HelpSection[] = [
           "If it may be a reportable cyber incident, [[Mark reportable to CERT-In]]: six hours from first noticed.",
           "Record the [[Validation]]: is it a personal data breach under s.2(u)? The first yes records it with a BR reference and starts the Board and principals duties. No sets them aside; the reasoning is kept.",
           "Derive [[Who it touched]], keep the assessment current, and draft the notice. [[Send version 1]] waits until the breach is recorded.",
-          "Ask the people who must act: [[Assign a ticket]] to a member of staff, with what you need and an optional [[Answer by]]. Read their answers on the ticket; [[Send back]] or [[Close the ticket]] once it is returned.",
+          "Ask the people who must act: [[Assign a ticket]] to a member of staff, or choose [[Someone without a console login]] and give their name and work email, with what you need and an optional [[Answer by]]. Read their answers on the ticket; [[Send back]] or [[Close the ticket]] once it is returned.",
           "Draft [[Documents for the Board]], submit through the Board's own channel, and [[Record submission]] on each duty with the reference returned.",
           "Close it once validated, every duty is done or not applicable, and no ticket is open. The page lists what is in the way.",
         ],
@@ -493,6 +494,56 @@ export const SECTIONS: HelpSection[] = [
         kind: "note",
         title: "What a ticket holder sees",
         text: "The breach reference, your instruction, the thread and their ticket's state - nothing else from the register. Their email says only that a ticket from the Privacy Office is waiting; it names no breach.",
+      },
+      {
+        kind: "list",
+        title: "Temporary logins and colleagues",
+        items: [
+          "Somebody with no console login, on one of the organisation's own email domains, is given a login for this breach only. They are emailed a code to set a password, and sign in with an emailed code like all staff. The Tickets table marks it [[Temporary login]], and says whether they have signed in yet.",
+          "A holder can [[Add a colleague]] while their ticket is open. The colleague gets their own ticket on the breach, opening with the holder's note rather than your instruction, and shows in the table under the person who added them. You can see every addition; you do not approve it.",
+          "A temporary login ends when you [[Withdraw]] that person's ticket, when the breach closes, or when an administrator ends it. Reopening their ticket gives it back, with a new email. An account made for the breach is switched off; one that was a data principal's goes back to being one.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "temporary-holder",
+    title: "If you were given a login for a breach ticket",
+    summary:
+      "The Privacy Office has asked for your help with a personal data breach, and given you a login that lasts as long as the work does.",
+    roles: ["breach_holder"],
+    blocks: [
+      {
+        kind: "steps",
+        title: "Signing in",
+        items: [
+          "Your email from the Privacy Office has a link and a code. Open the link, type the [[Code]], choose a [[New password]] of at least 12 characters, confirm it and click [[Set the new password]].",
+          "Sign in with your work email and that password. A six-digit code is emailed to you: type it in [[6-digit code]] and click [[Verify and continue]].",
+          "You land on [[My tasks]]. Your breach ticket is there.",
+        ],
+      },
+      {
+        kind: "list",
+        title: "What you can see",
+        items: [
+          "Your ticket: the breach reference, what you are asked, the date to answer by if there is one, and the conversation with the Privacy Office. Nothing else about the breach.",
+          "[[My tasks]], your notifications and your profile. Nothing else in the console is open to you.",
+          "Answer on the ticket as anyone does: write, attach a file, and when you are done choose what was done and tick [[This is my return]].",
+        ],
+      },
+      {
+        kind: "steps",
+        title: "Bringing in a colleague",
+        items: [
+          "While your ticket is open, click [[Add a colleague]] on it.",
+          "Give their name, their work email (on one of the organisation's own domains), a mobile if you wish, and a note saying what you are asking them to do.",
+          "Click [[Add]]. They get their own ticket, which opens with your note; if they have no console login they are given one for this breach, as you were. The Privacy Office can see that you added them.",
+        ],
+      },
+      {
+        kind: "note",
+        title: "When your login ends",
+        text: "When the Privacy Office closes the breach or withdraws your ticket, or an administrator ends it, your login ends and you are signed out. If you hold a ticket on another breach, that one stays. If the Privacy Office reopens your ticket, you are emailed a new code.",
       },
     ],
   },

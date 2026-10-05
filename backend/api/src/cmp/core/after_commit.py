@@ -22,9 +22,10 @@ step if that gap matters, and is recorded as such in the decisions.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Generator
+from collections.abc import Awaitable, Callable, Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
+from inspect import isawaitable
 
 from cmp.core.logging import get_logger
 
@@ -33,6 +34,13 @@ log = get_logger("cmp.after_commit")
 Hook = Callable[[], object]
 
 _pending: ContextVar[list[Hook] | None] = ContextVar("cmp_after_commit", default=None)
+
+#: What hooks handed back to be awaited: async work - ending a person's
+#: sessions - that the caller's transaction awaits once it has committed, so
+#: it is done before the response leaves rather than some time after.
+_awaiting: ContextVar[list[Awaitable[object]] | None] = ContextVar(
+    "cmp_after_commit_awaiting", default=None
+)
 
 
 @contextmanager
@@ -59,11 +67,16 @@ def unit_of_work() -> Generator[None]:
     else:
         hooks = _pending.get() or []
         _pending.reset(token)
+        late: list[Awaitable[object]] = []
         for hook in hooks:
             try:
-                hook()
+                result = hook()
+                if isawaitable(result):
+                    late.append(result)
             except Exception as exc:  # one failed side effect must not stop the rest
                 log.error("after_commit.hook_failed", error=str(exc), exc_info=True)
+        if late:
+            _awaiting.set([*(_awaiting.get() or []), *late])
 
 
 def defer(hook: Hook) -> bool:
@@ -81,3 +94,18 @@ def defer(hook: Hook) -> bool:
 
 def in_unit_of_work() -> bool:
     return _pending.get() is not None
+
+
+def take_awaiting() -> list[Awaitable[object]]:
+    """The awaitables committed hooks returned, for the transaction to await.
+    Taking them clears them."""
+    late = _awaiting.get() or []
+    _awaiting.set(None)
+    return late
+
+
+async def defer_async(work: Callable[[], Awaitable[object]]) -> None:
+    """Run async `work` once the enclosing transaction commits - awaited by
+    `cmp.db.pool.transaction()` before it returns - or now, outside one."""
+    if not defer(work):
+        await work()

@@ -11,3 +11,4 @@ Generated from `cmp.core.permissions`; denied resources are shown explicitly.
 | `rnd_user` | [R&D User](rnd_user.md) |
 | `admin` | [Administrator](admin.md) |
 | `data_subject` | [Data Subject](data_subject.md) |
+| `breach_holder` | [Temporary ticket holder](breach_holder.md) |

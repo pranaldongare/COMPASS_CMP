@@ -71,6 +71,15 @@ ticket.
   switched off, not deleted, at the end.
 - The Board's detailed report can now point at who was asked what, and what
   they said, from the register.
+- As built in S3-09: the second factor is required for `breach_holder` in
+  code (`requires_mfa`), not only by `MFA_REQUIRED_ROLES`, so a deployment that
+  narrows the list cannot leave a platform-made login on a password alone. A
+  person holding grants on two breaches keeps the role until the last one
+  ends, and the first grant's previous role is carried to the second. A
+  suspended account, or a member of staff whose account is not active, is
+  refused rather than given a second way in. An administrator's resend of a
+  pending holder's invitation sends `breach_ticket_access`, not the staff
+  invitation.
 
 ## Revisit when
 

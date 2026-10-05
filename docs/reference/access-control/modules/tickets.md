@@ -6,21 +6,21 @@
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
-| GET | `/tickets` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/tickets/{holder_uuid}` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| POST | `/tickets/{holder_uuid}/messages` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/tickets/{holder_uuid}/messages/{message_uuid}/evidence` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| POST | `/tickets/{holder_uuid}/return` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/tickets` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
+| GET | `/tickets/{holder_uuid}` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
+| POST | `/tickets/{holder_uuid}/messages` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
+| GET | `/tickets/{holder_uuid}/messages/{message_uuid}/evidence` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
+| POST | `/tickets/{holder_uuid}/return` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
 
 ## GET /tickets
 
 Tickets addressed to me.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`.
 - **Route guard:** `TicketReader`.
 - **Resolved gate:** `RequireResource(ticket, write=False)`.
 - **Rules:** Any staff role can use tickets addressed to that account only (respondent_user_id). This does not grant the staff member the full rights-request register.
@@ -30,11 +30,11 @@ Tickets addressed to me.
 
 One ticket, with its brief and thread.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`.
 - **Route guard:** `TicketReader`.
 - **Resolved gate:** `RequireResource(ticket, write=False)`.
 - **Rules:** Any staff role can use tickets addressed to that account only (respondent_user_id). This does not grant the staff member the full rights-request register.
@@ -44,11 +44,11 @@ One ticket, with its brief and thread.
 
 Write to the Privacy Office on my ticket, with a file if it helps.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`.
 - **Route guard:** `TicketWriter`.
 - **Resolved gate:** `RequireResource(ticket, write=True)`.
 - **Rules:** Any staff role can use tickets addressed to that account only (respondent_user_id). This does not grant the staff member the full rights-request register.
@@ -58,11 +58,11 @@ Write to the Privacy Office on my ticket, with a file if it helps.
 
 Download a file attached to a message on my ticket.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`.
 - **Route guard:** `TicketReader`.
 - **Resolved gate:** `RequireResource(ticket, write=False)`.
 - **Rules:** Any staff role can use tickets addressed to that account only (respondent_user_id). This does not grant the staff member the full rights-request register.
@@ -72,11 +72,11 @@ Download a file attached to a message on my ticket.
 
 Return a ticket addressed to me.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`.
 - **Route guard:** `TicketWriter`.
 - **Resolved gate:** `RequireResource(ticket, write=True)`.
 - **Rules:** Any staff role can use tickets addressed to that account only (respondent_user_id). This does not grant the staff member the full rights-request register. A return must state `outcome` - done, partial or failed (422 otherwise); only done counts as the work done (review DPDP-1, 2026-10-01).

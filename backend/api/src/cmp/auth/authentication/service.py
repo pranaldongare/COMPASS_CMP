@@ -544,6 +544,36 @@ async def invite_staff(conn: Conn, *, user: dict[str, Any]) -> None:
     )
 
 
+async def invite_breach_holder(conn: Conn, *, user: dict[str, Any]) -> None:
+    """Tell somebody given a breach-only login how to set its password (S3-09).
+
+    The invitation's mechanism exactly - the reset flow's code, the same page,
+    the same hours - with words that say the access is temporary and name no
+    breach (BD-18). Sent from here, never from breach code: it is a credential.
+    """
+    if not user.get("email"):
+        raise ValidationFailed("That account has no email address to write to", field="email")
+    person = await opened("auth_user", user)
+    issued = await otp.issue(
+        otp.Scope.CONTACT_VERIFY,
+        f"reset:{user['uuid']}",
+        ttl_s=settings.staff_invite_ttl_h * 3600,
+    )
+
+    from cmp.tasks.dispatch import dispatch_optional
+    from cmp.tasks.notifications import send_breach_ticket_access
+
+    dispatch_optional(
+        send_breach_ticket_access,
+        str(user["uuid"]),
+        person["email"],
+        person["full_name"],
+        issued.code,
+        _reset_url(person["email"]),
+        settings.staff_invite_ttl_h,
+    )
+
+
 async def end_staff_access(conn: Conn, *, user: dict[str, Any], actor_user_id: int) -> None:
     """Take the staff role away and leave the person.
 

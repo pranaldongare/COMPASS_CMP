@@ -86,11 +86,16 @@ function UsersPageView() {
     try {
       if (active) {
         const result = await deactivate.mutateAsync(user.uuid);
-        // Two different acts behind one button, and the server's message says
+        // Different acts behind one button, and the server's message says
         // which: a member of staff loses the role and keeps their account as a
-        // data principal; a data principal's account is switched off.
+        // data principal; a data principal's account is switched off; a
+        // temporary ticket holder's breach-only login ends (S3-09).
         toast.success(
-          user.role === "data_subject" ? "Account deactivated" : "Staff access ended",
+          user.role === "data_subject"
+            ? "Account deactivated"
+            : user.role === "breach_holder"
+              ? "Temporary access ended"
+              : "Staff access ended",
           result.message ?? "Every session was terminated immediately.",
         );
       } else {
@@ -260,11 +265,17 @@ function UsersPageView() {
                       title={
                         u.role === "data_subject"
                           ? undefined
-                          : "Ends their staff role. They keep their account as a data principal, with their own consents."
+                          : u.role === "breach_holder"
+                            ? "Ends their login for every breach ticket they hold. An account made for a breach is switched off; one that was a data principal's goes back to being one."
+                            : "Ends their staff role. They keep their account as a data principal, with their own consents."
                       }
                     >
                       <UserX className="size-4" />
-                      {u.role === "data_subject" ? "Deactivate" : "End staff access"}
+                      {u.role === "data_subject"
+                        ? "Deactivate"
+                        : u.role === "breach_holder"
+                          ? "End temporary access"
+                          : "End staff access"}
                     </Button>
                   )}
                   {u.status === "deactivated" && (

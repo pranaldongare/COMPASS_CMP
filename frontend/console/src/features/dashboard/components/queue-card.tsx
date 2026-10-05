@@ -93,8 +93,11 @@ export function QueueCard({
 
             // A rights request reads as its reference and the person; the
             // clock is what makes it urgent, so the due date joins the title.
+            // A breach ticket carries no person: its reference stands alone.
             const title = item.reference
-              ? `${String(item.reference)} · ${String(item.subject_name ?? "")}`
+              ? [String(item.reference), item.subject_name ? String(item.subject_name) : null]
+                  .filter(Boolean)
+                  .join(" · ")
               : typeof item.site_label === "string"
                 ? `${item.site_label} · ${String(item.project_name ?? "")}`
                 : ((item.project_name as string) ??

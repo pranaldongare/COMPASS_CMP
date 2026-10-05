@@ -73,6 +73,7 @@ class Message(StrEnum):
     # breach
     BREACH_NOTICE = "breach_notice"
     BREACH_TICKET_WAITING = "breach_ticket_waiting"
+    BREACH_TICKET_ACCESS = "breach_ticket_access"
 
 
 @dataclass(frozen=True, slots=True)
@@ -879,6 +880,41 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "the console. Sign in to read it and answer:\n\n{console_url}\n\n"
             "Please do not reply to this email: what the ticket is about is in the console "
             "only." + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+    ),
+    Junction(
+        key=Message.BREACH_TICKET_ACCESS,
+        title="Temporary console access for a breach ticket",
+        description=(
+            "Sent to somebody with no console login whom the Privacy Office - or a colleague - "
+            "has asked to answer a ticket (S3-09). It gives temporary access to the console to "
+            "answer it, ending when the matter is closed, and how to set a password. It names "
+            "no breach (BD-18). Email only; sent by the sign-in service, like an invitation."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("full_name", "The person given access.", "Asha Rao"),
+            CODE,
+            HOURS,
+            Variable(
+                "reset_url",
+                "The console page where they set their password, with their address filled in.",
+                "https://console.example.org/sign-in/reset?email=asha%40example.org",
+            ),
+            ORGANISATION,
+        ),
+        email_subject="The {organisation} Privacy Office has asked for your help",
+        email_body=(
+            "{full_name}, the {organisation} Privacy Office has given you temporary access to "
+            "its console to answer a ticket. The access ends when the matter is closed.\n\n"
+            "Set your password here:\n{reset_url}\n\n"
+            "and enter this code on that page:\n\n    {code}\n\n"
+            "The code works once and expires in {hours} hours. If it has expired, choose "
+            '"Forgotten your password?" on the sign-in page and a new one will be sent to this '
+            "address. Afterwards you sign in with your password and a six-digit code sent here "
+            "each time. What the ticket is about is in the console only." + _SIGN_OFF_EMAIL
         ),
         sms_body=None,
     ),

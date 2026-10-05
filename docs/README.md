@@ -18,7 +18,7 @@ you need. **Every document is in this tree.** The one exception is a
 **Working on a feature**
 
 - [Domain model](architecture/domain-model.md): the tables, the state machines, and the invariants the database holds
-- [Roles and access](domain/roles-and-access.md): the seven roles and what each may reach
+- [Roles and access](domain/roles-and-access.md): the eight roles and what each may reach
 - Behaviour, by obligation: [consent lifecycle](domain/consent-lifecycle.md), [collection and routing](domain/collection-and-routing.md), [rights requests](domain/rights-requests.md), [personal data breaches](domain/breaches.md), [messages the platform sends](domain/messages.md), [reading the audit trail](domain/audit-trail.md)
 - [Personal data](domain/personal-data.md): every table, store and endpoint that holds or moves something about a person, and what protects it
 - [PII fields and endpoints](domain/pii-fields-and-endpoints.md): the short form — the 54 personal columns by table, and every endpoint that carries one, by module

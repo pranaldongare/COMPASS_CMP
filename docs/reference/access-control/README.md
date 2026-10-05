@@ -7,12 +7,12 @@ This tree is reviewed by hand, not generated. When a route's guard, scope or con
 This folder answers: **which role can call each API, on which records, and under what additional conditions?** It expands the existing `api_docs` using the actual route guards, permission matrix, service checks and repository scopes.
 
 - [Module overview](module_permissions.md): access counts for every role, grouped by module.
-- [Endpoint permission matrix](endpoint_permissions.md): one row per method/path, with all seven roles and anonymous access.
+- [Endpoint permission matrix](endpoint_permissions.md): one row per method/path, with all eight roles and anonymous access.
 - [Roles and scopes](roles_and_scopes.md): role meanings, static read/write grants, ownership rules and session behavior.
 - [Implementation notes](implementation_notes.md): places where generic documentation and implemented controls differ.
 - [Machine-readable endpoint inventory](endpoint_permissions.json): guards, roles, conditions and source references.
 
-**Coverage: 21 modules, 291 documented operations over 254 OpenAPI paths, plus 3 registered system operations excluded from OpenAPI (294 total operations).** The breach module (S3-01 onward) is recorded in `endpoint_permissions.json`'s `amended` list; its evidence links point at `HEAD`. No framework-generated Swagger/ReDoc/OpenAPI routes or middleware-generated OPTIONS responses are counted.
+**Coverage: 21 modules, 292 documented operations over 255 OpenAPI paths, plus 3 registered system operations excluded from OpenAPI (295 total operations).** The breach module (S3-01 onward) is recorded in `endpoint_permissions.json`'s `amended` list; its evidence links point at `HEAD`. No framework-generated Swagger/ReDoc/OpenAPI routes or middleware-generated OPTIONS responses are counted.
 
 ## Module details
 
@@ -20,7 +20,7 @@ This folder answers: **which role can call each API, on which records, and under
 | --- | --- | --- |
 | Audit | 7 | [Open module](modules/audit.md) |
 | Auth | 14 | [Open module](modules/auth.md) |
-| Breach tickets | 5 | [Open module](modules/breach_tickets.md) |
+| Breach tickets | 6 | [Open module](modules/breach_tickets.md) |
 | Breaches | 31 | [Open module](modules/breaches.md) |
 | Consent | 12 | [Open module](modules/consent.md) |
 | Cross-border transfers | 3 | [Open module](modules/cross_border_transfers.md) |

@@ -57,7 +57,7 @@ export const EMPTY_FILTERS: AuditFilterState = {
 
 export const FILTER_KEYS = Object.keys(EMPTY_FILTERS) as (keyof AuditFilterState)[];
 
-const ROLES = ["dpo", "admin", "dco", "dco_admin", "rco", "rnd_user", "data_subject"];
+const ROLES = ["dpo", "admin", "dco", "dco_admin", "rco", "rnd_user", "data_subject", "breach_holder"];
 
 /** The API parameters for a state: dates widened to whole days, display-only
  *  keys dropped, empties dropped. */

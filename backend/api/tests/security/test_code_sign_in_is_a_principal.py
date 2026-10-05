@@ -146,3 +146,18 @@ class TestWhatACodeIsWorth:
         result = await sign_in_by_code(conn, redis_conn, queued, "subject@test.local")
         assert result["session"].role == Role.DATA_SUBJECT.value
         assert result["session"].account_role == Role.DATA_SUBJECT.value
+
+
+class TestABreachOnlyLoginOnThePortal:
+    async def test_a_code_is_still_only_a_data_principals_session(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any, queued: Any
+    ) -> None:
+        """ADR 0013 holds for the temporary role (S3-09): a code to its mailbox
+        signs in a data principal, never the breach-only role."""
+        await conn.execute(
+            "UPDATE auth_user SET role = 'breach_holder' WHERE id = %s",
+            (seeded["users"]["rco"]["id"],),
+        )
+        result = await sign_in_by_code(conn, redis_conn, queued, "rco@test.local")
+        assert result["session"].role == Role.DATA_SUBJECT.value
+        assert result["session"].account_role == "breach_holder"

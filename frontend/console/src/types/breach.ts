@@ -432,7 +432,12 @@ export interface BreachTicket {
   events: BreachTicketEvent[];
   moves: BreachTicketMove[];
   may_write: boolean;
+  /** The holder's breach-only login (S3-09): pending until they set a
+   *  password, then active, then ended. Null for a member of staff. */
+  temporary_access: TemporaryAccess | null;
 }
+
+export type TemporaryAccess = "pending" | "active" | "ended";
 
 export interface BreachTicketDetail {
   ticket: BreachTicket;
@@ -451,6 +456,8 @@ export interface MyBreachTicket {
   unread: number;
   last_activity_at: Timestamp | null;
   moves: BreachTicketMove[];
+  /** Whether they may bring in a colleague now: while the ticket is open. */
+  may_add_colleague: boolean;
 }
 
 export interface MyBreachTicketDetail {

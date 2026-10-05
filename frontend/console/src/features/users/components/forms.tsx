@@ -159,8 +159,9 @@ export function UserForm({ user, onDone }: { user?: User; onDone: () => void }) 
             {(p) => (
               <Select {...p} {...form.register("role")} disabled={Boolean(user)}>
                 {enums?.user_role
-                  // Data subjects register through a consent link, never here.
-                  ?.filter((o) => o.value !== "data_subject")
+                  // Data subjects register through a consent link, never here;
+                  // a temporary ticket holder is made by a breach ticket (S3-09).
+                  ?.filter((o) => o.value !== "data_subject" && o.value !== "breach_holder")
                   .map((o) => (
                     <option key={o.value} value={o.value}>
                       {o.label}
@@ -303,7 +304,7 @@ export function RoleChangeForm({ user, onDone }: { user: User; onDone: () => voi
           {(p) => (
             <Select {...p} {...form.register("role")}>
               {enums?.user_role
-                ?.filter((o) => o.value !== "data_subject")
+                ?.filter((o) => o.value !== "data_subject" && o.value !== "breach_holder")
                 .map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}

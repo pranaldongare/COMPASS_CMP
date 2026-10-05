@@ -76,10 +76,11 @@ test.describe("the DPO", () => {
 
     // Who it touched: the platform's own tables, as recorded, confirmed as revision 1.
     await page.getByRole("button", { name: "Derive who it touched" }).click();
-    // Accounts created from now on: nobody, which keeps the dev database's
-    // people off an end-to-end breach's list.
+    // Accounts created from a few minutes ahead: nobody, which keeps the dev
+    // database's people off an end-to-end breach's list - including the
+    // breach-only logins e2e/breach-tickets.spec.ts made the minute before.
     await page.getByRole("checkbox", { name: "auth_user" }).check();
-    await page.getByLabel(/^Rows written from/).fill(hoursAgo(0));
+    await page.getByLabel(/^Rows written from/).fill(hoursAgo(-0.1));
     await page.getByRole("button", { name: "Show what the records say" }).click();
     await expect(page.getByText(/The records place \d+ people here/)).toBeVisible();
     await page.getByRole("button", { name: "Confirm the list" }).click();

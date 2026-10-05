@@ -1,8 +1,10 @@
 # Roles and access
 
-Seven roles. Six are staff and sign in on the console with a password and an
+Eight roles. Six are staff and sign in on the console with a password and an
 emailed code; the seventh is the data principal, who signs in on the portal
-with a code alone. What each may reach is a static matrix in
+with a code alone; the eighth, the temporary ticket holder, is a breach-only
+login that signs in like staff but reaches nothing except the tickets
+addressed to it (S3-09). What each may reach is a static matrix in
 `backend/api/src/cmp/core/permissions.py`, consulted before any work is done,
 and the rows each may see are a scope compiled into every query.
 
@@ -17,37 +19,38 @@ and the rows each may see are a scope compiled into every query.
 | Research Collection Owner | `rco` | A DCO for in-house collection | The same as a DCO, restricted to the organisation's own sources and sites |
 | R&D User | `rnd_user` | Owns a study | Registers the project, names the collectors, brings the notice as a filled-in document or a copy of an approved one, uploads approval proofs, asks to add a collector after approval |
 | Data principal | `data_subject` | The person the data is about | Reads and withdraws her consents, sees her disclosures, makes and follows rights requests, names a nominee |
+| Temporary ticket holder | `breach_holder` | Somebody inside the organisation, with no console login, asked to act on a breach | Answers the breach tickets addressed to them and brings in colleagues; nothing else. Never given by hand: set when the DPO (or a holder) asks them by email, put back when their last ticket on an open breach ends ([ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)) |
 
 ## The matrix
 
 Each cell is a scope, and `+w` means the role may also write. A blank cell is
 denied: no wildcard, no inheritance.
 
-| Resource | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-|---|---|---|---|---|---|---|---|
-| user | all | all +w | | | | | |
-| purpose | all +w | all | all | all | all | all | |
-| processor | all +w | all +w | all | all | all | all | |
-| data_source | all +w | all +w | all +w | all +w | all +w | all | |
-| project | all +w | | scoped +w | scoped +w | scoped +w | own +w | |
-| approval | all | | scoped | scoped | scoped | own +w | |
-| site | all +w | | scoped +w | scoped +w | scoped +w | own | |
-| notice | all +w | | scoped | scoped | scoped | own +w | |
-| link | all +w | | scoped +w | scoped +w | scoped +w | | |
-| consent | all | | scoped | scoped | scoped | own | |
-| export | all +w | | scoped +w | scoped +w | scoped +w | | |
-| import | all +w | | scoped +w | scoped +w | scoped +w | own | |
-| collection | all | | scoped | scoped | scoped | own | |
-| asset | all | | scoped | scoped | scoped | own | |
-| audit | all | all | | | | | |
-| message_template | all +w | all +w | | | | | |
-| rights_request | all +w | scoped +w | | | | | |
-| legal_hold | all +w | | | | | | |
-| restricted_country | all +w | all | | | | | |
-| breach | all +w | | | | | | |
-| ticket | own +w | own +w | own +w | own +w | own +w | own +w | |
-| breach_ticket | own +w | own +w | own +w | own +w | own +w | own +w | |
-| me | | | | | | | own +w |
+| Resource | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+|---|---|---|---|---|---|---|---|---|
+| user | all | all +w | | | | | | |
+| purpose | all +w | all | all | all | all | all | | |
+| processor | all +w | all +w | all | all | all | all | | |
+| data_source | all +w | all +w | all +w | all +w | all +w | all | | |
+| project | all +w | | scoped +w | scoped +w | scoped +w | own +w | | |
+| approval | all | | scoped | scoped | scoped | own +w | | |
+| site | all +w | | scoped +w | scoped +w | scoped +w | own | | |
+| notice | all +w | | scoped | scoped | scoped | own +w | | |
+| link | all +w | | scoped +w | scoped +w | scoped +w | | | |
+| consent | all | | scoped | scoped | scoped | own | | |
+| export | all +w | | scoped +w | scoped +w | scoped +w | | | |
+| import | all +w | | scoped +w | scoped +w | scoped +w | own | | |
+| collection | all | | scoped | scoped | scoped | own | | |
+| asset | all | | scoped | scoped | scoped | own | | |
+| audit | all | all | | | | | | |
+| message_template | all +w | all +w | | | | | | |
+| rights_request | all +w | scoped +w | | | | | | |
+| legal_hold | all +w | | | | | | | |
+| restricted_country | all +w | all | | | | | | |
+| breach | all +w | | | | | | | |
+| ticket | own +w | own +w | own +w | own +w | own +w | own +w | | own +w |
+| breach_ticket | own +w | own +w | own +w | own +w | own +w | own +w | | own +w |
+| me | | | | | | | own +w | |
 
 The R&D User's write on a notice is narrower than the row can say. They bring
 one, by uploading the filled-in document, re-uploading a corrected one, or
@@ -108,6 +111,10 @@ matrix, so it cannot drift into showing a button that answers 403.
 | DCO, DCO Admin, RCO | dashboard, projects, sites, sources, links, consents, exports, imports, collections, delegate, tickets, notifications, profile |
 | R&D User | dashboard, projects, notices, processors, approvals, imports, collections, tickets, notifications, profile |
 | Data principal | consents, requests, notifications, profile |
+| Temporary ticket holder | tickets, notifications, profile |
+
+A temporary ticket holder has no dashboard: the console sends it from
+`/dashboard` to **My tasks**, reading `nav` rather than its role.
 
 Tickets are in every staff role's navigation, because any staff account can
 be named a respondent; the page is empty until one is addressed to them.
@@ -152,7 +159,9 @@ register's button reads "End staff access" for a staff row: the role becomes
 `data_subject`, the password goes, `person_type` becomes `ex_employee`, and the
 account stays active so they still reach the consents they gave and the rights
 they hold. A data principal's account, having nothing to be kept as, is
-switched off as before.
+switched off as before. For a temporary ticket holder the button reads "End
+temporary access" and ends their breach-only login instead (below); it never
+marks them an ex-employee.
 
 **A person may correct their own name** from the account page, on either
 portal (**Change** beside it). It is `PATCH /me` with the name alone: sealed on
@@ -211,6 +220,37 @@ it. If the invitation expires, "Forgotten your password?" sends a working
 replacement, because the invitation carries the reset flow's own code rather
 than a second kind; an administrator can also send it again from the register,
 but only while the account is still pending.
+
+**The one exception: a breach-only login** (S3-09,
+[ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)). When
+the DPO asks somebody to act on a recorded breach and they have no console
+login - or a ticket holder brings in a colleague who has none - the server
+gives them one without an administrator. It is bounded three ways: to one
+breach, to an address on `BREACH_TICKET_EMAIL_DOMAINS`, and to the role
+`breach_holder`, which reaches only the tickets addressed to it, notifications
+and the profile. The address is looked up by its keyed hash:
+
+| The address belongs to | Then |
+|---|---|
+| an active member of staff | an ordinary ticket |
+| a data principal's account | that account becomes `breach_holder` while the grant lasts; its previous role is kept on the grant |
+| nobody | a new account: `pending`, `employee`, `breach_holder`, marked as made for this breach |
+
+They are sent "Temporary console access for a breach ticket" - the reset
+link and code, exactly as an invitation, naming no breach - set a password,
+and sign in with a password and an emailed code like all staff. The role is
+never given by hand: `POST /users` and the change-role route refuse it, and no
+staff picker offers it. An administrator may give such a person a real role;
+ending the grant then leaves that role alone.
+
+Access ends when the breach closes, when the DPO withdraws that person's
+ticket, or when an administrator ends it from the register. If they hold a
+grant on another breach only this one ends; otherwise an account made for the
+breach is switched off and one that was a data principal's goes back to
+`data_subject`, with its password cleared either way and `person_type`
+untouched. Every session is revoked once the change has committed. Reopening
+their ticket gives the access back with a new grant and a new email; reopening
+a closed breach does not.
 
 ## What the dashboard asks of each role
 
@@ -312,8 +352,11 @@ Every staff role signs in with a password and then a six-digit code sent to
 the account's email, for five minutes and five attempts. The list is
 `MFA_REQUIRED_ROLES`, derived from the role enum by default so that a role
 added later is covered on arrival; a deployment may narrow it and answers for
-that. Data principals have no password: their sign-in *is* a code, to the
-mobile or the email they chose. See
+that. A temporary ticket holder always needs the code, whatever the list
+says: it is checked in code, not configuration. Data principals have no
+password: their sign-in *is* a code, to the mobile or the email they chose -
+and a code sign-in on the portal is a data principal's session whatever the
+account's role, a breach-only login's included. See
 [ADR 0006](../decisions/0006-mfa-for-every-staff-role.md).
 
 ## Delegation

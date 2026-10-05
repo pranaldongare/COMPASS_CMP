@@ -4,7 +4,7 @@ Two questions, deliberately answered by different things.
 
 ## 1. May this role call this at all?
 
-A static matrix: 22 resources × 7 roles → a grant. The whole table is laid out in
+A static matrix: 23 resources × 8 roles → a grant. The whole table is laid out in
 [docs/domain/roles-and-access.md](../domain/roles-and-access.md). Checked before any work is
 done, by `RequireResource` or `RequireRole`.
 
@@ -23,7 +23,7 @@ A `Scope`, which a repository turns into a WHERE predicate.
 |---|---|
 | `ALL` | every row |
 | `SCOPED` | rows assigned to them — for a collection owner, the projects and sites they own, plus a colleague's for a period of cover; for the administrator on `rights_request`, escalated grievances only |
-| `OWN` | rows they created, or that are about them — for `ticket` and `breach_ticket`, every staff role, since a respondent or a breach ticket's holder answers only the tickets addressed to them |
+| `OWN` | rows they created, or that are about them — for `ticket` and `breach_ticket`, every staff role and the temporary ticket holder, since a respondent or a breach ticket's holder answers only the tickets addressed to them |
 | `NONE` | no rows |
 
 **Never a filter applied after the fetch.** A row already in the response has
@@ -48,6 +48,15 @@ alike. `tests/security/test_breach_is_hidden.py` and the HTTP suite hold it.
 A breach ticket's holder (S3-08) is no exception: `breach_ticket` gives them
 their own ticket on `/breach-tickets`, scoped OWN in the `WHERE` clause, and
 the register still answers them 404.
+
+**The temporary ticket holder** (`breach_holder`, S3-09) holds exactly
+`ticket` OWN and `breach_ticket` OWN, and the personal routes every account
+has (profile, notifications, sessions). `RequireStaff` - the guard on routes
+any member of staff may call - excludes it, so everything else answers 403,
+and the register 404 like everyone's. It is not in `STAFF_ROLES`, the staff
+directory or any picker, and `POST /users` and the change-role route refuse it:
+the role is set and put back only by a breach ticket's grant
+([ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)).
 
 ## Where it lives
 

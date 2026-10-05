@@ -77,6 +77,8 @@ export function roleBlurb(role: string | null | undefined): string {
       return "Your projects and what each one needs from you before it can move forward.";
     case "admin":
       return "Invitations waiting, access problems, grievances about the DPO, and the processor and source registry.";
+    case "breach_holder":
+      return "The tickets the Privacy Office has asked you to answer.";
     default:
       return "What is waiting for you, and the state of the platform.";
   }

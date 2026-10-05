@@ -324,8 +324,9 @@ rights request's model ([ADR 0023](../decisions/0023-breach-tickets-and-breach-o
 [rights-requests.md](rights-requests.md#holders-and-tickets)). **Tickets** on a
 breach's page.
 
-- **Assign a ticket** to a member of staff, with what you are asking and an
-  optional **answer-by** date. Refused before the breach is recorded (409
+- **Assign a ticket** to a member of staff - or, choosing **Someone without a
+  console login**, to anyone internal named by an email (below) - with what you
+  are asking and an optional **answer-by** date. Refused before the breach is recorded (409
   `breach_not_recorded`); refused for anyone whose address is not on
   `BREACH_TICKET_EMAIL_DOMAINS` - internal staff only - without repeating the
   address; one ticket per person per breach (409 `ticket_exists`).
@@ -356,6 +357,47 @@ the DPO what holders wrote and returned. The DPO's **Needs you today** counts
 **Breach tickets returned** and **Breach tickets past their answer-by**, and
 every staff dashboard lists the breach tickets addressed to its reader.
 
+### Temporary logins
+
+Somebody without a console login can hold a ticket (S3-09, BD-04). The DPO
+gives a name, an email and optionally a mobile; the address must be on
+`BREACH_TICKET_EMAIL_DOMAINS` (422 otherwise, the address not repeated) and is
+looked up by its keyed hash. Active staff get an ordinary ticket. A data
+principal's account is given the role `breach_holder` while the grant lasts,
+its previous role kept on the grant; with no account at all, one is made -
+`pending`, `employee`, `breach_holder`, marked as made for this breach. Either
+way they are sent **Temporary console access for a breach ticket**: the reset
+link and a code, from the sign-in service like an invitation, naming no breach
+(BD-18). They set a password and sign in with an emailed code like all staff,
+and land on **My tasks**: their ticket, notifications and profile are all the
+console holds for them. The Tickets card marks their row **Temporary login**,
+with whether they have signed in yet, or that it has ended.
+
+Access ends on three triggers (BD-15): the **breach closes** (every grant on it
+ends in the closing transaction), the **DPO withdraws** that holder's ticket, or
+an **administrator ends it** from the register (**End temporary access**; never
+`end_staff_access`). Ending one grant ends only that one if they hold another
+on a different breach; otherwise an account made for the breach is switched
+off and one that existed goes back to the role it held (BD-16), the password
+is cleared, `person_type` is never touched, and every session is revoked after
+the commit. If an administrator has meanwhile given them a real role, it stays.
+**Reopening their ticket** grants access again with a new grant row and a new
+email; reopening a closed breach does not.
+
+### Colleagues
+
+A holder whose ticket is open - issued or returned - on an open breach can
+**Add a colleague** (BD-05, BD-14): a name, an email, an optional mobile, and a
+required note, sealed. The same domain check and three-way lookup apply. The
+colleague gets **their own ticket** on the breach, with `parent_ticket_id`
+pointing at the adder's, opening with the adder's note rather than the DPO's
+instruction, and can add colleagues in turn. The adder's answer is their own
+ticket whatever happened to the colleague's account, so it never says whether
+the address had one; somebody who already holds a ticket on the breach is a
+neutral 409 `colleague_not_added`. The DPO sees each colleague indented under
+the person who added them, and the bell says who added whom; additions are
+visible, not approved.
+
 ## Open and closed
 
 A breach is open or closed, and nothing else: the duties carry the rest. It
@@ -382,6 +424,7 @@ nothing about it can be recorded.
 | `breach_ticket` | One per person per breach: the holder, who assigned it, what it opened with (sealed), the answer-by date. Only the read markers change, by trigger (`cmp_breach_ticket_read_only`) |
 | `breach_ticket_event` | What happened to a ticket: returned (outcome, sealed summary), sent back, closed, withdrawn, reopened (each but close with a sealed reason). Append-only |
 | `breach_ticket_message` | The ticket's thread: office, holder or platform; sealed body and file name. Append-only |
+| `breach_temporary_access` | One grant of a breach-only login: whose, on which breach, through which ticket, whether the account was made for it, the role it held before, who granted it, and - once - when, by whom and why it ended (`breach_closed`, `ticket_withdrawn`, `account_deactivated`). One open grant per person per breach, by partial unique index; the end is written once and nothing else changes, by trigger; never deleted |
 | `breach_affected` | Each person listed, once per breach (`breach_affected_once`), with the revision that first listed them and what put them there - exports, assets or tables, never a value. Append-only |
 
 Every write takes the breach row first (`FOR UPDATE`), so two people recording
@@ -394,7 +437,7 @@ Every change writes an audit row against `breach`: `breach.recorded` (an
 incident logged - the key predates the incident-first order), `.determined`,
 `.confirmed` (recorded as a breach, with its BR), `.assessed`, `.cert_in_marked`, `.obligation_created`,
 `.obligation_completed`, `.obligation_not_applicable`,
-`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.obligation_reopened`, `.notice_drafted`, `.notice_edited`, `.notice_approved`, `.notice_sent` (with counts), `.closed`, `.reopened`. A breach ticket's events are against `breach_ticket`, with the holder as subject: `breach_ticket.assigned`, `.message`, `.returned` (with the outcome), `.sent_back`, `.closed`, `.withdrawn`, `.reopened`, `.file_read`; the administrator's trail names them by the breach reference only. Each person whose account a notice is written to gets `breach_notice.delivered` against her, naming the breach reference (the BR) and the version: that is her portal's notification, and the only breach event she is shown. The
+`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.obligation_reopened`, `.notice_drafted`, `.notice_edited`, `.notice_approved`, `.notice_sent` (with counts), `.closed`, `.reopened`. A breach ticket's events are against `breach_ticket`, with the holder as subject: `breach_ticket.assigned`, `.message`, `.returned` (with the outcome), `.sent_back`, `.closed`, `.withdrawn`, `.reopened`, `.file_read`, `.colleague_added` (with the adder's ticket's uuid); the administrator's trail names them by the breach reference only. A breach-only login's grant and end are against the account: `user.temporary_access_granted` and `user.temporary_access_ended`, with the breach reference and the cause, never a name or an address. Each person whose account a notice is written to gets `breach_notice.delivered` against her, naming the breach reference (the BR) and the version: that is her portal's notification, and the only breach event she is shown. The
 detail carries the reference, the outcome, which duty, a due time and that a
 reason was given - never the office's words, which are sealed on their rows
 ([ADR 0015](../decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md)).

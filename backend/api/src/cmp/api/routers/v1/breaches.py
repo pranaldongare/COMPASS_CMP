@@ -898,8 +898,15 @@ async def org_board_brief(breach_uuid: UUID, principal: BreachReader) -> dict[st
 
 
 class BreachTicketIn(Schema):
+    """Either a member of staff, by `user_uuid`, or - S3-09 - somebody named by
+    `email` (with `full_name`, and a `mobile` if known), who is given a
+    breach-only login if they have no console account."""
+
     #: An active member of staff, on one of BREACH_TICKET_EMAIL_DOMAINS.
-    user_uuid: UUID
+    user_uuid: UUID | None = None
+    full_name: Annotated[str, Field(max_length=200)] | None = None
+    email: Annotated[str, Field(max_length=320)] | None = None
+    mobile: Annotated[str, Field(max_length=32)] | None = None
     #: What they are asked to do. Sealed.
     instruction: Annotated[str, Field(min_length=1, max_length=20_000)]
     #: Optional date to answer by; shown to both sides.
@@ -965,6 +972,9 @@ class BreachTicketOut(Out):
     #: What the office may do now. None on a closed breach.
     moves: list[BreachTicketMoveOut]
     may_write: bool
+    #: The holder's breach-only login (S3-09): pending, active or ended. None
+    #: for a member of staff.
+    temporary_access: str | None
 
 
 class BreachTicketDetailOut(Out):
@@ -999,7 +1009,10 @@ async def assign_ticket(
         return await tickets.assign(
             conn,
             breach_uuid=str(breach_uuid),
-            user_uuid=str(body.user_uuid),
+            user_uuid=str(body.user_uuid) if body.user_uuid else None,
+            full_name=body.full_name,
+            email=body.email,
+            mobile=body.mobile,
             instruction=body.instruction,
             answer_by=body.answer_by,
             actor_id=principal.user_id,

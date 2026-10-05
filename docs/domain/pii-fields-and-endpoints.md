@@ -75,7 +75,7 @@ hash and no email is written
 rows from before that change stand as written, because the trail is
 hash-chained and cannot be rewritten.
 
-## 2. API endpoints that carry PII — 201 endpoints in 20 modules
+## 2. API endpoints that carry PII — 202 endpoints in 21 modules
 
 Every GET, POST, PUT, PATCH and DELETE whose request or response includes a
 personal field. *In* is what the caller sends (body, path and query); *out* is
@@ -224,7 +224,7 @@ these need no session; they are marked **public**.
 | POST | `/breaches/{breach_uuid}/obligations/{duty}/complete` | `reported_to` | `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name` |
 | GET | `/breaches/{breach_uuid}/org-board/brief` | — | `document` |
 | GET | `/breaches/{breach_uuid}/tickets` | — | `actor_name`, `added_by_name`, `assigned_by_name`, `holder_name`, `reason` |
-| POST | `/breaches/{breach_uuid}/tickets` | `instruction`, `user_uuid` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
+| POST | `/breaches/{breach_uuid}/tickets` | `email`, `full_name`, `instruction`, `mobile`, `user_uuid` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
 | GET | `/breaches/{breach_uuid}/tickets/{ticket_uuid}` | — | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
 | POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/close` | — | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
 | POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/messages` | `body`, `evidence` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
@@ -383,4 +383,10 @@ these need no session; they are marked **public**.
 | GET | `/breach-tickets/{ticket_uuid}` | — | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
 | POST | `/breach-tickets/{ticket_uuid}/messages` | `body`, `evidence` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
 | POST | `/breach-tickets/{ticket_uuid}/return` | `evidence` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
+
+### Breach_tickets — 1 endpoint
+
+| Method | Endpoint | PII in (request) | PII out (response) |
+|---|---|---|---|
+| POST | `/breach-tickets/{ticket_uuid}/colleagues` | `email`, `full_name`, `mobile` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
 

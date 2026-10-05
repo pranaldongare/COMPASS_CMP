@@ -30,9 +30,9 @@
 
 Get Asset.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `CollectionReader`.
@@ -44,9 +44,9 @@ Get Asset.
 
 One row per subject, bystanders included.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`.
 - **Route guard:** `CurrentUser`.
@@ -59,9 +59,9 @@ One row per subject, bystanders included.
 
 All collections, with their reconciliation gap.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `CollectionReader`.
@@ -73,9 +73,9 @@ All collections, with their reconciliation gap.
 
 Get Collection.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `CollectionReader`.
@@ -87,9 +87,9 @@ Get Collection.
 
 Collection Assets.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `CollectionReader`.
@@ -101,9 +101,9 @@ Collection Assets.
 
 Declared against mapped - the control that makes direct collection workable.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `CollectionReader`.
@@ -115,9 +115,9 @@ Declared against mapped - the control that makes direct collection workable.
 
 The disclosure register.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `ExportReader`.
@@ -129,9 +129,9 @@ The disclosure register.
 
 Get Export.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `ExportReader`.
@@ -143,9 +143,9 @@ Get Export.
 
 Download Export.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `ExportReader`.
@@ -157,9 +157,9 @@ Download Export.
 
 Who was in this file (s.11(1)(b)).
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `ExportReader`.
@@ -171,9 +171,9 @@ Who was in this file (s.11(1)(b)).
 
 List Imports.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| COND | COND | COND | COND | COND | COND | COND |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| COND | COND | COND | COND | COND | COND | COND | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`.
 - **Route guard:** `CurrentUser`.
@@ -185,9 +185,9 @@ List Imports.
 
 Create Import.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `ImportActor`.
@@ -200,9 +200,9 @@ Create Import.
 
 A manifest file to fill in.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `ImportActor`.
@@ -214,9 +214,9 @@ A manifest file to fill in.
 
 Dry run - nothing is written.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `ImportActor`.
@@ -229,9 +229,9 @@ Dry run - nothing is written.
 
 Get Import.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| COND | COND | COND | COND | COND | COND | COND |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| COND | COND | COND | COND | COND | COND | COND | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`.
 - **Route guard:** `CurrentUser`.
@@ -243,9 +243,9 @@ Get Import.
 
 Import Errors.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| COND | COND | COND | COND | COND | COND | COND |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| COND | COND | COND | COND | COND | COND | COND | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`.
 - **Route guard:** `CurrentUser`.
@@ -257,9 +257,9 @@ Import Errors.
 
 List Collections.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `CollectionReader`.
@@ -271,9 +271,9 @@ List Collections.
 
 List Exports.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `ExportReader`.
@@ -285,9 +285,9 @@ List Exports.
 
 Generate Export.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `ExportActor`.

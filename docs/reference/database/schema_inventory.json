@@ -1,6 +1,6 @@
 {
-  "commit": "b0adf6ef538aca743f5f1df1ba07ba05d9dcf00a",
-  "migration_head": "0040",
+  "commit": "0b8137dcaeebfb8cf22f302a62211024b0431059",
+  "migration_head": "0041",
   "migrations": [
     {
       "revision": "0001",
@@ -161,6 +161,10 @@
     {
       "revision": "0040",
       "source": "backend/api/migrations/versions/0040_breach_tickets.py"
+    },
+    {
+      "revision": "0041",
+      "source": "backend/api/migrations/versions/0041_breach_temporary_access.py"
     }
   ],
   "postgres_version": "16.15",
@@ -244,6 +248,11 @@
       "name": "breach_status_history",
       "kind": "r",
       "comment": null
+    },
+    {
+      "name": "breach_temporary_access",
+      "kind": "r",
+      "comment": "A breach-only login: one grant of the breach_holder role for one breach (S3-09, ADR 0023). Ends once; never deleted"
     },
     {
       "name": "breach_ticket",
@@ -1861,6 +1870,114 @@
       "not_null": true,
       "default_value": "now()",
       "comment": null
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "access_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_temporary_access_access_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "access_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "breach_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "user_id",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "ticket_id",
+      "position": 5,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "account_created",
+      "position": 6,
+      "type": "boolean",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "previous_role",
+      "position": 7,
+      "type": "user_role",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The role the account held before the grant, for an account that already existed; NULL for one made for the breach"
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "granted_by",
+      "position": 8,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "granted_at",
+      "position": 9,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "ended_at",
+      "position": 10,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "ended_by",
+      "position": 11,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "end_cause",
+      "position": 12,
+      "type": "character varying(24)",
+      "not_null": false,
+      "default_value": null,
+      "comment": "breach_closed, ticket_withdrawn or account_deactivated"
     },
     {
       "table_name": "breach_ticket",
@@ -7576,6 +7693,152 @@
       "initially_deferred": false
     },
     {
+      "table_name": "breach_temporary_access",
+      "name": "breach_temporary_access_access_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (access_uuid)",
+      "columns": [
+        "access_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "breach_temporary_access_breach_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (breach_id) REFERENCES breach(breach_id)",
+      "columns": [
+        "breach_id"
+      ],
+      "referenced_table": "breach",
+      "referenced_columns": [
+        "breach_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "breach_temporary_access_cause",
+      "kind": "c",
+      "definition": "CHECK (((end_cause IS NULL) OR ((end_cause)::text = ANY ((ARRAY['breach_closed'::character varying, 'ticket_withdrawn'::character varying, 'account_deactivated'::character varying])::text[]))))",
+      "columns": [
+        "end_cause"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "breach_temporary_access_ended",
+      "kind": "c",
+      "definition": "CHECK (((ended_at IS NULL) = (end_cause IS NULL)))",
+      "columns": [
+        "ended_at",
+        "end_cause"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "breach_temporary_access_ended_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (ended_by) REFERENCES auth_user(id)",
+      "columns": [
+        "ended_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "breach_temporary_access_granted_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (granted_by) REFERENCES auth_user(id)",
+      "columns": [
+        "granted_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "breach_temporary_access_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (access_id)",
+      "columns": [
+        "access_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "breach_temporary_access_ticket_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (ticket_id) REFERENCES breach_ticket(ticket_id)",
+      "columns": [
+        "ticket_id"
+      ],
+      "referenced_table": "breach_ticket",
+      "referenced_columns": [
+        "ticket_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "breach_temporary_access_user_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth_user(id)",
+      "columns": [
+        "user_id"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "breach_ticket",
       "name": "breach_ticket_assigned_by_fkey",
       "kind": "f",
@@ -11620,6 +11883,26 @@
       "definition": "CREATE INDEX idx_breach_status_history ON public.breach_status_history USING btree (breach_id, history_id)"
     },
     {
+      "table_name": "breach_temporary_access",
+      "name": "breach_temporary_access_access_uuid_key",
+      "definition": "CREATE UNIQUE INDEX breach_temporary_access_access_uuid_key ON public.breach_temporary_access USING btree (access_uuid)"
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "breach_temporary_access_open",
+      "definition": "CREATE UNIQUE INDEX breach_temporary_access_open ON public.breach_temporary_access USING btree (breach_id, user_id) WHERE (ended_at IS NULL)"
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "breach_temporary_access_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_temporary_access_pkey ON public.breach_temporary_access USING btree (access_id)"
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "idx_breach_temporary_access_user",
+      "definition": "CREATE INDEX idx_breach_temporary_access_user ON public.breach_temporary_access USING btree (user_id)"
+    },
+    {
       "table_name": "breach_ticket",
       "name": "breach_ticket_once",
       "definition": "CREATE UNIQUE INDEX breach_ticket_once ON public.breach_ticket USING btree (breach_id, holder_user_id)"
@@ -12682,7 +12965,8 @@
         "admin",
         "data_subject",
         "dco_admin",
-        "rco"
+        "rco",
+        "breach_holder"
       ]
     },
     {
@@ -12780,6 +13064,11 @@
       "table_name": "breach_status_history",
       "name": "trg_breach_status_history_append_only",
       "definition": "CREATE TRIGGER trg_breach_status_history_append_only BEFORE DELETE OR UPDATE ON public.breach_status_history FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "trg_breach_temporary_access_end_once",
+      "definition": "CREATE TRIGGER trg_breach_temporary_access_end_once BEFORE DELETE OR UPDATE ON public.breach_temporary_access FOR EACH ROW EXECUTE FUNCTION cmp_breach_temporary_access_end_once()"
     },
     {
       "table_name": "breach_ticket",
@@ -12989,6 +13278,9 @@
       "name": "breach_status_history_history_id_seq"
     },
     {
+      "name": "breach_temporary_access_access_id_seq"
+    },
+    {
       "name": "breach_ticket_event_event_id_seq"
     },
     {
@@ -13117,6 +13409,9 @@
       "name": "cmp_breach_status_only"
     },
     {
+      "name": "cmp_breach_temporary_access_end_once"
+    },
+    {
       "name": "cmp_breach_ticket_read_only"
     },
     {
@@ -13178,13 +13473,13 @@
     }
   ],
   "counts": {
-    "application_tables": 49,
+    "application_tables": 50,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 605,
-    "foreign_keys": 138,
+    "table_columns": 617,
+    "foreign_keys": 143,
     "enums": 39,
-    "triggers": 45,
-    "checks": 78
+    "triggers": 46,
+    "checks": 80
   }
 }

@@ -44,9 +44,9 @@ An incident is logged first (`POST /breaches`); the first validation of *yes* re
 
 Every incident and breach, open first.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachReader`.
@@ -58,9 +58,9 @@ Every incident and breach, open first.
 
 Log an incident as it was noticed.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.
@@ -72,9 +72,9 @@ Log an incident as it was noticed.
 
 One incident or breach, with every duty.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachReader`.
@@ -86,9 +86,9 @@ One incident or breach, with every duty.
 
 Validate: is it a personal data breach? The first yes records it.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.
@@ -100,9 +100,9 @@ Validate: is it a personal data breach? The first yes records it.
 
 Every revision of the assessment, newest first.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachReader`.
@@ -114,9 +114,9 @@ Every revision of the assessment, newest first.
 
 Revise what is known; the previous revision stays.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.
@@ -128,9 +128,9 @@ Revise what is known; the previous revision stays.
 
 Mark as a reportable cyber incident: CERT-In in six hours from detection.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.
@@ -142,9 +142,9 @@ Mark as a reportable cyber incident: CERT-In in six hours from detection.
 
 Record a submission made, with the regulator's reference - or, for the organisation's board, the report made and to whom.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.
@@ -156,9 +156,9 @@ Record a submission made, with the regulator's reference - or, for the organisat
 
 Record the longer period the Board allowed for the detailed report.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.
@@ -170,9 +170,9 @@ Record the longer period the Board allowed for the detailed report.
 
 Whether it may close, and what stands in the way.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachReader`.
@@ -184,9 +184,9 @@ Whether it may close, and what stands in the way.
 
 Close or reopen a breach.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.
@@ -198,9 +198,9 @@ Close or reopen a breach.
 
 Who the breach touched, as confirmed, with every revision.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachReader`.
@@ -212,9 +212,9 @@ Who the breach touched, as confirmed, with every revision.
 
 What the records show for these scopes, before confirming.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachReader`.
@@ -226,9 +226,9 @@ What the records show for these scopes, before confirming.
 
 Every version of the notice, and the account of who received which.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachReader`.
@@ -240,9 +240,9 @@ Every version of the notice, and the account of who received which.
 
 Start the next version of the notice, as a draft.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.
@@ -254,9 +254,9 @@ Start the next version of the notice, as a draft.
 
 Edit a draft notice.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.
@@ -268,9 +268,9 @@ Edit a draft notice.
 
 Approve the words; refused while any of the five is empty.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.
@@ -282,9 +282,9 @@ Approve the words; refused while any of the five is empty.
 
 Send the approved notice to everyone listed who lacks it; never twice, never before the breach is recorded.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.
@@ -296,9 +296,9 @@ Send the approved notice to everyone listed who lacks it; never twice, never bef
 
 Draft the Board's initial intimation (Rule 7(2)(a)) from the register.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachReader`.
@@ -310,9 +310,9 @@ Draft the Board's initial intimation (Rule 7(2)(a)) from the register.
 
 Draft the Board's detailed report (Rule 7(2)(b)), all six items.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachReader`.
@@ -324,9 +324,9 @@ Draft the Board's detailed report (Rule 7(2)(b)), all six items.
 
 Confirm who the breach touched: a new revision, adding only the newly found.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.
@@ -338,9 +338,9 @@ Confirm who the breach touched: a new revision, adding only the newly found.
 
 Draft the brief for the organisation's board from the register.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachReader`.
@@ -352,9 +352,9 @@ Draft the brief for the organisation's board from the register.
 
 Every ticket on a breach: holder, state, answer-by, unread, who added whom.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachReader`.
@@ -366,23 +366,23 @@ Every ticket on a breach: holder, state, answer-by, unread, who added whom.
 
 Assign a ticket to a member of staff; only on a recorded breach.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.
 - **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
-- **Rules:** The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08) Refused before the breach is recorded (409 `breach_not_recorded`); the assignee must be active staff whose address is on `BREACH_TICKET_EMAIL_DOMAINS` (422, the address not echoed); one ticket per person per breach (409 `ticket_exists`).
+- **Rules:** The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08) Refused before the breach is recorded (409 `breach_not_recorded`); the assignee is active staff picked by `user_uuid`, or - S3-09 - anybody named by `full_name`, `email` and optionally `mobile`, whose address must be on `BREACH_TICKET_EMAIL_DOMAINS` (422, the address not echoed); somebody without a console login is given a breach-only login (`breach_holder`) for this breach; one ticket per person per breach (409 `ticket_exists`).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breach_tickets.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/tickets.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## GET /breaches/{breach_uuid}/tickets/{ticket_uuid}
 
 One ticket, its thread, and the moves the server allows.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachReader`.
@@ -394,9 +394,9 @@ One ticket, its thread, and the moves the server allows.
 
 Write to the holder on the ticket, with a file if it helps.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.
@@ -408,9 +408,9 @@ Write to the holder on the ticket, with a file if it helps.
 
 Download a file attached to a message on the ticket.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachReader`.
@@ -422,9 +422,9 @@ Download a file attached to a message on the ticket.
 
 Send a returned ticket back to its holder, saying why.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.
@@ -436,9 +436,9 @@ Send a returned ticket back to its holder, saying why.
 
 Close a returned ticket: the DPO's alone.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.
@@ -450,9 +450,9 @@ Close a returned ticket: the DPO's alone.
 
 Withdraw a ticket, saying why.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.
@@ -464,9 +464,9 @@ Withdraw a ticket, saying why.
 
 Reopen a closed or withdrawn ticket, saying why.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
-| --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`; everyone else 404.
 - **Route guard:** `BreachWriter`.

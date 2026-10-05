@@ -171,9 +171,17 @@ export function listBreachTickets(uuid: Uuid): Promise<BreachTicket[]> {
   return apiGet<BreachTicket[]>(tickets(uuid));
 }
 
+/** Somebody named by an address rather than picked (S3-09): the server finds
+ *  their account, or makes a breach-only login for them. */
+export interface PersonByEmail {
+  full_name: string;
+  email: string;
+  mobile?: string | null;
+}
+
 export function assignBreachTicket(
   uuid: Uuid,
-  body: { user_uuid: Uuid; instruction: string; answer_by?: string | null },
+  body: ({ user_uuid: Uuid } | PersonByEmail) & { instruction: string; answer_by?: string | null },
 ): Promise<BreachTicketDetail> {
   return apiPost<BreachTicketDetail>(tickets(uuid), body);
 }
@@ -228,6 +236,16 @@ export function returnBreachTicket(
   form.set("outcome", input.outcome);
   if (input.evidence) form.set("evidence", input.evidence);
   return apiPost<MyBreachTicketDetail>(`/breach-tickets/${ticketUuid}/return`, form);
+}
+
+/** A holder brings in a colleague, who gets their own ticket (S3-09). The
+ *  answer is the adder's own ticket, whatever happened to the colleague's
+ *  account. */
+export function addBreachColleague(
+  ticketUuid: Uuid,
+  body: PersonByEmail & { note: string },
+): Promise<MyBreachTicketDetail> {
+  return apiPost<MyBreachTicketDetail>(`/breach-tickets/${ticketUuid}/colleagues`, body);
 }
 
 /** Where a holder downloads a file on their breach ticket's thread. */

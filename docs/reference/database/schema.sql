@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict hbIvSuVESX3zC9y1H0RXBfLcoILTCz4NZI1tg3BiQORft7hZ5xsgAYZTB2yQQDw
+\restrict 2cEHvMza19Z0qUhYvepBqjLt8LsjdLhYi8ICGLtt65rVh4dcCo2fPopEhQVFNan
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -509,7 +509,8 @@ CREATE TYPE public.user_role AS ENUM (
     'admin',
     'data_subject',
     'dco_admin',
-    'rco'
+    'rco',
+    'breach_holder'
 );
 
 
@@ -712,6 +713,35 @@ BEGIN
      OR NEW.recorded_by IS DISTINCT FROM OLD.recorded_by
      OR NEW.recorded_at IS DISTINCT FROM OLD.recorded_at THEN
     RAISE EXCEPTION 'only the status of a breach may change' USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: cmp_breach_temporary_access_end_once(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_breach_temporary_access_end_once() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    RAISE EXCEPTION 'temporary access is never deleted' USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF NEW.access_id IS DISTINCT FROM OLD.access_id
+     OR NEW.access_uuid IS DISTINCT FROM OLD.access_uuid
+     OR NEW.breach_id IS DISTINCT FROM OLD.breach_id
+     OR NEW.user_id IS DISTINCT FROM OLD.user_id
+     OR NEW.ticket_id IS DISTINCT FROM OLD.ticket_id
+     OR NEW.account_created IS DISTINCT FROM OLD.account_created
+     OR NEW.previous_role IS DISTINCT FROM OLD.previous_role
+     OR NEW.granted_by IS DISTINCT FROM OLD.granted_by
+     OR NEW.granted_at IS DISTINCT FROM OLD.granted_at
+     OR OLD.ended_at IS NOT NULL THEN
+    RAISE EXCEPTION 'a grant of temporary access is written once and ended once'
+      USING ERRCODE = 'restrict_violation';
   END IF;
   RETURN NEW;
 END;
@@ -1983,6 +2013,69 @@ CREATE SEQUENCE public.breach_status_history_history_id_seq
 --
 
 ALTER SEQUENCE public.breach_status_history_history_id_seq OWNED BY public.breach_status_history.history_id;
+
+
+--
+-- Name: breach_temporary_access; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_temporary_access (
+    access_id integer NOT NULL,
+    access_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    breach_id integer NOT NULL,
+    user_id integer NOT NULL,
+    ticket_id integer NOT NULL,
+    account_created boolean NOT NULL,
+    previous_role public.user_role,
+    granted_by integer NOT NULL,
+    granted_at timestamp with time zone DEFAULT now() NOT NULL,
+    ended_at timestamp with time zone,
+    ended_by integer,
+    end_cause character varying(24),
+    CONSTRAINT breach_temporary_access_cause CHECK (((end_cause IS NULL) OR ((end_cause)::text = ANY ((ARRAY['breach_closed'::character varying, 'ticket_withdrawn'::character varying, 'account_deactivated'::character varying])::text[])))),
+    CONSTRAINT breach_temporary_access_ended CHECK (((ended_at IS NULL) = (end_cause IS NULL)))
+);
+
+
+--
+-- Name: TABLE breach_temporary_access; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.breach_temporary_access IS 'A breach-only login: one grant of the breach_holder role for one breach (S3-09, ADR 0023). Ends once; never deleted';
+
+
+--
+-- Name: COLUMN breach_temporary_access.previous_role; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_temporary_access.previous_role IS 'The role the account held before the grant, for an account that already existed; NULL for one made for the breach';
+
+
+--
+-- Name: COLUMN breach_temporary_access.end_cause; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_temporary_access.end_cause IS 'breach_closed, ticket_withdrawn or account_deactivated';
+
+
+--
+-- Name: breach_temporary_access_access_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_temporary_access_access_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_temporary_access_access_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_temporary_access_access_id_seq OWNED BY public.breach_temporary_access.access_id;
 
 
 --
@@ -3841,6 +3934,13 @@ ALTER TABLE ONLY public.breach_status_history ALTER COLUMN history_id SET DEFAUL
 
 
 --
+-- Name: breach_temporary_access access_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_temporary_access ALTER COLUMN access_id SET DEFAULT nextval('public.breach_temporary_access_access_id_seq'::regclass);
+
+
+--
 -- Name: breach_ticket ticket_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4371,6 +4471,22 @@ ALTER TABLE ONLY public.breach
 
 ALTER TABLE ONLY public.breach_status_history
     ADD CONSTRAINT breach_status_history_pkey PRIMARY KEY (history_id);
+
+
+--
+-- Name: breach_temporary_access breach_temporary_access_access_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_temporary_access
+    ADD CONSTRAINT breach_temporary_access_access_uuid_key UNIQUE (access_uuid);
+
+
+--
+-- Name: breach_temporary_access breach_temporary_access_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_temporary_access
+    ADD CONSTRAINT breach_temporary_access_pkey PRIMARY KEY (access_id);
 
 
 --
@@ -5041,6 +5157,13 @@ CREATE UNIQUE INDEX auth_user_username_hash_key ON public.auth_user USING btree 
 
 
 --
+-- Name: breach_temporary_access_open; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX breach_temporary_access_open ON public.breach_temporary_access USING btree (breach_id, user_id) WHERE (ended_at IS NULL);
+
+
+--
 -- Name: idx_approval_project; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5178,6 +5301,13 @@ CREATE INDEX idx_breach_obligation_event ON public.breach_obligation_event USING
 --
 
 CREATE INDEX idx_breach_status_history ON public.breach_status_history USING btree (breach_id, history_id);
+
+
+--
+-- Name: idx_breach_temporary_access_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_breach_temporary_access_user ON public.breach_temporary_access USING btree (user_id);
 
 
 --
@@ -5734,6 +5864,13 @@ CREATE TRIGGER trg_breach_status_only BEFORE DELETE OR UPDATE ON public.breach F
 
 
 --
+-- Name: breach_temporary_access trg_breach_temporary_access_end_once; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_temporary_access_end_once BEFORE DELETE OR UPDATE ON public.breach_temporary_access FOR EACH ROW EXECUTE FUNCTION public.cmp_breach_temporary_access_end_once();
+
+
+--
 -- Name: breach_ticket_event trg_breach_ticket_event_append_only; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -6190,6 +6327,46 @@ ALTER TABLE ONLY public.breach_status_history
 
 ALTER TABLE ONLY public.breach_status_history
     ADD CONSTRAINT breach_status_history_changed_by_fkey FOREIGN KEY (changed_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_temporary_access breach_temporary_access_breach_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_temporary_access
+    ADD CONSTRAINT breach_temporary_access_breach_id_fkey FOREIGN KEY (breach_id) REFERENCES public.breach(breach_id);
+
+
+--
+-- Name: breach_temporary_access breach_temporary_access_ended_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_temporary_access
+    ADD CONSTRAINT breach_temporary_access_ended_by_fkey FOREIGN KEY (ended_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_temporary_access breach_temporary_access_granted_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_temporary_access
+    ADD CONSTRAINT breach_temporary_access_granted_by_fkey FOREIGN KEY (granted_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_temporary_access breach_temporary_access_ticket_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_temporary_access
+    ADD CONSTRAINT breach_temporary_access_ticket_id_fkey FOREIGN KEY (ticket_id) REFERENCES public.breach_ticket(ticket_id);
+
+
+--
+-- Name: breach_temporary_access breach_temporary_access_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_temporary_access
+    ADD CONSTRAINT breach_temporary_access_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.auth_user(id);
 
 
 --
@@ -7044,5 +7221,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict hbIvSuVESX3zC9y1H0RXBfLcoILTCz4NZI1tg3BiQORft7hZ5xsgAYZTB2yQQDw
+\unrestrict 2cEHvMza19Z0qUhYvepBqjLt8LsjdLhYi8ICGLtt65rVh4dcCo2fPopEhQVFNan
 

@@ -253,8 +253,9 @@ export function RequireAuth({
           role="status"
           className="border-b border-border px-4 py-2 text-center text-xs text-text-muted"
         >
-          You are signed in with your staff account, as a data principal. Only your own
-          consents, requests and rights are here; your console is a separate site.
+          {me.account_role === "breach_holder"
+            ? "You are signed in as a data principal. Only your own consents, requests and rights are here; your breach ticket is on the console, a separate site."
+            : "You are signed in with your staff account, as a data principal. Only your own consents, requests and rights are here; your console is a separate site."}
         </div>
       )}
       {children}

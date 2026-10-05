@@ -43,5 +43,5 @@
 | `s7_clause` | `s7_a_voluntary`, `s7_i_employment`, `s7_other` |
 | `source_role` | `identity`, `collection`, `both` |
 | `subject_role` | `consented`, `incidental`, `unidentified` |
-| `user_role` | `dpo`, `dco`, `rnd_user`, `admin`, `data_subject`, `dco_admin`, `rco` |
+| `user_role` | `dpo`, `dco`, `rnd_user`, `admin`, `data_subject`, `dco_admin`, `rco`, `breach_holder` |
 | `user_status` | `pending`, `active`, `suspended`, `deactivated` |

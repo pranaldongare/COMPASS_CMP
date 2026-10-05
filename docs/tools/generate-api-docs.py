@@ -378,7 +378,7 @@ def generate_readme(spec: dict[str, Any], modules: list[tuple[str, int]]) -> Non
         "",
         "## Roles",
         "",
-        "See [`roles/README.md`](roles/README.md) for all seven roles, their read/write permissions, row scope, navigation, and enforcement notes.",
+        "See [`roles/README.md`](roles/README.md) for all eight roles, their read/write permissions, row scope, navigation, and enforcement notes.",
         "",
         "## Source and regeneration",
         "",
@@ -397,7 +397,7 @@ def main() -> None:
     modules = generate_modules(spec)
     generate_roles()
     generate_readme(spec, modules)
-    print(f"Generated {len(modules)} modules and 7 role documents.")
+    print(f"Generated {len(modules)} modules and {len(list((OUT / 'roles').glob('*.md'))) - 1} role documents.")
 
 
 if __name__ == "__main__":

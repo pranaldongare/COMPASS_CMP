@@ -250,10 +250,11 @@ async def deactivate(user_uuid: UUID, principal: RequireAdmin) -> dict[str, Any]
         user, kept = await users.deactivate(conn, str(user_uuid), actor_id=principal.user_id)
     revoked = await sessions.revoke_all(user["id"])
     if kept:
+        what = "Temporary access" if user["role"] == Role.BREACH_HOLDER.value else "Staff access"
         return {
             "ok": True,
             "message": (
-                f"Staff access ended. {user['full_name']} keeps their account as a data "
+                f"{what} ended. {user['full_name']} keeps their account as a data "
                 f"principal. {revoked} session(s) terminated."
             ),
         }

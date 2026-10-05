@@ -7,9 +7,12 @@ code, [known gaps](06-known-gaps.md) says so.
 
 ## Two populations
 
-There are seven roles (`core/permissions.py`): `dpo`, `dco`, `dco_admin`,
-`rco`, `rnd_user`, `admin` - the **staff** - and `data_subject`, the
-**data principals**. Staff sign in to the console with a password and a
+There are eight roles (`core/permissions.py`): `dpo`, `dco`, `dco_admin`,
+`rco`, `rnd_user`, `admin` - the **staff** - `data_subject`, the
+**data principals**, and `breach_holder`, a breach-only login that signs in
+like staff but is not staff: `RequireStaff` excludes it, MFA is always
+required for it, and it reaches only the tickets addressed to it (S3-09,
+ADR 0023). Staff sign in to the console with a password and a
 second factor. Data principals have no password; they prove a contact with a
 one-time code.
 
@@ -119,7 +122,7 @@ see [known gaps](06-known-gaps.md) - are not checked.
 
 ## Authorisation
 
-**The matrix.** `core/permissions.py` `MATRIX` maps 22 resources × 7 roles
+**The matrix.** `core/permissions.py` `MATRIX` maps 23 resources × 8 roles
 to a `Grant(scope, write)`. A resource or role missing from a row is denied.
 
 **Scopes** say *which rows*:

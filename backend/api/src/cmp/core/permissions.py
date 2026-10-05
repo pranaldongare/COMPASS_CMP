@@ -27,7 +27,7 @@ from typing import Final
 
 
 class Role(StrEnum):
-    """The seven roles. Values match the `user_role` PostgreSQL enum exactly.
+    """The eight roles. Values match the `user_role` PostgreSQL enum exactly.
 
     Two of them exist because collection has two shapes:
 
@@ -48,6 +48,11 @@ class Role(StrEnum):
     RND_USER = "rnd_user"
     ADMIN = "admin"
     DATA_SUBJECT = "data_subject"
+    #: A breach-only login (S3-09, ADR 0023): somebody without a console
+    #: account given one to answer a breach ticket. Reaches its own tickets and
+    #: the personal pages, nothing else; granted only by a breach ticket, never
+    #: by hand, and taken away when the breach closes.
+    BREACH_HOLDER = "breach_holder"
 
 
 #: What each role is called in a sentence written to a person.
@@ -62,6 +67,7 @@ ROLE_TITLES: Final[dict[str, str]] = {
     Role.RND_USER.value: "R&D User",
     Role.ADMIN.value: "Administrator",
     Role.DATA_SUBJECT.value: "Data Subject",
+    Role.BREACH_HOLDER.value: "Temporary ticket holder",
 }
 
 
@@ -320,6 +326,9 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.DCO_ADMIN: Grant(Scope.OWN, write=True),
         Role.RCO: Grant(Scope.OWN, write=True),
         Role.RND_USER: Grant(Scope.OWN, write=True),
+        # BD-19: so the shared Tickets page needs no role check. A temporary
+        # holder is in no staff picker, so no rights ticket is ever theirs.
+        Role.BREACH_HOLDER: Grant(Scope.OWN, write=True),
     },
     # A breach ticket addressed to me (S3-08): the same rows as `ticket`. OWN
     # is "the holder is this account", in the WHERE clause; anything else is
@@ -331,6 +340,8 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.DCO_ADMIN: Grant(Scope.OWN, write=True),
         Role.RCO: Grant(Scope.OWN, write=True),
         Role.RND_USER: Grant(Scope.OWN, write=True),
+        # The temporary role's whole reason to exist (S3-09).
+        Role.BREACH_HOLDER: Grant(Scope.OWN, write=True),
     },
 }
 
@@ -481,6 +492,9 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     ),
     # Her own requests and her nomination, on her own pages.
     Role.DATA_SUBJECT: ("consents", "requests", "notifications", "profile"),
+    # Its tickets and its own account: nothing else (S3-09). It lands on
+    # Tickets, which is first.
+    Role.BREACH_HOLDER: PERSONAL,
 }
 
 
