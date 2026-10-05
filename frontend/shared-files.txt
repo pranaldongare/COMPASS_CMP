@@ -1,0 +1,110 @@
+# Files that are the same in both portals, and must stay the same.
+#
+# The two applications are separate on purpose - a data principal's portal and
+# a staff console have different audiences, navigation and policy - but these
+# files are their common ground: the API client and its errors, the key
+# service walker, formatting, security helpers, UI primitives, shared types.
+# 93 of them were byte-identical when this list was made (review 2026-10-01,
+# ARCH-4), and a fix to one copy alone is how they drift: a security or
+# accessibility fix that lands in one portal and not the other.
+#
+# `src/shared-files.test.ts` in each portal fails when a listed file differs
+# between them. Change both copies in the same commit. To let a file diverge
+# deliberately, take it off this list in that commit and say why.
+#
+# Moving them into one package both portals import is the better end state; it
+# changes how both apps install and build, and CI, so it waits on that decision.
+src/app/(app)/notifications/page.tsx
+src/app/dkms/decrypt/route.ts
+src/app/favicon.ico
+src/app/globals.css
+src/app/help/layout.tsx
+src/app/layout.tsx
+src/components/data-display/activity-feed.tsx
+src/components/feedback/error-boundary.tsx
+src/components/forms/index.tsx
+src/components/layout/auth-layout.tsx
+src/components/layout/use-drawer.test.tsx
+src/components/layout/use-drawer.ts
+src/components/layout/user-menu.tsx
+src/components/security/can.tsx
+src/components/security/security.test.tsx
+src/components/ui/charts.tsx
+src/components/ui/collapsible.tsx
+src/components/ui/dialog.tsx
+src/components/ui/graphics.tsx
+src/components/ui/menu.tsx
+src/components/ui/primitives.tsx
+src/components/ui/structure.test.tsx
+src/components/ui/tabs.tsx
+src/features/account/components/name-editor.test.tsx
+src/features/account/components/sessions-card.tsx
+src/features/account/index.ts
+src/features/account/queries.ts
+src/features/auth/index.ts
+src/features/dev/dev-code-popup.tsx
+src/features/dev/index.ts
+src/features/dkms/dkms.test.tsx
+src/features/dkms/index.ts
+src/features/dkms/use-decrypted.ts
+src/features/help/components/contact-panel.tsx
+src/features/help/components/help-header.tsx
+src/features/help/components/help-manual.test.tsx
+src/features/help/components/help-manual.tsx
+src/features/help/content.test.ts
+src/features/help/queries.ts
+src/features/help/types.ts
+src/features/meta/api.ts
+src/features/meta/index.ts
+src/features/meta/queries.ts
+src/features/notifications/api.ts
+src/features/notifications/index.ts
+src/features/notifications/queries.ts
+src/features/rights/components/clock-column.tsx
+src/features/rights/components/path.test.tsx
+src/features/rights/index.ts
+src/lib/api/client.test.ts
+src/lib/api/index.ts
+src/lib/browser/browser.test.ts
+src/lib/browser/index.ts
+src/lib/config/deployment.test.ts
+src/lib/config/deployment.ts
+src/lib/dev/dev-client.ts
+src/lib/dkms/api.ts
+src/lib/dkms/deep.test.ts
+src/lib/dkms/deep.ts
+src/lib/dkms/field-types.ts
+src/lib/dkms/index.ts
+src/lib/errors/api-error.test.ts
+src/lib/errors/api-error.ts
+src/lib/errors/index.ts
+src/lib/format/format.test.ts
+src/lib/format/index.ts
+src/lib/query/options.ts
+src/lib/security/index.ts
+src/lib/security/sanitize.ts
+src/lib/security/session-timeout.ts
+src/lib/security/use-hydrated.ts
+src/providers/index.tsx
+src/providers/query-provider.tsx
+src/providers/theme-provider.tsx
+src/proxy.ts
+src/schemas/contacts.ts
+src/schemas/files.ts
+src/schemas/index.ts
+src/schemas/security.ts
+src/shared-files.test.ts
+src/styles/base.css
+src/styles/bridge.css
+src/styles/print.css
+src/styles/themes.css
+src/styles/tokens.css
+src/test/render.tsx
+src/test/server.ts
+src/types/api-schema.d.ts
+src/types/consent.ts
+src/types/enums.ts
+src/types/envelope.ts
+src/types/exchange.ts
+src/types/meta.ts
+src/types/primitives.ts

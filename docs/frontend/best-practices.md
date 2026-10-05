@@ -692,14 +692,24 @@ portal and a secret scan over the whole repository.
 **The rule.** Shared UI, types and config as packages with enforced
 dependency boundaries, when there is more than one application.
 
-**Here.** Two applications, and 65 files byte-identical between them
-(`lib/api`, `lib/errors`, `lib/dkms`, `lib/query`, most of `components/ui`,
-the error boundary, the MSW setup) plus 37 near-duplicates
-([proposed-repository-structure.md](../architecture/proposed-repository-structure.md)).
-They are maintained by copying, and the DKMS work this month had to be done
-twice.
+**Here.** Two applications, and 93 files byte-identical between them
+(`lib/api`, `lib/errors`, `lib/dkms`, `lib/format`, most of `components/ui`,
+the drawer hook, the error boundary, the MSW setup, shared types) plus 52 that
+share a path and have drifted (October 2026, review ARCH-4;
+[proposed-repository-structure.md](../architecture/proposed-repository-structure.md)).
+They are maintained by copying, and the DKMS work had to be done twice.
 
-**Open — the next structural step.** `frontend/shared/` as a workspace
+**Held together until they are one.** `frontend/shared-files.txt` lists the
+identical files, and `src/shared-files.test.ts` in each portal fails when one
+of them changes in one portal and not the other - so a security or
+accessibility fix cannot land in half the product unnoticed. Change both
+copies in one commit, or take the file off the list in that commit and say
+why it now differs.
+
+**Open — the next structural step, and a tooling decision.** It changes how
+both apps install (one lockfile instead of two), how they build
+(`transpilePackages`) and the CI jobs, so it waits on the engineering lead.
+`frontend/shared/` as a workspace
 package holding the identical files once, each portal importing
 `@compass/shared/*`; the near-duplicates (`config`, `app-shell`,
 `auth-provider`) parameterised rather than forked. Turborepo is not needed
