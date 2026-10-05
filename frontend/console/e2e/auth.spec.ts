@@ -229,6 +229,14 @@ test.describe("session cookie", () => {
     // Through the account menu in the header, which every screen size shows.
     // Sign out is also at the foot of the sidebar, but on a phone the sidebar
     // is a closed drawer, which is why this test once failed on mobile only.
+    // In a development build the code popup can still be up over the header
+    // on a phone - dismiss it first, as a person would.
+    const devCodes = page.getByRole("region", { name: "Development one-time codes" });
+    if (await devCodes.isVisible().catch(() => false)) {
+      for (const dismiss of await devCodes.getByRole("button", { name: "Dismiss" }).all()) {
+        await dismiss.click();
+      }
+    }
     await page.getByRole("button", { name: /^account menu for/i }).click();
     await page.getByRole("menuitem", { name: /^sign out$/i }).click();
     await expect(page).toHaveURL(/\/sign-in/, { timeout: 10_000 });
