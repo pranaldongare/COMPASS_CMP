@@ -163,7 +163,8 @@ async def export_lines(conn: Conn, export_id: int) -> list[Row]:
         JOIN auth_user u        ON u.id = el.auth_user_id
         JOIN consent_artefact ca ON ca.consent_id = el.consent_id
         WHERE el.export_id = %s
-        ORDER BY u.full_name
+        -- The order the file was written in; the name is sealed and cannot sort.
+        ORDER BY el.line_id
         """,
         (export_id,),
     )
@@ -253,7 +254,8 @@ async def project_consents(
                   s.processor_id, dp.legal_name, dp.location_country,
                   cl.link_uuid, cl.status, cl.expires_at, cl.token_sealed
         HAVING ca.is_withdrawal OR count(*) FILTER (WHERE g.granted) > 0
-         ORDER BY u.full_name, ca.affirmative_action_at
+         -- Not by name: the name is sealed. The service sorts once it is open.
+         ORDER BY u.id, ca.affirmative_action_at
         """,
         [project_id, *params],
     )
@@ -308,7 +310,8 @@ async def consents_in_export(conn: Conn, export_id: int) -> list[Row]:
                   ca.is_withdrawal, ca.notice_content_hash, n.notice_code, n.version,
                   s.site_label, ds.source_code,
                   cl.link_uuid, cl.status, cl.expires_at, cl.token_sealed
-         ORDER BY u.full_name, ca.affirmative_action_at
+         -- Not by name: the name is sealed. The service sorts once it is open.
+         ORDER BY u.id, ca.affirmative_action_at
         """,
         (export_id,),
     )
@@ -338,7 +341,8 @@ async def consented_subjects(conn: Conn, *, project_id: int, site_id: int) -> li
                  u.person_type, ca.consent_id, ca.consent_uuid, ca.affirmative_action_at,
                  ca.notice_content_hash, n.notice_uuid, n.notice_code, n.version
         HAVING count(*) FILTER (WHERE g.granted) > 0
-        ORDER BY u.full_name
+        -- Not by name: the name is sealed.
+        ORDER BY u.id
         """,
         (project_id, site_id),
     )

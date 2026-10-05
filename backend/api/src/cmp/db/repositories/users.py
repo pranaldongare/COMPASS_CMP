@@ -565,7 +565,9 @@ async def collection_owners(conn: Conn) -> list[Row]:
         """SELECT u.uuid, u.full_name, u.email, u.role
            FROM auth_user u
            WHERE u.role IN ('dco', 'rco') AND u.status = 'active'
-           ORDER BY u.role, u.full_name""",
+           -- Not by name: it is sealed, and would sort the ciphertext. The
+           -- console puts the opened names in order.
+           ORDER BY u.role, u.id""",
     )
 
 
@@ -581,7 +583,8 @@ async def staff_directory(conn: Conn) -> list[Row]:
         """SELECT u.uuid, u.full_name, u.email, u.role
            FROM auth_user u
            WHERE u.role <> 'data_subject' AND u.status = 'active'
-           ORDER BY u.full_name""",
+           -- Not by name: it is sealed. The console sorts the opened names.
+           ORDER BY u.id""",
     )
 
 

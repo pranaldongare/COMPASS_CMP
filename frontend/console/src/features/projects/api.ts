@@ -14,6 +14,7 @@
  */
 
 import { apiDownload, apiGet, apiPost, apiPut, http, queryString } from "@/lib/api";
+import { inNameOrder } from "@/lib/format";
 import type {
   Acknowledged,
   Approval,
@@ -117,8 +118,11 @@ export function listApprovals(filters: ListFilters = {}): Promise<Page<ApprovalL
  * DCO and has no permission to read `/users`, so this endpoint exists to make
  * the requirement satisfiable without opening the register to them.
  */
-export function listCollectionOwners(): Promise<CollectionOwner[]> {
-  return apiGet<CollectionOwner[]>("/users/collection-owners");
+export async function listCollectionOwners(): Promise<CollectionOwner[]> {
+  // Grouped by role, then by name - sorted here because the names arrive
+  // sealed and the API cannot sort them.
+  const owners = await apiGet<CollectionOwner[]>("/users/collection-owners");
+  return inNameOrder(owners, (o) => o.role);
 }
 
 /* ---------------------------------------------------------------- writes */

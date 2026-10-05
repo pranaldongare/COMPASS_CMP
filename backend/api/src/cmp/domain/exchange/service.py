@@ -263,7 +263,7 @@ async def _project_export(
     # The file is for whoever collects, and a name they cannot read is not a
     # name. The person's columns are opened here, on the way into the CSV; the
     # rows in the database stay sealed.
-    consents = await unseal_many("auth_user", consents)
+    consents = _in_name_order(await unseal_many("auth_user", consents))
     payload = _write_csv(project, consents)
     lines = [
         (
@@ -305,8 +305,23 @@ async def render(conn: Conn, export: dict[str, Any]) -> tuple[str, str, str]:
     # through today's builder produces a file that may differ from the one
     # given out; the recorded hash says whether it does.
     consents = await repo.consents_in_export(conn, export["export_id"])
-    consents = await unseal_many("auth_user", consents)
+    consents = _in_name_order(await unseal_many("auth_user", consents))
     return _write_csv(project, consents), "text/csv", "csv"
+
+
+def _in_name_order(consents: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The people in the order of their names, once the names can be read.
+
+    The column is sealed, so the query cannot sort by it - `ORDER BY
+    full_name` ordered the envelopes, and the file read as shuffled. The
+    query orders by account and time, which is stable, and the names are put
+    in order here, after they are opened. Before sealing, the query sorted
+    by the name; this is that order again.
+    """
+    return sorted(
+        consents,
+        key=lambda c: (str(c.get("full_name") or "").casefold(), c["affirmative_action_at"]),
+    )
 
 
 # ------------------------------------------------------------------- imports

@@ -159,3 +159,28 @@ export function formatBytes(bytes: number): string {
 
 /* ------------------------------------------------------------------- timing */
 
+
+/**
+ * People in the order of their names, once the names can be read.
+ *
+ * A name arrives sealed and is opened in the browser, so the API cannot sort
+ * by it - `ORDER BY full_name` would order the ciphertext, and the list read
+ * as shuffled. `groupOf`, when given, keeps a group together first (a role,
+ * say). A missing name sorts last. Returns a new array.
+ */
+export function inNameOrder<T extends { full_name?: string | null }>(
+  people: readonly T[],
+  groupOf?: (person: T) => string,
+): T[] {
+  const collator = new Intl.Collator(undefined, { sensitivity: "base" });
+  return [...people].sort((a, b) => {
+    if (groupOf) {
+      const group = collator.compare(groupOf(a), groupOf(b));
+      if (group !== 0) return group;
+    }
+    const left = a.full_name ?? null;
+    const right = b.full_name ?? null;
+    if (left === null || right === null) return left === right ? 0 : left === null ? 1 : -1;
+    return collator.compare(left, right);
+  });
+}

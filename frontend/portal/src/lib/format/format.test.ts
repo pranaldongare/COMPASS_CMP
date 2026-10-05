@@ -14,6 +14,7 @@ import {
   formatDateTime,
   formatDuration,
   humanise,
+  inNameOrder,
   initials,
   shortHash,
 } from "@/lib/format";
@@ -136,5 +137,42 @@ describe("formatBytes", () => {
     expect(formatBytes(512)).toBe("512 B");
     expect(formatBytes(1024)).toBe("1.0 KB");
     expect(formatBytes(26_214_400)).toBe("25.0 MB");
+  });
+});
+
+describe("inNameOrder", () => {
+  // Names arrive sealed and the API cannot sort them; the list is put in
+  // order here, once they are open. Before this, a picker of people read as
+  // shuffled - the server had sorted the ciphertext.
+  it("sorts by the name a person reads, ignoring case", () => {
+    const people = [
+      { full_name: "Zara Khan" },
+      { full_name: "asha Rao" },
+      { full_name: "Meera Iyer" },
+    ];
+    expect(inNameOrder(people).map((p) => p.full_name)).toEqual([
+      "asha Rao",
+      "Meera Iyer",
+      "Zara Khan",
+    ]);
+  });
+
+  it("keeps a group first when asked, then the name", () => {
+    const people = [
+      { role: "rco", full_name: "Anil" },
+      { role: "dco", full_name: "Zoya" },
+      { role: "dco", full_name: "Bela" },
+    ];
+    expect(inNameOrder(people, (p) => p.role).map((p) => p.full_name)).toEqual([
+      "Bela",
+      "Zoya",
+      "Anil",
+    ]);
+  });
+
+  it("puts a missing name last and leaves the input alone", () => {
+    const people = [{ full_name: null }, { full_name: "Ravi" }];
+    expect(inNameOrder(people).map((p) => p.full_name)).toEqual(["Ravi", null]);
+    expect(people[0].full_name).toBeNull();
   });
 });

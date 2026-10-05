@@ -597,3 +597,41 @@ class TestTheLinkIsUsableAndStillProtected:
         # Neither stored column is the token itself.
         assert plain != stored["token"]
         assert plain.encode() not in bytes(stored["token_sealed"])
+
+
+class TestThePeopleAreInNameOrder:
+    """Names are sealed, and SQL sorted the ciphertext.
+
+    `ORDER BY u.full_name` on a sealed column orders the envelopes, which is
+    an order nobody chose - the file read as shuffled. The rows are sorted by
+    the opened name, on the way into the file.
+    """
+
+    async def test_the_file_is_sorted_by_the_names_it_shows(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        from cmp.infrastructure.dkms.rows import seal
+
+        dco = await _owner(conn, "dco", "order.dco@test.local")
+        people = ["Zara Khan", "asha Rao", "Meera Iyer", "Bilal Shaikh", "Kavya Nair"]
+        for n, person in enumerate(people):
+            await _site_with_consent(
+                conn,
+                seeded,
+                kind="external",
+                code=f"SRC-O-{n}",
+                label=f"Order {n}",
+                owner=dco,
+                person=person,
+            )
+            sealed = await seal("auth_user", {"full_name": person})
+            await conn.execute(
+                "UPDATE auth_user SET full_name = %s WHERE full_name = %s",
+                (sealed["full_name"], person),
+            )
+
+        payload, _, _, _ = await exchange_service._project_export(
+            conn, await _project(conn, seeded), role=Role.DCO, user_id=dco
+        )
+        names = [r["full_name"] for r in _rows(payload)]
+        assert names == sorted(people, key=str.casefold)

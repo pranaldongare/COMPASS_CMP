@@ -8,6 +8,7 @@
  */
 
 import { apiGet, apiPatch, apiPost, http, queryString } from "@/lib/api";
+import { inNameOrder } from "@/lib/format";
 import type { StaffMember, Acknowledged, Page, User, Uuid } from "@/types";
 
 export function listUsers(filters: Record<string, unknown> = {}): Promise<Page<User>> {
@@ -79,6 +80,7 @@ export async function forceLogout(uuid: Uuid): Promise<Acknowledged> {
 }
 
 /** Active staff, four fields, for naming a processor's respondent. DPO and admin only. */
-export function listStaff(): Promise<StaffMember[]> {
-  return apiGet<StaffMember[]>("/users/staff");
+export async function listStaff(): Promise<StaffMember[]> {
+  // Sorted here, not by the API: the names arrive sealed.
+  return inNameOrder(await apiGet<StaffMember[]>("/users/staff"));
 }
