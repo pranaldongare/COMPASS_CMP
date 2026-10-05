@@ -14,6 +14,8 @@
  */
 "use client";
 
+import * as React from "react";
+
 import { AppShell } from "@/components/layout/app-shell";
 import { RequireSection, SessionWarning } from "@/components/security";
 import { Skeleton } from "@/components/ui/primitives";
@@ -26,7 +28,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           because somebody who followed a wrong link needs somewhere to go.
           What does not render is the section. */}
       <AppShell>
-        <RequireSection>{children}</RequireSection>
+        <RequireSection>
+          {/* Every list keeps its filters and page in the query string (UX-5),
+              and a page reading `useSearchParams` needs a boundary above it
+              or Next will not prerender the route. One here covers them all. */}
+          <React.Suspense fallback={null}>{children}</React.Suspense>
+        </RequireSection>
       </AppShell>
       {/* Outside the shell so it survives a page-level error boundary: a
           session about to end is exactly when somebody needs to be told. */}

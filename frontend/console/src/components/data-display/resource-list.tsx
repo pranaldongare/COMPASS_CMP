@@ -36,7 +36,36 @@ import {
 import type { ApiError } from "@/lib/errors";
 import type { Page } from "@/types";
 
-/** Cursor stack, plus the reset that filter changes must trigger. */
+/**
+ * A list's state is its URL (review 2026-10-01, UX-5).
+ *
+ * Filters were read from the query string once and then kept in component
+ * state, and the cursor stack never left it: reload, share the link, or open
+ * a row and come Back, and the list was on page one with no filter. Now every
+ * filter and the page live in the query string, written with the History API
+ * (which Next keeps `useSearchParams` in step with), so the URL is the state.
+ *
+ * Written from `window.location` at the moment of the write, not from the
+ * render's snapshot: a filter change and the page reset it implies are two
+ * writes in one handler, and the second must not undo the first.
+ */
+const CURSOR = "cursor";
+/** The cursors of the pages before this one, in order; "" is the first page. */
+const PREVIOUS = "prev";
+
+function writeUrl(change: (params: URLSearchParams) => void): void {
+  const url = new URL(window.location.href);
+  change(url.searchParams);
+  window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+/** Re-render after a write, so the next read sees the URL it wrote. */
+function useRerender(): () => void {
+  const [, bump] = React.useReducer((n: number) => n + 1, 0);
+  return bump;
+}
+
+/** Cursor stack, plus the reset that filter changes must trigger. In the URL. */
 export function useCursorStack(): {
   cursor: string | undefined;
   canGoBack: boolean;
@@ -44,15 +73,43 @@ export function useCursorStack(): {
   back: () => void;
   reset: () => void;
 } {
-  const [stack, setStack] = React.useState<Array<string | undefined>>([undefined]);
+  const params = useSearchParams();
+  const rerender = useRerender();
+  const cursor = params.get(CURSOR) ?? undefined;
+  const previous = params.getAll(PREVIOUS);
 
   return {
-    cursor: stack[stack.length - 1],
-    canGoBack: stack.length > 1,
-    next: (c) => setStack((s) => [...s, c ?? undefined]),
-    back: () => setStack((s) => s.slice(0, -1)),
-    reset: () => setStack([undefined]),
+    cursor,
+    canGoBack: previous.length > 0,
+    next: (c) => {
+      writeUrl((p) => {
+        p.append(PREVIOUS, p.get(CURSOR) ?? "");
+        if (c) p.set(CURSOR, c);
+        else p.delete(CURSOR);
+      });
+      rerender();
+    },
+    back: () => {
+      writeUrl((p) => {
+        const before = p.getAll(PREVIOUS);
+        const last = before.pop();
+        p.delete(PREVIOUS);
+        for (const c of before) p.append(PREVIOUS, c);
+        if (last) p.set(CURSOR, last);
+        else p.delete(CURSOR);
+      });
+      rerender();
+    },
+    reset: () => {
+      writeUrl(resetPage);
+      rerender();
+    },
   };
+}
+
+function resetPage(params: URLSearchParams): void {
+  params.delete(CURSOR);
+  params.delete(PREVIOUS);
 }
 
 export interface FilterOption {
@@ -352,13 +409,14 @@ export function ResourceList<T>({
 }
 
 /**
- * Seed a filter from the URL.
+ * A filter that lives in the URL.
  *
  * Dashboard figures link to the list that explains them — "3 pending approval"
- * goes to the projects list already filtered to pending approval. That only
- * works if the list reads the query string, and it has to read it *once*, as an
- * initial value: after that the control owns the state, and re-syncing on every
- * render would fight the user every time they changed the dropdown.
+ * goes to the projects list already filtered to pending approval — and the
+ * filter stays in the URL as it changes, so a reload, a shared link or Back
+ * from a row finds the same list. Changing it goes back to the first page: a
+ * cursor describes a position in one result set, not in the next. An empty
+ * value (or the fallback) is left out of the URL.
  *
  * `useSearchParams` forces client rendering, so any page calling this needs a
  * Suspense boundary above it or Next refuses to prerender the route.
@@ -368,8 +426,21 @@ export function useFilterParam(
   fallback = "",
 ): [string, React.Dispatch<React.SetStateAction<string>>] {
   const params = useSearchParams();
-  // Read at mount only. React keeps the initialiser's result and ignores it on
-  // subsequent renders, which is exactly the semantics wanted here.
-  const [value, setValue] = React.useState(() => params.get(name) ?? fallback);
+  const rerender = useRerender();
+  const value = params.get(name) ?? fallback;
+
+  const setValue = React.useCallback<React.Dispatch<React.SetStateAction<string>>>(
+    (next) => {
+      writeUrl((p) => {
+        const current = p.get(name) ?? fallback;
+        const chosen = typeof next === "function" ? next(current) : next;
+        if (chosen && chosen !== fallback) p.set(name, chosen);
+        else p.delete(name);
+        resetPage(p);
+      });
+      rerender();
+    },
+    [name, fallback, rerender],
+  );
   return [value, setValue];
 }

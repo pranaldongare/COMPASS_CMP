@@ -296,6 +296,13 @@ RequestsPage
   8 s for the rest.
 - **Pagination** is cursor-based from the API
   ([api.md](../architecture/api.md#pagination)); the cursor lives in the URL.
+  So does every filter: `useFilterParam` and `useCursorStack`
+  (`components/data-display/resource-list.tsx`) read the query string and
+  write it with the History API, so reload, a shared link and Back from a row
+  find the same list. Until October 2026 the filter was read once and the
+  cursor stack never left the page, and that was not true (review UX-5;
+  `e2e/list-state.spec.ts`). The `(app)` layout's Suspense boundary is what
+  lets any page read the query string.
 - **Deduplication** comes free from the shared cache: ten components asking
   `useMe()` produce one request.
 - **Optimistic updates** are used sparingly and only where the write cannot

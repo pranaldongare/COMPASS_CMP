@@ -18,6 +18,7 @@ import {
   FilterSelect,
   ResourceList,
   useCursorStack,
+  useFilterParam,
 } from "@/components/data-display/resource-list";
 import { EmptyRecords } from "@/components/ui/graphics";
 import { Alert, Td, Tr } from "@/components/ui/primitives";
@@ -29,7 +30,7 @@ import { formatDate } from "@/lib/format";
 
 export default function SitesPage() {
   const stack = useCursorStack();
-  const [status, setStatus] = React.useState("");
+  const [status, setStatus] = useFilterParam("status");
 
   const { data: enums } = useEnums();
   const query = useAllSites({

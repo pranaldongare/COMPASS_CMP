@@ -9,7 +9,6 @@
 "use client";
 
 import { Ban, Building2, Pencil, Plus, UserRoundCog } from "lucide-react";
-import { useSearchParams } from "next/navigation";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
@@ -19,6 +18,7 @@ import {
   ResourceList,
   SearchBox,
   useCursorStack,
+  useFilterParam,
 } from "@/components/data-display/resource-list";
 import { SourceForm } from "@/features/registry/components/forms";
 import {
@@ -40,16 +40,18 @@ export default function SourcesPage() {
   const toast = useToast();
   const stack = useCursorStack();
 
-  // Seeded from the URL, then owned by the page. A dashboard count is a claim
-  // about a subset — "12 sources with nobody accountable" — and a link that
-  // lands on the unfiltered registry makes the reader find those twelve
-  // themselves. Read once rather than synced, because after arriving the
-  // controls on screen are the ones in charge.
-  const params = useSearchParams();
-  const [status, setStatus] = React.useState(params.get("status") ?? "");
-  const [q, setQ] = React.useState(params.get("q") ?? "");
-  const [unmapped, setUnmapped] = React.useState(params.get("unmapped") === "1");
-  const [unowned, setUnowned] = React.useState(params.get("unowned") === "1");
+  // In the URL. A dashboard count is a claim about a subset — "12 sources
+  // with nobody accountable" — and a link that lands on the unfiltered
+  // registry makes the reader find those twelve themselves; and a filter kept
+  // only on the page was lost on reload or on Back from a source (UX-5).
+  const [status, setStatus] = useFilterParam("status");
+  const [q, setQ] = useFilterParam("q");
+  const [unmappedFlag, setUnmappedFlag] = useFilterParam("unmapped");
+  const [unownedFlag, setUnownedFlag] = useFilterParam("unowned");
+  const unmapped = unmappedFlag === "1";
+  const unowned = unownedFlag === "1";
+  const setUnmapped = (on: boolean) => setUnmappedFlag(on ? "1" : "");
+  const setUnowned = (on: boolean) => setUnownedFlag(on ? "1" : "");
   const [creating, setCreating] = React.useState(false);
   const [editing, setEditing] = React.useState<DataSource | null>(null);
   const [assigning, setAssigning] = React.useState<DataSource | null>(null);

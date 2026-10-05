@@ -7,7 +7,7 @@
  * looking for a bug in the data when the request simply had not finished.
  */
 
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ResourceList, useCursorStack } from "@/components/data-display/resource-list";
 import { ApiError } from "@/lib/errors";
@@ -15,8 +15,13 @@ import { render, renderHook, screen, act } from "@/test/render";
 import { makeNoticeRow, makePage } from "@/test/fixtures";
 
 vi.mock("next/navigation", () => ({
-  useSearchParams: () => new URLSearchParams(),
+  // The stack lives in the URL (UX-5); the mock reads it as Next would.
+  useSearchParams: () => new URLSearchParams(window.location.search),
 }));
+
+beforeEach(() => {
+  window.history.replaceState(null, "", "/notices");
+});
 
 type Row = ReturnType<typeof makeNoticeRow>;
 

@@ -52,7 +52,7 @@ function UsersPageView() {
   // activation") opens the register already filtered.
   const [role, setRole] = useFilterParam("role");
   const [status, setStatus] = useFilterParam("status");
-  const [q, setQ] = React.useState("");
+  const [q, setQ] = useFilterParam("q");
 
   const deactivate = useDeactivateUser();
   const reactivate = useReactivateUser();

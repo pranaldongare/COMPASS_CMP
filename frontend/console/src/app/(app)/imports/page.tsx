@@ -21,6 +21,7 @@ import {
   FilterSelect,
   ResourceList,
   useCursorStack,
+  useFilterParam,
 } from "@/components/data-display/resource-list";
 import { ImportWizard } from "@/features/exchange/components";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -36,7 +37,7 @@ import { formatDateTime } from "@/lib/format";
 export default function ImportsPage() {
   const { me } = useAuth();
   const stack = useCursorStack();
-  const [status, setStatus] = React.useState("");
+  const [status, setStatus] = useFilterParam("status");
   const [importing, setImporting] = React.useState(false);
 
   const { data: enums } = useEnums();

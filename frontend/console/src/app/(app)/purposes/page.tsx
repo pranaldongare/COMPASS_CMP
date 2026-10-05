@@ -48,8 +48,8 @@ function PurposesPageView() {
   const activate = useActivatePurpose();
   const retire = useRetirePurpose();
   const [status, setStatus] = useFilterParam("status");
-  const [basis, setBasis] = React.useState("");
-  const [q, setQ] = React.useState("");
+  const [basis, setBasis] = useFilterParam("basis");
+  const [q, setQ] = useFilterParam("q");
 
   const { data: enums } = useEnums();
   const query = usePurposes({

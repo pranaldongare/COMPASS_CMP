@@ -20,6 +20,7 @@ import {
   ResourceList,
   SearchBox,
   useCursorStack,
+  useFilterParam,
 } from "@/components/data-display/resource-list";
 import { ProcessorForm } from "@/features/registry/components/forms";
 import { RespondentsPanel } from "@/features/registry/components/respondents";
@@ -38,8 +39,8 @@ export default function ProcessorsPage() {
   const { me } = useAuth();
   const toast = useToast();
   const stack = useCursorStack();
-  const [status, setStatus] = React.useState("");
-  const [q, setQ] = React.useState("");
+  const [status, setStatus] = useFilterParam("status");
+  const [q, setQ] = useFilterParam("q");
   const [creating, setCreating] = React.useState(false);
   const [editing, setEditing] = React.useState<Processor | null>(null);
   const [respondentsFor, setRespondentsFor] = React.useState<Processor | null>(null);

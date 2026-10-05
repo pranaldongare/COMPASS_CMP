@@ -24,6 +24,7 @@ import {
   FilterSelect,
   ResourceList,
   useCursorStack,
+  useFilterParam,
 } from "@/components/data-display/resource-list";
 import { EmptyRecords } from "@/components/ui/graphics";
 import { Badge, Button, Mono, Td, Tr } from "@/components/ui/primitives";
@@ -53,7 +54,7 @@ const TYPE_LABEL: Record<string, { label: string; tone: "neutral" | "warning" }>
 export default function ExportsPage() {
   const stack = useCursorStack();
   const toast = useToast();
-  const [type, setType] = React.useState("");
+  const [type, setType] = useFilterParam("type");
   const [busy, setBusy] = React.useState<string | null>(null);
 
   const query = useAllExports({
