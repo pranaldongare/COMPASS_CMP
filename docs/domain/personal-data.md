@@ -287,7 +287,7 @@ happened; it is state that must disappear on its own.
 | `usess:<user_id>` | The set of a person's live sessions, so signing out everywhere works | With the sessions |
 | `otp:<scope>:<identity>` | A **keyed digest** of a one-time code, never the code. The identity is the email or mobile it was sent to | 10 minutes (`OTP_TTL_S`), 5 attempts; a staff invitation lasts `STAFF_INVITE_TTL_H` hours, 48 by default |
 | `otpa:<scope>:<identity>` | Attempts against that code | With the code |
-| `mfa:*`, `lfail:*`, `lock:*` | Second-factor state, failed sign-ins, lockouts — each keyed by a login | The staff second factor is 5 minutes (`MFA_TTL_S`) and 5 attempts; 5 failed sign-ins in 30 minutes lock the account for 30 |
+| `mfa:*`, `lfail:*`, `lock:*` | Second-factor state, failed sign-ins, lockouts — keyed by the account's uuid, or the keyed hash of a login that names no account | The staff second factor is 5 minutes (`MFA_TTL_S`) and 5 attempts; 5 failed sign-ins in 30 minutes lock the account for 30 |
 | `rate:*` | Rate-limit counters, keyed by contact or address | The window |
 | `nsrv:*` | That the server showed a particular notice, in a particular rendition, to a particular person through a particular link — the fact a consent is checked against | Six hours (`NOTICE_SERVING_TTL`); past it, a consent is refused as `notice_stale` |
 

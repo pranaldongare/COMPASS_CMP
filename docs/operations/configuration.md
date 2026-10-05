@@ -58,7 +58,7 @@ boot: the second failure is loud and costs ten minutes.
 | Database | `POSTGRES_HOST`, `_PORT`, `_DB` (`cmp`), `_USER`, `_PASSWORD`; pool 2–10; 15s statement timeout, 5s lock timeout — never infinite |
 | Redis / Celery | `REDIS_URL`, `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND`: three logical databases, so a broker flush does not drop sessions |
 | Session | 8h absolute, 30min idle; HttpOnly, Secure, SameSite=Lax |
-| Lockout | 5 attempts / 30 min window / 30 min lockout |
+| Lockout | 5 attempts / 30 min window / 30 min lockout, per account however it is named (`LOGIN_*`). Per address: `AUTH_FAILURES_PER_ADDRESS` 30 failed attempts across every account in `AUTH_FAILURES_WINDOW_S` 900, at staff sign-in, code sign-in and password reset; successes do not count |
 | OTP & MFA | 6 digits, 10 minutes, 5 verify attempts; MFA codes live 5 minutes; `MFA_REQUIRED_ROLES` defaults to every staff role ([ADR 0006](../decisions/0006-mfa-for-every-staff-role.md)) |
 | Provisioning | `STAFF_INVITE_TTL_H` 48 — how long the code in a staff invitation lasts, in hours. It is the reset flow's own code, so an expired invitation needs no separate path: "Forgotten your password?" sends a working replacement |
 | URLs | `PUBLIC_BASE_URL` (the data-principal portal, port 3001: consent and acceptance links) and `CONSOLE_BASE_URL` (the staff console, port 3000: ticket and request links) |

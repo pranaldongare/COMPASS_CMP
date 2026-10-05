@@ -52,6 +52,9 @@ log = get_logger("cmp.auth")
 # One sentence for every failure mode of sign-in.
 _GENERIC_FAILURE = "Those credentials are not valid"
 
+# The doors whose failures count against the address they came from.
+_SIGN_IN, _CODE_SIGN_IN, _RESET = "login", "otp_login", "reset"
+
 
 async def authenticate(
     conn: Conn, *, login: str, password: str, ip_address: str | None, user_agent: str | None
@@ -59,21 +62,25 @@ async def authenticate(
     """Verify a staff password. Returns a session descriptor, possibly partial.
 
     Lockout is checked before the password is examined, so a locked account
-    cannot be probed at all, and the failure counter is keyed on the account.
+    cannot be probed at all, and the failure counter is keyed on the account -
+    the same counter whether it was named by email or by username.
     """
-    locked_for = await ratelimit.is_locked_out(login)
+    await ratelimit.refuse_spent_address(_SIGN_IN)
+    user = await user_repo.credentials_by_login(conn, login)
+    account = ratelimit.account_key(str(user["uuid"]) if user else None, login)
+
+    locked_for = await ratelimit.is_locked_out(account)
     if locked_for:
         log.warning("auth.attempt_while_locked")
         raise RateLimited("Too many failed attempts. Try again later.", retry_after_s=locked_for)
-
-    user = await user_repo.credentials_by_login(conn, login)
 
     # Always run a verification, even with no user, so the response time does not
     # distinguish "no such account" from "wrong password".
     ok = verify_password(password, user["password_hash"] if user else None)
 
     if not user or not ok:
-        fails = await ratelimit.record_login_failure(login)
+        await ratelimit.record_address_failure(_SIGN_IN)
+        fails = await ratelimit.record_login_failure(account)
         if user:
             await audit.record(
                 conn,
@@ -117,7 +124,7 @@ async def authenticate(
         # password route is still not theirs.
         raise Unauthenticated(_GENERIC_FAILURE)
 
-    await ratelimit.clear_login_failures(login)
+    await ratelimit.clear_login_failures(account)
 
     # Opportunistic upgrade when the cost parameters move on.
     if password_needs_rehash(user["password_hash"]):
@@ -267,12 +274,18 @@ async def request_subject_otp(conn: Conn, *, contact: str) -> None:
 async def verify_subject_otp(
     conn: Conn, *, contact: str, code: str, ip_address: str | None, user_agent: str | None
 ) -> dict[str, Any]:
+    await ratelimit.refuse_spent_address(_CODE_SIGN_IN)
     user = await user_repo.by_contact(conn, contact)
     if not user:
         # Same message and roughly the same work as a wrong code.
+        await ratelimit.record_address_failure(_CODE_SIGN_IN)
         raise BadRequest("Invalid or expired code", code="otp_invalid", field="code")
 
-    await otp.require(otp.Scope.SUBJECT_LOGIN, str(user["uuid"]), code)
+    try:
+        await otp.require(otp.Scope.SUBJECT_LOGIN, str(user["uuid"]), code)
+    except (BadRequest, RateLimited):
+        await ratelimit.record_address_failure(_CODE_SIGN_IN)
+        raise
 
     user = await user_repo.mark_contact_verified(
         conn, user["id"], "mobile" if is_mobile(contact) else "email"
@@ -418,12 +431,21 @@ async def request_password_reset(conn: Conn, *, email: str) -> None:
 
 
 async def confirm_password_reset(conn: Conn, *, email: str, code: str, new_password: str) -> None:
+    await ratelimit.refuse_spent_address(_RESET)
     user = await user_repo.by_email(conn, email)
     if not user:
+        await ratelimit.record_address_failure(_RESET)
         raise BadRequest("Invalid or expired code", code="otp_invalid", field="code")
 
-    await otp.require(otp.Scope.CONTACT_VERIFY, f"reset:{user['uuid']}", code)
+    try:
+        await otp.require(otp.Scope.CONTACT_VERIFY, f"reset:{user['uuid']}", code)
+    except (BadRequest, RateLimited):
+        await ratelimit.record_address_failure(_RESET)
+        raise
     await user_repo.set_password(conn, user["id"], hash_password(new_password))
+    # Whoever holds the reset code holds the mailbox; a lockout earned by
+    # somebody guessing at the old password no longer protects anything.
+    await ratelimit.clear_login_failures(ratelimit.account_key(str(user["uuid"])))
 
     # Setting the first password is what activates a provisioned account, and it
     # has to happen here: `authenticate` refuses anything but an active account,

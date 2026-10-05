@@ -75,7 +75,7 @@ class TestEndingStaffAccess:
 
         from cmp.auth.rate_limit import service as ratelimit
 
-        await ratelimit.clear_login_failures("dco@test.local")
+        await ratelimit.clear_login_failures(ratelimit.account_key(str(dco["uuid"])))
         with pytest.raises(Unauthenticated):
             await auth_service.authenticate(
                 conn,

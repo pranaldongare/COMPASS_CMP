@@ -5,8 +5,9 @@ thing an attacker cannot cheaply rotate.
 
 | Surface | Bound | Keyed on | Why |
 |---|---|---|---|
-| Sign-in | 5 attempts / 30 min, 30 min lockout | **account** | An attacker rotates addresses; a NAT'd office should not be locked out by one typo |
-| OTP verify | 5 attempts per code | code | The cap is what makes six digits strong enough |
+| Sign-in | 5 attempts / 30 min, 30 min lockout | **account** - its uuid, whichever name was typed | An attacker rotates addresses; a NAT'd office should not be locked out by one typo |
+| Sign-in, code sign-in, password reset | 30 **failures** / 15 min | address | The lockout protects one account from many guesses; this protects every account from one guesser. Only failures count, so an office signing in all morning never comes near it |
+| OTP verify | 5 attempts per code, for as long as the code lives | code | The cap is what makes six digits strong enough |
 | OTP request | 5 / hour per contact, 20 / hour per link | contact | Otherwise the form is an SMS pump aimed at someone else's number |
 | Public link | 60 / minute | address | Unauthenticated, and there is no account to key on |
 
@@ -23,6 +24,15 @@ suite clears between runs. The buckets in use:
 | `rights_public_contact`, `rights_public_ip`, `rights_verify_ip` | the public rights form and its verification; a request is neutral, so the address is the only handle a stranger has |
 | `nominee_start`, `nominee_start_ip`, `nominee_request_ip` | a nominee identifying themselves and acting |
 | `nomination_view_ip`, `nomination_act_ip` | opening and answering an acceptance link, so a link-holder cannot guess a code |
+| `login_fail_ip`, `otp_login_fail_ip`, `reset_fail_ip` | failed staff sign-ins, code sign-ins and password resets, per address (failures only) |
+
+**The lockout counts the account, not what was typed.** `account_key()` keys
+it on the account's uuid, so an email and a username are one budget; a login
+that names no account is keyed on its keyed hash, so no typed login sits in
+Redis in the clear. Until 5 October 2026 the counter was keyed on the typed
+text: two names, two budgets. **A code's failure count lives as long as the
+code** - until then it expired after `OTP_TTL_S` whatever the code's own life,
+so a 48-hour staff invitation had five fresh guesses every ten quiet minutes.
 
 **A contact bucket is keyed on the contact's keyed hash** (`contact_key()` in
 `auth/rate_limit/service.py`): `index_of("contact", …)`, the normalised form the

@@ -27,7 +27,7 @@ import pytest
 from cmp.auth.authentication import otp
 from cmp.auth.authentication import service as auth_service
 from cmp.auth.rate_limit import service as ratelimit
-from cmp.auth.rate_limit.service import contact_key
+from cmp.auth.rate_limit.service import account_key, contact_key
 from cmp.core.config import settings
 from cmp.core.enums import UserStatus
 from cmp.core.errors import Unauthenticated, ValidationFailed
@@ -121,10 +121,13 @@ async def unthrottle(redis_conn: Any, email: str) -> None:
     raises `RateLimited` where the test expects `Unauthenticated`, and the
     failure appears only in a full suite, hours from the change that caused it.
     """
+    # An account's lockout is keyed on its uuid, new each run; a login that
+    # names no account is keyed on its hash, which is the same every run.
+    unknown = account_key(None, email)
     await redis_conn.delete(
         rkey(K_RATE, "pwreset", contact_key(email)),
-        rkey(K_LOGIN_FAILS, email.lower()),
-        rkey(K_LOCKOUT, email.lower()),
+        rkey(K_LOGIN_FAILS, unknown),
+        rkey(K_LOCKOUT, unknown),
     )
 
 

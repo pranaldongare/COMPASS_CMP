@@ -124,7 +124,9 @@ class TestWhatACodeIsWorth:
         )
         # The lockout counts failures per account in Redis, which outlives the
         # test transaction; a clean slate so a re-run is not a sixth attempt.
-        await ratelimit.clear_login_failures("dpo@test.local")
+        await ratelimit.clear_login_failures(
+            ratelimit.account_key(str(seeded["users"]["dpo"]["uuid"]))
+        )
         result = await auth_service.authenticate(
             conn,
             login="dpo@test.local",

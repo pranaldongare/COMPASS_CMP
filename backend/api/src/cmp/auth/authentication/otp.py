@@ -100,6 +100,10 @@ async def issue(scope: str, identity: str, *, ttl_s: int | None = None) -> Issue
 #: neither a timing side channel over a network round trip nor five samples
 #: gets an attacker anywhere near a 256-bit digest.
 #:
+#: The failure count lives exactly as long as the code it counts against. It
+#: used to expire after `OTP_TTL_S` whatever the code's life, so a 48-hour
+#: invitation code had five fresh guesses every ten quiet minutes.
+#:
 #: Returns {outcome, attempts}: 1 = matched, 0 = wrong (attempts so far),
 #: 2 = wrong and the budget is spent (code discarded), -1 = no code stored.
 _VERIFY_SCRIPT = """
@@ -114,7 +118,9 @@ if stored == ARGV[1] then
   return {1, 0}
 end
 local attempts = redis.call('INCR', KEYS[2])
-redis.call('EXPIRE', KEYS[2], tonumber(ARGV[4]))
+local left = redis.call('TTL', KEYS[1])
+if left < 1 then left = tonumber(ARGV[4]) end
+redis.call('EXPIRE', KEYS[2], left)
 if attempts >= tonumber(ARGV[3]) then
   redis.call('DEL', KEYS[1], KEYS[2])
   return {2, attempts}

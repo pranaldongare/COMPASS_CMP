@@ -36,9 +36,13 @@ sign-in.
    account, a wrong password, an inactive account and a data-principal
    account. Status is checked only after the password is right, so the reply
    never confirms an account exists.
-4. Counts failures in Redis against the typed login: five in 30 minutes lock
-   it for 30 minutes (`LOGIN_MAX_ATTEMPTS`, `LOGIN_LOCKOUT_*`). A success
-   clears the count.
+4. Counts failures in Redis against the account - one counter whether it was
+   named by email or by username, keyed on its uuid (a login that names no
+   account, on the login's keyed hash): five in 30 minutes lock it for 30
+   minutes (`LOGIN_MAX_ATTEMPTS`, `LOGIN_LOCKOUT_*`). A success, or a password
+   reset, clears the count. Failures also count against the address, across
+   accounts: 30 in 15 minutes and that address is refused at sign-in, code
+   sign-in and password reset (`AUTH_FAILURES_*`).
 5. Opens a **partial session** and sends a six-digit code to the account's
    email.
 

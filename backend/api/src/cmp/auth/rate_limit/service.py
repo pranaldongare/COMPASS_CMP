@@ -6,6 +6,8 @@ accountable (API reference §1.6):
     POST /c/{token}/otp         5 per hour per contact, 20 per hour per token
     POST /c/{token}/otp/verify  5 per code, then the code is discarded
     POST /auth/login            5 per 30 min per account (R-AUT-03 lockout)
+    POST /auth/login, /auth/otp/verify, /auth/password/reset/confirm
+                                30 failures per 15 min per address
     GET  /c/{token}             60 per minute per IP
 
 Sliding window, not fixed: a fixed window lets an attacker send the full quota at
@@ -106,41 +108,111 @@ async def enforce(
 
 
 # ------------------------------------------------------------ account lockout
+def account_key(user_uuid: str | None, login: str = "") -> str:
+    """The lockout identity: the account, however it was named.
+
+    An account signed in to by email and by username is one account, and one
+    counter. Before 2026-10-05 the counter was keyed on what was typed, so the
+    two names were two budgets, and the typed login sat in Redis in the clear.
+
+    A login that names no account still has a counter - otherwise "this one
+    never locks" would say the account does not exist - keyed on its keyed
+    hash, never on the text.
+    """
+    if user_uuid:
+        return f"u:{user_uuid}"
+    from cmp.infrastructure.dkms.blind import index_of
+
+    return f"l:{index_of('username', login) or '-'}"
+
+
 async def record_login_failure(account: str) -> int:
     """R-AUT-03: count failures and lock the account when the threshold is reached.
 
-    Keyed on the account, not the source address: an attacker rotates addresses,
-    and a per-IP counter protects nobody. The cost is that a determined attacker
-    can lock a known account out - which is why the lock expires on its own
-    rather than requiring an administrator.
+    Keyed on the account (`account_key`). The address has its own budget
+    (`refuse_spent_address`), across accounts: the lockout protects one
+    account from many guesses, the address budget every account from one
+    guesser. The cost of the lockout is that a determined attacker can lock a
+    known account out - which is why the lock expires on its own rather than
+    requiring an administrator.
     """
     r = get_redis()
-    k = key(K_LOGIN_FAILS, account.lower())
+    k = key(K_LOGIN_FAILS, account)
     pipe = r.pipeline()
     pipe.incr(k)
     pipe.expire(k, settings.login_lockout_window_s)
     fails = int((await pipe.execute())[0])
 
     if fails >= settings.login_max_attempts:
-        await r.setex(key(K_LOCKOUT, account.lower()), settings.login_lockout_duration_s, "1")
+        await r.setex(key(K_LOCKOUT, account), settings.login_lockout_duration_s, "1")
         log.warning("auth.locked_out", account_hash=_obscure(account), failures=fails)
     return fails
 
 
 async def clear_login_failures(account: str) -> None:
     r = get_redis()
-    await r.delete(key(K_LOGIN_FAILS, account.lower()), key(K_LOCKOUT, account.lower()))
+    await r.delete(key(K_LOGIN_FAILS, account), key(K_LOCKOUT, account))
 
 
 async def is_locked_out(account: str) -> int:
     """Remaining lockout in seconds, or 0."""
     try:
-        ttl = await get_redis().ttl(key(K_LOCKOUT, account.lower()))
+        ttl = await get_redis().ttl(key(K_LOCKOUT, account))
     except (RedisError, RuntimeError) as exc:
         # Authentication fails closed. An unavailable lockout store must not
         # become an unlimited-attempts window.
         raise ServiceUnavailable("Authentication is temporarily unavailable") from exc
     return max(0, ttl)
+
+
+# ------------------------------------------------------- failures per address
+def _address_key(door: str, address: str) -> str:
+    return key(K_RATE, f"{door}_fail_ip", address)
+
+
+async def refuse_spent_address(door: str) -> None:
+    """Refuse an address that has spent its budget of failures at this door.
+
+    Only failures count (`record_address_failure`): an office behind one
+    address signs in all morning without coming near it. The address is the
+    request context's. Fails closed, as the lockout does.
+    """
+    from cmp.core.context import current_context
+
+    address = current_context().ip_address
+    if not address:
+        return
+    k = _address_key(door, address)
+    try:
+        r = get_redis()
+        await r.zremrangebyscore(k, 0, time.time() - settings.auth_failures_window_s)
+        spent = int(await r.zcard(k))
+    except (RedisError, RuntimeError) as exc:
+        raise ServiceUnavailable("Authentication is temporarily unavailable") from exc
+    if spent >= settings.auth_failures_per_address:
+        log.warning("auth.address_spent", door=door, failures=spent)
+        raise RateLimited(
+            "Too many failed attempts. Try again later.",
+            retry_after_s=settings.auth_failures_window_s,
+        )
+
+
+async def record_address_failure(door: str) -> None:
+    from cmp.core.context import current_context
+
+    address = current_context().ip_address
+    if not address:
+        return
+    k = _address_key(door, address)
+    now = time.time()
+    try:
+        r = get_redis()
+        pipe = r.pipeline()
+        pipe.zadd(k, {f"{now}:{uuidlib.uuid4().hex}": now})
+        pipe.expire(k, settings.auth_failures_window_s + 1)
+        await pipe.execute()
+    except (RedisError, RuntimeError) as exc:
+        log.error("auth.address_failure_unrecorded", door=door, error=str(exc))
 
 
 def _obscure(value: str) -> str:

@@ -70,7 +70,7 @@ async def test_a_lockout_is_recorded(
         )
         assert await _events(committed, int(rco.user["id"]), "auth.login_locked_out")
     finally:
-        await ratelimit.clear_login_failures(plain(rco.user["email"]))
+        await ratelimit.clear_login_failures(ratelimit.account_key(rco.uuid))
 
 
 async def test_a_wrong_second_factor_is_recorded(

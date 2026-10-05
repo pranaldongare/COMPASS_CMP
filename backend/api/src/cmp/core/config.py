@@ -66,6 +66,12 @@ class Settings(BaseSettings):
     login_max_attempts: int = 5
     login_lockout_window_s: int = 60 * 30
     login_lockout_duration_s: int = 60 * 30
+    #: Failed attempts one address may make, across every account, at staff
+    #: sign-in, code sign-in and password reset, within the window. The
+    #: per-account lockout stops guessing at one account; this stops one
+    #: address trying a few passwords at every account it can name.
+    auth_failures_per_address: int = Field(default=30, ge=1)
+    auth_failures_window_s: int = Field(default=60 * 15, ge=60)
 
     # OTP — public consent flow and data-subject sign-in
     otp_length: int = 6

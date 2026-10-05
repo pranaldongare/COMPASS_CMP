@@ -24,6 +24,13 @@ async def redis_conn() -> AsyncIterator[Any]:
     from cmp.db.redis import close_redis, open_redis
 
     client = await open_redis()
+    # Failed sign-ins count against the address they came from, and every
+    # test's requests come from the one address the request context gives.
+    # The budget outlives the test transaction; a full run would spend it.
+    from cmp.db.redis import K_RATE
+
+    async for k in client.scan_iter(match=f"{K_RATE}:*_fail_ip:127.0.0.1"):
+        await client.delete(k)
     try:
         yield client
     finally:
