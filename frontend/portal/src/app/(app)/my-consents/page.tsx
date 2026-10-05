@@ -44,6 +44,7 @@ import {
 } from "@/features/my-consents";
 import { HomeStrip } from "@/features/rights/components/home-strip";
 import { MyRequestForm } from "@/features/rights/components/request-form";
+import { langTag } from "@/features/public-consent/components/languages";
 import type { MyConsent } from "@/types";
 import { ApiError } from "@/lib/errors";
 import { formatDateTime, formatDuration, humanise, shortHash } from "@/lib/format";
@@ -325,7 +326,10 @@ function ConsentCard({
               </ul>
             )}
 
-            <ServedNotice consentUuid={consent.consent_uuid} />
+            <ServedNotice
+              consentUuid={consent.consent_uuid}
+              languageCode={consent.language_code}
+            />
           </div>
         )}
       </CardBody>
@@ -333,7 +337,14 @@ function ConsentCard({
   );
 }
 
-function ServedNotice({ consentUuid }: { consentUuid: string }) {
+function ServedNotice({
+  consentUuid,
+  languageCode,
+}: {
+  consentUuid: string;
+  /** The rendition she was shown, so the text is marked as that language. */
+  languageCode: string;
+}) {
   const [show, setShow] = React.useState(false);
   const served = useMyConsentNotice(show ? consentUuid : undefined);
 
@@ -385,7 +396,10 @@ function ServedNotice({ consentUuid }: { consentUuid: string }) {
         </span>
       </div>
 
-      <div className="max-h-72 overflow-y-auto text-sm leading-relaxed whitespace-pre-wrap">
+      <div
+        lang={langTag(languageCode)}
+        className="max-h-72 overflow-y-auto text-sm leading-relaxed whitespace-pre-wrap"
+      >
         {data.rendered_text}
       </div>
 

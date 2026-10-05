@@ -21,6 +21,10 @@ import { Check, X } from "lucide-react";
 import { formatDuration, humanise } from "@/lib/format";
 import type { Purpose } from "@/types";
 
+/** The site-wide focus outline (`base.css`), drawn on the label of a hidden radio. */
+const FOCUS_RING =
+  "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--focus)]";
+
 export function PurposeChoice({
   purpose,
   value,
@@ -63,6 +67,8 @@ export function PurposeChoice({
         <label
           className={[
             "flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm",
+            // The radio is visually hidden; its focus shows on the box she sees.
+            FOCUS_RING,
             value === true
               ? "border-success-border bg-success-subtle font-medium text-success-text"
               : "border-border hover:bg-surface-hover",
@@ -81,6 +87,8 @@ export function PurposeChoice({
         <label
           className={[
             "flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm",
+            // The radio is visually hidden; its focus shows on the box she sees.
+            FOCUS_RING,
             value === false
               ? "border-border-strong bg-bg-inset font-medium text-text"
               : "border-border hover:bg-surface-hover",

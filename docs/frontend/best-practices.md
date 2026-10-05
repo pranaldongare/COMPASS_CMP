@@ -497,6 +497,27 @@ use `<table>` with `scope`; status is conveyed by text as well as colour
 (`Badge` with `dot` and words); the viewport is not zoom-capped because
 someone reading a privacy notice on a phone is exactly who needs to zoom.
 
+Three rules from review UX-4 (October 2026):
+
+- **A visually hidden input shows its focus on what is seen.** A radio
+  styled as a box (`sr-only` inside a `<label>`) gets the site's focus
+  outline on the label through `has-[:focus-visible]:` - the consent choices
+  had none, so a keyboard user could not see which one they were on.
+- **The phone drawer is a modal.** `useDrawer` (`components/layout`, both
+  portals) moves focus in on open, keeps Tab inside, closes on Escape and
+  returns focus to the button that opened it; the page behind is `inert`, and
+  the drawer has its own "Close menu" button. It is the same `<nav>` the
+  desktop shows, which is why it is a hook and not a Radix dialog.
+- **Text in another language says so.** The notice's rendered text, and each
+  language's name in a language picker, carry `lang=` (`langTag()`), so a
+  screen reader uses the right voice and the browser the right font. The
+  portal offers the notice's languages on the consent link's first step,
+  not only after the code.
+
+Not done, and not a code decision: the portal's own controls and errors are
+English only. Translating them needs translations somebody is accountable
+for.
+
 **Bad**
 
 ```tsx

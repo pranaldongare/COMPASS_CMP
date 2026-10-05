@@ -214,6 +214,9 @@ export default function ConsentPage() {
       {step === "identify" && (
         <IdentifyStep
           token={token}
+          languages={link?.available_languages ?? []}
+          language={language}
+          onLanguageChange={setLanguage}
           onDone={(given) => {
             setContact(given);
             setError(null);

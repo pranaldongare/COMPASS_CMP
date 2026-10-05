@@ -35,7 +35,7 @@ import { ApiError } from "@/lib/errors";
 import { humanise, shortHash } from "@/lib/format";
 import type { LanguageCode, ServedNotice } from "@/types";
 
-import { LANGUAGE_NAMES } from "@/features/public-consent/components/languages";
+import { LANGUAGE_NAMES, langTag } from "@/features/public-consent/components/languages";
 import { PurposeChoice } from "@/features/public-consent/components/purpose-choice";
 
 export function NoticeStep({
@@ -115,7 +115,7 @@ export function NoticeStep({
             className="w-44"
           >
             {languages.map((code) => (
-              <option key={code} value={code}>
+              <option key={code} value={code} lang={langTag(code)}>
                 {LANGUAGE_NAMES[code] ?? humanise(code)}
               </option>
             ))}
@@ -131,7 +131,10 @@ export function NoticeStep({
           </CardTitle>
         </CardHeader>
         <CardBody>
-          <div className="text-sm leading-relaxed whitespace-pre-wrap text-text">
+          <div
+            lang={langTag(notice.language_code)}
+            className="text-sm leading-relaxed whitespace-pre-wrap text-text"
+          >
             {notice.rendered_text}
           </div>
 

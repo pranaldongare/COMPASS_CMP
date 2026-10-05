@@ -28,6 +28,7 @@
  */
 "use client";
 
+import { Globe } from "lucide-react";
 import * as React from "react";
 
 import {
@@ -38,9 +39,12 @@ import {
   CardTitle,
   Field,
   Input,
+  Select,
 } from "@/components/ui/primitives";
 import { requestOtp } from "@/features/public-consent/api";
+import { LANGUAGE_NAMES, langTag } from "@/features/public-consent/components/languages";
 import { ApiError } from "@/lib/errors";
+import type { LanguageCode } from "@/types";
 
 type Medium = "mobile" | "email";
 
@@ -48,10 +52,19 @@ export function IdentifyStep({
   token,
   onDone,
   onError,
+  languages = [],
+  language,
+  onLanguageChange,
 }: {
   token: string;
   onDone: (contact: string) => void;
   onError: (message: string | null) => void;
+  /** The notice's approved renditions. Offered here, first, when there is a
+   *  choice: somebody who reads Tamil should not have to get through two
+   *  English steps to find it (review UX-4). */
+  languages?: LanguageCode[];
+  language?: LanguageCode;
+  onLanguageChange?: (next: LanguageCode) => void;
 }) {
   const [medium, setMedium] = React.useState<Medium>("mobile");
   const [contact, setContact] = React.useState("");
@@ -85,6 +98,26 @@ export function IdentifyStep({
             submit natively, and HTML's default is GET - which would put the
             contact in the URL, the access log and the next Referer header. */}
         <form method="post" onSubmit={submit} className="space-y-4" noValidate>
+          {languages.length > 1 && language && onLanguageChange && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Globe className="size-4 text-text-muted" aria-hidden="true" />
+              <label htmlFor="notice-language" className="text-sm text-text-muted">
+                Read the notice in
+              </label>
+              <Select
+                id="notice-language"
+                value={language}
+                onChange={(e) => onLanguageChange(e.target.value as LanguageCode)}
+                className="w-44"
+              >
+                {languages.map((code) => (
+                  <option key={code} value={code} lang={langTag(code)}>
+                    {LANGUAGE_NAMES[code] ?? code}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">Send my code to</legend>
             <div className="flex gap-4 text-sm">

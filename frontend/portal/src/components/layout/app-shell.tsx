@@ -26,6 +26,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
 
+import { useDrawer } from "@/components/layout/use-drawer";
 import { UserMenu } from "@/components/layout/user-menu";
 import { BrandMark } from "@/components/ui/graphics";
 import { Button } from "@/components/ui/primitives";
@@ -106,7 +107,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           onSignOut={signOut}
         />
 
-        <main id="main" className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
+        {/* Inert under the open drawer: not reachable by Tab, not read out. */}
+        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
           {children}
         </main>
       </div>
@@ -181,10 +183,11 @@ function Sidebar({
   onClose: () => void;
   onSignOut: () => void;
 }) {
+  const drawer = useDrawer<HTMLElement>(mobileOpen, onClose);
   return (
     <>
       {/* Scrim. Clicking it closes the drawer; it is hidden from assistive tech
-          because the close button in the header already does the job. */}
+          because the drawer's own close button and Escape already do the job. */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-20 bg-black/50 backdrop-blur-[2px] lg:hidden"
@@ -194,6 +197,7 @@ function Sidebar({
       )}
 
       <nav
+        ref={drawer}
         id="sidebar-nav"
         aria-label="Main"
         className={cn(
@@ -204,6 +208,13 @@ function Sidebar({
             : "hidden lg:flex",
         )}
       >
+        {mobileOpen && (
+          <div className="flex justify-end border-b border-border px-3 py-2 lg:hidden">
+            <Button variant="ghost" onClick={onClose}>
+              Close menu
+            </Button>
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto px-3 py-4">
           {sections.map((section) => (
             <div key={section.title} className="mb-5 last:mb-0">

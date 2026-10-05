@@ -34,6 +34,7 @@ import {
   useCommandPaletteShortcut,
 } from "@/components/layout/command-palette";
 import { labelFor, locate, sectionsFor, type NavSection } from "@/components/layout/nav";
+import { useDrawer } from "@/components/layout/use-drawer";
 import { UserMenu } from "@/components/layout/user-menu";
 import { useCollapsed } from "@/components/ui/collapsible";
 import { BrandMark } from "@/components/ui/graphics";
@@ -148,7 +149,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           onSignOut={signOut}
         />
 
-        <main id="main" className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
+        {/* Inert under the open drawer: not reachable by Tab, not read out. */}
+        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
           {children}
         </main>
       </div>
@@ -328,10 +330,11 @@ function Sidebar({
   // Folding applies from the desktop breakpoint up; these are the classes that
   // do it, so the drawer on a phone is untouched.
   const folded = collapsed && !mobileOpen;
+  const drawer = useDrawer<HTMLElement>(mobileOpen, onClose);
   return (
     <>
       {/* Scrim. Clicking it closes the drawer; it is hidden from assistive tech
-          because the close button in the header already does the job. */}
+          because the drawer's own close button and Escape already do the job. */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-20 bg-black/50 backdrop-blur-[2px] lg:hidden"
@@ -341,6 +344,7 @@ function Sidebar({
       )}
 
       <nav
+        ref={drawer}
         id="sidebar-nav"
         aria-label="Main"
         data-collapsed={folded || undefined}
@@ -353,6 +357,13 @@ function Sidebar({
             : "hidden lg:flex",
         )}
       >
+        {mobileOpen && (
+          <div className="flex justify-end border-b border-border px-3 py-2 lg:hidden">
+            <Button variant="ghost" onClick={onClose}>
+              Close menu
+            </Button>
+          </div>
+        )}
         <div
           className={cn(
             "flex-1 overflow-x-hidden overflow-y-auto py-4",

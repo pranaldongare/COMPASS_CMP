@@ -151,3 +151,55 @@ describe("the code step", () => {
     expect(await screen.findByLabelText(/mobile number/i)).toBeInTheDocument();
   });
 });
+
+describe("reading the notice in her language (review UX-4)", () => {
+  const BILINGUAL = { ...LINK, available_languages: ["english", "hindi"] };
+  const HINDI = {
+    ...NOTICE,
+    language_code: "hindi",
+    rendered_text: "हम प्रवेश द्वार की तस्वीर लेना चाहेंगे।",
+    purposes: [
+      {
+        purpose_uuid: "00000000-0000-4000-8000-0000000000aa",
+        name: "Photographs",
+        uses: "Entrance photographs",
+        data_categories: ["image"],
+        retention_period: "P1Y",
+        is_mandatory: false,
+      },
+    ],
+  };
+
+  it("lets her choose the language before confirming, marks the text, and focuses the choices", async () => {
+    let asked: string | null = null;
+    server.use(
+      http.get(`${API}/c/${TOKEN}`, () => HttpResponse.json(BILINGUAL)),
+      http.post(`${API}/c/${TOKEN}/otp`, () => HttpResponse.json({ ok: true, message: "" })),
+      http.post(`${API}/c/${TOKEN}/otp/verify`, () =>
+        HttpResponse.json({ ok: true, complete: true, remaining: [], message: "" }),
+      ),
+      http.get(`${API}/auth/me`, () => HttpResponse.json(makeMe({ is_minor: false }))),
+      http.get(`${API}/c/${TOKEN}/notice`, ({ request }) => {
+        asked = new URL(request.url).searchParams.get("language_code");
+        return HttpResponse.json(HINDI);
+      }),
+    );
+    const { user } = render(<ConsentPage />);
+
+    // Offered on the first step, each name in its own language and marked so.
+    const picker = await screen.findByLabelText(/read the notice in/i);
+    const hindi = screen.getByRole("option", { name: "हिन्दी" });
+    expect(hindi).toHaveAttribute("lang", "hi");
+    await user.selectOptions(picker, "hindi");
+    await confirm(user);
+
+    const text = await screen.findByText(HINDI.rendered_text);
+    expect(asked).toBe("hindi");
+    expect(text.closest("[lang]")).toHaveAttribute("lang", "hi");
+
+    // A hidden radio shows its focus on the box a person sees.
+    for (const radio of screen.getAllByRole("radio")) {
+      expect(radio.closest("label")?.className).toContain("has-[:focus-visible]:outline");
+    }
+  });
+});

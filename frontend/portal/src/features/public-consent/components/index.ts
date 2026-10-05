@@ -14,4 +14,4 @@ export { VerifyStep } from "@/features/public-consent/components/verify-step";
 export { NoticeStep } from "@/features/public-consent/components/notice-step";
 export { DoneStep } from "@/features/public-consent/components/done-step";
 export { PurposeChoice } from "@/features/public-consent/components/purpose-choice";
-export { LANGUAGE_NAMES } from "@/features/public-consent/components/languages";
+export { LANGUAGE_NAMES, langTag } from "@/features/public-consent/components/languages";
