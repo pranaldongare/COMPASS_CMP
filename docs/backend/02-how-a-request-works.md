@@ -224,6 +224,11 @@ never on messages.
 - **Queueing** (`tasks/dispatch.py`):
   - `dispatch_required(task, ...)` queues now and turns a broker failure into
     a 503. Use it where queueing *is* the outcome - sending a code.
+  - `ensure_broker()` gives that 503 *before* anybody is looked up. The three
+    neutral forms - sign-in by code, password reset, a consent link's code -
+    call it first: `dispatch_required` runs only for a registered contact, so
+    on its own an outage was a 503 for her and a 200 for a stranger, and the
+    form answered "is this number registered?" (review UX-3).
   - `dispatch_optional(task, ...)` waits for the transaction to commit, then
     queues, and logs rather than fails if the broker is down. Use it for
     receipts and notices about a change.

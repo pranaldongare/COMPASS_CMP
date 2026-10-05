@@ -273,6 +273,10 @@ async def send_contact_code(conn: Conn, *, token: str, contact: str) -> None:
     # The caller's reply does not change, and must not: "if those details are
     # registered, a code has been sent" is the same sentence either way, so a
     # visitor cannot use this to find out whose number is on the register.
+    # Before the lookup, so an outage answers a stranger as it answers her.
+    from cmp.tasks.dispatch import ensure_broker
+
+    await ensure_broker()
     user = await user_repo.by_contact(conn, contact)
     if not user or user["status"] not in ("active", "pending"):
         log.info("consent.code_requested_for_unknown_contact")

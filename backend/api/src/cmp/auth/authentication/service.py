@@ -249,6 +249,10 @@ async def request_subject_otp(conn: Conn, *, contact: str) -> None:
         window_s=3600,
         message="Too many code requests for this contact.",
     )
+    # Before the lookup: an outage must answer a stranger as it answers her.
+    from cmp.tasks.dispatch import ensure_broker
+
+    await ensure_broker()
 
     user = await user_repo.by_contact(conn, contact)
     if not user or user["status"] not in ("active", "pending"):
@@ -401,6 +405,9 @@ async def request_password_reset(conn: Conn, *, email: str) -> None:
         window_s=3600,
         message="Too many reset requests.",
     )
+    from cmp.tasks.dispatch import ensure_broker
+
+    await ensure_broker()
     user = await user_repo.by_email(conn, email)
     if not user or user["role"] == Role.DATA_SUBJECT.value:
         log.info("auth.reset_requested_unknown")

@@ -76,6 +76,35 @@ def _withheld(args: tuple[Any, ...], kwargs: dict[str, Any]) -> dict[str, str]:
     }
 
 
+_BROKER_DOWN = "We could not send that message just now. Please try again in a moment."
+
+
+def _touch_broker() -> None:
+    """Open a connection to the broker and let it go. Raises if it cannot."""
+    from cmp.tasks.app import celery_app
+
+    with celery_app.connection_for_write() as connection:
+        connection.ensure_connection(max_retries=1, timeout=2)
+
+
+async def ensure_broker() -> None:
+    """Refuse now, for everybody, if a required message could not be queued.
+
+    For the forms that answer the same sentence whether or not a contact is
+    registered. Their `dispatch_required` runs only for a registered contact,
+    so on its own a broker outage was a 503 for a registered contact and a 200
+    for anybody else - the oracle the sentence exists to deny. Checked before
+    the lookup, the outage is a 503 for every caller.
+    """
+    import asyncio
+
+    try:
+        await asyncio.to_thread(_touch_broker)
+    except Exception as exc:
+        log.error("task.broker_unreachable", error=str(exc))
+        raise ServiceUnavailable(_BROKER_DOWN) from exc
+
+
 def dispatch_required(task: Any, *args: Any, **kwargs: Any) -> str | None:
     """Queue work the caller cannot succeed without."""
     try:
@@ -84,9 +113,7 @@ def dispatch_required(task: Any, *args: Any, **kwargs: Any) -> str | None:
         )
     except Exception as exc:
         log.error("task.dispatch_failed", task=task.name, required=True, error=str(exc))
-        raise ServiceUnavailable(
-            "We could not send that message just now. Please try again in a moment."
-        ) from exc
+        raise ServiceUnavailable(_BROKER_DOWN) from exc
     log.info("task.queued", task=task.name, task_id=result.id, required=True)
     return str(result.id)
 
