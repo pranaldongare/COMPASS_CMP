@@ -39,7 +39,7 @@ from cmp.db.repositories import holdings
 from cmp.db.repositories import registry as registry_repo
 from cmp.db.repositories import rights as repo
 from cmp.db.repositories import users as user_repo
-from cmp.db.sql import Conn, fetch_one
+from cmp.db.sql import Conn
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.rights import clock, erasure, execution
@@ -671,10 +671,10 @@ async def escalate(conn: Conn, row: Row, *, role: Role | str, actor_id: int) -> 
     if row["request_type"] != Kind.GRIEVANCE:
         raise Conflict("Only a grievance can be escalated to an independent reviewer")
     await repo.update(
-        conn, int(row["request_id"]), escalated_at=row["escalated_at"] or datetime.now(UTC)
-    )
-    await conn.execute(
-        "UPDATE rights_request SET about_dpo = true WHERE request_id = %s", (row["request_id"],)
+        conn,
+        int(row["request_id"]),
+        escalated_at=row["escalated_at"] or datetime.now(UTC),
+        about_dpo=True,
     )
     row = await reload(conn, row)
     await _record(conn, row, Event.RIGHTS_ESCALATED, actor_user_id=actor_id)
@@ -814,11 +814,7 @@ async def add_holder(
     _open(row)
     processor_id: int | None = None
     if processor_uuid:
-        processor = await fetch_one(
-            conn,
-            "SELECT processor_id, legal_name FROM processor WHERE processor_uuid = %s",
-            (processor_uuid,),
-        )
+        processor = await registry_repo.processor_by_uuid(conn, processor_uuid)
         if not processor:
             raise NotFound("Processor")
         processor_id = int(processor["processor_id"])

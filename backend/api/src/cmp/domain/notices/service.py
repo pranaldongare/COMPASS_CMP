@@ -630,3 +630,94 @@ async def preview(conn: Conn, notice_id: int, language_code: str | None = None) 
         "content_hash": chosen["content_hash"] if chosen else None,
         "recipients_preview": await repo.recipients_text(conn, notice["project_id"]),
     }
+
+
+# ------------------------------------------- moved from the router (ARCH-5)
+async def override_purpose(
+    conn: Conn,
+    notice: dict[str, Any],
+    purpose_uuid: str,
+    *,
+    data_categories: list[str] | None,
+    uses: str | None,
+    actor_id: int,
+) -> None:
+    """State Rule 3(b) more narrowly on this notice than the purpose does.
+
+    **The override may only narrow.** `data_categories` must be a subset of
+    the purpose's: a notice that promised *more* than its purpose permits would
+    be collecting outside the basis it cites. `uses` is free text and cannot be
+    checked mechanically, so it is attributed instead, and the audit event
+    carries both texts. Draft notices only; both None reverts to the purpose's
+    own wording.
+    """
+    if notice["status"] != "draft":
+        raise Conflict(
+            f"This notice is {notice['status']}. A published notice is frozen - "
+            "changing what it says is a new version.",
+            code="notice_not_draft",
+        )
+
+    attached = await repo.purposes_of(conn, notice["notice_id"])
+    purpose = next((p for p in attached if str(p["purpose_uuid"]) == purpose_uuid), None)
+    if purpose is None:
+        raise NotFound("Purpose on this notice")
+
+    if data_categories is not None:
+        if not data_categories:
+            raise ValidationFailed(
+                "Rule 3(b)(i) requires the data itemised. An empty list is not a "
+                "narrowing, it is a notice that itemises nothing.",
+                field="data_categories",
+            )
+        widened = sorted(set(data_categories) - set(purpose["purpose_data_categories"]))
+        if widened:
+            raise ValidationFailed(
+                "A notice can narrow what its purpose covers, never widen it. "
+                f"Not covered by '{purpose['purpose_code']}': {', '.join(widened)}.",
+                field="data_categories",
+            )
+
+    await repo.set_purpose_override(
+        conn,
+        notice_id=notice["notice_id"],
+        purpose_id=purpose["purpose_id"],
+        data_categories=data_categories,
+        uses=uses,
+        actor_id=actor_id,
+    )
+    await audit.record(
+        conn,
+        event=Event.NOTICE_PURPOSE_OVERRIDDEN,
+        entity_type="notice",
+        entity_id=notice["notice_id"],
+        detail={
+            "purpose": purpose_uuid,
+            "purpose_code": purpose["purpose_code"],
+            "cleared": data_categories is None and uses is None,
+            "data_categories": data_categories,
+            "uses": uses,
+            "purpose_data_categories": purpose["purpose_data_categories"],
+        },
+    )
+
+
+async def activate_drafted_purposes(conn: Conn, notice: dict[str, Any]) -> int:
+    """Activate every draft purpose on a notice - the DPO's sign-off on the set
+    an uploaded document brought. Returns how many there were."""
+    attached = await repo.purposes_of(conn, notice["notice_id"])
+    drafted = [p for p in attached if p["status"] == "draft"]
+    for purpose in drafted:
+        await registry_repo.set_purpose_status(conn, purpose["purpose_id"], "active")
+        await audit.record(
+            conn,
+            event=Event.PURPOSE_ACTIVATED,
+            entity_type="purpose",
+            entity_id=purpose["purpose_id"],
+            detail={
+                "code": purpose["purpose_code"],
+                "via": "notice",
+                "notice_id": notice["notice_id"],
+            },
+        )
+    return len(drafted)

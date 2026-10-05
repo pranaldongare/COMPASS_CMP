@@ -239,6 +239,8 @@ async def consent_chain_ids(conn: Conn, consent_id: int) -> list[int]:
 #: that quietly does nothing.
 _MUTABLE = frozenset(
     {
+        # Set once, when a grievance about the DPO is escalated.
+        "about_dpo",
         "request_type",
         "original_type",
         "status",

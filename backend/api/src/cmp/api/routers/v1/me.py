@@ -16,21 +16,18 @@ from pydantic import Field
 
 from cmp.api.dependencies import CurrentUser, RequireDataSubject
 from cmp.auth.authentication import service as auth_service
-from cmp.core.errors import Conflict, Forbidden, NotFound, ValidationFailed
+from cmp.core.errors import Forbidden, NotFound, ValidationFailed
 from cmp.db.pool import connection, transaction
 from cmp.db.repositories import audit as audit_repo
 from cmp.db.repositories import consent as consent_repo
 from cmp.db.repositories import entities as entity_repo
 from cmp.db.repositories import exchange as exchange_repo
 from cmp.db.repositories import users as user_repo
-from cmp.db.sql import unique_violation
-from cmp.domain.audit import service as audit
-from cmp.domain.audit.service import Event
 from cmp.domain.breach import notices as breach_notices
 from cmp.domain.consent import service as consent_service
-from cmp.infrastructure.dkms.blind import index_of
+from cmp.domain.users import service as users
 from cmp.schemas.common import Acknowledged, DateOfBirth, Mobile, OtpCode, Out, Schema, ShortText
-from cmp.validation import Email, normalise_mobile
+from cmp.validation import Email
 
 router = APIRouter(prefix="/me", tags=["me"])
 
@@ -129,62 +126,13 @@ async def update_me(body: UpdateMe, principal: CurrentUser) -> dict[str, Any]:
     """Her own details. A contact she gives here is sent a code in the same
     request, and cannot sign her in until it comes back."""
     async with transaction() as conn:
-        before = await user_repo.by_id(conn, principal.user_id)
-        if not before:
-            raise NotFound("Account")
-        try:
-            updated = await user_repo.update_profile(
-                conn,
-                principal.user_id,
-                full_name=body.full_name,
-                mobile=body.mobile,
-                organization_id=None,
-                dob=body.dob.isoformat() if body.dob else None,
-            )
-        except Exception as exc:
-            if unique_violation(exc):
-                raise Conflict(
-                    "That mobile belongs to another account", code="contact_taken"
-                ) from exc
-            raise
-
-        # A code goes out whenever she gives a mobile that is still unconfirmed
-        # afterwards - not only when the digits changed.
-        #
-        # Keying this on "changed" made the commonest case silent. An account
-        # often already carries an unconfirmed number: an administrator set it
-        # on the register, or she typed it and never answered the code. She
-        # opens the account page, and the edit box is pre-filled with that very
-        # number - so the natural act, opening it and pressing save, changed
-        # nothing, sent nothing, and left her at a code box waiting for a
-        # message that was never going to arrive.
-        #
-        # A number already confirmed is left alone: re-sending would unconfirm
-        # a contact that has already proved itself.
-        if body.mobile is not None and updated.get("mobile_verified_at") is None:
-            if index_of("mobile", normalise_mobile(body.mobile)) != (
-                before.get("mobile_hash") or None
-            ):
-                await audit.record(
-                    conn,
-                    event=Event.USER_CONTACT_CHANGED,
-                    entity_type="auth_user",
-                    entity_id=principal.user_id,
-                    subject_user_id=principal.user_id,
-                    detail={"medium": "mobile", "action": "set"},
-                )
-            await auth_service.request_contact_code(conn, user=updated, contact=str(body.mobile))
-        if body.secondary_email is not None:
-            updated = await auth_service.add_secondary_email(
-                conn, user=updated, email=str(body.secondary_email)
-            )
-        await audit.record(
+        updated = await users.update_own_profile(
             conn,
-            event=Event.USER_UPDATED,
-            entity_type="auth_user",
-            entity_id=principal.user_id,
-            subject_user_id=principal.user_id,
-            detail={"self_service": True},
+            principal.user_id,
+            full_name=body.full_name,
+            mobile=body.mobile,
+            dob=body.dob.isoformat() if body.dob else None,
+            secondary_email=str(body.secondary_email) if body.secondary_email is not None else None,
         )
     return updated
 
@@ -233,34 +181,12 @@ async def change_person_type(body: PersonTypeChange, principal: CurrentUser) -> 
     """
     from cmp.core.permissions import Role
 
-    valid = {"external", "employee", "ex_employee", "vendor"}
-    if body.person_type not in valid:
-        raise ValidationFailed("Unknown person type", field="person_type")
-
     if principal.role not in (Role.DATA_SUBJECT, Role.DPO, Role.ADMIN):
         raise Forbidden("Your role does not permit this action")
 
     async with transaction() as conn:
-        user = await user_repo.by_id(conn, principal.user_id)
-        if not user:
-            raise NotFound("Account")
-
-        await user_repo.set_person_type(conn, principal.user_id, body.person_type)
-        await user_repo.record_person_type_change(
-            conn,
-            user_id=principal.user_id,
-            from_type=user["person_type"],
-            to_type=body.person_type,
-            reason=body.reason,
-            changed_by=principal.user_id,
-        )
-        await audit.record(
-            conn,
-            event=Event.USER_PERSON_TYPE_CHANGED,
-            entity_type="person_type_history",
-            entity_id=principal.user_id,
-            subject_user_id=principal.user_id,
-            detail={"from": user["person_type"], "to": body.person_type},
+        await users.change_own_person_type(
+            conn, principal.user_id, person_type=body.person_type, reason=body.reason
         )
     return {"ok": True, "message": "Person type updated. Your permissions are unchanged."}
 

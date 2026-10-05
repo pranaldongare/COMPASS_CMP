@@ -26,8 +26,9 @@ from typing import Any
 from cmp.core.errors import NotFound, ValidationFailed
 from cmp.db.repositories import breaches as repo
 from cmp.db.repositories import holdings
+from cmp.db.repositories import registry as registry_repo
 from cmp.db.repositories import users as user_repo
-from cmp.db.sql import Conn, fetch_one
+from cmp.db.sql import Conn
 from cmp.domain.audit.service import Event
 from cmp.domain.breach import notices, service
 from cmp.validation.choices import choice
@@ -66,11 +67,7 @@ async def _derive(
         kind = choice(ScopeKind, str(scope.get("kind") or ""), field=f"scopes[{i}].kind")
         if kind == ScopeKind.PROCESSOR:
             uuid = scope.get("processor_uuid")
-            processor = uuid and await fetch_one(
-                conn,
-                "SELECT processor_id FROM processor WHERE processor_uuid = %s",
-                (str(uuid),),
-            )
+            processor = uuid and await registry_repo.processor_by_uuid(conn, str(uuid))
             if not processor:
                 raise NotFound("Processor")
             rows = await holdings.people_held_by(conn, processor_id=int(processor["processor_id"]))
@@ -79,9 +76,7 @@ async def _derive(
             resolved.append({"kind": kind.value, "processor_uuid": str(uuid), "found": len(rows)})
         elif kind == ScopeKind.DATA_SOURCE:
             uuid = scope.get("source_uuid")
-            source = uuid and await fetch_one(
-                conn, "SELECT source_id FROM data_source WHERE source_uuid = %s", (str(uuid),)
-            )
+            source = uuid and await registry_repo.source_by_uuid(conn, str(uuid))
             if not source:
                 raise NotFound("Data source")
             rows = await holdings.people_held_by(conn, source_id=int(source["source_id"]))
@@ -225,14 +220,9 @@ async def listing(conn: Conn, *, breach_uuid: str, after: str | None) -> Row:
     breach_id = int(breach["breach_id"])
     after_id: int | None = None
     if after:
-        row = await fetch_one(
-            conn,
-            "SELECT affected_id FROM breach_affected WHERE affected_uuid = %s AND breach_id = %s",
-            (after, breach_id),
-        )
-        if not row:
+        after_id = await repo.affected_id_by_uuid(conn, breach_id, after)
+        if after_id is None:
             raise ValidationFailed("Unknown cursor", field="cursor")
-        after_id = int(row["affected_id"])
     page = await repo.affected_page(conn, breach_id, after=after_id, limit=PAGE + 1)
     more = len(page) > PAGE
     page = page[:PAGE]

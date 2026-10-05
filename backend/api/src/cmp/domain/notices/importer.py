@@ -120,13 +120,7 @@ async def _guard(
     # That column names the notice currently in force; a notice that was approved
     # but not yet in force, or one already superseded, is equally not something an
     # upload may rewrite, and reading the pointer would have missed both.
-    cur = await conn.execute(
-        """SELECT notice_code, status FROM notice
-            WHERE project_id = %s AND status <> 'draft'
-            ORDER BY notice_id LIMIT 1""",
-        (project["project_id"],),
-    )
-    settled = await cur.fetchone()
+    settled = await repo.first_settled(conn, project["project_id"])
     if settled:
         raise Conflict(
             f"This project already has the {settled['status']} notice "
@@ -163,12 +157,7 @@ async def preview(
     # paginated: this needs to compare against the whole register, and a
     # paginated read would quietly compare against the first page and report
     # "no duplicates" for a register that has one on page two.
-    cur = await conn.execute(
-        """SELECT purpose_code, name, uses FROM purpose
-            WHERE status IN ('active', 'draft')
-            ORDER BY purpose_id DESC LIMIT 2000"""
-    )
-    rows = await cur.fetchall()
+    rows = await registry_repo.purposes_for_comparison(conn)
 
     # Normalised once, not once per comparison.
     register = [(row, _norm(row["uses"] or "")) for row in rows]
@@ -357,19 +346,11 @@ async def _discard_orphans(conn: Conn, *, purpose_ids: list[int]) -> list[str]:
         still_used = await registry_repo.purpose_usage(conn, purpose_id)
         if still_used:
             continue
-        granted = await _has_grants(conn, purpose_id)
-        if granted:
+        if await registry_repo.purpose_has_grants(conn, purpose_id):
             continue
-        await conn.execute("DELETE FROM purpose WHERE purpose_id = %s", (purpose_id,))
+        await registry_repo.delete_unused_purpose(conn, purpose_id)
         gone.append(row["purpose_code"])
     return gone
-
-
-async def _has_grants(conn: Conn, purpose_id: int) -> bool:
-    cur = await conn.execute(
-        "SELECT 1 FROM consent_purpose_grant WHERE purpose_id = %s LIMIT 1", (purpose_id,)
-    )
-    return await cur.fetchone() is not None
 
 
 async def _create_purpose(

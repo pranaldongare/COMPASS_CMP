@@ -18,7 +18,7 @@ from cmp.core.errors import Conflict, NotFound, ValidationFailed
 from cmp.db.repositories import legal_holds as hold_repo
 from cmp.db.repositories import rights as rights_repo
 from cmp.db.repositories import users as user_repo
-from cmp.db.sql import Conn, fetch_one
+from cmp.db.sql import Conn
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.rights import erasure
@@ -41,12 +41,9 @@ async def place(
     asset_id: int | None = None
     subject_id: int | None = None
     if asset_uuid is not None:
-        asset = await fetch_one(
-            conn, "SELECT asset_id FROM data_asset WHERE asset_uuid = %s", (asset_uuid,)
-        )
-        if not asset:
+        asset_id = await hold_repo.asset_id_by_uuid(conn, asset_uuid)
+        if asset_id is None:
             raise NotFound("Asset")
-        asset_id = int(asset["asset_id"])
     else:
         person = await user_repo.by_uuid(conn, str(subject_uuid))
         if not person:
@@ -80,11 +77,7 @@ async def release(conn: Conn, *, hold_uuid: str, actor_id: int) -> Row:
         raise NotFound("Legal hold")
     if held["released_at"] is not None:
         raise Conflict("This hold has already been released", code="hold_released")
-    row = await fetch_one(
-        conn,
-        "SELECT asset_id, subject_user_id FROM legal_hold WHERE hold_id = %s",
-        (int(held["hold_id"]),),
-    )
+    row = await hold_repo.what_it_covers(conn, int(held["hold_id"]))
     assert row is not None
     await hold_repo.release(conn, int(held["hold_id"]), released_by=actor_id)
     await audit.record(

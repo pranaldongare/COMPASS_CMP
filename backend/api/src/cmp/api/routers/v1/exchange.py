@@ -21,8 +21,6 @@ from cmp.core.permissions import Role
 from cmp.db.pool import connection, transaction
 from cmp.db.repositories import exchange as repo
 from cmp.db.repositories import projects as project_repo
-from cmp.domain.audit import service as audit
-from cmp.domain.audit.service import Event
 from cmp.domain.exchange import service as service
 from cmp.domain.exchange import transfer
 from cmp.schemas.common import Out, Page
@@ -242,18 +240,8 @@ async def download_export(export_uuid: UUID, principal: ExportReader) -> Respons
     that withdrawals since then are not reflected in it.
     """
     async with transaction() as conn:
-        export = await repo.export_by_uuid(
+        export, payload, media_type, ext = await service.download(
             conn, str(export_uuid), role=principal.role, user_id=principal.user_id
-        )
-        if not export:
-            raise NotFound("Export")
-
-        payload, media_type, ext = await service.render(conn, export)
-        await audit.record(
-            conn,
-            event=Event.EXPORT_DOWNLOADED,
-            entity_type="export_log",
-            entity_id=export["export_id"],
         )
 
     from cmp.core.security import file_hash
@@ -345,8 +333,8 @@ async def validate_import(
     finding out after a partial write is worse than finding out before.
     """
     payload = await _read_manifest(manifest)
-    async with connection() as conn:
-        result = await service.validate(
+    async with transaction() as conn:
+        return await service.dry_run(
             conn,
             source_uuid=str(source),
             project_uuid=str(project) if project else None,
@@ -354,20 +342,6 @@ async def validate_import(
             role=principal.role,
             actor_id=principal.user_id,
         )
-    async with transaction() as conn:
-        await audit.record(
-            conn,
-            event=Event.IMPORT_VALIDATED,
-            entity_type="import_batch",
-            entity_id=0,
-            detail={
-                "source": str(source),
-                "valid": result["valid"],
-                "errors": result["error_count"],
-                "sha256": result["file_sha256"],
-            },
-        )
-    return result
 
 
 @router.post("/imports", status_code=status.HTTP_201_CREATED)

@@ -91,7 +91,7 @@ def test_every_collection_role_can_register_a_data_source() -> None:
     A DCO and an RCO hold it too: a campus lead who needs a second rig should
     not have to ask somebody else to type it in. What constrains them is *which
     processor* they may register under - a DCO's is a third party's, an RCO's is
-    in-house - and that lives in `registry._refuse_foreign_processor`, because
+    in-house - and that lives in `domain/registry/service.refuse_foreign_processor`, because
     the matrix answers "may this role write here at all" and the answer is yes.
     """
     for role in (Role.DCO_ADMIN, Role.DCO, Role.RCO):

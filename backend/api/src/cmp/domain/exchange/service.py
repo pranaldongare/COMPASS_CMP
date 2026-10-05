@@ -772,3 +772,61 @@ async def _ingest_row(
             subject_role=subject_role,
             disposition="active",
         )
+
+
+# ------------------------------------------- moved from the router (ARCH-5)
+async def download(
+    conn: Conn, export_uuid: str, *, role: str, user_id: int
+) -> tuple[dict[str, Any], str, str, str]:
+    """The export as it was given out, and the record that it was taken again.
+
+    Returns the export row, the payload, its media type and its extension.
+    """
+    export = await repo.export_by_uuid(conn, export_uuid, role=role, user_id=user_id)
+    if not export:
+        raise NotFound("Export")
+    payload, media_type, ext = await render(conn, export)
+    await audit.record(
+        conn,
+        event=Event.EXPORT_DOWNLOADED,
+        entity_type="export_log",
+        entity_id=export["export_id"],
+    )
+    return export, payload, media_type, ext
+
+
+async def dry_run(
+    conn: Conn,
+    *,
+    source_uuid: str,
+    project_uuid: str | None,
+    raw: bytes,
+    role: str,
+    actor_id: int,
+) -> dict[str, Any]:
+    """Validate a manifest without importing it, and record that it was checked.
+
+    Nothing about the manifest is written but the record: which source, whether
+    it passed, how many errors, and the file's digest.
+    """
+    result = await validate(
+        conn,
+        source_uuid=source_uuid,
+        project_uuid=project_uuid,
+        raw=raw,
+        role=role,
+        actor_id=actor_id,
+    )
+    await audit.record(
+        conn,
+        event=Event.IMPORT_VALIDATED,
+        entity_type="import_batch",
+        entity_id=0,
+        detail={
+            "source": source_uuid,
+            "valid": result["valid"],
+            "errors": result["error_count"],
+            "sha256": result["file_sha256"],
+        },
+    )
+    return result

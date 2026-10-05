@@ -40,14 +40,11 @@ from cmp.api.dependencies import (
 )
 from cmp.core.config import settings
 from cmp.core.enums import NoticeAudience
-from cmp.core.errors import BadRequest, Conflict, NotFound, ValidationFailed
+from cmp.core.errors import BadRequest, NotFound, ValidationFailed
 from cmp.core.pagination import PageRequest
 from cmp.db.pool import connection, transaction
 from cmp.db.repositories import notices as repo
 from cmp.db.repositories import projects as project_repo
-from cmp.db.repositories import registry as registry_repo
-from cmp.domain.audit import service as audit
-from cmp.domain.audit.service import Event
 from cmp.domain.notices import importer
 from cmp.domain.notices import service as service
 from cmp.schemas.common import (
@@ -474,55 +471,13 @@ async def override_purpose(
     """
     async with transaction() as conn:
         notice = await _require_notice(conn, str(notice_uuid), principal)
-        if notice["status"] != "draft":
-            raise Conflict(
-                f"This notice is {notice['status']}. A published notice is frozen - "
-                "changing what it says is a new version.",
-                code="notice_not_draft",
-            )
-
-        attached = await repo.purposes_of(conn, notice["notice_id"])
-        purpose = next((p for p in attached if str(p["purpose_uuid"]) == str(purpose_uuid)), None)
-        if purpose is None:
-            raise NotFound("Purpose on this notice")
-
-        if body.data_categories is not None:
-            if not body.data_categories:
-                raise ValidationFailed(
-                    "Rule 3(b)(i) requires the data itemised. An empty list is not a "
-                    "narrowing, it is a notice that itemises nothing.",
-                    field="data_categories",
-                )
-            widened = sorted(set(body.data_categories) - set(purpose["purpose_data_categories"]))
-            if widened:
-                raise ValidationFailed(
-                    "A notice can narrow what its purpose covers, never widen it. "
-                    f"Not covered by '{purpose['purpose_code']}': {', '.join(widened)}.",
-                    field="data_categories",
-                )
-
-        await repo.set_purpose_override(
+        await service.override_purpose(
             conn,
-            notice_id=notice["notice_id"],
-            purpose_id=purpose["purpose_id"],
+            notice,
+            str(purpose_uuid),
             data_categories=body.data_categories,
             uses=body.uses,
             actor_id=principal.user_id,
-        )
-
-        await audit.record(
-            conn,
-            event=Event.NOTICE_PURPOSE_OVERRIDDEN,
-            entity_type="notice",
-            entity_id=notice["notice_id"],
-            detail={
-                "purpose": str(purpose_uuid),
-                "purpose_code": purpose["purpose_code"],
-                "cleared": body.data_categories is None and body.uses is None,
-                "data_categories": body.data_categories,
-                "uses": body.uses,
-                "purpose_data_categories": purpose["purpose_data_categories"],
-            },
         )
 
         return {
@@ -753,28 +708,13 @@ async def activate_notice_purposes(notice_uuid: UUID, principal: RequireDPO) -> 
     """
     async with transaction() as conn:
         notice = await _require_notice(conn, str(notice_uuid), principal)
-        attached = await repo.purposes_of(conn, notice["notice_id"])
-        drafted = [p for p in attached if p["status"] == "draft"]
-
-        for purpose in drafted:
-            await registry_repo.set_purpose_status(conn, purpose["purpose_id"], "active")
-            await audit.record(
-                conn,
-                event=Event.PURPOSE_ACTIVATED,
-                entity_type="purpose",
-                entity_id=purpose["purpose_id"],
-                detail={
-                    "code": purpose["purpose_code"],
-                    "via": "notice",
-                    "notice_id": notice["notice_id"],
-                },
-            )
+        drafted = await service.activate_drafted_purposes(conn, notice)
 
         if not drafted:
             return {"ok": True, "message": "Every purpose on this notice is already active."}
         return {
             "ok": True,
-            "message": f"{len(drafted)} purpose(s) activated. The notice can now be published.",
+            "message": f"{drafted} purpose(s) activated. The notice can now be published.",
         }
 
 

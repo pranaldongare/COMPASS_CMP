@@ -1013,3 +1013,27 @@ async def confirm_registration(
         detail={"method": "registration"},
     )
     return {"token": token, "session": session, "user": user, "max_age": settings.session_ttl_s}
+
+
+# ------------------------------------------- moved from the router (ARCH-5)
+async def record_sign_out(conn: Conn, *, user_id: int) -> None:
+    """The record that a session was ended by its owner; the caller ends it."""
+    await audit.record(
+        conn,
+        event=Event.LOGOUT,
+        entity_type="auth_user",
+        entity_id=user_id,
+        subject_user_id=user_id,
+    )
+
+
+async def record_session_revoked(conn: Conn, *, user_id: int, session_uuid: str) -> None:
+    """The record that she ended one of her own sessions from the account page."""
+    await audit.record(
+        conn,
+        event=Event.USER_SESSIONS_REVOKED,
+        entity_type="auth_user",
+        entity_id=user_id,
+        subject_user_id=user_id,
+        detail={"session": session_uuid, "self_service": True},
+    )

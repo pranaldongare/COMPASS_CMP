@@ -531,3 +531,37 @@ async def set_purpose_override(
         """,
         (data_categories, uses, clearing, actor_id, clearing, notice_id, purpose_id),
     )
+
+
+async def published_by_uuid(conn: Conn, notice_uuid: str) -> Row | None:
+    """A notice the public may read: published, or superseded by a later one.
+
+    A published notice is a public document; a draft is not, and is absent here
+    rather than refused.
+    """
+    return await fetch_one(
+        conn,
+        """SELECT n.notice_id, n.notice_uuid, n.notice_code, n.version, n.status,
+                  n.withdraw_url, n.exercise_rights_url, n.board_complaint_url,
+                  n.dpo_contact, n.recipients_text, n.published_at,
+                  p.project_name
+           FROM notice n JOIN project p ON p.project_id = n.project_id
+           WHERE n.notice_uuid = %s AND n.status IN ('published','superseded')""",
+        (notice_uuid,),
+    )
+
+
+async def first_settled(conn: Conn, project_id: int) -> Row | None:
+    """The project's first notice that is no longer a draft, if any.
+
+    Asked of the notices themselves rather than of `project.current_notice_id`:
+    that column names the notice in force, and a notice approved but not yet in
+    force, or one already superseded, is equally not a draft.
+    """
+    return await fetch_one(
+        conn,
+        """SELECT notice_code, status FROM notice
+            WHERE project_id = %s AND status <> 'draft'
+            ORDER BY notice_id LIMIT 1""",
+        (project_id,),
+    )

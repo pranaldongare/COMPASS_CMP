@@ -530,3 +530,13 @@ async def count_affected(conn: Conn, breach_id: int) -> int:
         conn, "SELECT count(*) AS n FROM breach_affected WHERE breach_id = %s", (breach_id,)
     )
     return int(row["n"]) if row else 0
+
+
+async def affected_id_by_uuid(conn: Conn, breach_id: int, affected_uuid: str) -> int | None:
+    """The row a page cursor names, within this breach only."""
+    row = await fetch_one(
+        conn,
+        "SELECT affected_id FROM breach_affected WHERE affected_uuid = %s AND breach_id = %s",
+        (affected_uuid, breach_id),
+    )
+    return int(row["affected_id"]) if row else None

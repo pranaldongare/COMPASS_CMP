@@ -555,7 +555,7 @@ async def capture(
     # migration 0023 makes the second a constraint violation, and this lock
     # makes it a supersession instead, which is what she meant. The lock is
     # transaction-scoped and released at commit or rollback.
-    await conn.execute("SELECT pg_advisory_xact_lock(%s, %s)", (user_id, link["notice_id"]))
+    await repo.lock_capture(conn, user_id=user_id, notice_id=link["notice_id"])
 
     existing = await repo.current_for_user_notice(
         conn, user_id=user_id, notice_id=link["notice_id"]
@@ -749,3 +749,82 @@ async def withdraw(
             "withdrawal - to ask for erasure, make a rights request."
         ),
     }
+
+
+# ------------------------------------------- moved from the router (ARCH-5)
+async def _link_in_scope(conn: Conn, link_uuid: str, *, role: Any, user_id: int) -> dict[str, Any]:
+    link = await repo.link_by_uuid(conn, link_uuid, role=role, user_id=user_id)
+    if not link:
+        raise NotFound("Consent link")
+    return link
+
+
+async def replace_link(
+    conn: Conn, link_uuid: str, *, role: Any, actor_id: int
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Revoke a live link and mint its replacement, in one transaction.
+
+    Returns the old link and the new one. A revoke without its replacement
+    would leave a site with no way to collect; a mint without the revoke would
+    leave two live links for one site, and the older one is exactly the one
+    nobody is tracking. The old link stays in the register as `revoked`.
+    """
+    link = await _link_in_scope(conn, link_uuid, role=role, user_id=actor_id)
+    revoked = await repo.revoke_link(conn, link["link_id"], actor_id)
+    if not revoked:
+        raise Conflict(
+            "That link is not active, so there is nothing to replace. "
+            "Mint a new one from the site instead.",
+            code="link_not_active",
+        )
+    fresh = await create_link(
+        conn,
+        site_uuid=str(link["site_uuid"]),
+        # The replacement inherits the original's terms. Re-deciding them here
+        # would make this a different operation wearing the same name.
+        expires_at=link["expires_at"],
+        max_uses=link["max_uses"],
+        actor_id=actor_id,
+        role=role,
+    )
+    await audit.record(
+        conn,
+        event=Event.LINK_REMINTED,
+        entity_type="consent_link",
+        entity_id=fresh["link_id"],
+        detail={
+            "replaced": str(link["link_uuid"]),
+            "site": str(link["site_uuid"]),
+            "uses_on_replaced": link["use_count"],
+        },
+    )
+    return link, fresh
+
+
+async def revoke_link(conn: Conn, link_uuid: str, *, role: Any, actor_id: int) -> None:
+    link = await _link_in_scope(conn, link_uuid, role=role, user_id=actor_id)
+    revoked = await repo.revoke_link(conn, link["link_id"], actor_id)
+    if not revoked:
+        raise Conflict("That link is not active", code="link_not_active")
+    await audit.record(
+        conn,
+        event=Event.LINK_REVOKED,
+        entity_type="consent_link",
+        entity_id=link["link_id"],
+    )
+
+
+async def record_link_opened(conn: Conn, token: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Resolve a link for its public page, and record that it was opened.
+
+    Returns the link and its notice's languages.
+    """
+    link = await resolve_link(conn, token)
+    languages = await notice_repo.languages_of(conn, link["notice_id"])
+    await audit.record(
+        conn,
+        event=Event.LINK_OPENED,
+        entity_type="consent_link",
+        entity_id=link["link_id"],
+    )
+    return link, languages

@@ -67,18 +67,7 @@ async def public_notice(
     """A published notice is a public document. Drafts are not visible here."""
     _no_referrer(response)
     async with connection() as conn:
-        from cmp.db.sql import fetch_one
-
-        notice = await fetch_one(
-            conn,
-            """SELECT n.notice_id, n.notice_uuid, n.notice_code, n.version, n.status,
-                      n.withdraw_url, n.exercise_rights_url, n.board_complaint_url,
-                      n.dpo_contact, n.recipients_text, n.published_at,
-                      p.project_name
-               FROM notice n JOIN project p ON p.project_id = n.project_id
-               WHERE n.notice_uuid = %s AND n.status IN ('published','superseded')""",
-            (str(notice_uuid),),
-        )
+        notice = await notice_repo.published_by_uuid(conn, str(notice_uuid))
         if not notice:
             raise NotFound("Notice")
 

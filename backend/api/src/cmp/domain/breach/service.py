@@ -27,7 +27,8 @@ from typing import Any
 from cmp.core.config import settings
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
 from cmp.db.repositories import breaches as repo
-from cmp.db.sql import Conn, fetch_one
+from cmp.db.repositories import registry as registry_repo
+from cmp.db.sql import Conn
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.breach import clock, state_machine
@@ -135,9 +136,7 @@ async def record(
     if kind == LocationKind.PROCESSOR:
         if not processor_uuid:
             raise ValidationFailed("Name the processor", field="processor_uuid")
-        found = await fetch_one(
-            conn, "SELECT processor_id FROM processor WHERE processor_uuid = %s", (processor_uuid,)
-        )
+        found = await registry_repo.processor_by_uuid(conn, processor_uuid)
         if not found:
             raise NotFound("Processor")
         processor_id = int(found["processor_id"])
@@ -148,9 +147,7 @@ async def record(
     if kind == LocationKind.DATA_SOURCE:
         if not source_uuid:
             raise ValidationFailed("Name the data source", field="source_uuid")
-        found = await fetch_one(
-            conn, "SELECT source_id FROM data_source WHERE source_uuid = %s", (source_uuid,)
-        )
+        found = await registry_repo.source_by_uuid(conn, source_uuid)
         if not found:
             raise NotFound("Data source")
         source_id = int(found["source_id"])

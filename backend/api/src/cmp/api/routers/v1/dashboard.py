@@ -19,11 +19,11 @@ from cmp.core.errors import Forbidden, NotFound
 from cmp.core.permissions import Role
 from cmp.db.pool import connection, transaction
 from cmp.db.repositories import audit as audit_repo
+from cmp.db.repositories import dashboard as dashboard_repo
 from cmp.db.repositories import entities as entity_repo
 from cmp.db.repositories import projects as project_repo
 from cmp.db.repositories import rights as rights_repo
 from cmp.db.repositories import users as user_repo
-from cmp.db.sql import fetch_all, fetch_one
 from cmp.domain.breach import service as breach_service
 from cmp.schemas.common import Acknowledged, Out
 
@@ -393,38 +393,12 @@ async def _recent_activity(
 
 async def _rnd(conn: Any, user_id: int) -> dict[str, Any]:
     """Own projects by status; what needs their action."""
-    counts = await fetch_one(
-        conn,
-        """SELECT
-             count(*) AS total,
-             count(*) FILTER (WHERE project_status IN ('in_draft', 'under_process'))
-                                                                         AS in_draft,
-             count(*) FILTER (WHERE project_status = 'pending_approval') AS pending_approval,
-             count(*) FILTER (WHERE project_status = 'approved')         AS approved,
-             count(*) FILTER (WHERE project_status = 'closed')           AS closed
-           FROM project WHERE created_by = %s""",
-        (user_id,),
-    )
+    counts = await dashboard_repo.rnd_counts(conn, user_id)
     # A draft with no proof-bearing approval is precisely what they must act on:
     # it is the last requirement between them and submitting for review, and the
     # one most easily forgotten because the proof comes from somebody else.
-    queue = await fetch_all(
-        conn,
-        """SELECT p.project_uuid, p.project_name, p.project_status, p.updated_at,
-                  'Upload a security approval with its proof file' AS action
-           FROM project p
-           WHERE p.created_by = %s
-             AND p.project_status IN ('in_draft', 'under_process')
-             AND NOT EXISTS (
-               SELECT 1 FROM project_approval a
-               WHERE a.project_id = p.project_id
-                 AND coalesce(length(trim(a.proof_file_ref)), 0) > 0)
-           ORDER BY p.updated_at DESC LIMIT 25""",
-        (user_id,),
-    )
-    own_projects = await fetch_all(
-        conn, "SELECT project_id FROM project WHERE created_by = %s", (user_id,)
-    )
+    queue = await dashboard_repo.rnd_queue(conn, user_id)
+    own_projects = await dashboard_repo.projects_created_by(conn, user_id)
     recent = await _recent_activity(
         conn,
         project_ids=[r["project_id"] for r in own_projects],
@@ -440,26 +414,7 @@ async def _rnd(conn: Any, user_id: int) -> dict[str, Any]:
 
 
 async def _dpo(conn: Any) -> dict[str, Any]:
-    counts = await fetch_one(
-        conn,
-        """SELECT
-             (SELECT count(*) FROM project WHERE project_status = 'in_draft')
-               AS in_draft,
-             (SELECT count(*) FROM project WHERE project_status = 'pending_approval')
-               AS pending_approval,
-             (SELECT count(*) FROM project WHERE project_status = 'approved')
-               AS approved,
-             (SELECT count(*) FROM notice WHERE status = 'draft')      AS draft_notices,
-             (SELECT count(*) FROM purpose WHERE status = 'draft')     AS draft_purposes,
-             (SELECT count(*) FROM v_current_consent)                  AS total_consents,
-             (SELECT count(*) FROM v_current_consent vc
-               WHERE vc.is_withdrawal AND NOT EXISTS (
-                 SELECT 1 FROM consent_purpose_grant g
-                  WHERE g.consent_id = vc.consent_id AND g.granted))
-               AS withdrawals,
-             (SELECT count(*) FROM notice_language WHERE approved_at IS NULL)
-               AS unapproved_languages""",
-    )
+    counts = await dashboard_repo.dpo_counts(conn)
     # Drafts where the DPO has something to do, rather than every draft.
     #
     # It used to list them all, with the action "Review and publish the notice"
@@ -472,30 +427,8 @@ async def _dpo(conn: Any) -> dict[str, Any]:
     # the activation gates the DPO's own approval. So this is work brought
     # forward rather than work owed, and the queue says so - it is not in
     # "Needs you today", and the name does not claim anyone is waiting.
-    draft_queue = await fetch_all(
-        conn,
-        """SELECT p.project_uuid, p.project_name, p.updated_at,
-                  'Activate the purposes on its notice' AS action
-           FROM project p
-           WHERE p.project_status = 'in_draft'
-             AND EXISTS (
-                   SELECT 1
-                     FROM notice n
-                     JOIN notice_purpose np ON np.notice_id = n.notice_id
-                     JOIN purpose pr        ON pr.purpose_id = np.purpose_id
-                    WHERE n.project_id = p.project_id
-                      AND n.status IN ('draft', 'approved')
-                      AND pr.status <> 'active'
-                 )
-           ORDER BY p.updated_at DESC LIMIT 25""",
-    )
-    approval_queue = await fetch_all(
-        conn,
-        """SELECT p.project_uuid, p.project_name, p.updated_at,
-                  'Review the approval documents' AS action
-           FROM project p WHERE p.project_status = 'pending_approval'
-           ORDER BY p.updated_at DESC LIMIT 25""",
-    )
+    draft_queue = await dashboard_repo.dpo_draft_queue(conn)
+    approval_queue = await dashboard_repo.dpo_approval_queue(conn)
     # Amendments to projects the DPO has already approved. Its own queue rather
     # than a row in the approval one: those are projects waiting to start, this
     # is a live project waiting to expand, and the second is easy to leave
@@ -585,51 +518,14 @@ async def _dpo(conn: Any) -> dict[str, Any]:
 
 
 async def _dco(conn: Any, user_id: int, *, role: Role = Role.DCO) -> dict[str, Any]:
-    counts = await fetch_one(
-        conn,
-        """SELECT
-             (SELECT count(*) FROM project WHERE dco_user_id = %(u)s
-                AND project_status = 'approved')                       AS approved_projects,
-             (SELECT count(*) FROM consent_link cl
-                JOIN notice n ON n.notice_id = cl.notice_id
-                JOIN project p ON p.project_id = n.project_id
-               WHERE p.dco_user_id = %(u)s AND cl.status = 'active')    AS active_links,
-             (SELECT count(*) FROM v_current_consent vc
-                JOIN notice n ON n.notice_id = vc.notice_id
-                JOIN project p ON p.project_id = n.project_id
-               WHERE p.dco_user_id = %(u)s)                            AS consents,
-             (SELECT count(*) FROM export_log e
-                JOIN project p ON p.project_id = e.project_id
-               WHERE p.dco_user_id = %(u)s)                            AS exports,
-             (SELECT count(*) FROM data_asset a
-                JOIN collection c ON c.collection_id = a.collection_id
-                JOIN project p ON p.project_id = c.project_id
-               WHERE p.dco_user_id = %(u)s AND a.has_unmapped_subjects) AS flagged_assets""",
-        {"u": user_id},
-    )
+    counts = await dashboard_repo.dco_counts(conn, user_id)
     # Declared-against-mapped gaps: the control that makes direct collection workable.
-    exceptions = await fetch_all(
-        conn,
-        """SELECT c.collection_uuid, c.source_collection_ref, c.collected_on,
-                  c.declared_asset_count,
-                  (SELECT count(*) FROM data_asset a
-                    WHERE a.collection_id = c.collection_id) AS mapped_asset_count,
-                  p.project_uuid, p.project_name
-           FROM collection c JOIN project p ON p.project_id = c.project_id
-           WHERE p.dco_user_id = %s
-             AND c.declared_asset_count >
-                 (SELECT count(*) FROM data_asset a WHERE a.collection_id = c.collection_id)
-           ORDER BY c.collected_on DESC LIMIT 25""",
-        (user_id,),
-    )
+    exceptions = await dashboard_repo.dco_exceptions(conn, user_id)
     # Projects in this caller's *read* scope. The predicate is imported rather
     # than restated: it used to be copied here under a comment promising the
     # feed and the project list could not show different worlds, and a copy is
     # exactly how they come to.
-    pred, pred_params = project_repo.scope_predicate(role, user_id)
-    in_scope = await fetch_all(
-        conn, f"SELECT p.project_id FROM project p WHERE {pred}", pred_params
-    )
+    in_scope = await dashboard_repo.projects_in_scope(conn, role, user_id)
     recent = await _recent_activity(
         conn, project_ids=[r["project_id"] for r in in_scope], actor_id=user_id, role=role
     )
@@ -649,68 +545,16 @@ async def _dco_admin(conn: Any, user_id: int) -> dict[str, Any]:
     can be minted for that site and nobody is accountable for it - the project is
     approved and stalled, and nothing else in the system says so.
     """
-    counts = await fetch_one(
-        conn,
-        """SELECT
-             count(DISTINCT p.project_id)                                AS projects,
-             count(DISTINCT p.project_id) FILTER (
-               WHERE p.project_status = 'approved')                      AS approved_projects,
-             count(DISTINCT ps.site_id) FILTER (
-               WHERE ps.source_id IS NULL AND ps.status = 'active')      AS sites_awaiting_source,
-             (SELECT count(*) FROM data_source d
-                JOIN processor pr ON pr.processor_id = d.processor_id
-               WHERE NOT pr.is_in_house
-                 AND d.owner_user_id IS NULL
-                 AND d.status = 'active')                                AS sources_without_owner
-           FROM project p
-           JOIN project_processor pp ON pp.project_id = p.project_id
-           JOIN processor pr ON pr.processor_id = pp.processor_id
-           LEFT JOIN project_site ps ON ps.project_id = p.project_id
-          WHERE NOT pr.is_in_house""",
-    )
-    awaiting = await fetch_all(
-        conn,
-        """SELECT DISTINCT p.project_uuid, p.project_name, p.project_status, p.updated_at,
-                  ps.site_uuid, ps.site_label,
-                  'Attach the data source that will collect here' AS action
-           FROM project p
-           JOIN project_processor pp ON pp.project_id = p.project_id
-           JOIN processor pr ON pr.processor_id = pp.processor_id
-           JOIN project_site ps ON ps.project_id = p.project_id
-          WHERE NOT pr.is_in_house
-            AND p.project_status = 'approved'
-            AND ps.status = 'active'
-            AND ps.source_id IS NULL
-          ORDER BY p.updated_at DESC LIMIT 25""",
-    )
+    counts = await dashboard_repo.dco_admin_counts(conn)
+    awaiting = await dashboard_repo.dco_admin_awaiting(conn)
 
     # A processor the DPO has just agreed to, with no collection set up under it
     # yet. The site queue above cannot show this - there are no sites to show -
     # so without it a newly approved partner is invisible to the person whose
     # job is to set it up.
-    fresh = await fetch_all(
-        conn,
-        """SELECT p.project_uuid, p.project_name, p.project_status,
-                  pr.legal_name, pp.decided_at,
-                  'Register the collection sites for this new processor' AS action
-           FROM project_processor pp
-           JOIN project p    ON p.project_id = pp.project_id
-           JOIN processor pr ON pr.processor_id = pp.processor_id
-          WHERE pp.status = 'approved'
-            AND NOT pr.is_in_house
-            AND p.project_status = 'approved'
-            AND NOT EXISTS (SELECT 1 FROM project_site ps
-                             WHERE ps.project_id = pp.project_id
-                               AND ps.processor_id = pp.processor_id
-                               AND ps.status = 'active')
-          ORDER BY pp.decided_at DESC NULLS LAST
-          LIMIT 25""",
-    )
+    fresh = await dashboard_repo.dco_admin_fresh(conn)
 
-    pred, pred_params = project_repo.scope_predicate(Role.DCO_ADMIN, user_id)
-    in_scope = await fetch_all(
-        conn, f"SELECT p.project_id FROM project p WHERE {pred}", pred_params
-    )
+    in_scope = await dashboard_repo.projects_in_scope(conn, Role.DCO_ADMIN, user_id)
     recent = await _recent_activity(
         conn,
         project_ids=[r["project_id"] for r in in_scope],
@@ -731,19 +575,8 @@ async def _dco_admin(conn: Any, user_id: int) -> dict[str, Any]:
 async def _admin(conn: Any) -> dict[str, Any]:
     by_status = await user_repo.count_by_status(conn)
     by_role = await user_repo.count_by_role(conn)
-    invites = await fetch_one(
-        conn,
-        "SELECT count(*) AS n FROM auth_user WHERE status = 'pending' AND role <> 'data_subject'",
-    )
-    suspended = await fetch_all(
-        conn,
-        """SELECT source_uuid, source_code, name, status FROM data_source
-           WHERE status <> 'active'
-           UNION ALL
-           SELECT processor_uuid, contract_ref, legal_name, status FROM processor
-           WHERE status <> 'active'
-           LIMIT 50""",
-    )
+    invites = await dashboard_repo.staff_invites_pending(conn)
+    suspended = await dashboard_repo.inactive_registry_rows(conn)
     # An administrator's "recent" is refusals, not activity: they provision
     # accounts rather than run collections, and a denial is the signal they act
     # on. Same shape as every other role's, so one renderer serves all five.
@@ -752,14 +585,7 @@ async def _admin(conn: Any) -> dict[str, Any]:
         await audit_repo.recent(conn, limit=25, event_type="auth.access_denied"),
         reader_role=Role.ADMIN,
     )
-    lockouts = await fetch_all(
-        conn,
-        """SELECT l.occurred_at, u.full_name, u.email
-           FROM audit_log l JOIN auth_user u ON u.id = l.subject_user_id
-           WHERE l.event_type = 'auth.login_locked_out'
-             AND l.occurred_at > now() - interval '24 hours'
-           ORDER BY l.occurred_at DESC LIMIT 25""",
-    )
+    lockouts = await dashboard_repo.recent_lockouts(conn)
     # Grievances about the DPO: the one kind of rights request that reaches the
     # administrator, as the reviewer the DPO cannot be.
     escalated = await rights_repo.queue(conn, role=Role.ADMIN, user_id=0)
@@ -782,24 +608,7 @@ async def _admin(conn: Any) -> dict[str, Any]:
 
 
 async def _subject(conn: Any, user_id: int) -> dict[str, Any]:
-    counts = await fetch_one(
-        conn,
-        """WITH mine AS (
-             SELECT vc.consent_id, vc.is_withdrawal,
-                    count(*) FILTER (WHERE g.granted) AS granted
-             FROM v_current_consent vc
-             LEFT JOIN consent_purpose_grant g ON g.consent_id = vc.consent_id
-             WHERE vc.auth_user_id = %(u)s
-             GROUP BY vc.consent_id, vc.is_withdrawal)
-           SELECT count(*) AS total,
-                  count(*) FILTER (WHERE granted > 0)                       AS active,
-                  count(*) FILTER (WHERE is_withdrawal AND granted = 0)     AS withdrawn,
-                  count(*) FILTER (WHERE NOT is_withdrawal AND granted = 0) AS declined,
-                  (SELECT count(*) FROM export_line WHERE auth_user_id = %(u)s)
-                    AS times_shared
-           FROM mine""",
-        {"u": user_id},
-    )
+    counts = await dashboard_repo.subject_counts(conn, user_id)
     recent = await audit_repo.for_subject(conn, user_id, limit=10)
     requests = await rights_repo.subject_counts(conn, user_id)
     return {
@@ -843,48 +652,8 @@ async def notifications(
             # people who could see that project in the register. Events with
             # no project - a lockout, a withdrawal - stay with the roles whose
             # section they belong to.
-            scope, scope_params = project_repo.scope_predicate(principal.role, principal.user_id)
-            rows = await fetch_all(
-                conn,
-                f"""SELECT l.log_uuid, l.event_type, l.entity_type, l.entity_id,
-                          l.occurred_at, l.detail_json - '_hash' - '_prev' AS detail,
-                          a.full_name AS actor_name
-                   FROM audit_log l LEFT JOIN auth_user a ON a.id = l.actor_user_id
-                   WHERE l.event_type IN (
-                     'project.transitioned','notice.published','import.rejected',
-                     'export.generated','consent.withdrawn','auth.login_locked_out')
-                     AND (
-                       CASE l.entity_type
-                         WHEN 'project' THEN EXISTS (
-                           SELECT 1 FROM project p
-                            WHERE p.project_id = l.entity_id AND {scope})
-                         WHEN 'notice' THEN EXISTS (
-                           SELECT 1 FROM notice n
-                             JOIN project p ON p.project_id = n.project_id
-                            WHERE n.notice_id = l.entity_id AND {scope})
-                         WHEN 'import_batch' THEN EXISTS (
-                           SELECT 1 FROM import_batch b
-                             JOIN project p ON p.project_id = b.project_id
-                            WHERE b.batch_id = l.entity_id AND {scope})
-                         WHEN 'export_log' THEN EXISTS (
-                           SELECT 1 FROM export_log e
-                             JOIN project p ON p.project_id = e.project_id
-                            WHERE e.export_id = l.entity_id AND {scope})
-                         -- No project: a lockout is the administrator's and
-                         -- the DPO's; a withdrawal opens a consent record,
-                         -- which only the DPO's role reads.
-                         ELSE (l.event_type <> 'consent.withdrawn' AND %s) OR %s
-                       END)
-                   ORDER BY l.occurred_at DESC LIMIT %s""",
-                (
-                    *scope_params,
-                    *scope_params,
-                    *scope_params,
-                    *scope_params,
-                    principal.role in (Role.DPO, Role.ADMIN),
-                    principal.role is Role.DPO,
-                    limit,
-                ),
+            rows = await dashboard_repo.staff_feed(
+                conn, principal.role, principal.user_id, limit=limit
             )
             # What happened on the tickets addressed to this person, and -
             # for the office - what holders did on theirs. Without these the
@@ -948,13 +717,7 @@ async def resend(log_uuid: UUID, principal: CurrentUser) -> dict[str, Any]:
         if not entry.get("subject_uuid"):
             raise NotFound("Notification recipient")
 
-        from cmp.db.sql import fetch_one as _fetch_one
-
-        subject = await _fetch_one(
-            conn,
-            "SELECT id, email, full_name FROM auth_user WHERE uuid = %s",
-            (str(entry["subject_uuid"]),),
-        )
+        subject = await user_repo.by_uuid(conn, str(entry["subject_uuid"]))
         if not subject:
             raise NotFound("Notification recipient")
 

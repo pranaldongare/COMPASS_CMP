@@ -22,16 +22,12 @@ from cmp.api.dependencies import (
     RequireRole,
     reject_unknown_filters,
 )
-from cmp.core.errors import Conflict, NotFound, PurposeInUse, ValidationFailed
+from cmp.core.errors import NotFound
 from cmp.core.pagination import PageRequest
 from cmp.core.permissions import Role
 from cmp.db.pool import connection, transaction
 from cmp.db.repositories import registry as repo
-from cmp.db.repositories import users as users_repo
-from cmp.db.sql import unique_violation
-from cmp.domain.audit import service as audit
-from cmp.domain.audit.service import Event
-from cmp.infrastructure.dkms import opened
+from cmp.domain.registry import service as registry
 from cmp.schemas.common import (
     Acknowledged,
     CodeText,
@@ -160,24 +156,9 @@ async def list_purposes(
 @router.post("/purposes", response_model=PurposeOut, status_code=status.HTTP_201_CREATED)
 async def create_purpose(body: PurposeIn, principal: RequireDPO) -> dict[str, Any]:
     async with transaction() as conn:
-        try:
-            purpose = await repo.create_purpose(
-                conn, created_by=principal.user_id, **_purpose_fields(body)
-            )
-        except Exception as exc:
-            if unique_violation(exc):
-                raise Conflict(
-                    "That purpose code already exists", code="purpose_code_taken"
-                ) from exc
-            raise
-        await audit.record(
-            conn,
-            event=Event.PURPOSE_CREATED,
-            entity_type="purpose",
-            entity_id=purpose["purpose_id"],
-            detail={"purpose_code": body.purpose_code, "lawful_basis": body.lawful_basis},
+        return await registry.create_purpose(
+            conn, fields=_purpose_fields(body), actor_id=principal.user_id
         )
-    return purpose
 
 
 @router.get("/purposes/{purpose_uuid}", response_model=PurposeOut)
@@ -194,78 +175,21 @@ async def update_purpose(
     purpose_uuid: UUID, body: PurposeUpdate, principal: RequireDPO
 ) -> dict[str, Any]:
     async with transaction() as conn:
-        purpose = await repo.purpose_by_uuid(conn, str(purpose_uuid))
-        if not purpose:
-            raise NotFound("Purpose")
-        if purpose["status"] != "draft":
-            raise Conflict(
-                "Only a draft purpose may be edited. Create a new version instead.",
-                code="purpose_not_draft",
-                details={"status": purpose["status"]},
-            )
-        updated = await repo.update_purpose(conn, purpose["purpose_id"], **_purpose_fields(body))
-        await audit.record(
-            conn,
-            event=Event.PURPOSE_UPDATED,
-            entity_type="purpose",
-            entity_id=purpose["purpose_id"],
-        )
-    return updated
+        return await registry.update_purpose(conn, str(purpose_uuid), fields=_purpose_fields(body))
 
 
 @router.post("/purposes/{purpose_uuid}/activate", response_model=Acknowledged)
 async def activate_purpose(purpose_uuid: UUID, principal: RequireDPO) -> dict[str, Any]:
     async with transaction() as conn:
-        purpose = await repo.purpose_by_uuid(conn, str(purpose_uuid))
-        if not purpose:
-            raise NotFound("Purpose")
-        if purpose["status"] == "active":
-            raise Conflict("That purpose is already active", code="purpose_active")
-        await repo.set_purpose_status(conn, purpose["purpose_id"], "active")
-        await audit.record(
-            conn,
-            event=Event.PURPOSE_ACTIVATED,
-            entity_type="purpose",
-            entity_id=purpose["purpose_id"],
-        )
+        await registry.activate_purpose(conn, str(purpose_uuid))
     return {"ok": True, "message": "Purpose activated and available to notices."}
 
 
 @router.post("/purposes/{purpose_uuid}/retire", response_model=Acknowledged)
 async def retire_purpose(purpose_uuid: UUID, principal: RequireDPO) -> dict[str, Any]:
-    """Blocked while the purpose is attached to a published notice.
-
-    Retiring it would leave a live notice offering a purpose the registry says
-    no longer exists, and the consents already given against it unexplainable.
-    """
+    """Blocked while the purpose is attached to a published notice (409 `purpose_in_use`)."""
     async with transaction() as conn:
-        purpose = await repo.purpose_by_uuid(conn, str(purpose_uuid))
-        if not purpose:
-            raise NotFound("Purpose")
-        if await repo.purpose_is_published_anywhere(conn, purpose["purpose_id"]):
-            usage = await repo.purpose_usage(conn, purpose["purpose_id"])
-            raise PurposeInUse(
-                "This purpose is attached to a published notice and cannot be retired",
-                details={
-                    "notices": [
-                        {
-                            "notice_code": u["notice_code"],
-                            "version": u["version"],
-                            "project": u["project_name"],
-                            "status": u["status"],
-                        }
-                        for u in usage
-                        if u["status"] in ("published", "superseded")
-                    ]
-                },
-            )
-        await repo.set_purpose_status(conn, purpose["purpose_id"], "retired")
-        await audit.record(
-            conn,
-            event=Event.PURPOSE_RETIRED,
-            entity_type="purpose",
-            entity_id=purpose["purpose_id"],
-        )
+        await registry.retire_purpose(conn, str(purpose_uuid))
     return {"ok": True, "message": "Purpose retired. It can no longer be attached."}
 
 
@@ -386,7 +310,7 @@ async def create_processor(
     principal: Annotated[Any, Depends(RequireResource("processor", write=True))],
 ) -> dict[str, Any]:
     async with transaction() as conn:
-        processor = await repo.create_processor(
+        return await registry.create_processor(
             conn,
             legal_name=body.legal_name,
             type_=body.type,
@@ -395,19 +319,6 @@ async def create_processor(
             is_in_house=body.is_in_house,
             location_country=body.location_country,
         )
-        await audit.record(
-            conn,
-            event=Event.PROCESSOR_CREATED,
-            entity_type="processor",
-            entity_id=processor["processor_id"],
-            detail={
-                "legal_name": body.legal_name,
-                "contract_ref": body.contract_ref,
-                "is_in_house": body.is_in_house,
-                "location_country": body.location_country,
-            },
-        )
-    return processor
 
 
 @router.get(
@@ -437,62 +348,19 @@ async def add_respondent(
     body: RespondentIn,
     principal: Annotated[Any, Depends(RequireRole(Role.DPO, Role.ADMIN))],
 ) -> dict[str, Any]:
-    """A respondent is how a holder's ticket gets answered.
+    """An account answers on the portal; a name and an address are mailed.
 
-    An account answers on the portal: the ticket is in front of them when they
-    sign in, and they return it there. A name and an address are mailed, and
-    the Privacy Office tracks the exchange by hand.
-
-    An in-house processor's respondent must be an account - our own team has
-    no reason to be reached by mail. A third party's may be either. Usually it
-    is somebody at the third party, reached by mail; sometimes one of our own
-    people represents that third party here, and naming their account puts the
-    ticket on the portal like any internal one. The rule is held here rather
-    than left to whoever fills the form.
+    The rules - an in-house processor's respondent must be an account - are the
+    service's (`registry.add_respondent`).
     """
     async with transaction() as conn:
-        processor = await repo.processor_by_uuid(conn, str(processor_uuid))
-        if not processor:
-            raise NotFound("Processor")
-        user_id: int | None = None
-        name = (body.name or "").strip()
-        contact = (body.contact or "").strip()
-        if body.user_uuid is not None:
-            account = await users_repo.by_uuid(conn, str(body.user_uuid))
-            if not account or account["role"] == "data_subject" or account["status"] != "active":
-                raise ValidationFailed("Choose an active member of staff", field="user_uuid")
-            user_id = int(account["id"])
-            # Opened: the respondent row seals its own copy under its own type,
-            # and a ciphertext copied across would be sealed under the wrong one.
-            person = await opened("auth_user", account)
-            name = str(person["full_name"])
-            contact = str(person["email"])
-        elif processor["is_in_house"]:
-            raise ValidationFailed(
-                "An in-house processor's respondent must be a CMP account, so they "
-                "answer on the portal",
-                field="user_uuid",
-            )
-        else:
-            if not name:
-                raise ValidationFailed("Name the respondent", field="name")
-            if not contact:
-                raise ValidationFailed("An address to send the instruction to", field="contact")
-        created = await repo.add_respondent(
-            conn, int(processor["processor_id"]), name=name, contact=contact, user_id=user_id
-        )
-        await audit.record(
+        return await registry.add_respondent(
             conn,
-            event=Event.PROCESSOR_RESPONDENT_ADDED,
-            entity_type="processor",
-            entity_id=int(processor["processor_id"]),
-            detail={"respondent": str(created["respondent_uuid"]), "portal": user_id is not None},
+            str(processor_uuid),
+            name=body.name,
+            contact=body.contact,
+            user_uuid=str(body.user_uuid) if body.user_uuid else None,
         )
-        fresh = await repo.respondent_by_uuid(
-            conn, int(processor["processor_id"]), str(created["respondent_uuid"])
-        )
-        assert fresh is not None
-        return fresh
 
 
 @router.delete(
@@ -506,22 +374,7 @@ async def remove_respondent(
     principal: Annotated[Any, Depends(RequireRole(Role.DPO, Role.ADMIN))],
 ) -> dict[str, Any]:
     async with transaction() as conn:
-        processor = await repo.processor_by_uuid(conn, str(processor_uuid))
-        if not processor:
-            raise NotFound("Processor")
-        rs = await repo.respondent_by_uuid(
-            conn, int(processor["processor_id"]), str(respondent_uuid)
-        )
-        if not rs:
-            raise NotFound("Respondent")
-        await repo.remove_respondent(conn, int(rs["respondent_id"]))
-        await audit.record(
-            conn,
-            event=Event.PROCESSOR_RESPONDENT_REMOVED,
-            entity_type="processor",
-            entity_id=int(processor["processor_id"]),
-            detail={"respondent": str(respondent_uuid)},
-        )
+        await registry.remove_respondent(conn, str(processor_uuid), str(respondent_uuid))
     return {"ok": True, "message": "Removed. Tickets already sent to them are unchanged."}
 
 
@@ -544,24 +397,14 @@ async def update_processor(
     principal: Annotated[Any, Depends(RequireResource("processor", write=True))],
 ) -> dict[str, Any]:
     async with transaction() as conn:
-        processor = await repo.processor_by_uuid(conn, str(processor_uuid))
-        if not processor:
-            raise NotFound("Processor")
-        updated = await repo.update_processor(
+        return await registry.update_processor(
             conn,
-            processor["processor_id"],
+            str(processor_uuid),
             legal_name=body.legal_name,
             contract_ref=body.contract_ref,
             security_confirmed_at=body.security_confirmed_at,
             location_country=body.location_country,
         )
-        await audit.record(
-            conn,
-            event=Event.PROCESSOR_UPDATED,
-            entity_type="processor",
-            entity_id=processor["processor_id"],
-        )
-    return updated
 
 
 @router.post("/processors/{processor_uuid}/suspend", response_model=Acknowledged)
@@ -570,16 +413,7 @@ async def suspend_processor(
     principal: Annotated[Any, Depends(RequireResource("processor", write=True))],
 ) -> dict[str, Any]:
     async with transaction() as conn:
-        processor = await repo.processor_by_uuid(conn, str(processor_uuid))
-        if not processor:
-            raise NotFound("Processor")
-        await repo.suspend_processor(conn, processor["processor_id"])
-        await audit.record(
-            conn,
-            event=Event.PROCESSOR_SUSPENDED,
-            entity_type="processor",
-            entity_id=processor["processor_id"],
-        )
+        await registry.suspend_processor(conn, str(processor_uuid))
     return {"ok": True, "message": "Processor suspended. Existing records are unchanged."}
 
 
@@ -691,79 +525,24 @@ async def create_source(
 ) -> dict[str, Any]:
     """`is_authoritative_for` lists the data elements this source owns.
 
-    Without it, a nightly identity sync will overwrite a value corrected under a
-    rights request and nobody will notice.
-
-    **A collection owner may only register under their own kind of processor.**
-    A DCO is accountable for what a third party collects and an RCO for what the
-    R&D team collects itself, so a DCO registering an in-house rig - or the
-    reverse - would be creating a source they could never be given. Everyone
-    else (DPO, administrator, DCO Admin, R&D User) is unconstrained: they are
-    registering on somebody's behalf rather than for themselves.
+    **A collection owner may only register under their own kind of processor**
+    (`registry.refuse_foreign_processor`): a DCO under a third party's, an RCO
+    under an in-house one. Everyone else registers on somebody's behalf.
     """
     async with transaction() as conn:
-        processor_id = None
-        if body.processor_uuid:
-            processor = await repo.processor_by_uuid(conn, str(body.processor_uuid))
-            if not processor:
-                raise NotFound("Processor")
-            if processor["status"] != "active":
-                raise ValidationFailed(
-                    f"{processor['legal_name']} is {processor['status']} and cannot take "
-                    "new data sources",
-                    field="processor_uuid",
-                )
-            _refuse_foreign_processor(principal.role, processor)
-            processor_id = processor["processor_id"]
-
-        # A collection owner has to say which processor it belongs to. Without
-        # one the source is unroutable - it can never appear under any project's
-        # processors, so no site could ever deploy it.
-        if processor_id is None and principal.role in (Role.DCO, Role.RCO):
-            raise ValidationFailed(
-                "Choose the processor this data source belongs to",
-                field="processor_uuid",
-            )
-
-        site_id = None
-        if body.site_uuid:
-            from cmp.db.repositories import projects as project_repo
-
-            site = await project_repo.site_by_uuid(
-                conn, str(body.site_uuid), role=principal.role, user_id=principal.user_id
-            )
-            if not site:
-                raise NotFound("Site")
-            site_id = site["site_id"]
-
-        try:
-            source = await repo.create_source(
-                conn,
-                source_code=body.source_code,
-                name=body.name,
-                source_role=body.source_role,
-                exchange_mode=body.exchange_mode,
-                id_scheme=body.id_scheme,
-                processor_id=processor_id,
-                site_id=site_id,
-                is_authoritative_for=body.is_authoritative_for,
-            )
-        except Exception as exc:
-            if unique_violation(exc):
-                raise Conflict("That source code already exists", code="source_code_taken") from exc
-            raise
-
-        await audit.record(
+        return await registry.create_source(
             conn,
-            event=Event.SOURCE_CREATED,
-            entity_type="data_source",
-            entity_id=source["source_id"],
-            detail={
-                "source_code": body.source_code,
-                "authoritative_for": body.is_authoritative_for,
-            },
+            role=principal.role,
+            user_id=principal.user_id,
+            source_code=body.source_code,
+            name=body.name,
+            source_role=body.source_role,
+            exchange_mode=body.exchange_mode,
+            id_scheme=body.id_scheme,
+            processor_uuid=str(body.processor_uuid) if body.processor_uuid else None,
+            site_uuid=str(body.site_uuid) if body.site_uuid else None,
+            is_authoritative_for=body.is_authoritative_for,
         )
-    return source
 
 
 @router.get("/sources/{source_uuid}", response_model=SourceOut)
@@ -785,43 +564,12 @@ async def update_source(
     principal: Annotated[Any, Depends(RequireResource("data_source", write=True))],
 ) -> dict[str, Any]:
     async with transaction() as conn:
-        source = await repo.source_by_uuid(conn, str(source_uuid))
-        if not source:
-            raise NotFound("Data source")
-        updated = await repo.update_source(
+        return await registry.update_source(
             conn,
-            source["source_id"],
+            str(source_uuid),
             name=body.name,
             id_scheme=body.id_scheme,
             is_authoritative_for=body.is_authoritative_for,
-        )
-        await audit.record(
-            conn,
-            event=Event.SOURCE_UPDATED,
-            entity_type="data_source",
-            entity_id=source["source_id"],
-        )
-    return updated
-
-
-def _refuse_foreign_processor(role: Any, processor: dict[str, Any]) -> None:
-    """A collection owner registers under their own kind of processor, or not at all.
-
-    Split out because it guards two writes - creating a source and updating one
-    - and a rule enforced at one of two call sites is a rule with a way round
-    it.
-    """
-    wanted_in_house = {Role.DCO: False, Role.RCO: True}.get(role)
-    if wanted_in_house is None:
-        return
-    if bool(processor["is_in_house"]) is not wanted_in_house:
-        raise ValidationFailed(
-            (
-                "An R&D Collection Owner registers sources under an in-house processor"
-                if wanted_in_house
-                else "A Data Collection Owner registers sources under a third-party processor"
-            ),
-            field="processor_uuid",
         )
 
 
@@ -846,63 +594,14 @@ async def assign_source_owner(
 
     This is where a person is named, and it is the *only* place. Everywhere else
     - registering a site, routing an approved project - picks a source, and the
-    owner comes with it. One answer to "who is accountable for CIT", recorded
-    once, rather than one per project that used it.
-
-    Which role fits which source is checked, because the distinction carries
-    meaning: an RCO is accountable for collection the R&D team does itself, a
-    DCO for a third party's. Assigning an RCO to a third-party source would
-    record that in-house staff are answerable for work they are not doing.
-
-    `trg_source_owner` re-derives the routing of every project deploying this
-    source, so this one write is the whole change. `projects_moved` says how many
-    that was - reassigning a rig used by three studies moves three studies, and
-    somebody should see that before they close the dialog.
+    owner comes with it. `projects_moved` says how many projects followed.
     """
     async with transaction() as conn:
-        source = await repo.source_by_uuid(conn, str(source_uuid))
-        if not source:
-            raise NotFound("Data source")
-
-        owner_id = None
-        if body.owner_user_uuid is not None:
-            owner = await users_repo.by_uuid(conn, str(body.owner_user_uuid))
-            if not owner:
-                raise NotFound("User")
-            if owner["status"] != "active":
-                raise ValidationFailed("That account is not active", field="owner_user_uuid")
-
-            in_house = bool(source.get("is_in_house"))
-            wanted = Role.RCO if in_house else Role.DCO
-            if owner["role"] != wanted.value:
-                raise ValidationFailed(
-                    (
-                        "Collection from this source is in-house, so an R&D Collection "
-                        "Owner is accountable for it"
-                        if in_house
-                        else "Collection from this source is by a third party, so a Data "
-                        "Collection Owner is accountable for it"
-                    ),
-                    field="owner_user_uuid",
-                )
-            owner_id = owner["id"]
-
-        moved = await repo.projects_using_source(conn, source["source_id"])
-        updated = await repo.set_source_owner(conn, source["source_id"], owner_id)
-
-        await audit.record(
+        return await registry.assign_source_owner(
             conn,
-            event=Event.SOURCE_OWNER_ASSIGNED,
-            entity_type="data_source",
-            entity_id=source["source_id"],
-            subject_user_id=owner_id,
-            detail={
-                "source_code": source["source_code"],
-                "owner": str(body.owner_user_uuid) if body.owner_user_uuid else None,
-                "projects_moved": moved,
-            },
+            str(source_uuid),
+            owner_user_uuid=str(body.owner_user_uuid) if body.owner_user_uuid else None,
         )
-    return {**updated, "projects_moved": moved}
 
 
 @router.post("/sources/{source_uuid}/suspend", response_model=Acknowledged)
@@ -911,16 +610,7 @@ async def suspend_source(
     principal: Annotated[Any, Depends(RequireResource("data_source", write=True))],
 ) -> dict[str, Any]:
     async with transaction() as conn:
-        source = await repo.source_by_uuid(conn, str(source_uuid))
-        if not source:
-            raise NotFound("Data source")
-        await repo.suspend_source(conn, source["source_id"])
-        await audit.record(
-            conn,
-            event=Event.SOURCE_SUSPENDED,
-            entity_type="data_source",
-            entity_id=source["source_id"],
-        )
+        await registry.suspend_source(conn, str(source_uuid))
     return {"ok": True, "message": "Source suspended. Imports from it are refused."}
 
 

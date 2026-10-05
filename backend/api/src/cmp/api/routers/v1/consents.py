@@ -14,14 +14,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request
 
 from cmp.api.dependencies import Paging, RequireResource, reject_unknown_filters
-from cmp.core.errors import Conflict, NotFound
+from cmp.core.errors import NotFound
 from cmp.core.pagination import PageRequest
 from cmp.core.security import unseal_token
 from cmp.db.pool import connection, transaction
 from cmp.db.repositories import consent as repo
 from cmp.db.repositories import projects as project_repo
-from cmp.domain.audit import service as audit
-from cmp.domain.audit.service import Event
 from cmp.domain.consent import service as consent_service
 from cmp.schemas.common import Acknowledged, Out, Page
 
@@ -280,41 +278,8 @@ async def remint_link(link_uuid: UUID, principal: LinkReader) -> dict[str, Any]:
     still point at it, and the record still says when it stopped working.
     """
     async with transaction() as conn:
-        link = await repo.link_by_uuid(
-            conn, str(link_uuid), role=principal.role, user_id=principal.user_id
-        )
-        if not link:
-            raise NotFound("Consent link")
-
-        revoked = await repo.revoke_link(conn, link["link_id"], principal.user_id)
-        if not revoked:
-            raise Conflict(
-                "That link is not active, so there is nothing to replace. "
-                "Mint a new one from the site instead.",
-                code="link_not_active",
-            )
-
-        fresh = await consent_service.create_link(
-            conn,
-            site_uuid=str(link["site_uuid"]),
-            # The replacement inherits the original's terms. Re-deciding them
-            # here would make this a different operation wearing the same name.
-            expires_at=link["expires_at"],
-            max_uses=link["max_uses"],
-            actor_id=principal.user_id,
-            role=principal.role,
-        )
-
-        await audit.record(
-            conn,
-            event=Event.LINK_REMINTED,
-            entity_type="consent_link",
-            entity_id=fresh["link_id"],
-            detail={
-                "replaced": str(link["link_uuid"]),
-                "site": str(link["site_uuid"]),
-                "uses_on_replaced": link["use_count"],
-            },
+        link, fresh = await consent_service.replace_link(
+            conn, str(link_uuid), role=principal.role, actor_id=principal.user_id
         )
 
     return {
@@ -334,19 +299,8 @@ async def remint_link(link_uuid: UUID, principal: LinkReader) -> dict[str, Any]:
 @router.post("/links/{link_uuid}/revoke", response_model=Acknowledged)
 async def revoke_link(link_uuid: UUID, principal: LinkReader) -> dict[str, Any]:
     async with transaction() as conn:
-        link = await repo.link_by_uuid(
-            conn, str(link_uuid), role=principal.role, user_id=principal.user_id
-        )
-        if not link:
-            raise NotFound("Consent link")
-        revoked = await repo.revoke_link(conn, link["link_id"], principal.user_id)
-        if not revoked:
-            raise Conflict("That link is not active", code="link_not_active")
-        await audit.record(
-            conn,
-            event=Event.LINK_REVOKED,
-            entity_type="consent_link",
-            entity_id=link["link_id"],
+        await consent_service.revoke_link(
+            conn, str(link_uuid), role=principal.role, actor_id=principal.user_id
         )
     return {"ok": True, "message": "Link revoked. It no longer resolves."}
 

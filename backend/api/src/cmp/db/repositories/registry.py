@@ -555,3 +555,31 @@ async def remove_respondent(conn: Conn, respondent_id: int) -> None:
         "UPDATE processor_respondent SET removed_at = now() WHERE respondent_id = %s",
         (respondent_id,),
     )
+
+
+async def purposes_for_comparison(conn: Conn) -> list[Row]:
+    """Every active or draft purpose's code, name and uses, for a duplicate check.
+
+    Not paginated on purpose: a comparison against the first page only would
+    report "no duplicates" for a register that has one on page two.
+    """
+    return await fetch_all(
+        conn,
+        """SELECT purpose_code, name, uses FROM purpose
+            WHERE status IN ('active', 'draft')
+            ORDER BY purpose_id DESC LIMIT 2000""",
+    )
+
+
+async def purpose_has_grants(conn: Conn, purpose_id: int) -> bool:
+    row = await fetch_one(
+        conn,
+        "SELECT 1 AS one FROM consent_purpose_grant WHERE purpose_id = %s LIMIT 1",
+        (purpose_id,),
+    )
+    return row is not None
+
+
+async def delete_unused_purpose(conn: Conn, purpose_id: int) -> None:
+    """Remove a purpose nothing uses and nobody has answered. The caller checks both."""
+    await conn.execute("DELETE FROM purpose WHERE purpose_id = %s", (purpose_id,))

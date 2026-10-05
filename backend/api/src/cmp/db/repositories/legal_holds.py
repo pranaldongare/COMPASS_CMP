@@ -79,3 +79,19 @@ async def active_covering(
             ORDER BY placed_at LIMIT 1""",
         (asset_id, asset_id, subject_user_id, subject_user_id),
     )
+
+
+async def asset_id_by_uuid(conn: Conn, asset_uuid: str) -> int | None:
+    row = await fetch_one(
+        conn, "SELECT asset_id FROM data_asset WHERE asset_uuid = %s", (asset_uuid,)
+    )
+    return int(row["asset_id"]) if row else None
+
+
+async def what_it_covers(conn: Conn, hold_id: int) -> Row | None:
+    """The asset or the person a hold covers - the ids, which the public row hides."""
+    return await fetch_one(
+        conn,
+        "SELECT asset_id, subject_user_id FROM legal_hold WHERE hold_id = %s",
+        (hold_id,),
+    )

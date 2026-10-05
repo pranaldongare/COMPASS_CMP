@@ -784,3 +784,97 @@ async def add_site(
             else None
         ),
     }
+
+
+# ------------------------------------------- moved from the router (ARCH-5)
+async def record_proof_download(
+    conn: Conn, approval_uuid: str, *, role: Role | str, user_id: int
+) -> dict[str, Any]:
+    """The approval whose proof is about to be served, and the record that it was.
+
+    Reading a security approval is evidence of who looked at it; the row is
+    written before the file is read, in the caller's transaction.
+    """
+    approval = await repo.approval_by_uuid(conn, approval_uuid, role=role, user_id=user_id)
+    if not approval:
+        raise NotFound("Approval")
+    await audit.record(
+        conn,
+        event=Event.APPROVAL_PROOF_DOWNLOADED,
+        entity_type="project_approval",
+        entity_id=approval["approval_id"],
+    )
+    return approval
+
+
+async def update_site(
+    conn: Conn,
+    site_uuid: str,
+    *,
+    role: Role | str,
+    user_id: int,
+    site_label: str | None,
+    location: str | None,
+) -> dict[str, Any]:
+    site = await repo.site_by_uuid(conn, site_uuid, role=role, user_id=user_id)
+    if not site:
+        raise NotFound("Site")
+    updated = await repo.update_site(
+        conn, site["site_id"], site_label=site_label, location=location
+    )
+    await audit.record(
+        conn, event=Event.SITE_UPDATED, entity_type="project_site", entity_id=site["site_id"]
+    )
+    return updated
+
+
+async def deactivate_site(conn: Conn, site_uuid: str, *, role: Role | str, actor_id: int) -> int:
+    """Deactivate a site and revoke its project's live links. Returns how many."""
+    from cmp.db.repositories import consent as consent_repo
+
+    site = await repo.site_by_uuid(conn, site_uuid, role=role, user_id=actor_id)
+    if not site:
+        raise NotFound("Site")
+    await repo.deactivate_site(conn, site["site_id"])
+    revoked = await consent_repo.revoke_links_for_project(
+        conn, project_uuid=str(site["project_uuid"]), actor_id=actor_id
+    )
+    await audit.record(
+        conn,
+        event=Event.SITE_DEACTIVATED,
+        entity_type="project_site",
+        entity_id=site["site_id"],
+        detail={"links_revoked": revoked},
+    )
+    return int(revoked)
+
+
+async def assign_agent(
+    conn: Conn,
+    site_uuid: str,
+    *,
+    expires_at: Any,
+    max_uses: int | None,
+    agent_ref: str | None,
+    actor_id: int,
+    role: Role | str,
+) -> dict[str, Any]:
+    """Mint the site's link for a Field Agent, and record who it was for."""
+    from cmp.domain.consent import service as consent_service
+
+    link = await consent_service.create_link(
+        conn,
+        site_uuid=site_uuid,
+        expires_at=expires_at,
+        max_uses=max_uses,
+        actor_id=actor_id,
+        role=role,
+    )
+    await audit.record(
+        conn,
+        event=Event.SITE_AGENT_ASSIGNED,
+        entity_type="consent_link",
+        entity_id=link["link_id"],
+        detail={"site": site_uuid, "agent_ref": agent_ref},
+    )
+    return link

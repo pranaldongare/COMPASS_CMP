@@ -21,32 +21,18 @@ from cmp.api.dependencies import (
     RequireStaff,
     reject_unknown_filters,
 )
-from cmp.auth.authentication import service as auth_service
 from cmp.auth.sessions import service as sessions
-from cmp.core.enums import UserStatus
-from cmp.core.errors import Conflict, NotFound, ValidationFailed
 from cmp.core.pagination import PageRequest
 from cmp.core.permissions import Role
-from cmp.core.security import hash_password, new_token
 from cmp.db.pool import connection, transaction
-from cmp.db.repositories import registry as registry_repo
 from cmp.db.repositories import users as repo
-from cmp.db.sql import unique_violation
-from cmp.domain.audit import service as audit
-from cmp.domain.audit.service import Event
-from cmp.infrastructure.dkms.blind import index_of
+from cmp.domain.users import service as users
 from cmp.schemas.common import Acknowledged, Mobile, Out, Page, Schema, ShortText
-from cmp.validation import Email, normalise_mobile
+from cmp.validation import Email
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 user_paging = Paging(repo.LIST_SORTS, "-created_at")
-
-
-#: Roles that can hold a data source. Ownership is accountability for
-#: collection, so it belongs to the people who do it: a DCO for a third party's
-#: collection, an RCO for the R&D team's own.
-_SOURCE_OWNING_ROLES = frozenset({Role.DCO.value, Role.RCO.value})
 
 
 class UserOut(Out):
@@ -183,86 +169,18 @@ async def list_users(
 @router.post("", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 async def create_user(body: CreateUser, principal: RequireAdmin) -> dict[str, Any]:
     """Provision a staff account. Administrators only - no self-registration."""
-    if body.role not in {r.value for r in Role}:
-        raise ValidationFailed("Unknown role", field="role")
-    if body.role == Role.DATA_SUBJECT.value:
-        raise ValidationFailed(
-            "Data subjects register through a consent link, not here", field="role"
-        )
-    if body.source_uuids and body.role not in _SOURCE_OWNING_ROLES:
-        raise ValidationFailed(
-            "Only a Data Collection Owner or an R&D Collection Owner can be "
-            "accountable for a data source",
-            field="source_uuids",
-        )
-
-    # A provisioned account starts with a random unusable password and is
-    # activated through the reset flow. Emailing an initial password puts a live
-    # credential in a mailbox.
     async with transaction() as conn:
-        try:
-            user = await repo.create(
-                conn,
-                full_name=body.full_name,
-                email=str(body.email),
-                role=body.role,
-                username=body.username,
-                mobile=body.mobile,
-                organization_id=body.organization_id,
-                person_type=body.person_type,
-                status="pending",
-                password_hash=hash_password(new_token(32)),
-            )
-        except Exception as exc:
-            if unique_violation(exc):
-                raise Conflict(
-                    "An account with that email, username or organisation id exists",
-                    code="user_exists",
-                ) from exc
-            raise
-
-        assigned: list[str] = []
-        for source_uuid in body.source_uuids:
-            source = await registry_repo.source_by_uuid(conn, str(source_uuid))
-            if not source:
-                raise NotFound("Data source")
-            # An in-house source needs an RCO and a third party's needs a DCO.
-            # Checked here as well as on the source endpoint because this path
-            # writes ownership too, and a rule enforced in one of two places is
-            # a rule with a way round it.
-            wanted = Role.RCO.value if source.get("is_in_house") else Role.DCO.value
-            if body.role != wanted:
-                raise ValidationFailed(
-                    f"{source['source_code']} is collected "
-                    + ("in-house" if source.get("is_in_house") else "by a third party")
-                    + f", so a {wanted} is accountable for it",
-                    field="source_uuids",
-                )
-            await registry_repo.set_source_owner(conn, source["source_id"], user["id"])
-            assigned.append(source["source_code"])
-
-        await audit.record(
+        user, assigned = await users.create_staff(
             conn,
-            event=Event.USER_CREATED,
-            entity_type="auth_user",
-            entity_id=user["id"],
-            subject_user_id=user["id"],
-            detail={"role": body.role, "sources": assigned},
+            full_name=body.full_name,
+            email=str(body.email),
+            role=body.role,
+            username=body.username,
+            mobile=body.mobile,
+            organization_id=body.organization_id,
+            person_type=body.person_type,
+            source_uuids=[str(u) for u in body.source_uuids],
         )
-
-        # An account nobody has been told about is an account nobody can use, so
-        # the last step of creating one is writing to its owner. Inside the
-        # transaction on purpose: the message is queued only once the row is
-        # committed, and a rollback sends nothing.
-        await auth_service.invite_staff(conn, user=user)
-        # A number typed here is a claim about somebody else's phone. It is
-        # sent a code the way any new contact is, so the person learns the
-        # number is on their account and can confirm it; until then it signs
-        # nobody in.
-        if body.mobile:
-            await auth_service.request_contact_code_on_behalf(
-                conn, user=user, contact=str(body.mobile)
-            )
     return {**user, "sources": assigned}
 
 
@@ -277,21 +195,9 @@ async def resend_invitation(user_uuid: UUID, principal: RequireAdmin) -> dict[st
     Needed because the invitation is dispatched optionally - the account is
     created whether or not the message could be queued - and a message nobody
     received is invisible to everybody except the person waiting for it.
-
-    Only for an account that has not been activated. Sending one to an active
-    account would be an administrator resetting a colleague's password from a
-    distance; that is a different act, and its owner already has "Forgotten
-    your password?".
     """
     async with transaction() as conn:
-        user = await repo.require_by_uuid(conn, str(user_uuid))
-        if user["status"] != UserStatus.PENDING.value:
-            raise ValidationFailed(
-                "That account is already activated. Its owner can set a new password "
-                'with "Forgotten your password?" on the sign-in page.',
-                field="status",
-            )
-        await auth_service.invite_staff(conn, user=user)
+        user = await users.resend_invitation(conn, str(user_uuid))
     return {"ok": True, "message": f"A new invitation is on its way to {user['email']}."}
 
 
@@ -303,74 +209,22 @@ async def get_user(user_uuid: UUID, principal: RequireDPOorAdmin) -> dict[str, A
 
 @router.patch("/{user_uuid}", response_model=UserOut)
 async def update_user(user_uuid: UUID, body: UpdateUser, principal: RequireAdmin) -> dict[str, Any]:
-    """Name, mobile, organisation id. A mobile that changes is unconfirmed
-    again and is sent a code, as it would be had the person typed it."""
+    """Name, mobile, organisation id. A changed mobile is sent a code."""
     async with transaction() as conn:
-        user = await repo.require_by_uuid(conn, str(user_uuid))
-        try:
-            updated = await repo.update_profile(
-                conn,
-                user["id"],
-                full_name=body.full_name,
-                mobile=body.mobile,
-                organization_id=body.organization_id,
-            )
-        except Exception as exc:
-            if unique_violation(exc):
-                raise Conflict(
-                    "That mobile belongs to another account", code="contact_taken"
-                ) from exc
-            raise
-        await audit.record(
+        return await users.update_profile(
             conn,
-            event=Event.USER_UPDATED,
-            entity_type="auth_user",
-            entity_id=user["id"],
-            subject_user_id=user["id"],
-            detail={"fields": sorted(k for k, v in body.model_dump().items() if v is not None)},
+            str(user_uuid),
+            full_name=body.full_name,
+            mobile=body.mobile,
+            organization_id=body.organization_id,
         )
-
-        # "Changed" is decided on the blind index: the stored number is sealed
-        # and differs on every write.
-        mobile_changed = body.mobile is not None and index_of(
-            "mobile", normalise_mobile(body.mobile)
-        ) != (user.get("mobile_hash") or None)
-        if mobile_changed:
-            await audit.record(
-                conn,
-                event=Event.USER_CONTACT_CHANGED,
-                entity_type="auth_user",
-                entity_id=user["id"],
-                subject_user_id=user["id"],
-                detail={"medium": "mobile", "action": "set", "by": "administrator"},
-            )
-            await auth_service.request_contact_code_on_behalf(
-                conn, user=updated, contact=str(body.mobile)
-            )
-    return updated
 
 
 @router.post("/{user_uuid}/role", response_model=Acknowledged, summary="Change a role")
 async def change_role(user_uuid: UUID, body: RoleChange, principal: RequireAdmin) -> dict[str, Any]:
-    if body.role not in {r.value for r in Role}:
-        raise ValidationFailed("Unknown role", field="role")
-
     async with transaction() as conn:
-        user = await repo.require_by_uuid(conn, str(user_uuid))
-        if user["role"] == body.role:
-            raise Conflict("That user already holds this role", code="role_unchanged")
-        if user["id"] == principal.user_id:
-            # Self-demotion is how an organisation ends up with no administrator.
-            raise Conflict("You cannot change your own role", code="self_role_change")
-
-        await repo.set_role(conn, user["id"], body.role)
-        await audit.record(
-            conn,
-            event=Event.USER_ROLE_CHANGED,
-            entity_type="auth_user",
-            entity_id=user["id"],
-            subject_user_id=user["id"],
-            detail={"from": user["role"], "to": body.role, "reason_given": bool(body.reason)},
+        user = await users.change_role(
+            conn, str(user_uuid), role=body.role, reason=body.reason, actor_id=principal.user_id
         )
     # A role change must not leave a session carrying the old role's permissions.
     revoked = await sessions.revoke_all(user["id"])
@@ -381,29 +235,11 @@ async def change_role(user_uuid: UUID, body: RoleChange, principal: RequireAdmin
 async def deactivate(user_uuid: UUID, principal: RequireAdmin) -> dict[str, Any]:
     """End a member of staff's access, or switch a data principal's account off.
 
-    Two different acts behind one button, and the row's role says which. For
-    staff the role and the password go and the person stays, active, as a data
-    principal - the consents they gave and the rights they hold are theirs
-    under the Act whether or not they still work here. For a data principal
-    there is nothing to keep them as, and the account is switched off.
+    For staff the role and the password go and the person stays as a data
+    principal; a data principal's account is switched off (`users.deactivate`).
     """
     async with transaction() as conn:
-        user = await repo.require_by_uuid(conn, str(user_uuid))
-        if user["id"] == principal.user_id:
-            raise Conflict("You cannot deactivate your own account", code="self_deactivate")
-        if user["role"] != Role.DATA_SUBJECT.value:
-            await auth_service.end_staff_access(conn, user=user, actor_user_id=principal.user_id)
-            kept = True
-        else:
-            await repo.set_status(conn, user["id"], "deactivated")
-            await audit.record(
-                conn,
-                event=Event.USER_DEACTIVATED,
-                entity_type="auth_user",
-                entity_id=user["id"],
-                subject_user_id=user["id"],
-            )
-            kept = False
+        user, kept = await users.deactivate(conn, str(user_uuid), actor_id=principal.user_id)
     revoked = await sessions.revoke_all(user["id"])
     if kept:
         return {
@@ -419,48 +255,22 @@ async def deactivate(user_uuid: UUID, principal: RequireAdmin) -> dict[str, Any]
 @router.post("/{user_uuid}/reactivate", response_model=Acknowledged)
 async def reactivate(user_uuid: UUID, principal: RequireAdmin) -> dict[str, Any]:
     async with transaction() as conn:
-        user = await repo.require_by_uuid(conn, str(user_uuid))
-        await repo.set_status(conn, user["id"], "active")
-        await audit.record(
-            conn,
-            event=Event.USER_REACTIVATED,
-            entity_type="auth_user",
-            entity_id=user["id"],
-            subject_user_id=user["id"],
-        )
+        await users.reactivate(conn, str(user_uuid))
     return {"ok": True, "message": "Reactivated."}
 
 
 @router.delete("/{user_uuid}/sessions", response_model=Acknowledged, summary="Force logout")
 async def force_logout(user_uuid: UUID, principal: RequireAdmin) -> dict[str, Any]:
     async with transaction() as conn:
-        user = await repo.require_by_uuid(conn, str(user_uuid))
-        await audit.record(
-            conn,
-            event=Event.USER_SESSIONS_REVOKED,
-            entity_type="auth_user",
-            entity_id=user["id"],
-            subject_user_id=user["id"],
-            detail={"forced": True},
-        )
+        user = await users.record_forced_sign_out(conn, str(user_uuid))
     revoked = await sessions.revoke_all(user["id"])
     return {"ok": True, "message": f"{revoked} session(s) terminated."}
 
 
 @router.post("/{user_uuid}/mfa/reset", response_model=Acknowledged)
 async def reset_mfa(user_uuid: UUID, principal: RequireAdmin) -> dict[str, Any]:
-    from cmp.auth.authentication import otp
-
     async with transaction() as conn:
-        user = await repo.require_by_uuid(conn, str(user_uuid))
-        await otp.discard(otp.Scope.STAFF_MFA, str(user_uuid))
-        await audit.record(
-            conn,
-            event=Event.USER_MFA_RESET,
-            entity_type="auth_user",
-            entity_id=user["id"],
-            subject_user_id=user["id"],
-        )
+        user = await users.reset_mfa(conn, str(user_uuid))
     await sessions.revoke_all(user["id"])
     return {"ok": True, "message": "MFA reset. The user must sign in again."}
 

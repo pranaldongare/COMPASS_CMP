@@ -11,7 +11,7 @@ follows from that.
 |---|---|---|
 | `bootstrap/` | everything | be imported by anything below it |
 | `api/middleware` | the app | read a database row |
-| `api/routers` | domain services, dependencies; `infrastructure/dkms` (see below) | write SQL, open a transaction it does not hand to a service |
+| `api/routers` | domain services, dependencies; repositories, for reads; `infrastructure/dkms` (see below) | write SQL, write through a repository, call `audit.record()`, open a transaction it does not hand to a service |
 | `api/dependencies` | `auth`, `core` | know the shape of any specific resource |
 | `auth/` | `domain` repositories, `core`; `infrastructure/dkms` (see below) | import from `api` |
 | `domain/` | repositories, `core`, `infrastructure` | import FastAPI, know an HTTP status code |
@@ -35,6 +35,15 @@ And the only callers of `audit.record()`. That is what makes "every change is
 recorded" a property of the structure rather than a convention somebody has to
 remember. A write that happened without an audit row is not a state the database
 can reach, because both happen in the same transaction.
+
+`tests/unit/test_layer_boundaries.py` checks it over the source: no router
+records an audit row or writes through a repository, and no router, domain
+service or `auth` module runs SQL - the audit service's own INSERT being the one
+named exception. Until 2026-10-05 this was a convention, and the registry,
+users, projects, consents, exchange, notices and `/me` routers wrote and
+audited for themselves; the dashboard and the public notice viewer ran their
+own SQL (review ARCH-5). A router may still *read* through a repository: a
+lookup is not a rule that a task could disagree with.
 
 ### Repositories do not decide permission
 

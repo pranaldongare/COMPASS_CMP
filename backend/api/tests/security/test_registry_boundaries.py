@@ -25,9 +25,9 @@ pytestmark = pytest.mark.asyncio
 
 
 def _refuse(role: Role, processor: dict[str, Any]) -> None:
-    from cmp.api.routers.v1.registry import _refuse_foreign_processor
+    from cmp.domain.registry.service import refuse_foreign_processor
 
-    _refuse_foreign_processor(role, processor)
+    refuse_foreign_processor(role, processor)
 
 
 class TestACollectionOwnerRegistersUnderTheirOwnProcessor:

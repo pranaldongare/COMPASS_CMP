@@ -30,10 +30,7 @@ from cmp.core.pagination import PageRequest
 from cmp.core.permissions import Role
 from cmp.core.security import file_hash
 from cmp.db.pool import connection, transaction
-from cmp.db.repositories import consent as consent_repo
 from cmp.db.repositories import projects as repo
-from cmp.domain.audit import service as audit
-from cmp.domain.audit.service import Event
 from cmp.domain.consent import service as consent_service
 from cmp.domain.projects import service as service
 from cmp.domain.projects.state_machine import COLLECTION_OWNERS
@@ -583,16 +580,8 @@ async def download_proof(approval_uuid: UUID, principal: ProjectReader) -> Respo
         raise Forbidden("Your role may not download approval proof")
 
     async with transaction() as conn:
-        approval = await repo.approval_by_uuid(
+        approval = await service.record_proof_download(
             conn, str(approval_uuid), role=principal.role, user_id=principal.user_id
-        )
-        if not approval:
-            raise NotFound("Approval")
-        await audit.record(
-            conn,
-            event=Event.APPROVAL_PROOF_DOWNLOADED,
-            entity_type="project_approval",
-            entity_id=approval["approval_id"],
         )
 
     payload = read_upload(approval["proof_file_ref"])
@@ -687,21 +676,14 @@ async def update_site(
     site_uuid: UUID, body: SiteUpdate, principal: ProjectReader
 ) -> dict[str, Any]:
     async with transaction() as conn:
-        site = await repo.site_by_uuid(
-            conn, str(site_uuid), role=principal.role, user_id=principal.user_id
-        )
-        if not site:
-            raise NotFound("Site")
-        updated = await repo.update_site(
-            conn, site["site_id"], site_label=body.site_label, location=body.location
-        )
-        await audit.record(
+        return await service.update_site(
             conn,
-            event=Event.SITE_UPDATED,
-            entity_type="project_site",
-            entity_id=site["site_id"],
+            str(site_uuid),
+            role=principal.role,
+            user_id=principal.user_id,
+            site_label=body.site_label,
+            location=body.location,
         )
-    return updated
 
 
 @router.put("/sites/{site_uuid}/source", summary="Attach the data source that stands here")
@@ -816,21 +798,8 @@ async def assign_site_owner(
 @router.post("/sites/{site_uuid}/deactivate", response_model=Acknowledged)
 async def deactivate_site(site_uuid: UUID, principal: RequireDPO) -> dict[str, Any]:
     async with transaction() as conn:
-        site = await repo.site_by_uuid(
-            conn, str(site_uuid), role=principal.role, user_id=principal.user_id
-        )
-        if not site:
-            raise NotFound("Site")
-        await repo.deactivate_site(conn, site["site_id"])
-        revoked = await consent_repo.revoke_links_for_project(
-            conn, project_uuid=str(site["project_uuid"]), actor_id=principal.user_id
-        )
-        await audit.record(
-            conn,
-            event=Event.SITE_DEACTIVATED,
-            entity_type="project_site",
-            entity_id=site["site_id"],
-            detail={"links_revoked": revoked},
+        revoked = await service.deactivate_site(
+            conn, str(site_uuid), role=principal.role, actor_id=principal.user_id
         )
     return {"ok": True, "message": f"Site deactivated. {revoked} link(s) revoked."}
 
@@ -855,20 +824,14 @@ async def assign_agent(
         raise Forbidden("Only a DPO or a collection owner may assign a Field Agent")
 
     async with transaction() as conn:
-        link = await consent_service.create_link(
+        link = await service.assign_agent(
             conn,
-            site_uuid=str(site_uuid),
+            str(site_uuid),
             expires_at=body.expires_at,
             max_uses=body.max_uses,
+            agent_ref=body.agent_ref,
             actor_id=principal.user_id,
             role=principal.role,
-        )
-        await audit.record(
-            conn,
-            event=Event.SITE_AGENT_ASSIGNED,
-            entity_type="consent_link",
-            entity_id=link["link_id"],
-            detail={"site": str(site_uuid), "agent_ref": body.agent_ref},
         )
     return {
         "link_uuid": link["link_uuid"],

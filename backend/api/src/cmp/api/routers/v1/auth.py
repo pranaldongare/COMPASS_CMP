@@ -25,8 +25,6 @@ from cmp.auth.sessions import service as sessions
 from cmp.core.config import settings
 from cmp.core.errors import NotFound, Unauthenticated
 from cmp.db.pool import connection, transaction
-from cmp.domain.audit import service as audit
-from cmp.domain.audit.service import Event
 from cmp.schemas.common import Acknowledged, DateOfBirth, OtpCode, Out, Password, Schema
 from cmp.validation import Mobile
 
@@ -281,13 +279,7 @@ async def logout(request: Request, response: Response, principal: CurrentUser) -
     if token:
         await sessions.destroy(token)
     async with transaction() as conn:
-        await audit.record(
-            conn,
-            event=Event.LOGOUT,
-            entity_type="auth_user",
-            entity_id=principal.user_id,
-            subject_user_id=principal.user_id,
-        )
+        await auth_service.record_sign_out(conn, user_id=principal.user_id)
     clear_session_cookies(response)
     return {"ok": True, "message": "Signed out."}
 
@@ -356,13 +348,8 @@ async def revoke_session(session_uuid: UUID, principal: CurrentUser, response: R
         raise NotFound("Session")
 
     async with transaction() as conn:
-        await audit.record(
-            conn,
-            event=Event.USER_SESSIONS_REVOKED,
-            entity_type="auth_user",
-            entity_id=principal.user_id,
-            subject_user_id=principal.user_id,
-            detail={"session": str(session_uuid), "self_service": True},
+        await auth_service.record_session_revoked(
+            conn, user_id=principal.user_id, session_uuid=str(session_uuid)
         )
     if str(session_uuid) == principal.session.sid:
         clear_session_cookies(response)

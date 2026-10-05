@@ -28,9 +28,6 @@ from cmp.core.config import settings
 from cmp.core.errors import Unauthenticated
 from cmp.core.permissions import Role
 from cmp.db.pool import transaction
-from cmp.db.repositories import notices as notice_repo
-from cmp.domain.audit import service as audit
-from cmp.domain.audit.service import Event
 from cmp.domain.consent import service as service
 from cmp.schemas.common import (
     Acknowledged,
@@ -118,14 +115,7 @@ async def open_link(token: TokenPath, request: Request, response: Response) -> d
     )
 
     async with transaction() as conn:
-        link = await service.resolve_link(conn, token)
-        languages = await notice_repo.languages_of(conn, link["notice_id"])
-        await audit.record(
-            conn,
-            event=Event.LINK_OPENED,
-            entity_type="consent_link",
-            entity_id=link["link_id"],
-        )
+        link, languages = await service.record_link_opened(conn, token)
 
     return {
         "valid": True,

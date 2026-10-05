@@ -18,9 +18,8 @@ Paths are under `backend/api/src/cmp/`.
 
 | Gap | Where |
 |---|---|
-| Routers write through repositories and call `audit.record()` themselves - 37 calls in 9 router files - where [layers](../architecture/layers.md) says only services write | e.g. `api/routers/v1/registry.py`, `projects.py` (`deactivate_site`) |
-| SQL outside repositories | `api/routers/v1/dashboard.py`, `api/routers/public/rights.py`, `domain/rights/holds.py`, `domain/notices/importer.py` |
-| A repository imports another's predicates | `db/repositories/consent.py` and `exchange.py` import from `projects.py` |
+| SQL outside repositories, in two maintenance sweeps (routers, domain services and `auth` are clean since 2026-10-05 and `tests/unit/test_layer_boundaries.py` keeps them so; the retention sweep is rewritten under S4-01) | `tasks/maintenance/assets.py`, `tasks/maintenance/retention.py` |
+| A repository imports another's predicates | `db/repositories/consent.py`, `exchange.py` and `dashboard.py` import from `projects.py` |
 | `domain` imports `auth` (codes, rate limits), and `domain`, `auth` and `api` import `tasks` inside functions | `domain/consent/service.py`, `domain/rights/service.py` |
 
 ## Documents that disagree with the code

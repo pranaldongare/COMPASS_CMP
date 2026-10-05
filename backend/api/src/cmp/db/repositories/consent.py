@@ -703,3 +703,13 @@ async def list_all_consents(
     total = await fetch_one(conn, f"SELECT count(*) AS n {base} WHERE {clause}", params)
     items, cursor = build_page(rows, req)
     return items, cursor, int((total or {}).get("n", 0))
+
+
+async def lock_capture(conn: Conn, *, user_id: int, notice_id: int) -> None:
+    """Serialise consent captures for one person and one notice.
+
+    Transaction-scoped: released at commit or rollback. Two first captures
+    racing would each see nothing current and each write a root; with the lock
+    the second becomes a supersession, which is what she meant.
+    """
+    await conn.execute("SELECT pg_advisory_xact_lock(%s, %s)", (user_id, notice_id))
