@@ -1,12 +1,14 @@
 /**
- * One rights request, the way the flow diagram draws it.
+ * One rights request.
  *
- * Three columns on the diagram - the clock, the path, where it can end early -
- * and the same three here, followed by the cards that do the work in the
- * order the path asks the questions: identity, classification, holders, the
- * erasure scope, the transitions the server offers, and the response. Nothing
- * on this page decides what may happen next; every card renders the server's
- * answer and shows its sentence when it refuses.
+ * Where it stands comes first: due date, current step, who has it and the next
+ * move (UX review 2026-10-05). Then the request itself, then the cards that do
+ * the work, grouped in the order the path asks the questions - identity and
+ * classification, the holders and the erasure scope, the response - and last
+ * what was recorded. The full clock and path, the flow diagram's three
+ * columns, is folded until asked for; the timing that matters is in the
+ * summary. Nothing on this page decides what may happen next; every card
+ * renders the server's answer and shows its sentence when it refuses.
  */
 "use client";
 
@@ -43,6 +45,7 @@ import {
   LinkedRequestCard,
 } from "@/features/rights/components/linked-request-card";
 import { Path } from "@/features/rights/components/path";
+import { RequestSummary } from "@/features/rights/components/request-summary";
 import { RespondCard } from "@/features/rights/components/respond-card";
 import { ScopeCard } from "@/features/rights/components/scope-card";
 import {
@@ -101,169 +104,213 @@ export default function RequestDetailPage() {
       />
 
       <div className="space-y-6">
-        <Card>
-          <CardBody>
-            <DescriptionList>
-              <DescriptionItem term="Who">
-                {r.subject_uuid ? (
-                  <>
-                    <Link
-                      href={`/users?person=${r.subject_uuid}`}
-                      className="text-accent-text hover:underline"
-                    >
-                      {r.subject_name}
-                    </Link>
-                    <span className="block text-xs text-text-subtle">
-                      {r.subject_email}
-                      {r.subject_mobile && ` · ${r.subject_mobile}`}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span>{r.submitted_name ?? "No name given"}</span>
-                    <span className="block text-xs text-warning-text">
-                      No account matches this contact
-                    </span>
-                  </>
-                )}
-              </DescriptionItem>
-              <DescriptionItem term="Contact given">{r.submitted_contact}</DescriptionItem>
-              {r.consent_uuid && (
-                <DescriptionItem term="Confined to">
-                  <ConsentScope
-                    scope={{
-                      consent_uuid: r.consent_uuid,
-                      project: r.consent_project,
-                      notice_code: r.consent_notice_code,
-                      notice_version: r.consent_notice_version,
-                      at: r.consent_at,
-                      withdrawn: r.consent_withdrawn,
-                      purposes: r.consent_purposes,
-                    }}
-                  />
-                  <span className="mt-1 block text-xs text-text-subtle">
-                    The requester asked about this consent only. Holders, scope, tickets and the
-                    response are confined to the data under it.
-                  </span>
-                </DescriptionItem>
-              )}
-              <DescriptionItem term="Received">
-                {formatDateTime(r.received_at)}
-              </DescriptionItem>
-              <DescriptionItem term="Acknowledged">
-                {r.acknowledged_at ? formatDateTime(r.acknowledged_at) : "Not yet"}
-              </DescriptionItem>
-              {r.linked_reference && (
-                <DescriptionItem term="About">
-                  <Mono>{r.linked_reference}</Mono>
-                  <span className="ml-2 text-xs text-text-subtle">
-                    {r.request_type === "grievance"
-                      ? "the request under dispute, shown below"
-                      : "shown below"}
-                  </span>
-                </DescriptionItem>
-              )}
-              <LinkedFrom request={r} />
-              {r.channel === "nominee" && (
-                <DescriptionItem term="Nominee">
-                  {r.nominee_name} ({r.nominee_contact}) ·{" "}
-                  {r.trigger_event === "death"
-                    ? "reports the principal has died"
-                    : "reports the principal cannot act"}
-                  {r.trigger_evidenced_at && (
-                    <span className="block text-xs text-text-subtle">
-                      Evidenced {formatDateTime(r.trigger_evidenced_at)}
-                      {r.trigger_event === "death"
-                        ? " · the principal's account is closed and cannot sign in"
-                        : " · the principal keeps their account and can follow this request"}
-                    </span>
-                  )}
-                  {r.trigger_evidence_hash && (
-                    <a
-                      className="ml-2 inline-flex items-center gap-1 text-accent-text underline underline-offset-2"
-                      href={`${config.apiUrl}/requests/${r.request_uuid}/event/evidence`}
-                    >
-                      <Download className="size-3.5" aria-hidden="true" /> evidence
-                    </a>
-                  )}
-                </DescriptionItem>
-              )}
-              {r.about_dpo && (
-                <DescriptionItem term="Reviewer">
-                  {r.reviewer_name ?? "Not yet assigned - an administrator names one"}
-                </DescriptionItem>
-              )}
-            </DescriptionList>
-            <p className="mt-4 rounded-md bg-bg-inset p-3 text-sm whitespace-pre-wrap">
-              {r.request_text}
-            </p>
-          </CardBody>
-        </Card>
+        <RequestSummary request={r} actionsHref="#actions" />
 
-        <LinkedRequestCard request={r} />
-
-        {/* The clock and the path are the map of the request: read once, then
-            folded away so the work below comes first. Remembered per browser. */}
-        <CollapsibleCard
-          title="Clock and path"
-          description="The deadlines this request runs to, and every step it takes - with where it can end early."
-          icon={Clock}
-          storageKey="request.overview"
-        >
-          <div className="grid gap-6 p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
-            <div className="min-w-0">
-              <h3 className="mb-3 text-sm font-semibold">Clock</h3>
-              <ClockColumn clock={r.clock} closed={closed} />
-            </div>
-            <div className="min-w-0">
-              <h3 className="mb-3 text-sm font-semibold">
-                The path, and where it can end early
-              </h3>
-              <Path request={r} />
-            </div>
-          </div>
-        </CollapsibleCard>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <VerificationCard request={r} />
-          <ClassificationCard request={r} />
-        </div>
-
-        {withHolders && <HoldersCard request={r} />}
-        {r.request_type === "erasure" && <ScopeCard request={r} />}
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <RequestTransitions request={r} />
-          <RespondCard request={r} />
-        </div>
-
-        <Card>
-          <CardHeader className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <History className="size-4" aria-hidden="true" />
-              What was recorded
-            </CardTitle>
-            <button
-              type="button"
-              className="text-sm text-accent-text underline underline-offset-2"
-              onClick={() => setTrailOpen((v) => !v)}
-              aria-expanded={trailOpen}
-            >
-              {trailOpen ? "Hide" : "Show"}
-            </button>
-          </CardHeader>
-          {trailOpen && (
+        <Group title="The request">
+          <Card>
             <CardBody>
-              <ActivityFeed
-                entries={trail.data}
-                isLoading={trail.isLoading}
-                order="oldest"
-                emptyTitle="Nothing recorded yet"
-              />
+              <DescriptionList>
+                <DescriptionItem term="Who">
+                  {r.subject_uuid ? (
+                    <>
+                      <Link
+                        href={`/users?person=${r.subject_uuid}`}
+                        className="text-accent-text hover:underline"
+                      >
+                        {r.subject_name}
+                      </Link>
+                      <span className="block text-xs text-text-subtle">
+                        {r.subject_email}
+                        {r.subject_mobile && ` · ${r.subject_mobile}`}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{r.submitted_name ?? "No name given"}</span>
+                      <span className="block text-xs text-warning-text">
+                        No account matches this contact
+                      </span>
+                    </>
+                  )}
+                </DescriptionItem>
+                <DescriptionItem term="Contact given">
+                  {r.submitted_contact}
+                </DescriptionItem>
+                {r.consent_uuid && (
+                  <DescriptionItem term="Confined to">
+                    <ConsentScope
+                      scope={{
+                        consent_uuid: r.consent_uuid,
+                        project: r.consent_project,
+                        notice_code: r.consent_notice_code,
+                        notice_version: r.consent_notice_version,
+                        at: r.consent_at,
+                        withdrawn: r.consent_withdrawn,
+                        purposes: r.consent_purposes,
+                      }}
+                    />
+                    <span className="mt-1 block text-xs text-text-subtle">
+                      The requester asked about this consent only. Holders, scope, tickets
+                      and the response are confined to the data under it.
+                    </span>
+                  </DescriptionItem>
+                )}
+                <DescriptionItem term="Received">
+                  {formatDateTime(r.received_at)}
+                </DescriptionItem>
+                <DescriptionItem term="Acknowledged">
+                  {r.acknowledged_at ? formatDateTime(r.acknowledged_at) : "Not yet"}
+                </DescriptionItem>
+                {r.linked_reference && (
+                  <DescriptionItem term="About">
+                    <Mono>{r.linked_reference}</Mono>
+                    <span className="ml-2 text-xs text-text-subtle">
+                      {r.request_type === "grievance"
+                        ? "the request under dispute, shown below"
+                        : "shown below"}
+                    </span>
+                  </DescriptionItem>
+                )}
+                <LinkedFrom request={r} />
+                {r.channel === "nominee" && (
+                  <DescriptionItem term="Nominee">
+                    {r.nominee_name} ({r.nominee_contact}) ·{" "}
+                    {r.trigger_event === "death"
+                      ? "reports the principal has died"
+                      : "reports the principal cannot act"}
+                    {r.trigger_evidenced_at && (
+                      <span className="block text-xs text-text-subtle">
+                        Evidenced {formatDateTime(r.trigger_evidenced_at)}
+                        {r.trigger_event === "death"
+                          ? " · the principal's account is closed and cannot sign in"
+                          : " · the principal keeps their account and can follow this request"}
+                      </span>
+                    )}
+                    {r.trigger_evidence_hash && (
+                      <a
+                        className="ml-2 inline-flex items-center gap-1 text-accent-text underline underline-offset-2"
+                        href={`${config.apiUrl}/requests/${r.request_uuid}/event/evidence`}
+                      >
+                        <Download className="size-3.5" aria-hidden="true" /> evidence
+                      </a>
+                    )}
+                  </DescriptionItem>
+                )}
+                {r.about_dpo && (
+                  <DescriptionItem term="Reviewer">
+                    {r.reviewer_name ?? "Not yet assigned - an administrator names one"}
+                  </DescriptionItem>
+                )}
+              </DescriptionList>
+              <p className="mt-4 rounded-md bg-bg-inset p-3 text-sm whitespace-pre-wrap">
+                {r.request_text}
+              </p>
             </CardBody>
-          )}
-        </Card>
+          </Card>
+
+          <LinkedRequestCard request={r} />
+
+          {/* The clock and the path are the map of the request. Folded to start
+            with: the summary above carries the timing and the step, and the
+            full map is there for whoever wants to read it. Remembered per
+            browser once somebody opens it. */}
+          <CollapsibleCard
+            title="Clock and path"
+            description="Every checkpoint this request runs to, and every step it takes - with where it can end early."
+            icon={Clock}
+            defaultOpen={false}
+            storageKey="request.overview"
+          >
+            <div className="grid gap-6 p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
+              <div className="min-w-0">
+                <h3 className="mb-3 text-sm font-semibold">Clock</h3>
+                <ClockColumn clock={r.clock} closed={closed} />
+              </div>
+              <div className="min-w-0">
+                <h3 className="mb-3 text-sm font-semibold">
+                  The path, and where it can end early
+                </h3>
+                <Path request={r} />
+              </div>
+            </div>
+          </CollapsibleCard>
+        </Group>
+
+        <Group title="Identity and classification">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <VerificationCard request={r} />
+            <ClassificationCard request={r} />
+          </div>
+        </Group>
+
+        {(withHolders || r.request_type === "erasure") && (
+          <Group title={r.request_type === "erasure" ? "Holders and what goes" : "Holders"}>
+            {withHolders && <HoldersCard request={r} />}
+            {r.request_type === "erasure" && <ScopeCard request={r} />}
+          </Group>
+        )}
+
+        {/* `#actions`: where the summary's next move points. */}
+        <Group title="Response and outcome" id="actions">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <RequestTransitions request={r} />
+            <RespondCard request={r} />
+          </div>
+        </Group>
+
+        <Group title="History">
+          <Card>
+            <CardHeader className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <History className="size-4" aria-hidden="true" />
+                What was recorded
+              </CardTitle>
+              <button
+                type="button"
+                className="text-sm text-accent-text underline underline-offset-2"
+                onClick={() => setTrailOpen((v) => !v)}
+                aria-expanded={trailOpen}
+              >
+                {trailOpen ? "Hide" : "Show"}
+              </button>
+            </CardHeader>
+            {trailOpen && (
+              <CardBody>
+                <ActivityFeed
+                  entries={trail.data}
+                  isLoading={trail.isLoading}
+                  order="oldest"
+                  emptyTitle="Nothing recorded yet"
+                />
+              </CardBody>
+            )}
+          </Card>
+        </Group>
       </div>
     </>
+  );
+}
+
+/** One group of the page, named so it can be found by eye and by heading. */
+function Group({
+  title,
+  id,
+  children,
+}: {
+  title: string;
+  id?: string;
+  children: React.ReactNode;
+}) {
+  const headingId = React.useId();
+  return (
+    <section id={id} aria-labelledby={headingId} className="scroll-mt-20 space-y-4">
+      <h2
+        id={headingId}
+        className="text-sm font-semibold tracking-wide text-text-muted uppercase"
+      >
+        {title}
+      </h2>
+      {children}
+    </section>
   );
 }
