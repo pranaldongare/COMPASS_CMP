@@ -18,13 +18,12 @@ from typing import Any
 
 from fastapi import Request
 
-from cmp.api.dependencies.csrf import UNSAFE_METHODS
+from cmp.api.dependencies.csrf import verify_csrf
 from cmp.auth.sessions import service as sessions
 from cmp.auth.sessions.service import Session
 from cmp.core.config import settings
 from cmp.core.constants import BACKGROUND_HEADER
-from cmp.core.errors import Forbidden, Unauthenticated
-from cmp.core.security import csrf_matches
+from cmp.core.errors import Unauthenticated
 
 
 async def session_from_request(request: Request) -> Session:
@@ -40,11 +39,7 @@ async def session_from_request(request: Request) -> Session:
 
     # Double-submit CSRF. Checked here rather than in middleware because it needs
     # the session's own token, and because safe methods must be exempt.
-    if request.method in UNSAFE_METHODS:
-        header = request.headers.get(settings.csrf_header_name)
-        if not csrf_matches(session.csrf_token, header):
-            raise Forbidden("Missing or invalid CSRF token", code="csrf_failed")
-
+    verify_csrf(request, session.csrf_token)
     return session
 
 

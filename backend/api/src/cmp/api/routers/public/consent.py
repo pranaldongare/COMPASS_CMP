@@ -20,6 +20,7 @@ from fastapi import APIRouter, Request, Response, status
 from pydantic import EmailStr, Field
 
 from cmp.api.dependencies import set_session_cookies
+from cmp.api.dependencies.sessions import session_from_request
 from cmp.auth.authentication import service as auth_service
 from cmp.auth.rate_limit import service as ratelimit
 from cmp.auth.sessions import service as sessions
@@ -249,10 +250,12 @@ async def give_consent(
     The subject is taken from the session, never from the body.
     """
     _no_referrer(response)
-    cookie = request.cookies.get(settings.cookie_name)
-    session = await sessions.load(cookie) if cookie else None
-    if session is None:
+    if not request.cookies.get(settings.cookie_name):
         raise Unauthenticated("Confirm your contact details before consenting")
+    # The one session check every cookie-authenticated write goes through,
+    # CSRF header included. This route loaded the session itself until
+    # 2026-10-05, and was the one write without the second layer (SEC-4).
+    session = await session_from_request(request)
     if session.role != Role.DATA_SUBJECT.value:
         # Staff cannot record consent on someone's behalf through this route.
         raise Unauthenticated("This flow is for data subjects only")

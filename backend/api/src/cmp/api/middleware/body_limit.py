@@ -7,23 +7,40 @@ request has none at all.
 This sits above the route so an oversized payload never reaches a Pydantic model
 or a file handler. Parsing a 2 GB body to discover it is too large is the
 denial-of-service this prevents.
+
+Until 2026-10-05 only the first half was true: the middleware read the header
+and nothing else, so a streamed body of any size went through (review SEC-4).
+It is a plain ASGI middleware now, because counting the bytes means wrapping
+`receive`, and `BaseHTTPMiddleware` hides it.
 """
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from typing import Any
 
-from fastapi import Request, Response, status
+from fastapi import status
 from fastapi.responses import ORJSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.exceptions import HTTPException
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from cmp.core.config import settings
 from cmp.core.context import current_context
 
-Next = Callable[[Request], Awaitable[Response]]
+
+class BodyTooLarge(HTTPException):
+    """Raised from inside `receive` once the bytes read pass the limit.
+
+    An `HTTPException` because FastAPI re-raises those from body parsing
+    untouched, where any other exception becomes "There was an error parsing
+    the body" - a 400 that would hide what happened. The API's handler for
+    these answers 413 `payload_too_large`.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, _message())
 
 
-class BodyLimitMiddleware(BaseHTTPMiddleware):
+class BodyLimitMiddleware:
     """Refuse oversized bodies before they are read into memory.
 
     Enforced here, in the application, and not left to whatever sits in front
@@ -32,36 +49,75 @@ class BodyLimitMiddleware(BaseHTTPMiddleware):
     bypasses the proxy, and in development nothing sits in front at all.
     """
 
-    async def dispatch(self, request: Request, call_next: Next) -> Response:
-        declared = request.headers.get("content-length")
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        limit = settings.max_upload_bytes
+        declared = _header(scope, b"content-length")
         if declared is not None:
             try:
-                if int(declared) > settings.max_upload_bytes:
-                    return _too_large()
+                if int(declared) > limit:
+                    await _too_large()(scope, receive, send)
+                    return
             except ValueError:
-                return ORJSONResponse(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    content={
-                        "error": {
-                            "code": "bad_request",
-                            "message": "Malformed Content-Length",
-                            "request_id": getattr(request.state, "request_id", "-"),
-                        }
-                    },
-                )
-        return await call_next(request)
+                await _malformed()(scope, receive, send)
+                return
+
+        received = 0
+
+        async def counted() -> Message:
+            nonlocal received
+            message = await receive()
+            if message["type"] == "http.request":
+                received += len(message.get("body", b""))
+                if received > limit:
+                    raise BodyTooLarge()
+            return message
+
+        started = False
+
+        async def tracked(message: Message) -> None:
+            nonlocal started
+            if message["type"] == "http.response.start":
+                started = True
+            await send(message)
+
+        try:
+            await self.app(scope, counted, tracked)
+        except BodyTooLarge:
+            # Normally answered by the API's handler before it gets here; this
+            # is for a route outside it, or a body read after the reply began.
+            if started:
+                raise
+            await _too_large()(scope, receive, send)
+
+
+def _header(scope: Scope, name: bytes) -> str | None:
+    for key, value in scope.get("headers", []):
+        if key.lower() == name:
+            return bytes(value).decode("latin-1")
+    return None
+
+
+def _message() -> str:
+    return f"Request body exceeds {settings.max_upload_bytes // (1024 * 1024)} MB"
 
 
 def _too_large() -> ORJSONResponse:
-    return ORJSONResponse(
-        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-        content={
-            "error": {
-                "code": "payload_too_large",
-                "message": (
-                    f"Request body exceeds {settings.max_upload_bytes // (1024 * 1024)} MB"
-                ),
-                "request_id": current_context().request_id,
-            }
-        },
-    )
+    return _error(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "payload_too_large", _message())
+
+
+def _malformed() -> ORJSONResponse:
+    return _error(status.HTTP_400_BAD_REQUEST, "bad_request", "Malformed Content-Length")
+
+
+def _error(status_code: int, code: str, message: str) -> ORJSONResponse:
+    content: dict[str, Any] = {
+        "error": {"code": code, "message": message, "request_id": current_context().request_id}
+    }
+    return ORJSONResponse(status_code=status_code, content=content)

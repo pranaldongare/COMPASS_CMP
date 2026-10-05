@@ -308,6 +308,22 @@ async def build(http: httpx.AsyncClient, session_for: SessionFactory, queued: li
         params={"language_code": "english"},
         cookies=cookies,
     )
+    # A page on another site can make her browser send her cookies, not read
+    # them: the same request without the header is refused (review SEC-4).
+    forged = await call(
+        http,
+        "POST",
+        f"/c/{w.link_token}/consent",
+        template="/c/{token}/consent",
+        expect=403,
+        cookies=cookies,
+        json={
+            "language_code": "english",
+            "grants": {w.purpose_uuid: True},
+            "action_type": "checkbox_click",
+        },
+    )
+    assert forged.json()["error"]["code"] == "csrf_failed"
     consent = await call(
         http,
         "POST",

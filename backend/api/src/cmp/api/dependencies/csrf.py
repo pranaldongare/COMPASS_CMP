@@ -43,4 +43,4 @@ def verify_csrf(request: Request, expected: str) -> None:
 
     supplied = request.headers.get(settings.csrf_header_name, "")
     if not csrf_matches(expected, supplied):
-        raise Forbidden("CSRF check failed. Reload the page and try again.")
+        raise Forbidden("Missing or invalid CSRF token", code="csrf_failed")

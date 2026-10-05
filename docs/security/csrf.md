@@ -41,6 +41,16 @@ all, and an equality check passes.
 
 `tests/security/test_csrf.py` asserts each of these, including the empty case.
 
+## One check, every cookie-authenticated write
+
+`verify_csrf()` (`api/dependencies/csrf.py`) is the check, and
+`session_from_request()` is the one place that calls it: every route that
+takes a session gets it by that dependency. `POST /c/{token}/consent` used to
+load the session itself, and was the one cookie-authenticated write without
+the header check; it goes through `session_from_request` since 2026-10-05
+(review SEC-4), and the HTTP suite's walk through the consent flow sends a
+forged consent - her cookies, no header - and expects 403 `csrf_failed`.
+
 ## Not covered: the portals' own `/dkms/decrypt`
 
 Everything above is the API's. Each portal also serves one route of its own,

@@ -11,11 +11,8 @@ Paths are under `backend/api/src/cmp/`.
 
 | Gap | Where | Why it matters |
 |---|---|---|
-| `POST /c/{token}/consent` does not check the CSRF header | `api/routers/public/consent.py` loads the session itself with `sessions.load()` instead of `session_from_request` | The `SameSite=Lax` cookie keeps a cross-site POST from carrying the session, so the practical exposure is small - but it is the one cookie-authenticated write without the second layer [csrf](../security/csrf.md) promises |
-| `verify_csrf()` is unused | `api/dependencies/csrf.py` | The real check is in `api/dependencies/sessions.py`; the helper suggests a second path that does not exist |
 | The portals' decrypt route checks only that a session cookie is present | `frontend/*/src/app/dkms/decrypt/route.ts` | It does not ask the API whether the session is valid; noted in [csrf](../security/csrf.md) |
 | `/metrics` has no authentication | `bootstrap/application.py` | Fine behind a private network; not on a public one |
-| The body limit reads `Content-Length` only | `api/middleware/body_limit.py` | A chunked upload is not measured, despite the docstring |
 
 ## Layering
 
