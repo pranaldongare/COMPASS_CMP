@@ -47,10 +47,14 @@ class TestPartOfAName:
     async def test_a_middle_fragment_finds_the_person(
         self, conn: Any, seeded: dict[str, Any], request_context: Any
     ) -> None:
-        tag = uuid4().hex[:8]
+        # The fragment is from the middle of the tag, and long enough to be
+        # nobody else's: the dev database holds thousands of names carrying
+        # random hex tags from earlier runs, and a four-character fragment
+        # matched one of them about one run in five.
+        tag = uuid4().hex[:16]
         await _person(conn, f"Amruta {tag} Shukla")
 
-        rows, _, _ = await user_repo.list_users(conn, _page(), q=tag[2:6])
+        rows, _, _ = await user_repo.list_users(conn, _page(), q=tag[4:12])
 
         assert len(rows) == 1
 
