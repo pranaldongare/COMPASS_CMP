@@ -39,7 +39,7 @@ import {
   type TransitionInput,
   type TransitionResult,
 } from "@/features/projects/api";
-import { keys, prefixes, type Result } from "@/lib/query";
+import { effects, keys, prefixes, type Result } from "@/lib/query";
 import type {
   Acknowledged,
   Project,
@@ -62,20 +62,16 @@ export type {
 /**
  * A lifecycle transition.
  *
- * Invalidates broadly on purpose: a transition can publish a notice, move the
- * project between queues, change which transitions are available next, and
- * alter the dashboard's counts. Enumerating those precisely is how one gets
- * forgotten.
+ * A transition can publish a notice, move the project between queues, change
+ * which transitions are available next, and alter the dashboard's counts -
+ * `effects.projectMoved` names all of it, in one place, so the notice views
+ * are not forgotten again (ARCH-3).
  */
 export function useTransition(projectUuid: Uuid): Result<TransitionResult, TransitionInput> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: TransitionInput) => requestTransition(projectUuid, body),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: keys.project.detail(projectUuid) });
-      void qc.invalidateQueries({ queryKey: keys.project.list() });
-      void qc.invalidateQueries({ queryKey: keys.dashboard.all });
-    },
+    onSuccess: () => effects.projectMoved(qc, projectUuid),
   });
 }
 
@@ -169,11 +165,7 @@ export function useCloseProject(uuid: Uuid): Result<Acknowledged, { reason?: str
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: { reason?: string }) => closeProject(uuid, body),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: keys.project.detail(uuid) });
-      void qc.invalidateQueries({ queryKey: keys.project.list() });
-      void qc.invalidateQueries({ queryKey: keys.dashboard.all });
-    },
+    onSuccess: () => effects.projectMoved(qc, uuid),
   });
 }
 

@@ -29,7 +29,7 @@ import {
   type PurposeAttachment,
   type PurposeOverride,
 } from "@/features/notices/api";
-import { keys, prefixes, type Result } from "@/lib/query";
+import { effects, keys, prefixes, type Result } from "@/lib/query";
 import type {
   Acknowledged,
   LanguageCode,
@@ -44,10 +44,7 @@ export function useCreateNotice(projectUuid: Uuid): Result<Notice, NoticeInput> 
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: NoticeInput) => createNotice(projectUuid, body),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: keys.project.detail(projectUuid) });
-      void qc.invalidateQueries({ queryKey: keys.notice.all() });
-    },
+    onSuccess: () => effects.noticesChanged(qc, projectUuid),
   });
 }
 
@@ -55,10 +52,7 @@ export function useCopyNotice(projectUuid: Uuid): Result<Notice, { source_notice
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: { source_notice_uuid: Uuid }) => copyNotice(projectUuid, body),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: keys.project.detail(projectUuid) });
-      void qc.invalidateQueries({ queryKey: keys.notice.all() });
-    },
+    onSuccess: () => effects.noticesChanged(qc, projectUuid),
   });
 }
 
@@ -82,9 +76,10 @@ export function usePublishNotice(noticeUuid: Uuid): Result<Notice, void> {
   return useMutation({
     mutationFn: () => publishNotice(noticeUuid),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: keys.notice.detail(noticeUuid) });
+      // A published notice is one the next can be copied from: the copy
+      // sources go stale too, which `noticesChanged` covers (ARCH-3).
+      effects.noticesChanged(qc);
       void qc.invalidateQueries({ queryKey: prefixes.anyProject });
-      void qc.invalidateQueries({ queryKey: keys.notice.all() });
     },
   });
 }
@@ -161,8 +156,7 @@ export function useImportNoticeDocument(projectUuid: Uuid) {
       // The import creates a notice, its rendition and its purposes at once, so
       // the project surface, the notice list and the register all go stale
       // together.
-      void qc.invalidateQueries({ queryKey: keys.notice.all() });
-      void qc.invalidateQueries({ queryKey: keys.project.detail(projectUuid) });
+      effects.noticesChanged(qc, projectUuid);
       void qc.invalidateQueries({ queryKey: ["purposes"] });
     },
   });

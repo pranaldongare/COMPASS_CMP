@@ -281,6 +281,14 @@ RequestsPage
 - **Mutations** name what they invalidate, in `mutations.ts`, next to the
   query they affect. The failure mode of a missed invalidation is a screen
   quietly showing the old number, so this is reviewed like a write.
+- **A consequence that crosses features is named once**, in
+  `lib/query/effects.ts` (console), and every hook that causes it calls it.
+  Approving a project publishes its notice, so `effects.projectMoved`
+  invalidates every notice view as well as the project's; when each hook
+  listed its own keys the project hooks listed project keys, and the notice
+  read as a draft until a reload (review ARCH-3). Its test caches every
+  affected view first, then writes, then asks which are still fresh
+  (`features/projects/transition-effects.test.tsx`).
 - **Defaults** ([`providers/query-provider.tsx`](../../frontend/console/src/providers/query-provider.tsx)):
   `staleTime` from config; **never retry a 4xx** (a 403 is a 403 on the
   fourth attempt and each attempt is an audited denial); **never retry a

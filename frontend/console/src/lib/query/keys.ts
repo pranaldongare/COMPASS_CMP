@@ -220,6 +220,9 @@ export const prefixes = {
   anyProject: ["project"] as const,
   anyCrossProjectList: ["all"] as const,
   anyNotice: ["notice"] as const,
+  /** Every cross-project notice list, the copy sources included. */
+  anyNoticeList: ["all", "notices"] as const,
+  anyApprovalList: ["all", "approvals"] as const,
   anyConsent: ["consent"] as const,
   anyCollection: ["collection"] as const,
   anyImport: ["import"] as const,
