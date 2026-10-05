@@ -10,7 +10,7 @@
 <title>Schema</title>
 <polygon fill="#f7fafc" stroke="none" points="-36,36 -36,-1428 2333.66,-1428 2333.66,36 -36,36"/>
 <text xml:space="preserve" text-anchor="start" x="8" y="-1362" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="30.00" fill="#142c44">COMPASS / EXCHANGE</text>
-<text xml:space="preserve" text-anchor="start" x="8" y="-1346.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0038 / full module tables with outgoing references / source adf96f4</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-1346.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0039 / full module tables with outgoing references / source 4bddceb</text>
 <text xml:space="preserve" text-anchor="start" x="8" y="-1320.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">FK arrow: child column to referenced key &#160;&#160;| &#160;&#160;Solid = required FK; dashed = nullable FK; dotted = view dependency</text>
 <text xml:space="preserve" text-anchor="start" x="13.43" y="-1308.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">PK = primary key; FK = foreign key; UQ = member of unique constraint (possibly composite); ? = nullable column</text>
 <g id="clust1" class="cluster">

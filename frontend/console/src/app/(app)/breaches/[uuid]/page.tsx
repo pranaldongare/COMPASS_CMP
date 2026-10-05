@@ -68,6 +68,12 @@ export default function BreachPage() {
             <OutcomeBadge outcome={b.determination} />
             <BreachStatusBadge status={b.status} />
             <Button variant="secondary" size="sm" asChild>
+              <Link href={`/breaches/${b.breach_uuid}/org-board`}>
+                <FileText className="size-4" />
+                Brief for the organisation&apos;s board
+              </Link>
+            </Button>
+            <Button variant="secondary" size="sm" asChild>
               <Link href={`/breaches/${b.breach_uuid}/board`}>
                 <FileText className="size-4" />
                 Documents for the Board

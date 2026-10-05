@@ -93,6 +93,7 @@ async def test_the_first_yes_records_the_breach_once(conn: Any, seeded: dict[str
     assert recorded["incident_reference"].startswith("INC-"), "and the incident's is kept"
     assert recorded["breach_recorded_at"] is not None
     assert {o["duty"] for o in recorded["obligations"]} == {
+        "org_board",
         "board_intimation",
         "board_report",
         "principals",
@@ -106,10 +107,13 @@ async def test_the_first_yes_records_the_breach_once(conn: Any, seeded: dict[str
     # reinstates them and issues no second number.
     after_no = await _determine(conn, seeded, uuid, "no")
     assert after_no["breach_reference"] == reference
-    assert all(o["state"] == "not_applicable" for o in after_no["obligations"])
+    dpdp = [o for o in after_no["obligations"] if o["duty"] != "org_board"]
+    assert all(o["state"] == "not_applicable" for o in dpdp)
     after_yes = await _determine(conn, seeded, uuid, "yes")
     assert after_yes["breach_reference"] == reference
-    assert all(o["state"] == "outstanding" for o in after_yes["obligations"])
+    assert all(o["state"] == "outstanding" for o in after_yes["obligations"]), (
+        "the organisation's board is untouched by either"
+    )
     assert len([e for e in await _events(conn, uuid) if e["event_type"] == "breach.confirmed"]) == 1
     rows = await fetch_all(
         conn,

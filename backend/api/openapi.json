@@ -12292,7 +12292,7 @@
         "tags": [
           "breaches"
         ],
-        "summary": "Record a submission made, with the regulator's reference",
+        "summary": "Record a submission made, with the regulator's reference - or, for the organisation's board, the report made and to whom",
         "operationId": "complete_duty_breaches__breach_uuid__obligations__duty__complete_post",
         "parameters": [
           {
@@ -12984,6 +12984,49 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BreachReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/org-board/brief": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Draft the brief for the organisation's board from the register",
+        "operationId": "org_board_brief_breaches__breach_uuid__org_board_brief_get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgBoardBriefOut"
                 }
               }
             }
@@ -15993,10 +16036,28 @@
             "title": "Occurred At"
           },
           "reference": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Reference"
+          },
+          "reported_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reported To"
           },
           "note": {
             "anyOf": [
@@ -16014,8 +16075,7 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "occurred_at",
-          "reference"
+          "occurred_at"
         ],
         "title": "BreachCompletionIn"
       },
@@ -16245,6 +16305,17 @@
             ],
             "title": "Note"
           },
+          "reported_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reported To"
+          },
           "due_at": {
             "anyOf": [
               {
@@ -16305,6 +16376,7 @@
           "occurred_at",
           "reference",
           "note",
+          "reported_to",
           "due_at",
           "requested_at",
           "determination_uuid",
@@ -16388,6 +16460,17 @@
             ],
             "title": "Reference"
           },
+          "reported_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reported To"
+          },
           "extended_until": {
             "anyOf": [
               {
@@ -16435,6 +16518,7 @@
           "anchored_at",
           "completed_at",
           "reference",
+          "reported_to",
           "extended_until",
           "extension_requested_at",
           "clock",
@@ -23194,6 +23278,225 @@
         "additionalProperties": false,
         "type": "object",
         "title": "NoticeUpdate"
+      },
+      "OrgBoardBriefOut": {
+        "properties": {
+          "document": {
+            "type": "string",
+            "title": "Document"
+          },
+          "basis": {
+            "type": "string",
+            "title": "Basis"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "incident_reference": {
+            "type": "string",
+            "title": "Incident Reference"
+          },
+          "breach_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breach Reference"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "detected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Detected At"
+          },
+          "began_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Began At"
+          },
+          "location": {
+            "$ref": "#/components/schemas/BreachLocationOut"
+          },
+          "validation": {
+            "type": "string",
+            "title": "Validation"
+          },
+          "became_aware_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Became Aware At"
+          },
+          "cert_in_reportable": {
+            "type": "boolean",
+            "title": "Cert In Reportable"
+          },
+          "duties": {
+            "items": {
+              "$ref": "#/components/schemas/OrgBoardDutyOut"
+            },
+            "type": "array",
+            "title": "Duties"
+          },
+          "touched": {
+            "$ref": "#/components/schemas/OrgBoardTouchedOut"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing"
+          },
+          "duty": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrgBoardDutyOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "document",
+          "basis",
+          "reference",
+          "incident_reference",
+          "breach_reference",
+          "title",
+          "generated_at",
+          "detected_at",
+          "began_at",
+          "location",
+          "validation",
+          "became_aware_at",
+          "cert_in_reportable",
+          "duties",
+          "touched",
+          "missing",
+          "duty"
+        ],
+        "title": "OrgBoardBriefOut",
+        "description": "For the organisation's board, drafted from the register. The platform\nnever reports to the board; a person does, and the DPO records it."
+      },
+      "OrgBoardDutyOut": {
+        "properties": {
+          "duty": {
+            "type": "string",
+            "title": "Duty"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "basis": {
+            "type": "string",
+            "title": "Basis"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "anchored_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anchored At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "clock": {
+            "$ref": "#/components/schemas/BreachClockOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "duty",
+          "label",
+          "basis",
+          "state",
+          "due_at",
+          "anchored_at",
+          "completed_at",
+          "clock"
+        ],
+        "title": "OrgBoardDutyOut",
+        "description": "A duty as the brief carries it: its clock, and nobody's name."
+      },
+      "OrgBoardTouchedOut": {
+        "properties": {
+          "listed": {
+            "type": "integer",
+            "title": "Listed"
+          },
+          "notified": {
+            "type": "integer",
+            "title": "Notified"
+          }
+        },
+        "type": "object",
+        "required": [
+          "listed",
+          "notified"
+        ],
+        "title": "OrgBoardTouchedOut"
       },
       "OtpBody": {
         "properties": {

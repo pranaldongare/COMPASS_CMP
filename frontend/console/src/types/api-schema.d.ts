@@ -4245,7 +4245,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Record a submission made, with the regulator's reference */
+        /** Record a submission made, with the regulator's reference - or, for the organisation's board, the report made and to whom */
         post: operations["complete_duty_breaches__breach_uuid__obligations__duty__complete_post"];
         delete?: never;
         options?: never;
@@ -4434,6 +4434,23 @@ export interface paths {
         };
         /** Draft the Board's detailed report (Rule 7(2)(b)), all six items */
         get: operations["board_report_breaches__breach_uuid__board_report_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/org-board/brief": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Draft the brief for the organisation's board from the register */
+        get: operations["org_board_brief_breaches__breach_uuid__org_board_brief_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5352,7 +5369,9 @@ export interface components {
              */
             occurred_at: string;
             /** Reference */
-            reference: string;
+            reference?: string | null;
+            /** Reported To */
+            reported_to?: string | null;
             /** Note */
             note?: string | null;
         };
@@ -5447,6 +5466,8 @@ export interface components {
             reference: string | null;
             /** Note */
             note: string | null;
+            /** Reported To */
+            reported_to: string | null;
             /** Due At */
             due_at: string | null;
             /** Requested At */
@@ -5489,6 +5510,8 @@ export interface components {
             completed_at: string | null;
             /** Reference */
             reference: string | null;
+            /** Reported To */
+            reported_to: string | null;
             /** Extended Until */
             extended_until: string | null;
             /** Extension Requested At */
@@ -7840,6 +7863,78 @@ export interface components {
             note?: string | null;
             /** Change Class */
             change_class?: string | null;
+        };
+        /**
+         * OrgBoardBriefOut
+         * @description For the organisation's board, drafted from the register. The platform
+         *     never reports to the board; a person does, and the DPO records it.
+         */
+        OrgBoardBriefOut: {
+            /** Document */
+            document: string;
+            /** Basis */
+            basis: string;
+            /** Reference */
+            reference: string;
+            /** Incident Reference */
+            incident_reference: string;
+            /** Breach Reference */
+            breach_reference: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /**
+             * Detected At
+             * Format: date-time
+             */
+            detected_at: string;
+            /** Began At */
+            began_at: string | null;
+            location: components["schemas"]["BreachLocationOut"];
+            /** Validation */
+            validation: string;
+            /** Became Aware At */
+            became_aware_at: string | null;
+            /** Cert In Reportable */
+            cert_in_reportable: boolean;
+            /** Duties */
+            duties: components["schemas"]["OrgBoardDutyOut"][];
+            touched: components["schemas"]["OrgBoardTouchedOut"];
+            /** Missing */
+            missing: string[];
+            duty: components["schemas"]["OrgBoardDutyOut"] | null;
+        };
+        /**
+         * OrgBoardDutyOut
+         * @description A duty as the brief carries it: its clock, and nobody's name.
+         */
+        OrgBoardDutyOut: {
+            /** Duty */
+            duty: string;
+            /** Label */
+            label: string;
+            /** Basis */
+            basis: string;
+            /** State */
+            state: string;
+            /** Due At */
+            due_at: string | null;
+            /** Anchored At */
+            anchored_at: string | null;
+            /** Completed At */
+            completed_at: string | null;
+            clock: components["schemas"]["BreachClockOut"];
+        };
+        /** OrgBoardTouchedOut */
+        OrgBoardTouchedOut: {
+            /** Listed */
+            listed: number;
+            /** Notified */
+            notified: number;
         };
         /** OtpBody */
         OtpBody: {
@@ -17927,6 +18022,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BreachReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    org_board_brief_breaches__breach_uuid__org_board_brief_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgBoardBriefOut"];
                 };
             };
             /** @description Validation Error */

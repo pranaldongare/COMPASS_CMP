@@ -42,6 +42,7 @@ export const TYPE_BY_FIELD: Readonly<Record<string, DataType>> = {
   reason: "FREE_TEXT",
   refusal_reason: "FREE_TEXT",
   remedy_text: "FREE_TEXT",
+  reported_to: "FREE_TEXT",
   request_text: "FREE_TEXT",
   responder_contact: "CONTACT",
   responder_name: "NAME",
@@ -58,6 +59,7 @@ export const TYPE_BY_FIELD: Readonly<Record<string, DataType>> = {
   // foreign key, under the name the response gives it.
   actor_name: "NAME",
   author_name: "NAME",
+  breach_recorded_by_name: "NAME",
   changed_by_name: "NAME",
   confirmed_by_name: "NAME",
   created_by_name: "NAME",

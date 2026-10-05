@@ -171,6 +171,7 @@ async def test_the_dashboard_shows_every_open_breach_and_each_duty(
     data = await dashboard._dpo(conn)
     [mine] = [b for b in data["breaches"] if str(b["breach_uuid"]) == uuid]
     assert {d["duty"] for d in mine["obligations"]} == {
+        "org_board",
         "cert_in",
         "board_intimation",
         "board_report",

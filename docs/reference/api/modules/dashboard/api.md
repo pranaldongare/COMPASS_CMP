@@ -283,6 +283,7 @@ and where to act on it. Rows with nothing to count are not sent.
 | `anchored_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `completed_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `reference` | `string` or `null` | Yes | — | — |
+| `reported_to` | `string` or `null` | Yes | — | — |
 | `extended_until` | `string` or `null` | Yes | format: `date-time` | — |
 | `extension_requested_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `clock` | [`BreachClockOut`](#schema-breachclockout) | Yes | — | — |
@@ -310,6 +311,7 @@ and where to act on it. Rows with nothing to count are not sent.
 | `occurred_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `reference` | `string` or `null` | Yes | — | — |
 | `note` | `string` or `null` | Yes | — | — |
+| `reported_to` | `string` or `null` | Yes | — | — |
 | `due_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `requested_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `determination_uuid` | `string` or `null` | Yes | format: `uuid` | — |

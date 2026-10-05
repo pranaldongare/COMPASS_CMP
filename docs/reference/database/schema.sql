@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict imrbAeE8wBvGfvu8UfvPVd6ADFzygvW0cbVv6YfNNWbRB6btcIhg0byTAYOJYD9
+\restrict hhI8yqZLKi8JQ0XirPaIiPLsxNmrFcYHI5EMDqQdCtCuaxEF5GdWJLsEcwPMYOJ
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -663,6 +663,25 @@ BEGIN
      OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
     RAISE EXCEPTION 'only the words and the approval of a draft may change'
       USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: cmp_breach_org_board_reported_to(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_breach_org_board_reported_to() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF NEW.kind = 'completed' AND NEW.reported_to IS NULL AND EXISTS (
+       SELECT 1 FROM breach_obligation
+        WHERE obligation_id = NEW.obligation_id AND kind = 'org_board') THEN
+    RAISE EXCEPTION 'a report to the organisation''s board records whom it was made to'
+      USING ERRCODE = 'check_violation';
   END IF;
   RETURN NEW;
 END;
@@ -1744,7 +1763,7 @@ CREATE TABLE public.breach_obligation (
     determination_id integer,
     created_by integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT breach_obligation_kind CHECK (((kind)::text = ANY ((ARRAY['cert_in'::character varying, 'board_intimation'::character varying, 'board_report'::character varying, 'principals'::character varying])::text[])))
+    CONSTRAINT breach_obligation_kind CHECK (((kind)::text = ANY ((ARRAY['cert_in'::character varying, 'board_intimation'::character varying, 'board_report'::character varying, 'principals'::character varying, 'org_board'::character varying])::text[])))
 );
 
 
@@ -1766,11 +1785,19 @@ CREATE TABLE public.breach_obligation_event (
     determination_id integer,
     recorded_by integer,
     recorded_at timestamp with time zone DEFAULT now() NOT NULL,
+    reported_to text,
     CONSTRAINT breach_obligation_event_cites_determination CHECK ((((kind)::text <> ALL ((ARRAY['not_applicable'::character varying, 'reinstated'::character varying])::text[])) OR (determination_id IS NOT NULL))),
     CONSTRAINT breach_obligation_event_completed_when CHECK ((((kind)::text <> 'completed'::text) OR (occurred_at IS NOT NULL))),
     CONSTRAINT breach_obligation_event_extension CHECK ((((kind)::text <> 'extended'::text) OR ((due_at IS NOT NULL) AND (requested_at IS NOT NULL)))),
     CONSTRAINT breach_obligation_event_kind CHECK (((kind)::text = ANY ((ARRAY['completed'::character varying, 'not_applicable'::character varying, 'reinstated'::character varying, 'extended'::character varying, 'reopened'::character varying])::text[])))
 );
+
+
+--
+-- Name: COLUMN breach_obligation_event.reported_to; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_obligation_event.reported_to IS 'Whom the organisation''s board was told through, on a completion of the org_board duty. Sealed (FREE_TEXT); required for that duty by trg_breach_org_board_reported_to';
 
 
 --
@@ -5383,6 +5410,13 @@ CREATE TRIGGER trg_breach_obligation_event_append_only BEFORE DELETE OR UPDATE O
 
 
 --
+-- Name: breach_obligation_event trg_breach_org_board_reported_to; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_org_board_reported_to BEFORE INSERT ON public.breach_obligation_event FOR EACH ROW EXECUTE FUNCTION public.cmp_breach_org_board_reported_to();
+
+
+--
 -- Name: breach_recording trg_breach_recording_append_only; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -6629,5 +6663,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict imrbAeE8wBvGfvu8UfvPVd6ADFzygvW0cbVv6YfNNWbRB6btcIhg0byTAYOJYD9
+\unrestrict hhI8yqZLKi8JQ0XirPaIiPLsxNmrFcYHI5EMDqQdCtCuaxEF5GdWJLsEcwPMYOJ
 

@@ -70,10 +70,10 @@ function Timing({ doc }: { doc: BreachIntimation | BreachReport }) {
   return (
     <>
       <DescriptionItem term="Reference">{doc.reference}</DescriptionItem>
-      <DescriptionItem term="Determination">{OUTCOME_COPY[doc.determination]}</DescriptionItem>
+      <DescriptionItem term="Validation">{OUTCOME_COPY[doc.determination]}</DescriptionItem>
       <DescriptionItem term="First noticed">{formatDateTime(doc.detected_at)}</DescriptionItem>
       <DescriptionItem term="Became aware">
-        {doc.became_aware_at ? formatDateTime(doc.became_aware_at) : "Not yet determined"}
+        {doc.became_aware_at ? formatDateTime(doc.became_aware_at) : "Set with a validation of yes"}
       </DescriptionItem>
       <DescriptionItem term="Began">{doc.began_at ? formatDateTime(doc.began_at) : "Not known"}</DescriptionItem>
       <DescriptionItem term="Where it occurred">

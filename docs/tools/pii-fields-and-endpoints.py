@@ -43,7 +43,7 @@ COLUMNS: list[tuple[str, list[str]]] = [
     ("breach_assessment", ["nature_extent", "likely_impact", "consequences", "circumstances",
                            "mitigation", "protective_steps", "caused_by_findings",
                            "remedial_measures", "contact_point"]),
-    ("breach_obligation_event", ["note"]),
+    ("breach_obligation_event", ["note", "reported_to"]),
     # Who a breach touched (S3-02): the person, by account.
     ("breach_affected_revision", ["note"]),
     ("breach_affected", ["auth_user_id"]),

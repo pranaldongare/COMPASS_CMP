@@ -213,6 +213,12 @@ notices to principals. There are no statutory hours, so the duty has no due
 time: the register shows the time since awareness, flagged against an internal
 target (`BREACH_WITHOUT_DELAY_TARGET_HOURS`) once Legal sets one.
 
+**Organisation's board.** The organisation's own board, which internal policy
+says hears of every incident within 30 minutes of its being first noticed
+(`BREACH_ORG_BOARD_MINUTES`). A duty on every incident from logging; a person
+reports, and the DPO records when and to whom. Not a regulator, and not a DPDP
+duty: validation never touches it.
+
 **CERT-In.** The Indian Computer Emergency Response Team. Its Directions of
 April 2022, under IT Act s.70B, require a reportable cyber incident to be
 reported within six hours of noticing it - in force now, and parallel to DPDP.

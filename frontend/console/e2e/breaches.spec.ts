@@ -42,6 +42,21 @@ test.describe("the DPO", () => {
     const incident = (await page.getByRole("heading", { level: 1 }).textContent()) ?? "";
     await expect(page.getByText(title)).toBeVisible();
 
+    // The organisation's board is owed from the moment it was logged, from when
+    // it was first noticed: five hours ago is long past thirty minutes.
+    const orgBoard = page.getByRole("row", { name: /Organisation's board/ });
+    await expect(orgBoard.getByText(/^Overdue by /)).toBeVisible();
+    await page.getByRole("link", { name: "Brief for the organisation's board" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Brief for the organisation's board - ${incident}`);
+    await expect(page.getByText("Whether it is a personal data breach - validation is still pending")).toBeVisible();
+    await page.getByRole("link", { name: "Back to the incident" }).click();
+    await orgBoard.getByRole("button", { name: "Record the report" }).click();
+    await page.getByLabel(/^Reported at/).fill(hoursAgo(4.5));
+    await page.getByLabel(/^Reported to/).fill("The chair, by phone");
+    await page.getByRole("dialog").getByRole("button", { name: "Record", exact: true }).click();
+    await expect(orgBoard.getByText("Done")).toBeVisible();
+    await expect(orgBoard.getByText(/to The chair, by phone/)).toBeVisible();
+
     await page.getByRole("button", { name: "Mark reportable to CERT-In" }).click();
     const certIn = page.getByRole("row", { name: /Report to CERT-In/ });
     await expect(certIn).toBeVisible();

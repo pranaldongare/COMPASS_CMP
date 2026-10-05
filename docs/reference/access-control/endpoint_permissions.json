@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 276,
-  "registered_business_and_system_operations": 279,
+  "documented_operations": 277,
+  "registered_business_and_system_operations": 280,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -9889,7 +9889,7 @@
       "module": "breaches",
       "method": "POST",
       "path": "/breaches/{breach_uuid}/obligations/{duty}/complete",
-      "summary": "Record a submission made, with the regulator's reference",
+      "summary": "Record a submission made, with the regulator's reference - or, for the organisation's board, the report made and to whom",
       "function": "complete_duty",
       "operation_id": "complete_duty_breaches__breach_uuid__obligations__duty__complete_post",
       "in_openapi": true,
@@ -10437,6 +10437,43 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/me.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/breach_notices.py"
       ]
+    },
+    {
+      "module": "breaches",
+      "method": "GET",
+      "path": "/breaches/{breach_uuid}/org-board/brief",
+      "summary": "Draft the brief for the organisation's board from the register",
+      "function": "org_board_brief",
+      "operation_id": "org_board_brief_breaches__breach_uuid__org_board_brief_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachReader",
+      "resolved_gate": "RequireResource(breach, hidden=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403. Drafted from the register at any point, from the incident's first minutes; counts only for who it touched, no finding on who caused it, no name or contact. The platform never reports to the organisation's board. (S3-07, ADR 0022)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/board.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
     }
   ],
   "amended": [
@@ -10474,6 +10511,11 @@
       "on": "2026-09-30",
       "commit": "S3",
       "note": "The breach register (S3-01 to S3-04): 21 operations under /breaches, resource breach, DPO only and hidden - every other role is answered 404. Evidence links for these point at HEAD."
+    },
+    {
+      "on": "2026-10-05",
+      "commit": "S3-07",
+      "note": "GET /breaches/{breach_uuid}/org-board/brief added (S3-07): the brief for the organisation's board, DPO only and hidden like the rest of the register. S3-06 changed summaries only (incident first, ADR 0022)."
     }
   ]
 }

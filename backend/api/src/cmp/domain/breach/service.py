@@ -187,6 +187,25 @@ async def record(
     await record_event(
         conn, breach, Event.BREACH_RECORDED, actor_id=actor_id, detail={"location": kind.value}
     )
+    # The organisation's board, for every incident, from first noticed (S3-07).
+    # No determination is needed and none will move it: it is policy, not DPDP.
+    due = clock.due_for(Duty.ORG_BOARD, detected_at)
+    await repo.create_obligation(
+        conn,
+        int(created["breach_id"]),
+        kind=Duty.ORG_BOARD.value,
+        due_at=due,
+        anchored_at=detected_at,
+        determination_id=None,
+        created_by=actor_id,
+    )
+    await record_event(
+        conn,
+        breach,
+        Event.BREACH_OBLIGATION_CREATED,
+        actor_id=actor_id,
+        detail={"duty": Duty.ORG_BOARD.value, "due_at": due.isoformat() if due else None},
+    )
     return await detail(conn, str(created["breach_uuid"]))
 
 
@@ -487,11 +506,16 @@ async def complete_duty(
     breach_uuid: str,
     duty: str,
     occurred_at: datetime,
-    reference: str,
+    reference: str | None,
     note: str | None,
     actor_id: int,
+    reported_to: str | None = None,
 ) -> Row:
-    """Record that a submission was made, when, and what the regulator returned."""
+    """Record that a submission was made, when, and what the regulator returned.
+
+    The organisation's board is not a regulator: what is recorded is when a
+    person reported to it and to whom, and a reference only if there is one.
+    """
     kind = choice(Duty, duty, field="duty")
     breach = await locked_open(conn, breach_uuid)
     if kind == Duty.PRINCIPALS:
@@ -501,9 +525,21 @@ async def complete_duty(
             code="principals_complete_by_delivery",
         )
     row, state = await _outstanding(conn, breach, kind)
-    reference = (reference or "").strip()
-    if not reference:
-        raise ValidationFailed("Enter the reference the regulator returned", field="reference")
+    reference = _text(reference)
+    reported_to = _text(reported_to)
+    if kind == Duty.ORG_BOARD:
+        if not reported_to:
+            raise ValidationFailed(
+                "Say to whom the organisation's board was told", field="reported_to"
+            )
+    else:
+        if reported_to:
+            raise ValidationFailed(
+                "Whom it was reported to is recorded for the organisation's board only",
+                field="reported_to",
+            )
+        if not reference:
+            raise ValidationFailed("Enter the reference the regulator returned", field="reference")
     _not_future(occurred_at, "occurred_at")
     if state["anchored_at"] is not None and occurred_at < state["anchored_at"]:
         raise ValidationFailed(
@@ -516,6 +552,7 @@ async def complete_duty(
         occurred_at=occurred_at,
         reference=reference,
         note=_text(note),
+        reported_to=reported_to,
         recorded_by=actor_id,
     )
     await record_event(
@@ -647,7 +684,7 @@ def _duty_view(row: Row, state: dict[str, Any], events: list[Row], now: datetime
         "obligation_uuid": row["obligation_uuid"],
         "duty": row["kind"],
         "label": clock.LABELS[row["kind"]],
-        "basis": clock.BASIS[row["kind"]],
+        "basis": clock.basis_for(str(row["kind"]), row["due_at"], row["anchored_at"]),
         "created_at": row["created_at"],
         **state,
         "clock": clock.timing(state["state"], state["due_at"], state["anchored_at"], now=now),

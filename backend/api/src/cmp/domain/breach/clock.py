@@ -1,10 +1,11 @@
 # ruff: noqa: E501 - the table of duties below is read as a table; wrapped, it is not.
 """The duties a breach starts, and the clock on each.
 
-Four duties, running in parallel from two different moments:
+Five duties, running in parallel from two different moments:
 
 | Duty | Created when | Due | Basis |
 |---|---|---|---|
+| Organisation's board | every incident, when it is logged | 30 minutes from detection (`BREACH_ORG_BOARD_MINUTES`) | internal policy |
 | Report to CERT-In | marked a reportable cyber incident | 6 hours from detection | CERT-In Directions 2022, IT Act s.70B |
 | Board - initial intimation | determined a personal data breach | without delay | Rule 7(2)(a) |
 | Board - detailed report | determined a personal data breach | 72 hours from awareness, or what the Board allows | Rule 7(2)(b) |
@@ -45,13 +46,15 @@ BOARD_REPORT_HOURS: Final = 72
 
 
 class Duty(StrEnum):
+    ORG_BOARD = "org_board"
     CERT_IN = "cert_in"
     BOARD_INTIMATION = "board_intimation"
     BOARD_REPORT = "board_report"
     PRINCIPALS = "principals"
 
 
-#: The three duties a determination creates. CERT-In stands on its own test.
+#: The three duties a determination creates. CERT-In stands on its own test,
+#: and the organisation's board on its policy: validation touches neither.
 DPDP_DUTIES: Final[tuple[Duty, ...]] = (
     Duty.BOARD_INTIMATION,
     Duty.BOARD_REPORT,
@@ -59,6 +62,7 @@ DPDP_DUTIES: Final[tuple[Duty, ...]] = (
 )
 
 LABELS: Final[dict[str, str]] = {
+    Duty.ORG_BOARD: "Organisation's board",
     Duty.CERT_IN: "Report to CERT-In",
     Duty.BOARD_INTIMATION: "Board - initial intimation",
     Duty.BOARD_REPORT: "Board - detailed report",
@@ -66,6 +70,7 @@ LABELS: Final[dict[str, str]] = {
 }
 
 BASIS: Final[dict[str, str]] = {
+    Duty.ORG_BOARD: "Internal policy: within 30 minutes of first noticed",
     Duty.CERT_IN: "CERT-In Directions 2022 (IT Act s.70B): within 6 hours of noticing",
     Duty.BOARD_INTIMATION: "Rule 7(2)(a): without delay",
     Duty.BOARD_REPORT: "Rule 7(2)(b): within 72 hours of becoming aware, or as the Board allows",
@@ -87,9 +92,21 @@ class EventKind(StrEnum):
     REOPENED = "reopened"
 
 
+def basis_for(duty: str, due_at: datetime | None, anchored_at: datetime | None) -> str:
+    """The basis a person reads. The organisation's board says the minutes its
+    own clock was stored with, not today's setting."""
+    if duty == Duty.ORG_BOARD and due_at is not None and anchored_at is not None:
+        minutes = round((due_at - anchored_at).total_seconds() / 60)
+        return f"Internal policy: within {minutes} minutes of first noticed"
+    return BASIS[duty]
+
+
 def due_for(duty: Duty | str, anchor: datetime) -> datetime | None:
     """When a duty created now, anchored at `anchor`, falls due. None is "without
-    delay". Called once, when the duty is created or reinstated."""
+    delay". Called once, when the duty is created or reinstated: the setting is
+    read here and nowhere else."""
+    if duty == Duty.ORG_BOARD:
+        return anchor + timedelta(minutes=settings.breach_org_board_minutes)
     if duty == Duty.CERT_IN:
         return anchor + timedelta(hours=CERT_IN_HOURS)
     if duty == Duty.BOARD_REPORT:
@@ -132,6 +149,7 @@ def fold(obligation: dict[str, Any], events: Iterable[dict[str, Any]]) -> dict[s
         "anchored_at": anchored_at,
         "completed_at": completed["occurred_at"] if completed else None,
         "reference": completed["reference"] if completed else None,
+        "reported_to": completed.get("reported_to") if completed else None,
         "extended_until": extension["due_at"] if extension else None,
         "extension_requested_at": extension["requested_at"] if extension else None,
     }

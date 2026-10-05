@@ -96,6 +96,8 @@ FREE_TEXT = {
     "reasoning", "nature_extent", "likely_impact", "consequences",
     "circumstances", "mitigation", "protective_steps", "caused_by_findings",
     "remedial_measures", "contact_point", "location_detail",
+    # Whom the organisation's board was told through (S3-07): a person.
+    "reported_to",
 }
 FILE = {
     "file_name", "file_uuid", "files", "response_files", "evidence_name",

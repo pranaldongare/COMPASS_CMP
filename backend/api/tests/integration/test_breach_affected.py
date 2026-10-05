@@ -23,6 +23,7 @@ from cmp.domain.breach import affected, service
 from cmp.domain.consent import service as consent_service
 from cmp.infrastructure.dkms.fields import ENCRYPTED_FIELDS
 from tests.conftest import hashed
+from tests.integration.test_breach_register import tell_org_board
 from tests.integration.test_rights_flows import _asset_with_her
 
 pytestmark = pytest.mark.integration
@@ -267,6 +268,7 @@ async def test_nobody_is_added_from_nowhere(conn: Any, seeded: dict[str, Any]) -
     await service.determine(
         conn, breach_uuid=uuid, outcome="no", reasoning="Test", became_aware_at=None, actor_id=dpo
     )
+    await tell_org_board(conn, seeded, uuid)
     await service.transition(conn, breach_uuid=uuid, to="closed", reason=None, actor_id=dpo)
     with pytest.raises(Conflict):
         await affected.confirm(

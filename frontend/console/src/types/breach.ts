@@ -11,7 +11,7 @@ import type { Timestamp, Uuid } from "@/types/primitives";
 export type BreachStatus = "open" | "closed";
 export type BreachOutcome = "pending" | "yes" | "no";
 export type BreachLocationKind = "platform" | "processor" | "data_source" | "other";
-export type BreachDutyKind = "cert_in" | "board_intimation" | "board_report" | "principals";
+export type BreachDutyKind = "org_board" | "cert_in" | "board_intimation" | "board_report" | "principals";
 export type BreachDutyState = "outstanding" | "done" | "not_applicable";
 
 export interface BreachLocation {
@@ -40,6 +40,8 @@ export interface BreachDutyEvent {
   occurred_at: Timestamp | null;
   reference: string | null;
   note: string | null;
+  /** On a report to the organisation's board: to whom. */
+  reported_to: string | null;
   due_at: Timestamp | null;
   requested_at: Timestamp | null;
   determination_uuid: Uuid | null;
@@ -58,6 +60,8 @@ export interface BreachDuty {
   anchored_at: Timestamp | null;
   completed_at: Timestamp | null;
   reference: string | null;
+  /** The organisation's board: to whom it was reported. */
+  reported_to: string | null;
   extended_until: Timestamp | null;
   extension_requested_at: Timestamp | null;
   clock: BreachClock;
@@ -350,4 +354,40 @@ export interface BreachReport extends BoardDocument {
   facts: { item: "ii" | "iii" | "iv" | "v"; label: string; text: string | null }[];
   notices: BreachNoticeAccount;
   duties: BreachDuty[];
+}
+
+/* ---------------------------------------- the organisation's board (S3-07) */
+
+/** A duty as the brief carries it: its clock, and nobody's name. */
+export interface OrgBoardDuty {
+  duty: BreachDutyKind;
+  label: string;
+  basis: string;
+  state: BreachDutyState;
+  due_at: Timestamp | null;
+  anchored_at: Timestamp | null;
+  completed_at: Timestamp | null;
+  clock: BreachClock;
+}
+
+/** For the organisation's board, drafted from the register. Never sent by the platform. */
+export interface OrgBoardBrief {
+  document: "org_board_brief";
+  basis: string;
+  reference: string;
+  incident_reference: string;
+  breach_reference: string | null;
+  title: string;
+  generated_at: Timestamp;
+  detected_at: Timestamp;
+  began_at: Timestamp | null;
+  location: BreachLocation;
+  validation: BreachOutcome;
+  became_aware_at: Timestamp | null;
+  cert_in_reportable: boolean;
+  duties: OrgBoardDuty[];
+  /** Counts only: who it touched is never named in the brief. */
+  touched: { listed: number; notified: number };
+  missing: string[];
+  duty: OrgBoardDuty | null;
 }

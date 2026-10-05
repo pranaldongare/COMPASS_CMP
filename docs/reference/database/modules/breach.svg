@@ -10,7 +10,7 @@
 <title>Schema</title>
 <polygon fill="#f7fafc" stroke="none" points="-36,36 -36,-2443 1730.99,-2443 1730.99,36 -36,36"/>
 <text xml:space="preserve" text-anchor="start" x="8" y="-2377" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="30.00" fill="#142c44">COMPASS / BREACH</text>
-<text xml:space="preserve" text-anchor="start" x="8" y="-2361.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0038 / full module tables with outgoing references / source adf96f4</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-2361.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0039 / full module tables with outgoing references / source 4bddceb</text>
 <text xml:space="preserve" text-anchor="start" x="8" y="-2335.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">FK arrow: child column to referenced key &#160;&#160;| &#160;&#160;Solid = required FK; dashed = nullable FK; dotted = view dependency</text>
 <text xml:space="preserve" text-anchor="start" x="13.43" y="-2323.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">PK = primary key; FK = foreign key; UQ = member of unique constraint (possibly composite); ? = nullable column</text>
 <g id="clust1" class="cluster">
@@ -157,7 +157,7 @@
 <g id="FK024" class="edge">
 <title>breach_obligation_event:e&#45;&gt;breach_determination:w</title>
 <g id="a_FK024"><a xlink:title="FK024 / breach_obligation_event_determination_id_fkey / breach_obligation_event(determination_id) to breach_determination(determination_id) / FOREIGN KEY (determination_id) REFERENCES breach_determination(determination_id)">
-<path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M163.52,-1678.6C163.52,-1678.6 517.34,-1695 517.34,-1695 517.34,-1695 617.93,-2059.4 634.04,-2117.76"/>
+<path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M163.52,-1678.2C163.52,-1678.2 517.34,-1695 517.34,-1695 517.34,-1695 617.93,-2059.4 634.04,-2117.76"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="631.84,-2118.33 635.76,-2124 636.23,-2117.12 631.84,-2118.33"/>
 </a>
 </g>
@@ -166,8 +166,8 @@
 <g id="FK025" class="edge">
 <title>breach_obligation_event:e&#45;&gt;breach_obligation:w</title>
 <g id="a_FK025"><a xlink:title="FK025 / breach_obligation_event_obligation_id_fkey / breach_obligation_event(obligation_id) to breach_obligation(obligation_id) / FOREIGN KEY (obligation_id) REFERENCES breach_obligation(obligation_id)">
-<path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M163.52,-1880.2C163.52,-1880.2 307.56,-1914.96 342.45,-1923.38"/>
-<polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="341.52,-1925.5 348.37,-1924.81 342.59,-1921.07 341.52,-1925.5"/>
+<path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M163.52,-1879.8C163.52,-1879.8 307.56,-1914.87 342.45,-1923.36"/>
+<polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="341.52,-1925.48 348.37,-1924.81 342.6,-1921.06 341.52,-1925.48"/>
 </a>
 </g>
 </g>
@@ -175,7 +175,7 @@
 <g id="FK026" class="edge">
 <title>breach_obligation_event:e&#45;&gt;auth_user:w</title>
 <g id="a_FK026"><a xlink:title="FK026 / breach_obligation_event_recorded_by_fkey / breach_obligation_event(recorded_by) to auth_user(id) / FOREIGN KEY (recorded_by) REFERENCES auth_user(id)">
-<path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M163.52,-1653.4C163.52,-1653.4 324.49,-367 324.49,-367 324.49,-367 607.34,-94 607.34,-94 607.34,-94 710.72,0 710.72,0 710.72,0 710.72,0 1016.36,0 1016.36,0 1409.81,-94 1409.81,-94 1409.81,-94 1509.21,-353.49 1527.46,-401.13"/>
+<path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M163.52,-1653C163.52,-1653 324.49,-367 324.49,-367 324.49,-367 607.34,-94 607.34,-94 607.34,-94 710.72,0 710.72,0 710.72,0 710.72,0 1016.36,0 1016.36,0 1409.81,-94 1409.81,-94 1409.81,-94 1509.21,-353.49 1527.46,-401.13"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1525.28,-401.79 1529.73,-407.05 1529.52,-400.16 1525.28,-401.79"/>
 </a>
 </g>
@@ -736,90 +736,96 @@
 <g id="table_breach_obligation_event" class="node">
 <title>breach_obligation_event</title>
 <g id="a_table_breach_obligation_event"><a xlink:href="../table_reference.md#breach-obligation-event" xlink:title="breach_obligation_event">
-<polygon fill="#ffffff" stroke="none" points="32,-1614.6 32,-1999.4 234.49,-1999.4 234.49,-1614.6 32,-1614.6"/>
-<polygon fill="none" stroke="#174e82" points="32,-1614.6 32,-1999.4 234.49,-1999.4 234.49,-1614.6 32,-1614.6"/>
-<polygon fill="#174e82" stroke="none" points="33,-1967.2 33,-1998.4 233.49,-1998.4 233.49,-1967.2 33,-1967.2"/>
-<text xml:space="preserve" text-anchor="start" x="39" y="-1979" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="white">breach_obligation_event</text>
-<polygon fill="#f1f5f9" stroke="none" points="33,-1943.2 33,-1967.2 233.49,-1967.2 233.49,-1943.2 33,-1943.2"/>
-<text xml:space="preserve" text-anchor="start" x="39" y="-1951.2" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">BREACH / 13 columns / 3 foreign keys</text>
-<polygon fill="#f8fafc" stroke="none" points="33,-1918 33,-1943.2 60.79,-1943.2 60.79,-1918 33,-1918"/>
-<text xml:space="preserve" text-anchor="start" x="39" y="-1927" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#174e82">PK</text>
-<polygon fill="#f8fafc" stroke="none" points="60.79,-1918 60.79,-1943.2 162.52,-1943.2 162.52,-1918 60.79,-1918"/>
-<text xml:space="preserve" text-anchor="start" x="66.79" y="-1926.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">event_id</text>
-<polygon fill="#f8fafc" stroke="none" points="162.52,-1918 162.52,-1943.2 233.49,-1943.2 233.49,-1918 162.52,-1918"/>
-<text xml:space="preserve" text-anchor="start" x="168.52" y="-1926.6" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">int4</text>
-<polygon fill="#ffffff" stroke="none" points="33,-1892.8 33,-1918 60.79,-1918 60.79,-1892.8 33,-1892.8"/>
-<text xml:space="preserve" text-anchor="start" x="39" y="-1901.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">UQ</text>
-<polygon fill="#ffffff" stroke="none" points="60.79,-1892.8 60.79,-1918 162.52,-1918 162.52,-1892.8 60.79,-1892.8"/>
-<text xml:space="preserve" text-anchor="start" x="66.79" y="-1901" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">event_uuid</text>
-<polygon fill="#ffffff" stroke="none" points="162.52,-1892.8 162.52,-1918 233.49,-1918 233.49,-1892.8 162.52,-1892.8"/>
-<text xml:space="preserve" text-anchor="start" x="168.52" y="-1901.4" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">uuid</text>
-<polygon fill="#f8fafc" stroke="none" points="33,-1867.6 33,-1892.8 60.79,-1892.8 60.79,-1867.6 33,-1867.6"/>
-<text xml:space="preserve" text-anchor="start" x="39" y="-1876.6" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#087f8c">FK</text>
-<polygon fill="#f8fafc" stroke="none" points="60.79,-1867.6 60.79,-1892.8 162.52,-1892.8 162.52,-1867.6 60.79,-1867.6"/>
-<text xml:space="preserve" text-anchor="start" x="66.79" y="-1875.8" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">obligation_id</text>
-<polygon fill="#f8fafc" stroke="none" points="162.52,-1867.6 162.52,-1892.8 233.49,-1892.8 233.49,-1867.6 162.52,-1867.6"/>
-<text xml:space="preserve" text-anchor="start" x="168.52" y="-1876.2" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">int4</text>
-<polygon fill="#ffffff" stroke="none" points="33,-1842.4 33,-1867.6 60.79,-1867.6 60.79,-1842.4 33,-1842.4"/>
-<text xml:space="preserve" text-anchor="start" x="39" y="-1851.4" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">/</text>
-<polygon fill="#ffffff" stroke="none" points="60.79,-1842.4 60.79,-1867.6 162.52,-1867.6 162.52,-1842.4 60.79,-1842.4"/>
-<text xml:space="preserve" text-anchor="start" x="66.79" y="-1850.6" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">kind</text>
-<polygon fill="#ffffff" stroke="none" points="162.52,-1842.4 162.52,-1867.6 233.49,-1867.6 233.49,-1842.4 162.52,-1842.4"/>
-<text xml:space="preserve" text-anchor="start" x="168.52" y="-1851" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">varchar(16)</text>
-<polygon fill="#f8fafc" stroke="none" points="33,-1817.2 33,-1842.4 60.79,-1842.4 60.79,-1817.2 33,-1817.2"/>
-<text xml:space="preserve" text-anchor="start" x="39" y="-1826.2" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">/</text>
-<polygon fill="#f8fafc" stroke="none" points="60.79,-1817.2 60.79,-1842.4 162.52,-1842.4 162.52,-1817.2 60.79,-1817.2"/>
-<text xml:space="preserve" text-anchor="start" x="66.79" y="-1825.4" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">occurred_at?</text>
-<polygon fill="#f8fafc" stroke="none" points="162.52,-1817.2 162.52,-1842.4 233.49,-1842.4 233.49,-1817.2 162.52,-1817.2"/>
-<text xml:space="preserve" text-anchor="start" x="168.52" y="-1825.8" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">timestamptz</text>
-<polygon fill="#ffffff" stroke="none" points="33,-1792 33,-1817.2 60.79,-1817.2 60.79,-1792 33,-1792"/>
-<text xml:space="preserve" text-anchor="start" x="39" y="-1801" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">/</text>
-<polygon fill="#ffffff" stroke="none" points="60.79,-1792 60.79,-1817.2 162.52,-1817.2 162.52,-1792 60.79,-1792"/>
-<text xml:space="preserve" text-anchor="start" x="66.79" y="-1800.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">reference?</text>
-<polygon fill="#ffffff" stroke="none" points="162.52,-1792 162.52,-1817.2 233.49,-1817.2 233.49,-1792 162.52,-1792"/>
-<text xml:space="preserve" text-anchor="start" x="168.52" y="-1800.6" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">varchar(200)</text>
-<polygon fill="#f8fafc" stroke="none" points="33,-1766.8 33,-1792 60.79,-1792 60.79,-1766.8 33,-1766.8"/>
-<text xml:space="preserve" text-anchor="start" x="39" y="-1775.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">/</text>
-<polygon fill="#f8fafc" stroke="none" points="60.79,-1766.8 60.79,-1792 162.52,-1792 162.52,-1766.8 60.79,-1766.8"/>
-<text xml:space="preserve" text-anchor="start" x="66.79" y="-1775" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">note?</text>
-<polygon fill="#f8fafc" stroke="none" points="162.52,-1766.8 162.52,-1792 233.49,-1792 233.49,-1766.8 162.52,-1766.8"/>
-<text xml:space="preserve" text-anchor="start" x="168.52" y="-1775.4" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">text</text>
-<polygon fill="#ffffff" stroke="none" points="33,-1741.6 33,-1766.8 60.79,-1766.8 60.79,-1741.6 33,-1741.6"/>
-<text xml:space="preserve" text-anchor="start" x="39" y="-1750.6" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">/</text>
-<polygon fill="#ffffff" stroke="none" points="60.79,-1741.6 60.79,-1766.8 162.52,-1766.8 162.52,-1741.6 60.79,-1741.6"/>
-<text xml:space="preserve" text-anchor="start" x="66.79" y="-1749.8" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">due_at?</text>
-<polygon fill="#ffffff" stroke="none" points="162.52,-1741.6 162.52,-1766.8 233.49,-1766.8 233.49,-1741.6 162.52,-1741.6"/>
-<text xml:space="preserve" text-anchor="start" x="168.52" y="-1750.2" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">timestamptz</text>
-<polygon fill="#f8fafc" stroke="none" points="33,-1716.4 33,-1741.6 60.79,-1741.6 60.79,-1716.4 33,-1716.4"/>
-<text xml:space="preserve" text-anchor="start" x="39" y="-1725.4" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">/</text>
-<polygon fill="#f8fafc" stroke="none" points="60.79,-1716.4 60.79,-1741.6 162.52,-1741.6 162.52,-1716.4 60.79,-1716.4"/>
-<text xml:space="preserve" text-anchor="start" x="66.79" y="-1724.6" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">anchored_at?</text>
-<polygon fill="#f8fafc" stroke="none" points="162.52,-1716.4 162.52,-1741.6 233.49,-1741.6 233.49,-1716.4 162.52,-1716.4"/>
-<text xml:space="preserve" text-anchor="start" x="168.52" y="-1725" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">timestamptz</text>
-<polygon fill="#ffffff" stroke="none" points="33,-1691.2 33,-1716.4 60.79,-1716.4 60.79,-1691.2 33,-1691.2"/>
-<text xml:space="preserve" text-anchor="start" x="39" y="-1700.2" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">/</text>
-<polygon fill="#ffffff" stroke="none" points="60.79,-1691.2 60.79,-1716.4 162.52,-1716.4 162.52,-1691.2 60.79,-1691.2"/>
-<text xml:space="preserve" text-anchor="start" x="66.79" y="-1699.4" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">requested_at?</text>
-<polygon fill="#ffffff" stroke="none" points="162.52,-1691.2 162.52,-1716.4 233.49,-1716.4 233.49,-1691.2 162.52,-1691.2"/>
-<text xml:space="preserve" text-anchor="start" x="168.52" y="-1699.8" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">timestamptz</text>
-<polygon fill="#f8fafc" stroke="none" points="33,-1666 33,-1691.2 60.79,-1691.2 60.79,-1666 33,-1666"/>
-<text xml:space="preserve" text-anchor="start" x="39" y="-1675" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#087f8c">FK</text>
-<polygon fill="#f8fafc" stroke="none" points="60.79,-1666 60.79,-1691.2 162.52,-1691.2 162.52,-1666 60.79,-1666"/>
-<text xml:space="preserve" text-anchor="start" x="66.79" y="-1674.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">determination_id?</text>
-<polygon fill="#f8fafc" stroke="none" points="162.52,-1666 162.52,-1691.2 233.49,-1691.2 233.49,-1666 162.52,-1666"/>
-<text xml:space="preserve" text-anchor="start" x="168.52" y="-1674.6" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">int4</text>
-<polygon fill="#ffffff" stroke="none" points="33,-1640.8 33,-1666 60.79,-1666 60.79,-1640.8 33,-1640.8"/>
-<text xml:space="preserve" text-anchor="start" x="39" y="-1649.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#087f8c">FK</text>
-<polygon fill="#ffffff" stroke="none" points="60.79,-1640.8 60.79,-1666 162.52,-1666 162.52,-1640.8 60.79,-1640.8"/>
-<text xml:space="preserve" text-anchor="start" x="66.79" y="-1649" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">recorded_by?</text>
-<polygon fill="#ffffff" stroke="none" points="162.52,-1640.8 162.52,-1666 233.49,-1666 233.49,-1640.8 162.52,-1640.8"/>
-<text xml:space="preserve" text-anchor="start" x="168.52" y="-1649.4" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">int4</text>
-<polygon fill="#f8fafc" stroke="none" points="33,-1615.6 33,-1640.8 60.79,-1640.8 60.79,-1615.6 33,-1615.6"/>
-<text xml:space="preserve" text-anchor="start" x="39" y="-1624.6" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">/</text>
-<polygon fill="#f8fafc" stroke="none" points="60.79,-1615.6 60.79,-1640.8 162.52,-1640.8 162.52,-1615.6 60.79,-1615.6"/>
-<text xml:space="preserve" text-anchor="start" x="66.79" y="-1623.8" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">recorded_at</text>
-<polygon fill="#f8fafc" stroke="none" points="162.52,-1615.6 162.52,-1640.8 233.49,-1640.8 233.49,-1615.6 162.52,-1615.6"/>
-<text xml:space="preserve" text-anchor="start" x="168.52" y="-1624.2" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">timestamptz</text>
+<polygon fill="#ffffff" stroke="none" points="32,-1589 32,-1999 234.49,-1999 234.49,-1589 32,-1589"/>
+<polygon fill="none" stroke="#174e82" points="32,-1589 32,-1999 234.49,-1999 234.49,-1589 32,-1589"/>
+<polygon fill="#174e82" stroke="none" points="33,-1966.8 33,-1998 233.49,-1998 233.49,-1966.8 33,-1966.8"/>
+<text xml:space="preserve" text-anchor="start" x="39" y="-1978.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="white">breach_obligation_event</text>
+<polygon fill="#f1f5f9" stroke="none" points="33,-1942.8 33,-1966.8 233.49,-1966.8 233.49,-1942.8 33,-1942.8"/>
+<text xml:space="preserve" text-anchor="start" x="39" y="-1950.8" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">BREACH / 14 columns / 3 foreign keys</text>
+<polygon fill="#f8fafc" stroke="none" points="33,-1917.6 33,-1942.8 60.79,-1942.8 60.79,-1917.6 33,-1917.6"/>
+<text xml:space="preserve" text-anchor="start" x="39" y="-1926.6" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#174e82">PK</text>
+<polygon fill="#f8fafc" stroke="none" points="60.79,-1917.6 60.79,-1942.8 162.52,-1942.8 162.52,-1917.6 60.79,-1917.6"/>
+<text xml:space="preserve" text-anchor="start" x="66.79" y="-1925.8" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">event_id</text>
+<polygon fill="#f8fafc" stroke="none" points="162.52,-1917.6 162.52,-1942.8 233.49,-1942.8 233.49,-1917.6 162.52,-1917.6"/>
+<text xml:space="preserve" text-anchor="start" x="168.52" y="-1926.2" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">int4</text>
+<polygon fill="#ffffff" stroke="none" points="33,-1892.4 33,-1917.6 60.79,-1917.6 60.79,-1892.4 33,-1892.4"/>
+<text xml:space="preserve" text-anchor="start" x="39" y="-1901.4" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">UQ</text>
+<polygon fill="#ffffff" stroke="none" points="60.79,-1892.4 60.79,-1917.6 162.52,-1917.6 162.52,-1892.4 60.79,-1892.4"/>
+<text xml:space="preserve" text-anchor="start" x="66.79" y="-1900.6" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">event_uuid</text>
+<polygon fill="#ffffff" stroke="none" points="162.52,-1892.4 162.52,-1917.6 233.49,-1917.6 233.49,-1892.4 162.52,-1892.4"/>
+<text xml:space="preserve" text-anchor="start" x="168.52" y="-1901" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">uuid</text>
+<polygon fill="#f8fafc" stroke="none" points="33,-1867.2 33,-1892.4 60.79,-1892.4 60.79,-1867.2 33,-1867.2"/>
+<text xml:space="preserve" text-anchor="start" x="39" y="-1876.2" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#087f8c">FK</text>
+<polygon fill="#f8fafc" stroke="none" points="60.79,-1867.2 60.79,-1892.4 162.52,-1892.4 162.52,-1867.2 60.79,-1867.2"/>
+<text xml:space="preserve" text-anchor="start" x="66.79" y="-1875.4" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">obligation_id</text>
+<polygon fill="#f8fafc" stroke="none" points="162.52,-1867.2 162.52,-1892.4 233.49,-1892.4 233.49,-1867.2 162.52,-1867.2"/>
+<text xml:space="preserve" text-anchor="start" x="168.52" y="-1875.8" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">int4</text>
+<polygon fill="#ffffff" stroke="none" points="33,-1842 33,-1867.2 60.79,-1867.2 60.79,-1842 33,-1842"/>
+<text xml:space="preserve" text-anchor="start" x="39" y="-1851" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">/</text>
+<polygon fill="#ffffff" stroke="none" points="60.79,-1842 60.79,-1867.2 162.52,-1867.2 162.52,-1842 60.79,-1842"/>
+<text xml:space="preserve" text-anchor="start" x="66.79" y="-1850.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">kind</text>
+<polygon fill="#ffffff" stroke="none" points="162.52,-1842 162.52,-1867.2 233.49,-1867.2 233.49,-1842 162.52,-1842"/>
+<text xml:space="preserve" text-anchor="start" x="168.52" y="-1850.6" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">varchar(16)</text>
+<polygon fill="#f8fafc" stroke="none" points="33,-1816.8 33,-1842 60.79,-1842 60.79,-1816.8 33,-1816.8"/>
+<text xml:space="preserve" text-anchor="start" x="39" y="-1825.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">/</text>
+<polygon fill="#f8fafc" stroke="none" points="60.79,-1816.8 60.79,-1842 162.52,-1842 162.52,-1816.8 60.79,-1816.8"/>
+<text xml:space="preserve" text-anchor="start" x="66.79" y="-1825" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">occurred_at?</text>
+<polygon fill="#f8fafc" stroke="none" points="162.52,-1816.8 162.52,-1842 233.49,-1842 233.49,-1816.8 162.52,-1816.8"/>
+<text xml:space="preserve" text-anchor="start" x="168.52" y="-1825.4" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">timestamptz</text>
+<polygon fill="#ffffff" stroke="none" points="33,-1791.6 33,-1816.8 60.79,-1816.8 60.79,-1791.6 33,-1791.6"/>
+<text xml:space="preserve" text-anchor="start" x="39" y="-1800.6" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">/</text>
+<polygon fill="#ffffff" stroke="none" points="60.79,-1791.6 60.79,-1816.8 162.52,-1816.8 162.52,-1791.6 60.79,-1791.6"/>
+<text xml:space="preserve" text-anchor="start" x="66.79" y="-1799.8" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">reference?</text>
+<polygon fill="#ffffff" stroke="none" points="162.52,-1791.6 162.52,-1816.8 233.49,-1816.8 233.49,-1791.6 162.52,-1791.6"/>
+<text xml:space="preserve" text-anchor="start" x="168.52" y="-1800.2" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">varchar(200)</text>
+<polygon fill="#f8fafc" stroke="none" points="33,-1766.4 33,-1791.6 60.79,-1791.6 60.79,-1766.4 33,-1766.4"/>
+<text xml:space="preserve" text-anchor="start" x="39" y="-1775.4" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">/</text>
+<polygon fill="#f8fafc" stroke="none" points="60.79,-1766.4 60.79,-1791.6 162.52,-1791.6 162.52,-1766.4 60.79,-1766.4"/>
+<text xml:space="preserve" text-anchor="start" x="66.79" y="-1774.6" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">note?</text>
+<polygon fill="#f8fafc" stroke="none" points="162.52,-1766.4 162.52,-1791.6 233.49,-1791.6 233.49,-1766.4 162.52,-1766.4"/>
+<text xml:space="preserve" text-anchor="start" x="168.52" y="-1775" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">text</text>
+<polygon fill="#ffffff" stroke="none" points="33,-1741.2 33,-1766.4 60.79,-1766.4 60.79,-1741.2 33,-1741.2"/>
+<text xml:space="preserve" text-anchor="start" x="39" y="-1750.2" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">/</text>
+<polygon fill="#ffffff" stroke="none" points="60.79,-1741.2 60.79,-1766.4 162.52,-1766.4 162.52,-1741.2 60.79,-1741.2"/>
+<text xml:space="preserve" text-anchor="start" x="66.79" y="-1749.4" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">due_at?</text>
+<polygon fill="#ffffff" stroke="none" points="162.52,-1741.2 162.52,-1766.4 233.49,-1766.4 233.49,-1741.2 162.52,-1741.2"/>
+<text xml:space="preserve" text-anchor="start" x="168.52" y="-1749.8" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">timestamptz</text>
+<polygon fill="#f8fafc" stroke="none" points="33,-1716 33,-1741.2 60.79,-1741.2 60.79,-1716 33,-1716"/>
+<text xml:space="preserve" text-anchor="start" x="39" y="-1725" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">/</text>
+<polygon fill="#f8fafc" stroke="none" points="60.79,-1716 60.79,-1741.2 162.52,-1741.2 162.52,-1716 60.79,-1716"/>
+<text xml:space="preserve" text-anchor="start" x="66.79" y="-1724.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">anchored_at?</text>
+<polygon fill="#f8fafc" stroke="none" points="162.52,-1716 162.52,-1741.2 233.49,-1741.2 233.49,-1716 162.52,-1716"/>
+<text xml:space="preserve" text-anchor="start" x="168.52" y="-1724.6" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">timestamptz</text>
+<polygon fill="#ffffff" stroke="none" points="33,-1690.8 33,-1716 60.79,-1716 60.79,-1690.8 33,-1690.8"/>
+<text xml:space="preserve" text-anchor="start" x="39" y="-1699.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">/</text>
+<polygon fill="#ffffff" stroke="none" points="60.79,-1690.8 60.79,-1716 162.52,-1716 162.52,-1690.8 60.79,-1690.8"/>
+<text xml:space="preserve" text-anchor="start" x="66.79" y="-1699" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">requested_at?</text>
+<polygon fill="#ffffff" stroke="none" points="162.52,-1690.8 162.52,-1716 233.49,-1716 233.49,-1690.8 162.52,-1690.8"/>
+<text xml:space="preserve" text-anchor="start" x="168.52" y="-1699.4" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">timestamptz</text>
+<polygon fill="#f8fafc" stroke="none" points="33,-1665.6 33,-1690.8 60.79,-1690.8 60.79,-1665.6 33,-1665.6"/>
+<text xml:space="preserve" text-anchor="start" x="39" y="-1674.6" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#087f8c">FK</text>
+<polygon fill="#f8fafc" stroke="none" points="60.79,-1665.6 60.79,-1690.8 162.52,-1690.8 162.52,-1665.6 60.79,-1665.6"/>
+<text xml:space="preserve" text-anchor="start" x="66.79" y="-1673.8" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">determination_id?</text>
+<polygon fill="#f8fafc" stroke="none" points="162.52,-1665.6 162.52,-1690.8 233.49,-1690.8 233.49,-1665.6 162.52,-1665.6"/>
+<text xml:space="preserve" text-anchor="start" x="168.52" y="-1674.2" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">int4</text>
+<polygon fill="#ffffff" stroke="none" points="33,-1640.4 33,-1665.6 60.79,-1665.6 60.79,-1640.4 33,-1640.4"/>
+<text xml:space="preserve" text-anchor="start" x="39" y="-1649.4" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#087f8c">FK</text>
+<polygon fill="#ffffff" stroke="none" points="60.79,-1640.4 60.79,-1665.6 162.52,-1665.6 162.52,-1640.4 60.79,-1640.4"/>
+<text xml:space="preserve" text-anchor="start" x="66.79" y="-1648.6" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">recorded_by?</text>
+<polygon fill="#ffffff" stroke="none" points="162.52,-1640.4 162.52,-1665.6 233.49,-1665.6 233.49,-1640.4 162.52,-1640.4"/>
+<text xml:space="preserve" text-anchor="start" x="168.52" y="-1649" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">int4</text>
+<polygon fill="#f8fafc" stroke="none" points="33,-1615.2 33,-1640.4 60.79,-1640.4 60.79,-1615.2 33,-1615.2"/>
+<text xml:space="preserve" text-anchor="start" x="39" y="-1624.2" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">/</text>
+<polygon fill="#f8fafc" stroke="none" points="60.79,-1615.2 60.79,-1640.4 162.52,-1640.4 162.52,-1615.2 60.79,-1615.2"/>
+<text xml:space="preserve" text-anchor="start" x="66.79" y="-1623.4" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">recorded_at</text>
+<polygon fill="#f8fafc" stroke="none" points="162.52,-1615.2 162.52,-1640.4 233.49,-1640.4 233.49,-1615.2 162.52,-1615.2"/>
+<text xml:space="preserve" text-anchor="start" x="168.52" y="-1623.8" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">timestamptz</text>
+<polygon fill="#ffffff" stroke="none" points="33,-1590 33,-1615.2 60.79,-1615.2 60.79,-1590 33,-1590"/>
+<text xml:space="preserve" text-anchor="start" x="39" y="-1599" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#334155">/</text>
+<polygon fill="#ffffff" stroke="none" points="60.79,-1590 60.79,-1615.2 162.52,-1615.2 162.52,-1590 60.79,-1590"/>
+<text xml:space="preserve" text-anchor="start" x="66.79" y="-1598.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#152536">reported_to?</text>
+<polygon fill="#ffffff" stroke="none" points="162.52,-1590 162.52,-1615.2 233.49,-1615.2 233.49,-1590 162.52,-1590"/>
+<text xml:space="preserve" text-anchor="start" x="168.52" y="-1598.6" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">text</text>
 </a>
 </g>
 </g>

@@ -87,10 +87,14 @@ class BreachAssessmentIn(Schema):
 
 
 class BreachCompletionIn(Schema):
-    #: When the submission was made, as entered.
+    #: When the submission or report was made, as entered.
     occurred_at: AwareDatetime
-    #: What the regulator returned.
-    reference: Annotated[str, Field(min_length=1, max_length=200)]
+    #: What the regulator returned. Required for every duty but the
+    #: organisation's board, where there may be none.
+    reference: Annotated[str, Field(max_length=200)] | None = None
+    #: The organisation's board only, and required there: to whom it was
+    #: reported. Sealed.
+    reported_to: Annotated[str, Field(max_length=2000)] | None = None
     note: _Text | None = None
 
 
@@ -136,6 +140,8 @@ class BreachDutyEventOut(Out):
     occurred_at: datetime | None
     reference: str | None
     note: str | None
+    #: On a report to the organisation's board: to whom. Sealed.
+    reported_to: str | None
     due_at: datetime | None
     requested_at: datetime | None
     determination_uuid: UUID | None
@@ -155,6 +161,8 @@ class BreachDutyOut(Out):
     anchored_at: datetime | None
     completed_at: datetime | None
     reference: str | None
+    #: The organisation's board: to whom it was reported. Sealed.
+    reported_to: str | None
     extended_until: datetime | None
     extension_requested_at: datetime | None
     clock: BreachClockOut
@@ -371,7 +379,10 @@ async def mark_cert_in(breach_uuid: UUID, principal: BreachWriter) -> dict[str, 
 @router.post(
     "/{breach_uuid}/obligations/{duty}/complete",
     response_model=BreachOut,
-    summary="Record a submission made, with the regulator's reference",
+    summary=(
+        "Record a submission made, with the regulator's reference - or, for the "
+        "organisation's board, the report made and to whom"
+    ),
 )
 async def complete_duty(
     breach_uuid: UUID, duty: str, body: BreachCompletionIn, principal: BreachWriter
@@ -384,6 +395,7 @@ async def complete_duty(
             occurred_at=body.occurred_at,
             reference=body.reference,
             note=body.note,
+            reported_to=body.reported_to,
             actor_id=principal.user_id,
         )
 
@@ -822,3 +834,60 @@ async def board_intimation(breach_uuid: UUID, principal: BreachReader) -> dict[s
 async def board_report(breach_uuid: UUID, principal: BreachReader) -> dict[str, Any]:
     async with connection() as conn:
         return await board.report(conn, breach_uuid=str(breach_uuid))
+
+
+# ------------------------------------ the organisation's board (S3-07)
+
+
+class OrgBoardDutyOut(Out):
+    """A duty as the brief carries it: its clock, and nobody's name."""
+
+    duty: str
+    label: str
+    basis: str
+    state: str
+    due_at: datetime | None
+    anchored_at: datetime | None
+    completed_at: datetime | None
+    clock: BreachClockOut
+
+
+class OrgBoardTouchedOut(Out):
+    listed: int
+    notified: int
+
+
+class OrgBoardBriefOut(Out):
+    """For the organisation's board, drafted from the register. The platform
+    never reports to the board; a person does, and the DPO records it."""
+
+    document: str
+    basis: str
+    reference: str
+    incident_reference: str
+    breach_reference: str | None
+    title: str
+    generated_at: datetime
+    detected_at: datetime
+    began_at: datetime | None
+    location: BreachLocationOut
+    #: pending, yes or no.
+    validation: str
+    became_aware_at: datetime | None
+    cert_in_reportable: bool
+    duties: list[OrgBoardDutyOut]
+    #: Counts only: who it touched is never named here.
+    touched: OrgBoardTouchedOut
+    missing: list[str]
+    #: The organisation's board duty itself, as the others: its clock only.
+    duty: OrgBoardDutyOut | None
+
+
+@router.get(
+    "/{breach_uuid}/org-board/brief",
+    response_model=OrgBoardBriefOut,
+    summary="Draft the brief for the organisation's board from the register",
+)
+async def org_board_brief(breach_uuid: UUID, principal: BreachReader) -> dict[str, Any]:
+    async with connection() as conn:
+        return await board.org_board_brief(conn, breach_uuid=str(breach_uuid))

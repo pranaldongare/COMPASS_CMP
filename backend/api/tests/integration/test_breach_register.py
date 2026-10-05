@@ -59,6 +59,21 @@ async def _yes(
     )
 
 
+async def tell_org_board(conn: Any, seeded: dict[str, Any], uuid: str) -> dict[str, Any]:
+    """Every incident owes the organisation's board a report (S3-07); a test
+    about something else records it so it does not stand in the way."""
+    return await service.complete_duty(
+        conn,
+        breach_uuid=uuid,
+        duty="org_board",
+        occurred_at=datetime.now(UTC),
+        reference=None,
+        reported_to="The chair, by phone",
+        note=None,
+        actor_id=_dpo(seeded),
+    )
+
+
 def _duty(detail: dict[str, Any], duty: str) -> dict[str, Any]:
     [found] = [d for d in detail["obligations"] if d["duty"] == duty]
     return found
@@ -85,7 +100,7 @@ async def test_every_category_sealed_and_the_key_safe_still_creates_all_three_du
     aware = datetime.now(UTC) - 2 * HOUR
     detail = await _yes(conn, seeded, breach, aware)
 
-    duties = {d["duty"]: d for d in detail["obligations"]}
+    duties = {d["duty"]: d for d in detail["obligations"] if d["duty"] != "org_board"}
     assert set(duties) == {"board_intimation", "board_report", "principals"}
     assert all(d["state"] == "outstanding" for d in duties.values())
     assert duties["board_report"]["due_at"] == aware + timedelta(hours=72)
@@ -182,6 +197,7 @@ async def test_closing_is_refused_while_a_duty_is_outstanding(
 
     aware = datetime.now(UTC) - HOUR
     await _yes(conn, seeded, breach, aware)
+    await tell_org_board(conn, seeded, uuid)
     for duty in ("board_intimation", "board_report"):
         await service.complete_duty(
             conn,
@@ -214,6 +230,7 @@ async def test_a_breach_determined_no_closes_and_reopens_with_a_reason(
         became_aware_at=None,
         actor_id=_dpo(seeded),
     )
+    await tell_org_board(conn, seeded, uuid)
     closed = await service.transition(
         conn, breach_uuid=uuid, to="closed", reason=None, actor_id=_dpo(seeded)
     )
@@ -498,8 +515,9 @@ async def test_the_trail_records_what_happened_and_none_of_the_words(
         )
     ).fetchall()
     events = [r["event_type"] for r in rows]
-    assert events[:2] == ["breach.recorded", "breach.determined"]
-    assert events.count("breach.obligation_created") == 3
+    # Logged, its organisation's-board duty created, then validated.
+    assert events[:3] == ["breach.recorded", "breach.obligation_created", "breach.determined"]
+    assert events.count("breach.obligation_created") == 4
     assert not any(
         "laptop" in r["detail"].lower() or "contact details" in r["detail"].lower() for r in rows
     )

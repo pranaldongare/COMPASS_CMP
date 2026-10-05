@@ -1,6 +1,6 @@
 {
-  "commit": "adf96f4739bb951d35efb491f03a57578c510541",
-  "migration_head": "0038",
+  "commit": "4bddceb3389a8cfb6a23b8ea0e2f9e3ff349237e",
+  "migration_head": "0039",
   "migrations": [
     {
       "revision": "0001",
@@ -153,6 +153,10 @@
     {
       "revision": "0038",
       "source": "backend/api/migrations/versions/0038_incident_first.py"
+    },
+    {
+      "revision": "0039",
+      "source": "backend/api/migrations/versions/0039_org_board_duty.py"
     }
   ],
   "postgres_version": "16.15",
@@ -1703,6 +1707,15 @@
       "not_null": true,
       "default_value": "now()",
       "comment": null
+    },
+    {
+      "table_name": "breach_obligation_event",
+      "name": "reported_to",
+      "position": 14,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Whom the organisation's board was told through, on a completion of the org_board duty. Sealed (FREE_TEXT); required for that duty by trg_breach_org_board_reported_to"
     },
     {
       "table_name": "breach_recording",
@@ -6902,7 +6915,7 @@
       "table_name": "breach_obligation",
       "name": "breach_obligation_kind",
       "kind": "c",
-      "definition": "CHECK (((kind)::text = ANY ((ARRAY['cert_in'::character varying, 'board_intimation'::character varying, 'board_report'::character varying, 'principals'::character varying])::text[])))",
+      "definition": "CHECK (((kind)::text = ANY ((ARRAY['cert_in'::character varying, 'board_intimation'::character varying, 'board_report'::character varying, 'principals'::character varying, 'org_board'::character varying])::text[])))",
       "columns": [
         "kind"
       ],
@@ -12071,6 +12084,11 @@
       "definition": "CREATE TRIGGER trg_breach_obligation_event_append_only BEFORE DELETE OR UPDATE ON public.breach_obligation_event FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
     },
     {
+      "table_name": "breach_obligation_event",
+      "name": "trg_breach_org_board_reported_to",
+      "definition": "CREATE TRIGGER trg_breach_org_board_reported_to BEFORE INSERT ON public.breach_obligation_event FOR EACH ROW EXECUTE FUNCTION cmp_breach_org_board_reported_to()"
+    },
+    {
       "table_name": "breach_recording",
       "name": "trg_breach_recording_append_only",
       "definition": "CREATE TRIGGER trg_breach_recording_append_only BEFORE DELETE OR UPDATE ON public.breach_recording FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
@@ -12386,6 +12404,9 @@
       "name": "cmp_breach_notice_frozen"
     },
     {
+      "name": "cmp_breach_org_board_reported_to"
+    },
+    {
       "name": "cmp_breach_status_only"
     },
     {
@@ -12450,10 +12471,10 @@
     "application_tables": 46,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 573,
+    "table_columns": 574,
     "foreign_keys": 130,
     "enums": 39,
-    "triggers": 41,
+    "triggers": 42,
     "checks": 72
   }
 }

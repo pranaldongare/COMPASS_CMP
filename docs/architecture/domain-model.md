@@ -138,6 +138,7 @@ with raw SQL that bypasses the service layer.
 | A rights reference is unique and minted by the database | sequence-backed default on `rights_request.reference` |
 | A breach's facts are entered once; only its status moves | `cmp_breach_status_only()`; its recording, determinations, assessments, duties and their events are append-only |
 | A breach is recorded once, and its reference never withdrawn | `breach_recording` `UNIQUE (breach_id)`; `trg_breach_recording_append_only` |
+| A report to the organisation's board records to whom | `trg_breach_org_board_reported_to` |
 | One duty of each kind per breach, its due time never updated | `breach_obligation_once`; `trg_breach_obligation_append_only` |
 
 Why the rules live here rather than in Python is

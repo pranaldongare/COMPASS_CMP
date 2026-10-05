@@ -74,6 +74,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | GET | `/breaches/{breach_uuid}/board/intimation` | NO | ALL | NO | NO | NO | NO | NO | NO |
 | GET | `/breaches/{breach_uuid}/board/report` | NO | ALL | NO | NO | NO | NO | NO | NO |
 | POST | `/breaches/{breach_uuid}/affected` | NO | ALL | NO | NO | NO | NO | NO | NO |
+| GET | `/breaches/{breach_uuid}/org-board/brief` | NO | ALL | NO | NO | NO | NO | NO | NO |
 
 ## Consent
 

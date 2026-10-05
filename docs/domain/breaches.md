@@ -19,10 +19,11 @@ moment of noticing whatever validation says.
 The platform is the **system of record**. It records the breach, tracks every
 duty's clock, and holds the evidence that each duty was done. **People**
 contain the breach, preserve forensic evidence, decide whether it is a personal
-data breach, and submit to the Board and to CERT-In through those bodies' own
-channels. The platform never contains anything and never talks to a regulator:
-a submission is recorded after a person has made it, with the reference the
-regulator returned.
+data breach, tell the organisation's board, and submit to the Board and to
+CERT-In through those bodies' own channels. The platform never contains
+anything, never talks to a regulator and never reports to the organisation's
+board: a submission or report is recorded after a person has made it, with the
+reference the regulator returned or whom the board was told through.
 
 ## Who can see it
 
@@ -147,6 +148,7 @@ their own clocks; nothing waits for the assessment.
 
 | Duty | Created when | Due | Basis |
 |---|---|---|---|
+| Organisation's board | **every incident, when it is logged** | 30 minutes from first noticed (`BREACH_ORG_BOARD_MINUTES`) | internal policy |
 | Report to CERT-In | **Mark reportable to CERT-In** | 6 hours from first noticed | CERT-In Directions 2022, IT Act s.70B |
 | Board - initial intimation | validation *yes* | without delay | Rule 7(2)(a) |
 | Board - detailed report | validation *yes* | 72 hours from awareness, or the date the Board allows | Rule 7(2)(b) |
@@ -166,6 +168,12 @@ their own clocks; nothing waits for the assessment.
 - **The Board's extension** of the detailed report records when it was asked
   for and the date allowed, which becomes the report's due time as a new row.
   The initial intimation's clock does not move.
+- **The organisation's board** is policy, not DPDP: validation never sets it
+  aside or moves it, and an incident logged more than thirty minutes after it
+  was noticed starts out overdue, as CERT-In does. **Record the report** on the
+  duty takes when it was made (not before first noticed, not in the future) and
+  **to whom** - required, sealed - and a reference only if there is one.
+  Incidents logged before migration 0039 have no such duty.
 - **Principals notified** cannot be completed by hand. It completes when every
   affected principal's notice is delivered or its failure recorded after retry
   (S3-03).
@@ -261,6 +269,17 @@ The words are sealed, like every narrative about the breach; the console and
 her portal open them, and the worker opens them at `deliver()`. They go to
 everyone listed, so they must name nobody.
 
+## The organisation's board
+
+**Brief for the organisation's board**, from an incident's page, drafts what
+to tell the board from the register as it stands, at any point from the first
+minutes on: the reference, the title, first noticed, began, where it occurred,
+the validation and time of awareness if any, whether it is marked reportable
+to CERT-In, every duty with its clock, and who it touched **as counts only**.
+It names what the register does not yet hold. It never carries the finding on
+who caused it, anybody's name or contact, or who recorded what. **Print**
+produces the copy to hand over. The platform never sends it.
+
 ## The Board and CERT-In
 
 **The platform never submits to the Board or to CERT-In.** It drafts the
@@ -314,8 +333,8 @@ nothing about it can be recorded.
 | `breach_status_history` | Every open and close, with the reason for a reopening. Append-only |
 | `breach_determination` | Every determination, with its reasoning and, for *yes*, the time of awareness. Append-only |
 | `breach_assessment` | Every revision of the facts. Append-only |
-| `breach_obligation` | One row per duty per breach, with its stored due time and the moment its clock runs from. Append-only; one of each kind per breach, by unique constraint |
-| `breach_obligation_event` | Everything that happens to a duty afterwards: completed, not applicable, reinstated, extended, reopened. Append-only |
+| `breach_obligation` | One row per duty per breach - `org_board`, `cert_in` and the three DPDP duties - with its stored due time and the moment its clock runs from. Append-only; one of each kind per breach, by unique constraint |
+| `breach_obligation_event` | Everything that happens to a duty afterwards: completed (with `reported_to`, sealed, for the organisation's board - required there by trigger), not applicable, reinstated, extended, reopened. Append-only |
 | `breach_affected_revision` | Each confirmation of who it touched: the scopes, the counts, a sealed note. Append-only |
 | `breach_notice` | Each version of the five Rule 7(1) contents, sealed. A draft is editable; an approved one is frozen by trigger (`cmp_breach_notice_frozen`) |
 | `breach_notice_delivery` | Every state of every attempt on every channel for every person. Append-only; `breach_notice_delivery_once` makes resends idempotent |

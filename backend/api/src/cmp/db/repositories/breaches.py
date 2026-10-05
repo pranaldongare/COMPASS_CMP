@@ -319,18 +319,19 @@ async def add_obligation_event(
     occurred_at: datetime | None = None,
     reference: str | None = None,
     note: str | None = None,
+    reported_to: str | None = None,
     due_at: datetime | None = None,
     anchored_at: datetime | None = None,
     requested_at: datetime | None = None,
     determination_id: int | None = None,
 ) -> Row:
-    sealed = await seal("breach_obligation_event", {"note": note})
+    sealed = await seal("breach_obligation_event", {"note": note, "reported_to": reported_to})
     row = await fetch_one(
         conn,
         """INSERT INTO breach_obligation_event
-             (obligation_id, kind, occurred_at, reference, note, due_at, anchored_at,
-              requested_at, determination_id, recorded_by)
-           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+             (obligation_id, kind, occurred_at, reference, note, reported_to, due_at,
+              anchored_at, requested_at, determination_id, recorded_by)
+           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
            RETURNING event_id, event_uuid""",
         (
             obligation_id,
@@ -338,6 +339,7 @@ async def add_obligation_event(
             occurred_at,
             reference,
             sealed["note"],
+            sealed["reported_to"],
             due_at,
             anchored_at,
             requested_at,
@@ -354,7 +356,7 @@ async def obligation_events(conn: Conn, obligation_ids: list[int]) -> list[Row]:
     return await fetch_all(
         conn,
         """SELECT e.event_uuid, e.obligation_id, e.kind, e.occurred_at, e.reference, e.note,
-                  e.due_at, e.anchored_at, e.requested_at, e.recorded_at,
+                  e.reported_to, e.due_at, e.anchored_at, e.requested_at, e.recorded_at,
                   d.determination_uuid, u.full_name AS recorded_by_name
              FROM breach_obligation_event e
              LEFT JOIN breach_determination d ON d.determination_id = e.determination_id

@@ -179,6 +179,7 @@ export const keys = {
     assessments: (uuid: Uuid) => ["breach", uuid, "assessments"] as const,
     affected: (uuid: Uuid) => ["breach", uuid, "affected"] as const,
     notices: (uuid: Uuid) => ["breach", uuid, "notices"] as const,
+    orgBoard: (uuid: Uuid) => ["breach", uuid, "org-board"] as const,
   },
 
   users: {

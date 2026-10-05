@@ -60,6 +60,15 @@ as a release yet.
 - Export CSV cells that begin with a formula character are written as text.
 
 ### Added
+- **The organisation's board within thirty minutes of first noticed (S3-07,
+  [ADR 0022](docs/decisions/0022-an-incident-first-and-a-breach-on-a-yes.md)).**
+  Every incident logged now owes the organisation's board a report: a duty
+  anchored at first noticed and due `BREACH_ORG_BOARD_MINUTES` (30) later,
+  stored then. Validation never touches it. **Brief for the organisation's
+  board** drafts what to say - counts, clocks, nobody's name - and prints; the
+  DPO records when the board was told and to whom (`reported_to`, sealed,
+  required by trigger). It counts on the dashboard and blocks closing like any
+  duty. Migration 0039; incidents logged before it have no such duty.
 - **An incident first; a breach is recorded on a yes (S3-06,
   [ADR 0022](docs/decisions/0022-an-incident-first-and-a-breach-on-a-yes.md)).**
   "Record a breach" is now **Log an incident**, with an `INC-` reference from

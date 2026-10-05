@@ -24,8 +24,9 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
+from cmp.db.repositories import breaches as breach_repo
 from cmp.db.sql import Conn
-from cmp.domain.breach import notices, service
+from cmp.domain.breach import clock, notices, service
 from cmp.domain.breach.clock import Duty
 
 Row = dict[str, Any]
@@ -138,4 +139,54 @@ async def report(conn: Conn, *, breach_uuid: str) -> Row:
         "missing": missing,
         "duty": _duty(detail, Duty.BOARD_REPORT),
         "duties": detail["obligations"],
+    }
+
+
+#: What a duty says in the brief: its clock and nothing that names anybody -
+#: the events, which carry who recorded what, stay on the register.
+_BRIEF_DUTY = ("duty", "label", "basis", "state", "due_at", "anchored_at", "completed_at", "clock")
+
+
+async def org_board_brief(conn: Conn, *, breach_uuid: str) -> Row:
+    """For the organisation's board (S3-07): what the register holds now.
+
+    Drafted at any point, as often as wanted, from the incident's first minutes
+    on. It never carries the finding on who caused it, a name or a contact:
+    who it touched is counts. The platform drafts it and never sends it; a
+    person reports, and the DPO records when and to whom on the duty.
+    """
+    detail = await service.detail(conn, breach_uuid)
+    account = await notices.account_for_report(conn, breach_uuid=breach_uuid)
+    listed = await breach_repo.count_affected(
+        conn, int((await service.require(conn, breach_uuid))["breach_id"])
+    )
+    duties = detail["obligations"]
+    missing: list[str] = []
+    if detail["determination"] == "pending":
+        missing.append("Whether it is a personal data breach - validation is still pending")
+    if detail["began_at"] is None:
+        missing.append("When it began")
+    if not (detail["assessment"] or {}).get("nature_extent"):
+        missing.append("The nature and extent of what happened")
+    if listed == 0:
+        missing.append("Who it touched - no list has been confirmed")
+    own = _duty(detail, Duty.ORG_BOARD)
+    brief_duties = [{k: d[k] for k in _BRIEF_DUTY} for d in duties]
+    return {
+        "document": "org_board_brief",
+        "basis": own["basis"] if own else clock.BASIS[Duty.ORG_BOARD],
+        **_references(detail),
+        "title": detail["title"],
+        "generated_at": datetime.now(UTC),
+        "detected_at": detail["detected_at"],
+        "began_at": detail["began_at"],
+        "location": detail["location"],
+        "validation": detail["determination"],
+        "became_aware_at": detail["became_aware_at"],
+        "cert_in_reportable": any(d["duty"] == Duty.CERT_IN for d in duties),
+        "duties": brief_duties,
+        "touched": {"listed": listed, "notified": int(account["notified"])},
+        "missing": missing,
+        # This brief's own duty, as the rest: its clock, no names.
+        "duty": next((d for d in brief_duties if d["duty"] == Duty.ORG_BOARD), None),
     }

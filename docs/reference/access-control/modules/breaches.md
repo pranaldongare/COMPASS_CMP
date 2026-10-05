@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-21 operations; 21 appear in the existing OpenAPI/API docs. Added with S3-01 to S3-04; evidence links point at `HEAD`.
+22 operations; 22 appear in the existing OpenAPI/API docs. Added with S3-01 to S3-04; evidence links point at `HEAD`.
 
 An incident is logged first (`POST /breaches`); the first validation of *yes* records it as a breach ([ADR 0022](../../../decisions/0022-an-incident-first-and-a-breach-on-a-yes.md)). Every route is the DPO's and **hidden**: any other role - staff or principal - is answered **404**, on the register, on a breach that exists and on a write alike, where other DPO-only modules answer 403. That a breach is being handled is itself withheld.
 
@@ -29,6 +29,7 @@ An incident is logged first (`POST /breaches`); the first validation of *yes* re
 | GET | `/breaches/{breach_uuid}/board/intimation` | `dpo` | Full session; anonymous NO |
 | GET | `/breaches/{breach_uuid}/board/report` | `dpo` | Full session; anonymous NO |
 | POST | `/breaches/{breach_uuid}/affected` | `dpo` | Full session; anonymous NO |
+| GET | `/breaches/{breach_uuid}/org-board/brief` | `dpo` | Full session; anonymous NO |
 
 ## GET /breaches
 
@@ -130,7 +131,7 @@ Mark as a reportable cyber incident: CERT-In in six hours from detection.
 
 ## POST /breaches/{breach_uuid}/obligations/{duty}/complete
 
-Record a submission made, with the regulator's reference.
+Record a submission made, with the regulator's reference - or, for the organisation's board, the report made and to whom.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -323,3 +324,17 @@ Confirm who the breach touched: a new revision, adding only the newly found.
 - **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
 - **Rules:** The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Re-derives from the scopes server-side, leaves out `exclude`, adds `add`; a new revision listing only people not already listed. Refused on a closed breach. (S3-02)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## GET /breaches/{breach_uuid}/org-board/brief
+
+Draft the brief for the organisation's board from the register.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal |
+| --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 404.
+- **Route guard:** `BreachReader`.
+- **Resolved gate:** `RequireResource(breach, hidden=True)`.
+- **Rules:** The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403. Drafted from the register at any point, from the incident's first minutes; counts only for who it touched, no finding on who caused it, no name or contact. The platform never reports to the organisation's board. (S3-07, ADR 0022)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/board.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).

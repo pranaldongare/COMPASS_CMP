@@ -10,19 +10,20 @@ import { apiGet, apiPost, apiPut, queryString } from "@/lib/api";
 import type {
   Breach,
   BreachAffected,
-  BreachPreview,
-  BreachScope,
   BreachAssessment,
   BreachAssessmentInput,
   BreachDutyKind,
   BreachInput,
   BreachIntimation,
-  BreachReport,
-  BreachNotices,
   BreachNoticeWords,
+  BreachNotices,
   BreachOutcome,
+  BreachPreview,
+  BreachReport,
+  BreachScope,
   BreachStatus,
   BreachSummary,
+  OrgBoardBrief,
   Timestamp,
   Uuid,
 } from "@/types";
@@ -61,7 +62,7 @@ export function markCertIn(uuid: Uuid): Promise<Breach> {
 export function completeDuty(
   uuid: Uuid,
   duty: BreachDutyKind,
-  body: { occurred_at: Timestamp; reference: string; note?: string | null },
+  body: { occurred_at: Timestamp; reference?: string | null; reported_to?: string | null; note?: string | null },
 ): Promise<Breach> {
   return apiPost<Breach>(`/breaches/${uuid}/obligations/${duty}/complete`, body);
 }
@@ -136,4 +137,10 @@ export function getIntimation(uuid: Uuid): Promise<BreachIntimation> {
 
 export function getReport(uuid: Uuid): Promise<BreachReport> {
   return apiGet<BreachReport>(`/breaches/${uuid}/board/report`);
+}
+
+/* ---------------------------------------- the organisation's board (S3-07) */
+
+export function getOrgBoardBrief(uuid: Uuid): Promise<OrgBoardBrief> {
+  return apiGet<OrgBoardBrief>(`/breaches/${uuid}/org-board/brief`);
 }

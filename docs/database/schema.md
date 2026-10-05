@@ -119,6 +119,11 @@ determination of *yes*: one row per breach (`UNIQUE (breach_id)`), the
 reference unique, the row append-only by trigger and grant. A later *no* leaves
 it; nothing withdraws it.
 
+**A report to the organisation's board says to whom, since 0039.** `org_board`
+is a duty kind like the others, created on every incident at logging;
+`trg_breach_org_board_reported_to` refuses a `completed` event on it without
+`reported_to`, which is sealed.
+
 **Who a breach touched is only ever added to, since 0035.** Each
 confirmation is a `breach_affected_revision` with its scopes and counts; each
 person is a `breach_affected` row, once per breach (`breach_affected_once`),

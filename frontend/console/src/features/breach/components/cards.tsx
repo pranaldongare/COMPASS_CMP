@@ -79,18 +79,31 @@ function CompleteDialog({
   onClose: () => void;
 }) {
   const toast = useToast();
+  // The organisation's board is not a regulator: a person reports to it, and
+  // what is recorded is when and to whom - a reference only if there is one.
+  const board = duty.duty === "org_board";
   const [when, setWhen] = React.useState("");
   const [reference, setReference] = React.useState("");
+  const [reportedTo, setReportedTo] = React.useState("");
   const [note, setNote] = React.useState("");
   const write = useBreachWrite(breach, (uuid, a: { at: string }) =>
-    completeDuty(uuid, duty.duty, { occurred_at: a.at, reference: reference.trim(), note: note.trim() || null }),
+    completeDuty(uuid, duty.duty, {
+      occurred_at: a.at,
+      reference: reference.trim() || null,
+      reported_to: board ? reportedTo.trim() : null,
+      note: note.trim() || null,
+    }),
   );
   const at = instant(when);
+  const ready = at !== null && (board ? reportedTo.trim() !== "" : reference.trim() !== "");
   async function save() {
     if (!at) return;
     try {
       await write.mutateAsync({ at });
-      toast.success(`${duty.label}: recorded`, "The submission and its reference are on the record.");
+      toast.success(
+        `${duty.label}: recorded`,
+        board ? "The report and whom it was made to are on the record." : "The submission and its reference are on the record.",
+      );
       onClose();
     } catch (err) {
       toast.error("Not recorded", messageOf(err, "The server refused."));
@@ -99,16 +112,30 @@ function CompleteDialog({
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent
-        title={`Record the submission - ${duty.label}`}
-        description="The platform never submits to a regulator. Record what was submitted through the regulator's own channel, when, and the reference it returned."
+        title={board ? "Record the report - Organisation's board" : `Record the submission - ${duty.label}`}
+        description={
+          board
+            ? "The platform never reports to the organisation's board. Record when a person reported to it, and to whom."
+            : "The platform never submits to a regulator. Record what was submitted through the regulator's own channel, when, and the reference it returned."
+        }
       >
         <div className="space-y-3">
-          <Field label="Submitted at" hint="When it was made, not when you are recording it" required>
+          <Field
+            label={board ? "Reported at" : "Submitted at"}
+            hint="When it was made, not when you are recording it"
+            required
+          >
             {(p) => <Input {...p} type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />}
           </Field>
-          <Field label="Reference returned" hint="Acknowledgement or filing number" required>
-            {(p) => <Input {...p} value={reference} maxLength={200} onChange={(e) => setReference(e.target.value)} />}
-          </Field>
+          {board ? (
+            <Field label="Reported to" hint="Who was told, and how - for example the chair, by phone" required>
+              {(p) => <Input {...p} value={reportedTo} maxLength={2000} onChange={(e) => setReportedTo(e.target.value)} />}
+            </Field>
+          ) : (
+            <Field label="Reference returned" hint="Acknowledgement or filing number" required>
+              {(p) => <Input {...p} value={reference} maxLength={200} onChange={(e) => setReference(e.target.value)} />}
+            </Field>
+          )}
           <Field label="Note" hint="Optional">
             {(p) => <Textarea {...p} value={note} onChange={(e) => setNote(e.target.value)} />}
           </Field>
@@ -116,7 +143,7 @@ function CompleteDialog({
             <Button variant="ghost" onClick={onClose}>
               Cancel
             </Button>
-            <Button variant="primary" disabled={!at || !reference.trim()} loading={write.isPending} onClick={save}>
+            <Button variant="primary" disabled={!ready} loading={write.isPending} onClick={save}>
               Record
             </Button>
           </div>
@@ -198,8 +225,8 @@ export function DutiesCard({ breach }: { breach: Breach }) {
       <CardHeader>
         <CardTitle>Duties</CardTitle>
         <p className="mt-1 text-xs text-text-muted">
-          Each runs on its own clock, in parallel. CERT-In runs from when it was first noticed; every DPDP duty from when
-          the organisation became aware.
+          Each runs on its own clock, in parallel. The organisation&apos;s board and CERT-In run from when it was first
+          noticed; every DPDP duty from when the organisation became aware.
           {breach.without_delay_target_hours === null
             ? " No internal target is set for “without delay”: the time elapsed is shown and nothing is flagged."
             : ` The internal target for “without delay” is ${breach.without_delay_target_hours} hours.`}
@@ -235,7 +262,14 @@ export function DutiesCard({ breach }: { breach: Breach }) {
                     <DutyStateBadge duty={d} />
                     {d.state === "done" && (
                       <span className="block text-xs text-text-subtle">
-                        {formatDateTime(d.completed_at)} · <Mono>{d.reference}</Mono>
+                        {formatDateTime(d.completed_at)}
+                        {d.reported_to && <> · to {d.reported_to}</>}
+                        {d.reference && (
+                          <>
+                            {" "}
+                            · <Mono>{d.reference}</Mono>
+                          </>
+                        )}
                       </span>
                     )}
                   </Td>
@@ -248,9 +282,10 @@ export function DutiesCard({ breach }: { breach: Breach }) {
                     {open && d.state === "outstanding" && d.duty !== "principals" && (
                       <Button variant="secondary" size="sm" onClick={() => setCompleting(d)}>
                         <CheckCircle2 className="size-4" />
-                        Record submission
+                        {d.duty === "org_board" ? "Record the report" : "Record submission"}
                       </Button>
                     )}
+
                     {open && d.state === "outstanding" && d.duty === "board_report" && (
                       <Button variant="ghost" size="sm" onClick={() => setExtending(true)}>
                         <CalendarPlus className="size-4" />

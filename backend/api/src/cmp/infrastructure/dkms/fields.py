@@ -166,6 +166,8 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
     },
     "breach_obligation_event": {
         "note": DataType.FREE_TEXT,
+        # Whom the organisation's board was told through (S3-07): a person.
+        "reported_to": DataType.FREE_TEXT,
     },
     "breach_affected_revision": {
         "note": DataType.FREE_TEXT,

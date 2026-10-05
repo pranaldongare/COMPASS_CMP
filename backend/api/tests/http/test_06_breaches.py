@@ -90,10 +90,12 @@ class TestTheRegister:
         assert breach["breach_reference"] is None
         assert breach["reference"] == breach["incident_reference"]
 
+        # Every incident owes the organisation's board from the moment it is logged.
+        assert [d["duty"] for d in breach["obligations"]] == ["org_board"]
         marked = await call(
             http, "POST", f"{path}/cert-in", template=f"{B}/cert-in", session=world.dpo
         )
-        [cert_in] = marked.json()["obligations"]
+        [cert_in] = [d for d in marked.json()["obligations"] if d["duty"] == "cert_in"]
         assert cert_in["duty"] == "cert_in"
         assert 0 < cert_in["clock"]["seconds_remaining"] <= 3600
 
@@ -107,6 +109,7 @@ class TestTheRegister:
         )
         body = determined.json()
         assert {d["duty"] for d in body["obligations"]} == {
+            "org_board",
             "cert_in",
             "board_intimation",
             "board_report",
@@ -197,6 +200,14 @@ class TestTheRegister:
             session=world.dpo,
             json={"outcome": "no", "reasoning": "Test data only"},
         )
+        await call(
+            http,
+            "POST",
+            f"{path}/obligations/org_board/complete",
+            template=f"{B}/obligations/{{duty}}/complete",
+            session=world.dpo,
+            json={"occurred_at": _at(0.5), "reported_to": "The board's secretary"},
+        )
         closed = await call(
             http,
             "POST",
@@ -207,6 +218,63 @@ class TestTheRegister:
         )
         assert closed.json()["status"] == "closed"
         assert closed.json()["status_history"][-1]["changed_by_name"].startswith("SE::")
+
+
+class TestTheOrganisationsBoard:
+    async def test_draft_the_brief_then_record_the_report(
+        self, http: httpx.AsyncClient, world: World
+    ) -> None:
+        breach = await _record(
+            http, world, location_kind="platform", processor_uuid=None, detected_at=_at(0.25)
+        )
+        path = f"/breaches/{breach['breach_uuid']}"
+        [duty] = breach["obligations"]
+        assert duty["duty"] == "org_board" and 0 < duty["clock"]["seconds_remaining"] <= 15 * 60
+
+        brief = await call(
+            http,
+            "GET",
+            f"{path}/org-board/brief",
+            template=f"{B}/org-board/brief",
+            session=world.dpo,
+        )
+        body = brief.json()
+        assert body["reference"] == breach["incident_reference"]
+        assert body["validation"] == "pending" and body["touched"]["listed"] == 0
+        assert str(body["title"]).startswith("SE::"), "sealed; the console opens it"
+        assert "reported_to" not in brief.text and "_by_name" not in brief.text
+
+        # Whom is required here, and a reference is not.
+        await call(
+            http,
+            "POST",
+            f"{path}/obligations/org_board/complete",
+            template=f"{B}/obligations/{{duty}}/complete",
+            session=world.dpo,
+            json={"occurred_at": _at(0.1)},
+            expect=422,
+        )
+        done = await call(
+            http,
+            "POST",
+            f"{path}/obligations/org_board/complete",
+            template=f"{B}/obligations/{{duty}}/complete",
+            session=world.dpo,
+            json={"occurred_at": _at(0.1), "reported_to": "The chair, by phone"},
+        )
+        [told] = done.json()["obligations"]
+        assert told["state"] == "done" and told["reference"] is None
+        assert str(told["reported_to"]).startswith("SE::")
+        assert plain(told["reported_to"]) == "The chair, by phone"
+        for who in (world.dco, world.admin):
+            await call(
+                http,
+                "GET",
+                f"{path}/org-board/brief",
+                template=f"{B}/org-board/brief",
+                session=who,
+                expect=404,
+            )
 
 
 class TestWhoItTouched:
@@ -468,7 +536,7 @@ class TestTheRace:
         assert first.status_code == second.status_code == 200
         final = await call(http, "GET", path, template=B, session=world.dpo)
         duties = [d["duty"] for d in final.json()["obligations"]]
-        assert sorted(duties) == ["board_intimation", "board_report", "principals"]
+        assert sorted(duties) == ["board_intimation", "board_report", "org_board", "principals"]
         assert len(final.json()["determinations"]) == 2
         # One recording and one number, whichever *yes* arrived first.
         issued = {first.json()["breach_reference"], second.json()["breach_reference"]}

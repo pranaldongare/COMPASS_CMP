@@ -1,6 +1,6 @@
 # Breaches API
 
-Generated from `backend/api/openapi.json`. **21 operations.**
+Generated from `backend/api/openapi.json`. **22 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -27,6 +27,7 @@ For each operation the information is deliberately ordered as **API → Validati
 19. [`POST /breaches/{breach_uuid}/notices/send`](#19_post_breaches_breach_uuid_notices_send)
 20. [`GET /breaches/{breach_uuid}/board/intimation`](#20_get_breaches_breach_uuid_board_intimation)
 21. [`GET /breaches/{breach_uuid}/board/report`](#21_get_breaches_breach_uuid_board_report)
+22. [`GET /breaches/{breach_uuid}/org-board/brief`](#22_get_breaches_breach_uuid_org_board_brief)
 
 <a id="1_get_breaches"></a>
 ## 1. `GET /breaches` — Every incident and breach, open first
@@ -86,6 +87,7 @@ No request body.
         "anchored_at": "…",
         "completed_at": "…",
         "reference": "…",
+        "reported_to": "…",
         "extended_until": "…",
         "extension_requested_at": "…",
         "clock": "…",
@@ -221,6 +223,7 @@ Request body required: **yes**.
       "anchored_at": "…",
       "completed_at": "…",
       "reference": "…",
+      "reported_to": "…",
       "extended_until": "…",
       "extension_requested_at": "…",
       "clock": "…",
@@ -365,6 +368,7 @@ No request body.
       "anchored_at": "…",
       "completed_at": "…",
       "reference": "…",
+      "reported_to": "…",
       "extended_until": "…",
       "extension_requested_at": "…",
       "clock": "…",
@@ -520,6 +524,7 @@ Request body required: **yes**.
       "anchored_at": "…",
       "completed_at": "…",
       "reference": "…",
+      "reported_to": "…",
       "extended_until": "…",
       "extension_requested_at": "…",
       "clock": "…",
@@ -762,6 +767,7 @@ Request body required: **yes**.
       "anchored_at": "…",
       "completed_at": "…",
       "reference": "…",
+      "reported_to": "…",
       "extended_until": "…",
       "extension_requested_at": "…",
       "clock": "…",
@@ -906,6 +912,7 @@ No request body.
       "anchored_at": "…",
       "completed_at": "…",
       "reference": "…",
+      "reported_to": "…",
       "extended_until": "…",
       "extension_requested_at": "…",
       "clock": "…",
@@ -957,7 +964,7 @@ No request body.
 ```
 
 <a id="8_post_breaches_breach_uuid_obligations_duty_complete"></a>
-## 8. `POST /breaches/{breach_uuid}/obligations/{duty}/complete` — Record a submission made, with the regulator's reference
+## 8. `POST /breaches/{breach_uuid}/obligations/{duty}/complete` — Record a submission made, with the regulator's reference - or, for the organisation's board, the report made and to whom
 
 ### API
 
@@ -982,6 +989,7 @@ Request body required: **yes**.
 {
   "occurred_at": "2026-09-17T12:00:00Z",
   "reference": "string",
+  "reported_to": "string",
   "note": "string"
 }
 ```
@@ -1062,6 +1070,7 @@ Request body required: **yes**.
       "anchored_at": "…",
       "completed_at": "…",
       "reference": "…",
+      "reported_to": "…",
       "extended_until": "…",
       "extension_requested_at": "…",
       "clock": "…",
@@ -1218,6 +1227,7 @@ Request body required: **yes**.
       "anchored_at": "…",
       "completed_at": "…",
       "reference": "…",
+      "reported_to": "…",
       "extended_until": "…",
       "extension_requested_at": "…",
       "clock": "…",
@@ -1434,6 +1444,7 @@ Request body required: **yes**.
       "anchored_at": "…",
       "completed_at": "…",
       "reference": "…",
+      "reported_to": "…",
       "extended_until": "…",
       "extension_requested_at": "…",
       "clock": "…",
@@ -2351,6 +2362,7 @@ No request body.
     "anchored_at": "…",
     "completed_at": "…",
     "reference": "…",
+    "reported_to": "…",
     "extended_until": "…",
     "extension_requested_at": "…",
     "clock": "…",
@@ -2487,6 +2499,7 @@ No request body.
     "anchored_at": "…",
     "completed_at": "…",
     "reference": "…",
+    "reported_to": "…",
     "extended_until": "…",
     "extension_requested_at": "…",
     "clock": "…",
@@ -2506,6 +2519,7 @@ No request body.
       "anchored_at": "…",
       "completed_at": "…",
       "reference": "…",
+      "reported_to": "…",
       "extended_until": "…",
       "extension_requested_at": "…",
       "clock": "…",
@@ -2514,6 +2528,105 @@ No request body.
       ]
     }
   ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="22_get_breaches_breach_uuid_org_board_brief"></a>
+## 22. `GET /breaches/{breach_uuid}/org-board/brief` — Draft the brief for the organisation's board from the register
+
+### API
+
+- **Operation ID:** `org_board_brief_breaches__breach_uuid__org_board_brief_get`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`OrgBoardBriefOut`](#schema-orgboardbriefout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "document": "string",
+  "basis": "string",
+  "reference": "string",
+  "incident_reference": "string",
+  "breach_reference": "string",
+  "title": "string",
+  "generated_at": "2026-09-17T12:00:00Z",
+  "detected_at": "2026-09-17T12:00:00Z",
+  "began_at": "2026-09-17T12:00:00Z",
+  "location": {
+    "kind": "string",
+    "processor_uuid": "00000000-0000-4000-8000-000000000000",
+    "processor_name": "string",
+    "source_uuid": "00000000-0000-4000-8000-000000000000",
+    "source_name": "string",
+    "detail": "string"
+  },
+  "validation": "string",
+  "became_aware_at": "2026-09-17T12:00:00Z",
+  "cert_in_reportable": true,
+  "duties": [
+    {
+      "duty": "string",
+      "label": "string",
+      "basis": "string",
+      "state": "string",
+      "due_at": "…",
+      "anchored_at": "…",
+      "completed_at": "…",
+      "clock": "…"
+    }
+  ],
+  "touched": {
+    "listed": 1,
+    "notified": 1
+  },
+  "missing": [
+    "string"
+  ],
+  "duty": {
+    "duty": "string",
+    "label": "string",
+    "basis": "string",
+    "state": "string",
+    "due_at": "…",
+    "anchored_at": "…",
+    "completed_at": "…",
+    "clock": "…"
+  }
 }
 ```
 
@@ -2581,7 +2694,8 @@ No request body.
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
 | `occurred_at` | `string` | Yes | format: `date-time` | — |
-| `reference` | `string` | Yes | min length: `1`; max length: `200` | — |
+| `reference` | `string` or `null` | No | max length: `200` | — |
+| `reported_to` | `string` or `null` | No | max length: `2000` | — |
 | `note` | `string` or `null` | No | max length: `8000` | — |
 
 <a id="schema-breachdeterminationin"></a>
@@ -2767,6 +2881,32 @@ Rule 7(2)(b), all six items, drafted from the register.
 |---|---|---:|---|---|
 | `detail` | array of [`ValidationError`](#schema-validationerror) | No | — | — |
 
+<a id="schema-orgboardbriefout"></a>
+#### `OrgBoardBriefOut`
+
+For the organisation's board, drafted from the register. The platform
+never reports to the board; a person does, and the DPO records it.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `document` | `string` | Yes | — | — |
+| `basis` | `string` | Yes | — | — |
+| `reference` | `string` | Yes | — | — |
+| `incident_reference` | `string` | Yes | — | — |
+| `breach_reference` | `string` or `null` | Yes | — | — |
+| `title` | `string` | Yes | — | — |
+| `generated_at` | `string` | Yes | format: `date-time` | — |
+| `detected_at` | `string` | Yes | format: `date-time` | — |
+| `began_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `location` | [`BreachLocationOut`](#schema-breachlocationout) | Yes | — | — |
+| `validation` | `string` | Yes | — | — |
+| `became_aware_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `cert_in_reportable` | `boolean` | Yes | — | — |
+| `duties` | array of [`OrgBoardDutyOut`](#schema-orgboarddutyout) | Yes | — | — |
+| `touched` | [`OrgBoardTouchedOut`](#schema-orgboardtouchedout) | Yes | — | — |
+| `missing` | array of `string` | Yes | — | — |
+| `duty` | [`OrgBoardDutyOut`](#schema-orgboarddutyout) or `null` | Yes | — | — |
+
 <a id="schema-breachscopein"></a>
 #### `BreachScopeIn`
 
@@ -2846,6 +2986,7 @@ Rule 7(2)(b), all six items, drafted from the register.
 | `anchored_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `completed_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `reference` | `string` or `null` | Yes | — | — |
+| `reported_to` | `string` or `null` | Yes | — | — |
 | `extended_until` | `string` or `null` | Yes | format: `date-time` | — |
 | `extension_requested_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `clock` | [`BreachClockOut`](#schema-breachclockout) | Yes | — | — |
@@ -3005,6 +3146,30 @@ Rule 7(2)(b)(vi). Present whether or not anything was sent.
 | `input` | `object` | No | — | — |
 | `ctx` | `object` | No | — | — |
 
+<a id="schema-orgboarddutyout"></a>
+#### `OrgBoardDutyOut`
+
+A duty as the brief carries it: its clock, and nobody's name.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `duty` | `string` | Yes | — | — |
+| `label` | `string` | Yes | — | — |
+| `basis` | `string` | Yes | — | — |
+| `state` | `string` | Yes | — | — |
+| `due_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `anchored_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `completed_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `clock` | [`BreachClockOut`](#schema-breachclockout) | Yes | — | — |
+
+<a id="schema-orgboardtouchedout"></a>
+#### `OrgBoardTouchedOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `listed` | `integer` | Yes | — | — |
+| `notified` | `integer` | Yes | — | — |
+
 <a id="schema-breachevidenceout"></a>
 #### `BreachEvidenceOut`
 
@@ -3036,6 +3201,7 @@ Rule 7(2)(b)(vi). Present whether or not anything was sent.
 | `occurred_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `reference` | `string` or `null` | Yes | — | — |
 | `note` | `string` or `null` | Yes | — | — |
+| `reported_to` | `string` or `null` | Yes | — | — |
 | `due_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `requested_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `determination_uuid` | `string` or `null` | Yes | format: `uuid` | — |

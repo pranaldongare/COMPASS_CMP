@@ -280,25 +280,31 @@ only the platform's part. Only the DPO can see or use the register.
    If it may be a reportable cyber incident, press **Mark reportable to
    CERT-In**: the six hours run from the time you entered, and the page shows
    what is left.
-2. **Record the validation** as soon as it is made: is it a personal data
+2. **Tell the organisation's board now** - within thirty minutes of first
+   noticed, by internal policy; the duty's clock is already running. **Brief
+   for the organisation's board** on the incident's page drafts what to say,
+   names nobody, and prints. Tell the board through the organisation's own
+   channel, then **Record the report** on the duty: when, and to whom. The
+   platform never tells the board itself.
+3. **Record the validation** as soon as it is made: is it a personal data
    breach under s.2(u)? The first *yes* needs the time the organisation became
    aware, **records the breach** with a `BR-` reference - quote that one from
    now on - and creates the Board and principals duties with their clocks. *No*
    marks them not applicable and keeps the reasoning. Revise it as a new
    validation if it changes; nothing is edited, and a breach reference once
    issued stays.
-3. **Keep the assessment current** - each revision is a new row - with the
+4. **Keep the assessment current** - each revision is a new row - with the
    categories exposed and, per category, whether it was sealed and whether its
    key was exposed. None of that delays or removes a duty. Who it touched and
    the notice may be prepared while validation is pending; **Send** waits until
    the breach is recorded.
-4. **Draft the Board's documents** - **Documents for the Board** on the
+5. **Draft the Board's documents** - **Documents for the Board** on the
    breach's page - and check what they say is not yet recorded. **Submit
    through the regulator's own channel**, then **Record submission**
    on the duty with when it was made and the reference returned. The platform
    never submits. If the Board allows longer for the detailed report, record
    the **Extension**; its due time moves, the intimation's does not.
-5. **Close it** once validated and every duty is done or not applicable. The
+6. **Close it** once validated and every duty is done or not applicable. The
    page lists what is in the way. Reopen it with a reason if more is found.
 
 If a duty shows overdue, it is overdue: the due time was stored when the duty
