@@ -14,6 +14,8 @@
  */
 "use client";
 
+import * as React from "react";
+
 import { AppShell } from "@/components/layout/app-shell";
 import { RequireAge, RequireSection, SessionWarning } from "@/components/security";
 import { Skeleton } from "@/components/ui/primitives";
@@ -29,7 +31,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <RequireSection>
           {/* Third: an account with no date of birth is asked for one before
               anything else, bar withdrawing and making a request (S2-01). */}
-          <RequireAge>{children}</RequireAge>
+          <RequireAge>
+            {/* Pages read the query string (a named request, a view), and a
+                page reading `useSearchParams` needs a boundary above it. */}
+            <React.Suspense fallback={null}>{children}</React.Suspense>
+          </RequireAge>
         </RequireSection>
       </AppShell>
       {/* Outside the shell so it survives a page-level error boundary: a

@@ -235,14 +235,17 @@ async def list_all_notices(
     page: Annotated[PageRequest, Depends(notice_paging)],
     notice_status: Annotated[str | None, Query(alias="status")] = None,
     project: Annotated[UUID | None, Query()] = None,
+    languages: Annotated[str | None, Query()] = None,
 ) -> dict[str, Any]:
-    """Cross-project notice list.
+    """Cross-project notice list. `languages=unapproved`: text awaiting approval.
 
     The per-project route answers "what does this project have". The console's
     Notices section asks "what is outstanding anywhere", which cannot be
     assembled client-side without one request per project.
     """
-    reject_unknown_filters(request, {"status", "project"})
+    reject_unknown_filters(request, {"status", "project", "languages"})
+    if languages not in (None, "", "unapproved"):
+        raise ValidationFailed("Only languages=unapproved is supported", field="languages")
     async with connection() as conn:
         items, cursor, total = await repo.list_all(
             conn,
@@ -251,6 +254,7 @@ async def list_all_notices(
             user_id=principal.user_id,
             status=notice_status,
             project_uuid=str(project) if project else None,
+            unapproved_languages=languages == "unapproved",
         )
     return {"items": items, "next_cursor": cursor, "total": total}
 

@@ -29,7 +29,7 @@ describe("stepsFor", () => {
     expect(steps.filter((s) => s.state === "current")).toHaveLength(0);
   });
 
-  it("marks 'she meant withdrawal' when an erasure closed that way", () => {
+  it("marks 'the requester meant withdrawal' when an erasure closed that way", () => {
     const steps = stepsFor(
       makeRequestDetail({
         request_type: "erasure",
@@ -56,7 +56,7 @@ describe("stepsFor", () => {
     expect(steps.find((s) => s.state === "current")?.title).toBe("Is the triggering event evidenced?");
   });
 
-  it("renders the principal's view from her own, thinner shape", () => {
+  it("renders the principal's view from their own, thinner shape", () => {
     const steps = stepsFor(makeMyRequest({ status: "in_progress" }));
     expect(steps.find((s) => s.state === "current")?.title).toBe("Holders derived, DPO confirms");
   });
@@ -65,5 +65,22 @@ describe("stepsFor", () => {
     const steps = stepsFor(makeRequestDetail({ request_type: "grievance", about_dpo: true, status: "in_progress", classified_at: "2026-09-02T10:00:00Z" }));
     const about = steps.find((s) => s.title === "Is the complaint about the DPO?");
     expect(about?.exit?.taken).toBe(true);
+  });
+
+  it("says 'the requester' to staff and 'you' to the person, never 'she'", () => {
+    // The portal shows this path to the person whose request it is; it used
+    // to narrate their own request back to them in the third person.
+    const all = (voice: "staff" | "self") =>
+      (["access", "erasure", "grievance"] as const)
+        .flatMap((request_type) =>
+          stepsFor(makeRequestDetail({ request_type, channel: "nominee" }), voice),
+        )
+        .flatMap((s) => [s.title, s.detail, s.exit?.title ?? "", s.exit?.detail ?? ""])
+        .join(" ");
+    for (const voice of ["staff", "self"] as const) {
+      expect(all(voice)).not.toMatch(/\b(she|her|hers)\b/i);
+    }
+    expect(all("self")).toMatch(/\byou\b/i);
+    expect(all("staff")).toMatch(/the requester/);
   });
 });

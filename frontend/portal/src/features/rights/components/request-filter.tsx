@@ -22,7 +22,8 @@ import type { MyRequest } from "@/types";
 /** Below this many requests the list is short enough to read whole. */
 export const FILTER_FROM = 6;
 
-export type RequestView = "open" | "closed" | "all";
+/** `ready`: a response waiting to be downloaded - where "responses are ready" links. */
+export type RequestView = "open" | "closed" | "all" | "ready";
 
 const TYPE_WORDS: Record<MyRequest["request_type"], string> = {
   access: "access s.11",
@@ -48,20 +49,24 @@ function matches(request: MyRequest, query: string): boolean {
     .every((word) => haystack.includes(word));
 }
 
-export function useRequestFilter(requests: MyRequest[]) {
-  const [view, setView] = React.useState<RequestView>("all");
+export function useRequestFilter(requests: MyRequest[], initialView: RequestView = "all") {
+  const [view, setView] = React.useState<RequestView>(initialView);
   const [query, setQuery] = React.useState("");
 
   const counts = {
     open: requests.filter((r) => !r.closed_at).length,
     closed: requests.filter((r) => r.closed_at).length,
     all: requests.length,
+    ready: requests.filter((r) => r.download_available).length,
   };
-  const shown = requests.filter(
-    (r) =>
-      (view === "all" || (view === "open" ? !r.closed_at : Boolean(r.closed_at))) &&
-      matches(r, query),
-  );
+  const inView = (r: MyRequest) =>
+    view === "all" ||
+    (view === "ready"
+      ? r.download_available
+      : view === "open"
+        ? !r.closed_at
+        : Boolean(r.closed_at));
+  const shown = requests.filter((r) => inView(r) && matches(r, query));
 
   return {
     view,
@@ -83,6 +88,7 @@ const VIEWS: { value: RequestView; label: string }[] = [
   { value: "all", label: "All" },
   { value: "open", label: "Open" },
   { value: "closed", label: "Closed" },
+  { value: "ready", label: "Ready to download" },
 ];
 
 export function RequestFilter({ filter }: { filter: ReturnType<typeof useRequestFilter> }) {
@@ -96,7 +102,10 @@ export function RequestFilter({ filter }: { filter: ReturnType<typeof useRequest
           come from the browser; the pills are only their clothes. */}
       <fieldset className="inline-flex rounded-xl border border-border bg-bg-inset/70 p-1">
         <legend className="sr-only">Show requests</legend>
-        {VIEWS.map((v) => {
+        {VIEWS.filter(
+          // Offered only when there is something to download, or it is chosen.
+          (v) => v.value !== "ready" || filter.counts.ready > 0 || filter.view === "ready",
+        ).map((v) => {
           const checked = filter.view === v.value;
           return (
             <label

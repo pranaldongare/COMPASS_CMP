@@ -37,7 +37,7 @@ import { OUTCOME_COPY, clockText, locationText } from "@/features/breach/compone
 import { formatDateTime } from "@/lib/format";
 import type { BreachDuty, BreachIntimation, BreachReport } from "@/types";
 
-const CHANNEL: Record<string, string> = { portal: "Her account", email: "Email", sms: "SMS" };
+const CHANNEL: Record<string, string> = { portal: "Their account", email: "Email", sms: "SMS" };
 
 function Missing({ items }: { items: string[] }) {
   if (items.length === 0) return null;

@@ -26,16 +26,13 @@ export function AttentionList({ rows }: { rows: AttentionRow[] }) {
   return (
     <Card>
       <CardHeader className="flex items-center justify-between">
-        <CardTitle>Needs you today</CardTitle>
-        {rows.length > 0 && (
-          <span className="text-xs text-text-muted">
-            {rows.length} {rows.length === 1 ? "thing" : "things"}
-          </span>
-        )}
+        {/* Not "Needs you today - 5 things": the rows are kinds of work, each
+            with its own count, and not every one is due today (UX review). */}
+        <CardTitle>Needs attention</CardTitle>
       </CardHeader>
       {rows.length === 0 ? (
         <CardBody>
-          <p className="text-sm text-text-muted">Nothing needs you today. The queues below are clear or waiting on somebody else.</p>
+          <p className="text-sm text-text-muted">Nothing needs your attention. The queues below are clear or waiting on somebody else.</p>
         </CardBody>
       ) : (
         <ul className="divide-y divide-border" data-testid="attention">

@@ -80,7 +80,7 @@ case(
                       "Empty queues are listed together in one grey line that starts 'Clear:'. People's names in queue rows are readable.")},
         {"action": "Scroll further to the cards 'Projects by stage' and 'Consent position'.",
          "expected": ("'Projects by stage' shows bars labelled 'In draft', 'Pending approval' and 'Approved' with numbers; "
-                      "'Consent position' shows one bar split into 'Still standing' and 'Withdrawn' with the caption "
+                      "'Consent position' shows one bar split into 'Agreed to all purposes', 'Agreed to some', 'Declined' and 'Withdrawn' with the caption "
                       "'Every record counted once, at its current state.'")},
         {"action": "Look at the 'Recent activity' card at the bottom.",
          "expected": ("Up to 8 entries, newest first, each with an event name, a time, who did it (name and role badge) and the record it concerns. "

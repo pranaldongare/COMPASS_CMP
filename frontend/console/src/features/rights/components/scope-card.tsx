@@ -58,8 +58,8 @@ function messageOf(err: unknown, fallback: string): string {
 }
 
 const DECISION_COPY: Record<RightsScopeDecision, string> = {
-  erase: "Erase - the asset holds only her",
-  redact: "Redact - remove her, keep the others",
+  erase: "Erase - the asset holds only the requester",
+  redact: "Redact - remove the requester, keep the others",
   retain: "Retain - a floor binds, erased when it passes",
   quarantine: "Quarantine - removal cannot be assured; the DPO decides",
 };
@@ -114,7 +114,7 @@ export function ScopeCard({ request: r }: { request: RightsRequestDetail }) {
           <CardTitle>5–6 · Scope determined; inside the one-year floor?</CardTitle>
           <p className="mt-1 text-xs text-text-muted">
             What can go, what must stay, and the legal basis for each. Rule 6 and Rule 8(3) bind
-            even against her own request.
+            even against the requester&apos;s own request.
           </p>
           {r.consent_uuid && <ConfinedNote project={r.consent_project} />}
         </div>
@@ -126,7 +126,7 @@ export function ScopeCard({ request: r }: { request: RightsRequestDetail }) {
             onClick={async () => {
               try {
                 const items = await derive.mutateAsync();
-                toast.success("Scope derived", `${items.length} appearance${items.length === 1 ? "" : "s"} of her in collected assets.`);
+                toast.success("Scope derived", `${items.length} appearance${items.length === 1 ? "" : "s"} of the requester in collected assets.`);
               } catch (err) {
                 toast.error("Not derived", messageOf(err, "The server refused."));
               }
@@ -147,7 +147,7 @@ export function ScopeCard({ request: r }: { request: RightsRequestDetail }) {
         </Alert>
         {r.items.length === 0 ? (
           <p className="text-sm text-text-muted">
-            {canWork ? "No scope yet. Derive it from the records she appears in." : "Nothing in scope."}
+            {canWork ? "No scope yet. Derive it from the records the requester appears in." : "Nothing in scope."}
           </p>
         ) : (
           <ul className="divide-y divide-border">
@@ -201,7 +201,7 @@ function ItemRow({ request: r, item, canWork }: { request: RightsRequestDetail; 
     try {
       const result = await apply.mutateAsync(item.item_uuid);
       toast.success(
-        result.executed_at ? `Her row is now ${result.disposition}` : "Quarantined",
+        result.executed_at ? `The requester's row is now ${result.disposition}` : "Quarantined",
         result.executed_at
           ? "Every store holding it is confirmed."
           : "It is out of use now; it is erased when every store holding it is confirmed.",
@@ -253,7 +253,7 @@ function ItemRow({ request: r, item, canWork }: { request: RightsRequestDetail; 
                 holds {item.other_subjects} other {item.other_subjects === 1 ? "person" : "people"}
               </Badge>
             ) : (
-              <Badge tone="neutral" dot={false}>only her</Badge>
+              <Badge tone="neutral" dot={false}>only the requester</Badge>
             )}
             {applied && (carriedOut || item.decision === "quarantine") && <Badge tone="success">{item.disposition}</Badge>}
             {inProgress && !hold && <Badge tone="warning">quarantined - being {item.decision === "redact" ? "redacted" : "erased"}</Badge>}

@@ -137,7 +137,7 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "list",
         items: [
-          "[[Needs you today]] lists only work you can act on, most urgent first - for example [[Requests awaiting verification]] or [[Projects pending approval]]. Each row opens the list that explains it, already filtered.",
+          "[[Needs attention]] lists only work you can act on, most urgent first - for example [[Requests awaiting verification]] or [[Projects pending approval]]. Each row opens the list that explains it, already filtered.",
           "Below it are your work queues; an empty queue is listed as clear rather than hidden.",
           "The DPO also sees [[Projects by stage]] and the [[Consent position]] across the platform.",
           "[[Recent activity]] shows the latest events on your records.",
@@ -312,7 +312,7 @@ export const SECTIONS: HelpSection[] = [
         kind: "steps",
         title: "Review and approve (DPO)",
         items: [
-          "Open the project from [[Needs you today]] › [[Projects pending approval]].",
+          "Open the project from [[Needs attention]] › [[Projects pending approval]].",
           "[[What happens next]] lists what still blocks approval, with links: activate each purpose the notice carries, and legally approve each language.",
           "On the notice, [[Edit this rendition]] to correct the wording, [[Add a rendition]] for another language, then [[Approve]] each language. The approved text is hashed; consent is matched against it.",
           "Back on the project click [[Approved]], add an optional note and [[Confirm]]. The notice is published and frozen.",
@@ -441,7 +441,7 @@ export const SECTIONS: HelpSection[] = [
         title: "The path",
         items: [
           "Check identity: a request made signed in, or verified by code, is already verified.",
-          "Classify it in [[A valid … request?]] and click [[Confirm classification]]. For an erasure, confirm [[She means erasure]] - erasure is not withdrawal.",
+          "Classify it in [[A valid … request?]] and click [[Confirm classification]]. For an erasure, confirm [[They mean erasure]] - erasure is not withdrawal.",
           "Click [[In progress]].",
           "Holders: [[Derive from the records]], choose each holder's [[Respondent]] and [[Confirm]], then [[Issue tickets]]. Each ticket has a thread; [[Thread]] opens it.",
           "Erasure scope: [[Derive from asset_consent]]. For each asset choose [[Erase]], [[Redact]], [[Retain]] (a retention floor, with its date) or [[Quarantine]], give the basis and [[Record the decision]], then [[Apply]].",

@@ -19,16 +19,44 @@ import { Segment } from "@/components/ui/charts";
 export function consentComposition(
   counts: Record<string, number>,
 ): { segments: Segment[]; consumed: string[] } | null {
-  // The register reports a total and the withdrawals within it.
-  if ("total_consents" in counts && "withdrawals" in counts) {
-    const withdrawn = counts.withdrawals ?? 0;
-    const standing = Math.max(0, (counts.total_consents ?? 0) - withdrawn);
+  // Four states, counted apart by the server: every current record is in
+  // exactly one. A total minus withdrawals used to be drawn as "still
+  // standing", which counted declined and partial records as standing consent.
+  const states = [
+    "consents_full",
+    "consents_partial",
+    "consents_declined",
+    "consents_withdrawn",
+  ];
+  if (states.every((key) => key in counts)) {
     return {
       segments: [
-        { key: "standing", label: "Still standing", value: standing, color: "var(--viz-1)" },
-        { key: "withdrawn", label: "Withdrawn", value: withdrawn, color: "var(--viz-3)" },
+        {
+          key: "full",
+          label: "Agreed to all purposes",
+          value: counts.consents_full ?? 0,
+          color: "var(--viz-1)",
+        },
+        {
+          key: "partial",
+          label: "Agreed to some",
+          value: counts.consents_partial ?? 0,
+          color: "var(--viz-2)",
+        },
+        {
+          key: "declined",
+          label: "Declined",
+          value: counts.consents_declined ?? 0,
+          color: "var(--viz-neutral)",
+        },
+        {
+          key: "withdrawn",
+          label: "Withdrawn",
+          value: counts.consents_withdrawn ?? 0,
+          color: "var(--viz-3)",
+        },
       ],
-      consumed: ["total_consents", "withdrawals"],
+      consumed: [...states, "total_consents", "withdrawals"],
     };
   }
 

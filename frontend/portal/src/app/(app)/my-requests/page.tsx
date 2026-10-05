@@ -17,6 +17,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
@@ -37,21 +38,30 @@ import { relate } from "@/features/rights/relate";
 
 export default function MyRequestsPage() {
   const requests = useMyRequests();
+  // A link may name a request (`?request=`) or the responses ready to download
+  // (`?view=ready`) - "our response to RR-… is ready" used to open the top of
+  // this page at a different request with nothing expanded (UX review). Read
+  // once, as where the page starts; after that the person is in charge.
+  const params = useSearchParams();
+  const named = params.get("request");
   const [asking, setAsking] = React.useState(false);
-  const [open, setOpen] = React.useState<string | null>(null);
-  const [flash, setFlash] = React.useState<string | null>(null);
+  const [open, setOpen] = React.useState<string | null>(named);
+  const [flash, setFlash] = React.useState<string | null>(named);
   const { byUuid, followers } = relate(requests.data ?? []);
-  const filter = useRequestFilter(requests.data ?? []);
-  const filtering = (requests.data?.length ?? 0) >= FILTER_FROM;
+  const filter = useRequestFilter(
+    requests.data ?? [],
+    params.get("view") === "ready" ? "ready" : "all",
+  );
+  const filtering = (requests.data?.length ?? 0) >= FILTER_FROM || filter.view !== "all";
   // A card to bring into view once it is rendered: after a jump that had to
-  // widen the filter, the card does not exist until the next commit. The jump
-  // itself always renders (it sets the flash), and this runs after it.
-  const scrollTo = React.useRef<string | null>(null);
+  // widen the filter, or on arrival before the list has loaded, the card does
+  // not exist yet. Kept until it does.
+  const scrollTo = React.useRef<string | null>(named);
   React.useEffect(() => {
     if (!scrollTo.current) return;
-    document
-      .getElementById(cardId(scrollTo.current))
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const card = document.getElementById(cardId(scrollTo.current));
+    if (!card) return;
+    card.scrollIntoView({ behavior: "smooth", block: "start" });
     scrollTo.current = null;
   });
 

@@ -40,8 +40,18 @@ function staff(r: AnyRequest): r is RightsRequest {
   return "holder_count" in r;
 }
 
+/**
+ * Who the path is being read by. The console reads it about somebody (`staff`:
+ * "the requester"); the portal shows the same path to the person whose request
+ * it is (`self`: "you"). It used to say "she" to both - to staff, a guess; to
+ * the person, a stranger narrating their own request (UX review 2026-10-05).
+ */
+export type Voice = "staff" | "self";
+
 /** The steps for one request, states already decided. */
-export function stepsFor(r: AnyRequest): Step[] {
+export function stepsFor(r: AnyRequest, voice: Voice = "staff"): Step[] {
+  const you = voice === "self";
+  const whose = you ? "your" : "the requester's";
   const closed = r.status === "closed";
   const started = r.status !== "received";
   const collated = r.status === "collating" || closed;
@@ -63,7 +73,7 @@ export function stepsFor(r: AnyRequest): Step[] {
 
   // Everything begins the same way.
   push({ title: "Request received", detail: "Dashboard · notice link · email to the DPO - all three make the same record", done: true });
-  push({ title: "Acknowledge", detail: "Reference number, expected date, and what she will receive", done: has(r.acknowledged_at) });
+  push({ title: "Acknowledge", detail: `Reference number, expected date, and what ${you ? "you" : "the requester"} will receive`, done: has(r.acknowledged_at) });
   push({
     title: "Identity verified?",
     detail: "session · code to a stored channel · manual, with reason recorded",
@@ -71,7 +81,7 @@ export function stepsFor(r: AnyRequest): Step[] {
     done: verified,
     exit: {
       title: "No match, or verification not satisfied",
-      detail: "Neutral message - nothing is confirmed either way. Request closed and audited. She may try again.",
+      detail: `Neutral message - nothing is confirmed either way. Request closed and audited. ${you ? "You" : "The requester"} may try again.`,
       taken: r.outcome === "not_verified",
     },
   });
@@ -84,7 +94,7 @@ export function stepsFor(r: AnyRequest): Step[] {
       done: evidenced,
       exit: {
         title: "The event is not evidenced",
-        detail: "Refused, with the reason. She is not contacted - she may be exactly as incapacitated as claimed.",
+        detail: `Refused, with the reason. ${you ? "The person you act for" : "The data principal"} is not contacted - they may be exactly as incapacitated as claimed.`,
         taken: r.outcome === "refused" && !evidenced,
       },
     });
@@ -130,10 +140,10 @@ export function stepsFor(r: AnyRequest): Step[] {
       push({ title: "Collate, review, redact", detail: "Third-party data removed. The DPO signs off - nothing releases automatically", done: responded });
       push({
         title: "Release and close",
-        detail: "Authenticated, time-limited download from her dashboard - not an email",
+        detail: `Authenticated, time-limited download from ${whose} account - not an email`,
         done: responded,
         exit: {
-          title: "She disputes the response",
+          title: you ? "You dispute the response" : "The requester disputes the response",
           detail: "Grievance under s.13, then the Data Protection Board. The Board link is already in every notice.",
           taken: false,
         },
@@ -143,11 +153,11 @@ export function stepsFor(r: AnyRequest): Step[] {
     case "erasure":
       push({
         title: "Withdrawal, or erasure?",
-        detail: "Different rights, different outcomes - the DPO confirms which she means",
+        detail: `Different rights, different outcomes - the DPO confirms which ${you ? "you mean" : "the requester means"}`,
         decision: true,
         done: intent,
         exit: {
-          title: "She meant withdrawal",
+          title: you ? "You meant withdrawal" : "The requester meant withdrawal",
           detail: "Processing stops going forward. Data already collected is not reached by it. Handled under s.6(4), not s.12(3).",
           taken: r.outcome === "reclassified_withdrawal",
         },
@@ -155,7 +165,7 @@ export function stepsFor(r: AnyRequest): Step[] {
       push({ title: "Scope determined", detail: "What can go, what must stay, and the legal basis for each", done: items > 0 || collated });
       push({
         title: "Inside the one-year floor?",
-        detail: "Rule 6 and Rule 8(3) bind even against her own request",
+        detail: `Rule 6 and Rule 8(3) bind even against ${whose} own request`,
         decision: true,
         done: items > 0 && undecided === 0,
         exit: {
@@ -184,7 +194,7 @@ export function stepsFor(r: AnyRequest): Step[] {
       push({ title: "Linked to an existing request?", detail: has(r.linked_reference) ? `Linked to ${r.linked_reference} - what was asked, what was returned and its trail are on this page` : "If so, the original request, its response and its trail are shown here", decision: true, done: classified });
       push({
         title: "Is the complaint about the DPO?",
-        detail: "The DPO owns grievances, including ones about her own decisions",
+        detail: "The DPO owns grievances, including ones about the DPO's own decisions",
         decision: true,
         done: classified,
         exit: {
@@ -205,14 +215,14 @@ export function stepsFor(r: AnyRequest): Step[] {
           taken: r.outcome === "not_upheld",
         },
       });
-      push({ title: "Remedy applied", detail: "The original request is re-run or corrected, at no cost to her", done: r.outcome === "upheld" });
+      push({ title: "Remedy applied", detail: `The original request is re-run or corrected, at no cost to ${you ? "you" : "the requester"}`, done: r.outcome === "upheld" });
       push({
         title: "Respond and close",
-        detail: "What was found, what was done, and her route onward to the Board",
+        detail: `What was found, what was done, and ${whose} route onward to the Board`,
         done: closed && has(r.responded_at),
         exit: {
-          title: "She remains unsatisfied",
-          detail: "The Data Protection Board. The link is already in every notice she was ever served.",
+          title: you ? "You remain unsatisfied" : "The requester remains unsatisfied",
+          detail: `The Data Protection Board. The link is already in every notice ${you ? "you were" : "the requester was"} ever served.`,
           taken: false,
         },
       });
@@ -235,8 +245,8 @@ export function stepsFor(r: AnyRequest): Step[] {
   });
 }
 
-export function Path({ request }: { request: AnyRequest }) {
-  const steps = stepsFor(request);
+export function Path({ request, voice = "staff" }: { request: AnyRequest; voice?: Voice }) {
+  const steps = stepsFor(request, voice);
   return (
     <ol className="space-y-2" aria-label="The path">
       {steps.map((step) => (

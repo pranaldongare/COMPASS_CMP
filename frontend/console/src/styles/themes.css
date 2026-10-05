@@ -24,7 +24,10 @@
 
   --text: oklch(22% 0.015 258);
   --text-muted: oklch(47% 0.013 258);
-  --text-subtle: oklch(60% 0.011 258);
+  /* 4.5:1 or better on every light background, the inset included (4.65:1).
+     It was 60%, about 3.9:1 on a card and 3.3:1 on an inset - too faint for
+     the small labels and dates it is used for (UX review 2026-10-05). */
+  --text-subtle: oklch(52% 0.011 258);
   --text-inverse: oklch(99% 0.002 255);
 
   --border: oklch(91% 0.006 258);
@@ -96,7 +99,8 @@
 
   --text: oklch(96% 0.004 258);
   --text-muted: oklch(73% 0.011 258);
-  --text-subtle: oklch(60% 0.012 258);
+  /* 4.5:1 or better on every dark background, hover and raised included. */
+  --text-subtle: oklch(63% 0.012 258);
   --text-inverse: oklch(17% 0.011 262);
 
   --border: oklch(30% 0.015 262);

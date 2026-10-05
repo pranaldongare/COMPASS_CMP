@@ -452,7 +452,7 @@ function HolderRow({ request: r, holder: h, canWork }: { request: RightsRequestD
       <Dialog open={withdrawing} onOpenChange={(next) => !next && setWithdrawing(false)}>
         <DialogContent
           title={`${h.label} · withdraw this ticket`}
-          description="For a ticket issued in error, or a party that turns out to hold nothing of hers. Not a return and not a gap: the response will not name them as outstanding. They are told."
+          description="For a ticket issued in error, or a party that turns out to hold nothing of the requester's. Not a return and not a gap: the response will not name them as outstanding. They are told."
         >
           <WithdrawForm request={r} holder={h} onDone={() => setWithdrawing(false)} />
         </DialogContent>

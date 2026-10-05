@@ -80,7 +80,7 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
           <p className="mt-1 text-xs text-text-muted">
             {r.outcome && OUTCOME_COPY[r.outcome].label}
             {r.responded_at && ` · ${formatDateTime(r.responded_at)}`}
-            {r.download_expires_at && ` · downloadable by her until ${formatDate(r.download_expires_at)}`}
+            {r.download_expires_at && ` · downloadable by the requester until ${formatDate(r.download_expires_at)}`}
           </p>
         </CardHeader>
         <CardBody className="space-y-3">
@@ -148,7 +148,7 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
           </Field>
           {upheld && (
             <>
-              <Field label="Remedy" hint="What is done about it, at no cost to her." required>
+              <Field label="Remedy" hint="What is done about it, at no cost to the requester." required>
                 {(p) => <Textarea {...p} rows={2} value={remedy} onChange={(e) => setRemedy(e.target.value)} />}
               </Field>
               {r.linked_reference && (
@@ -193,7 +193,7 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
         <CardTitle>{r.request_type === "erasure" ? "10 · Respond and close" : "9–10 · Collate, review, release"}</CardTitle>
         <p className="mt-1 text-xs text-text-muted">
           Third-party data removed. The DPO signs off - nothing releases automatically.
-          {r.request_type === "access" && " An access response is a file she downloads from her own account."}
+          {r.request_type === "access" && " An access response is a file the requester downloads from their own account."}
         </p>
       </CardHeader>
       <CardBody className="space-y-3">
@@ -221,7 +221,7 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
           hint={
             r.request_type === "erasure"
               ? "What was decided for each item, what has been carried out, and why. Say only what was done: the record lists each item as it stands."
-              : "What she is being given, and what could not be provided."
+              : "What the requester is being given, and what could not be provided."
           }
           required
         >
@@ -229,7 +229,7 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
         </Field>
         <Field
           label="Files released with the response"
-          hint="Optional. An extract a holder returned, a corrected document, a letter. PDF, image, CSV or text, up to 25 MB each. She downloads them from her account on the same window as the record."
+          hint="Optional. An extract a holder returned, a corrected document, a letter. PDF, image, CSV or text, up to 25 MB each. The requester downloads them from their account, for as long as the record is available."
         >
           {(p) => (
             <div className="space-y-2">
@@ -270,7 +270,7 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
             try {
               await respond.mutateAsync({ outcome, response_text: text, files });
               setFiles([]);
-              toast.success("Released and closed", files.length ? `She has been told; ${files.length} file${files.length === 1 ? "" : "s"} released with the response.` : "She has been told the response is ready.");
+              toast.success("Released and closed", files.length ? `The requester has been told; ${files.length} file${files.length === 1 ? "" : "s"} released with the response.` : "The requester has been told the response is ready.");
             } catch (err) {
               toast.error("Not released", messageOf(err, "The server refused."));
             }

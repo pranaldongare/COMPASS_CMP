@@ -128,7 +128,7 @@ export function VerificationCard({ request: r }: { request: RightsRequestDetail 
                   >
                     Send a code
                   </Button>
-                  <Field label="Code she read back">
+                  <Field label="Code the requester read back">
                     {(p) => (
                       <Input
                         {...p}
@@ -284,17 +284,17 @@ export function ClassificationCard({ request: r }: { request: RightsRequestDetai
 
         {r.request_type === "erasure" && beforeCollation && !r.intent_confirmed_at && (
           <div className="rounded-md border border-warning-border bg-warning-subtle p-3">
-            <p className="text-sm font-medium text-warning-text">Does she mean erasure, or withdrawal?</p>
+            <p className="text-sm font-medium text-warning-text">Does the requester mean erasure, or withdrawal?</p>
             <p className="mt-0.5 text-xs text-text-muted">
-              Withdrawal stops future processing and is hers to do from her consent record.
+              Withdrawal stops future processing, and the requester can do it from their consent record.
               Erasure removes data already collected. Confirm which before anything is deleted.
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               <Button variant="primary" size="sm" loading={intent.isPending} onClick={() => run(() => intent.mutateAsync(), "Erasure confirmed")}>
-                She means erasure
+                They mean erasure
               </Button>
               <Button variant="secondary" size="sm" loading={withdrawal.isPending} onClick={() => run(() => withdrawal.mutateAsync(note || null), "Handled as withdrawal")}>
-                She meant withdrawal
+                They meant withdrawal
               </Button>
             </div>
           </div>
@@ -360,7 +360,7 @@ export function ClassificationCard({ request: r }: { request: RightsRequestDetai
               !isAdmin && (
                 <div className="mt-1">
                   <p className="text-xs text-text-muted">
-                    The DPO owns grievances, including ones about her own decisions - and that is a
+                    The DPO owns grievances, including ones about the DPO&apos;s own decisions - and that is a
                     real conflict. Recuse if this concerns your handling.
                   </p>
                   <Button variant="subtle" size="sm" className="mt-2" loading={escalate.isPending} onClick={() => run(() => escalate.mutateAsync(), "Escalated to an independent reviewer")}>

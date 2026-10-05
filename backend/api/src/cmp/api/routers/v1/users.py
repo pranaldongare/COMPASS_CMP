@@ -157,11 +157,19 @@ async def list_users(
     user_status: Annotated[str | None, Query(alias="status")] = None,
     person_type: Annotated[str | None, Query()] = None,
     q: Annotated[str | None, Query(max_length=100)] = None,
+    person: Annotated[UUID | None, Query()] = None,
 ) -> dict[str, Any]:
-    reject_unknown_filters(request, {"role", "status", "person_type", "q"})
+    """`person` is one account by uuid: the destination of a link that names someone."""
+    reject_unknown_filters(request, {"role", "status", "person_type", "q", "person"})
     async with connection() as conn:
         items, cursor, total = await repo.list_users(
-            conn, page, role=role, status=user_status, person_type=person_type, q=q
+            conn,
+            page,
+            role=role,
+            status=user_status,
+            person_type=person_type,
+            q=q,
+            person=str(person) if person else None,
         )
     return {"items": items, "next_cursor": cursor, "total": total}
 

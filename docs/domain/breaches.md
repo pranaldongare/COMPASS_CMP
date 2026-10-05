@@ -246,7 +246,7 @@ the same way. Who files with CERT-In - the DPO or corporate security - is not
 yet decided; today only the DPO can record it.
 
 **The dashboard.** The DPO's dashboard lists every open breach with each duty's
-state and time remaining or elapsed, and its **Needs you today** counts
+state and time remaining or elapsed, and its **Needs attention** counts
 **Breach duties overdue** (critical) and **Breach duties outstanding**. No other
 role's dashboard carries any of it.
 

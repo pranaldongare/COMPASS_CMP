@@ -662,9 +662,13 @@ async def list_requests(
     overdue: Annotated[bool, Query()] = False,
     q: Annotated[str | None, Query(max_length=120)] = None,
     unread: Annotated[bool, Query()] = False,
+    due_soon: Annotated[bool, Query()] = False,
 ) -> dict[str, Any]:
-    """The register. Soonest due is the sort that matters; newest first is the default."""
-    reject_unknown_filters(request, ("type", "status", "overdue", "q", "unread"))
+    """The register. Soonest due is the sort that matters; newest first is the default.
+
+    `due_soon` is open and due within seven days - the window the dashboard counts.
+    """
+    reject_unknown_filters(request, ("type", "status", "overdue", "q", "unread", "due_soon"))
     async with connection() as conn:
         items, cursor, total = await repo.list_requests(
             conn,
@@ -676,6 +680,7 @@ async def list_requests(
             overdue=overdue,
             q=q,
             unread=unread,
+            due_soon=due_soon,
         )
     return {"items": [_with_clock(r) for r in items], "next_cursor": cursor, "total": total}
 

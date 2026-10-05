@@ -454,8 +454,8 @@ function Disclosures() {
         </CardBody>
       ) : items.length === 0 ? (
         <EmptyState
-          title="Not shared with anyone"
-          description="No export containing your record has been generated."
+          title="No sharing recorded here"
+          description="This lists every file of your details this platform has sent to a processor. None has been sent."
         />
       ) : (
         <ul className="divide-y divide-border">

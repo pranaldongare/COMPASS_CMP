@@ -83,10 +83,10 @@ describe("My consents", () => {
     );
     const { user } = page();
     expect(await screen.findByText(/could not load who your data has been shared with/i)).toBeInTheDocument();
-    expect(screen.queryByText("Not shared with anyone")).not.toBeInTheDocument();
+    expect(screen.queryByText("No sharing recorded here")).not.toBeInTheDocument();
 
     // Asked again, and answered: only now may it say nobody.
     await user.click(screen.getByRole("button", { name: /try again/i }));
-    expect(await screen.findByText("Not shared with anyone")).toBeInTheDocument();
+    expect(await screen.findByText("No sharing recorded here")).toBeInTheDocument();
   });
 });

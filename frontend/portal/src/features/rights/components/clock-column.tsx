@@ -18,9 +18,12 @@ import { AlertTriangle, CheckCircle2, Circle, Clock3 } from "lucide-react";
 import { cn, formatDate } from "@/lib/format";
 import type { Clock } from "@/types";
 
+/** `self` in the portal, read by the person whose request it is; `staff` in the console. */
+type Voice = "staff" | "self";
+
 const DETAIL: Record<Clock["checkpoints"][number]["key"], string> = {
   received: "D0. The clock starts here, whatever happens next.",
-  acknowledge: "D0 + 2. Reference number and the date she will hear by.",
+  acknowledge: "D0 + 2. Reference number and the date the requester will hear by.",
   tickets: "D0 + 5. Every holder has a ticket with a named responder.",
   halfway: "Halfway. Tickets fall due; anything missing is escalated once.",
   collate: "D − 5. Stop collecting, start collating.",
@@ -31,11 +34,17 @@ export function ClockColumn({
   clock,
   closed,
   compact = false,
+  voice = "staff",
 }: {
   clock: Clock;
   closed: boolean;
   compact?: boolean;
+  voice?: Voice;
 }) {
+  const detail = (key: keyof typeof DETAIL) =>
+    voice === "self" && key === "acknowledge"
+      ? "D0 + 2. Reference number and the date you will hear by."
+      : DETAIL[key];
   return (
     <div className="space-y-3">
       <Headline clock={clock} closed={closed} />
@@ -68,7 +77,7 @@ export function ClockColumn({
                   <span className="font-medium">{point.label}</span>
                   <span className="tabular text-xs text-text-subtle">{formatDate(point.at)}</span>
                 </p>
-                {!compact && <p className="mt-0.5 text-xs text-text-muted">{DETAIL[point.key]}</p>}
+                {!compact && <p className="mt-0.5 text-xs text-text-muted">{detail(point.key)}</p>}
               </div>
             </li>
           );

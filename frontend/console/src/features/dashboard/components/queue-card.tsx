@@ -29,27 +29,35 @@ export function QueueCard({
   items,
   slug,
   href: listHref,
+  capped = false,
 }: {
   name: string;
   items: Array<Record<string, unknown>>;
   slug?: string;
-  /** Where "all N" goes when the queue is longer than what is shown. */
+  /** Where "see all" goes when the queue is longer than what is shown. */
   href?: string | null;
+  /** The server stopped at its row limit, so `items.length` is a floor. */
+  capped?: boolean;
 }) {
   const shown = items.slice(0, SHOWN);
   const rest = items.length - shown.length;
+  // "All 25" claimed a complete list the query had cut short (UX review).
+  const count = capped ? `${items.length}+` : String(items.length);
   return (
     <Card id={slug ? `q-${slug}` : undefined} className="scroll-mt-20">
       <CardHeader className="flex items-center justify-between gap-3">
         <CardTitle>{name}</CardTitle>
         <span className="flex items-center gap-3">
-          {rest > 0 && listHref && (
-            <Link href={listHref} className="text-xs text-accent-text underline-offset-4 hover:underline">
-              All {items.length}
+          {(rest > 0 || capped) && listHref && (
+            <Link
+              href={listHref}
+              className="text-xs text-accent-text underline-offset-4 hover:underline"
+            >
+              See all
             </Link>
           )}
-          <span className="rounded-full bg-bg-inset px-2.5 py-0.5 text-xs font-medium tabular text-text-muted">
-            {items.length}
+          <span className="tabular rounded-full bg-bg-inset px-2.5 py-0.5 text-xs font-medium text-text-muted">
+            {count}
           </span>
         </span>
       </CardHeader>
@@ -68,25 +76,32 @@ export function QueueCard({
               (item.project_uuid as string) ??
               (item.collection_uuid as string) ??
               null;
-            const href = item.ticket
-              ? `/tickets?ticket=${item.holder_uuid as string}`
-              : item.request_uuid
-              ? `/requests/${item.request_uuid}`
-              : item.project_uuid
-                ? `/projects/${item.project_uuid}`
-                : item.collection_uuid
-                  ? `/collections/${item.collection_uuid}`
-                  : null;
+            // A row the server gave a destination opens it: a collection or a
+            // site is not its project. Otherwise the order below decides.
+            const href =
+              typeof item.href === "string"
+                ? item.href
+                : item.ticket
+                  ? `/tickets?ticket=${item.holder_uuid as string}`
+                  : item.request_uuid
+                    ? `/requests/${item.request_uuid}`
+                    : item.project_uuid
+                      ? `/projects/${item.project_uuid}`
+                      : item.collection_uuid
+                        ? `/collections/${item.collection_uuid}`
+                        : null;
 
             // A rights request reads as its reference and the person; the
             // clock is what makes it urgent, so the due date joins the title.
             const title = item.reference
               ? `${String(item.reference)} · ${String(item.subject_name ?? "")}`
-              : ((item.project_name as string) ??
-                (item.source_collection_ref as string) ??
-                (item.full_name as string) ??
-                (item.name as string) ??
-                "Item");
+              : typeof item.site_label === "string"
+                ? `${item.site_label} · ${String(item.project_name ?? "")}`
+                : ((item.project_name as string) ??
+                  (item.source_collection_ref as string) ??
+                  (item.full_name as string) ??
+                  (item.name as string) ??
+                  "Item");
 
             const Row = (
               <div className="group flex items-center justify-between gap-4 px-5 py-3 transition-colors hover:bg-surface-hover">
@@ -140,14 +155,17 @@ export function QueueCard({
               <li key={uuid ?? index}>{href ? <Link href={href}>{Row}</Link> : Row}</li>
             );
           })}
-          {rest > 0 && (
+          {(rest > 0 || capped) && (
             <li className="px-5 py-2.5 text-xs text-text-muted">
-              {rest} more
+              {capped ? "More than these" : `${rest} more`}
               {listHref && (
                 <>
                   {" · "}
-                  <Link href={listHref} className="text-accent-text underline-offset-4 hover:underline">
-                    see all {items.length}
+                  <Link
+                    href={listHref}
+                    className="text-accent-text underline-offset-4 hover:underline"
+                  >
+                    see all
                   </Link>
                 </>
               )}

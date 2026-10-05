@@ -87,7 +87,14 @@ export default function DashboardPage() {
           <OpenBreaches breaches={data.breaches ?? []} />
 
           {busy.map((queue) => (
-            <QueueCard key={queue.name} name={queue.name} items={queue.items} slug={queue.slug} href={queue.href} />
+            <QueueCard
+              key={queue.name}
+              name={queue.name}
+              items={queue.items}
+              slug={queue.slug}
+              href={queue.href}
+              capped={queue.capped}
+            />
           ))}
           <ClearQueues names={clear} />
 

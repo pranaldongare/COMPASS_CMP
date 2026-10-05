@@ -1,4 +1,4 @@
-"""'Needs you today' lists only what the role can act on.
+"""'Needs attention' lists only what the role can act on.
 
 An administrator was shown 'Accounts awaiting activation' for two data
 principals who had not finished their own sign-up - nothing an administrator
@@ -61,3 +61,43 @@ def test_the_dpo_is_asked_to_escalate_not_to_decide_grievances_about_the_dpo() -
 
 def test_zero_counts_are_not_rows() -> None:
     assert _attention("dpo", {"requests_overdue": 0, "pending_approval": 0}, []) == []
+
+
+def test_a_row_opens_the_list_its_label_describes() -> None:
+    """A count is a claim about a subset, and its link has to open that subset
+    (UX review 2026-10-05). "Sources with nobody accountable" opened every
+    source; "due within 7 days" opened every request; "notice text awaiting
+    approval" opened every notice."""
+    expect = {
+        ("dco_admin", "sources_without_owner"): "/sources?unowned=1",
+        ("dpo", "requests_due_7d"): "/requests?due_soon=1",
+        ("dpo", "unapproved_languages"): "/notices?languages=unapproved",
+        ("admin", "grievances_about_dpo"): "/requests?type=grievance",
+    }
+    for (role, key), href in expect.items():
+        [row] = _attention(role, {key: 1}, [])
+        assert row["href"] == href, (role, key, row["href"])
+
+
+def test_a_queue_row_opens_what_it_is_about() -> None:
+    """A row about a collection or a site opens it, not its project; a queue at
+    its row limit says it is not the whole list (UX review 2026-10-05)."""
+    from cmp.api.routers.v1.dashboard import QUEUE_LIMIT, _finish_queues
+
+    queues = [
+        {
+            "name": "Import exceptions",
+            "items": [{"collection_uuid": "c-1", "project_uuid": "p-1"}],
+        },
+        {
+            "name": "Sites awaiting a data source",
+            "items": [{"site_uuid": "s-1", "project_uuid": "p-2"}] * QUEUE_LIMIT,
+        },
+        {"name": "Pending Approval", "items": [{"project_uuid": "p-3"}]},
+    ]
+    _finish_queues(queues)
+    exceptions, sites, pending = queues
+    assert exceptions["items"][0]["href"] == "/collections/c-1"
+    assert sites["items"][0]["href"] == "/projects/p-2#sites"
+    assert "href" not in pending["items"][0], "the card's own rule still serves the rest"
+    assert sites["capped"] is True and exceptions["capped"] is False

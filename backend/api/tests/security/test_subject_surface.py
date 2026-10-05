@@ -55,7 +55,9 @@ def test_no_entity_can_send_her_to_a_staff_console() -> None:
 
 def test_her_own_account_does_not_resolve_to_the_account_register() -> None:
     """The exact route reported. `/users` is the administrator's screen."""
-    assert _SPECS["auth_user"].href == "/users", "staff still go to the register"
+    assert _SPECS["auth_user"].href == "/users?person={uuid}", (
+        "staff still go to the register - to that person in it"
+    )
     assert _SPECS["auth_user"].subject_href == "/account"
 
 
@@ -95,7 +97,7 @@ class TestTheResolverPicksByReader:
         """The same row, the same label, a different link. Staff have business
         on `/users`; she does not."""
         rows = await entity_repo.attach(conn, await self._subject_event(conn, seeded))
-        assert rows[0]["entity_href"] == "/users"
+        assert rows[0]["entity_href"].startswith("/users?person=")
 
     async def test_the_label_is_the_same_either_way(
         self, conn: Any, seeded: dict[str, Any]

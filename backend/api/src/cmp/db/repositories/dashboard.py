@@ -62,9 +62,33 @@ async def projects_created_by(conn: Conn, user_id: int) -> list[Row]:
 
 
 async def dpo_counts(conn: Conn) -> Row | None:
+    """The DPO's figures, the four consent states among them.
+
+    Each current record is in exactly one state, by what it grants now: every
+    purpose (`consents_full`), some (`consents_partial`), none and never
+    withdrawn from (`consents_declined`), or none after a withdrawal
+    (`consents_withdrawn`). Before 2026-10-05 the dashboard showed total minus
+    withdrawals as "still standing", counting declined and partial records as
+    standing consent (UX review).
+    """
     return await fetch_one(
         conn,
-        """SELECT
+        """WITH states AS (
+             SELECT vc.is_withdrawal,
+                    count(g.*) FILTER (WHERE g.granted) AS granted,
+                    count(g.*)                          AS asked
+               FROM v_current_consent vc
+               LEFT JOIN consent_purpose_grant g ON g.consent_id = vc.consent_id
+              GROUP BY vc.consent_id, vc.is_withdrawal)
+           SELECT
+             (SELECT count(*) FILTER (WHERE granted > 0 AND granted = asked) FROM states)
+               AS consents_full,
+             (SELECT count(*) FILTER (WHERE granted > 0 AND granted < asked) FROM states)
+               AS consents_partial,
+             (SELECT count(*) FILTER (WHERE granted = 0 AND NOT is_withdrawal) FROM states)
+               AS consents_declined,
+             (SELECT count(*) FILTER (WHERE granted = 0 AND is_withdrawal) FROM states)
+               AS consents_withdrawn,
              (SELECT count(*) FROM project WHERE project_status = 'in_draft')
                AS in_draft,
              (SELECT count(*) FROM project WHERE project_status = 'pending_approval')

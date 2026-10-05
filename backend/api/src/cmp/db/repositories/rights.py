@@ -364,6 +364,7 @@ async def list_requests(
     overdue: bool = False,
     q: str | None = None,
     unread: bool = False,
+    due_soon: bool = False,
 ) -> tuple[list[Row], str | None, int]:
     pred, sparams = scope_predicate(role, user_id)
     where = [pred]
@@ -377,6 +378,12 @@ async def list_requests(
         params.append(status)
     if overdue:
         where.append("r.status <> 'closed' AND r.due_at < now()")
+    if due_soon:
+        # The same window `counts()` reports as requests_due_7d, so the
+        # dashboard's number and the list it opens agree.
+        where.append(
+            "r.status <> 'closed' AND r.due_at BETWEEN now() AND now() + interval '7 days'"
+        )
     if unread:
         # A team has written on a ticket and the office has not read it.
         where.append(f"r.status <> 'closed' AND {_UNREAD_THREADS} > 0")

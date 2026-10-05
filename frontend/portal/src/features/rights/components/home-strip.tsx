@@ -39,7 +39,7 @@ export function HomeStrip() {
       key: `dl-${r.request_uuid}`,
       icon: <Download className="size-4" aria-hidden="true" />,
       text: `Our response to ${r.reference} is ready to download${r.download_expires_at ? ` until ${formatDate(r.download_expires_at)}` : ""}.`,
-      href: "/my-requests",
+      href: `/my-requests?request=${r.request_uuid}`,
       tone: "attention",
     });
   } else if (ready.length > 1) {
@@ -51,7 +51,7 @@ export function HomeStrip() {
       key: "dl-many",
       icon: <Download className="size-4" aria-hidden="true" />,
       text: `${ready.length} responses are ready to download${soonest ? `; the first window closes ${formatDate(soonest)}` : ""}.`,
-      href: "/my-requests",
+      href: "/my-requests?view=ready",
       tone: "attention",
     });
   }
@@ -65,7 +65,7 @@ export function HomeStrip() {
         open.length === 1
           ? `${first.reference} is with the Privacy Office; you will hear by ${formatDate(first.due_at)}.`
           : `${open.length} requests are with the Privacy Office; the first is due by ${formatDate(first.due_at)}.`,
-      href: "/my-requests",
+      href: open.length === 1 ? `/my-requests?request=${first.request_uuid}` : "/my-requests",
       tone: "quiet",
     });
   }

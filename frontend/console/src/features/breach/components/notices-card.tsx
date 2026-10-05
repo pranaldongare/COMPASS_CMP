@@ -39,7 +39,7 @@ import { keys } from "@/lib/query";
 import { useToast } from "@/providers";
 import type { Breach, BreachNotice, BreachNotices, BreachNoticeWords } from "@/types";
 
-const CHANNEL: Record<string, string> = { portal: "Her account", email: "Email", sms: "SMS" };
+const CHANNEL: Record<string, string> = { portal: "Their account", email: "Email", sms: "SMS" };
 
 /** A first draft from the assessment, which says most of it already. */
 function fromAssessment(breach: Breach): BreachNoticeWords {
@@ -158,7 +158,7 @@ export function NoticesCard({ breach }: { breach: Breach }) {
           Telling the people it touched
         </CardTitle>
         <p className="mt-1 text-xs text-text-muted">
-          Rule 7(1): concise, clear and plain, without delay, to her account and her registered email or mobile. Nothing
+          Rule 7(1): concise, clear and plain, without delay, to each person&apos;s account and their registered email or mobile. Nothing
           is sent until you approve and send it. The words go to everyone listed: name nobody.
         </p>
       </CardHeader>

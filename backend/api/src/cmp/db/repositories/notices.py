@@ -461,6 +461,7 @@ async def list_all(
     user_id: int,
     status: str | None = None,
     project_uuid: str | None = None,
+    unapproved_languages: bool = False,
 ) -> tuple[list[Row], str | None, int]:
     """Every notice this caller may see, across projects.
 
@@ -478,6 +479,12 @@ async def list_all(
     if project_uuid:
         where.append("p.project_uuid = %s")
         params.append(project_uuid)
+    if unapproved_languages:
+        # The rows the dashboard counts as notice text awaiting approval.
+        where.append(
+            "EXISTS (SELECT 1 FROM notice_language nl "
+            "WHERE nl.notice_id = n.notice_id AND nl.approved_at IS NULL)"
+        )
 
     clause = " AND ".join(where)
     keyset, kparams = keyset_clause(req, alias="n", id_column="notice_id")

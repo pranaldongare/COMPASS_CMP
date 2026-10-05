@@ -66,7 +66,7 @@ _QUEUE_HREF = {
     "Pending Approval": "/projects?status=pending_approval",
     "Tickets addressed to you": "/tickets",
     "Needs your action": "/projects",
-    "Grievances about the DPO - yours to review": "/requests",
+    "Grievances about the DPO - yours to review": "/requests?type=grievance",
     "Sites awaiting a data source": "/sites",
     "Processors with no collection set up": "/projects",
     "Import exceptions": "/collections",
@@ -113,7 +113,7 @@ _ATTENTION: dict[str, list[dict[str, Any]]] = {
             "count": "requests_due_7d",
             "label": "Rights requests due within 7 days",
             "severity": "warning",
-            "href": "/requests",
+            "href": "/requests?due_soon=1",
         },
         {
             "count": "requests_unverified",
@@ -150,7 +150,7 @@ _ATTENTION: dict[str, list[dict[str, Any]]] = {
             "count": "unapproved_languages",
             "label": "Notice text awaiting approval",
             "severity": "info",
-            "href": "/notices",
+            "href": "/notices?languages=unapproved",
         },
         {
             "count": "pending_approval",
@@ -178,7 +178,7 @@ _ATTENTION: dict[str, list[dict[str, Any]]] = {
             "count": "grievances_about_dpo",
             "label": "Grievances about the DPO to review",
             "severity": "warning",
-            "href": "/requests",
+            "href": "/requests?type=grievance",
         },
         {
             "count": "tickets_for_me",
@@ -228,7 +228,7 @@ _ATTENTION: dict[str, list[dict[str, Any]]] = {
             "count": "sources_without_owner",
             "label": "Sources with nobody accountable",
             "severity": "warning",
-            "href": "/sources",
+            "href": "/sources?unowned=1",
         },
         {
             "queue": "Processors with no collection set up",
@@ -351,11 +351,37 @@ async def dashboard(principal: CurrentUser) -> dict[str, Any]:
         data["counts"]["tickets_for_me"] = count
         if items:
             data["queues"].append({"name": "Tickets addressed to you", "items": items})
-        for q in data["queues"]:
-            q["slug"] = _slug(q["name"])
-            q["href"] = _QUEUE_HREF.get(q["name"])
+        _finish_queues(data["queues"])
         data["attention"] = _attention(data["role"], data["counts"], data["queues"])
         return data
+
+
+#: Every queue on the dashboard is cut at this many rows by its query.
+QUEUE_LIMIT = 25
+
+#: Where a row opens when it is about something other than its project. The
+#: card's own rule picks the project first, which sent an import exception and a
+#: site awaiting its source to the top of a project page (UX review 2026-10-05).
+_ITEM_HREF: dict[str, Any] = {
+    "Import exceptions": lambda r: f"/collections/{r['collection_uuid']}",
+    "Sites awaiting a data source": lambda r: f"/projects/{r['project_uuid']}#sites",
+    "Processors with no collection set up": lambda r: f"/projects/{r['project_uuid']}#sites",
+}
+
+
+def _finish_queues(queues: list[dict[str, Any]]) -> None:
+    """Anchor, list link, row destinations, and whether the queue is complete.
+
+    `capped` says the query stopped at its limit, so the count shown is a floor
+    and not the whole list - "All 25" was claiming completeness it did not have.
+    """
+    for q in queues:
+        q["slug"] = _slug(q["name"])
+        q["href"] = _QUEUE_HREF.get(q["name"])
+        q["capped"] = len(q["items"]) >= QUEUE_LIMIT
+        destination = _ITEM_HREF.get(q["name"])
+        if destination:
+            q["items"] = [{**item, "href": destination(item)} for item in q["items"]]
 
 
 async def _recent_activity(
@@ -426,7 +452,7 @@ async def _dpo(conn: Any) -> dict[str, Any]:
     # Nobody is held up by it: the author submits whenever they are ready, and
     # the activation gates the DPO's own approval. So this is work brought
     # forward rather than work owed, and the queue says so - it is not in
-    # "Needs you today", and the name does not claim anyone is waiting.
+    # "Needs attention", and the name does not claim anyone is waiting.
     draft_queue = await dashboard_repo.dpo_draft_queue(conn)
     approval_queue = await dashboard_repo.dpo_approval_queue(conn)
     # Amendments to projects the DPO has already approved. Its own queue rather

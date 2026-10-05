@@ -107,7 +107,10 @@ export default function RequestDetailPage() {
               <DescriptionItem term="Who">
                 {r.subject_uuid ? (
                   <>
-                    <Link href={`/users`} className="text-accent-text hover:underline">
+                    <Link
+                      href={`/users?person=${r.subject_uuid}`}
+                      className="text-accent-text hover:underline"
+                    >
                       {r.subject_name}
                     </Link>
                     <span className="block text-xs text-text-subtle">
@@ -139,7 +142,7 @@ export default function RequestDetailPage() {
                     }}
                   />
                   <span className="mt-1 block text-xs text-text-subtle">
-                    She asked about this consent only. Holders, scope, tickets and the
+                    The requester asked about this consent only. Holders, scope, tickets and the
                     response are confined to the data under it.
                   </span>
                 </DescriptionItem>

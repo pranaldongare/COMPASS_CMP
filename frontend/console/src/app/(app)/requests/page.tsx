@@ -49,6 +49,9 @@ function RequestsPageView() {
   const [status, setStatus] = useFilterParam("status");
   const [type, setType] = useFilterParam("type");
   const [overdue, setOverdue] = useFilterParam("overdue");
+  const [dueSoon, setDueSoon] = useFilterParam("due_soon");
+  // One "Clock" control over two filters the API keeps apart.
+  const clock = overdue ? "overdue" : dueSoon ? "due_soon" : "";
   const [unread, setUnread] = useFilterParam("unread");
   const [logging, setLogging] = React.useState(false);
 
@@ -56,6 +59,7 @@ function RequestsPageView() {
     status: status || undefined,
     type: type || undefined,
     overdue: overdue ? true : undefined,
+    due_soon: dueSoon ? true : undefined,
     unread: unread ? true : undefined,
     cursor: stack.cursor,
     limit: 25,
@@ -105,12 +109,16 @@ function RequestsPageView() {
         />
         <FilterSelect
           label="Clock"
-          value={overdue}
+          value={clock}
           onChange={(v) => {
-            setOverdue(v);
+            setOverdue(v === "overdue" ? "1" : "");
+            setDueSoon(v === "due_soon" ? "1" : "");
             stack.reset();
           }}
-          options={[{ value: "1", label: "Overdue only" }]}
+          options={[
+            { value: "overdue", label: "Overdue only" },
+            { value: "due_soon", label: "Due within 7 days" },
+          ]}
           allLabel="Any"
         />
         <FilterSelect
@@ -133,7 +141,7 @@ function RequestsPageView() {
         keyOf={(r) => r.request_uuid}
         empty={{
           illustration: <EmptyRecords />,
-          title: status || type || overdue || unread ? "No requests match" : "No requests yet",
+          title: status || type || clock || unread ? "No requests match" : "No requests yet",
           description: isAdmin
             ? "A grievance escalated away from the DPO appears here."
             : "A request made from the dashboard, the notice link or an email you log appears here with its clock.",

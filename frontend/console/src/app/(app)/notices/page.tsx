@@ -33,10 +33,12 @@ import { formatDateTime } from "@/lib/format";
 function NoticesPageView() {
   const stack = useCursorStack();
   const [status, setStatus] = useFilterParam("status");
+  const [languages, setLanguages] = useFilterParam("languages");
 
   const { data: enums } = useEnums();
   const query = useAllNotices({
     status: status || undefined,
+    languages: languages || undefined,
     cursor: stack.cursor,
     limit: 25,
   });
@@ -58,6 +60,16 @@ function NoticesPageView() {
           }}
           options={enums?.notice_status ?? []}
           allLabel="All statuses"
+        />
+        <FilterSelect
+          label="Text"
+          value={languages}
+          onChange={(v) => {
+            setLanguages(v);
+            stack.reset();
+          }}
+          options={[{ value: "unapproved", label: "Awaiting approval" }]}
+          allLabel="Any"
         />
       </FilterBar>
 

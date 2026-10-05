@@ -139,7 +139,7 @@ export default function ConsentDetailPage() {
             <CardHeader>
               <CardTitle>Purposes</CardTitle>
               <p className="mt-1 text-sm text-text-muted">
-                Consent is given purpose by purpose. Each line is a separate decision she
+                Consent is given purpose by purpose. Each line is a separate decision the person
                 made.
               </p>
             </CardHeader>
@@ -174,8 +174,8 @@ export default function ConsentDetailPage() {
             <CardHeader>
               <CardTitle>Assets containing this person</CardTitle>
               <p className="mt-1 text-sm text-text-muted">
-                The reverse lookup an erasure request depends on: which collected assets she
-                appears in.
+                The reverse lookup an erasure request depends on: which collected assets the
+                person appears in.
               </p>
             </CardHeader>
             {assets.isLoading ? (

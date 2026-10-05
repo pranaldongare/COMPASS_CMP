@@ -407,7 +407,8 @@ export default function ProjectDetailPage() {
             onUpload={() => setSheet({ kind: "approval" })}
           />
 
-          <Card>
+          {/* `#sites`: where a dashboard row about a site lands. */}
+          <Card id="sites" className="scroll-mt-20">
             <CardHeader>
               <CardTitle>Collection sites</CardTitle>
             </CardHeader>

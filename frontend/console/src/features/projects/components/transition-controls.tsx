@@ -45,6 +45,22 @@ import { useTransition, useTransitions } from "@/features/projects";
 import type { ProjectStatus, TransitionOption } from "@/types";
 import { useToast } from "@/providers";
 
+/**
+ * A button names what it does; a badge names where things stand. The buttons
+ * here used to read "Approved" or "In Draft" - the state, not the act (UX
+ * review 2026-10-05). The resulting state is said beside each one.
+ */
+const PROJECT_ACTIONS: Record<string, string> = {
+  pending_approval: "Submit for approval",
+  approved: "Approve project",
+  in_draft: "Return to draft",
+  closed: "Close project",
+};
+
+function actionFor(to: string): string {
+  return PROJECT_ACTIONS[to] ?? `Move to ${statusLabel("project", to)}`;
+}
+
 export function TransitionControls({
   projectUuid,
   currentStatus,
@@ -165,7 +181,7 @@ export function TransitionControls({
           >
             <div className="min-w-0">
               <p className="flex items-center gap-1.5 text-sm font-medium">
-                Move to {statusLabel("project", option.to)}
+                Moves the project to {statusLabel("project", option.to)}
                 {option.publishes_notice && (
                   <span className="rounded-full border border-warning-border bg-warning-subtle px-2 py-0.5 text-2xs font-medium text-warning-text">
                     publishes the notice
@@ -223,7 +239,7 @@ export function TransitionControls({
               }
               title={option.blocked_by}
             >
-              {statusLabel("project", option.to)}
+              {actionFor(option.to)}
               <ArrowRight className="size-4" />
             </Button>
             {option.blocked_by && (
@@ -236,9 +252,7 @@ export function TransitionControls({
 
         {pending && (
           <div className="rounded-md border border-accent-border bg-accent-subtle p-4">
-            <p className="text-sm font-medium text-accent-text">
-              Move to {statusLabel("project", pending.to)}
-            </p>
+            <p className="text-sm font-medium text-accent-text">{actionFor(pending.to)}</p>
 
             {pending.publishes_notice && (
               <Alert tone="warning" className="mt-3">
@@ -291,7 +305,7 @@ export function TransitionControls({
                   void run(pending, reason);
                 }}
               >
-                Confirm
+                {actionFor(pending.to)}
               </Button>
               <Button
                 variant="ghost"

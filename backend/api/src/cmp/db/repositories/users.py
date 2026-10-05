@@ -438,9 +438,16 @@ async def list_users(
     status: str | None = None,
     person_type: str | None = None,
     q: str | None = None,
+    person: str | None = None,
 ) -> tuple[list[Row], str | None, int]:
     where = ["1 = 1"]
     params: list[Any] = []
+
+    if person:
+        # One account by its uuid: where a link names a person - a requester
+        # on a rights request - it opens that person, not the register.
+        where.append("u.uuid = %s")
+        params.append(person)
 
     if role:
         where.append("u.role = %s::user_role")

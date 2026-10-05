@@ -39,6 +39,8 @@ export interface RequestFilters extends ListFilters {
   overdue?: boolean;
   /** Only requests a team has written on and the office has not read. */
   unread?: boolean;
+  /** Open and due within seven days - the window the dashboard counts. */
+  due_soon?: boolean;
 }
 
 export function listRequests(filters: RequestFilters = {}): Promise<Page<RightsRequestRow>> {

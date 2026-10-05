@@ -54,7 +54,7 @@ describe("the project's next move, at the top and at the foot", () => {
 
     expect(await screen.findByText("What happens next")).toBeInTheDocument();
     expect(screen.getByText("Next steps")).toBeInTheDocument();
-    const moves = screen.getAllByRole("button", { name: /pending approval/i });
+    const moves = screen.getAllByRole("button", { name: /submit for approval/i });
     expect(moves).toHaveLength(2);
     // Each copy names its own blocker; one shared id would describe both
     // buttons with whichever element came first.

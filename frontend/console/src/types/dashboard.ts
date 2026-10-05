@@ -20,7 +20,14 @@ export interface AttentionRow {
 export interface DashboardData {
   role: Role;
   counts: Record<string, number>;
-  queues: Array<{ name: string; slug?: string; href?: string | null; items: Array<Record<string, unknown>> }>;
+  queues: Array<{
+    name: string;
+    slug?: string;
+    href?: string | null;
+    /** The query stopped at its row limit: the list continues past what is here. */
+    capped?: boolean;
+    items: Array<Record<string, unknown>>;
+  }>;
   /** Only rows with something to count; empty means nothing needs them today. */
   attention: AttentionRow[];
   /**

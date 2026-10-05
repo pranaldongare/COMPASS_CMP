@@ -187,7 +187,7 @@ but only while the account is still pending.
 
 ## What the dashboard asks of each role
 
-Each role's landing page opens with **Needs you today**: counts of things
+Each role's landing page opens with **Needs attention**: counts of things
 that role can act on, from the page each row opens. The rule is strict, and
 tested: a count the role can only look at is not on the list. Lockouts
 clear themselves; a suspended source was suspended on purpose; refusals in the
@@ -205,9 +205,9 @@ it lists only the drafts whose purposes are waiting to be activated, which is
 the one thing on a draft that is theirs. Nobody is held up by it - the author
 submits when they are ready, and the activation gates the officer's own
 approval - so it is work brought forward, and it is a queue rather than a row in
-**Needs you today**.
+**Needs attention**.
 
-| Role | Needs you today |
+| Role | Needs attention |
 |---|---|
 | DPO | tickets past their date; rights requests overdue and due within seven days; requests awaiting verification; teams that have written on their tickets; grievances about the DPO not yet escalated; retention floors passed; tickets addressed to them; notice text awaiting approval; projects pending approval; new collectors awaiting a decision |
 | Administrator | staff invitations not yet accepted (resend them); grievances about the DPO to review; tickets addressed to them |

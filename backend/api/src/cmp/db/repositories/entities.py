@@ -186,7 +186,8 @@ _SPECS: dict[str, _Spec] = {
     "auth_user": _Spec(
         sql="""SELECT id, uuid::text AS uuid, full_name AS label
                FROM auth_user WHERE id = ANY(%s)""",
-        href="/users",
+        # That person in the register, not the register (UX review 2026-10-05).
+        href="/users?person={uuid}",
         # Her own registration and sign-ins resolve to her own account. Before
         # this they resolved to `/users` - the administrator's account register -
         # for every reader, which is how a data principal following a
@@ -204,7 +205,7 @@ _SPECS: dict[str, _Spec] = {
                         AS label_parts
                FROM person_type_history h JOIN auth_user u ON u.id = h.auth_user_id
                WHERE h.history_id = ANY(%s)""",
-        href="/users",
+        href="/users?person={uuid}",
         noun="Person type change",
     ),
     "delegation": _Spec(
@@ -230,7 +231,8 @@ _SPECS: dict[str, _Spec] = {
                WHERE r.request_id = ANY(%s)""",
         href="/requests/{uuid}",
         # Her own request, on her own page. The staff console refuses her.
-        subject_href="/my-requests",
+        # Her request opened on her page, not the top of the list (UX review).
+        subject_href="/my-requests?request={uuid}",
         noun="Rights request",
     ),
     "rights_request_holder": _Spec(

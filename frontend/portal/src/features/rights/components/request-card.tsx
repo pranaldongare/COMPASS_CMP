@@ -280,13 +280,13 @@ export function RequestCard({
               <p className="mb-2 text-2xs font-semibold tracking-wide text-text-subtle uppercase">
                 Clock
               </p>
-              <ClockColumn clock={r.clock} closed={closed} compact />
+              <ClockColumn clock={r.clock} closed={closed} compact voice="self" />
             </div>
             <div>
               <p className="mb-2 text-2xs font-semibold tracking-wide text-text-subtle uppercase">
                 The path
               </p>
-              <Path request={r} />
+              <Path request={r} voice="self" />
             </div>
           </div>
         )}

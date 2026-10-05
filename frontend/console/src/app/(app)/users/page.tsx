@@ -53,6 +53,9 @@ function UsersPageView() {
   const [role, setRole] = useFilterParam("role");
   const [status, setStatus] = useFilterParam("status");
   const [q, setQ] = useFilterParam("q");
+  // One account, by uuid: where a link names somebody - the requester on a
+  // rights request - it opens them, not the whole register (UX review).
+  const [person, setPerson] = useFilterParam("person");
 
   const deactivate = useDeactivateUser();
   const reactivate = useReactivateUser();
@@ -70,6 +73,7 @@ function UsersPageView() {
     role: role || undefined,
     status: status || undefined,
     q: q || undefined,
+    person: person || undefined,
     cursor: stack.cursor,
     limit: 25,
   });
@@ -134,6 +138,17 @@ function UsersPageView() {
         <Alert tone="info" className="mb-4">
           You can read the register. Provisioning, role changes and deactivation are
           restricted to administrators.
+        </Alert>
+      )}
+
+      {person && (
+        <Alert tone="info" className="mb-4">
+          <span className="flex flex-wrap items-center justify-between gap-2">
+            Showing one person.
+            <Button variant="ghost" size="sm" onClick={() => setPerson("")}>
+              Show everyone
+            </Button>
+          </span>
         </Alert>
       )}
 
