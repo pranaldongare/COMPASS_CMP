@@ -22,10 +22,13 @@ export interface ExportRecord {
   exported_at: Timestamp;
   row_count: number;
   file_hash: string;
-  line_count?: number;
-  site_uuid?: Uuid;
-  site_label?: string;
-  exported_by_name?: string;
+  // Null, not absent, when there is none: a project export has no single
+  // site, and an export from before line counts were kept has no count
+  // (ARCH-2: these were typed as never null).
+  line_count?: number | null;
+  site_uuid?: Uuid | null;
+  site_label?: string | null;
+  exported_by_name?: string | null;
 }
 
 export interface ExportLine {

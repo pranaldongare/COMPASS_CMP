@@ -37,6 +37,15 @@
  *
  * Exact equality would reject every one of those narrowings, so this file would
  * either be deleted or filled with exceptions until it checked nothing.
+ *
+ * Assignability alone missed the other half (ARCH-2): a field the server
+ * **stopped sending** - an extra local property is still assignable - and a
+ * field the server **may now send as null** while the local type says it never
+ * is. `Covers` checks both as well, per field, so narrowing stays allowed.
+ * (Not "may leave out": the schema marks every field with a default optional,
+ * and the API sends those fields every time, so that check would be noise.)
+ * A local field that is meant to exist only in the client is named in
+ * `Extra`, which says so at the line that declares it.
  */
 
 import type { components } from "@/types/api-schema";
@@ -73,9 +82,35 @@ type Schemas = components["schemas"];
  * does not, so the compiler's message names the type that drifted instead of
  * saying "true is not assignable to false".
  */
-type Covers<Name extends string, Generated, Local> = Local extends Generated
+type Covers<Name extends string, Generated, Local, Extra extends PropertyKey = never> = [
+  Local extends Generated ? true : false,
+  Exclude<keyof Local, keyof Generated | Extra>,
+  NullGaps<Generated, Local>,
+] extends [true, never, never]
   ? true
-  : { error: `${Name} has drifted from the API`; expected: Generated; got: Local };
+  : {
+      error: `${Name} has drifted from the API`;
+      notAssignable: Local extends Generated ? never : { expected: Generated; got: Local };
+      /** Fields the local type has and the server no longer sends. */
+      noLongerSent: Exclude<keyof Local, keyof Generated | Extra>;
+      /** Fields the server may send as null that the local type says cannot be. */
+      mayBeNull: NullGaps<Generated, Local>;
+    };
+
+/**
+ * The fields of `Local` the server may send as null where `Local` says they
+ * cannot be. Checked per field rather than by assigning the whole generated
+ * type to the local one, which would reject every intended narrowing.
+ */
+type NullGaps<Generated, Local> = {
+  [K in keyof Generated & keyof Local]-?: unknown extends Generated[K]
+    ? never // the schema does not say: an untyped field cannot be judged
+    : null extends Generated[K]
+      ? null extends Local[K]
+        ? never
+        : K
+      : never;
+}[keyof Generated & keyof Local];
 
 // Each line is one type. A drift turns the right-hand side into the error
 // object above, and `true` stops being assignable.
@@ -103,7 +138,14 @@ export type _NoticeListRow = Covers<
   NoticeListRow
 >;
 
-export type _Purpose = Covers<"Purpose", Schemas["PurposeOut"], Purpose>;
+// `is_mandatory` and `display_order` come with a purpose read through a
+// notice (`PurposeOnNotice`), not from the registry: named, not ignored.
+export type _Purpose = Covers<
+  "Purpose",
+  Schemas["PurposeOut"],
+  Purpose,
+  "is_mandatory" | "display_order"
+>;
 export type _Processor = Covers<"Processor", Schemas["ProcessorOut"], Processor>;
 // Absent until a field the API returns silently stopped arriving: the column
 // was joined and selected, the response model did not declare it, and the
@@ -188,3 +230,30 @@ const _contractHolds: {
 };
 
 void _contractHolds;
+
+/**
+ * The check catches what the server takes away, not only what it adds
+ * (review 2026-10-01, ARCH-2).
+ *
+ * `Local extends Generated` alone let a local type keep a field the server had
+ * stopped sending - an extra property is still assignable - and keep calling
+ * a field non-null after the server began sending null. A probe removed
+ * `SourceOut.is_in_house` from the generated schema and this file stayed
+ * silent. These two must stay errors; if either compiles, the check has been
+ * weakened.
+ */
+type _Removed = Covers<"Removed", { kept: string }, { kept: string; gone: boolean }>;
+// @ts-expect-error - `gone` is no longer sent, so the check must not hold.
+const _removalIsCaught: _Removed = true;
+
+type _NowNullable = Covers<"NowNullable", { name: string | null }, { name: string }>;
+// @ts-expect-error - the server may send null where the local type says string.
+const _nullIsCaught: _NowNullable = true;
+
+// Narrowing stays allowed: a union of the roles where the API says string.
+type _Narrowed = Covers<"Narrowed", { role: string }, { role: "dpo" | "admin" }>;
+const _narrowingIsAllowed: _Narrowed = true;
+
+void _removalIsCaught;
+void _nullIsCaught;
+void _narrowingIsAllowed;

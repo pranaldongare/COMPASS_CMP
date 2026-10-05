@@ -399,7 +399,14 @@ where types vanish.
   read as the domain reads, and `api-schema.d.ts` generated from the running
   API's OpenAPI document. `types/api-contract.test-d.ts` asserts the curated
   types are assignable to the generated ones, so a server change fails
-  `npm run api:check` before it fails a user.
+  `npm run api:check` before it fails a user. Assignability alone missed a
+  field the server **stopped sending** and one it **began sending as null**
+  (review ARCH-2), so `Covers` also refuses a local field the schema no
+  longer has and a non-null local field the schema says may be null. A field
+  meant to exist only in the client is named in `Covers`' fourth argument, at
+  the line that declares it; narrowing a `string` to a union stays allowed.
+  The same file holds `@ts-expect-error` cases that must stay errors, so the
+  check cannot be quietly weakened.
 - Runtime validation is zod at the two edges where types are only a hope:
   form input (`schemas.ts`) and anything read from the URL or storage.
 - Query keys are literal tuples (`as const`); a wrong segment does not

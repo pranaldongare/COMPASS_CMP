@@ -49,7 +49,6 @@ export interface Processor {
    *  processor is and not whose it is — a lab can be either. */
   is_in_house: boolean;
   created_at: Timestamp;
-  sites?: number;
 }
 
 export interface DataSource {

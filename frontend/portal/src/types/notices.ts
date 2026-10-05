@@ -39,8 +39,9 @@ export interface Notice {
   published_at: Timestamp | null;
   created_at: Timestamp;
   updated_at: Timestamp;
-  purpose_count?: number;
-  language_count?: number;
+  /** Null where the list query did not count them (ARCH-2: was typed as never null). */
+  purpose_count?: number | null;
+  language_count?: number | null;
 }
 
 export interface NoticeLanguage {

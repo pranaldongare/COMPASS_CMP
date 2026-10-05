@@ -68,7 +68,6 @@ export interface Processor {
    *  export to it is refused until it is. */
   location_country: string | null;
   created_at: Timestamp;
-  sites?: number;
 }
 
 /** A country the Government has restricted transfers to under s.16 (S2-04). */
