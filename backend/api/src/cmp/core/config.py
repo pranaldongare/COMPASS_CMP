@@ -10,7 +10,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Annotated, Literal
 
-from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from cmp.core.permissions import Role
@@ -233,7 +233,13 @@ class Settings(BaseSettings):
     # ---------------------------------------------------------------- external
     #: How the organisation names itself in messages ({organisation}).
     organisation_name: str = "COMPASS"
-    notification_email_from: str = "privacy@example.org"
+    #: The address every email comes from. `SENDER_EMAIL` is accepted too.
+    notification_email_from: str = Field(
+        default="privacy@example.org",
+        validation_alias=AliasChoices("notification_email_from", "sender_email"),
+    )
+    #: The name shown beside it. Empty: "<ORGANISATION_NAME> Privacy Office".
+    notification_email_from_name: str = ""
     external_http_timeout_s: float = 10.0  # never infinite — checklist §13
     external_http_retries: int = 3
 
@@ -246,11 +252,25 @@ class Settings(BaseSettings):
     sms_transport: Literal["console", "http", "null"] = "console"
     storage_backend: Literal["local", "object"] = "local"
 
-    smtp_host: str = "localhost"
+    #: The mail server. `SMTP_SERVER` is accepted too.
+    smtp_host: str = Field(
+        default="localhost", validation_alias=AliasChoices("smtp_host", "smtp_server")
+    )
     smtp_port: int = 587
+    #: Leave empty for a relay that takes mail without a login.
     smtp_username: str = ""
     smtp_password: SecretStr = SecretStr("")
+    #: How the connection is protected: `starttls` (port 587, upgraded after
+    #: connecting), `ssl` (port 465, encrypted from the start) or `none` (a
+    #: plain connection - an internal relay on port 25). Unset, it follows
+    #: SMTP_USE_TLS: starttls when true, none when false.
+    smtp_security: Literal["starttls", "ssl", "none"] | None = None
     smtp_use_tls: bool = True
+    #: A CA bundle to trust beyond the system's, for a relay whose certificate
+    #: an internal authority signed. Verification is never switched off.
+    smtp_ca_file: str = ""
+    #: Seconds before a stalled server is given up on. Unset: EXTERNAL_HTTP_TIMEOUT_S.
+    smtp_timeout_s: float | None = Field(default=None, gt=0)
 
     # The HTTP SMS transport: a JSON POST to a gateway of the deployment's
     # choosing, authenticated with a bearer token. Provider-specific shapes
@@ -313,6 +333,10 @@ class Settings(BaseSettings):
             # complete. In production the choice has to be explicit and real.
             if self.email_transport != "smtp":
                 raise ValueError("EMAIL_TRANSPORT must be smtp in production")
+            # Mail from a placeholder domain is mail nobody can reply to, and
+            # mail a real server is entitled to refuse.
+            if self.notification_email_from.lower().endswith(("@example.org", "@example.com")):
+                raise ValueError("NOTIFICATION_EMAIL_FROM must be a real address in production")
             if self.sms_transport != "http":
                 raise ValueError("SMS_TRANSPORT must be http in production")
             # The switch exists for a development database of plaintext rows.

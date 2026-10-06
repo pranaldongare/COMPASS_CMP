@@ -21,7 +21,11 @@ properties of the *transport*, not of the caller:
 
 from __future__ import annotations
 
-from typing import Protocol, runtime_checkable
+import smtplib
+import ssl
+from email.message import EmailMessage
+from email.utils import formataddr, formatdate, make_msgid
+from typing import Final, Protocol, runtime_checkable
 
 from cmp.core.config import settings
 from cmp.core.logging import get_logger
@@ -109,6 +113,18 @@ class ConsoleEmailTransport:
             log.warning("email.outbox_unavailable", error=str(exc))
 
 
+class EmailRejected(RuntimeError):
+    """The mail server refused for good: a wrong login, an address or a sender
+    it will not take, a certificate that does not verify, a protocol it does
+    not speak. Not an `OSError`, so no task retries it - the same request
+    would be refused again. A passing failure - the server unreachable or
+    busy, a 4xx - stays the `OSError` smtplib raised, and is retried."""
+
+
+#: How the connection is protected; see SMTP_SECURITY.
+SECURITY_MODES: Final = ("starttls", "ssl", "none")
+
+
 class SmtpEmailTransport:
     """Production, via SMTP.
 
@@ -116,6 +132,19 @@ class SmtpEmailTransport:
     settings, and `build_email_transport` returns this instead. Left explicit
     rather than auto-detected, because "it silently started emailing people" is
     not a surprise anybody wants.
+
+    One connection per message, opened and closed here: a worker sends a
+    message now and then, and a pooled connection a server dropped while it
+    sat idle is a failure the next message would find. The three ways in:
+
+    * `starttls` - connect in the clear (usually 587), upgrade with STARTTLS,
+      then log in. A server that cannot upgrade is refused, never used plain.
+    * `ssl` - encrypted from the first byte (usually 465).
+    * `none` - plain, for an internal relay (usually 25). A login over it is
+      sent in the clear, so it is for a relay on a trusted network only.
+
+    Certificates are always verified - against the system's authorities and,
+    if set, `SMTP_CA_FILE` for a relay an internal authority signed.
     """
 
     def __init__(
@@ -125,38 +154,139 @@ class SmtpEmailTransport:
         *,
         username: str = "",
         password: str = "",
-        use_tls: bool = True,
+        security: str = "starttls",
+        sender: str = "",
+        sender_name: str = "",
+        ca_file: str = "",
         timeout_s: float | None = None,
     ) -> None:
+        if security not in SECURITY_MODES:
+            raise ValueError(f"SMTP security must be one of {', '.join(SECURITY_MODES)}")
         self._host = host
         self._port = port
         self._username = username
         self._password = password
-        self._use_tls = use_tls
+        self._security = security
+        self._sender = sender or settings.notification_email_from
+        self._sender_name = sender_name
+        self._ca_file = ca_file
         # Never infinite. A hung connection holds a worker slot indefinitely.
         self._timeout = timeout_s or settings.external_http_timeout_s
 
-    def send(self, *, to: str, subject: str, body: str) -> dict[str, object]:
-        import smtplib
-        from email.message import EmailMessage
+    # ---------------------------------------------------------------- message
 
+    def compose(self, *, to: str, subject: str, body: str) -> EmailMessage:
+        """The message as it goes out: plain text in UTF-8, a named sender, a
+        date and an id, and marked automatic so an out-of-office reply is not
+        sent back to an address nobody reads (RFC 3834)."""
+        domain = self._sender.rpartition("@")[2] or "localhost"
         message = EmailMessage()
-        message["From"] = settings.notification_email_from
+        message["From"] = (
+            formataddr((self._sender_name, self._sender)) if self._sender_name else self._sender
+        )
         message["To"] = to
         message["Subject"] = subject
+        message["Date"] = formatdate(usegmt=True)
+        message["Message-ID"] = make_msgid(domain=domain)
+        message["Auto-Submitted"] = "auto-generated"
         message.set_content(body)
+        return message
 
-        # Exceptions propagate on purpose: the task's retry policy is what
-        # decides whether to try again, and it cannot decide if it is not told.
-        with smtplib.SMTP(self._host, self._port, timeout=self._timeout) as client:
-            if self._use_tls:
-                client.starttls()
-            if self._username:
-                client.login(self._username, self._password)
-            client.send_message(message)
+    # ------------------------------------------------------------- connection
 
-        log.info("email.delivered", to=obscure(to), subject=subject, transport="smtp")
-        return {"channel": "email", "transport": "smtp", "delivered": True}
+    def _tls(self) -> ssl.SSLContext:
+        context = ssl.create_default_context()
+        if self._ca_file:
+            context.load_verify_locations(cafile=self._ca_file)
+        return context
+
+    def _connect(self) -> smtplib.SMTP:
+        if self._security == "ssl":
+            return smtplib.SMTP_SSL(
+                self._host, self._port, timeout=self._timeout, context=self._tls()
+            )
+        client = smtplib.SMTP(self._host, self._port, timeout=self._timeout)
+        if self._security == "starttls":
+            try:
+                client.ehlo()
+                client.starttls(context=self._tls())
+                client.ehlo()
+            except BaseException:
+                client.close()
+                raise
+        return client
+
+    # ------------------------------------------------------------------ send
+
+    def send(self, *, to: str, subject: str, body: str) -> dict[str, object]:
+        message = self.compose(to=to, subject=subject, body=body)
+        where = {
+            "to": obscure(to),
+            "server": f"{self._host}:{self._port}",
+            "security": self._security,
+        }
+        try:
+            with self._connect() as client:
+                if self._username:
+                    client.login(self._username, self._password)
+                refused = client.send_message(message)
+        except smtplib.SMTPAuthenticationError as exc:
+            log.error("email.rejected", reason="login refused", code=exc.smtp_code, **where)
+            raise EmailRejected(
+                f"The mail server refused the login for SMTP_USERNAME (code {exc.smtp_code})"
+            ) from exc
+        except smtplib.SMTPNotSupportedError as exc:
+            # STARTTLS or AUTH not offered: a setting, not an outage.
+            log.error("email.rejected", reason="not supported by the server", **where)
+            raise EmailRejected(
+                f"The mail server does not support what SMTP_SECURITY={self._security} "
+                f"and the login need: {exc}"
+            ) from exc
+        except ssl.SSLCertVerificationError as exc:
+            log.error("email.rejected", reason="certificate not trusted", **where)
+            raise EmailRejected(
+                "The mail server's certificate did not verify; set SMTP_CA_FILE to the "
+                "authority that signed it"
+            ) from exc
+        except smtplib.SMTPRecipientsRefused as exc:
+            codes = [code for code, _ in exc.recipients.values()]
+            if all(code >= 500 for code in codes):
+                log.error("email.rejected", reason="recipient refused", code=codes[0], **where)
+                raise EmailRejected(
+                    f"The mail server refused the recipient (code {codes[0]})"
+                ) from exc
+            log.warning("email.deferred", reason="recipient deferred", code=codes[0], **where)
+            raise
+        except smtplib.SMTPResponseException as exc:
+            # Sender refused, data refused, anything with a reply code: 5xx is
+            # the server's final word, 4xx is "try later".
+            if exc.smtp_code >= 500:
+                log.error("email.rejected", reason="refused", code=exc.smtp_code, **where)
+                raise EmailRejected(
+                    f"The mail server refused the message (code {exc.smtp_code})"
+                ) from exc
+            log.warning("email.deferred", reason="busy", code=exc.smtp_code, **where)
+            raise
+        except OSError as exc:
+            # Unreachable, timed out, dropped: retried by the task.
+            log.warning("email.unavailable", error=type(exc).__name__, **where)
+            raise
+
+        if refused:  # pragma: no cover - one recipient: refused raises above
+            raise EmailRejected("The mail server refused the recipient")
+        log.info(
+            "email.delivered",
+            to=obscure(to),
+            subject=subject,
+            transport="smtp",
+            message_id=message["Message-ID"],
+        )
+        return {
+            "channel": "email",
+            "transport": "smtp",
+            "delivered": True,
+            "message_id": message["Message-ID"],
+        }
 
 
 class NullEmailTransport:
@@ -168,6 +298,18 @@ class NullEmailTransport:
     def send(self, *, to: str, subject: str, body: str) -> dict[str, object]:
         self.sent.append({"to": to, "subject": subject, "body": body})
         return {"channel": "email", "transport": "null", "delivered": True}
+
+
+def smtp_security() -> str:
+    """SMTP_SECURITY, or - unset - what SMTP_USE_TLS has always meant."""
+    if settings.smtp_security:
+        return settings.smtp_security
+    return "starttls" if settings.smtp_use_tls else "none"
+
+
+def sender_name() -> str:
+    """The name beside the sender's address."""
+    return settings.notification_email_from_name or f"{settings.organisation_name} Privacy Office"
 
 
 def build_email_transport() -> EmailTransport:
@@ -185,7 +327,11 @@ def build_email_transport() -> EmailTransport:
             # Unwrapped at the last possible moment. SecretStr keeps it out of
             # reprs, tracebacks and structlog output everywhere above this line.
             password=settings.smtp_password.get_secret_value(),
-            use_tls=settings.smtp_use_tls,
+            security=smtp_security(),
+            sender=settings.notification_email_from,
+            sender_name=sender_name(),
+            ca_file=settings.smtp_ca_file,
+            timeout_s=settings.smtp_timeout_s,
         )
     if settings.email_transport == "null":
         return NullEmailTransport()

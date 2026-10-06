@@ -144,4 +144,7 @@ transport, which is what stops a message being sent around the catalogue.
 | `DKMS_ENABLED`, `DKMS_URL` | Opening the recipient, in the worker's environment as well as the API's |
 
 The transports themselves (`EMAIL_TRANSPORT`, `SMS_TRANSPORT`) are described
-in [configuration.md](../operations/configuration.md).
+in [configuration.md](../operations/configuration.md); email - its settings,
+failures and a test send - in [email/README.md](../email/README.md), with every
+message, its task and the code that queues it in
+[email/messages.md](../email/messages.md).

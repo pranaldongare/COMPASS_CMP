@@ -6,6 +6,7 @@
 
 from cmp.infrastructure.email.transport import (
     ConsoleEmailTransport,
+    EmailRejected,
     EmailTransport,
     NullEmailTransport,
     SmtpEmailTransport,
@@ -14,6 +15,7 @@ from cmp.infrastructure.email.transport import (
 
 __all__ = [
     "ConsoleEmailTransport",
+    "EmailRejected",
     "EmailTransport",
     "NullEmailTransport",
     "SmtpEmailTransport",

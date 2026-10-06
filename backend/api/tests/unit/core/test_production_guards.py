@@ -27,6 +27,7 @@ PRODUCTION: dict[str, Any] = {
     "dkms_enabled": True,
     "blind_index_key": "a-real-blind-index-key-of-thirty-two-bytes",
     "breach_ticket_email_domains": ("organisation.example",),
+    "notification_email_from": "privacy@organisation.example",
 }
 
 
@@ -98,6 +99,10 @@ class TestBreachTicketDomainsInProduction:
     def test_the_development_domain_alone_is_refused(self) -> None:
         with pytest.raises(ValueError, match="BREACH_TICKET_EMAIL_DOMAINS"):
             _settings(breach_ticket_email_domains=("cmp.local",))
+
+    def test_a_placeholder_sender_is_refused(self) -> None:
+        with pytest.raises(ValueError, match="NOTIFICATION_EMAIL_FROM"):
+            _settings(notification_email_from="privacy@example.org")
 
     def test_a_comma_separated_value_is_read_as_a_list(self) -> None:
         settings = _settings(breach_ticket_email_domains="organisation.example, lab.example")

@@ -5,7 +5,7 @@ Seven suites, each answering a different question. Counts are as of
 
 | Suite | Where | Runs against | Count |
 |---|---|---|---|
-| Backend unit | `backend/api/tests/unit` | nothing; pure functions | 639 |
+| Backend unit | `backend/api/tests/unit` | nothing; pure functions | 657 |
 | Backend integration | `backend/api/tests/integration` | real PostgreSQL, Redis and key service | 471 |
 | Backend security | `backend/api/tests/security` | the ASGI app with real datastores | 472 |
 | Backend HTTP | `backend/api/tests/http` | the ASGI app over HTTP, real datastores and key service; **commits** | 121 |

@@ -8,6 +8,21 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Email that works with any mail server, and a document of every message**
+  (2026-10-06). The SMTP transport connects by STARTTLS, SSL from the first
+  byte (465) or plainly to an internal relay (25) - `SMTP_SECURITY` - logs in
+  only when `SMTP_USERNAME` is set, verifies certificates (with `SMTP_CA_FILE`
+  for an internal authority), and sends a named sender
+  (`NOTIFICATION_EMAIL_FROM_NAME`), a Date, a Message-ID and
+  `Auto-Submitted`. A refusal no retry will mend - a wrong login, a 5xx, an
+  untrusted certificate - is `EmailRejected` and fails at once instead of
+  being retried five times; an unreachable or busy server is still retried.
+  `SMTP_SERVER` and `SENDER_EMAIL` are read as `SMTP_HOST` and
+  `NOTIFICATION_EMAIL_FROM`; production refuses a placeholder sender.
+  `scripts/send_test_email.py` sends one test through it. `docs/email/`
+  explains it, and `docs/email/messages.md` - generated from the code by
+  `docs/tools/generate-email-docs.py` - lists all 25 messages with the task
+  and line that send each and where it is queued from.
 - **Files kept with an incident** (2026-10-06). Log an incident takes the
   email that reported it, a screenshot, a chat or a log - each marked Email,
   Proof, Chat or Other - and sends them once the incident is logged; the

@@ -97,6 +97,12 @@ works.**
    `retry_backoff=5`): at most about two and a half minutes. A message queued during a
    longer outage is dropped after the last retry; the person asks for a new
    code.
+5. If the key service is fine and nothing arrives by email, it is the mail
+   server: run `scripts/send_test_email.py --to <you>` from the worker's
+   machine, and look for `email.rejected` (a login or address refused - not
+   retried) or `email.unavailable` (unreachable - retried) in the worker's
+   log. [email/README.md](../email/README.md#checking-a-deployment) says what
+   each answer means.
 
 ## A portal shows `SE::…` where a name should be
 

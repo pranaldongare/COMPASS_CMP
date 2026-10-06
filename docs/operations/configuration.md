@@ -151,7 +151,8 @@ that writes to a file is a far better failure than one that emails and texts rea
 people the first time somebody signs in.
 
 Set `EMAIL_TRANSPORT=smtp` explicitly, along with the SMTP settings, to deliver
-for real, and `SMS_TRANSPORT=http` with the gateway URL and token. Outside
+for real - every SMTP setting, the three ways to connect and a test send are in
+[email/README.md](../email/README.md) - and `SMS_TRANSPORT=http` with the gateway URL and token. Outside
 local and test the console transports raise rather than pretend; in
 production the settings refuse to load at all.
 
