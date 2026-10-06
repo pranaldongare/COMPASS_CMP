@@ -27,7 +27,10 @@ as a release yet.
   one off switch: it puts the account back (switched off if made for the
   breach, `data_subject` otherwise), clears the password and revokes the
   sessions. The after-commit async hooks S3-09 added for revocation are gone
-  again; the users route revokes after its commit, as for any deactivation.
+  again; the users route revokes after its commit, as for any deactivation. The
+  access email (`breach_ticket_access`) says so: "When the matter is closed you
+  can still read the ticket, but no longer answer it", in place of "The access
+  ends when the matter is closed".
 
 ### Security
 - **A refused request keeps its evidence.** A failed sign-in's audit row was

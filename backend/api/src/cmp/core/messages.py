@@ -889,7 +889,8 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
         description=(
             "Sent to somebody with no console login whom the Privacy Office - or a colleague - "
             "has asked to answer a ticket (S3-09). It gives temporary access to the console to "
-            "answer it, ending when the matter is closed, and how to set a password. It names "
+            "answer it - when the matter is closed they can still read it, no longer answer it - "
+            "and how to set a password. It names "
             "no breach (BD-18). Email only; sent by the sign-in service, like an invitation."
         ),
         group="Breach",
@@ -908,7 +909,8 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
         email_subject="The {organisation} Privacy Office has asked for your help",
         email_body=(
             "{full_name}, the {organisation} Privacy Office has given you temporary access to "
-            "its console to answer a ticket. The access ends when the matter is closed.\n\n"
+            "its console to answer a ticket. When the matter is closed you can still read the "
+            "ticket, but no longer answer it.\n\n"
             "Set your password here:\n{reset_url}\n\n"
             "and enter this code on that page:\n\n    {code}\n\n"
             "The code works once and expires in {hours} hours. If it has expired, choose "
