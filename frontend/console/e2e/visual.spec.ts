@@ -30,6 +30,15 @@
  */
 import { expect, test } from "@playwright/test";
 
+// The screens as a real deployment shows them: the development accounts the
+// sign-in page lists when DEV_SHOW_CODES is on (which this build's .env.local
+// may set) are not part of the product, so the panel is told there are none.
+test.beforeEach(async ({ page }) => {
+  await page.route("**/dev/seed-accounts", (route) =>
+    route.fulfill({ json: { password: null, accounts: [] } }),
+  );
+});
+
 /**
  * Serial, and for a measured reason rather than a cautious one.
  *

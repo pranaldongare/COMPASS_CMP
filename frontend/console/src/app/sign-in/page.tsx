@@ -27,6 +27,7 @@ import { AuthLayout } from "@/components/layout/auth-layout";
 import { AuthPageGate } from "@/components/security";
 import { Alert, Button, Field, Input } from "@/components/ui/primitives";
 import { signInWithPassword } from "@/features/auth";
+import { SeedAccounts } from "@/features/dev/seed-accounts";
 import { config } from "@/lib/config";
 import { ApiError, unexpectedErrorMessage } from "@/lib/errors";
 import { safeRedirectPath, useHydrated } from "@/lib/security";
@@ -212,6 +213,15 @@ function StaffForm() {
           Forgotten your password?
         </Link>
       </p>
+
+      {/* Development only; renders nothing in a real deployment. */}
+      <SeedAccounts
+        onUse={(login, password) => {
+          form.setValue("login", login, { shouldValidate: true });
+          form.setValue("password", password, { shouldValidate: true });
+          setFormError(null);
+        }}
+      />
     </form>
   );
 }

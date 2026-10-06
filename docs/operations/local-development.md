@@ -199,6 +199,17 @@ does not exist unless it is on - a code shown on the screen that asks for it
 proves nothing about who holds the phone, so this never goes near a real
 deployment.
 
+**The seed accounts, on the sign-in page.** With the same switch on, the
+console's sign-in page has a **Development accounts** panel: the seed's own
+logins - `admin@`, `dpo@`, `dcoadmin@`, `dco@`, `rco@`, `rnd@cmp.local` and
+`seed_demo.py`'s twelve staff - that are active and still have the seed
+password, with the password and a **Use** button that fills the form. Each is
+checked against the password it has now (`GET /dev/seed-accounts`), so one
+whose password was changed disappears from the list, and an account the seed
+did not make - a breach-only login, an invited colleague - is never shown.
+`DEV_SEED_PASSWORD` and `DEV_SEED_LOGINS` change what it looks for; the
+seed script reads the same password setting.
+
 A code is valid for ten minutes (five for MFA) and five attempts. Five codes
 per contact per hour; if you hit that during manual testing, clear the
 counters:

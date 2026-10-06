@@ -43,7 +43,9 @@ from cmp.db.sql import fetch_one
 
 log = get_logger("cmp.seed")
 
-PASSWORD = "SeedPassw0rd!2026"  # noqa: S105 - development only, guarded below
+#: Development only, guarded below. One setting, so the console's sign-in page
+#: (DEV_SHOW_CODES) shows the same password the seed gave.
+PASSWORD = settings.dev_seed_password
 
 # =============================================================================
 #  The administrator - the only account the seed creates

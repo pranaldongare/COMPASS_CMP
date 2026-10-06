@@ -1,4 +1,5 @@
-"""`GET /dev/codes` - the development popup's one-time codes.
+"""`GET /dev/codes` - the development popup's one-time codes - and
+`GET /dev/seed-accounts`, the seed logins still on the seed password.
 
 Mounted only when `DEV_SHOW_CODES` is on, which the settings refuse outside
 `local` and `test`. No session: the popup is needed before anybody has one.
@@ -12,8 +13,10 @@ from typing import Any
 
 from fastapi import APIRouter, Request, Response
 
+from cmp.core.config import settings
+from cmp.db.pool import connection
 from cmp.db.redis import get_redis
-from cmp.infrastructure import devcodes
+from cmp.infrastructure import devcodes, devseed
 
 router = APIRouter(tags=["development"], include_in_schema=False)
 
@@ -24,3 +27,12 @@ async def dev_codes(request: Request, response: Response) -> dict[str, Any]:
     response.headers["Cache-Control"] = "no-store"
     client = devcodes.client_id(request.headers.get(devcodes.CLIENT_HEADER))
     return {"items": await devcodes.recent(get_redis(), client=client)}
+
+
+@router.get("/dev/seed-accounts", summary="Seed accounts still on the seed password")
+async def dev_seed_accounts(response: Response) -> dict[str, Any]:
+    """For the console's sign-in page - see `cmp.infrastructure.devseed`."""
+    response.headers["Cache-Control"] = "no-store"
+    async with connection() as conn:
+        found = await devseed.accounts(conn)
+    return {"password": settings.dev_seed_password if found else None, "accounts": found}

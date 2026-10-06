@@ -138,6 +138,31 @@ class Settings(BaseSettings):
     #: refused outright outside local and test: shown on the screen that asks
     #: for it, a code proves nothing about who is holding the phone.
     dev_show_codes: bool = False
+    #: The password the development seed gives its accounts, and - with
+    #: DEV_SHOW_CODES on - shown on the console's sign-in page beside each of
+    #: DEV_SEED_LOGINS that still has it. Never read outside local and test.
+    dev_seed_password: str = "SeedPassw0rd!2026"  # noqa: S105 - development only
+    #: The role logins first, then `scripts/seed_demo.py`'s staff.
+    dev_seed_logins: Annotated[tuple[str, ...], NoDecode] = (
+        "admin@cmp.local",
+        "dpo@cmp.local",
+        "dcoadmin@cmp.local",
+        "dco@cmp.local",
+        "rco@cmp.local",
+        "rnd@cmp.local",
+        "kavitha.raman@cmp.local",
+        "farhan.qureshi@cmp.local",
+        "rohit.kulkarni@cmp.local",
+        "sneha.pillai@cmp.local",
+        "vikram.joshi@cmp.local",
+        "lakshmi.iyer@cmp.local",
+        "imran.sheikh@cmp.local",
+        "deepa.menon@cmp.local",
+        "arjun.reddy@cmp.local",
+        "neha.gupta@cmp.local",
+        "siddharth.rao@cmp.local",
+        "pooja.bhat@cmp.local",
+    )
     #: The key the blind indexes are computed under. Separate from SECRET_KEY on
     #: purpose: rotating the session secret must not change every index, and
     #: the index key never leaves this process. 32+ bytes.
@@ -252,6 +277,7 @@ class Settings(BaseSettings):
         "allowed_proof_mime",
         "allowed_manifest_mime",
         "breach_ticket_email_domains",
+        "dev_seed_logins",
         mode="before",
     )
     @classmethod

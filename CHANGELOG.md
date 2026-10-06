@@ -7,84 +7,22 @@ as a release yet.
 
 ## [Unreleased]
 
-### Changed
-- **A breach's page is in tabs, like a project's.** It had grown to eight
-  cards in one column. Closing it - with what still stands in the way - now
-  sits at the top beside its details; the work is in tabs in the order it
-  runs: Duties (the default), Validation, People & notices, Tickets,
-  Assessment, and a new Activity tab with every close and reopening. Duties
-  and Tickets turn red when something there is late; a prompt leads to
-  Validation until it is done; `#tickets`, `#notices` and the other old
-  addresses open the right tab. On a phone the details follow the tabs, and
-  every tab row now scrolls its selected tab into view.
-- **A breach-only login stays, read only, when the holder's part is over**
-  (decided 2026-10-06, amending ADR 0023's BD-16). When the breach closes or
-  the DPO withdraws a holder's ticket, the grant ends but the account is left
-  as it is: they can still sign in and read their ticket, and every write is
-  refused as before. A person with another role keeps it. The Tickets card
-  shows **Temporary login · read only**; asking a kept login again sends the
-  "ticket waiting" email. The administrator's **End temporary access** is the
-  one off switch: it puts the account back (switched off if made for the
-  breach, `data_subject` otherwise), clears the password and revokes the
-  sessions. The after-commit async hooks S3-09 added for revocation are gone
-  again; the users route revokes after its commit, as for any deactivation. The
-  access email (`breach_ticket_access`) says so: "When the matter is closed you
-  can still read the ticket, but no longer answer it", in place of "The access
-  ends when the matter is closed".
-
-### Security
-- **A refused request keeps its evidence.** A failed sign-in's audit row was
-  rolled back by the raise that followed it, and no 403 was ever recorded.
-  Failed sign-ins and second-factor codes now commit their record before
-  refusing (`with_evidence`), and every 403 - and the 404 a hidden breach
-  answers with - is recorded as `auth.access_denied` (review 2026-10-01, SEC-3).
-- **Guessing is counted by account and by address.** The lockout counts the
-  account however it is named, not the text typed; failed attempts at sign-in,
-  code sign-in and password reset also count against the address
-  (`AUTH_FAILURES_PER_ADDRESS`); a code's failure count lives as long as the
-  code; a password reset lifts the lockout.
-- **A broker outage answers every code request alike.** Only a registered
-  contact's request reached the queue, so an outage was a 503 for her and a 200
-  for a stranger. The three neutral forms check the broker first.
-- **The consent submission checks CSRF, and the body limit counts what
-  arrives** - a chunked body is measured too (SEC-4).
-- **One phone is one quota, however it is typed.** The sign-in code and
-  public rights form throttles were keyed on the contact as typed while the
-  lookup normalised it, so "+91 98765 00001", "+919876500001" and two other
-  spellings were four quotas for one person - four times the codes, and four
-  times the guesses. Every contact throttle now keys on the contact's keyed
-  hash, the same identity the lookup finds, so rate keys no longer hold
-  contacts in the clear either (review 2026-10-01, SEC-2).
-- **The development code popup shows a code only in the tab that asked.**
-  Every open portal and console polled one shared list, so a code asked for
-  on one screen popped up on every screen on every machine - anyone testing
-  alongside saw everyone else's codes. Each tab now sends an
-  `X-CMP-Dev-Client` id; the API keeps it with the code (through the Celery
-  task that sends it) and `/dev/codes` returns a tab's own codes only.
-  Development only, as before: refused outside local/test.
-- **A one-time code is worth exactly a data principal's session.** The
-  portal's code sign-in minted a session with whatever role the account held,
-  so a code to a staff mailbox - no password, no second factor - produced a
-  full staff session with every power of the role. Every code sign-in now
-  acts as `data_subject` whatever the row says; the row's role is carried as
-  `account_role` for display only ([ADR 0013](docs/decisions/0013-every-account-is-a-data-principal.md)).
-- Task arguments are withheld from Celery's task events. Celery puts a repr of
-  every argument into `task-sent` and `task-received`, and anything reading
-  those events renders it - the arguments here are one-time codes and personal
-  contacts. The events now carry the number of arguments and nothing else,
-  while the worker still receives the real ones.
-- One-time code verification is atomic: the check, the consumption and the
-  attempt count are one Redis script, so two requests carrying the same code
-  cannot both succeed.
-- A failed request on a capability path no longer writes the token to the
-  failure log, and the nginx access log scrubs consent and nomination tokens
-  in every location (the earlier scrubbing variable was set and never used).
-- A consent is recorded only against a serving the server itself witnessed:
-  the moment comes from the server's record of rendering the notice to that
-  person, and the request body's `served_at` is ignored ([ADR 0011](docs/decisions/0011-server-held-notice-serving.md)).
-- Export CSV cells that begin with a formula character are written as text.
-
 ### Added
+- **The breach register can be searched and filtered** (2026-10-06). Search
+  by either reference (INC- or BR-), the title or where it occurred; filter by
+  validation, duties overdue or due within 24 hours, recent activity (24
+  hours, 7 days, 30 days), and tickets open or past their answer-by; sort by
+  the most recent activity or by what is due soonest. The filters are kept in
+  the address. The register now carries each incident's `last_activity_at`
+  (from the audit trail: the breach, its notices and its tickets) and its
+  `tickets_open` and `tickets_overdue`, shown as two new columns.
+- **The seed accounts on the console's sign-in page, in development.** With
+  `DEV_SHOW_CODES` on, a **Development accounts** panel lists the seed logins
+  that are active and still have the seed password, with the password and a
+  **Use** button. Checked against each account's current password
+  (`GET /dev/seed-accounts`, development only): a changed password or an
+  account the seed did not make is never shown. `DEV_SEED_PASSWORD` and
+  `DEV_SEED_LOGINS` configure it; `scripts/seed.py` reads the same password.
 - **Breach-only logins, and colleagues who follow the same flow (S3-09,
   [ADR 0023](docs/decisions/0023-breach-tickets-and-breach-only-logins.md)).**
   A breach ticket can go to somebody with no console login: the DPO chooses
@@ -522,6 +460,29 @@ as a release yet.
 - `CONTRIBUTING.md`.
 
 ### Changed
+- **A breach's page is in tabs, like a project's.** It had grown to eight
+  cards in one column. Closing it - with what still stands in the way - now
+  sits at the top beside its details; the work is in tabs in the order it
+  runs: Duties (the default), Validation, People & notices, Tickets,
+  Assessment, and a new Activity tab with every close and reopening. Duties
+  and Tickets turn red when something there is late; a prompt leads to
+  Validation until it is done; `#tickets`, `#notices` and the other old
+  addresses open the right tab. On a phone the details follow the tabs, and
+  every tab row now scrolls its selected tab into view.
+- **A breach-only login stays, read only, when the holder's part is over**
+  (decided 2026-10-06, amending ADR 0023's BD-16). When the breach closes or
+  the DPO withdraws a holder's ticket, the grant ends but the account is left
+  as it is: they can still sign in and read their ticket, and every write is
+  refused as before. A person with another role keeps it. The Tickets card
+  shows **Temporary login · read only**; asking a kept login again sends the
+  "ticket waiting" email. The administrator's **End temporary access** is the
+  one off switch: it puts the account back (switched off if made for the
+  breach, `data_subject` otherwise), clears the password and revokes the
+  sessions. The after-commit async hooks S3-09 added for revocation are gone
+  again; the users route revokes after its commit, as for any deactivation. The
+  access email (`breach_ticket_access`) says so: "When the matter is closed you
+  can still read the ticket, but no longer answer it", in place of "The access
+  ends when the matter is closed".
 - **The UX review of 2026-10-05, package 4: records lead with where they
   stand.** The project page is one workspace - the next move and its blockers
   beside the project's details, then tabs for Overview, Setup, Consent,
@@ -1047,6 +1008,58 @@ as a release yet.
 - Production refuses to start unless the email transport is SMTP and the SMS
   transport is the HTTP gateway; the console transports raise outside local
   and test instead of reporting delivery.
+
+### Security
+- **A refused request keeps its evidence.** A failed sign-in's audit row was
+  rolled back by the raise that followed it, and no 403 was ever recorded.
+  Failed sign-ins and second-factor codes now commit their record before
+  refusing (`with_evidence`), and every 403 - and the 404 a hidden breach
+  answers with - is recorded as `auth.access_denied` (review 2026-10-01, SEC-3).
+- **Guessing is counted by account and by address.** The lockout counts the
+  account however it is named, not the text typed; failed attempts at sign-in,
+  code sign-in and password reset also count against the address
+  (`AUTH_FAILURES_PER_ADDRESS`); a code's failure count lives as long as the
+  code; a password reset lifts the lockout.
+- **A broker outage answers every code request alike.** Only a registered
+  contact's request reached the queue, so an outage was a 503 for her and a 200
+  for a stranger. The three neutral forms check the broker first.
+- **The consent submission checks CSRF, and the body limit counts what
+  arrives** - a chunked body is measured too (SEC-4).
+- **One phone is one quota, however it is typed.** The sign-in code and
+  public rights form throttles were keyed on the contact as typed while the
+  lookup normalised it, so "+91 98765 00001", "+919876500001" and two other
+  spellings were four quotas for one person - four times the codes, and four
+  times the guesses. Every contact throttle now keys on the contact's keyed
+  hash, the same identity the lookup finds, so rate keys no longer hold
+  contacts in the clear either (review 2026-10-01, SEC-2).
+- **The development code popup shows a code only in the tab that asked.**
+  Every open portal and console polled one shared list, so a code asked for
+  on one screen popped up on every screen on every machine - anyone testing
+  alongside saw everyone else's codes. Each tab now sends an
+  `X-CMP-Dev-Client` id; the API keeps it with the code (through the Celery
+  task that sends it) and `/dev/codes` returns a tab's own codes only.
+  Development only, as before: refused outside local/test.
+- **A one-time code is worth exactly a data principal's session.** The
+  portal's code sign-in minted a session with whatever role the account held,
+  so a code to a staff mailbox - no password, no second factor - produced a
+  full staff session with every power of the role. Every code sign-in now
+  acts as `data_subject` whatever the row says; the row's role is carried as
+  `account_role` for display only ([ADR 0013](docs/decisions/0013-every-account-is-a-data-principal.md)).
+- Task arguments are withheld from Celery's task events. Celery puts a repr of
+  every argument into `task-sent` and `task-received`, and anything reading
+  those events renders it - the arguments here are one-time codes and personal
+  contacts. The events now carry the number of arguments and nothing else,
+  while the worker still receives the real ones.
+- One-time code verification is atomic: the check, the consumption and the
+  attempt count are one Redis script, so two requests carrying the same code
+  cannot both succeed.
+- A failed request on a capability path no longer writes the token to the
+  failure log, and the nginx access log scrubs consent and nomination tokens
+  in every location (the earlier scrubbing variable was set and never used).
+- A consent is recorded only against a serving the server itself witnessed:
+  the moment comes from the server's record of rendering the notice to that
+  person, and the request body's `served_at` is ignored ([ADR 0011](docs/decisions/0011-server-held-notice-serving.md)).
+- Export CSV cells that begin with a formula character are written as text.
 
 ## 2026-09-10
 

@@ -97,7 +97,10 @@ def test_the_route_exists_only_when_asked(monkeypatch: Any) -> None:
     monkeypatch.setattr("cmp.core.config.settings.dev_show_codes", False)
     assert _development_routers() == ()
     monkeypatch.setattr("cmp.core.config.settings.dev_show_codes", True)
-    assert [r.routes[0].path for r in _development_routers()] == ["/dev/codes"]
+    assert [route.path for r in _development_routers() for route in r.routes] == [  # type: ignore[attr-defined]
+        "/dev/codes",
+        "/dev/seed-accounts",
+    ]
 
 
 # ------------------------------------------------ only the tab that asked sees a code
