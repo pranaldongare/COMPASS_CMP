@@ -38,6 +38,7 @@ import {
   consentComposition,
   roleBlurb,
 } from "@/features/dashboard/components";
+import { QuickAction } from "@/features/dashboard/components/quick-action";
 import { humanise } from "@/lib/format";
 import { useAuth } from "@/providers";
 
@@ -76,6 +77,7 @@ export default function DashboardPage() {
         eyebrow={me ? humanise(me.role) : undefined}
         title={me ? `Good day, ${me.full_name.split(" ")[0]}` : "Dashboard"}
         description={roleBlurb(me?.role)}
+        actions={<QuickAction me={me} />}
       />
 
       {error && (

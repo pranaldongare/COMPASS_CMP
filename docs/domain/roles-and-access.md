@@ -293,6 +293,13 @@ review**, apart from **Needs your action** (UX review 2026-10-05).
 | R&D User | projects needing something from them; tickets addressed to them |
 | Temporary ticket holder | no dashboard: the console sends it to **My tasks**, where its breach tickets are |
 
+Three roles start something from nothing, and its button sits at the top of
+their dashboard (2026-10-06): the DPO **Log an incident** - the organisation's
+board is owed word within thirty minutes of its being first noticed, so it is
+never a menu away - an R&D User **Register a project**, an administrator
+**Provision an account**. The collection roles get none: a link, a site or a
+source belongs to a project or a site, which their queues already lead to.
+
 Every staff dashboard also lists the breach tickets addressed to its reader,
 and the DPO's shows the open breaches above the queues.
 
