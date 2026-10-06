@@ -1,12 +1,14 @@
 """The SMTP transport (2026-10-06): how it connects, what it sends, and which
 failures a retry can mend.
 
-A fake server stands in for smtplib's client, recording what the transport
-asked of it. Three ways in - STARTTLS, SSL from the first byte, plain for an
-internal relay - a login only when one is configured, and a message with a
-named sender, a date, an id and the auto-reply guard. A refusal that will not
-change (a wrong login, a 5xx, an untrusted certificate) is `EmailRejected`,
-which no task retries; a passing failure stays an `OSError`, which they do.
+Five settings and nothing else: SMTP_SERVER, SMTP_PORT, SMTP_USERNAME,
+SMTP_PASSWORD, SENDER_EMAIL. A fake server stands in for smtplib's client,
+recording what the transport asked of it. The port decides the way in - 465
+SSL, 587 STARTTLS, anything else plain - a login only when one is set, and
+the message carries both the laid-out HTML and the plain text, a named
+sender, a date, an id and the auto-reply guard. A refusal that will not change
+(a wrong login, a 5xx, an untrusted certificate) is `EmailRejected`, which no
+task retries; a passing failure stays an `OSError`, which they do.
 """
 
 from __future__ import annotations
@@ -81,7 +83,6 @@ def transport(**kw: Any) -> SmtpEmailTransport:
         kw.pop("host", "mail.corp.example"),
         kw.pop("port", 587),
         sender="privacy@corp.example",
-        sender_name="COMPASS Privacy Office",
         timeout_s=7,
         **kw,
     )
@@ -92,7 +93,7 @@ def send(tx: SmtpEmailTransport) -> dict[str, object]:
 
 
 def test_starttls_upgrades_before_the_login_and_sends_once() -> None:
-    result = send(transport(username="svc-cmp", password="secret", security="starttls"))
+    result = send(transport(username="svc-cmp", password="secret"))
     [server] = FakeServer.made
     assert server.calls == ["ehlo", "starttls", "ehlo", "login:svc-cmp", "send", "quit"]
     assert (server.host, server.port, server.timeout) == ("mail.corp.example", 587, 7)
@@ -100,28 +101,32 @@ def test_starttls_upgrades_before_the_login_and_sends_once() -> None:
 
 
 def test_ssl_is_encrypted_from_the_first_byte() -> None:
-    send(transport(port=465, username="svc-cmp", password="secret", security="ssl"))
+    send(transport(port=465, username="svc-cmp", password="secret"))
     [server] = FakeServer.made
     assert isinstance(server, FakeSSLServer) and isinstance(server.context, ssl.SSLContext)
     assert server.calls == ["login:svc-cmp", "send", "quit"]
 
 
 def test_a_plain_relay_without_a_login_only_sends() -> None:
-    send(transport(port=25, security="none"))
+    send(transport(port=25))
     [server] = FakeServer.made
     assert server.calls == ["send", "quit"]
 
 
 def test_the_message_names_its_sender_and_is_marked_automatic() -> None:
-    send(transport(security="none"))
+    send(transport(port=25))
     [message] = FakeServer.made[0].sent
     assert message["From"] == "COMPASS Privacy Office <privacy@corp.example>"
     assert message["To"] == "asha.rao@corp.example"
     assert message["Subject"] == "Your code"
     assert message["Auto-Submitted"] == "auto-generated"
     assert message["Date"] and message["Message-ID"]
-    assert message.get_content_type() == "text/plain"
-    assert message.get_content().strip() == "482913 is your code."
+    # Both: the laid-out HTML, and the text for a client that shows none.
+    assert message.get_content_type() == "multipart/alternative"
+    text = message.get_body(preferencelist=("plain",)).get_content()
+    page = message.get_body(preferencelist=("html",)).get_content()
+    assert text.startswith("482913 is your code.") and "COMPASS Privacy Office" in text
+    assert "<h1" in page and "Your code" in page and "Privacy Office" in page
 
 
 @pytest.mark.parametrize(
@@ -137,7 +142,7 @@ def test_the_message_names_its_sender_and_is_marked_automatic() -> None:
 def test_a_refusal_no_retry_will_mend_is_not_retried(step: str, error: BaseException) -> None:
     FakeServer.fail = {step: error}
     with pytest.raises(EmailRejected) as refused:
-        send(transport(username="svc-cmp", password="secret", security="starttls"))
+        send(transport(username="svc-cmp", password="secret"))
     assert not isinstance(refused.value, OSError), "tasks retry OSError; this must not be one"
     assert "secret" not in str(refused.value)
 
@@ -154,34 +159,36 @@ def test_a_refusal_no_retry_will_mend_is_not_retried(step: str, error: BaseExcep
 def test_a_passing_failure_is_left_for_the_task_to_retry(step: str, error: BaseException) -> None:
     FakeServer.fail = {step: error}
     with pytest.raises(OSError):
-        send(transport(username="svc-cmp", password="secret", security="starttls"))
+        send(transport(username="svc-cmp", password="secret"))
 
 
 def test_a_failed_upgrade_closes_the_connection() -> None:
     FakeServer.fail = {"starttls": smtplib.SMTPNotSupportedError("no STARTTLS")}
     with pytest.raises(EmailRejected):
-        send(transport(security="starttls"))
+        send(transport(port=587))
     assert FakeServer.made[0].calls[-1] == "close"
 
 
-def test_an_unknown_security_mode_is_refused_at_once() -> None:
-    with pytest.raises(ValueError):
-        transport(security="tls-ish")
+def test_the_port_decides_the_connection() -> None:
+    assert [t.connection_for(p) for p in (465, 587, 25, 2525)] == [
+        "ssl",
+        "starttls",
+        "plain",
+        "plain",
+    ]
 
 
-def test_settings_build_the_transport_and_take_the_scripts_names(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """SMTP_SERVER and SENDER_EMAIL are read as SMTP_HOST and
-    NOTIFICATION_EMAIL_FROM; SMTP_SECURITY unset follows SMTP_USE_TLS."""
+def test_the_five_settings_build_the_transport(monkeypatch: pytest.MonkeyPatch) -> None:
+    """SMTP_SERVER set is all it takes to send for real."""
     s = Settings(
         _env_file=None,  # type: ignore[call-arg]
-        EMAIL_TRANSPORT="smtp",
         SMTP_SERVER="relay.corp.example",
         SMTP_PORT=25,
-        SMTP_USE_TLS=False,
+        SMTP_USERNAME="",
+        SMTP_PASSWORD="",
         SENDER_EMAIL="privacy@corp.example",
     )
+    assert s.email_mode == "smtp"
     monkeypatch.setattr(t, "settings", s)
     built = t.build_email_transport()
     assert isinstance(built, SmtpEmailTransport)
@@ -191,12 +198,17 @@ def test_settings_build_the_transport_and_take_the_scripts_names(
     assert server.sent[0]["From"] == "COMPASS Privacy Office <privacy@corp.example>"
 
 
+def test_without_a_server_email_goes_to_the_outbox() -> None:
+    s = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert s.email_mode == "console"
+
+
 def test_production_refuses_a_placeholder_sender() -> None:
     with pytest.raises(ValueError, match="NOTIFICATION_EMAIL_FROM"):
         Settings(
             _env_file=None,  # type: ignore[call-arg]
             ENVIRONMENT="production",
-            EMAIL_TRANSPORT="smtp",
+            SMTP_SERVER="relay.corp.example",
             SMS_TRANSPORT="http",
             NOTIFICATION_EMAIL_FROM="privacy@example.org",
             SECRET_KEY="x" * 64,

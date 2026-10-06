@@ -81,7 +81,7 @@ def test_the_setting_is_refused_outside_local_development(environment: str) -> N
             SECRET_KEY="x" * 40,
             POSTGRES_PASSWORD="not-a-default-password",
             COOKIE_SECURE=True,
-            EMAIL_TRANSPORT="smtp",
+            SMTP_SERVER="relay.organisation.example",
             SMS_TRANSPORT="http",
             SMS_HTTP_URL="https://sms.example.org",
             DKMS_ENABLED=True,

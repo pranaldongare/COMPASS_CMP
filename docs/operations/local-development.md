@@ -85,7 +85,8 @@ Settings worth checking in `.env` for local work:
 | `PUBLIC_BASE_URL` | `http://localhost:3001` | where the links in emails land: consent links, nomination acceptance |
 | `CONSOLE_BASE_URL` | `http://localhost:3000` | where staff links land: tickets, requests |
 | `MFA_REQUIRED_ROLES` | every staff role | the default; leave it |
-| `EMAIL_TRANSPORT`, `SMS_TRANSPORT` | `console` | nothing is sent; see the outbox |
+| `SMTP_SERVER` | empty | no email is sent; see the outbox, and `var/outbox-html/` for each email laid out |
+| `SMS_TRANSPORT` | `console` | nothing is sent; see the outbox |
 | `DKMS_ENABLED` | `true` | personal fields are sealed; the key service must be up for any write |
 | `DKMS_URL` | `http://localhost:32688` | the key service from step 2 |
 | `BLIND_INDEX_KEY` | the `.env.example` value | must equal the key service's `DKMS_HASH_KEY` |

@@ -34,7 +34,8 @@ The API (`_production_guards` in `core/config.py`):
 | `COOKIE_SECURE` is false | The session travels in cleartext on the first `http://` hop |
 | `DEBUG` is true | Turns a handled failure into a traceback carrying local variables |
 | `CORS_ORIGINS` contains `*` | With `allow_credentials`, that hands the session to any origin |
-| `EMAIL_TRANSPORT` is not `smtp` | The console transport writes nothing outside local/test; a code nobody receives is a sign-in nobody completes |
+| `SMTP_SERVER` is empty | Email would go to the local outbox, which writes nothing outside local/test; a code nobody receives is a sign-in nobody completes |
+| `SENDER_EMAIL` is on `example.org` or `example.com` | Mail from a placeholder address is mail a real server may refuse and nobody can reply to |
 | `SMS_TRANSPORT` is not `http` | The same, for the data principal's primary sign-in; and `SMS_HTTP_URL` must be `https://` |
 | `DKMS_ENABLED` is false | Personal data would be written in the clear, and nothing would ever report it |
 | `BLIND_INDEX_KEY` starts `dev-only` or is under 32 bytes | Every lookup hash could be recomputed by anyone holding this repository |
@@ -67,14 +68,15 @@ boot: the second failure is loud and costs ten minutes.
 | OTP & MFA | 6 digits, 10 minutes, 5 verify attempts; MFA codes live 5 minutes; `MFA_REQUIRED_ROLES` defaults to every staff role ([ADR 0006](../decisions/0006-mfa-for-every-staff-role.md)) |
 | Provisioning | `STAFF_INVITE_TTL_H` 48 — how long the code in a staff invitation lasts, in hours. It is the reset flow's own code, so an expired invitation needs no separate path: "Forgotten your password?" sends a working replacement |
 | URLs | `PUBLIC_BASE_URL` (the data-principal portal, port 3001: consent and acceptance links) and `CONSOLE_BASE_URL` (the staff console, port 3000: ticket and request links) |
-| Messages | `ORGANISATION_NAME`, the `{organisation}` every message may name; `NOTIFICATION_EMAIL_FROM`; the words themselves are edited in the console ([messages.md](../domain/messages.md)) |
+| Messages | `ORGANISATION_NAME`, the `{organisation}` every message may name and the sender's name; the words themselves are edited in the console ([messages.md](../domain/messages.md)) |
 | Rights | `RIGHTS_RESPONSE_PERIOD_DAYS` 90, `GRIEVANCE_RESPONSE_PERIOD_DAYS` 90, acknowledge 2, tickets 5, collate 5 before, download 30, unverified close 7, nomination accept 30 |
 | Breach | `BREACH_WITHOUT_DELAY_TARGET_HOURS`, unset: the internal target for a duty Rule 7 says is due "without delay" - the Board's initial intimation and the notices to principals - in hours from awareness. The Rule sets no hours and the number is Legal's and the Programme's to choose; while it is unset the register shows the time elapsed and flags nothing ([breaches.md](../domain/breaches.md)). The 6 hours for CERT-In and 72 for the Board's report are statute and are not settings. `BREACH_ORG_BOARD_MINUTES`, 30: the internal policy for telling the organisation's board, in minutes from first noticed; read when an incident is logged and stored as its duty's due time, so a change moves nothing already running ([ADR 0022](../decisions/0022-an-incident-first-and-a-breach-on-a-yes.md)). `BREACH_TICKET_EMAIL_DOMAINS`, `cmp.local`: the email domains, comma-separated, that make a person internal enough to hold a breach ticket; checked for every assignee and every colleague ([ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)) |
 | Uploads | `MAX_UPLOAD_BYTES` 25 MB under `UPLOAD_ROOT`; proofs are PDF, PNG, JPEG only |
 | API | 50 default page size, 200 max; public link 60/min |
 | Outbound HTTP | `EXTERNAL_HTTP_TIMEOUT_S` 10, `EXTERNAL_HTTP_RETRIES` 3 |
 | Logging | `LOG_LEVEL`, `LOG_JSON` (false for a terminal) |
-| Transports | `EMAIL_TRANSPORT` (`console`, `smtp`, `null`), `SMS_TRANSPORT` (`console`, `http`, `null`), `STORAGE_BACKEND` (`local`; `object` is not built, and any environment refuses to start with it - until 2026-10-05 it started and failed the first upload). With more than one API or worker replica, `UPLOAD_ROOT` must be one durable volume they all mount: a proof saved by one replica is read back by another. The `http` SMS transport POSTs `{"to","body","from"}` as JSON with a bearer token to `SMS_HTTP_URL`; put a provider-specific adapter in front of it |
+| Email | Five settings: `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SENDER_EMAIL`. `SMTP_SERVER` empty writes to the outbox; the port decides the connection (465 SSL, 587 STARTTLS, 25 plain). See [email/README.md](../email/README.md) |
+| Transports | `SMS_TRANSPORT` (`console`, `http`, `null`), `STORAGE_BACKEND` (`local`; `object` is not built, and any environment refuses to start with it - until 2026-10-05 it started and failed the first upload). With more than one API or worker replica, `UPLOAD_ROOT` must be one durable volume they all mount: a proof saved by one replica is read back by another. The `http` SMS transport POSTs `{"to","body","from"}` as JSON with a bearer token to `SMS_HTTP_URL`; put a provider-specific adapter in front of it |
 | Key service | See below |
 
 ## The key service
@@ -150,8 +152,8 @@ starts, so a change needs a restart.
 that writes to a file is a far better failure than one that emails and texts real
 people the first time somebody signs in.
 
-Set `EMAIL_TRANSPORT=smtp` explicitly, along with the SMTP settings, to deliver
-for real - every SMTP setting, the three ways to connect and a test send are in
+Set `SMTP_SERVER` and the other four email settings to deliver email for
+real - they, the template every email is laid out in, and a test send are in
 [email/README.md](../email/README.md) - and `SMS_TRANSPORT=http` with the gateway URL and token. Outside
 local and test the console transports raise rather than pretend; in
 production the settings refuse to load at all.

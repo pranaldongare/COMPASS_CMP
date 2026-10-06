@@ -139,7 +139,7 @@ class TestProductionStartupGuards:
             "cors_origins": ("https://console.example.org",),
             # Since September 2026 production also refuses a transport that
             # delivers nothing; a correct deployment names real ones.
-            "email_transport": "smtp",
+            "smtp_host": "relay.organisation.example",
             "sms_transport": "http",
             "sms_http_url": "https://sms-gateway.example.org/send",
             # And since the key service arrived, one that writes personal data

@@ -185,10 +185,10 @@ async def run_checks() -> list[Check]:
         results.append(
             Check(
                 "transports are configured for this environment",
-                not settings.is_production or settings.email_transport != "console",
-                f"email_transport={settings.email_transport} — production is writing mail to a file"
-                if settings.is_production and settings.email_transport == "console"
-                else f"email={settings.email_transport}, storage={settings.storage_backend}",
+                not settings.is_production or settings.email_mode != "console",
+                f"email_transport={settings.email_mode} — production is writing mail to a file"
+                if settings.is_production and settings.email_mode == "console"
+                else f"email={settings.email_mode}, storage={settings.storage_backend}",
             )
         )
 

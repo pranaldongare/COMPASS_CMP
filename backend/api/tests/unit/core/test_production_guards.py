@@ -21,7 +21,7 @@ PRODUCTION: dict[str, Any] = {
     "cookie_secure": True,
     "debug": False,
     "cors_origins": "https://console.example.org",
-    "email_transport": "smtp",
+    "smtp_host": "relay.organisation.example",
     "sms_transport": "http",
     "sms_http_url": "https://sms-gateway.example.org/send",
     "dkms_enabled": True,
@@ -49,9 +49,9 @@ class TestTransportsInProduction:
         with pytest.raises(ValueError, match="SMS_TRANSPORT"):
             _settings(sms_transport="null")
 
-    def test_console_email_is_refused(self) -> None:
-        with pytest.raises(ValueError, match="EMAIL_TRANSPORT"):
-            _settings(email_transport="console")
+    def test_no_mail_server_is_refused(self) -> None:
+        with pytest.raises(ValueError, match="SMTP_SERVER"):
+            _settings(smtp_host="")
 
     def test_the_http_gateway_must_be_https(self) -> None:
         with pytest.raises(ValueError, match="https"):

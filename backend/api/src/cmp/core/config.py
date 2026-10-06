@@ -233,13 +233,12 @@ class Settings(BaseSettings):
     # ---------------------------------------------------------------- external
     #: How the organisation names itself in messages ({organisation}).
     organisation_name: str = "COMPASS"
-    #: The address every email comes from. `SENDER_EMAIL` is accepted too.
+    #: SENDER_EMAIL: the address every email comes from. (The older name
+    #: NOTIFICATION_EMAIL_FROM is read too.)
     notification_email_from: str = Field(
         default="privacy@example.org",
-        validation_alias=AliasChoices("notification_email_from", "sender_email"),
+        validation_alias=AliasChoices("sender_email", "notification_email_from"),
     )
-    #: The name shown beside it. Empty: "<ORGANISATION_NAME> Privacy Office".
-    notification_email_from_name: str = ""
     external_http_timeout_s: float = 10.0  # never infinite — checklist §13
     external_http_retries: int = 3
 
@@ -248,29 +247,34 @@ class Settings(BaseSettings):
     # the local, non-delivering option on purpose: a misconfigured staging box
     # that quietly writes to a file is a far better failure than one that starts
     # emailing and texting real people the first time somebody signs in.
-    email_transport: Literal["console", "smtp", "null"] = "console"
+    #: Not a setting to make: email goes to the mail server when SMTP_SERVER
+    #: is set, and to the local outbox when it is not (`email_mode`). Kept so
+    #: a test can choose `null`, and so an older .env that names it loads.
+    email_transport: Literal["console", "smtp", "null"] | None = None
     sms_transport: Literal["console", "http", "null"] = "console"
     storage_backend: Literal["local", "object"] = "local"
 
-    #: The mail server. `SMTP_SERVER` is accepted too.
-    smtp_host: str = Field(
-        default="localhost", validation_alias=AliasChoices("smtp_host", "smtp_server")
-    )
-    smtp_port: int = 587
-    #: Leave empty for a relay that takes mail without a login.
+    # Email: five settings and nothing else (docs/email/README.md).
+    #: SMTP_SERVER: the mail server. Empty: email is written to the local
+    #: outbox instead (local and test only). (SMTP_HOST is read too.)
+    smtp_host: str = Field(default="", validation_alias=AliasChoices("smtp_server", "smtp_host"))
+    #: SMTP_PORT: 465 is SSL from the first byte, 587 is STARTTLS, anything
+    #: else (25) is a plain connection to an internal relay.
+    smtp_port: int = 25
+    #: SMTP_USERNAME / SMTP_PASSWORD: the login. Empty: no login.
     smtp_username: str = ""
     smtp_password: SecretStr = SecretStr("")
-    #: How the connection is protected: `starttls` (port 587, upgraded after
-    #: connecting), `ssl` (port 465, encrypted from the start) or `none` (a
-    #: plain connection - an internal relay on port 25). Unset, it follows
-    #: SMTP_USE_TLS: starttls when true, none when false.
-    smtp_security: Literal["starttls", "ssl", "none"] | None = None
-    smtp_use_tls: bool = True
-    #: A CA bundle to trust beyond the system's, for a relay whose certificate
-    #: an internal authority signed. Verification is never switched off.
-    smtp_ca_file: str = ""
-    #: Seconds before a stalled server is given up on. Unset: EXTERNAL_HTTP_TIMEOUT_S.
-    smtp_timeout_s: float | None = Field(default=None, gt=0)
+    #: No longer used - the port decides how the connection is protected.
+    #: Accepted so an .env written before 2026-10-06 still loads.
+    smtp_use_tls: bool | None = None
+
+    @property
+    def email_mode(self) -> Literal["console", "smtp", "null"]:
+        """Where email goes: the mail server when SMTP_SERVER is set,
+        otherwise the local outbox."""
+        if self.email_transport:
+            return self.email_transport
+        return "smtp" if self.smtp_host.strip() else "console"
 
     # The HTTP SMS transport: a JSON POST to a gateway of the deployment's
     # choosing, authenticated with a bearer token. Provider-specific shapes
@@ -331,8 +335,8 @@ class Settings(BaseSettings):
                 raise ValueError("CORS_ORIGINS must be explicit in production")
             # A transport that does not deliver is a sign-in nobody can
             # complete. In production the choice has to be explicit and real.
-            if self.email_transport != "smtp":
-                raise ValueError("EMAIL_TRANSPORT must be smtp in production")
+            if self.email_mode != "smtp" or not self.smtp_host.strip():
+                raise ValueError("SMTP_SERVER must be set in production: email has to be delivered")
             # Mail from a placeholder domain is mail nobody can reply to, and
             # mail a real server is entitled to refuse.
             if self.notification_email_from.lower().endswith(("@example.org", "@example.com")):

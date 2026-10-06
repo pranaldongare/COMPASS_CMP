@@ -8,21 +8,23 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
-- **Email that works with any mail server, and a document of every message**
-  (2026-10-06). The SMTP transport connects by STARTTLS, SSL from the first
-  byte (465) or plainly to an internal relay (25) - `SMTP_SECURITY` - logs in
-  only when `SMTP_USERNAME` is set, verifies certificates (with `SMTP_CA_FILE`
-  for an internal authority), and sends a named sender
-  (`NOTIFICATION_EMAIL_FROM_NAME`), a Date, a Message-ID and
-  `Auto-Submitted`. A refusal no retry will mend - a wrong login, a 5xx, an
-  untrusted certificate - is `EmailRejected` and fails at once instead of
-  being retried five times; an unreachable or busy server is still retried.
-  `SMTP_SERVER` and `SENDER_EMAIL` are read as `SMTP_HOST` and
-  `NOTIFICATION_EMAIL_FROM`; production refuses a placeholder sender.
-  `scripts/send_test_email.py` sends one test through it. `docs/email/`
-  explains it, and `docs/email/messages.md` - generated from the code by
-  `docs/tools/generate-email-docs.py` - lists all 25 messages with the task
-  and line that send each and where it is queued from.
+- **Email: five settings, one designed template, and a document of every
+  message** (2026-10-06). Email is configured by `SMTP_SERVER`, `SMTP_PORT`,
+  `SMTP_USERNAME`, `SMTP_PASSWORD` and `SENDER_EMAIL`, and nothing else: with
+  no server it goes to the local outbox; the port decides the connection
+  (465 SSL, 587 STARTTLS - refused if the server cannot - 25 plain); a login
+  only when a username is set. Every email is laid out in one template -
+  the organisation's header, the subject as its title, the content with
+  codes in a highlighted box, links as buttons, headings, lists and small
+  print, and a footer - sent as HTML with the plain text beside it, escaped
+  throughout; in development each is saved to `var/outbox-html/` to open in a
+  browser. A refusal no retry will mend - a wrong login, a 5xx, an untrusted
+  certificate - is `EmailRejected` and fails at once; an unreachable or busy
+  server is still retried. Production refuses an empty `SMTP_SERVER` or a
+  placeholder sender. `scripts/send_test_email.py` sends a sample.
+  `docs/email/` explains it all in tables, and `docs/email/messages.md` -
+  generated from the code - lists all 25 messages with the task and line
+  that send each and where it is queued from.
 - **Files kept with an incident** (2026-10-06). Log an incident takes the
   email that reported it, a screenshot, a chat or a log - each marked Email,
   Proof, Chat or Other - and sends them once the incident is logged; the
