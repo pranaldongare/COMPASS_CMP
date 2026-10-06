@@ -211,6 +211,28 @@ async def determinations(conn: Conn, breach_id: int) -> list[Row]:
     )
 
 
+async def last_activity(conn: Conn, breach_ids: list[int]) -> dict[int, Any]:
+    """When anything last happened to each breach: the newest audit row about
+    it, its notices or its tickets. The trail records every write, so it is
+    the one place that knows."""
+    rows = await fetch_all(
+        conn,
+        """SELECT x.breach_id, max(a.occurred_at) AS at
+             FROM (SELECT breach_id, 'breach' AS entity_type, breach_id AS entity_id
+                     FROM breach WHERE breach_id = ANY(%(ids)s)
+                   UNION ALL
+                   SELECT breach_id, 'breach_notice', notice_id
+                     FROM breach_notice WHERE breach_id = ANY(%(ids)s)
+                   UNION ALL
+                   SELECT breach_id, 'breach_ticket', ticket_id
+                     FROM breach_ticket WHERE breach_id = ANY(%(ids)s)) x
+             JOIN audit_log a ON a.entity_type = x.entity_type AND a.entity_id = x.entity_id
+            GROUP BY x.breach_id""",
+        {"ids": breach_ids},
+    )
+    return {int(r["breach_id"]): r["at"] for r in rows}
+
+
 async def latest_determinations(conn: Conn, breach_ids: list[int]) -> dict[int, Row]:
     rows = await fetch_all(
         conn,

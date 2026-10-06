@@ -18766,6 +18766,19 @@
             },
             "type": "array",
             "title": "Obligations"
+          },
+          "last_activity_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Activity At"
+          },
+          "tickets_open": {
+            "type": "integer",
+            "title": "Tickets Open"
+          },
+          "tickets_overdue": {
+            "type": "integer",
+            "title": "Tickets Overdue"
           }
         },
         "type": "object",
@@ -18779,7 +18792,10 @@
           "detected_at",
           "location",
           "determination",
-          "obligations"
+          "obligations",
+          "last_activity_at",
+          "tickets_open",
+          "tickets_overdue"
         ],
         "title": "BreachSummaryOut"
       },

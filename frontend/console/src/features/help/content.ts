@@ -483,6 +483,11 @@ export const SECTIONS: HelpSection[] = [
       },
       {
         kind: "tip",
+        title: "Finding an incident",
+        text: "On [[Incidents and personal data breaches]], [[Search]] by either reference (INC- or BR-), the title or where it occurred. Narrow the list with [[Validation]], [[Duties]] (overdue, or due within 24 hours), [[Recent activity]] and [[Tickets]], and [[Sort]] by the most recent activity or by what is due soonest. [[Clear filters]] shows everything again.",
+      },
+      {
+        kind: "tip",
         title: "Finding your way on a breach's page",
         text: "[[Close the breach]] sits at the top, with a list of what still stands in the way. Below it the work is in tabs, in the order it runs: [[Duties]], [[Validation]], [[People & notices]], [[Tickets]], [[Assessment]] and [[Activity]]. A red count on [[Duties]] or [[Tickets]] means something there is late.",
       },

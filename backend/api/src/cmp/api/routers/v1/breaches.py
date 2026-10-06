@@ -239,6 +239,13 @@ class BreachSummaryOut(Out):
     location: BreachLocationOut
     determination: str
     obligations: list[BreachDutyOut]
+    #: When anything last happened to it - a write to it, its notices or its
+    #: tickets - from the audit trail. For "recent activity" in the register.
+    last_activity_at: datetime
+    #: Its tickets still with a holder or the office (issued or returned), and
+    #: those past their answer-by.
+    tickets_open: int
+    tickets_overdue: int
 
 
 class BreachOut(Out):

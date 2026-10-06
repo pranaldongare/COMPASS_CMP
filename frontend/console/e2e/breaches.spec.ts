@@ -139,6 +139,16 @@ test.describe("the DPO", () => {
     await expect(page.getByText("(vi) The account of notices to the Data Principals affected")).toBeVisible();
     await expect(page.getByText(/^1 of the 1 Data Principals listed as affected have been notified/)).toBeVisible();
 
+    // Found in the register by the reference it was logged as, and by its
+    // title; the search stays in the address.
+    await page.goto("/breaches?status=all");
+    const search = page.getByRole("searchbox", { name: "Search" });
+    await search.fill(incident);
+    await search.press("Enter");
+    await expect(page).toHaveURL(new RegExp(`q=${incident}`));
+    await expect(page.getByRole("link", { name: reference })).toBeVisible();
+    await expect(page.getByText(/^1 of \d+ shown$/)).toBeVisible();
+
     // And on the dashboard, with every duty's clock.
     await page.goto("/dashboard");
     const open = page.getByLabel("Open breaches");

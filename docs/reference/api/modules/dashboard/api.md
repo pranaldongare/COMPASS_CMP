@@ -66,7 +66,10 @@ No request body.
       "determination": "string",
       "obligations": [
         "…"
-      ]
+      ],
+      "last_activity_at": "2026-09-17T12:00:00Z",
+      "tickets_open": 1,
+      "tickets_overdue": 1
     }
   ]
 }
@@ -244,6 +247,9 @@ and where to act on it. Rows with nothing to count are not sent.
 | `location` | [`BreachLocationOut`](#schema-breachlocationout) | Yes | — | — |
 | `determination` | `string` | Yes | — | — |
 | `obligations` | array of [`BreachDutyOut`](#schema-breachdutyout) | Yes | — | — |
+| `last_activity_at` | `string` | Yes | format: `date-time` | — |
+| `tickets_open` | `integer` | Yes | — | — |
+| `tickets_overdue` | `integer` | Yes | — | — |
 
 <a id="schema-validationerror"></a>
 #### `ValidationError`

@@ -36,6 +36,21 @@ and their reference (`Incident INC-2026-0001`, then `Breach BR-2026-0001
 (INC-2026-0001)` once recorded), never a title or a reason, and cannot follow
 the link.
 
+## The register
+
+**Incidents and personal data breaches** lists every incident, open first by
+default, with its outstanding duties and their clocks. **Search** finds one by
+either reference (`INC-`, `BR-`), words of its title or where it occurred. The
+filters ask the register the office's questions: **Show** open, closed or all;
+**Validation**; **Duties** overdue or due within 24 hours; **Recent activity**
+in the last day, week or month - anything written to it, its notices or its
+tickets, from the audit trail; **Tickets** with one open or past its
+answer-by. **Sort** by the most recent activity or by what is due soonest,
+late first. The filters live in the address, so a filtered register can be
+bookmarked or shared; every clock and count is the server's. The register
+holds at most 500 incidents and their titles are sealed, so the narrowing is
+done in the console after the titles are opened.
+
 ## The page
 
 A breach's page is one workspace, shaped like a project's (2026-10-06). Above

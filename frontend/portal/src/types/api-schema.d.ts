@@ -6206,6 +6206,15 @@ export interface components {
             determination: string;
             /** Obligations */
             obligations: components["schemas"]["BreachDutyOut"][];
+            /**
+             * Last Activity At
+             * Format: date-time
+             */
+            last_activity_at: string;
+            /** Tickets Open */
+            tickets_open: number;
+            /** Tickets Overdue */
+            tickets_overdue: number;
         };
         /** BreachTicketDetailOut */
         BreachTicketDetailOut: {

@@ -441,6 +441,21 @@ async def my_detail(conn: Conn, *, user_id: int, ticket_uuid: str) -> Row:
     }
 
 
+async def counts_by_breach(conn: Conn, breach_ids: list[int]) -> dict[int, dict[str, int]]:
+    """For the register: each breach's open tickets (issued or returned) and
+    those past their answer-by, as the dashboard counts them."""
+    today = _today()
+    out: dict[int, dict[str, int]] = defaultdict(lambda: {"open": 0, "overdue": 0})
+    for r in await repo.kinds_on(conn, breach_ids):
+        state = fold({"kind": k} for k in r["kinds"])
+        counts = out[int(r["breach_id"])]
+        if state in (TicketState.ISSUED, TicketState.RETURNED):
+            counts["open"] += 1
+        if state == TicketState.ISSUED and r["answer_by"] and r["answer_by"] < today:
+            counts["overdue"] += 1
+    return dict(out)
+
+
 async def dashboard_counts(conn: Conn) -> dict[str, int]:
     """For the DPO's "Needs you today": tickets returned and waiting on the
     office, and tickets past their answer-by, on open breaches."""

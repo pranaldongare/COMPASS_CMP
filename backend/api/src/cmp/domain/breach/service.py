@@ -793,9 +793,14 @@ async def register(conn: Conn, *, status: str | None) -> list[Row]:
     ids = [int(r["breach_id"]) for r in rows]
     latest = await repo.latest_determinations(conn, ids) if ids else {}
     duties = await _duty_views(conn, ids) if ids else {}
+    activity = await repo.last_activity(conn, ids) if ids else {}
+    from cmp.domain.breach import tickets  # it imports this module
+
+    ticket_counts = await tickets.counts_by_breach(conn, ids) if ids else {}
     out: list[Row] = []
     for r in rows:
         d = latest.get(int(r["breach_id"]))
+        counts = ticket_counts.get(int(r["breach_id"]), {"open": 0, "overdue": 0})
         out.append(
             {
                 "breach_uuid": r["breach_uuid"],
@@ -806,6 +811,9 @@ async def register(conn: Conn, *, status: str | None) -> list[Row]:
                 "location": _location(r),
                 "determination": d["outcome"] if d else Outcome.PENDING.value,
                 "obligations": duties.get(int(r["breach_id"]), []),
+                "last_activity_at": activity.get(int(r["breach_id"])) or r["recorded_at"],
+                "tickets_open": counts["open"],
+                "tickets_overdue": counts["overdue"],
             }
         )
     return out

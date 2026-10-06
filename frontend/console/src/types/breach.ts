@@ -138,9 +138,16 @@ export interface BreachSummary {
   location: BreachLocation;
   determination: BreachOutcome;
   obligations: BreachDuty[];
+  /** When anything last happened to it - it, its notices or its tickets -
+   *  from the audit trail. The register's "recent activity". */
+  last_activity_at: Timestamp;
+  /** Its tickets issued or returned, and those past their answer-by. */
+  tickets_open: number;
+  tickets_overdue: number;
 }
 
-export interface Breach extends Omit<BreachSummary, "obligations"> {
+export interface Breach
+  extends Omit<BreachSummary, "obligations" | "last_activity_at" | "tickets_open" | "tickets_overdue"> {
   /** When the first yes recorded it as a breach, and who made it. */
   breach_recorded_at: Timestamp | null;
   breach_recorded_by_name: string | null;

@@ -102,7 +102,10 @@ No request body.
         "clock": "…",
         "events": "…"
       }
-    ]
+    ],
+    "last_activity_at": "2026-09-17T12:00:00Z",
+    "tickets_open": 1,
+    "tickets_overdue": 1
   }
 ]
 ```

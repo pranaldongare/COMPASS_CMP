@@ -248,6 +248,22 @@ async def ids_on(conn: Conn, breach_id: int) -> list[int]:
     return [int(r["ticket_id"]) for r in rows]
 
 
+async def kinds_on(conn: Conn, breach_ids: list[int]) -> list[Row]:
+    """Every ticket on these breaches, with its events' kinds in order, for
+    the register's ticket counts."""
+    return await fetch_all(
+        conn,
+        """SELECT t.breach_id, t.answer_by,
+                  coalesce(array_agg(e.kind ORDER BY e.event_id)
+                           FILTER (WHERE e.event_id IS NOT NULL), '{}') AS kinds
+             FROM breach_ticket t
+             LEFT JOIN breach_ticket_event e ON e.ticket_id = t.ticket_id
+            WHERE t.breach_id = ANY(%s)
+            GROUP BY t.ticket_id, t.breach_id, t.answer_by""",
+        (breach_ids,),
+    )
+
+
 async def on_open_breaches(conn: Conn) -> list[Row]:
     """Every ticket on an open breach, with its events' kinds in order, for the
     DPO's dashboard counts."""

@@ -498,6 +498,38 @@ async def test_the_dpo_dashboard_counts_returned_and_overdue(
     assert after["breach_tickets_overdue"] == before["breach_tickets_overdue"] + 1
 
 
+async def test_the_register_counts_each_breachs_tickets_and_its_last_activity(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    """For the register's filters: open tickets (issued or returned), those
+    past their answer-by, and when anything last happened, from the trail."""
+    uuid = await _recorded(conn, seeded)
+    t = str((await _assign(conn, seeded, uuid))["ticket"]["ticket_uuid"])
+    await _return(conn, seeded, t)
+    late = str(
+        (await _assign(conn, seeded, uuid, role="rco", answer_by=_today()))["ticket"]["ticket_uuid"]
+    )
+    # Past its answer-by: written as it would have been yesterday.
+    await conn.execute(
+        """INSERT INTO breach_ticket (breach_id, holder_user_id, assigned_by, instruction,
+                                      answer_by)
+           SELECT breach_id, %s, assigned_by, instruction, current_date - 1
+             FROM breach_ticket WHERE ticket_uuid = %s""",
+        (_id(seeded, "rnd_user"), late),
+    )
+    [row] = [
+        r for r in await service.register(conn, status="open") if str(r["breach_uuid"]) == uuid
+    ]
+    assert (row["tickets_open"], row["tickets_overdue"]) == (3, 1)
+    assert row["last_activity_at"] is not None
+
+    await _move(conn, seeded, uuid, t, "close")
+    [row] = [
+        r for r in await service.register(conn, status="open") if str(r["breach_uuid"]) == uuid
+    ]
+    assert (row["tickets_open"], row["tickets_overdue"]) == (2, 1)
+
+
 async def test_every_staff_dashboard_lists_their_breach_tickets(
     conn: Any, seeded: dict[str, Any]
 ) -> None:
