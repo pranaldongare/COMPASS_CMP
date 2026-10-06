@@ -236,7 +236,8 @@ export function DutiesCard({ breach }: { breach: Breach }) {
         {breach.obligations.length === 0 ? (
           <p className="text-sm text-text-muted">
             No duty yet. A validation of yes records it as a personal data breach and creates the Board and principals
-            duties; marking a reportable cyber incident creates CERT-In.
+            duties (<a href="#validation" className="font-medium text-accent-text hover:underline">record the validation</a>);
+            marking a reportable cyber incident creates CERT-In.
           </p>
         ) : (
           <Table>

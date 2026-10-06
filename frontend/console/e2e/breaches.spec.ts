@@ -8,7 +8,7 @@
  * while they are outstanding. Then a collection owner, who is told the page
  * is not part of their account - the server answers them 404.
  */
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { statePath } from "./support/session";
 
@@ -19,6 +19,11 @@ function hoursAgo(hours: number): string {
   const at = new Date(Date.now() - hours * 3_600_000);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}T${pad(at.getHours())}:${pad(at.getMinutes())}`;
+}
+
+/** The breach page's sections are tabs; a tab's name carries its count. */
+function openTab(page: Page, name: string) {
+  return page.getByRole("tab", { name: new RegExp(`^${name}`) }).click();
 }
 
 test.describe("the DPO", () => {
@@ -63,18 +68,23 @@ test.describe("the DPO", () => {
     // Five hours after noticing, under an hour is left - not six.
     await expect(certIn.getByText(/^\d+ min left$/)).toBeVisible();
 
+    await openTab(page, "Validation");
     await page.getByLabel(/^Became aware at/).fill(hoursAgo(4));
     await page.getByLabel(/^Reasoning/).fill("Names and mobile numbers were on the copy");
     await page.getByRole("button", { name: "Record the validation" }).click();
     // The yes records it: a BR reference, with the INC it was logged as kept.
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^BR-\d{4}-\d{4}$/);
     await expect(page.getByText("Personal data breach", { exact: true })).toBeVisible();
-    await expect(page.getByText(incident, { exact: true })).toBeVisible();
+    // In the Details card: beside the close card on a wide screen, after the
+    // tabs on a phone - one of the two placements is shown.
+    await expect(page.getByText(incident, { exact: true }).filter({ visible: true })).toBeVisible();
+    await openTab(page, "Duties");
     await expect(page.getByRole("row", { name: /Board - initial intimation/ })).toBeVisible();
     await expect(page.getByRole("row", { name: /Board - detailed report/ })).toBeVisible();
     await expect(page.getByRole("row", { name: /Principals notified/ })).toBeVisible();
 
     // Who it touched: the platform's own tables, as recorded, confirmed as revision 1.
+    await openTab(page, "People & notices");
     await page.getByRole("button", { name: "Derive who it touched" }).click();
     // Accounts created from a few minutes ahead: nobody, which keeps the dev
     // database's people off an end-to-end breach's list - including the
@@ -114,6 +124,7 @@ test.describe("the DPO", () => {
       timeout: 60_000,
     });
     await page.reload();
+    await openTab(page, "Duties");
     await expect(page.getByRole("row", { name: /Principals notified/ }).getByText("Done")).toBeVisible();
 
     await expect(page.getByText("Report to CERT-In is outstanding")).toBeVisible();

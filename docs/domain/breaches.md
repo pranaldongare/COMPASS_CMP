@@ -36,6 +36,20 @@ and their reference (`Incident INC-2026-0001`, then `Breach BR-2026-0001
 (INC-2026-0001)` once recorded), never a title or a reason, and cannot follow
 the link.
 
+## The page
+
+A breach's page is one workspace, shaped like a project's (2026-10-06). Above
+the tabs, where it stands: **Close** - or **Reopen** - with exactly what still
+stands in the way, beside the details it was logged with (after the tabs on a
+phone). Under the tabs, the work in the order it runs: **Duties** (the
+default: every clock), **Validation**, **People & notices** (who it touched
+and what they are told), **Tickets**, **Assessment** and **Activity** (every
+close and reopening, with its reason). A tab's count says how much is there;
+**Duties** turns red when a duty is late and **Tickets** when one is past its
+answer-by, whichever tab is open. Until it is validated, a prompt above the
+tabs leads to Validation. The address names the tab (`#tickets`, `#people`),
+so the bell's links and older addresses such as `#notices` open the right one.
+
 ## Logging an incident
 
 **Breaches → Log an incident.** Three things are asked for, and every time is

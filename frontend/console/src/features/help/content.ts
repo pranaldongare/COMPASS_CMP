@@ -482,6 +482,11 @@ export const SECTIONS: HelpSection[] = [
         text: "[[Breaches]] is the Privacy Office's alone; every other role is told it is not there. The platform logs, records, drafts and tracks every clock. It never reports to the organisation's board, the Data Protection Board or CERT-In: a person does, through their own channel, and you record it.",
       },
       {
+        kind: "tip",
+        title: "Finding your way on a breach's page",
+        text: "[[Close the breach]] sits at the top, with a list of what still stands in the way. Below it the work is in tabs, in the order it runs: [[Duties]], [[Validation]], [[People & notices]], [[Tickets]], [[Assessment]] and [[Activity]]. A red count on [[Duties]] or [[Tickets]] means something there is late.",
+      },
+      {
         kind: "steps",
         title: "From incident to close",
         items: [

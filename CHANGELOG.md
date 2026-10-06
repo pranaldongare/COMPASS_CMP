@@ -8,6 +8,15 @@ as a release yet.
 ## [Unreleased]
 
 ### Changed
+- **A breach's page is in tabs, like a project's.** It had grown to eight
+  cards in one column. Closing it - with what still stands in the way - now
+  sits at the top beside its details; the work is in tabs in the order it
+  runs: Duties (the default), Validation, People & notices, Tickets,
+  Assessment, and a new Activity tab with every close and reopening. Duties
+  and Tickets turn red when something there is late; a prompt leads to
+  Validation until it is done; `#tickets`, `#notices` and the other old
+  addresses open the right tab. On a phone the details follow the tabs, and
+  every tab row now scrolls its selected tab into view.
 - **A breach-only login stays, read only, when the holder's part is over**
   (decided 2026-10-06, amending ADR 0023's BD-16). When the breach closes or
   the DPO withdraws a holder's ticket, the grant ends but the account is left

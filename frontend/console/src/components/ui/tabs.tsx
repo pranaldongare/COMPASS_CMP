@@ -121,6 +121,7 @@ export function Tab({
   value,
   children,
   count,
+  alert,
   icon: Icon,
   disabled,
 }: {
@@ -128,13 +129,30 @@ export function Tab({
   children: React.ReactNode;
   /** A number shown beside the label - how many rows the panel holds. */
   count?: number;
+  /** Something in the panel is late: the count turns red, and says so to a
+   *  screen reader, so it is seen from whichever tab is open. */
+  alert?: string;
   icon?: React.ComponentType<{ className?: string }>;
   disabled?: boolean;
 }) {
   const { value: selected, onValueChange, id } = useTabs();
   const active = selected === value;
+  const ref = React.useRef<HTMLButtonElement>(null);
+  // On a phone the row scrolls sideways; the selected tab - one opened from a
+  // link, say - is brought inside it rather than left cut off at the edge.
+  // The row alone scrolls: scrollIntoView would move the page as well.
+  React.useEffect(() => {
+    const tab = ref.current;
+    const row = tab?.parentElement;
+    if (!active || !tab || !row || row.scrollWidth <= row.clientWidth) return;
+    const left = tab.offsetLeft - row.offsetLeft;
+    const right = left + tab.offsetWidth;
+    if (left < row.scrollLeft) row.scrollLeft = Math.max(0, left - 16);
+    else if (right > row.scrollLeft + row.clientWidth) row.scrollLeft = right - row.clientWidth + 16;
+  }, [active]);
   return (
     <button
+      ref={ref}
       type="button"
       role="tab"
       id={`${id}-tab-${slug(value)}`}
@@ -158,12 +176,17 @@ export function Tab({
         <span
           className={cn(
             "tabular min-w-5 rounded-full px-1.5 text-center text-2xs font-semibold",
-            active ? "bg-accent-subtle text-accent-text" : "bg-bg-inset text-text-subtle",
+            alert
+              ? "bg-danger-subtle text-danger-text"
+              : active
+                ? "bg-accent-subtle text-accent-text"
+                : "bg-bg-inset text-text-subtle",
           )}
         >
           {count}
         </span>
       )}
+      {alert && <span className="sr-only">({alert})</span>}
     </button>
   );
 }
