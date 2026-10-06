@@ -20,7 +20,7 @@ export const ROLES: RoleOption[] = [
 const COLLECTORS = ["dco_admin", "dco", "rco"];
 
 export const INTRO =
-  "How to use the staff console, task by task: signing in, registering projects and their notices, running collection, handling rights requests and reading the audit trail. Choose your role to see only the sections written for you, or search for what you want to do.";
+  "How to use the staff console, task by task: signing in, registering projects and their notices, running collection, handling rights requests and personal data breaches, and reading the audit trail. Choose your role to see only the sections written for you, or search for what you want to do.";
 
 export const SECTIONS: HelpSection[] = [
   {
@@ -38,7 +38,7 @@ export const SECTIONS: HelpSection[] = [
           {
             term: "DPO",
             meaning:
-              "The Data Protection Officer. Keeps purposes and processors, writes and approves notices, approves projects, answers rights requests and reads the audit trail.",
+              "The Data Protection Officer. Keeps purposes and processors, writes and approves notices, approves projects, answers rights requests, handles incidents and personal data breaches, and reads the audit trail.",
           },
           {
             term: "Administrator",
@@ -64,6 +64,11 @@ export const SECTIONS: HelpSection[] = [
             term: "RCO",
             meaning:
               "R&D Collection Owner. Runs in-house collection, and answers rights tickets addressed to in-house teams.",
+          },
+          {
+            term: "Temporary ticket holder",
+            meaning:
+              "Somebody without a console login whom the Privacy Office has asked to act on a breach. Signs in like staff and sees only their own breach tickets, which they can still read once their part is over.",
           },
         ],
       },

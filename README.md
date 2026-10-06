@@ -2,18 +2,18 @@
 
 A consent management platform built to India's **Digital Personal Data
 Protection Act 2023** and the DPDP Rules 2025: notices, purpose-by-purpose
-consent, the collection that follows, and the rights a data principal can
-exercise afterwards, all recorded so that what happened can be proved years
-later.
+consent, the collection that follows, the rights a data principal can
+exercise afterwards, and the handling of a personal data breach, all recorded
+so that what happened can be proved years later.
 
 Four deployable projects in one repository, one API:
 
 | Path | Stack | What it is |
 |---|---|---|
-| [`backend/api/`](backend/api) | FastAPI 0.141, PostgreSQL 16, Redis 7, Celery 5, Python 3.12 | The API: 276 endpoints, 45 tables, raw SQL over psycopg 3, no ORM, 37 migrations |
+| [`backend/api/`](backend/api) | FastAPI 0.141, PostgreSQL 16, Redis 7, Celery 5, Python 3.12 | The API: 292 operations, 50 tables, raw SQL over psycopg 3, no ORM, 41 migrations |
 | [`backend/dkms/`](backend/dkms) | FastAPI, `cryptography`, Python 3.12 | The key service on port 32688: seals personal fields on the way into the database and opens them for the portals' servers; computes the keyed hashes that let a sealed column be looked up |
-| [`frontend/console/`](frontend/console) | Next.js 16, React 19, Tailwind 4, TanStack Query | The staff console on port 3000: password and emailed code sign-in, the registers, the DPO's rights queue, a respondent's tickets |
-| [`frontend/portal/`](frontend/portal) | the same | The data principal's portal on port 3001: the consent link, sign-up, code sign-in, the rights pages, her own consents and requests |
+| [`frontend/console/`](frontend/console) | Next.js 16, React 19, Tailwind 4, TanStack Query | The staff console on port 3000: password and emailed code sign-in, the registers, the DPO's rights queue and breach register, the tickets addressed to each person - a breach-only login's included |
+| [`frontend/portal/`](frontend/portal) | the same | The data principal's portal on port 3001: the consent link, sign-up, code sign-in, the rights pages, her own consents and requests, and any breach notice sent to her |
 
 Documentation starts at [docs/README.md](docs/README.md). The short version
 of the architecture is
@@ -35,9 +35,12 @@ refuses purpose by purpose. Data is then collected at sites owned by
 accountable people, exported to processors with a disclosure record, and
 imported back as assets reconciled against consent. Later she may ask what is
 held, have it corrected or erased, complain, or name a nominee to act for
-her, and the Privacy Office must answer within a published period.
+her, and the Privacy Office must answer within a published period. When
+something goes wrong, the Privacy Office logs the incident, decides whether
+it is a personal data breach, asks the people who must act through tickets,
+tracks every reporting clock, and tells the people it touched.
 
-Five decisions carry most of the weight, each recorded under
+Six decisions carry most of the weight, each recorded under
 [docs/decisions/](docs/decisions/README.md):
 
 - **Consent is per purpose, never in aggregate.** One grant row per purpose;
@@ -54,6 +57,10 @@ Five decisions carry most of the weight, each recorded under
 - **A rights request is a record with a clock.** Received, verified, every
   holder of her data ticketed, decided per appearance, answered on time even
   if partial.
+- **A breach is recorded and its duties tracked; the platform never
+  submits.** An incident first, a breach on a yes, every clock stored when it
+  starts, and a person - never the platform - reports to the regulators
+  ([ADR 0021](docs/decisions/0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md)).
 
 ## Running it locally
 

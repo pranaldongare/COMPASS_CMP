@@ -286,11 +286,15 @@ review**, apart from **Needs your action** (UX review 2026-10-05).
 
 | Role | Needs attention |
 |---|---|
-| DPO | tickets past their date; rights requests overdue and due within seven days; requests awaiting verification; teams that have written on their tickets; grievances about the DPO not yet escalated; retention floors passed; tickets addressed to them; notice text awaiting approval; projects pending approval; new collectors awaiting a decision |
+| DPO | breach duties past their due time; breach tickets returned or past their answer-by; tickets past their date; rights requests overdue and due within seven days; requests awaiting verification; teams that have written on their tickets; grievances about the DPO not yet escalated; retention floors passed; tickets addressed to them; notice text awaiting approval; projects pending approval; new collectors awaiting a decision |
 | Administrator | staff invitations not yet accepted (resend them); grievances about the DPO to review; tickets addressed to them |
 | DCO, RCO | tickets past their date; tickets addressed to them; imports that did not reconcile; assets with unmapped subjects |
 | DCO Admin | tickets past their date; sites awaiting a data source; sources with nobody accountable; processors with no collection set up; tickets addressed to them |
 | R&D User | projects needing something from them; tickets addressed to them |
+| Temporary ticket holder | no dashboard: the console sends it to **My tasks**, where its breach tickets are |
+
+Every staff dashboard also lists the breach tickets addressed to its reader,
+and the DPO's shows the open breaches above the queues.
 
 A data principal who has not finished her own sign-up is not the
 administrator's to activate, so she is not counted; a grievance about the
@@ -315,12 +319,13 @@ open.
   and lockouts; the administrator sees lockouts only, because a withdrawal
   links to a consent record and the administrator's role does not read
   those; every other role sees neither.
-- **Tickets.** Every member of staff also sees what happened on the tickets
-  addressed to them, and the DPO what respondents did on everyone's. A
+- **Tickets.** Every member of staff - and a temporary ticket holder - also
+  sees what happened on the tickets addressed to them, and the DPO what respondents did on everyone's. A
   respondent's link opens the ticket, not the request page their role may
   not reach. Breach tickets (S3-08) the same: a holder hears what the office
   did and wrote on theirs, linking to `/tickets?breach_ticket=`; the DPO hears
-  what holders wrote and returned, linking to the breach.
+  what holders wrote and returned, and whom they added as a colleague
+  (S3-09), linking to the breach.
 
 The rule the bell keeps is the dashboard's: no link in it leads to a page
 that answers 403 or 404 for the person reading it. It is held where the link

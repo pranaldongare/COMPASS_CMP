@@ -4,7 +4,7 @@ Status: accepted.
 
 ## Context
 
-Seven roles see different rows of the same tables. A filter applied after
+Eight roles see different rows of the same tables. A filter applied after
 the fetch has already counted the row, moved the cursor, and loaded it into
 memory; and a service that must remember to filter will one day forget.
 

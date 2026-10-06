@@ -1,7 +1,7 @@
 # Schema
 
-45 tables, 39 enums, 1 view, 40 triggers, 72 named CHECK constraints and 127
-foreign keys, as of migration 0037. Those counts are read from the PostgreSQL
+50 tables, 39 enums, 1 view, 46 triggers, 80 named CHECK constraints and 143
+foreign keys, as of migration 0041. Those counts are read from the PostgreSQL
 catalogs after replaying every migration, not maintained by hand.
 
 The migrations are the source of truth: 0001 transcribed the original
@@ -24,7 +24,7 @@ its stated commit before trusting it against a later change.
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant` |
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` |
 | Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_item_execution`, `rights_ticket_message`, `rights_response_file`, `nomination`, `legal_hold` |
-| Breach | `breach`, `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event`, `breach_affected_revision`, `breach_affected`, `breach_notice`, `breach_notice_delivery` |
+| Breach | `breach`, `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event`, `breach_affected_revision`, `breach_affected`, `breach_notice`, `breach_notice_delivery`, `breach_recording`, `breach_ticket`, `breach_ticket_event`, `breach_ticket_message`, `breach_temporary_access` |
 | Audit | `audit_log` |
 
 ## The view
@@ -131,6 +131,13 @@ and any delete; `breach_ticket_once` is one ticket per person per breach.
 must carry - a return its outcome and summary, a send-back, withdrawal or
 reopening its reason. `breach_ticket_message`, the thread, is append-only like
 `rights_ticket_message`. A ticket's state is folded from its events.
+
+**A breach-only login's grant ends once, since 0041.**
+`breach_temporary_access` is one row per grant of the `breach_holder` role: at
+most one open per person per breach (`breach_temporary_access_open`, a partial
+unique index), the end written once with its cause and nothing else changed
+(`cmp_breach_temporary_access_end_once`), and never deleted. Ending a grant
+does not change the account (decided 2026-10-06): the login stays, read only.
 
 **Who a breach touched is only ever added to, since 0035.** Each
 confirmation is a `breach_affected_revision` with its scopes and counts; each

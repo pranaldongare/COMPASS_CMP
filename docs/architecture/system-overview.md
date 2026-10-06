@@ -4,8 +4,9 @@ COMPASS CMP is a consent management platform built to India's **Digital
 Personal Data Protection Act 2023** and the DPDP Rules 2025. A data fiduciary
 registers the projects it collects personal data for, states their purposes,
 publishes notices, collects consent purpose by purpose at named sites, records
-every disclosure, and answers a data principal's rights requests inside a
-published period. Everything it does is arranged so that it can be proved,
+every disclosure, answers a data principal's rights requests inside a
+published period, and handles a personal data breach from the first minutes
+to its close. Everything it does is arranged so that it can be proved,
 years later, to somebody who was not there.
 
 ## The pieces
@@ -14,7 +15,7 @@ years later, to somebody who was not there.
 flowchart LR
   subgraph People
     S[Data principal<br/>browser or phone]
-    T[Staff<br/>DPO, owners, admin]
+    T[Staff<br/>DPO, owners, admin,<br/>breach ticket holders]
   end
   subgraph Portals
     P[frontend/portal<br/>Next.js, port 3001]
@@ -59,7 +60,7 @@ flowchart LR
 | Key service | `backend/dkms/` | `python3 -m app.main` in its own virtualenv, port 32688 | nothing; it is called |
 | Staff console | `frontend/console/` | Next.js on port 3000 | the API, through its own `/api` proxy; the key service, from its server |
 | Data-principal portal | `frontend/portal/` | Next.js on port 3001 | the API, through its own `/api` proxy; the key service, from its server |
-| PostgreSQL | native, or `dev-services.yml` | 45 tables, 39 enums, 40 triggers, one view | |
+| PostgreSQL | native, or `dev-services.yml` | 50 tables, 39 enums, 46 triggers, one view | |
 | Redis | native, or `dev-services.yml` | three logical databases: sessions and limits, broker, results | |
 
 ## Two audiences, two portals
@@ -135,7 +136,7 @@ on `high_priority`, so a sign-in never waits behind an export.
 The detail is in
 [request-lifecycle.md](../architecture/request-lifecycle.md).
 
-## The four workflows
+## The five workflows
 
 | Workflow | Starts with | Ends with | Document |
 |---|---|---|---|
@@ -143,6 +144,7 @@ The detail is in
 | Consent | A data principal opens a consent link | A consent artefact per purpose, superseded only by a later withdrawal | [consent-lifecycle.md](../domain/consent-lifecycle.md) |
 | Exchange | A collection owner exports a file or imports a manifest | A disclosure record naming every person in the file; assets reconciled to consents | [collection-and-routing.md](../domain/collection-and-routing.md#exports-imports-and-assets) |
 | Rights | A data principal, a stranger on the public form, or a nominee asks | A response released inside the published period, with every holder's ticket returned or escalated | [rights-requests.md](../domain/rights-requests.md) |
+| Breach | The DPO logs an incident with the time it was first noticed | Validated, every duty done or set aside, everyone it touched notified, every ticket closed - and the reports made by a person, never the platform | [breaches.md](../domain/breaches.md) |
 
 ## What is enforced where
 

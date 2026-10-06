@@ -13,7 +13,7 @@ otherwise.
 | `schemas/` | The base classes every request and response model uses: `Schema` (requests, unknown fields refused), `Out` (responses, unknown fields dropped), `Page[T]` | `schemas/common.py` |
 | `validation/` | Constrained types (`ShortText`, `Mobile`, `DateOfBirth` …), `choice()` for enum fields, contact normalisation | - |
 | `auth/` | Who you are and what you may do: password and MFA, one-time codes, password reset, sessions in Redis, roles, the authorisation evaluator, rate limiting and lockout | `auth/authentication/service.py` |
-| `domain/` | One package per area - `projects`, `notices`, `consent`, `exchange`, `rights`, `registry`, `users`, `delegations`, `messaging`, `audit`. The business rules and state machines live here | `domain/projects/service.py` |
+| `domain/` | One package per area - `projects`, `notices`, `consent`, `exchange`, `rights`, `breach`, `registry`, `users`, `delegations`, `messaging`, `audit`. The business rules and state machines live here | `domain/projects/service.py` |
 | `db/` | The connection pool and `transaction()`, SQL helpers, Redis, and `repositories/` - thirteen modules of hand-written SQL | `db/pool.py`, `db/sql.py` |
 | `infrastructure/` | Adapters to the outside: email and SMS transports, file storage, message delivery (`deliver()`), and the key-service client that seals and opens personal fields | `infrastructure/dkms/` |
 | `core/` | Settings, the exception classes, the permission matrix and navigation, pagination cursors, the request context, enums, token and hash helpers | `core/permissions.py`, `core/errors.py` |

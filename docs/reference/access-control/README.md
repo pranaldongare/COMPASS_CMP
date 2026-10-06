@@ -52,7 +52,7 @@ Paths here are backend paths as declared, without an invented `/v1` prefix. A fr
 
 ## Validation and maintenance
 
-The inventory was matched by method and path against every operation in `backend/api/openapi.json` and the registered router source. All 254 documented operations match exactly once; the three excluded system routes are separately identified. Role dependencies were resolved against `core/permissions.py`, explicit route-role denials were applied, and the service/repository exceptions in the notes were reviewed. This is static source validation, not execution against a live database or a complete security audit.
+The inventory was matched by method and path against every operation in `backend/api/openapi.json` and the registered router source. All 292 documented operations match exactly once; the three excluded system routes are separately identified. Role dependencies were resolved against `core/permissions.py`, explicit route-role denials were applied, and the service/repository exceptions in the notes were reviewed. This is static source validation, not execution against a live database or a complete security audit.
 
 The portals' own `POST /dkms/decrypt` is served by Next.js, not the API, and is outside this inventory; see [implementation notes](implementation_notes.md#the-portals-decrypt-route-is-not-an-api-operation).
 

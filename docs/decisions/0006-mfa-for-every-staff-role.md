@@ -28,6 +28,11 @@ or email she chooses.
 - Staff accounts must have an email; the database requires it with a CHECK.
 - Local development reads codes from the outbox; the browser suite reads the
   same file.
+- The temporary ticket holder (`breach_holder`, S3-09) is not staff but signs
+  in the same way, and its second factor is required in code, not only by the
+  list: a deployment that narrows `MFA_REQUIRED_ROLES` cannot leave a login
+  the platform made on a password alone
+  ([ADR 0023](0023-breach-tickets-and-breach-only-logins.md)).
 - A staff sign-in is two steps everywhere, including the test fixtures.
 - The partial session between the steps authorises the verification route
   only.

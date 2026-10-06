@@ -81,7 +81,7 @@ those blocks do nothing and the triggers are the enforcement you will see.
 
 ## The tables
 
-35 tables, one view, 39 enum types, in groups:
+50 tables, one view, 39 enum types, in groups:
 
 | Group | Tables |
 |---|---|
@@ -92,6 +92,7 @@ those blocks do nothing and the triggers are the enforcement you will see.
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant`, view `v_current_consent` |
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` |
 | Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_ticket_message`, `rights_response_file`, `rights_item_execution`, `legal_hold`, `nomination` |
+| Breach | `breach`, `breach_recording`, `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event`, `breach_affected_revision`, `breach_affected`, `breach_notice`, `breach_notice_delivery`, `breach_ticket`, `breach_ticket_event`, `breach_ticket_message`, `breach_temporary_access` |
 | Platform | `audit_log`, `message_template`, `restricted_country` |
 
 Every column and constraint: [table reference](../reference/database/table_reference.md).

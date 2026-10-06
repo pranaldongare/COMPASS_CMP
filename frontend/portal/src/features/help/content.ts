@@ -283,6 +283,32 @@ export const SECTIONS: HelpSection[] = [
     ],
   },
   {
+    id: "breach-notices",
+    title: "If we tell you about a personal data breach",
+    summary: "What a breach notice says, where to read it, and whom to ask.",
+    blocks: [
+      {
+        kind: "p",
+        text: "If a personal data breach may affect your personal data, we tell you by your registered email or mobile, and the same notice is written to your account. Open it from [[Updates]], or go to [[Personal data breach notices]].",
+      },
+      {
+        kind: "list",
+        title: "What each notice tells you",
+        items: [
+          "[[What happened]]: the breach, in plain words.",
+          "[[What it may mean for you]]: the consequences that could follow.",
+          "[[What we have done, and are doing]]: the steps taken to limit the harm.",
+          "[[What you can do]]: what you can do to protect yourself.",
+          "[[Questions]]: whom to ask, and how.",
+        ],
+      },
+      {
+        kind: "note",
+        text: "A later notice about the same breach is marked as an update, and the earlier ones stay in your account.",
+      },
+    ],
+  },
+  {
     id: "troubleshooting",
     title: "Troubleshooting",
     summary: "Common questions and what to do.",

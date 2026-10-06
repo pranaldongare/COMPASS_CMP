@@ -21,7 +21,7 @@ the reference is the territory.
 | `/exports/*`, `/imports/*`, `/collections/*`, `/assets/*` | staff | the disclosure register, import batches, collections and their exceptions, assets and their subjects |
 | `/requests/*`, `/tickets/*` | DPO, administrator; respondents for tickets | the rights register and every action on a request; a respondent's own tickets |
 | `/breaches/*` | the DPO; every other role is answered 404 | incidents and breaches, their duties, who it touched, notices, the Board's and the organisation's board's documents, breach tickets |
-| `/breach-tickets/*` | every member of staff, their own only | breach tickets addressed to me (S3-08): read, write, return. Managing them is `/breaches/{uuid}/tickets/*`, the DPO's and hidden |
+| `/breach-tickets/*` | every member of staff and the temporary ticket holder, their own only | breach tickets addressed to me (S3-08): read, write, return, and bring in a colleague (S3-09). Managing them is `/breaches/{uuid}/tickets/*`, the DPO's and hidden |
 | `/delegations/*` | staff | delegation (Delegate in the console): arranging it, ending it, what I hold |
 | `/messages/*` | administrator, DPO | the words of every message the platform sends: list, replace per channel, preview, reset |
 | `/users/*` | administrator, DPO | accounts, roles, sessions |

@@ -236,6 +236,7 @@ openapi.json         the generated API document; regenerate after a route change
 | Who may do what? | `core/permissions.py`, then [../docs/domain/roles-and-access.md](../../docs/domain/roles-and-access.md) |
 | How does a project move state? | `domain/projects/state_machine.py` |
 | How does a rights request work? | [docs/architecture/rights-module.md](../../docs/architecture/rights-module.md) |
+| How is a breach handled? | `domain/breach/`, then [docs/domain/breaches.md](../../docs/domain/breaches.md) |
 | What makes the audit trail evidence? | [docs/security/audit.md](../../docs/security/audit.md) |
 | Why no ORM? | [docs/architecture/api-internals.md](../../docs/architecture/api-internals.md) |
 | How is personal data sealed? | `infrastructure/dkms/`, then [docs/dkms/README.md](../../docs/dkms/README.md) |
