@@ -568,7 +568,7 @@ export const SECTIONS: HelpSection[] = [
         items: [
           "[[My tasks]] in the sidebar shows a count of tickets with something unread.",
           "Click [[Respond]] on a ticket. It shows what the platform already knows and the messages so far.",
-          "Ask a question or say what you hold in [[Message]], attach a file if needed, and [[Send]].",
+          "Ask a question or say what you hold in [[Message]], attach a file if needed, and [[Send]]. The window closes and your message is on the ticket's thread; [[Respond]] opens it again.",
           "When your work is done, tick [[This is my return - close the ticket with it]] and click [[Return the ticket]].",
         ],
       },

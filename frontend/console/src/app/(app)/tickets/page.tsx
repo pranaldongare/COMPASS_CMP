@@ -261,14 +261,14 @@ function TicketCard({ ticket: t, openAtFirst }: { ticket: MyTicket; openAtFirst?
               : "This ticket is returned. Everything said is kept; you can still add a note."
           }
         >
-          {responding && <Respond ticket={t} onReturned={() => setResponding(false)} />}
+          {responding && <Respond ticket={t} onDone={() => setResponding(false)} />}
         </DialogContent>
       </Dialog>
     </Card>
   );
 }
 
-function Respond({ ticket: t, onReturned }: { ticket: MyTicket; onReturned: () => void }) {
+function Respond({ ticket: t, onDone }: { ticket: MyTicket; onDone: () => void }) {
   const toast = useToast();
   const detail = useMyTicket(t.holder_uuid);
   const send = useMessageOffice();
@@ -337,9 +337,13 @@ function Respond({ ticket: t, onReturned }: { ticket: MyTicket; onReturned: () =
             }
             await ret.mutateAsync({ holderUuid: t.holder_uuid, summary: body, outcome, evidence: file });
             toast.success("Ticket returned", "The Privacy Office can see it.");
-            onReturned();
+            onDone();
           } else {
             await send.mutateAsync({ holderUuid: t.holder_uuid, body, evidence: file });
+            // Sent: the window closes, as a response does. The thread keeps
+            // it, and Respond opens it again.
+            toast.success("Message sent", "The Privacy Office can see it.");
+            onDone();
           }
         }}
       />

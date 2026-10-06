@@ -203,4 +203,25 @@ describe("BreachTicketCard", () => {
     render(<BreachTicketCard ticket={mine({ state: "closed", moves: [], may_add_colleague: false })} />);
     expect(screen.queryByRole("button", { name: /add a colleague/i })).not.toBeInTheDocument();
   });
+
+  it("closes the window once a message is sent, without asking about it", async () => {
+    let sent = 0;
+    server.use(
+      http.get(`${API}/breach-tickets/${TICKET}`, () => HttpResponse.json({ ticket: mine(), messages: [] })),
+      http.post(`${API}/breach-tickets/${TICKET}/messages`, () => {
+        sent += 1;
+        return HttpResponse.json({ ticket: mine(), messages: [] });
+      }),
+    );
+    const { user } = render(<BreachTicketCard ticket={mine()} />);
+
+    await user.click(screen.getByRole("button", { name: /respond/i }));
+    const dialog = await screen.findByRole("dialog");
+    await user.type(await within(dialog).findByLabelText("Message"), "Pulled the log; uploading it now");
+    await user.click(within(dialog).getByTestId("composer-send"));
+
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(sent).toBe(1);
+    expect(screen.queryByText(/not saved/i)).not.toBeInTheDocument();
+  });
 });

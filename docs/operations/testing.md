@@ -10,7 +10,7 @@ Seven suites, each answering a different question. Counts are as of
 | Backend security | `backend/api/tests/security` | the ASGI app with real datastores | 471 |
 | Backend HTTP | `backend/api/tests/http` | the ASGI app over HTTP, real datastores and key service; **commits** | 116 |
 | Key service | `backend/dkms/tests` | the service in-process; nothing else | 58 |
-| Portal unit | `src/**/*.test.ts*` in each portal | vitest with MSW | 334 console, 239 portal |
+| Portal unit | `src/**/*.test.ts*` in each portal | vitest with MSW | 336 console, 240 portal |
 | Browser | `e2e/` in each portal | the running stack in a real browser | 210 console and 78 portal test runs across the Playwright projects (setup included) |
 
 ### Which suites need the key service

@@ -713,6 +713,14 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **Sending on a ticket no longer leaves a "not saved" warning behind.** The
+  dialog guard counted any typing since the dialog opened, so after a message
+  was sent - or the DPO sent back or withdrew a ticket with a reason - closing
+  the window asked about changes already saved. A save that keeps a dialog
+  open now marks it clean (`useDialogSaved`, used by the ticket reply box and
+  the DPO's ticket moves); typing again makes it ask again. And a holder's
+  **Send** now closes the window, as a return does, with "Message sent" -
+  on breach tickets and rights tickets alike; the DPO's window stays open.
 - **Storage is checked before use.** `STORAGE_BACKEND=object` (a stub) is
   refused at start-up and `/ready` checks that storage can be written (SCALE-5).
 - **A refused decrypt batch is narrowed down**, not retried value by value,

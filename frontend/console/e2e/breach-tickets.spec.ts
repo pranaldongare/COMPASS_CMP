@@ -280,10 +280,10 @@ test.describe("a temporary holder", () => {
     await dialog.getByRole("button", { name: "Withdraw" }).click();
     await expect(page.getByText("Ticket withdrawn")).toBeVisible();
     await expect(dialog.getByText("Temporary login · read only")).toBeVisible();
-    // The reason typed into it marks the dialog unsaved; start the page afresh
-    // (a reload: the address already names the tab, so a goto would only
-    // move the fragment).
-    await page.reload();
+    // The reason is saved with the move, so closing does not ask about it.
+    await page.keyboard.press("Escape");
+    await expect(page.getByText(/not saved/i)).toHaveCount(0);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(colleague.getByText("Temporary login · read only")).toBeVisible();
 
     await holder.getByRole("button", { name: "Open" }).focus();

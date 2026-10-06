@@ -20,6 +20,29 @@ export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
 export const DialogClose = DialogPrimitive.Close;
 
+/** Tells the dialog around it that what was typed has been saved. */
+const SavedContext = React.createContext<() => void>(() => {});
+
+/**
+ * For a form that saves and stays open - a message sent on a thread, a move
+ * made with a reason: call it after the save succeeds, and closing the dialog
+ * no longer asks about changes that are already saved. Outside a dialog it
+ * does nothing.
+ */
+export function useDialogSaved(): () => void {
+  return React.useContext(SavedContext);
+}
+
+/** The same, for a dialog's owner, which sits outside it: render it inside
+ *  the dialog and bump `count` after each save. */
+export function DialogSaved({ count }: { count: number }) {
+  const saved = useDialogSaved();
+  React.useEffect(() => {
+    if (count > 0) saved();
+  }, [count, saved]);
+  return null;
+}
+
 export function DialogContent({
   className,
   children,
@@ -40,9 +63,14 @@ export function DialogContent({
   // closes as it always did; one somebody has asks before its typing is
   // thrown away (UX review 2026-10-05: a project draft vanished on Escape).
   // A form's own Cancel, and a save that closes it, are not dismissals and do
-  // not ask.
+  // not ask. A save that keeps it open - a message sent on a thread - says so
+  // through `useDialogSaved`, and typing after it starts the question again.
   const [dirty, setDirty] = React.useState(false);
   const [asking, setAsking] = React.useState(false);
+  const markSaved = React.useCallback(() => {
+    setDirty(false);
+    setAsking(false);
+  }, []);
   const guard = (event: { preventDefault: () => void }) => {
     if (!dirty) return;
     event.preventDefault();
@@ -127,7 +155,9 @@ export function DialogContent({
           </div>
         )}
 
-        <div className="px-5 py-4">{children}</div>
+        <div className="px-5 py-4">
+          <SavedContext.Provider value={markSaved}>{children}</SavedContext.Provider>
+        </div>
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
   );

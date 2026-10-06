@@ -104,14 +104,14 @@ export function BreachTicketCard({ ticket: t, openAtFirst }: { ticket: MyBreachT
               : "Everything said is kept. Only the Privacy Office closes a ticket."
           }
         >
-          {responding && <Respond ticket={t} onReturned={() => setResponding(false)} />}
+          {responding && <Respond ticket={t} onDone={() => setResponding(false)} />}
         </DialogContent>
       </Dialog>
     </Card>
   );
 }
 
-function Respond({ ticket: t, onReturned }: { ticket: MyBreachTicket; onReturned: () => void }) {
+function Respond({ ticket: t, onDone }: { ticket: MyBreachTicket; onDone: () => void }) {
   const toast = useToast();
   const qc = useQueryClient();
   const detail = useMyBreachTicket(t.ticket_uuid);
@@ -178,9 +178,13 @@ function Respond({ ticket: t, onReturned }: { ticket: MyBreachTicket; onReturned
             }
             await ret.mutateAsync({ summary: body, outcome, evidence: file });
             toast.success("Ticket returned", "The Privacy Office can see it.");
-            onReturned();
+            onDone();
           } else {
             await send.mutateAsync({ body, evidence: file });
+            // Sent: the window closes, as a response does. The thread keeps
+            // it, and Respond opens it again.
+            toast.success("Message sent", "The Privacy Office can see it.");
+            onDone();
           }
         }}
       />

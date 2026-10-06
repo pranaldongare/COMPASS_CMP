@@ -13,6 +13,7 @@ import { Building2, FileText, MessageSquare, Send, ShieldCheck } from "lucide-re
 import * as React from "react";
 
 import { FileInput } from "@/components/forms";
+import { useDialogSaved } from "@/components/ui/dialog";
 import { Alert, Badge, Button, Textarea } from "@/components/ui/primitives";
 import { formatDateTime } from "@/lib/format";
 import type { TicketMessage } from "@/types";
@@ -117,6 +118,8 @@ export function ReplyBox({
   const [body, setBody] = React.useState("");
   const [file, setFile] = React.useState<File | null>(null);
   const [final, setFinal] = React.useState(false);
+  // Sent is saved: closing the dialog around it no longer asks.
+  const saved = useDialogSaved();
   const [error, setError] = React.useState<string | null>(null);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -126,6 +129,7 @@ export function ReplyBox({
       setBody("");
       setFile(null);
       setFinal(false);
+      saved();
     } catch (err) {
       setError(
         err && typeof err === "object" && "userMessage" in err

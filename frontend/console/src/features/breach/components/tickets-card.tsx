@@ -19,7 +19,7 @@ import { ClipboardList, MessagesSquare, UserPlus } from "lucide-react";
 import * as React from "react";
 
 import { ReplyBox, Thread, UnreadBadge } from "@/components/data-display/thread";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogSaved } from "@/components/ui/dialog";
 import {
   Alert,
   Badge,
@@ -264,6 +264,8 @@ function TicketDialog({
   });
   const [asking, setAsking] = React.useState<Exclude<BreachTicketMoveKind, "return"> | null>(null);
   const [reason, setReason] = React.useState("");
+  // Each move made: its reason is saved, so closing need not ask about it.
+  const [moved, setMoved] = React.useState(0);
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: keys.breach.tickets(breach.breach_uuid) });
     void qc.invalidateQueries({ queryKey: keys.breach.detail(breach.breach_uuid) });
@@ -290,6 +292,7 @@ function TicketDialog({
       toast.success(MOVE_COPY[m].done);
       setAsking(null);
       setReason("");
+      setMoved((n) => n + 1);
     } catch (err) {
       toast.error("Not done", messageOf(err, "The server refused."));
     }
@@ -303,6 +306,7 @@ function TicketDialog({
         description={`On ${breach.reference}. ${TICKET_STATE[t.state].label}.`}
         size="lg"
       >
+        <DialogSaved count={moved} />
         {detail.isLoading ? (
           <Skeleton className="h-40" />
         ) : detail.error ? (
