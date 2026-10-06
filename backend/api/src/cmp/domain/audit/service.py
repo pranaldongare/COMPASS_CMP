@@ -263,6 +263,10 @@ class Event:
     BREACH_OBLIGATION_EXTENDED = "breach.obligation_extended"
     BREACH_CLOSED = "breach.closed"
     BREACH_REOPENED = "breach.reopened"
+    #: A file kept with the incident (2026-10-06): its kind, never its name.
+    BREACH_ATTACHMENT_ADDED = "breach.attachment_added"
+    #: An attached file was read: every read is audited.
+    BREACH_ATTACHMENT_READ = "breach.attachment_read"
     #: A confirmation of who the breach touched: counts, never people (S3-02).
     BREACH_AFFECTED_REVISED = "breach.affected_revised"
     #: The principals' duty owed again: people listed after it completed.

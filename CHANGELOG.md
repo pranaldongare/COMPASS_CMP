@@ -8,6 +8,21 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Files kept with an incident** (2026-10-06). Log an incident takes the
+  email that reported it, a screenshot, a chat or a log - each marked Email,
+  Proof, Chat or Other - and sends them once the incident is logged; the
+  breach page's new **Attachments** tab adds more while it is open. PDF, PNG,
+  JPEG, text, CSV, .eml, .msg or Word, 25 MB each. Evidence: the name and note
+  are sealed, the hash and size kept, and a file is never replaced or removed
+  (append-only by trigger and grant); every download is audited and carries
+  both hashes. Migration 0042 (`breach_attachment`); routes
+  `POST /breaches/{uuid}/attachments` and
+  `GET /breaches/{uuid}/attachments/{attachment_uuid}`, the DPO's and hidden.
+- **The first thing each role starts, on its dashboard** (2026-10-06): the
+  DPO's **Log an incident** - thirty minutes run from first noticed - an R&D
+  User's **Register a project** and an administrator's **Provision an
+  account**, each opening the same form as its page. The collection roles get
+  none: what they begin belongs to a project or a site.
 - **The breach register can be searched and filtered** (2026-10-06). Search
   by either reference (INC- or BR-), the title or where it occurred; filter by
   validation, duties overdue or due within 24 hours, recent activity (24

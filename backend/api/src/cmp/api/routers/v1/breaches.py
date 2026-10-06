@@ -23,6 +23,7 @@ from cmp.api.dependencies import BreachReader, BreachWriter
 from cmp.db.pool import connection, transaction
 from cmp.domain.breach import affected, board, notices, service, tickets
 from cmp.schemas.common import Out, Schema
+from cmp.validation.files import BREACH_EVIDENCE
 
 router = APIRouter(prefix="/breaches", tags=["breaches"])
 
@@ -211,6 +212,22 @@ class BreachStatusChangeOut(Out):
     changed_by_name: str | None
 
 
+class BreachAttachmentOut(Out):
+    attachment_uuid: UUID
+    #: email, proof, chat or other.
+    kind: str
+    #: What it is, in a few words. Sealed.
+    note: str | None
+    #: The name it was uploaded with. Sealed.
+    file_name: str
+    #: The SHA-256 of the file as uploaded.
+    sha256: str
+    size_bytes: int
+    content_type: str
+    added_at: datetime
+    added_by_name: str | None
+
+
 class BreachTransitionOut(Out):
     to: str
     allowed: bool
@@ -276,6 +293,8 @@ class BreachOut(Out):
     assessment_revisions: int
     obligations: list[BreachDutyOut]
     status_history: list[BreachStatusChangeOut]
+    #: Files kept with it as evidence, oldest first (2026-10-06).
+    attachments: list[BreachAttachmentOut]
     transitions: list[BreachTransitionOut]
     #: The internal target for "without delay", in hours. None while unset.
     without_delay_target_hours: float | None
@@ -370,6 +389,57 @@ async def assess(
             text=body.model_dump(exclude={"began_at", "categories"}),
             actor_id=principal.user_id,
         )
+
+
+@router.post(
+    "/{breach_uuid}/attachments",
+    response_model=BreachOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Keep a file with the incident: an email, a proof, a chat",
+)
+async def add_attachment(
+    breach_uuid: UUID,
+    principal: BreachWriter,
+    file: Annotated[UploadFile, File(description="The file, max 25 MB")],
+    kind: Annotated[str, Form(description="email, proof, chat or other")] = "other",
+    note: Annotated[str | None, Form(max_length=500)] = None,
+) -> dict[str, Any]:
+    """Evidence, kept as it came: never replaced or removed. Refused on a closed
+    breach, like every write to one."""
+    # Checked before the file is stored, so a refusal leaves nothing behind.
+    async with connection() as conn:
+        await service.require_open(conn, str(breach_uuid))
+    stored = await uploads.kept(file, subdir="breach", rules=BREACH_EVIDENCE)
+    async with transaction() as conn:
+        return await service.add_attachment(
+            conn,
+            breach_uuid=str(breach_uuid),
+            kind=kind,
+            note=note,
+            file_name=stored.file_name,
+            storage_ref=stored.storage_ref,
+            sha256=stored.sha256,
+            size_bytes=stored.size_bytes,
+            content_type=stored.content_type,
+            actor_id=principal.user_id,
+        )
+
+
+@router.get(
+    "/{breach_uuid}/attachments/{attachment_uuid}",
+    summary="Download a file kept with the incident; every download is audited",
+)
+async def attachment_file(
+    breach_uuid: UUID, attachment_uuid: UUID, principal: BreachReader
+) -> Response:
+    async with transaction() as conn:
+        payload, name, recorded = await service.read_attachment(
+            conn,
+            breach_uuid=str(breach_uuid),
+            attachment_uuid=str(attachment_uuid),
+            actor_id=principal.user_id,
+        )
+    return uploads.download(payload, name, recorded)
 
 
 @router.post(

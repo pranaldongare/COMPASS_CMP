@@ -1,6 +1,6 @@
 {
-  "commit": "0b8137dcaeebfb8cf22f302a62211024b0431059",
-  "migration_head": "0041",
+  "commit": "7a50d2710c8e082c90cfd5543a2a988f654ada52",
+  "migration_head": "0042",
   "migrations": [
     {
       "revision": "0001",
@@ -165,6 +165,10 @@
     {
       "revision": "0041",
       "source": "backend/api/migrations/versions/0041_breach_temporary_access.py"
+    },
+    {
+      "revision": "0042",
+      "source": "backend/api/migrations/versions/0042_breach_attachment.py"
     }
   ],
   "postgres_version": "16.15",
@@ -213,6 +217,11 @@
       "name": "breach_assessment",
       "kind": "r",
       "comment": null
+    },
+    {
+      "name": "breach_attachment",
+      "kind": "r",
+      "comment": "A file kept with an incident as evidence: an email, a proof, a chat. Append-only; never replaced or removed"
     },
     {
       "name": "breach_determination",
@@ -1254,6 +1263,114 @@
       "table_name": "breach_assessment",
       "name": "revised_at",
       "position": 17,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "attachment_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_attachment_attachment_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "attachment_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "breach_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "kind",
+      "position": 4,
+      "type": "character varying(8)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "note",
+      "position": 5,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "What it is, in a few words. Optional; sealed (FREE_TEXT)"
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "file_name",
+      "position": 6,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": "The name it was uploaded with. Sealed (FILE_NAME)"
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "storage_ref",
+      "position": 7,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "sha256",
+      "position": 8,
+      "type": "character(64)",
+      "not_null": true,
+      "default_value": null,
+      "comment": "The hash of the file as uploaded; a download carries it beside the hash of what was read"
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "size_bytes",
+      "position": 9,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "content_type",
+      "position": 10,
+      "type": "character varying(120)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "added_by",
+      "position": 11,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "added_at",
+      "position": 12,
       "type": "timestamp with time zone",
       "not_null": true,
       "default_value": "now()",
@@ -6904,6 +7021,100 @@
       "initially_deferred": false
     },
     {
+      "table_name": "breach_attachment",
+      "name": "breach_attachment_added_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (added_by) REFERENCES auth_user(id)",
+      "columns": [
+        "added_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "breach_attachment_attachment_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (attachment_uuid)",
+      "columns": [
+        "attachment_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "breach_attachment_breach_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (breach_id) REFERENCES breach(breach_id)",
+      "columns": [
+        "breach_id"
+      ],
+      "referenced_table": "breach",
+      "referenced_columns": [
+        "breach_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "breach_attachment_kind",
+      "kind": "c",
+      "definition": "CHECK (((kind)::text = ANY ((ARRAY['email'::character varying, 'proof'::character varying, 'chat'::character varying, 'other'::character varying])::text[])))",
+      "columns": [
+        "kind"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "breach_attachment_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (attachment_id)",
+      "columns": [
+        "attachment_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "breach_attachment_size",
+      "kind": "c",
+      "definition": "CHECK ((size_bytes > 0))",
+      "columns": [
+        "size_bytes"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "breach_determination",
       "name": "breach_determination_aware_when_yes",
       "kind": "c",
@@ -11768,6 +11979,21 @@
       "definition": "CREATE UNIQUE INDEX breach_assessment_revision ON public.breach_assessment USING btree (breach_id, revision)"
     },
     {
+      "table_name": "breach_attachment",
+      "name": "breach_attachment_attachment_uuid_key",
+      "definition": "CREATE UNIQUE INDEX breach_attachment_attachment_uuid_key ON public.breach_attachment USING btree (attachment_uuid)"
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "breach_attachment_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_attachment_pkey ON public.breach_attachment USING btree (attachment_id)"
+    },
+    {
+      "table_name": "breach_attachment",
+      "name": "idx_breach_attachment",
+      "definition": "CREATE INDEX idx_breach_attachment ON public.breach_attachment USING btree (breach_id, attachment_id)"
+    },
+    {
       "table_name": "breach_determination",
       "name": "breach_determination_determination_uuid_key",
       "definition": "CREATE UNIQUE INDEX breach_determination_determination_uuid_key ON public.breach_determination USING btree (determination_uuid)"
@@ -13026,6 +13252,11 @@
       "definition": "CREATE TRIGGER trg_breach_assessment_append_only BEFORE DELETE OR UPDATE ON public.breach_assessment FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
     },
     {
+      "table_name": "breach_attachment",
+      "name": "trg_breach_attachment_append_only",
+      "definition": "CREATE TRIGGER trg_breach_attachment_append_only BEFORE DELETE OR UPDATE ON public.breach_attachment FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
       "table_name": "breach_determination",
       "name": "trg_breach_determination_append_only",
       "definition": "CREATE TRIGGER trg_breach_determination_append_only BEFORE DELETE OR UPDATE ON public.breach_determination FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
@@ -13246,6 +13477,9 @@
     },
     {
       "name": "breach_assessment_assessment_id_seq"
+    },
+    {
+      "name": "breach_attachment_attachment_id_seq"
     },
     {
       "name": "breach_breach_id_seq"
@@ -13473,13 +13707,13 @@
     }
   ],
   "counts": {
-    "application_tables": 50,
+    "application_tables": 51,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 617,
-    "foreign_keys": 143,
+    "table_columns": 629,
+    "foreign_keys": 145,
     "enums": 39,
-    "triggers": 46,
-    "checks": 80
+    "triggers": 47,
+    "checks": 82
   }
 }

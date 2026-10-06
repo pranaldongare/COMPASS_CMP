@@ -86,6 +86,20 @@ breach. Its title and the words describing where it occurred are sealed like
 every other narrative the office writes. The table and the routes keep the
 name `breach`: an incident is a breach row that has not been recorded as one.
 
+## Attachments
+
+An incident arrives with what showed it - the email that reported it, a
+screenshot, a chat, a log. They are kept with it (2026-10-06): chosen on
+**Log an incident** and sent once it is logged, or added later on the
+**Attachments** tab while it is open. Each is one of **Email**, **Proof**,
+**Chat** or **Other**, with an optional note; PDF, PNG, JPEG, text, CSV, a
+saved email (.eml, .msg) or Word, at most 25 MB. Evidence is kept as it came:
+the name and the note are sealed, the hash and size recorded, and a file is
+never replaced or removed - a file added in error stays, with the right one
+beside it. Every download is on the trail, and carries the hash recorded when
+it was kept beside the hash of what was read. The DPO's alone, like the rest
+of the register.
+
 ## Validation
 
 Whether the event is a personal data breach under s.2(u) - *pending* (still
@@ -462,6 +476,7 @@ nothing about it can be recorded.
 | `breach_ticket` | One per person per breach: the holder, who assigned it, what it opened with (sealed), the answer-by date. Only the read markers change, by trigger (`cmp_breach_ticket_read_only`) |
 | `breach_ticket_event` | What happened to a ticket: returned (outcome, sealed summary), sent back, closed, withdrawn, reopened (each but close with a sealed reason). Append-only |
 | `breach_ticket_message` | The ticket's thread: office, holder or platform; sealed body and file name. Append-only |
+| `breach_attachment` | A file kept with the incident: its kind, sealed name and note, where it is stored, its hash and size, who added it and when. Append-only: never replaced or removed |
 | `breach_temporary_access` | One grant of a breach-only login: whose, on which breach, through which ticket, whether the account was made for it, the role it held before, who granted it, and - once - when, by whom and why it ended (`breach_closed`, `ticket_withdrawn`, `account_deactivated`). One open grant per person per breach, by partial unique index; the end is written once and nothing else changes, by trigger; never deleted |
 | `breach_affected` | Each person listed, once per breach (`breach_affected_once`), with the revision that first listed them and what put them there - exports, assets or tables, never a value. Append-only |
 
@@ -475,7 +490,7 @@ Every change writes an audit row against `breach`: `breach.recorded` (an
 incident logged - the key predates the incident-first order), `.determined`,
 `.confirmed` (recorded as a breach, with its BR), `.assessed`, `.cert_in_marked`, `.obligation_created`,
 `.obligation_completed`, `.obligation_not_applicable`,
-`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.obligation_reopened`, `.notice_drafted`, `.notice_edited`, `.notice_approved`, `.notice_sent` (with counts), `.closed`, `.reopened`. A breach ticket's events are against `breach_ticket`, with the holder as subject: `breach_ticket.assigned`, `.message`, `.returned` (with the outcome), `.sent_back`, `.closed`, `.withdrawn`, `.reopened`, `.file_read`, `.colleague_added` (with the adder's ticket's uuid); the administrator's trail names them by the breach reference only. A breach-only login's grant and end are against the account: `user.temporary_access_granted` and `user.temporary_access_ended`, with the breach reference and the cause, never a name or an address. Each person whose account a notice is written to gets `breach_notice.delivered` against her, naming the breach reference (the BR) and the version: that is her portal's notification, and the only breach event she is shown. The
+`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.obligation_reopened`, `.notice_drafted`, `.notice_edited`, `.notice_approved`, `.notice_sent` (with counts), `.closed`, `.reopened`, `.attachment_added` (the kind, never the name), `.attachment_read`. A breach ticket's events are against `breach_ticket`, with the holder as subject: `breach_ticket.assigned`, `.message`, `.returned` (with the outcome), `.sent_back`, `.closed`, `.withdrawn`, `.reopened`, `.file_read`, `.colleague_added` (with the adder's ticket's uuid); the administrator's trail names them by the breach reference only. A breach-only login's grant and end are against the account: `user.temporary_access_granted` and `user.temporary_access_ended`, with the breach reference and the cause, never a name or an address. Each person whose account a notice is written to gets `breach_notice.delivered` against her, naming the breach reference (the BR) and the version: that is her portal's notification, and the only breach event she is shown. The
 detail carries the reference, the outcome, which duty, a due time and that a
 reason was given - never the office's words, which are sealed on their rows
 ([ADR 0015](../decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md)).

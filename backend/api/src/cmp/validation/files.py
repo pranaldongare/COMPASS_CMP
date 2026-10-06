@@ -61,6 +61,37 @@ EVIDENCE = UploadRules(
 )
 
 
+#: What arrives with an incident (2026-10-06): the email that reported it,
+#: saved as .eml or Outlook's .msg; a screenshot or a photo; a PDF; a chat or
+#: a log exported as text; a Word document. Nothing that runs.
+BREACH_EVIDENCE = UploadRules(
+    field="file",
+    max_bytes=25 * 1024 * 1024,
+    allowed_mime=(
+        "application/pdf",
+        "image/png",
+        "image/jpeg",
+        "text/plain",
+        "text/csv",
+        "message/rfc822",
+        "application/vnd.ms-outlook",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ),
+    allowed_suffixes=(
+        ".pdf",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".txt",
+        ".csv",
+        ".log",
+        ".eml",
+        ".msg",
+        ".docx",
+    ),
+)
+
+
 def check_upload(payload: bytes, content_type: str | None, rules: UploadRules) -> None:
     """Refuse an upload that breaks the rules, naming the field that failed.
 

@@ -84,6 +84,7 @@ const breach = (over: Partial<Breach> = {}): Breach => ({
   assessment: null,
   assessment_revisions: 0,
   obligations: [duty()],
+  attachments: [],
   status_history: [
     { from_status: null, to_status: "open", reason: null, changed_at: "2026-10-06T09:05:00Z", changed_by_name: "Priya Menon" },
   ],
@@ -137,6 +138,7 @@ describe("the breach page", () => {
       "People & notices",
       "Tickets",
       "Assessment",
+      "Attachments",
       "Activity",
     ]);
     expect(within(tabs).getByRole("tab", { name: /Duties/ })).toHaveAttribute("aria-selected", "true");

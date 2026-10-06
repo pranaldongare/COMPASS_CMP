@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-31 operations; 31 appear in the existing OpenAPI/API docs. Added with S3-01 to S3-04; evidence links point at `HEAD`.
+33 operations; 33 appear in the existing OpenAPI/API docs. Added with S3-01 to S3-04; evidence links point at `HEAD`.
 
 An incident is logged first (`POST /breaches`); the first validation of *yes* records it as a breach ([ADR 0022](../../../decisions/0022-an-incident-first-and-a-breach-on-a-yes.md)). Every route is the DPO's and **hidden**: any other role - staff or principal - is answered **404**, on the register, on a breach that exists and on a write alike, where other DPO-only modules answer 403. That a breach is being handled is itself withheld.
 
@@ -39,6 +39,8 @@ An incident is logged first (`POST /breaches`); the first validation of *yes* re
 | POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/close` | `dpo` | Full session; anonymous NO |
 | POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw` | `dpo` | Full session; anonymous NO |
 | POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen` | `dpo` | Full session; anonymous NO |
+| POST | `/breaches/{breach_uuid}/attachments` | `dpo` | Full session; anonymous NO |
+| GET | `/breaches/{breach_uuid}/attachments/{attachment_uuid}` | `dpo` | Full session; anonymous NO |
 
 ## GET /breaches
 
@@ -473,3 +475,31 @@ Reopen a closed or withdrawn ticket, saying why.
 - **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
 - **Rules:** The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breach_tickets.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/tickets.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /breaches/{breach_uuid}/attachments
+
+Keep a file with the incident: an email, a proof, a chat.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 404.
+- **Route guard:** `BreachWriter`.
+- **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
+- **Rules:** The DPO's alone (resource `breach`, S3-01), hidden from every other role (404). Multipart: `file` (PDF, PNG, JPEG, text, CSV, .eml, .msg or .docx; at most 25 MB), `kind` (email, proof, chat, other), an optional `note`. Kept as evidence - never replaced or removed, by trigger and grant; the name and note sealed. Refused on a closed breach (409 `breach_closed`), checked before the file is stored. The trail records the kind, never the name. (2026-10-06)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## GET /breaches/{breach_uuid}/attachments/{attachment_uuid}
+
+Download a file kept with the incident; every download is audited.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 404.
+- **Route guard:** `BreachReader`.
+- **Resolved gate:** `RequireResource(breach, hidden=True)`.
+- **Rules:** The DPO's alone, hidden from every other role (404). A file of this breach only (404 otherwise). The response carries `X-Recorded-SHA256` (as kept) and `X-Content-SHA256` (as read); every read is `breach.attachment_read` on the trail. (2026-10-06)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).

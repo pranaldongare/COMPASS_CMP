@@ -39,6 +39,13 @@ test.describe("the DPO", () => {
     const title = `E2E breach ${Date.now()}`;
     await page.getByLabel(/^Title/).fill(title);
     await page.getByLabel(/^First noticed/).fill(hoursAgo(5));
+    // The email that reported it, kept with the incident as it is logged.
+    await page.getByRole("button", { name: "Attach a file" }).click();
+    await page.getByLabel(/^File 1/).setInputFiles({
+      name: "report.eml",
+      mimeType: "message/rfc822",
+      buffer: Buffer.from("From: someone@example.org\r\nSubject: Not mine\r\n\r\nHello.\r\n"),
+    });
     await page.getByRole("button", { name: "Log the incident" }).click();
 
     // Lands on the incident itself, titled by its incident reference.
@@ -46,6 +53,10 @@ test.describe("the DPO", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^INC-\d{4}-\d{4}$/);
     const incident = (await page.getByRole("heading", { level: 1 }).textContent()) ?? "";
     await expect(page.getByText(title)).toBeVisible();
+    await openTab(page, "Attachments");
+    await expect(page.locator("#attachments").getByText("report.eml")).toBeVisible();
+    await expect(page.locator("#attachments").getByText("Email", { exact: true })).toBeVisible();
+    await openTab(page, "Duties");
 
     // The organisation's board is owed from the moment it was logged, from when
     // it was first noticed: five hours ago is long past thirty minutes.
@@ -151,6 +162,8 @@ test.describe("the DPO", () => {
 
     // And on the dashboard, with every duty's clock.
     await page.goto("/dashboard");
+    // Logging an incident is always one click from the DPO's landing page.
+    await expect(page.getByRole("button", { name: "Log an incident" })).toBeVisible();
     const open = page.getByLabel("Open breaches");
     await expect(open.getByText(reference)).toBeVisible();
   });

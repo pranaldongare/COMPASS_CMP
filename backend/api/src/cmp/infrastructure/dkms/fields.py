@@ -184,6 +184,12 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
         "body": DataType.FREE_TEXT,
         "evidence_name": DataType.FILE_NAME,
     },
+    # A file kept with an incident (2026-10-06): its name, and a few words on
+    # what it is - either may name a person.
+    "breach_attachment": {
+        "file_name": DataType.FILE_NAME,
+        "note": DataType.FREE_TEXT,
+    },
     # What every affected person is told (S3-03). Sealed with the rest: it
     # repeats the assessment, and a draft may name somebody before it is fixed.
     "breach_notice": {

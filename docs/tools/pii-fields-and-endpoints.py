@@ -53,6 +53,8 @@ COLUMNS: list[tuple[str, list[str]]] = [
     ("breach_ticket", ["holder_user_id", "instruction"]),
     ("breach_ticket_event", ["summary", "reason"]),
     ("breach_ticket_message", ["body", "evidence_name"]),
+    # A file kept with an incident: its name and a note (2026-10-06).
+    ("breach_attachment", ["file_name", "note", "storage_ref"]),
     ("consent_artefact", ["ip_address", "auth_user_id"]),
     ("consent_purpose_grant", ["granted"]),
     ("consent_link", ["token", "token_sealed"]),
@@ -116,8 +118,8 @@ def main() -> None:
                "`reason`, `decision_reason`, and every narrative in the breach register\n"
                "(`title`, `location_detail`, `reasoning`, the nine assessment facts, a duty\n"
                "event's and a revision's `note`, `reported_to`, the five words of a breach notice, and a\n"
-               "breach ticket's `instruction`, `summary`, `reason`, `body` and `evidence_name`) — 60 columns in\n"
-               "24 tables. The eight the platform\n"
+               "breach ticket's `instruction`, `summary`, `reason`, `body` and `evidence_name`, and an\n"
+               "attached file's `file_name` and `note`) — 62 columns in 25 tables. The eight the platform\n"
                "looks rows up by whole (`email`, `secondary_email`, `mobile`, `username`,\n"
                "`organization_id`, `nominee_email`, `nominee_mobile`, `submitted_contact`) carry\n"
                "a keyed hash beside them - `*_hash`, an HMAC of the normalised value - and three\n"

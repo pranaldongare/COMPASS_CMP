@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 292,
-  "registered_business_and_system_operations": 295,
+  "documented_operations": 294,
+  "registered_business_and_system_operations": 297,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -11381,6 +11381,82 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
       ]
+    },
+    {
+      "module": "breaches",
+      "method": "POST",
+      "path": "/breaches/{breach_uuid}/attachments",
+      "summary": "Keep a file with the incident: an email, a proof, a chat",
+      "function": "add_attachment",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachWriter",
+      "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO"
+      },
+      "conditions": [
+        "The DPO's alone (resource `breach`, S3-01), hidden from every other role (404). Multipart: `file` (PDF, PNG, JPEG, text, CSV, .eml, .msg or .docx; at most 25 MB), `kind` (email, proof, chat, other), an optional `note`. Kept as evidence - never replaced or removed, by trigger and grant; the name and note sealed. Refused on a closed breach (409 `breach_closed`), checked before the file is stored. The trail records the kind, never the name. (2026-10-06)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
+      "method": "GET",
+      "path": "/breaches/{breach_uuid}/attachments/{attachment_uuid}",
+      "summary": "Download a file kept with the incident; every download is audited",
+      "function": "attachment_file",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachReader",
+      "resolved_gate": "RequireResource(breach, hidden=True)",
+      "route_roles": [
+        "dpo"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO"
+      },
+      "conditions": [
+        "The DPO's alone, hidden from every other role (404). A file of this breach only (404 otherwise). The response carries `X-Recorded-SHA256` (as kept) and `X-Content-SHA256` (as read); every read is `breach.attachment_read` on the trail. (2026-10-06)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
     }
   ],
   "amended": [
@@ -11438,6 +11514,11 @@
       "on": "2026-10-05",
       "commit": "S3-09",
       "note": "POST /breach-tickets/{ticket_uuid}/colleagues: a holder brings in a colleague, who follows the same flow. POST /breaches/{breach_uuid}/tickets now also takes a name and an email for somebody with no console login."
+    },
+    {
+      "on": "2026-10-06",
+      "commit": "attachments",
+      "note": "Files kept with an incident: POST /breaches/{breach_uuid}/attachments and GET /breaches/{breach_uuid}/attachments/{attachment_uuid} (resource breach, DPO only and hidden)."
     }
   ]
 }

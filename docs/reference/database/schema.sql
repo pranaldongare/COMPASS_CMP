@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 2cEHvMza19Z0qUhYvepBqjLt8LsjdLhYi8ICGLtt65rVh4dcCo2fPopEhQVFNan
+\restrict RRLFrX1XlyUV99qfOhjgVU6mQYPmjwMJ2oaa4ukaErnobxzeiypRjDguQbsR1Cv
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -1636,6 +1636,76 @@ CREATE SEQUENCE public.breach_assessment_assessment_id_seq
 --
 
 ALTER SEQUENCE public.breach_assessment_assessment_id_seq OWNED BY public.breach_assessment.assessment_id;
+
+
+--
+-- Name: breach_attachment; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_attachment (
+    attachment_id integer NOT NULL,
+    attachment_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    breach_id integer NOT NULL,
+    kind character varying(8) NOT NULL,
+    note text,
+    file_name text NOT NULL,
+    storage_ref text NOT NULL,
+    sha256 character(64) NOT NULL,
+    size_bytes integer NOT NULL,
+    content_type character varying(120) NOT NULL,
+    added_by integer NOT NULL,
+    added_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT breach_attachment_kind CHECK (((kind)::text = ANY ((ARRAY['email'::character varying, 'proof'::character varying, 'chat'::character varying, 'other'::character varying])::text[]))),
+    CONSTRAINT breach_attachment_size CHECK ((size_bytes > 0))
+);
+
+
+--
+-- Name: TABLE breach_attachment; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.breach_attachment IS 'A file kept with an incident as evidence: an email, a proof, a chat. Append-only; never replaced or removed';
+
+
+--
+-- Name: COLUMN breach_attachment.note; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_attachment.note IS 'What it is, in a few words. Optional; sealed (FREE_TEXT)';
+
+
+--
+-- Name: COLUMN breach_attachment.file_name; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_attachment.file_name IS 'The name it was uploaded with. Sealed (FILE_NAME)';
+
+
+--
+-- Name: COLUMN breach_attachment.sha256; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_attachment.sha256 IS 'The hash of the file as uploaded; a download carries it beside the hash of what was read';
+
+
+--
+-- Name: breach_attachment_attachment_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_attachment_attachment_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_attachment_attachment_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_attachment_attachment_id_seq OWNED BY public.breach_attachment.attachment_id;
 
 
 --
@@ -3885,6 +3955,13 @@ ALTER TABLE ONLY public.breach_assessment ALTER COLUMN assessment_id SET DEFAULT
 
 
 --
+-- Name: breach_attachment attachment_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_attachment ALTER COLUMN attachment_id SET DEFAULT nextval('public.breach_attachment_attachment_id_seq'::regclass);
+
+
+--
 -- Name: breach_determination determination_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4303,6 +4380,22 @@ ALTER TABLE ONLY public.breach_assessment
 
 ALTER TABLE ONLY public.breach_assessment
     ADD CONSTRAINT breach_assessment_revision UNIQUE (breach_id, revision);
+
+
+--
+-- Name: breach_attachment breach_attachment_attachment_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_attachment
+    ADD CONSTRAINT breach_attachment_attachment_uuid_key UNIQUE (attachment_uuid);
+
+
+--
+-- Name: breach_attachment breach_attachment_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_attachment
+    ADD CONSTRAINT breach_attachment_pkey PRIMARY KEY (attachment_id);
 
 
 --
@@ -5276,6 +5369,13 @@ CREATE INDEX idx_breach_affected_revision ON public.breach_affected USING btree 
 
 
 --
+-- Name: idx_breach_attachment; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_breach_attachment ON public.breach_attachment USING btree (breach_id, attachment_id);
+
+
+--
 -- Name: idx_breach_determination; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5801,6 +5901,13 @@ CREATE TRIGGER trg_breach_assessment_append_only BEFORE DELETE OR UPDATE ON publ
 
 
 --
+-- Name: breach_attachment trg_breach_attachment_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_attachment_append_only BEFORE DELETE OR UPDATE ON public.breach_attachment FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
 -- Name: breach_determination trg_breach_determination_append_only; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -6159,6 +6266,22 @@ ALTER TABLE ONLY public.breach_assessment
 
 ALTER TABLE ONLY public.breach_assessment
     ADD CONSTRAINT breach_assessment_revised_by_fkey FOREIGN KEY (revised_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_attachment breach_attachment_added_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_attachment
+    ADD CONSTRAINT breach_attachment_added_by_fkey FOREIGN KEY (added_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_attachment breach_attachment_breach_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_attachment
+    ADD CONSTRAINT breach_attachment_breach_id_fkey FOREIGN KEY (breach_id) REFERENCES public.breach(breach_id);
 
 
 --
@@ -7221,5 +7344,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 2cEHvMza19Z0qUhYvepBqjLt8LsjdLhYi8ICGLtt65rVh4dcCo2fPopEhQVFNan
+\unrestrict RRLFrX1XlyUV99qfOhjgVU6mQYPmjwMJ2oaa4ukaErnobxzeiypRjDguQbsR1Cv
 

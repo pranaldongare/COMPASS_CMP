@@ -116,6 +116,22 @@ export interface BreachStatusChange {
   changed_by_name: string | null;
 }
 
+export type BreachAttachmentKind = "email" | "proof" | "chat" | "other";
+
+/** A file kept with an incident as evidence (2026-10-06). Never replaced or
+ *  removed; the name and the note are sealed. */
+export interface BreachAttachment {
+  attachment_uuid: Uuid;
+  kind: BreachAttachmentKind;
+  note: string | null;
+  file_name: string;
+  sha256: string;
+  size_bytes: number;
+  content_type: string;
+  added_at: Timestamp;
+  added_by_name: string | null;
+}
+
 export interface BreachTransition {
   to: BreachStatus;
   allowed: boolean;
@@ -161,6 +177,8 @@ export interface Breach
   assessment_revisions: number;
   obligations: BreachDuty[];
   status_history: BreachStatusChange[];
+  /** Files kept with it, oldest first. */
+  attachments: BreachAttachment[];
   transitions: BreachTransition[];
   /** The internal target for "without delay", in hours. Null while unset. */
   without_delay_target_hours: number | null;

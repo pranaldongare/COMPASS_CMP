@@ -9,11 +9,13 @@ its own.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from fastapi import Response, UploadFile
 
 from cmp.core.security import file_hash
 from cmp.infrastructure.storage.service import storage
-from cmp.validation.files import EVIDENCE, check_upload
+from cmp.validation.files import EVIDENCE, UploadRules, check_upload, safe_suffix
 
 
 def safe_name(filename: str | None) -> str | None:
@@ -25,19 +27,48 @@ def safe_name(filename: str | None) -> str | None:
 
 
 async def stored(
-    upload: UploadFile | None, *, subdir: str
+    upload: UploadFile | None, *, subdir: str, rules: UploadRules = EVIDENCE
 ) -> tuple[str | None, str | None, str | None]:
     """Store an attached file, if there is one: its reference, its hash, and
     the name it came with."""
     if upload is None:
         return None, None, None
     payload = await upload.read()
-    check_upload(payload, upload.content_type, EVIDENCE)
+    check_upload(payload, upload.content_type, rules)
     name = safe_name(upload.filename)
     return (
         storage().save(payload, subdir=subdir, suggested_name=name or "attachment"),
         file_hash(payload),
         name,
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class Kept:
+    """A stored file: everything a row that keeps it needs."""
+
+    storage_ref: str
+    sha256: str
+    size_bytes: int
+    content_type: str
+    file_name: str
+
+
+async def kept(upload: UploadFile, *, subdir: str, rules: UploadRules) -> Kept:
+    """Store a required file, checked against `rules`. Stored under a name of
+    our making, with an extension `rules` allows; the name it came with is
+    kept for the row."""
+    payload = await upload.read()
+    check_upload(payload, upload.content_type, rules)
+    name = safe_name(upload.filename) or "attachment"
+    return Kept(
+        storage_ref=storage().save(
+            payload, subdir=subdir, suggested_name=f"attachment{safe_suffix(name, rules)}"
+        ),
+        sha256=file_hash(payload),
+        size_bytes=len(payload),
+        content_type=str(upload.content_type),
+        file_name=name,
     )
 
 

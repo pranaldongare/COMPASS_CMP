@@ -40,6 +40,7 @@ from cmp.domain.audit.service import Event
 from cmp.domain.breach import clock, state_machine, ticket_state
 from cmp.domain.breach.clock import DPDP_DUTIES, Duty, EventKind, State
 from cmp.domain.breach.state_machine import BreachFacts, Status
+from cmp.infrastructure.dkms import unseal_value
 from cmp.validation.choices import choice
 
 Row = dict[str, Any]
@@ -80,6 +81,16 @@ async def require(conn: Conn, breach_uuid: str) -> Row:
     row = await repo.by_uuid(conn, breach_uuid)
     if not row:
         raise NotFound("Breach")
+    return row
+
+
+async def require_open(conn: Conn, breach_uuid: str) -> Row:
+    """The breach, if it is open - without taking its row: a check made before
+    work that must not start on a closed one (a file stored, say). The write
+    itself still goes through `locked_open`."""
+    row = await require(conn, breach_uuid)
+    if row["status"] != Status.OPEN:
+        raise Conflict("This breach is closed; reopen it to record more", code="breach_closed")
     return row
 
 
@@ -467,6 +478,74 @@ async def assess(
     return await detail(conn, breach_uuid)
 
 
+#: What a file kept with an incident is (2026-10-06).
+ATTACHMENT_KINDS = ("email", "proof", "chat", "other")
+
+
+async def add_attachment(
+    conn: Conn,
+    *,
+    breach_uuid: str,
+    kind: str,
+    note: str | None,
+    file_name: str,
+    storage_ref: str,
+    sha256: str,
+    size_bytes: int,
+    content_type: str,
+    actor_id: int,
+) -> Row:
+    """Keep a file with the incident, as evidence: the email that reported it,
+    a proof, a chat. Never replaced or removed; the trail says its kind, never
+    its name. The caller has stored the file and checked it."""
+    if kind not in ATTACHMENT_KINDS:
+        raise ValidationFailed(f"kind must be one of: {', '.join(ATTACHMENT_KINDS)}", field="kind")
+    breach = await locked_open(conn, breach_uuid)
+    made = await repo.add_attachment(
+        conn,
+        int(breach["breach_id"]),
+        kind=kind,
+        note=_text(note),
+        file_name=file_name,
+        storage_ref=storage_ref,
+        sha256=sha256,
+        size_bytes=size_bytes,
+        content_type=content_type,
+        added_by=actor_id,
+    )
+    await record_event(
+        conn,
+        breach,
+        Event.BREACH_ATTACHMENT_ADDED,
+        actor_id=actor_id,
+        detail={"attachment": str(made["attachment_uuid"]), "kind": kind},
+    )
+    return await detail(conn, breach_uuid)
+
+
+async def read_attachment(
+    conn: Conn, *, breach_uuid: str, attachment_uuid: str, actor_id: int
+) -> tuple[bytes, str, str]:
+    """One attached file: its bytes, the name it came with, and the hash
+    recorded when it was kept. Every read is audited."""
+    from cmp.infrastructure.storage.service import storage
+
+    breach = await require(conn, breach_uuid)
+    row = await repo.attachment(conn, int(breach["breach_id"]), attachment_uuid)
+    if row is None:
+        raise NotFound("Attachment")
+    payload = storage().read(str(row["storage_ref"]))
+    await record_event(
+        conn,
+        breach,
+        Event.BREACH_ATTACHMENT_READ,
+        actor_id=actor_id,
+        detail={"attachment": attachment_uuid},
+    )
+    name = await unseal_value("breach_attachment", "file_name", row["file_name"])
+    return payload, str(name or "attachment"), str(row["sha256"])
+
+
 async def assessments(conn: Conn, *, breach_uuid: str) -> list[Row]:
     breach = await require(conn, breach_uuid)
     return await repo.assessments(conn, int(breach["breach_id"]))
@@ -780,6 +859,7 @@ async def detail(conn: Conn, breach_uuid: str) -> Row:
         "assessment_revisions": len(assessments),
         "obligations": duties,
         "status_history": await repo.status_history(conn, breach_id),
+        "attachments": await repo.attachments(conn, breach_id),
         "transitions": state_machine.available(str(breach["status"]), facts),
         "without_delay_target_hours": settings.breach_without_delay_target_hours,
     }

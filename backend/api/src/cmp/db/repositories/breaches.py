@@ -457,6 +457,7 @@ NOT_ABOUT_A_PRINCIPAL: dict[str, str] = {
     "breach_obligation_event": "a note on a submission",
     "breach_affected_revision": "a note on a revision of this list",
     "breach_notice": "what everyone a breach touched is told; it names nobody",
+    "breach_attachment": "the office's evidence on an incident; a person it names is added by hand",
 }
 
 
@@ -597,3 +598,67 @@ async def affected_id_by_uuid(conn: Conn, breach_id: int, affected_uuid: str) ->
         (affected_uuid, breach_id),
     )
     return int(row["affected_id"]) if row else None
+
+
+# ---------------------------------------------------------------- attachments
+
+
+async def add_attachment(
+    conn: Conn,
+    breach_id: int,
+    *,
+    kind: str,
+    note: str | None,
+    file_name: str,
+    storage_ref: str,
+    sha256: str,
+    size_bytes: int,
+    content_type: str,
+    added_by: int,
+) -> Row:
+    sealed = await seal("breach_attachment", {"file_name": file_name, "note": note})
+    row = await fetch_one(
+        conn,
+        """INSERT INTO breach_attachment (breach_id, kind, note, file_name, storage_ref, sha256,
+                                          size_bytes, content_type, added_by)
+           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+           RETURNING attachment_uuid""",
+        (
+            breach_id,
+            kind,
+            sealed["note"],
+            sealed["file_name"],
+            storage_ref,
+            sha256,
+            size_bytes,
+            content_type,
+            added_by,
+        ),
+    )
+    assert row is not None
+    return row
+
+
+_ATTACHMENT = """
+  a.attachment_uuid, a.kind, a.note, a.file_name, a.storage_ref, a.sha256, a.size_bytes,
+  a.content_type, a.added_at, u.full_name AS added_by_name
+  FROM breach_attachment a JOIN auth_user u ON u.id = a.added_by
+"""
+
+
+async def attachments(conn: Conn, breach_id: int) -> list[Row]:
+    """Every file kept with a breach, oldest first."""
+    return await fetch_all(
+        conn,
+        f"SELECT {_ATTACHMENT} WHERE a.breach_id = %s ORDER BY a.attachment_id",
+        (breach_id,),
+    )
+
+
+async def attachment(conn: Conn, breach_id: int, attachment_uuid: str) -> Row | None:
+    """One file, within this breach only."""
+    return await fetch_one(
+        conn,
+        f"SELECT {_ATTACHMENT} WHERE a.breach_id = %s AND a.attachment_uuid = %s",
+        (breach_id, attachment_uuid),
+    )

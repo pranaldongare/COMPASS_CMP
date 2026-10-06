@@ -9,6 +9,7 @@
 import { apiGet, apiPost, apiPut, queryString } from "@/lib/api";
 import { config } from "@/lib/config";
 import type {
+  BreachAttachmentKind,
   Breach,
   BreachAffected,
   BreachAssessment,
@@ -166,6 +167,37 @@ function messageForm(input: TicketMessageInput): FormData {
 }
 
 const tickets = (uuid: Uuid) => `/breaches/${uuid}/tickets`;
+
+/** What a browser often leaves blank for a saved email or a log: the type
+ *  the API checks, read off the extension. */
+const TYPE_BY_EXTENSION: Record<string, string> = {
+  eml: "message/rfc822",
+  msg: "application/vnd.ms-outlook",
+  txt: "text/plain",
+  log: "text/plain",
+  csv: "text/csv",
+};
+
+/** Keep a file with the incident (2026-10-06): an email, a proof, a chat. */
+export function addBreachAttachment(
+  uuid: Uuid,
+  input: { file: File; kind: BreachAttachmentKind; note?: string | null },
+): Promise<Breach> {
+  const ext = input.file.name.split(".").pop()?.toLowerCase() ?? "";
+  const typed =
+    input.file.type || !TYPE_BY_EXTENSION[ext]
+      ? input.file
+      : new File([input.file], input.file.name, { type: TYPE_BY_EXTENSION[ext] });
+  const form = new FormData();
+  form.set("file", typed, typed.name);
+  form.set("kind", input.kind);
+  if (input.note?.trim()) form.set("note", input.note.trim());
+  return apiPost<Breach>(`/breaches/${uuid}/attachments`, form);
+}
+
+/** Where a file kept with an incident is downloaded; every download is audited. */
+export const breachAttachmentUrl = (uuid: Uuid, attachmentUuid: Uuid) =>
+  `${config.apiUrl}/breaches/${uuid}/attachments/${attachmentUuid}`;
 
 export function listBreachTickets(uuid: Uuid): Promise<BreachTicket[]> {
   return apiGet<BreachTicket[]>(tickets(uuid));

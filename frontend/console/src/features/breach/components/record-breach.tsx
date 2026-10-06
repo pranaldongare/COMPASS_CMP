@@ -14,7 +14,8 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import { Button, Field, Input, Select, Textarea } from "@/components/ui/primitives";
-import { recordBreach } from "@/features/breach/api";
+import { addBreachAttachment, recordBreach } from "@/features/breach/api";
+import { AttachmentRows, type PendingAttachment } from "@/features/breach/components/attachments";
 import { LOCATION_COPY } from "@/features/breach/components/copy";
 import { useAllProcessors, useAllSources } from "@/features/registry/queries";
 import { keys } from "@/lib/query";
@@ -121,6 +122,7 @@ export function RecordBreachForm({ onDone }: { onDone: () => void }) {
   const [kind, setKind] = React.useState<BreachLocationKind>("platform");
   const [target, setTarget] = React.useState("");
   const [detail, setDetail] = React.useState("");
+  const [files, setFiles] = React.useState<PendingAttachment[]>([]);
   const record = useMutation({ mutationFn: recordBreach });
 
   const detectedAt = instant(detected);
@@ -143,10 +145,33 @@ export function RecordBreachForm({ onDone }: { onDone: () => void }) {
         source_uuid: kind === "data_source" ? target : null,
         location_detail: detail.trim() || null,
       });
+      // The incident first - its clocks run from now - then its files, one by
+      // one. A file the server refuses does not undo the incident: it is said,
+      // and can be attached again from the incident's page.
+      const chosen = files.filter((f): f is PendingAttachment & { file: File } => f.file !== null);
+      const refused: string[] = [];
+      for (const f of chosen) {
+        try {
+          await addBreachAttachment(made.breach_uuid, { file: f.file, kind: f.kind });
+        } catch (err) {
+          refused.push(`${f.file.name}: ${messageOf(err, "refused")}`);
+        }
+      }
       await qc.invalidateQueries({ queryKey: keys.breach.list() });
-      toast.success(`${made.reference} logged`, "Validate it next: is it a personal data breach?");
+      toast.success(
+        `${made.reference} logged`,
+        chosen.length && !refused.length
+          ? `With ${chosen.length} attached file${chosen.length === 1 ? "" : "s"}. Validate it next: is it a personal data breach?`
+          : "Validate it next: is it a personal data breach?",
+      );
+      if (refused.length) {
+        toast.error(
+          `${refused.length} file${refused.length === 1 ? " was" : "s were"} not attached`,
+          `${refused.join("; ")}. Attach ${refused.length === 1 ? "it" : "them"} from the incident's Attachments tab.`,
+        );
+      }
       onDone();
-      router.push(`/breaches/${made.breach_uuid}`);
+      router.push(`/breaches/${made.breach_uuid}${refused.length ? "#attachments" : ""}`);
     } catch (err) {
       toast.error("Not logged", messageOf(err, "The server refused."));
     }
@@ -194,6 +219,7 @@ export function RecordBreachForm({ onDone }: { onDone: () => void }) {
       >
         {(p) => <Textarea {...p} value={detail} onChange={(e) => setDetail(e.target.value)} />}
       </Field>
+      <AttachmentRows rows={files} onChange={setFiles} />
       <div className="flex justify-end gap-2">
         <Button type="button" variant="ghost" onClick={onDone}>
           Cancel

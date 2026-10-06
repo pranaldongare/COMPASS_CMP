@@ -12244,6 +12244,111 @@
         }
       }
     },
+    "/breaches/{breach_uuid}/attachments": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Keep a file with the incident: an email, a proof, a chat",
+        "description": "Evidence, kept as it came: never replaced or removed. Refused on a closed\nbreach, like every write to one.",
+        "operationId": "add_attachment_breaches__breach_uuid__attachments_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_add_attachment_breaches__breach_uuid__attachments_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/attachments/{attachment_uuid}": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Download a file kept with the incident; every download is audited",
+        "operationId": "attachment_file_breaches__breach_uuid__attachments__attachment_uuid__get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "attachment_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Attachment Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/breaches/{breach_uuid}/cert-in": {
       "post": {
         "tags": [
@@ -15808,6 +15913,39 @@
         ],
         "title": "Body_add_approval_projects__project_uuid__approvals_post"
       },
+      "Body_add_attachment_breaches__breach_uuid__attachments_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "The file, max 25 MB"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "description": "email, proof, chat or other",
+            "default": "other"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_add_attachment_breaches__breach_uuid__attachments_post"
+      },
       "Body_create_import_imports_post": {
         "properties": {
           "source": {
@@ -16723,6 +16861,75 @@
           "revised_by_name"
         ],
         "title": "BreachAssessmentOut"
+      },
+      "BreachAttachmentOut": {
+        "properties": {
+          "attachment_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attachment Uuid"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type"
+          },
+          "added_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Added At"
+          },
+          "added_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Added By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attachment_uuid",
+          "kind",
+          "note",
+          "file_name",
+          "sha256",
+          "size_bytes",
+          "content_type",
+          "added_at",
+          "added_by_name"
+        ],
+        "title": "BreachAttachmentOut"
       },
       "BreachCandidateOut": {
         "properties": {
@@ -18297,6 +18504,13 @@
             "type": "array",
             "title": "Status History"
           },
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/BreachAttachmentOut"
+            },
+            "type": "array",
+            "title": "Attachments"
+          },
           "transitions": {
             "items": {
               "$ref": "#/components/schemas/BreachTransitionOut"
@@ -18339,6 +18553,7 @@
           "assessment_revisions",
           "obligations",
           "status_history",
+          "attachments",
           "transitions",
           "without_delay_target_hours"
         ],

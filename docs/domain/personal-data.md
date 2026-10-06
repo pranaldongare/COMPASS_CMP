@@ -235,6 +235,7 @@ register is the DPO's alone, hidden from every other role (404).
 **`breach`** — `title`, `location_detail` (sealed), `recorded_by`.
 **`breach_recording`** — `recorded_by`: who made the *yes* that recorded it as a breach (S3-06).
 **`breach_ticket`** — `holder_user_id` (a member of staff or a temporary ticket holder, who is a data principal too), `assigned_by`, `instruction` (sealed); `parent_ticket_id` says who added whom (S3-09).
+**`breach_attachment`** — `file_name`, `note` (sealed), `added_by`; the file itself in storage under `breach/`, by hash (2026-10-06). An email or a chat kept as evidence may name anyone.
 **`breach_temporary_access`** — `user_id`, `granted_by`, `ended_by`: whose breach-only login, and who gave and ended it, with the role the account held before (S3-09). No name and no address: a person without an account is made one in `auth_user`, sealed like every other.
 **`breach_ticket_event`** — `summary`, `reason` (sealed), `actor_user_id`.
 **`breach_ticket_message`** — `body`, `evidence_name` (sealed), `author_user_id` (S3-08).
@@ -301,7 +302,7 @@ it. A dump of Redis yields sessions you cannot resume and codes you cannot use.
 
 ### Files on disk
 
-Under `UPLOAD_ROOT` (`backend/api/var/uploads` in development), four
+Under `UPLOAD_ROOT` (`backend/api/var/uploads` in development), five
 directories, all of which contain personal data:
 
 | Directory | What is in it | Who put it there |
@@ -310,6 +311,7 @@ directories, all of which contain personal data:
 | `responses/` | The document answering a rights request, and the principal's own uploads | The office |
 | `rights/` | Ticket evidence, return evidence, trigger evidence (a death certificate, for instance) | The office and the holders |
 | `approvals/` | Institutional approval proofs for a project | The R&D User |
+| `breach/` | Files on breach tickets' threads (S3-08), and files kept with an incident - the email that reported it, proofs, chats (2026-10-06) | The DPO and ticket holders |
 
 A cell that begins with a formula character is written as text, so an export
 opened in a spreadsheet cannot execute what a name field contained.
@@ -338,7 +340,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-202 of 292 operations accept or return personal data. Each table gives the
+203 of 294 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -485,29 +487,30 @@ selected.
 
 ### Personal data breaches — `/breaches/*`
 
-29 operations carry personal data.
+30 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
 | GET | `/breaches` | DPO every row | — | `recorded_by_name`, `reported_to` |
-| POST | `/breaches` | DPO every row | `location_detail` | `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name` |
-| GET | `/breaches/{breach_uuid}` | DPO every row | — | `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name` |
+| POST | `/breaches` | DPO every row | `location_detail` | `added_by_name`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `determined_by_name`, `file_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes` |
+| GET | `/breaches/{breach_uuid}` | DPO every row | — | `added_by_name`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `determined_by_name`, `file_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes` |
 | GET | `/breaches/{breach_uuid}/affected` | DPO every row | — | `confirmed_by_name`, `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
 | POST | `/breaches/{breach_uuid}/affected` | DPO every row | — | `confirmed_by_name`, `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
 | POST | `/breaches/{breach_uuid}/affected/preview` | DPO every row | — | `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
 | GET | `/breaches/{breach_uuid}/assessments` | DPO every row | — | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures`, `revised_by_name` |
-| POST | `/breaches/{breach_uuid}/assessments` | DPO every row | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures` | `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name` |
+| POST | `/breaches/{breach_uuid}/assessments` | DPO every row | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures` | `added_by_name`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `determined_by_name`, `file_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes` |
+| POST | `/breaches/{breach_uuid}/attachments` | DPO every row | — | `added_by_name`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `determined_by_name`, `file_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes` |
 | GET | `/breaches/{breach_uuid}/board/intimation` | DPO every row | — | `document`, `likely_impact`, `nature_extent`, `recorded_by_name`, `reported_to` |
 | GET | `/breaches/{breach_uuid}/board/report` | DPO every row | — | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `document`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name` |
-| POST | `/breaches/{breach_uuid}/cert-in` | DPO every row | — | `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name` |
-| POST | `/breaches/{breach_uuid}/determinations` | DPO every row | `reasoning` | `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name` |
+| POST | `/breaches/{breach_uuid}/cert-in` | DPO every row | — | `added_by_name`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `determined_by_name`, `file_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes` |
+| POST | `/breaches/{breach_uuid}/determinations` | DPO every row | `reasoning` | `added_by_name`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `determined_by_name`, `file_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes` |
 | GET | `/breaches/{breach_uuid}/notices` | DPO every row | — | `approved_by_name`, `consequences`, `contact`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
 | POST | `/breaches/{breach_uuid}/notices` | DPO every row | `consequences`, `contact`, `protective_steps` | `approved_by_name`, `consequences`, `contact`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
 | POST | `/breaches/{breach_uuid}/notices/send` | DPO every row | — | `approved_by_name`, `consequences`, `contact`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
 | PUT | `/breaches/{breach_uuid}/notices/{notice_uuid}` | DPO every row | `consequences`, `contact`, `protective_steps` | `approved_by_name`, `consequences`, `contact`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
 | POST | `/breaches/{breach_uuid}/notices/{notice_uuid}/approve` | DPO every row | — | `approved_by_name`, `consequences`, `contact`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
-| POST | `/breaches/{breach_uuid}/obligations/board_report/extension` | DPO every row | — | `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name` |
-| POST | `/breaches/{breach_uuid}/obligations/{duty}/complete` | DPO every row | `reported_to` | `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name` |
+| POST | `/breaches/{breach_uuid}/obligations/board_report/extension` | DPO every row | — | `added_by_name`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `determined_by_name`, `file_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes` |
+| POST | `/breaches/{breach_uuid}/obligations/{duty}/complete` | DPO every row | `reported_to` | `added_by_name`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `determined_by_name`, `file_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes` |
 | GET | `/breaches/{breach_uuid}/org-board/brief` | DPO every row | — | `document` |
 | GET | `/breaches/{breach_uuid}/tickets` | DPO every row | — | `actor_name`, `added_by_name`, `assigned_by_name`, `holder_name`, `reason` |
 | POST | `/breaches/{breach_uuid}/tickets` | DPO every row | `email`, `full_name`, `instruction`, `mobile`, `user_uuid` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
@@ -517,7 +520,7 @@ selected.
 | POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen` | DPO every row | `reason` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
 | POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/send-back` | DPO every row | `reason` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
 | POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw` | DPO every row | `reason` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
-| POST | `/breaches/{breach_uuid}/transition` | DPO every row | `reason` | `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name` |
+| POST | `/breaches/{breach_uuid}/transition` | DPO every row | `reason` | `added_by_name`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `determined_by_name`, `file_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes` |
 
 ### Breach tickets a holder answers — `/breach-tickets/*`
 
@@ -704,7 +707,7 @@ selected.
 |---|---|---|---|---|
 | POST | `/breach-tickets/{ticket_uuid}/colleagues` | any signed-in session, own record | `email`, `full_name`, `mobile` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
 
-<!-- 202 of 292 operations carry personal data; 20 of them need no session. -->
+<!-- 203 of 294 operations carry personal data; 20 of them need no session. -->
 
 ## The public surface
 

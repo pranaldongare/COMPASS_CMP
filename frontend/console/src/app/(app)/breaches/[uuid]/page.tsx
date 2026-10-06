@@ -5,7 +5,8 @@
  * what still stands in the way, beside the facts it was logged with. Under
  * the tabs, the work in the order it runs: the duties and their clocks first,
  * because they are what runs out; then validation, who it touched and what
- * they are told, the tickets, the assessment, and its history. A tab whose
+ * they are told, the tickets, the assessment, the files kept with it
+ * (2026-10-06), and its history. A tab whose
  * duties are late says so from whichever tab is open.
  *
  * The fragment names the tab, so a tab can be linked to and survives a
@@ -39,6 +40,7 @@ import {
 import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
 import { listBreachTickets } from "@/features/breach/api";
 import { AffectedCard } from "@/features/breach/components/affected-card";
+import { AttachmentsCard } from "@/features/breach/components/attachments";
 import {
   AssessmentCard,
   BreachTransitions,
@@ -53,7 +55,7 @@ import { formatDateTime } from "@/lib/format";
 import { keys } from "@/lib/query";
 import type { Breach } from "@/types";
 
-const TABS = ["duties", "validation", "people", "tickets", "assessment", "activity"] as const;
+const TABS = ["duties", "validation", "people", "tickets", "assessment", "attachments", "activity"] as const;
 type BreachTab = (typeof TABS)[number];
 /** Card anchors inside a tab, written before the tabs or naming one card. */
 const SECTIONS: Record<string, BreachTab> = {
@@ -175,6 +177,9 @@ export default function BreachPage() {
           <Tab value="assessment" count={b.assessment_revisions}>
             Assessment
           </Tab>
+          <Tab value="attachments" count={b.attachments.length}>
+            Attachments
+          </Tab>
           <Tab value="activity" count={b.status_history.length}>
             Activity
           </Tab>
@@ -199,6 +204,9 @@ export default function BreachPage() {
         </TabPanel>
         <TabPanel value="assessment" className="space-y-6">
           <AssessmentCard breach={b} />
+        </TabPanel>
+        <TabPanel value="attachments" className="space-y-6">
+          <AttachmentsCard breach={b} />
         </TabPanel>
         <TabPanel value="activity" className="space-y-6">
           <HistoryCard breach={b} />

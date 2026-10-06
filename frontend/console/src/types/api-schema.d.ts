@@ -4219,6 +4219,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/breaches/{breach_uuid}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Keep a file with the incident: an email, a proof, a chat
+         * @description Evidence, kept as it came: never replaced or removed. Refused on a closed
+         *     breach, like every write to one.
+         */
+        post: operations["add_attachment_breaches__breach_uuid__attachments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/attachments/{attachment_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a file kept with the incident; every download is audited */
+        get: operations["attachment_file_breaches__breach_uuid__attachments__attachment_uuid__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/breaches/{breach_uuid}/cert-in": {
         parameters: {
             query?: never;
@@ -5271,6 +5309,22 @@ export interface components {
              */
             proof: string;
         };
+        /** Body_add_attachment_breaches__breach_uuid__attachments_post */
+        Body_add_attachment_breaches__breach_uuid__attachments_post: {
+            /**
+             * File
+             * @description The file, max 25 MB
+             */
+            file: string;
+            /**
+             * Kind
+             * @description email, proof, chat or other
+             * @default other
+             */
+            kind: string;
+            /** Note */
+            note?: string | null;
+        };
         /** Body_create_import_imports_post */
         Body_create_import_imports_post: {
             /**
@@ -5576,6 +5630,33 @@ export interface components {
             revised_at: string;
             /** Revised By Name */
             revised_by_name: string | null;
+        };
+        /** BreachAttachmentOut */
+        BreachAttachmentOut: {
+            /**
+             * Attachment Uuid
+             * Format: uuid
+             */
+            attachment_uuid: string;
+            /** Kind */
+            kind: string;
+            /** Note */
+            note: string | null;
+            /** File Name */
+            file_name: string;
+            /** Sha256 */
+            sha256: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Content Type */
+            content_type: string;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+            /** Added By Name */
+            added_by_name: string | null;
         };
         /** BreachCandidateOut */
         BreachCandidateOut: {
@@ -6066,6 +6147,8 @@ export interface components {
             obligations: components["schemas"]["BreachDutyOut"][];
             /** Status History */
             status_history: components["schemas"]["BreachStatusChangeOut"][];
+            /** Attachments */
+            attachments: components["schemas"]["BreachAttachmentOut"][];
             /** Transitions */
             transitions: components["schemas"]["BreachTransitionOut"][];
             /** Without Delay Target Hours */
@@ -18001,6 +18084,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BreachOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_attachment_breaches__breach_uuid__attachments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_add_attachment_breaches__breach_uuid__attachments_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attachment_file_breaches__breach_uuid__attachments__attachment_uuid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                attachment_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
