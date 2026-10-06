@@ -9,6 +9,8 @@ import {
   listRespondents,
   getPurpose,
   getPurposeUsage,
+  listAllProcessors,
+  listAllSources,
   listProcessors,
   listPurposeVersions,
   listPurposes,
@@ -48,6 +50,25 @@ export function useProcessors(filters: Record<string, unknown> = {}) {
   return useQuery<Page<Processor>, ApiError>({
     queryKey: keys.registry.processors(filters),
     queryFn: () => listProcessors(filters),
+  });
+}
+
+/** Every processor, for a picker: under the same key family, so creating or
+ *  editing one refreshes it. */
+export function useAllProcessors() {
+  return useQuery<Processor[], ApiError>({
+    queryKey: keys.registry.processors({ every: true }),
+    queryFn: listAllProcessors,
+    staleTime: 60_000,
+  });
+}
+
+/** Every data source, for a picker. */
+export function useAllSources() {
+  return useQuery<DataSource[], ApiError>({
+    queryKey: keys.registry.sources({ every: true }),
+    queryFn: listAllSources,
+    staleTime: 60_000,
   });
 }
 

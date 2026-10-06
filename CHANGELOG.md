@@ -677,6 +677,12 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **Log an incident offers every processor and data source, A to Z.** The
+  pickers asked for the newest fifty, so an older processor - the seeded SEED
+  among them - could not be chosen once the register grew. They now load the
+  whole register by name (every page, 200 at a time), sort it A to Z ignoring
+  case, and narrow it as you type. The same pickers set a scope in "Who it
+  touched".
 - **Sending on a ticket no longer leaves a "not saved" warning behind.** The
   dialog guard counted any typing since the dialog opened, so after a message
   was sent - or the DPO sent back or withdrew a ticket with a reason - closing

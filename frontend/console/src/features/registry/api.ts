@@ -66,6 +66,30 @@ export function listSources(filters: Record<string, unknown> = {}): Promise<Page
   return apiGet<Page<DataSource>>(`/sources${queryString(filters)}`);
 }
 
+/** Every page of a register, followed to its end - for a picker that must
+ *  offer every row, not the newest few. Capped, so a runaway cursor cannot
+ *  loop for ever; 200 a page is the API's largest. */
+async function everyPage<T>(
+  list: (filters: Record<string, unknown>) => Promise<Page<T>>,
+  sort: string,
+): Promise<T[]> {
+  const rows: T[] = [];
+  let cursor: string | null | undefined;
+  for (let page = 0; page < 10; page += 1) {
+    const got = await list({ sort, limit: 200, cursor: cursor ?? undefined });
+    rows.push(...got.items);
+    cursor = got.next_cursor;
+    if (!cursor) break;
+  }
+  return rows;
+}
+
+/** Every processor, by name. */
+export const listAllProcessors = () => everyPage(listProcessors, "legal_name");
+
+/** Every data source, by name. */
+export const listAllSources = () => everyPage(listSources, "name");
+
 /* ---------------------------------------------------------------- writes */
 
 export interface PurposeInput {

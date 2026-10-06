@@ -16,7 +16,7 @@ import * as React from "react";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui/primitives";
 import { recordBreach } from "@/features/breach/api";
 import { LOCATION_COPY } from "@/features/breach/components/copy";
-import { useProcessors, useSources } from "@/features/registry/queries";
+import { useAllProcessors, useAllSources } from "@/features/registry/queries";
 import { keys } from "@/lib/query";
 import { useToast } from "@/providers";
 import type { BreachLocationKind } from "@/types";
@@ -34,18 +34,31 @@ export function messageOf(err: unknown, fallback: string): string {
     : fallback;
 }
 
+/** A to Z, ignoring case, and narrowed by what is typed. */
+function arrange(options: { uuid: string; label: string; also?: string }[], q: string) {
+  const term = q.trim().toLowerCase();
+  return options
+    .filter((o) => !term || `${o.label} ${o.also ?? ""}`.toLowerCase().includes(term))
+    .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }));
+}
+
+// Every row, not the newest fifty: an incident can be at any processor or
+// source, however old, and the register's newest page left the seeded ones
+// out (2026-10-06).
 function useProcessorOptions(q: string) {
-  const filters = { q: q || undefined, limit: 50 };
-  const processors = useProcessors(filters);
-  return (processors.data?.items ?? []).map((p) => ({ uuid: p.processor_uuid, label: p.legal_name }));
+  const processors = useAllProcessors();
+  return arrange(
+    (processors.data ?? []).map((p) => ({ uuid: p.processor_uuid, label: p.legal_name, also: p.contract_ref })),
+    q,
+  );
 }
 
 function useSourceOptions(q: string) {
-  const sources = useSources({ q: q || undefined, limit: 50 });
-  return (sources.data?.items ?? []).map((s) => ({
-    uuid: s.source_uuid,
-    label: `${s.name} (${s.source_code})`,
-  }));
+  const sources = useAllSources();
+  return arrange(
+    (sources.data ?? []).map((s) => ({ uuid: s.source_uuid, label: `${s.name} (${s.source_code})` })),
+    q,
+  );
 }
 
 function Choose({
@@ -84,7 +97,8 @@ function Choose({
   );
 }
 
-/** Searched rather than listed whole: the register can hold hundreds. */
+/** Listed whole, A to Z, and narrowed by typing: the register can hold
+ *  hundreds. */
 export function ProcessorPicker({ value, onChange }: { value: string; onChange: (uuid: string) => void }) {
   const [q, setQ] = React.useState("");
   const options = useProcessorOptions(q);
