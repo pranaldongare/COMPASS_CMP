@@ -1,6 +1,6 @@
 # 0023. Breach tickets reach internal staff only, through breach-only temporary logins that end with the breach
 
-**Status:** accepted · 2026-10-05. Amends [ADR 0021](0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md).
+**Status:** accepted · 2026-10-05; amended 2026-10-06 (a holder keeps a read-only login - see the end). Amends [ADR 0021](0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md).
 Migrations 0040 (S3-08) and 0041 (S3-09).
 
 ## Context
@@ -45,11 +45,12 @@ given the run of the console.
   account, role `breach_holder`, its previous role recorded; an address with no
   account gets a new one, `pending`, set up through the reset flow like any
   staff invitation. The role reaches its own tickets, the shared Tickets page
-  and the personal pages, nothing else, and is never granted by hand. Access
-  ends when the breach closes, when the DPO withdraws that ticket, or when an
-  administrator deactivates the account: an existing principal goes back to
-  `data_subject`, an account made for the breach is switched off, `person_type`
-  is never touched, and every session is revoked after commit.
+  and the personal pages, nothing else, and is never granted by hand. The
+  grant ends when the breach closes or the DPO withdraws that ticket; the
+  login stays, read only (amended 2026-10-06, below). An administrator's End
+  temporary access removes it: an existing principal goes back to
+  `data_subject`, an account made for the breach is switched off,
+  `person_type` is never touched, and every session is revoked after commit.
 - **A holder may add a colleague, who follows the same flow** (BD-05, BD-14):
   their own ticket, opening with the adder's note and not the DPO's
   instruction, under the same domain check and the same three-way lookup. The
@@ -66,9 +67,9 @@ ticket.
   organisation's domain is internal to this check.
 - A holder's additions are visible to the DPO but not approved first; a holder
   can bring a colleague into a breach without asking.
-- A breach-only login is a real account for its lifetime: it signs in with a
-  password and the emailed second factor like all staff (ADR 0006), and is
-  switched off, not deleted, at the end.
+- A breach-only login is a real account: it signs in with a password and the
+  emailed second factor like all staff (ADR 0006), and outlives the breach
+  unless an administrator removes it - switched off, never deleted.
 - The Board's detailed report can now point at who was asked what, and what
   they said, from the register.
 - As built in S3-09: the second factor is required for `breach_holder` in
@@ -87,3 +88,24 @@ An HR directory can confirm employment, replacing the domain list; the team
 wants the DPO to approve colleague additions; tickets are wanted during
 validation, before a *yes* (one guard in `tickets.assign`); or temporary access
 needs a time limit beyond the breach closing.
+
+## Amended 2026-10-06: the team's answers
+
+The questions this decision left open were answered by the team on
+2026-10-06:
+
+- **The domain list.** `cmp.local` for now; production needs the
+  organisation's list in `BREACH_TICKET_EMAIL_DOMAINS` before go-live.
+- **A holder keeps the account** (replaces BD-16's switch-off at the end).
+  When the breach closes or their ticket is withdrawn, the grant ends and the
+  login stays, so they can still read their ticket; every write is already
+  refused on a closed or withdrawn ticket and on a closed breach. Somebody who
+  also holds a real role keeps it, and their tickets with it. A second breach
+  for a kept login sends the "ticket waiting" email, not a new password. The
+  administrator's End temporary access is the one off switch, and does what
+  the end of a grant used to do.
+- **No approval of colleague additions**: it would cost time a breach does not
+  have. The check is that a holder works only through the console - a code
+  sign-in on the public portal is a data principal's session, which reaches no
+  ticket (ADR 0013).
+

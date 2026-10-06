@@ -297,6 +297,16 @@ async def open_grants_on(conn: Conn, breach_id: int) -> list[Row]:
     )
 
 
+async def first_grant_of(conn: Conn, user_id: int) -> Row | None:
+    """This person's first grant on any breach: what the account was before."""
+    return await fetch_one(
+        conn,
+        """SELECT * FROM breach_temporary_access
+            WHERE user_id = %s ORDER BY access_id LIMIT 1""",
+        (user_id,),
+    )
+
+
 async def latest_grant(conn: Conn, breach_id: int, user_id: int) -> Row | None:
     return await fetch_one(
         conn,

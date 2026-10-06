@@ -9,9 +9,9 @@
  * Then a temporary holder (S3-09): the DPO asks somebody with no console
  * login by email; they set a password from the emailed code, sign in with the
  * second factor, land on Tickets, bring in a colleague and return their
- * ticket; when the breach closes their login ends. The codes are read from
- * the dev outbox: the dev popup shows only the codes its own tab caused, and
- * the invitation is caused by the DPO's.
+ * ticket; when the breach closes their login stays, read only. The codes are
+ * read from the dev outbox: the dev popup shows only the codes its own tab
+ * caused, and the invitation is caused by the DPO's.
  */
 import { expect, test, type Page } from "@playwright/test";
 
@@ -241,7 +241,9 @@ test.describe("a temporary holder", () => {
     await context.close();
   });
 
-  test("the DPO sees who added whom, closes the breach, and the login ends", async ({ browser }, info) => {
+  test("the DPO sees who added whom, closes the breach, and the login stays read only", async ({
+    browser,
+  }, info) => {
     const context = await browser.newContext({ storageState: statePath("dpo") });
     const page = await context.newPage();
     await page.goto(temp.url);
@@ -258,10 +260,10 @@ test.describe("a temporary holder", () => {
     await dialog.getByLabel(/Why is it withdrawn/).fill("Covered by the first return");
     await dialog.getByRole("button", { name: "Withdraw" }).click();
     await expect(page.getByText("Ticket withdrawn")).toBeVisible();
-    await expect(dialog.getByText("Temporary login ended")).toBeVisible();
+    await expect(dialog.getByText("Temporary login · read only")).toBeVisible();
     // The reason typed into it marks the dialog unsaved; start the page afresh.
     await page.goto(temp.url);
-    await expect(colleague.getByText("Temporary login ended")).toBeVisible();
+    await expect(colleague.getByText("Temporary login · read only")).toBeVisible();
 
     await holder.getByRole("button", { name: "Open" }).click();
     dialog = page.getByRole("dialog");
@@ -281,17 +283,18 @@ test.describe("a temporary holder", () => {
     await close.focus();
     await page.keyboard.press("Enter");
     await expect(page.getByText("Breach closed")).toBeVisible();
-    await expect(holder.getByText("Temporary login ended")).toBeVisible();
+    await expect(holder.getByText("Temporary login · read only")).toBeVisible();
     await context.close();
 
-    // Their session is gone, and so is the password.
+    // Their login stays, to read the ticket; nothing on it can be written.
     const gone = await browser.newContext({ storageState: holderState(info.project.name) });
     const after = await gone.newPage();
     await after.goto("/tickets");
-    await after.waitForURL(/sign-in/, { timeout: 20_000 });
-    await signInAsHolder(after);
-    await expect(after.getByText("Those credentials are not valid")).toBeVisible();
-    await expect(after).not.toHaveURL(/verify/);
+    const card = after.getByTestId("breach-ticket").filter({ hasText: temp.reference });
+    await expect(card.getByText("Closed")).toBeVisible();
+    await expect(card.getByRole("button", { name: "Add a colleague" })).toHaveCount(0);
+    await card.getByRole("button", { name: "Open" }).click();
+    await expect(after.getByRole("dialog").getByText(/nothing further is needed from you/i)).toBeVisible();
     await gone.close();
   });
 });

@@ -231,10 +231,12 @@ and can bring in a colleague, who gets a ticket of their own. Not a rights
 request's *holder*, which is a party holding the person's data.
 
 **Temporary access.** A breach-only login: one grant of the `breach_holder`
-role for one breach, to an address on the organisation's own domains. It ends
-when the breach closes, when the DPO withdraws that person's ticket, or when
-an administrator ends it; an account made for the breach is then switched off,
-and one that was a data principal's goes back to being one.
+role for one breach, to an address on the organisation's own domains. The
+grant ends when the breach closes or the DPO withdraws that person's ticket,
+and the login stays, read only, so they can still read their ticket. An
+administrator's End temporary access removes the login: an account made for a
+breach is switched off, and one that was a data principal's goes back to
+being one.
 
 **CERT-In.** The Indian Computer Emergency Response Team. Its Directions of
 April 2022, under IT Act s.70B, require a reportable cyber incident to be

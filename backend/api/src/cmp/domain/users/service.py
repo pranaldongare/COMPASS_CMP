@@ -254,15 +254,11 @@ async def deactivate(conn: Conn, user_uuid: str, *, actor_id: int) -> tuple[dict
     if user["id"] == actor_id:
         raise Conflict("You cannot deactivate your own account", code="self_deactivate")
     if user["role"] == Role.BREACH_HOLDER.value:
-        # A breach-only login ends the way it was given (BD-15, BD-16): never
-        # through end_staff_access, which would mark the person an ex-employee.
+        # A breach-only login's one off switch (BD-15, BD-16): never through
+        # end_staff_access, which would mark the person an ex-employee.
         from cmp.domain.breach import access
 
-        if not await access.end_for_account(conn, int(user["id"]), actor_id=actor_id):
-            # No grant left to end it by: switch it off as such an account ends.
-            await repo.set_status(conn, user["id"], "deactivated")
-        after = await repo.require_by_uuid(conn, user_uuid)
-        return user, after["status"] != "deactivated"
+        return user, await access.remove(conn, user, actor_id=actor_id)
     if user["role"] != Role.DATA_SUBJECT.value:
         await auth_service.end_staff_access(conn, user=user, actor_user_id=actor_id)
         return user, True

@@ -102,7 +102,7 @@ describe("TicketsCard", () => {
     const pending = (await screen.findByText("Arun Shetty")).closest("tr") as HTMLElement;
     expect(within(pending).getByText("Temporary login · not yet signed in")).toBeInTheDocument();
     const ended = screen.getByText("Meera Iyer").closest("tr") as HTMLElement;
-    expect(within(ended).getByText("Temporary login ended")).toBeInTheDocument();
+    expect(within(ended).getByText("Temporary login · read only")).toBeInTheDocument();
   });
 
   it("asks somebody without a console login by name and email", async () => {

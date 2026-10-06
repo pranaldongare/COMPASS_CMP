@@ -28,8 +28,8 @@ one stays and points forward.
 | [0019](0019-erasure-reaches-every-store-but-the-record.md) | Erasure reaches every store that holds an item, and never the record of what happened | accepted |
 | [0020](0020-cross-border-transfer-checked-at-export.md) | A transfer is checked at export, and an unknown place is refused | accepted |
 | [0021](0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md) | A breach is recorded and its duties tracked; the platform never submits | accepted; amended 2026-10-05 |
-| [0022](0022-an-incident-first-and-a-breach-on-a-yes.md) | An incident is logged first, and a breach is recorded on a yes; the organisation's board is told within 30 minutes | accepted |
-| [0023](0023-breach-tickets-and-breach-only-logins.md) | Breach tickets reach internal staff only, through breach-only temporary logins that end with the breach | accepted |
+| [0022](0022-an-incident-first-and-a-breach-on-a-yes.md) | An incident is logged first, and a breach is recorded on a yes; the organisation's board is told within 30 minutes | accepted; amended 2026-10-06 |
+| [0023](0023-breach-tickets-and-breach-only-logins.md) | Breach tickets reach internal staff only, through breach-only temporary logins that end with the breach | accepted; amended 2026-10-06 |
 
 ## Writing one
 

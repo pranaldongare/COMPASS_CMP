@@ -7,7 +7,8 @@
  * internal people only, and one person holds one ticket per breach; the server
  * refuses otherwise and says why. Somebody without a console login is named by
  * their email and given a breach-only login for this breach (S3-09); the
- * table shows whose login it is and whether it is waiting, in use or ended. Every control here comes from the moves the
+ * table shows whose login it is and whether it is waiting, in use, or kept
+ * read only once their part is over. Every control here comes from the moves the
  * server returns with each ticket: nothing in the console decides what may
  * happen next.
  */
@@ -73,7 +74,11 @@ const ACCESS: Record<TemporaryAccess, { label: string; tone: "info" | "success" 
     hint: "Emailed a code to set a password; they have not done so yet.",
   },
   active: { label: "Temporary login", tone: "success", hint: "Signs in for this breach only." },
-  ended: { label: "Temporary login ended", tone: "neutral", hint: "Reopening the ticket gives it back, with a new email." },
+  ended: {
+    label: "Temporary login · read only",
+    tone: "neutral",
+    hint: "Their ticket is closed to them; they can still sign in and read it. Reopening it lets them answer again.",
+  },
 };
 
 /** A holder's breach-only login, if they have one (S3-09). */

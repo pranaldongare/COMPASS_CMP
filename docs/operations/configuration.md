@@ -38,7 +38,7 @@ The API (`_production_guards` in `core/config.py`):
 | `SMS_TRANSPORT` is not `http` | The same, for the data principal's primary sign-in; and `SMS_HTTP_URL` must be `https://` |
 | `DKMS_ENABLED` is false | Personal data would be written in the clear, and nothing would ever report it |
 | `BLIND_INDEX_KEY` starts `dev-only` or is under 32 bytes | Every lookup hash could be recomputed by anyone holding this repository |
-| `BREACH_TICKET_EMAIL_DOMAINS` is empty or only `cmp.local` | "Internal" is only as good as the list: empty, nobody could hold a breach ticket; the development domain alone, nobody real could (S3-08) |
+| `BREACH_TICKET_EMAIL_DOMAINS` is empty or only `cmp.local` | "Internal" is only as good as the list: empty, nobody could hold a breach ticket; the development domain alone, nobody real could (S3-08). The organisation's own list is needed before production (decided 2026-10-06) |
 
 In any environment, the API and the worker also refuse `STORAGE_BACKEND=object`:
 the object backend is a stub, and a deployment set that way used to start,

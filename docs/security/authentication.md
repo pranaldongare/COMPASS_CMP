@@ -17,8 +17,9 @@ and needs the second factor whatever `MFA_REQUIRED_ROLES` says: `requires_mfa`
 answers yes for it before reading the list, because a breach-only login made
 by the platform rather than an administrator is not one a deployment should be
 able to leave on a password alone. It is not staff: `RequireStaff` excludes it.
-Its password is cleared when its last grant ends, so the account cannot sign
-in again until a new grant sends a new code
+It keeps its password when its part in a breach is over, to read its ticket;
+an administrator's **End temporary access** clears it, and the account cannot
+sign in again until a new grant sends a new code
 ([ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)).
 
 A **partial session** exists between password verification and MFA. It authorises

@@ -383,7 +383,7 @@ async def _set_password(http: httpx.AsyncClient, queued: Any, email: str, passwo
 
 
 class TestBreachOnlyLogins:
-    async def test_a_stranger_is_asked_adds_a_colleague_and_both_lose_access(
+    async def test_a_stranger_is_asked_adds_a_colleague_and_keeps_a_read_only_login(
         self, http: httpx.AsyncClient, world: World, queued: Any
     ) -> None:
         uuid = await _recorded(http, world)
@@ -487,19 +487,39 @@ class TestBreachOnlyLogins:
             json={"to": "closed"},
         )
 
-        # 5. Neither can sign in, and the sessions they held are gone.
-        for email, password, session in (
-            (engineer, "HttpSuite!Breach1", eng),
-            (colleague, "HttpSuite!Breach2", col),
-        ):
+        # 5. Both keep their login, to read their ticket and nothing more
+        #    (decided 2026-10-06): the breach is closed, so every write is refused.
+        for session in (eng, col):
+            [read] = (await call(http, "GET", "/breach-tickets", session=session)).json()
+            assert read["state"] == "closed" and read["may_add_colleague"] is False
             await call(
                 http,
                 "POST",
-                "/auth/login",
-                json={"login": email, "password": password},
-                expect=(401, 403),
+                f"/breach-tickets/{read['ticket_uuid']}/messages",
+                template=f"{MINE}/messages",
+                session=session,
+                data={"body": "One more thing"},
+                expect=409,
             )
-            await call(http, "GET", "/breach-tickets", session=session, expect=401)
+            await call(http, "GET", f"/breaches/{uuid}", template=B, session=session, expect=404)
+
+        # 6. The administrator's End temporary access is the off switch.
+        await call(
+            http,
+            "POST",
+            f"/users/{me.json()['uuid']}/deactivate",
+            template="/users/{user_uuid}/deactivate",
+            session=world.admin,
+        )
+        await call(http, "GET", "/breach-tickets", session=eng, expect=401)
+        await call(
+            http,
+            "POST",
+            "/auth/login",
+            json={"login": engineer, "password": "HttpSuite!Breach1"},
+            expect=(401, 403),
+        )
+        await call(http, "GET", "/breach-tickets", session=col)
 
     async def test_the_role_is_never_granted_by_hand(
         self, http: httpx.AsyncClient, world: World

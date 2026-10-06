@@ -501,7 +501,7 @@ export const SECTIONS: HelpSection[] = [
         items: [
           "Somebody with no console login, on one of the organisation's own email domains, is given a login for this breach only. They are emailed a code to set a password, and sign in with an emailed code like all staff. The Tickets table marks it [[Temporary login]], and says whether they have signed in yet.",
           "A holder can [[Add a colleague]] while their ticket is open. The colleague gets their own ticket on the breach, opening with the holder's note rather than your instruction, and shows in the table under the person who added them. You can see every addition; you do not approve it.",
-          "A temporary login ends when you [[Withdraw]] that person's ticket, when the breach closes, or when an administrator ends it. Reopening their ticket gives it back, with a new email. An account made for the breach is switched off; one that was a data principal's goes back to being one.",
+          "When you [[Withdraw]] that person's ticket or the breach closes, their part is over: they keep their login, read only, so they can still read their ticket. The table marks it [[Temporary login · read only]]. Reopening their ticket lets them answer again. Only an administrator's [[End temporary access]] removes the login.",
         ],
       },
     ],
@@ -542,8 +542,8 @@ export const SECTIONS: HelpSection[] = [
       },
       {
         kind: "note",
-        title: "When your login ends",
-        text: "When the Privacy Office closes the breach or withdraws your ticket, or an administrator ends it, your login ends and you are signed out. If you hold a ticket on another breach, that one stays. If the Privacy Office reopens your ticket, you are emailed a new code.",
+        title: "When your part is over",
+        text: "When the Privacy Office closes the breach or withdraws your ticket, you can no longer write on it, but you keep your login and can still read it. If the Privacy Office reopens your ticket, you are emailed that a ticket is waiting. Only an administrator can end the login itself.",
       },
     ],
   },

@@ -1,6 +1,6 @@
 # 0022. An incident is logged first, and a breach is recorded on a yes; the organisation's board is told within 30 minutes
 
-**Status:** accepted · 2026-10-05. Amends [ADR 0021](0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md).
+**Status:** accepted · 2026-10-05; amended 2026-10-06 (the team's answers, at the end). Amends [ADR 0021](0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md).
 Migrations 0038 (S3-06) and 0039 (S3-07).
 
 ## Context
@@ -74,3 +74,14 @@ CERT-In's six hours and the Board's duties and had no clock for that.
 The board policy changes its time or its anchor; the team wants breach
 tickets during validation, before a *yes* (one guard in the ticket service,
 S3-08); or someone other than the DPO team should be able to log an incident.
+
+## Amended 2026-10-06: the team's answers
+
+- **Reporting to the organisation's board** is through an offline channel, and
+  the DPO is accountable for it: the platform drafts the brief and the DPO
+  records when and to whom.
+- **The DPO team is several accounts** with the `dpo` role, so logging an
+  incident inside the thirty minutes does not wait on one person.
+- **Tickets only for recorded breaches**: not during validation. The guard in
+  `tickets.assign` stays.
+

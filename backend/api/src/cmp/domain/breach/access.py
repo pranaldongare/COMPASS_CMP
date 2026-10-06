@@ -17,17 +17,20 @@ Somebody given a login sets a password with the reset flow's code, exactly as
 an invitation works, and signs in with the emailed second factor like all
 staff (ADR 0006). The email names no breach (BD-18).
 
-Access ends when the breach closes, when the DPO withdraws that holder's
-ticket, or when an administrator deactivates the account (BD-15). Ending one
-grant:
+A grant is the window in which they act. It ends when the breach closes or
+when the DPO withdraws that holder's ticket (BD-15), and ending it changes
+nothing about the account: the login stays, and the ticket stays theirs to
+read (decided 2026-10-06, replacing BD-16's switch-off). Read-only needs no
+check of its own - a withdrawn or closed ticket, and every ticket on a closed
+breach, already refuses every write. A person who also holds a real role
+keeps it, and their tickets with it.
 
-1. If the person holds a grant on another breach, only this one ends.
-2. Otherwise, if their role is still `breach_holder`: an account made for the
-   breach is switched off; one that existed goes back to the role it held.
-   The password goes either way.
-3. `person_type` is never touched (BD-16) - this is not `end_staff_access`.
-4. If an administrator has meanwhile given the person a real role, it stays.
-5. Every session is revoked once the transaction has committed.
+The one off switch is the administrator's **End temporary access**
+(`remove`): every open grant ends, and the account goes back to what it was
+before its first grant - switched off if it was made for a breach, its
+previous role otherwise - with the password cleared. `person_type` is never
+touched (BD-16) - this is not `end_staff_access`. The caller revokes the
+sessions once the transaction has committed.
 """
 
 from __future__ import annotations
@@ -35,8 +38,6 @@ from __future__ import annotations
 from typing import Any
 
 from cmp.auth.authentication import service as auth_service
-from cmp.auth.sessions import service as sessions
-from cmp.core import after_commit
 from cmp.core.config import settings
 from cmp.core.enums import PersonType, UserStatus
 from cmp.core.errors import Conflict, ValidationFailed
@@ -128,16 +129,18 @@ async def grant(
     created: bool,
     actor_id: int,
     cause: str,
-) -> None:
+) -> bool:
     """Give `user` the breach-only role for this breach, and tell them how to
-    sign in. The caller holds the breach row."""
+    sign in if they cannot yet. True if that email went; False if they already
+    sign in, and the caller tells them a ticket is waiting instead. The caller
+    holds the breach row."""
     user_id = int(user["id"])
-    elsewhere = await repo.open_grants_for_user(conn, user_id)
     role = str(user["role"])
     if role == Role.BREACH_HOLDER.value:
-        # A second breach: carry over what the first grant will put back.
-        previous = elsewhere[0]["previous_role"] if elsewhere else None
-        account_created = bool(elsewhere[0]["account_created"]) if elsewhere else created
+        # Held one before: carry over what the account was before its first.
+        first = await repo.first_grant_of(conn, user_id)
+        previous = first["previous_role"] if first else None
+        account_created = bool(first["account_created"]) if first else created
     elif role in _STAFF:
         # A member of staff whose account is not active - switched off, or
         # never activated - is not given a second way in through a ticket.
@@ -176,28 +179,17 @@ async def grant(
     )
     fresh = await user_repo.by_id(conn, user_id)
     assert fresh is not None
-    if elsewhere and role == Role.BREACH_HOLDER.value and str(fresh["status"]) == "active":
-        # They already sign in for another breach: the waiting notice will do.
-        return
+    if role == Role.BREACH_HOLDER.value and str(fresh["status"]) == UserStatus.ACTIVE.value:
+        # They already sign in: the waiting notice will do.
+        return False
     await auth_service.invite_breach_holder(conn, user=fresh)
+    return True
 
 
 async def end(conn: Conn, grant_row: Row, *, cause: str, actor_id: int | None) -> None:
-    """End one grant, and put the account back if it was the last."""
+    """End one grant. The account is left as it is: the login stays, to read."""
     user_id = int(grant_row["user_id"])
     await repo.end_grant(conn, int(grant_row["access_id"]), cause=cause, ended_by=actor_id)
-    still = await repo.open_grants_for_user(conn, user_id)
-    user = await user_repo.by_id(conn, user_id)
-    assert user is not None
-    breach_ref = await _reference(conn, int(grant_row["breach_id"]))
-    if not still and str(user["role"]) == Role.BREACH_HOLDER.value:
-        if grant_row["account_created"]:
-            await user_repo.set_status(conn, user_id, UserStatus.DEACTIVATED.value)
-        else:
-            await user_repo.set_role(
-                conn, user_id, str(grant_row["previous_role"] or Role.DATA_SUBJECT.value)
-            )
-        await user_repo.clear_password(conn, user_id)
     await audit.record(
         conn,
         event=Event.USER_TEMPORARY_ACCESS_ENDED,
@@ -205,11 +197,8 @@ async def end(conn: Conn, grant_row: Row, *, cause: str, actor_id: int | None) -
         entity_id=user_id,
         subject_user_id=user_id,
         actor_user_id=actor_id,
-        detail={"reference": breach_ref, "cause": cause, "kept": bool(still)},
+        detail={"reference": await _reference(conn, int(grant_row["breach_id"])), "cause": cause},
     )
-    # After the commit: a session revoked inside a transaction that then rolls
-    # back has ended access that was never ended.
-    await after_commit.defer_async(lambda: sessions.revoke_all(user_id))
 
 
 async def _reference(conn: Conn, breach_id: int) -> str:
@@ -234,9 +223,19 @@ async def end_for_ticket(conn: Conn, breach_id: int, user_id: int, *, actor_id: 
         await end(conn, row, cause=TICKET_WITHDRAWN, actor_id=actor_id)
 
 
-async def end_for_account(conn: Conn, user_id: int, *, actor_id: int) -> int:
-    """An administrator deactivated the account (BD-15): every grant ends."""
-    rows = await repo.open_grants_for_user(conn, user_id)
-    for row in rows:
+async def remove(conn: Conn, user: Row, *, actor_id: int) -> bool:
+    """An administrator's End temporary access: the one off switch. Every open
+    grant ends, and the account goes back to what it was before its first -
+    switched off if made for a breach, its previous role otherwise - with the
+    password cleared. True if the account was kept. The caller revokes every
+    session after the commit."""
+    user_id = int(user["id"])
+    for row in await repo.open_grants_for_user(conn, user_id):
         await end(conn, row, cause=ACCOUNT_DEACTIVATED, actor_id=actor_id)
-    return len(rows)
+    first = await repo.first_grant_of(conn, user_id)
+    await user_repo.clear_password(conn, user_id)
+    if first is None or first["account_created"]:
+        await user_repo.set_status(conn, user_id, UserStatus.DEACTIVATED.value)
+        return False
+    await user_repo.set_role(conn, user_id, str(first["previous_role"] or Role.DATA_SUBJECT.value))
+    return True

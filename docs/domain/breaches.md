@@ -278,7 +278,10 @@ the validation and time of awareness if any, whether it is marked reportable
 to CERT-In, every duty with its clock, and who it touched **as counts only**.
 It names what the register does not yet hold. It never carries the finding on
 who caused it, anybody's name or contact, or who recorded what. **Print**
-produces the copy to hand over. The platform never sends it.
+produces the copy to hand over. The platform never sends it: the report goes
+through the organisation's own offline channel, and the DPO is accountable for
+it and records it (decided 2026-10-06). The DPO team is several `dpo`
+accounts, so the thirty minutes never wait on one person.
 
 ## The Board and CERT-In
 
@@ -371,18 +374,24 @@ link and a code, from the sign-in service like an invitation, naming no breach
 (BD-18). They set a password and sign in with an emailed code like all staff,
 and land on **My tasks**: their ticket, notifications and profile are all the
 console holds for them. The Tickets card marks their row **Temporary login**,
-with whether they have signed in yet, or that it has ended.
+with whether they have signed in yet, or **read only** once their part is over.
 
-Access ends on three triggers (BD-15): the **breach closes** (every grant on it
-ends in the closing transaction), the **DPO withdraws** that holder's ticket, or
-an **administrator ends it** from the register (**End temporary access**; never
-`end_staff_access`). Ending one grant ends only that one if they hold another
-on a different breach; otherwise an account made for the breach is switched
-off and one that existed goes back to the role it held (BD-16), the password
-is cleared, `person_type` is never touched, and every session is revoked after
-the commit. If an administrator has meanwhile given them a real role, it stays.
-**Reopening their ticket** grants access again with a new grant row and a new
-email; reopening a closed breach does not.
+**Their part ends; the login stays** (decided 2026-10-06). The grant - the
+window in which they act - ends when the **breach closes** (every grant on it,
+in the closing transaction) or the **DPO withdraws** that holder's ticket
+(BD-15). The account is left as it is, so they can still sign in and read
+their ticket; a withdrawn or closed ticket, and every ticket on a closed
+breach, refuses every write, so read-only needs no check of its own. A person
+who also holds a real role keeps it, and their tickets with it.
+**Reopening their ticket** opens a new grant and emails them that a ticket is
+waiting; reopening a closed breach does not reopen anybody's ticket.
+
+**The off switch is the administrator's.** **End temporary access** on the
+register (never `end_staff_access`) ends every open grant and puts the account
+back as it was before its first grant: switched off if it was made for a
+breach, its previous role - `data_subject` - otherwise (BD-16). The password is
+cleared, `person_type` is never touched, and every session is revoked once the
+change has committed. Asked again later, they get a new access email.
 
 ### Colleagues
 

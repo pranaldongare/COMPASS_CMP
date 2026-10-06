@@ -7,6 +7,7 @@
  * from the register - not its title, not who it touched - reaches this page,
  * and the register itself is not mine to open.
  *
+ * Once the ticket or the breach is closed it stays here to read (2026-10-06).
  * While it is open I can bring in a colleague (S3-09), who gets their own
  * ticket opening with my note. What comes back is my own ticket whatever
  * happened to theirs, so this page never says whether they had an account.

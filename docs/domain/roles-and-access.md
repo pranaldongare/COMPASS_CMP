@@ -160,8 +160,8 @@ register's button reads "End staff access" for a staff row: the role becomes
 account stays active so they still reach the consents they gave and the rights
 they hold. A data principal's account, having nothing to be kept as, is
 switched off as before. For a temporary ticket holder the button reads "End
-temporary access" and ends their breach-only login instead (below); it never
-marks them an ex-employee.
+temporary access" and removes their breach-only login instead (below); it
+never marks them an ex-employee.
 
 **A person may correct their own name** from the account page, on either
 portal (**Change** beside it). It is `PATCH /me` with the name alone: sealed on
@@ -243,14 +243,12 @@ never given by hand: `POST /users` and the change-role route refuse it, and no
 staff picker offers it. An administrator may give such a person a real role;
 ending the grant then leaves that role alone.
 
-Access ends when the breach closes, when the DPO withdraws that person's
-ticket, or when an administrator ends it from the register. If they hold a
-grant on another breach only this one ends; otherwise an account made for the
-breach is switched off and one that was a data principal's goes back to
-`data_subject`, with its password cleared either way and `person_type`
-untouched. Every session is revoked once the change has committed. Reopening
-their ticket gives the access back with a new grant and a new email; reopening
-a closed breach does not.
+When the breach closes or the DPO withdraws their ticket, their part is over
+but the login stays, so they can still read their ticket; nothing on it can be
+written (decided 2026-10-06). The one off switch is an administrator's **End
+temporary access**: an account made for a breach is switched off, one that was
+a data principal's goes back to `data_subject`, the password is cleared,
+`person_type` is untouched, and every session is revoked.
 
 ## What the dashboard asks of each role
 

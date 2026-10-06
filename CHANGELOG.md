@@ -7,6 +7,19 @@ as a release yet.
 
 ## [Unreleased]
 
+### Changed
+- **A breach-only login stays, read only, when the holder's part is over**
+  (decided 2026-10-06, amending ADR 0023's BD-16). When the breach closes or
+  the DPO withdraws a holder's ticket, the grant ends but the account is left
+  as it is: they can still sign in and read their ticket, and every write is
+  refused as before. A person with another role keeps it. The Tickets card
+  shows **Temporary login · read only**; asking a kept login again sends the
+  "ticket waiting" email. The administrator's **End temporary access** is the
+  one off switch: it puts the account back (switched off if made for the
+  breach, `data_subject` otherwise), clears the password and revokes the
+  sessions. The after-commit async hooks S3-09 added for revocation are gone
+  again; the users route revokes after its commit, as for any deactivation.
+
 ### Security
 - **A refused request keeps its evidence.** A failed sign-in's audit row was
   rolled back by the raise that followed it, and no 403 was ever recorded.
@@ -74,9 +87,9 @@ as a release yet.
   open; the colleague gets their own ticket under the same domain check and
   lookup, and the adder's answer never says whether an account existed. Access
   ends when the breach closes, when the DPO withdraws the ticket, or when an
-  administrator chooses **End temporary access**; the account goes back to what
-  it was (or is switched off if made for the breach), the password is cleared,
-  `person_type` is never touched, and sessions are revoked after the commit.
+  administrator chooses **End temporary access**; `person_type` is never
+  touched (since 2026-10-06 the login stays, read only, until an
+  administrator removes it - see Changed).
   The role is never given by hand. The Tickets card marks temporary logins and
   their state. Migration 0041 (`breach_holder` enum value;
   `breach_temporary_access`); route `POST /breach-tickets/{uuid}/colleagues`.

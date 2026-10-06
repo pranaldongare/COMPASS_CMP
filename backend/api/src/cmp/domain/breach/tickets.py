@@ -250,7 +250,7 @@ async def _ask_by_email(
         notify=not temporary,
     )
     if temporary:
-        await access.grant(
+        invited = await access.grant(
             conn,
             breach=breach,
             user=user,
@@ -259,6 +259,9 @@ async def _ask_by_email(
             actor_id=actor_id,
             cause=cause,
         )
+        if not invited:
+            # A login kept from an earlier breach: they sign in already.
+            await _tell_holder(made)
     return made
 
 
@@ -612,22 +615,24 @@ async def office_move(
     )
     await repo.mark_read(conn, int(row["ticket_id"]), side="office")
     await _trail(conn, row, _TRAIL[chosen], actor_id=actor_id, detail={"reason_given": bool(text)})
-    regranted = False
+    invited = False
     if chosen == Move.WITHDRAW:
-        # BD-15: a withdrawn ticket takes its breach-only login with it.
+        # BD-15: a withdrawn ticket ends its holder's grant on this breach. The
+        # login stays, to read the ticket; the withdrawal refuses every write.
         await access.end_for_ticket(
             conn, int(breach["breach_id"]), int(row["holder_user_id"]), actor_id=actor_id
         )
     elif chosen == Move.REOPEN:
-        regranted = await _restore_access(conn, breach, row, actor_id=actor_id)
-    if chosen in _WAITING_AFTER and not regranted:
+        invited = await _restore_access(conn, breach, row, actor_id=actor_id)
+    if chosen in _WAITING_AFTER and not invited:
         await _tell_holder(row)
     return await office_detail(conn, breach_uuid=breach_uuid, ticket_uuid=ticket_uuid)
 
 
 async def _restore_access(conn: Conn, breach: Row, row: Row, *, actor_id: int) -> bool:
-    """Reopening a ticket whose holder's breach-only login has ended grants it
-    again: a new grant, and a new email. True if it did."""
+    """Reopening a ticket whose holder's grant has ended grants it again. True
+    if that sent the access email - they could no longer sign in, because an
+    administrator ended their login - so the waiting notice is not needed."""
     last = await repo.latest_grant(conn, int(breach["breach_id"]), int(row["holder_user_id"]))
     if last is None or last["ended_at"] is None:
         return False
@@ -635,7 +640,7 @@ async def _restore_access(conn: Conn, breach: Row, row: Row, *, actor_id: int) -
     assert user is not None
     if not access.needs_grant(user):
         return False  # an administrator has since given them a real role
-    await access.grant(
+    return await access.grant(
         conn,
         breach=breach,
         user=user,
@@ -644,7 +649,6 @@ async def _restore_access(conn: Conn, breach: Row, row: Row, *, actor_id: int) -
         actor_id=actor_id,
         cause="reopened",
     )
-    return True
 
 
 async def add_colleague(
