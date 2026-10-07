@@ -41,6 +41,75 @@ export interface Notice {
   /** Null where the list query did not count them (ARCH-2: was typed as never null). */
   purpose_count?: number | null;
   language_count?: number | null;
+  /** The template it was made from (`TPL-0007`), if any. A copy: the template
+   *  changing afterwards changes nothing here. */
+  template_code?: string | null;
+}
+
+/** A notice the DPO writes before any project exists (0044). Never served;
+ *  attached to a project by its ID, which copies it into that project's draft
+ *  notice. Retired, never deleted. */
+export interface NoticeTemplate {
+  template_uuid: Uuid;
+  /** The ID the DPO gives out: `TPL-0007`. */
+  template_code: string;
+  title: string;
+  withdraw_url: string;
+  exercise_rights_url: string;
+  board_complaint_url: string;
+  dpo_contact: string;
+  applicable_to: NoticeAudience | null;
+  note: string | null;
+  status: "active" | "retired";
+  created_by_name: string;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  retired_at: Timestamp | null;
+  purpose_count: number;
+  language_count: number;
+  /** How many project notices were made from it. */
+  used_count: number;
+}
+
+export interface NoticeTemplatePurpose {
+  purpose_uuid: Uuid;
+  purpose_code: string;
+  name: string;
+  status: string;
+  lawful_basis: string;
+  data_categories: string[];
+  display_order: number;
+  is_mandatory: boolean;
+}
+
+export interface NoticeTemplateLanguage {
+  language_code: LanguageCode;
+  rendered_text: string;
+  updated_at: Timestamp;
+  updated_by_name: string;
+}
+
+/** A project notice made from a template. */
+export interface NoticeTemplateUse {
+  notice_uuid: Uuid;
+  notice_code: string;
+  version: number;
+  status: NoticeStatus;
+  created_at: Timestamp;
+  project_uuid: Uuid;
+  project_name: string;
+}
+
+export interface NoticeTemplateDetail extends NoticeTemplate {
+  purposes: NoticeTemplatePurpose[];
+  languages: NoticeTemplateLanguage[];
+  notices: NoticeTemplateUse[];
+}
+
+/** What an R&D User sees when they look an ID up: what it carries. */
+export interface NoticeTemplateFound extends NoticeTemplate {
+  purposes: NoticeTemplatePurpose[];
+  languages: NoticeTemplateLanguage[];
 }
 
 export interface NoticeLanguage {

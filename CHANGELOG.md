@@ -8,6 +8,22 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Notice templates** (2026-10-07). The DPO writes notices before the
+  projects that will use them exist, as many as they like: on the Notices
+  screen's new Templates tab, each template has a name, the Rule 3 links and
+  DPO contact, an audience, purposes from the register and its text in each
+  language, under an ID the database mints (`TPL-0007`). Nothing on a template
+  is approved or served; it is edited in place and retired, never deleted.
+  The DPO gives the ID to the study's R&D User, who on their project chooses
+  Use a notice template, looks the ID up to see what it carries, and makes the
+  project's own draft notice from it - a copy, with the project's own code and
+  nothing approved, then approved and published as usual. The notice shows
+  the template it came from; the template's page lists the notices made from
+  it, and a later change to the template reaches none of them. Migration
+  0044: `notice_template`, `notice_template_purpose`,
+  `notice_template_language`, `notice.template_id`. Nine DPO-only routes under
+  `/notice-templates`, `GET /notice-templates/by-code/{code}` for whoever brings
+  notices, and `POST /projects/{uuid}/notices/from-template`.
 - **Documents with a rights request** (2026-10-07). Signed in, a data
   principal can send documents with her request - a proof of who she is, a
   letter, a screenshot: PDF, PNG, JPEG, text or Word, 25 MB each, at most ten,

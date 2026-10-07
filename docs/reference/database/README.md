@@ -1,6 +1,6 @@
 # COMPASS complete database schema
 
-The diagrams, the table reference and the enum reference are generated from the catalogue of a scratch database built by replaying migrations **0001 → 0043**, on 2026-10-07; rebuild them with `python3 docs/tools/generate-schema-docs.py --database <db>`. The notes on this page follow them by hand.
+The diagrams, the table reference and the enum reference are generated from the catalogue of a scratch database built by replaying migrations **0001 → 0044**, on 2026-10-07; rebuild them with `python3 docs/tools/generate-schema-docs.py --database <db>`. The notes on this page follow them by hand.
 
 ## Open the diagrams
 
@@ -19,7 +19,7 @@ The complete SVG is a large, zoomable vector drawing. Open it in a browser or ve
 | Identity | `auth_user`, `person_type_history`, `delegation` | [Open SVG](modules/identity.svg) |
 | Registry | `purpose`, `processor`, `processor_respondent`, `data_source` | [Open SVG](modules/registry.svg) |
 | Projects | `project`, `project_processor`, `project_approval`, `project_site`, `project_status_history` | [Open SVG](modules/projects.svg) |
-| Notices | `notice`, `notice_language`, `notice_purpose` | [Open SVG](modules/notices.svg) |
+| Notices | `notice`, `notice_language`, `notice_purpose`, `notice_template`, `notice_template_purpose`, `notice_template_language` | [Open SVG](modules/notices.svg) |
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant`, `v_current_consent` | [Open SVG](modules/consent.svg) |
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` | [Open SVG](modules/exchange.svg) |
 | Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_ticket_message`, `rights_response_file`, `rights_request_attachment`, `rights_item_execution`, `legal_hold`, `nomination` | [Open SVG](modules/rights.svg) |
@@ -70,6 +70,8 @@ Since **0027–0030** the personal columns are `text` rather than `varchar(n)` -
 **0042** adds files kept with an incident: `breach_attachment`, each file's kind, sealed name and note, hash and size; append-only.
 
 **0043** adds documents a requester sends with a rights request: `rights_request_attachment`, each one's sealed name, hash, size and type; append-only.
+
+**0044** adds notice templates: `notice_template` with its purposes and languages - the DPO's notice before a project exists, never served, retired rather than deleted - and `notice.template_id`, the template a notice was copied from.
 
 ## Reading relationships and keys
 

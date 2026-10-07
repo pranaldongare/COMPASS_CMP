@@ -52,6 +52,8 @@ ENTITY_TYPES: Final[frozenset[str]] = frozenset(
         "notice",
         "notice_purpose",
         "notice_language",
+        # The DPO's notice written before a project exists (0044).
+        "notice_template",
         "consent_link",
         "consent_artefact",
         "consent_purpose_grant",
@@ -189,6 +191,17 @@ class Event:
     NOTICE_LANGUAGE_APPROVED = "notice.language_approved"
     NOTICE_PUBLISHED = "notice.published"
     NOTICE_SUPERSEDED = "notice.superseded"
+    #: The DPO's templates (0044): written, edited, retired, and used - a
+    #: project's draft notice made from one is `notice.created` with the
+    #: template named in its detail.
+    NOTICE_TEMPLATE_CREATED = "notice_template.created"
+    NOTICE_TEMPLATE_UPDATED = "notice_template.updated"
+    NOTICE_TEMPLATE_PURPOSE_ATTACHED = "notice_template.purpose_attached"
+    NOTICE_TEMPLATE_PURPOSE_DETACHED = "notice_template.purpose_detached"
+    NOTICE_TEMPLATE_LANGUAGE_SET = "notice_template.language_set"
+    NOTICE_TEMPLATE_LANGUAGE_REMOVED = "notice_template.language_removed"
+    NOTICE_TEMPLATE_RETIRED = "notice_template.retired"
+    NOTICE_TEMPLATE_REACTIVATED = "notice_template.reactivated"
 
     # consent
     LINK_CREATED = "link.created"

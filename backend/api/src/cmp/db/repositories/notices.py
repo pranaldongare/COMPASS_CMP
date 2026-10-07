@@ -17,7 +17,9 @@ NOTICE_COLUMNS = """
   n.notice_uuid, n.notice_code, n.version, n.withdraw_url, n.exercise_rights_url,
   n.board_complaint_url, n.dpo_contact, n.recipients_text, n.status,
   n.note, n.applicable_to,
-  n.change_class, n.published_at, n.created_at, n.updated_at
+  n.change_class, n.published_at, n.created_at, n.updated_at,
+  (SELECT t.template_code FROM notice_template t WHERE t.template_id = n.template_id)
+    AS template_code
 """
 
 #: Repeated in the RETURNING clauses, which cannot use `NOTICE_COLUMNS` because
@@ -168,14 +170,15 @@ async def create(
     note: str | None = None,
     applicable_to: str | None = None,
     change_class: str | None = None,
+    template_id: int | None = None,
 ) -> Row:
     row = await fetch_one(
         conn,
         """
         INSERT INTO notice (notice_code, project_id, version, withdraw_url,
                             exercise_rights_url, board_complaint_url, dpo_contact,
-                            note, applicable_to, change_class)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::notice_audience, %s::change_class)
+                            note, applicable_to, change_class, template_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::notice_audience, %s::change_class, %s)
         RETURNING """
         + NOTICE_RETURNING,
         (
@@ -189,6 +192,7 @@ async def create(
             note,
             applicable_to,
             change_class,
+            template_id,
         ),
     )
     assert row is not None

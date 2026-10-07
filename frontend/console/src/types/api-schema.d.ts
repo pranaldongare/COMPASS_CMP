@@ -2416,6 +2416,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{project_uuid}/notices/from-template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Make this project's notice from a template, by its ID
+         * @description The template's links, contact, audience, purposes and text, copied into
+         *     a fresh draft with this project's own code. Then approved and published
+         *     like any notice. A retired template is refused (409 `template_retired`).
+         */
+        post: operations["notice_from_template_projects__project_uuid__notices_from_template_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/notices/{notice_uuid}": {
         parameters: {
             query?: never;
@@ -2724,6 +2746,128 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notice-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The DPO's notice templates, newest first */
+        get: operations["list_templates_notice_templates_get"];
+        put?: never;
+        /** Write a notice template, before any project exists */
+        post: operations["create_template_notice_templates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notice-templates/by-code/{template_code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Look up a template by the ID the DPO gave out, before attaching it */
+        get: operations["find_template_notice_templates_by_code__template_code__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notice-templates/{template_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Template */
+        get: operations["get_template_notice_templates__template_uuid__get"];
+        /** Update Template */
+        put: operations["update_template_notice_templates__template_uuid__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notice-templates/{template_uuid}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retire a template, or bring it back */
+        post: operations["set_template_status_notice_templates__template_uuid__status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notice-templates/{template_uuid}/purposes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attach Template Purpose */
+        post: operations["attach_template_purpose_notice_templates__template_uuid__purposes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notice-templates/{template_uuid}/purposes/{purpose_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Detach Template Purpose */
+        delete: operations["detach_template_purpose_notice_templates__template_uuid__purposes__purpose_uuid__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notice-templates/{template_uuid}/languages/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** The template's text in one language, added or replaced */
+        put: operations["set_template_language_notice_templates__template_uuid__languages__code__put"];
+        post?: never;
+        /** Remove Template Language */
+        delete: operations["remove_template_language_notice_templates__template_uuid__languages__code__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -8361,6 +8505,14 @@ export interface components {
              */
             source_notice_uuid: string;
         };
+        /**
+         * NoticeFromTemplateIn
+         * @description Start this project's notice from a template the DPO wrote (0044).
+         */
+        NoticeFromTemplateIn: {
+            /** Template Code */
+            template_code: string;
+        };
         /** NoticeIn */
         NoticeIn: {
             /** Withdraw Url */
@@ -8477,6 +8629,8 @@ export interface components {
             purpose_count?: number | null;
             /** Language Count */
             language_count?: number | null;
+            /** Template Code */
+            template_code?: string | null;
         };
         /** NoticeUpdate */
         NoticeUpdate: {
@@ -10057,16 +10211,269 @@ export interface components {
             /** Attachments */
             attachments?: components["schemas"]["AttachmentOut"][];
         };
+        /** TemplateDetail */
+        TemplateDetail: {
+            /**
+             * Template Uuid
+             * Format: uuid
+             */
+            template_uuid: string;
+            /** Template Code */
+            template_code: string;
+            /** Title */
+            title: string;
+            /** Withdraw Url */
+            withdraw_url: string;
+            /** Exercise Rights Url */
+            exercise_rights_url: string;
+            /** Board Complaint Url */
+            board_complaint_url: string;
+            /** Dpo Contact */
+            dpo_contact: string;
+            /** Applicable To */
+            applicable_to: string | null;
+            /** Note */
+            note: string | null;
+            /** Status */
+            status: string;
+            /** Created By Name */
+            created_by_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Retired At */
+            retired_at: string | null;
+            /** Purpose Count */
+            purpose_count: number;
+            /** Language Count */
+            language_count: number;
+            /** Used Count */
+            used_count: number;
+            /** Purposes */
+            purposes: components["schemas"]["TemplatePurposeOut"][];
+            /** Languages */
+            languages: components["schemas"]["TemplateLanguageOut"][];
+            /** Notices */
+            notices: components["schemas"]["TemplateNoticeOut"][];
+        };
         /**
-         * TemplateIn
-         * @description The words. `subject` is required for email and refused for SMS; the
-         *     service says which, with every other problem, in one answer.
+         * TemplateFound
+         * @description What the R&D User sees before attaching one: what it carries, not where
+         *     else it was used.
          */
-        TemplateIn: {
-            /** Subject */
-            subject?: string | null;
-            /** Body */
-            body: string;
+        TemplateFound: {
+            /**
+             * Template Uuid
+             * Format: uuid
+             */
+            template_uuid: string;
+            /** Template Code */
+            template_code: string;
+            /** Title */
+            title: string;
+            /** Withdraw Url */
+            withdraw_url: string;
+            /** Exercise Rights Url */
+            exercise_rights_url: string;
+            /** Board Complaint Url */
+            board_complaint_url: string;
+            /** Dpo Contact */
+            dpo_contact: string;
+            /** Applicable To */
+            applicable_to: string | null;
+            /** Note */
+            note: string | null;
+            /** Status */
+            status: string;
+            /** Created By Name */
+            created_by_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Retired At */
+            retired_at: string | null;
+            /** Purpose Count */
+            purpose_count: number;
+            /** Language Count */
+            language_count: number;
+            /** Used Count */
+            used_count: number;
+            /** Purposes */
+            purposes: components["schemas"]["TemplatePurposeOut"][];
+            /** Languages */
+            languages: components["schemas"]["TemplateLanguageOut"][];
+        };
+        /** TemplateLanguageIn */
+        TemplateLanguageIn: {
+            /** Rendered Text */
+            rendered_text: string;
+        };
+        /** TemplateLanguageOut */
+        TemplateLanguageOut: {
+            /** Language Code */
+            language_code: string;
+            /** Rendered Text */
+            rendered_text: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Updated By Name */
+            updated_by_name: string;
+        };
+        /**
+         * TemplateNoticeOut
+         * @description A project notice made from the template.
+         */
+        TemplateNoticeOut: {
+            /**
+             * Notice Uuid
+             * Format: uuid
+             */
+            notice_uuid: string;
+            /** Notice Code */
+            notice_code: string;
+            /** Version */
+            version: number;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Project Uuid
+             * Format: uuid
+             */
+            project_uuid: string;
+            /** Project Name */
+            project_name: string;
+        };
+        /** TemplateOut */
+        TemplateOut: {
+            /**
+             * Template Uuid
+             * Format: uuid
+             */
+            template_uuid: string;
+            /** Template Code */
+            template_code: string;
+            /** Title */
+            title: string;
+            /** Withdraw Url */
+            withdraw_url: string;
+            /** Exercise Rights Url */
+            exercise_rights_url: string;
+            /** Board Complaint Url */
+            board_complaint_url: string;
+            /** Dpo Contact */
+            dpo_contact: string;
+            /** Applicable To */
+            applicable_to: string | null;
+            /** Note */
+            note: string | null;
+            /** Status */
+            status: string;
+            /** Created By Name */
+            created_by_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Retired At */
+            retired_at: string | null;
+            /** Purpose Count */
+            purpose_count: number;
+            /** Language Count */
+            language_count: number;
+            /** Used Count */
+            used_count: number;
+        };
+        /** TemplatePurposeIn */
+        TemplatePurposeIn: {
+            /**
+             * Purpose Uuid
+             * Format: uuid
+             */
+            purpose_uuid: string;
+            /**
+             * Display Order
+             * @default 0
+             */
+            display_order: number;
+            /**
+             * Is Mandatory
+             * @default false
+             */
+            is_mandatory: boolean;
+        };
+        /** TemplatePurposeOut */
+        TemplatePurposeOut: {
+            /**
+             * Purpose Uuid
+             * Format: uuid
+             */
+            purpose_uuid: string;
+            /** Purpose Code */
+            purpose_code: string;
+            /** Name */
+            name: string;
+            /** Status */
+            status: string;
+            /** Lawful Basis */
+            lawful_basis: string;
+            /** Data Categories */
+            data_categories: string[];
+            /** Display Order */
+            display_order: number;
+            /** Is Mandatory */
+            is_mandatory: boolean;
+        };
+        /** TemplateStatusIn */
+        TemplateStatusIn: {
+            /**
+             * Status
+             * @description active or retired
+             */
+            status: string;
+        };
+        /** TemplateUpdate */
+        TemplateUpdate: {
+            /** Title */
+            title?: string | null;
+            /** Withdraw Url */
+            withdraw_url?: string | null;
+            /** Exercise Rights Url */
+            exercise_rights_url?: string | null;
+            /** Board Complaint Url */
+            board_complaint_url?: string | null;
+            /** Dpo Contact */
+            dpo_contact?: string | null;
+            applicable_to?: components["schemas"]["NoticeAudience"] | null;
+            /** Note */
+            note?: string | null;
         };
         /** ThreadOut */
         ThreadOut: {
@@ -10420,6 +10827,40 @@ export interface components {
             variables: components["schemas"]["VariableOut"][];
             /** Channels */
             channels: components["schemas"]["ChannelOut"][];
+        };
+        /**
+         * TemplateIn
+         * @description The words. `subject` is required for email and refused for SMS; the
+         *     service says which, with every other problem, in one answer.
+         */
+        cmp__api__routers__v1__messages__TemplateIn: {
+            /** Subject */
+            subject?: string | null;
+            /** Body */
+            body: string;
+        };
+        /** TemplateIn */
+        cmp__api__routers__v1__notice_templates__TemplateIn: {
+            /** Title */
+            title: string;
+            /** Withdraw Url */
+            withdraw_url: string;
+            /** Exercise Rights Url */
+            exercise_rights_url: string;
+            /**
+             * Board Complaint Url
+             * @description The Data Protection Board portal, NOT the internal grievance form
+             */
+            board_complaint_url: string;
+            /** Dpo Contact */
+            dpo_contact: string;
+            applicable_to?: components["schemas"]["NoticeAudience"] | null;
+            /** Note */
+            note?: string | null;
+            /** Rendered Text */
+            rendered_text?: string | null;
+            /** Language Code */
+            language_code?: string | null;
         };
         /**
          * TransitionsOut
@@ -14746,6 +15187,41 @@ export interface operations {
             };
         };
     };
+    notice_from_template_projects__project_uuid__notices_from_template_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoticeFromTemplateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoticeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_notice_notices__notice_uuid__get: {
         parameters: {
             query?: never;
@@ -15337,6 +15813,338 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    list_templates_notice_templates_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                q?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_template_notice_templates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["cmp__api__routers__v1__notice_templates__TemplateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    find_template_notice_templates_by_code__template_code__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateFound"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_template_notice_templates__template_uuid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_template_notice_templates__template_uuid__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_template_status_notice_templates__template_uuid__status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateStatusIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attach_template_purpose_notice_templates__template_uuid__purposes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplatePurposeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    detach_template_purpose_notice_templates__template_uuid__purposes__purpose_uuid__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_uuid: string;
+                purpose_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_template_language_notice_templates__template_uuid__languages__code__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_uuid: string;
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateLanguageIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_template_language_notice_templates__template_uuid__languages__code__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_uuid: string;
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -19787,7 +20595,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TemplateIn"];
+                "application/json": components["schemas"]["cmp__api__routers__v1__messages__TemplateIn"];
             };
         };
         responses: {
@@ -19823,7 +20631,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TemplateIn"];
+                "application/json": components["schemas"]["cmp__api__routers__v1__messages__TemplateIn"];
             };
         };
         responses: {

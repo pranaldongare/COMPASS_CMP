@@ -24,7 +24,7 @@ import { noticeSchema } from "@/features/notices/schemas";
  * work the raw labels do not: "Employee" alone leaves somebody guessing whether
  * a contractor counts.
  */
-const AUDIENCES = [
+export const AUDIENCES = [
   { value: "data_subject", label: "Data subjects — people outside the organisation" },
   { value: "employee", label: "Employees" },
   { value: "ex_employee", label: "Former employees" },

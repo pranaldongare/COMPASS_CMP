@@ -81,6 +81,13 @@ export const keys = {
     languages: (uuid: Uuid) => ["notice", uuid, "languages"] as const,
   },
 
+  /** The DPO's notice templates (0044). */
+  noticeTemplate: {
+    list: (params?: Params) => ["notice-templates", params ?? {}] as const,
+    detail: (uuid: Uuid) => ["notice-template", uuid] as const,
+    byCode: (code: string) => ["notice-template", "code", code] as const,
+  },
+
   registry: {
     purposes: (params?: Params) => ["purposes", params ?? {}] as const,
     purpose: (uuid: Uuid) => ["purpose", uuid] as const,

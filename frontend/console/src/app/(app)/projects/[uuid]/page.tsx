@@ -16,6 +16,7 @@ import {
   Copy,
   Download,
   FileCheck,
+  FileStack,
   History as HistoryIcon,
   Info,
   Link2,
@@ -57,6 +58,7 @@ import {
   NoticeForm,
   NoticeImportForm,
 } from "@/features/notices/components";
+import { UseTemplateForm } from "@/features/notice-templates/components/use-template-form";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Alert,
@@ -91,6 +93,7 @@ type Sheet =
   | { kind: "site" }
   | { kind: "notice" }
   | { kind: "notice-copy" }
+  | { kind: "notice-template" }
   | { kind: "notice-import" }
   | { kind: "approval" }
   | { kind: "export" }
@@ -279,6 +282,14 @@ export default function ProjectDetailPage() {
       >
         <Copy className="size-4" />
         Copy an existing notice
+      </Button>
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={() => setSheet({ kind: "notice-template" })}
+      >
+        <FileStack className="size-4" />
+        Use a notice template
       </Button>
       {isDpo && (
         <Button variant="secondary" size="sm" onClick={() => setSheet({ kind: "notice" })}>
@@ -824,6 +835,15 @@ export default function ProjectDetailPage() {
           description="Copies the wording, the purposes and every language rendition into this project as a fresh draft."
         >
           <NoticeCopyForm projectUuid={uuid} onDone={close} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={sheet?.kind === "notice-template"} onOpenChange={(o) => !o && close()}>
+        <DialogContent
+          title="Use a notice template"
+          description="A notice the Privacy Office wrote ahead of the project. Enter the ID they gave you."
+        >
+          <UseTemplateForm projectUuid={uuid} onDone={close} />
         </DialogContent>
       </Dialog>
 

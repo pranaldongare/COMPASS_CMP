@@ -68,6 +68,13 @@ start from; the copy is a draft on their own project and its legal approval
 does not come with it. Everywhere else an R&D User sees only their own
 projects' notices, and another project's draft is never copyable.
 
+Notice templates (0044) are the DPO's: writing, editing and retiring one is
+`RequireDPO`, and nobody else lists them. The one read that reaches wider is
+by ID - `GET /notice-templates/by-code/{code}` - for whoever brings notices to
+a project, so the R&D User the DPO gave `TPL-0007` to can see what it carries
+before attaching it to their own project
+(`POST /projects/{uuid}/notices/from-template`, an author's act like copying).
+
 Where a cell says "own" for the R&D user, it means the projects they created
 and everything hanging off them. "Scoped" for a collection owner means the
 projects and sites they are the owner of, resolved through the site's owner

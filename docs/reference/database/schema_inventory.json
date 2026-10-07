@@ -1,6 +1,6 @@
 {
-  "commit": "1d1917cd094560abc3805d4452dbcd04843fb47c",
-  "migration_head": "0043",
+  "commit": "4e0e52e3a2329eb7c106b9c1a4c2d0221f0905b9",
+  "migration_head": "0044",
   "migrations": [
     {
       "revision": "0001",
@@ -173,6 +173,10 @@
     {
       "revision": "0043",
       "source": "backend/api/migrations/versions/0043_rights_request_attachment.py"
+    },
+    {
+      "revision": "0044",
+      "source": "backend/api/migrations/versions/0044_notice_template.py"
     }
   ],
   "postgres_version": "16.15",
@@ -359,6 +363,21 @@
     },
     {
       "name": "notice_purpose",
+      "kind": "r",
+      "comment": null
+    },
+    {
+      "name": "notice_template",
+      "kind": "r",
+      "comment": "A notice the DPO writes before a project exists. Never served; copied into a project as its draft notice"
+    },
+    {
+      "name": "notice_template_language",
+      "kind": "r",
+      "comment": null
+    },
+    {
+      "name": "notice_template_purpose",
       "kind": "r",
       "comment": null
     },
@@ -3834,6 +3853,15 @@
       "comment": "Who this notice addresses. Null on notices that predate the column; the publish checklist requires it, so nothing reaches a data principal without it being answered."
     },
     {
+      "table_name": "notice",
+      "name": "template_id",
+      "position": 20,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The template this notice was made from, if any. The notice is a copy: changing the template changes nothing here"
+    },
+    {
       "table_name": "notice_language",
       "name": "notice_language_id",
       "position": 1,
@@ -4011,6 +4039,240 @@
       "type": "timestamp with time zone",
       "not_null": false,
       "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "notice_template",
+      "name": "template_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('notice_template_template_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "notice_template",
+      "name": "template_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "notice_template",
+      "name": "template_code",
+      "position": 3,
+      "type": "character varying(20)",
+      "not_null": true,
+      "default_value": "('TPL-'::text || lpad((nextval('notice_template_code_seq'::regclass))::text, 4, '0'::text))",
+      "comment": "The ID the DPO gives an R&D User to attach it, minted by the database"
+    },
+    {
+      "table_name": "notice_template",
+      "name": "title",
+      "position": 4,
+      "type": "character varying(200)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "notice_template",
+      "name": "withdraw_url",
+      "position": 5,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "notice_template",
+      "name": "exercise_rights_url",
+      "position": 6,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "notice_template",
+      "name": "board_complaint_url",
+      "position": 7,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "notice_template",
+      "name": "dpo_contact",
+      "position": 8,
+      "type": "character varying(255)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "notice_template",
+      "name": "applicable_to",
+      "position": 9,
+      "type": "notice_audience",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "notice_template",
+      "name": "note",
+      "position": 10,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "notice_template",
+      "name": "status",
+      "position": 11,
+      "type": "character varying(20)",
+      "not_null": true,
+      "default_value": "'active'::character varying",
+      "comment": null
+    },
+    {
+      "table_name": "notice_template",
+      "name": "created_by",
+      "position": 12,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "notice_template",
+      "name": "created_at",
+      "position": 13,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "notice_template",
+      "name": "updated_at",
+      "position": 14,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "notice_template",
+      "name": "retired_at",
+      "position": 15,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "notice_template_language",
+      "name": "template_language_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('notice_template_language_template_language_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "notice_template_language",
+      "name": "template_id",
+      "position": 2,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "notice_template_language",
+      "name": "language_code",
+      "position": 3,
+      "type": "language_code",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "notice_template_language",
+      "name": "rendered_text",
+      "position": 4,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "notice_template_language",
+      "name": "updated_by",
+      "position": 5,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "notice_template_language",
+      "name": "updated_at",
+      "position": 6,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "notice_template_purpose",
+      "name": "template_purpose_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('notice_template_purpose_template_purpose_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "notice_template_purpose",
+      "name": "template_id",
+      "position": 2,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "notice_template_purpose",
+      "name": "purpose_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "notice_template_purpose",
+      "name": "display_order",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "0",
+      "comment": null
+    },
+    {
+      "table_name": "notice_template_purpose",
+      "name": "is_mandatory",
+      "position": 5,
+      "type": "boolean",
+      "not_null": true,
+      "default_value": "false",
       "comment": null
     },
     {
@@ -9925,6 +10187,23 @@
     },
     {
       "table_name": "notice",
+      "name": "notice_template_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (template_id) REFERENCES notice_template(template_id)",
+      "columns": [
+        "template_id"
+      ],
+      "referenced_table": "notice_template",
+      "referenced_columns": [
+        "template_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice",
       "name": "publishable",
       "kind": "c",
       "definition": "CHECK (((status <> 'published'::notice_status) OR ((recipients_text IS NOT NULL) AND (published_at IS NOT NULL))))",
@@ -10149,6 +10428,229 @@
       "referenced_columns": [],
       "delete_action": " ",
       "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice_template",
+      "name": "notice_template_created_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (created_by) REFERENCES auth_user(id)",
+      "columns": [
+        "created_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice_template",
+      "name": "notice_template_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (template_id)",
+      "columns": [
+        "template_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice_template",
+      "name": "notice_template_retired_at",
+      "kind": "c",
+      "definition": "CHECK ((((status)::text = 'retired'::text) = (retired_at IS NOT NULL)))",
+      "columns": [
+        "status",
+        "retired_at"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice_template",
+      "name": "notice_template_status",
+      "kind": "c",
+      "definition": "CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'retired'::character varying])::text[])))",
+      "columns": [
+        "status"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice_template",
+      "name": "notice_template_template_code_key",
+      "kind": "u",
+      "definition": "UNIQUE (template_code)",
+      "columns": [
+        "template_code"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice_template",
+      "name": "notice_template_template_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (template_uuid)",
+      "columns": [
+        "template_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice_template_language",
+      "name": "notice_template_language_once",
+      "kind": "u",
+      "definition": "UNIQUE (template_id, language_code)",
+      "columns": [
+        "template_id",
+        "language_code"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice_template_language",
+      "name": "notice_template_language_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (template_language_id)",
+      "columns": [
+        "template_language_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice_template_language",
+      "name": "notice_template_language_template_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (template_id) REFERENCES notice_template(template_id)",
+      "columns": [
+        "template_id"
+      ],
+      "referenced_table": "notice_template",
+      "referenced_columns": [
+        "template_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice_template_language",
+      "name": "notice_template_language_updated_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (updated_by) REFERENCES auth_user(id)",
+      "columns": [
+        "updated_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice_template_purpose",
+      "name": "notice_template_purpose_once",
+      "kind": "u",
+      "definition": "UNIQUE (template_id, purpose_id)",
+      "columns": [
+        "template_id",
+        "purpose_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice_template_purpose",
+      "name": "notice_template_purpose_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (template_purpose_id)",
+      "columns": [
+        "template_purpose_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice_template_purpose",
+      "name": "notice_template_purpose_purpose_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (purpose_id) REFERENCES purpose(purpose_id)",
+      "columns": [
+        "purpose_id"
+      ],
+      "referenced_table": "purpose",
+      "referenced_columns": [
+        "purpose_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice_template_purpose",
+      "name": "notice_template_purpose_template_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (template_id) REFERENCES notice_template(template_id)",
+      "columns": [
+        "template_id"
+      ],
+      "referenced_table": "notice_template",
+      "referenced_columns": [
+        "template_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
       "deferrable": false,
       "initially_deferred": false
     },
@@ -12658,6 +13160,11 @@
     },
     {
       "table_name": "notice",
+      "name": "idx_notice_template",
+      "definition": "CREATE INDEX idx_notice_template ON public.notice USING btree (template_id) WHERE (template_id IS NOT NULL)"
+    },
+    {
+      "table_name": "notice",
       "name": "notice_notice_code_version_key",
       "definition": "CREATE UNIQUE INDEX notice_notice_code_version_key ON public.notice USING btree (notice_code, version)"
     },
@@ -12710,6 +13217,41 @@
       "table_name": "notice_purpose",
       "name": "notice_purpose_pkey",
       "definition": "CREATE UNIQUE INDEX notice_purpose_pkey ON public.notice_purpose USING btree (notice_purpose_id)"
+    },
+    {
+      "table_name": "notice_template",
+      "name": "notice_template_pkey",
+      "definition": "CREATE UNIQUE INDEX notice_template_pkey ON public.notice_template USING btree (template_id)"
+    },
+    {
+      "table_name": "notice_template",
+      "name": "notice_template_template_code_key",
+      "definition": "CREATE UNIQUE INDEX notice_template_template_code_key ON public.notice_template USING btree (template_code)"
+    },
+    {
+      "table_name": "notice_template",
+      "name": "notice_template_template_uuid_key",
+      "definition": "CREATE UNIQUE INDEX notice_template_template_uuid_key ON public.notice_template USING btree (template_uuid)"
+    },
+    {
+      "table_name": "notice_template_language",
+      "name": "notice_template_language_once",
+      "definition": "CREATE UNIQUE INDEX notice_template_language_once ON public.notice_template_language USING btree (template_id, language_code)"
+    },
+    {
+      "table_name": "notice_template_language",
+      "name": "notice_template_language_pkey",
+      "definition": "CREATE UNIQUE INDEX notice_template_language_pkey ON public.notice_template_language USING btree (template_language_id)"
+    },
+    {
+      "table_name": "notice_template_purpose",
+      "name": "notice_template_purpose_once",
+      "definition": "CREATE UNIQUE INDEX notice_template_purpose_once ON public.notice_template_purpose USING btree (template_id, purpose_id)"
+    },
+    {
+      "table_name": "notice_template_purpose",
+      "name": "notice_template_purpose_pkey",
+      "definition": "CREATE UNIQUE INDEX notice_template_purpose_pkey ON public.notice_template_purpose USING btree (template_purpose_id)"
     },
     {
       "table_name": "person_type_history",
@@ -13770,6 +14312,18 @@
       "name": "notice_purpose_notice_purpose_id_seq"
     },
     {
+      "name": "notice_template_code_seq"
+    },
+    {
+      "name": "notice_template_language_template_language_id_seq"
+    },
+    {
+      "name": "notice_template_purpose_template_purpose_id_seq"
+    },
+    {
+      "name": "notice_template_template_id_seq"
+    },
+    {
       "name": "person_type_history_history_id_seq"
     },
     {
@@ -13908,13 +14462,13 @@
     }
   ],
   "counts": {
-    "application_tables": 52,
+    "application_tables": 55,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 639,
-    "foreign_keys": 147,
+    "table_columns": 666,
+    "foreign_keys": 153,
     "enums": 39,
     "triggers": 48,
-    "checks": 83
+    "checks": 85
   }
 }

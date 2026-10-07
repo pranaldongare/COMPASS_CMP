@@ -264,6 +264,17 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/projects/{project_uuid}/notices/copy` | NO | ALL | NO | NO | NO | NO | OWN | NO | NO |
 | POST | `/projects/{project_uuid}/notices/import` | NO | ALL | NO | NO | NO | NO | OWN | NO | NO |
 | POST | `/projects/{project_uuid}/notices/import/validate` | NO | ALL | NO | NO | NO | NO | OWN | NO | NO |
+| GET | `/notice-templates` | NO | ALL | NO | NO | NO | NO | NO | NO | NO |
+| POST | `/notice-templates` | NO | ALL | NO | NO | NO | NO | NO | NO | NO |
+| GET | `/notice-templates/{template_uuid}` | NO | ALL | NO | NO | NO | NO | NO | NO | NO |
+| PUT | `/notice-templates/{template_uuid}` | NO | ALL | NO | NO | NO | NO | NO | NO | NO |
+| POST | `/notice-templates/{template_uuid}/status` | NO | ALL | NO | NO | NO | NO | NO | NO | NO |
+| POST | `/notice-templates/{template_uuid}/purposes` | NO | ALL | NO | NO | NO | NO | NO | NO | NO |
+| DELETE | `/notice-templates/{template_uuid}/purposes/{purpose_uuid}` | NO | ALL | NO | NO | NO | NO | NO | NO | NO |
+| PUT | `/notice-templates/{template_uuid}/languages/{code}` | NO | ALL | NO | NO | NO | NO | NO | NO | NO |
+| DELETE | `/notice-templates/{template_uuid}/languages/{code}` | NO | ALL | NO | NO | NO | NO | NO | NO | NO |
+| GET | `/notice-templates/by-code/{template_code}` | NO | ALL | NO | NO | NO | NO | OWN | NO | NO |
+| POST | `/projects/{project_uuid}/notices/from-template` | NO | ALL | NO | NO | NO | NO | OWN | NO | NO |
 
 ## Projects
 

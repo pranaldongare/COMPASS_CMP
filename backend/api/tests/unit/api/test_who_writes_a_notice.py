@@ -30,6 +30,8 @@ THE_AUTHORS = {
     ("POST", "/projects/{project_uuid}/notices/import"),
     ("POST", "/projects/{project_uuid}/notices/import/validate"),
     ("POST", "/projects/{project_uuid}/notices/copy"),
+    # A template the office wrote, by the ID it gave out (0044).
+    ("POST", "/projects/{project_uuid}/notices/from-template"),
 }
 
 #: What only the office may do. Composing, and everything that changes what the

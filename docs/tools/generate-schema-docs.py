@@ -55,7 +55,14 @@ MODULES: dict[str, list[str]] = {
         "project_site",
         "project_status_history",
     ],
-    "notices": ["notice", "notice_language", "notice_purpose"],
+    "notices": [
+        "notice",
+        "notice_language",
+        "notice_purpose",
+        "notice_template",
+        "notice_template_purpose",
+        "notice_template_language",
+    ],
     "consent": ["consent_link", "consent_artefact", "consent_purpose_grant", "v_current_consent"],
     "exchange": [
         "export_log",

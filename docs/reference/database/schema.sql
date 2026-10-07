@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict l9VmNEsQglH0ydjz6qdujOlVdRm4PJkBkIyVsFOtTTOdif0B6eBwTAmMTQPVxSV
+\restrict eyqzwX4wLFFeJgmbQ0WQLKEwWddlEqIea0QGC3OSon9dYI4k4YAEgey5cdehmpX
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -2938,6 +2938,7 @@ CREATE TABLE public.notice (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     note text,
     applicable_to public.notice_audience,
+    template_id integer,
     CONSTRAINT publishable CHECK (((status <> 'published'::public.notice_status) OR ((recipients_text IS NOT NULL) AND (published_at IS NOT NULL))))
 );
 
@@ -2954,6 +2955,13 @@ COMMENT ON COLUMN public.notice.note IS 'A note from the author to whoever colle
 --
 
 COMMENT ON COLUMN public.notice.applicable_to IS 'Who this notice addresses. Null on notices that predate the column; the publish checklist requires it, so nothing reaches a data principal without it being answered.';
+
+
+--
+-- Name: COLUMN notice.template_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.notice.template_id IS 'The template this notice was made from, if any. The notice is a copy: changing the template changes nothing here';
 
 
 --
@@ -3066,6 +3074,151 @@ CREATE SEQUENCE public.notice_purpose_notice_purpose_id_seq
 --
 
 ALTER SEQUENCE public.notice_purpose_notice_purpose_id_seq OWNED BY public.notice_purpose.notice_purpose_id;
+
+
+--
+-- Name: notice_template; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notice_template (
+    template_id integer NOT NULL,
+    template_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    template_code character varying(20) NOT NULL,
+    title character varying(200) NOT NULL,
+    withdraw_url text NOT NULL,
+    exercise_rights_url text NOT NULL,
+    board_complaint_url text NOT NULL,
+    dpo_contact character varying(255) NOT NULL,
+    applicable_to public.notice_audience,
+    note text,
+    status character varying(20) DEFAULT 'active'::character varying NOT NULL,
+    created_by integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    retired_at timestamp with time zone,
+    CONSTRAINT notice_template_retired_at CHECK ((((status)::text = 'retired'::text) = (retired_at IS NOT NULL))),
+    CONSTRAINT notice_template_status CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'retired'::character varying])::text[])))
+);
+
+
+--
+-- Name: TABLE notice_template; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.notice_template IS 'A notice the DPO writes before a project exists. Never served; copied into a project as its draft notice';
+
+
+--
+-- Name: COLUMN notice_template.template_code; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.notice_template.template_code IS 'The ID the DPO gives an R&D User to attach it, minted by the database';
+
+
+--
+-- Name: notice_template_code_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notice_template_code_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notice_template_code_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notice_template_code_seq OWNED BY public.notice_template.template_code;
+
+
+--
+-- Name: notice_template_language; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notice_template_language (
+    template_language_id integer NOT NULL,
+    template_id integer NOT NULL,
+    language_code public.language_code NOT NULL,
+    rendered_text text NOT NULL,
+    updated_by integer NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: notice_template_language_template_language_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notice_template_language_template_language_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notice_template_language_template_language_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notice_template_language_template_language_id_seq OWNED BY public.notice_template_language.template_language_id;
+
+
+--
+-- Name: notice_template_purpose; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notice_template_purpose (
+    template_purpose_id integer NOT NULL,
+    template_id integer NOT NULL,
+    purpose_id integer NOT NULL,
+    display_order integer DEFAULT 0 NOT NULL,
+    is_mandatory boolean DEFAULT false NOT NULL
+);
+
+
+--
+-- Name: notice_template_purpose_template_purpose_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notice_template_purpose_template_purpose_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notice_template_purpose_template_purpose_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notice_template_purpose_template_purpose_id_seq OWNED BY public.notice_template_purpose.template_purpose_id;
+
+
+--
+-- Name: notice_template_template_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notice_template_template_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notice_template_template_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notice_template_template_id_seq OWNED BY public.notice_template.template_id;
 
 
 --
@@ -4211,6 +4364,34 @@ ALTER TABLE ONLY public.notice_purpose ALTER COLUMN notice_purpose_id SET DEFAUL
 
 
 --
+-- Name: notice_template template_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template ALTER COLUMN template_id SET DEFAULT nextval('public.notice_template_template_id_seq'::regclass);
+
+
+--
+-- Name: notice_template template_code; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template ALTER COLUMN template_code SET DEFAULT ('TPL-'::text || lpad((nextval('public.notice_template_code_seq'::regclass))::text, 4, '0'::text));
+
+
+--
+-- Name: notice_template_language template_language_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template_language ALTER COLUMN template_language_id SET DEFAULT nextval('public.notice_template_language_template_language_id_seq'::regclass);
+
+
+--
+-- Name: notice_template_purpose template_purpose_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template_purpose ALTER COLUMN template_purpose_id SET DEFAULT nextval('public.notice_template_purpose_template_purpose_id_seq'::regclass);
+
+
+--
 -- Name: person_type_history history_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5002,6 +5183,62 @@ ALTER TABLE ONLY public.notice_purpose
 
 
 --
+-- Name: notice_template_language notice_template_language_once; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template_language
+    ADD CONSTRAINT notice_template_language_once UNIQUE (template_id, language_code);
+
+
+--
+-- Name: notice_template_language notice_template_language_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template_language
+    ADD CONSTRAINT notice_template_language_pkey PRIMARY KEY (template_language_id);
+
+
+--
+-- Name: notice_template notice_template_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template
+    ADD CONSTRAINT notice_template_pkey PRIMARY KEY (template_id);
+
+
+--
+-- Name: notice_template_purpose notice_template_purpose_once; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template_purpose
+    ADD CONSTRAINT notice_template_purpose_once UNIQUE (template_id, purpose_id);
+
+
+--
+-- Name: notice_template_purpose notice_template_purpose_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template_purpose
+    ADD CONSTRAINT notice_template_purpose_pkey PRIMARY KEY (template_purpose_id);
+
+
+--
+-- Name: notice_template notice_template_template_code_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template
+    ADD CONSTRAINT notice_template_template_code_key UNIQUE (template_code);
+
+
+--
+-- Name: notice_template notice_template_template_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template
+    ADD CONSTRAINT notice_template_template_uuid_key UNIQUE (template_uuid);
+
+
+--
 -- Name: person_type_history person_type_history_history_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5666,6 +5903,13 @@ CREATE INDEX idx_notice_project ON public.notice USING btree (project_id, versio
 --
 
 CREATE INDEX idx_notice_purpose_notice ON public.notice_purpose USING btree (notice_id, display_order);
+
+
+--
+-- Name: idx_notice_template; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_notice_template ON public.notice USING btree (template_id) WHERE (template_id IS NOT NULL);
 
 
 --
@@ -7070,6 +7314,54 @@ ALTER TABLE ONLY public.notice_purpose
 
 
 --
+-- Name: notice_template notice_template_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template
+    ADD CONSTRAINT notice_template_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: notice notice_template_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice
+    ADD CONSTRAINT notice_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.notice_template(template_id);
+
+
+--
+-- Name: notice_template_language notice_template_language_template_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template_language
+    ADD CONSTRAINT notice_template_language_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.notice_template(template_id);
+
+
+--
+-- Name: notice_template_language notice_template_language_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template_language
+    ADD CONSTRAINT notice_template_language_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: notice_template_purpose notice_template_purpose_purpose_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template_purpose
+    ADD CONSTRAINT notice_template_purpose_purpose_id_fkey FOREIGN KEY (purpose_id) REFERENCES public.purpose(purpose_id);
+
+
+--
+-- Name: notice_template_purpose notice_template_purpose_template_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template_purpose
+    ADD CONSTRAINT notice_template_purpose_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.notice_template(template_id);
+
+
+--
 -- Name: person_type_history person_type_history_auth_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7457,5 +7749,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict l9VmNEsQglH0ydjz6qdujOlVdRm4PJkBkIyVsFOtTTOdif0B6eBwTAmMTQPVxSV
+\unrestrict eyqzwX4wLFFeJgmbQ0WQLKEwWddlEqIea0QGC3OSon9dYI4k4YAEgey5cdehmpX
 

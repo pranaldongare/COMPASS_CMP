@@ -89,6 +89,7 @@ the [runbook](../operations/runbook.md).
 | `0041` | Breach-only logins (S3-09, ADR 0023): `user_role` gains `breach_holder`, added alone first in an autocommit block and never removed; `breach_temporary_access`, one grant of the role per person per breach (`breach_temporary_access_open`, partial unique on the open ones), with the previous role, whether the account was made for it, and an end written once with its cause (`cmp_breach_temporary_access_end_once`; never deleted). Downgrade drops the table and function; the enum value stays, as in 0018. Raw SQL |
 | `0042` | Files kept with an incident (2026-10-06): `breach_attachment` - kind (`email`, `proof`, `chat`, `other`), sealed `file_name` and `note`, `storage_ref`, `sha256`, `size_bytes`, `content_type`, who and when; append-only by trigger (`cmp_append_only`) and grant. Downgrade drops it. Raw SQL |
 | `0043` | Documents a requester sends with a rights request (2026-10-07): `rights_request_attachment` - sealed `file_name`, `storage_ref`, `sha256`, `size_bytes` (> 0), `content_type`, who and when; append-only by trigger (`cmp_append_only`) and grant. Downgrade drops it. Raw SQL |
+| `0044` | Notice templates (2026-10-07): `notice_template` (`template_code` minted from `notice_template_code_seq` as `TPL-0000`; `status` active/retired with `retired_at` by CHECK), `notice_template_purpose`, `notice_template_language`; `notice.template_id` (nullable FK, indexed). Editable, never deleted. Downgrade drops them. Raw SQL |
 
 ## What 0004 fixed
 

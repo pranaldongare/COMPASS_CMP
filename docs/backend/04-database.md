@@ -81,14 +81,14 @@ those blocks do nothing and the triggers are the enforcement you will see.
 
 ## The tables
 
-52 tables, one view, 39 enum types, in groups:
+55 tables, one view, 39 enum types, in groups:
 
 | Group | Tables |
 |---|---|
 | Identity | `auth_user` (every account, staff and principal), `person_type_history`, `delegation` |
 | Registry | `purpose`, `processor`, `processor_respondent`, `data_source` |
 | Projects | `project`, `project_status_history`, `project_approval`, `project_site`, `project_processor` |
-| Notices | `notice`, `notice_language`, `notice_purpose` |
+| Notices | `notice`, `notice_language`, `notice_purpose`, `notice_template`, `notice_template_purpose`, `notice_template_language` |
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant`, view `v_current_consent` |
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` |
 | Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_ticket_message`, `rights_response_file`, `rights_request_attachment`, `rights_item_execution`, `legal_hold`, `nomination` |

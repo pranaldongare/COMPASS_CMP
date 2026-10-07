@@ -159,7 +159,7 @@ No request body.
 Request body required: **yes**.
 
 **Content type:** `application/json`  
-**Schema:** [`TemplateIn`](#schema-templatein)
+**Schema:** [`cmp__api__routers__v1__messages__TemplateIn`](#schema-cmp_api_routers_v1_messages_templatein)
 
 ```json
 {
@@ -223,7 +223,7 @@ Request body required: **yes**.
 Request body required: **yes**.
 
 **Content type:** `application/json`  
-**Schema:** [`TemplateIn`](#schema-templatein)
+**Schema:** [`cmp__api__routers__v1__messages__TemplateIn`](#schema-cmp_api_routers_v1_messages_templatein)
 
 ```json
 {
@@ -379,17 +379,6 @@ No request body.
 | `subject` | `string` or `null` | Yes | — | — |
 | `body` | `string` | Yes | — | — |
 
-<a id="schema-templatein"></a>
-#### `TemplateIn`
-
-The words. `subject` is required for email and refused for SMS; the
-service says which, with every other problem, in one answer.
-
-| Field | Type | Required | Validation | Description |
-|---|---|---:|---|---|
-| `subject` | `string` or `null` | No | max length: `200` | — |
-| `body` | `string` | Yes | min length: `1`; max length: `6000` | — |
-
 <a id="schema-cmp_api_routers_v1_messages_messageout"></a>
 #### `cmp__api__routers__v1__messages__MessageOut`
 
@@ -401,6 +390,17 @@ service says which, with every other problem, in one answer.
 | `group` | `string` | Yes | — | — |
 | `variables` | array of [`VariableOut`](#schema-variableout) | Yes | — | — |
 | `channels` | array of [`ChannelOut`](#schema-channelout) | Yes | — | — |
+
+<a id="schema-cmp_api_routers_v1_messages_templatein"></a>
+#### `cmp__api__routers__v1__messages__TemplateIn`
+
+The words. `subject` is required for email and refused for SMS; the
+service says which, with every other problem, in one answer.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `subject` | `string` or `null` | No | max length: `200` | — |
+| `body` | `string` | Yes | min length: `1`; max length: `6000` | — |
 
 <a id="schema-validationerror"></a>
 #### `ValidationError`

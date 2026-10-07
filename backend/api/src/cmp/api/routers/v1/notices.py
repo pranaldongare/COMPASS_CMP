@@ -45,7 +45,7 @@ from cmp.core.pagination import PageRequest
 from cmp.db.pool import connection, transaction
 from cmp.db.repositories import notices as repo
 from cmp.db.repositories import projects as project_repo
-from cmp.domain.notices import importer
+from cmp.domain.notices import importer, templates
 from cmp.domain.notices import service as service
 from cmp.schemas.common import (
     Acknowledged,
@@ -107,6 +107,9 @@ class NoticeOut(Out):
     updated_at: datetime
     purpose_count: int | None = None
     language_count: int | None = None
+    #: The template it was made from (`TPL-0007`), if any. A copy: the template
+    #: changing afterwards changes nothing here.
+    template_code: str | None = None
 
 
 class NoticeIn(Schema):
@@ -143,6 +146,13 @@ class NoticeCopyIn(Schema):
     """Start this project's notice from one that already exists."""
 
     source_notice_uuid: UUID
+
+
+class NoticeFromTemplateIn(Schema):
+    """Start this project's notice from a template the DPO wrote (0044)."""
+
+    #: The ID the DPO gave out: `TPL-0007`. Case and spacing are forgiven.
+    template_code: Annotated[str, Field(min_length=3, max_length=20)]
 
 
 class NoticeUpdate(Schema):
@@ -348,6 +358,28 @@ async def copy_notice(
             conn,
             project_uuid=str(project_uuid),
             source_notice_uuid=str(body.source_notice_uuid),
+            actor_id=principal.user_id,
+            role=principal.role,
+        )
+
+
+@router.post(
+    "/projects/{project_uuid}/notices/from-template",
+    response_model=NoticeOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Make this project's notice from a template, by its ID",
+)
+async def notice_from_template(
+    project_uuid: UUID, body: NoticeFromTemplateIn, principal: NoticeAuthor
+) -> dict[str, Any]:
+    """The template's links, contact, audience, purposes and text, copied into
+    a fresh draft with this project's own code. Then approved and published
+    like any notice. A retired template is refused (409 `template_retired`)."""
+    async with transaction() as conn:
+        return await templates.apply(
+            conn,
+            project_uuid=str(project_uuid),
+            template_code=body.template_code,
             actor_id=principal.user_id,
             role=principal.role,
         )

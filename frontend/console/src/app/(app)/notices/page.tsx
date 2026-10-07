@@ -5,6 +5,9 @@
  * not once per notice - a DPO who reads English and approves eight renditions
  * has approved one - and an unapproved rendition is the single most common
  * reason a notice cannot be published.
+ *
+ * The DPO has a second tab here (2026-10-07): notice templates, written before
+ * any project exists and attached to one by their ID.
  */
 "use client";
 
@@ -25,11 +28,55 @@ import { EmptyRecords } from "@/components/ui/graphics";
 import { Td, Tr } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { useEnums } from "@/features/meta";
+import { Tab, TabList, TabPanel, Tabs } from "@/components/ui/tabs";
+import {
+  NewTemplateButton,
+  TemplatesPanel,
+} from "@/features/notice-templates/components/templates-panel";
 import { useAllNotices } from "@/features/notices";
+import { useAuth } from "@/providers";
 import type { NoticeListRow } from "@/types";
 import { formatDateTime } from "@/lib/format";
 
 function NoticesPageView() {
+  const { me } = useAuth();
+  const isDpo = me?.role === "dpo";
+  const [tab, setTab] = useFilterParam("tab", "notices");
+  const description =
+    "The text a data subject actually reads. Publication freezes it and its hash; a correction after that is a new version, never an edit.";
+
+  if (!isDpo) {
+    return (
+      <>
+        <PageHeader title="Notices" description={description} />
+        <ProjectNotices />
+      </>
+    );
+  }
+  return (
+    <>
+      <PageHeader
+        title="Notices"
+        description={description}
+        actions={tab === "templates" ? <NewTemplateButton /> : undefined}
+      />
+      <Tabs value={tab} onValueChange={setTab} label="Notices">
+        <TabList>
+          <Tab value="notices">Project notices</Tab>
+          <Tab value="templates">Templates</Tab>
+        </TabList>
+        <TabPanel value="notices">
+          <ProjectNotices />
+        </TabPanel>
+        <TabPanel value="templates">
+          {tab === "templates" && <TemplatesPanel />}
+        </TabPanel>
+      </Tabs>
+    </>
+  );
+}
+
+function ProjectNotices() {
   const stack = useCursorStack();
   const here = useHere();
   const [status, setStatus] = useFilterParam("status");
@@ -45,11 +92,6 @@ function NoticesPageView() {
 
   return (
     <>
-      <PageHeader
-        title="Notices"
-        description="The text a data subject actually reads. Publication freezes it and its hash; a correction after that is a new version, never an edit."
-      />
-
       <FilterBar>
         <FilterSelect
           label="Status"

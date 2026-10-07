@@ -298,6 +298,26 @@ export const SECTIONS: HelpSection[] = [
           "Only the DPO writes or approves notice wording, purposes and translations.",
         ],
       },
+      {
+        kind: "steps",
+        title: "Use a notice template (R&D User)",
+        items: [
+          "Ask the Privacy Office for the template ID, like TPL-0007.",
+          "On the project, open [[Setup]] and in the [[Notices]] card click [[Use a notice template]].",
+          "Enter the ID and click [[Look up]]. You see what it carries: its name, who it addresses, its purposes and languages.",
+          "Click [[Make this project's notice from it]]. The project gets its own draft notice, which the DPO approves and publishes as usual.",
+        ],
+      },
+      {
+        kind: "steps",
+        title: "Write a notice template (DPO)",
+        items: [
+          "Open [[Notices]], then the [[Templates]] tab, and click [[New template]].",
+          "Give it a [[Template name]], the DPO contact and the three links, and paste the text if you have it. Click [[Create template]].",
+          "On its page, add its purposes and the text in each language. Nothing on a template needs approving - each language is approved on the project's notice made from it.",
+          "Give its ID to the study's R&D User; [[Copy ID]] puts it on the clipboard. [[Retire]] stops it being used; notices already made from it are unaffected.",
+        ],
+      },
     ],
   },
   {

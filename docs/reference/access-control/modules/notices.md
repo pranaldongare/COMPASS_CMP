@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-23 operations; 23 appear in the existing OpenAPI/API docs. Snapshot `1757d50`; `GET /notices/copy-sources` added 2026-09-28.
+34 operations; 34 appear in the existing OpenAPI/API docs. Snapshot `1757d50`; `GET /notices/copy-sources` added 2026-09-28.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
@@ -29,6 +29,17 @@
 | POST | `/projects/{project_uuid}/notices/copy` | `dpo`, `rnd_user` | Full session; anonymous NO |
 | POST | `/projects/{project_uuid}/notices/import` | `dpo`, `rnd_user` | Full session; anonymous NO |
 | POST | `/projects/{project_uuid}/notices/import/validate` | `dpo`, `rnd_user` | Full session; anonymous NO |
+| GET | `/notice-templates` | `dpo` | Full session; anonymous NO |
+| POST | `/notice-templates` | `dpo` | Full session; anonymous NO |
+| GET | `/notice-templates/{template_uuid}` | `dpo` | Full session; anonymous NO |
+| PUT | `/notice-templates/{template_uuid}` | `dpo` | Full session; anonymous NO |
+| POST | `/notice-templates/{template_uuid}/status` | `dpo` | Full session; anonymous NO |
+| POST | `/notice-templates/{template_uuid}/purposes` | `dpo` | Full session; anonymous NO |
+| DELETE | `/notice-templates/{template_uuid}/purposes/{purpose_uuid}` | `dpo` | Full session; anonymous NO |
+| PUT | `/notice-templates/{template_uuid}/languages/{code}` | `dpo` | Full session; anonymous NO |
+| DELETE | `/notice-templates/{template_uuid}/languages/{code}` | `dpo` | Full session; anonymous NO |
+| GET | `/notice-templates/by-code/{template_code}` | `dpo`, `rnd_user` | Full session; anonymous NO |
+| POST | `/projects/{project_uuid}/notices/from-template` | `dpo`, `rnd_user` | Full session; anonymous NO |
 
 ## GET /notices
 
@@ -373,3 +384,157 @@ Dry run - reports what the document says, writes nothing.
 - **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
 - Authors are DPO and R&D owner only. Service checks restrict draft editing and require a new version for material changes.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/notices.py#L642), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/notices/service.py#L1).
+
+## GET /notice-templates
+
+The DPO's notice templates, newest first.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 403.
+- **Route guard:** `RequireDPO`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
+- **Rules:** Every template; `status` (active, retired) and `q` (ID or name) filter. A template has no project, so there is no project scope. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notices.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/templates.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /notice-templates
+
+Write a notice template, before any project exists.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 403.
+- **Route guard:** `RequireDPO`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
+- **Rules:** Title, the three Rule 3 links, the DPO contact, audience and note; optionally the first text. The ID (`TPL-0007`) is minted by the database. Never served to a data principal. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notices.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/templates.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## GET /notice-templates/{template_uuid}
+
+A template with its purposes, languages and the notices made from it.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 403.
+- **Route guard:** `RequireDPO`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
+- **Rules:** The DPO's alone; 404 for an unknown template. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notices.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/templates.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## PUT /notice-templates/{template_uuid}
+
+Edit a template.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 403.
+- **Route guard:** `RequireDPO`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
+- **Rules:** Edited in place: a template is not evidence. Notices already made from it are copies and do not change. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notices.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/templates.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /notice-templates/{template_uuid}/status
+
+Retire a template, or bring it back.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 403.
+- **Route guard:** `RequireDPO`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
+- **Rules:** `active` or `retired`. A retired template cannot be attached to a project; it is never deleted. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notices.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/templates.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /notice-templates/{template_uuid}/purposes
+
+Put a purpose on a template.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 403.
+- **Route guard:** `RequireDPO`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
+- **Rules:** An active or draft purpose from the register (a retired one is 422); a notice made from it cannot publish until each purpose is active. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notices.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/templates.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## DELETE /notice-templates/{template_uuid}/purposes/{purpose_uuid}
+
+Take a purpose off a template.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 403.
+- **Route guard:** `RequireDPO`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
+- **Rules:** 404 when the purpose is not on it. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notices.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/templates.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## PUT /notice-templates/{template_uuid}/languages/{code}
+
+The template's text in one language, added or replaced.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 403.
+- **Route guard:** `RequireDPO`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
+- **Rules:** A language the platform renders (422 otherwise). No approval on a template: each language is approved on the project notice made from it. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notices.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/templates.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## DELETE /notice-templates/{template_uuid}/languages/{code}
+
+Remove a language from a template.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 403.
+- **Route guard:** `RequireDPO`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
+- **Rules:** 404 when the template has no text in that language. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notices.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/templates.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## GET /notice-templates/by-code/{template_code}
+
+Look up a template by the ID the DPO gave out, before attaching it.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | OWN | NO | NO |
+
+- **Who:** `dpo`; `rnd_user`, who brings notices to their own projects.
+- **Route guard:** `NoticeAuthor`.
+- **Resolved gate:** `RequireResource(notice, write=True)`.
+- **Rules:** Whoever may bring a notice to a project. Case and spacing in the ID are forgiven; 404 for an unknown one. Returns what the template carries - its fields, purposes and languages - never which projects used it. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notices.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/templates.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /projects/{project_uuid}/notices/from-template
+
+Make this project's notice from a template, by its ID.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | OWN | NO | NO |
+
+- **Who:** `dpo`; `rnd_user` on their own project.
+- **Route guard:** `NoticeAuthor`.
+- **Resolved gate:** `RequireResource(notice, write=True)`.
+- **Rules:** The project must be within the caller's scope (404 otherwise). Copies the template's links, contact, audience, note, purposes and every language into a fresh draft notice with the project's own code; `notice.template_id` records the template. Nothing is approved. A retired template is 409 `template_retired`. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notices.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/templates.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).

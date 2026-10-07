@@ -34,6 +34,7 @@ ROUTERS: tuple[APIRouter, ...] = (
     # The project lifecycle, in the order it is walked.
     v1.projects_router,
     v1.notices_router,
+    v1.notice_templates_router,
     v1.consents_router,
     v1.exchange_router,
     v1.transfers_router,

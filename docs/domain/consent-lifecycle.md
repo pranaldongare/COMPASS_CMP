@@ -37,6 +37,22 @@ keep the notice they were given under. When approving a project publishes its
 notice and there are several drafts, the most recently created one is published.
 A notice code belongs to one project: another project's code is refused.
 
+**Notice templates** (0044, 2026-10-07). The Privacy Office writes notices
+before the projects that will use them exist: a template is a notice with no
+project - a name, the Rule 3 links and DPO contact, the audience, purposes and
+the text of each language - under an ID the database mints (`TPL-0007`). The
+DPO writes as many as they like on the Notices screen, edits them in place
+(nothing is approved or served on a template) and retires one that should no
+longer be used; none is ever deleted. The DPO gives the ID to the study's R&D
+User, who on their project chooses **Use a notice template**, looks the ID up
+and attaches it. That makes the project's own draft notice - a copy, with the
+project's own code, its purposes and every language, nothing approved - which
+then goes the way every notice goes: each language approved, each purpose
+active, published. The notice remembers its template (`notice.template_id`);
+changing the template afterwards reaches no notice already made from it. Two
+projects that use one template have two notices, so "which text did she agree
+to, for which project" keeps one answer.
+
 ## 2. The link and the site
 
 A data principal never types an address. She opens a **consent link** minted

@@ -1,6 +1,6 @@
 # Notices API
 
-Generated from `backend/api/openapi.json`. **23 operations.**
+Generated from `backend/api/openapi.json`. **24 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -11,24 +11,25 @@ For each operation the information is deliberately ordered as **API → Validati
 3. [`GET /projects/{project_uuid}/notices`](#3_get_projects_project_uuid_notices)
 4. [`POST /projects/{project_uuid}/notices`](#4_post_projects_project_uuid_notices)
 5. [`POST /projects/{project_uuid}/notices/copy`](#5_post_projects_project_uuid_notices_copy)
-6. [`GET /notices/{notice_uuid}`](#6_get_notices_notice_uuid)
-7. [`PUT /notices/{notice_uuid}`](#7_put_notices_notice_uuid)
-8. [`GET /notices/{notice_uuid}/versions`](#8_get_notices_notice_uuid_versions)
-9. [`GET /notices/{notice_uuid}/purposes`](#9_get_notices_notice_uuid_purposes)
-10. [`POST /notices/{notice_uuid}/purposes`](#10_post_notices_notice_uuid_purposes)
-11. [`PUT /notices/{notice_uuid}/purposes/{purpose_uuid}`](#11_put_notices_notice_uuid_purposes_purpose_uuid)
-12. [`DELETE /notices/{notice_uuid}/purposes/{purpose_uuid}`](#12_delete_notices_notice_uuid_purposes_purpose_uuid)
-13. [`GET /notices/{notice_uuid}/languages`](#13_get_notices_notice_uuid_languages)
-14. [`POST /notices/{notice_uuid}/languages`](#14_post_notices_notice_uuid_languages)
-15. [`PUT /notices/{notice_uuid}/languages/{code}`](#15_put_notices_notice_uuid_languages_code)
-16. [`POST /notices/{notice_uuid}/languages/{code}/approve`](#16_post_notices_notice_uuid_languages_code_approve)
-17. [`GET /notices/{notice_uuid}/checklist`](#17_get_notices_notice_uuid_checklist)
-18. [`GET /notices/{notice_uuid}/preview`](#18_get_notices_notice_uuid_preview)
-19. [`POST /notices/{notice_uuid}/publish`](#19_post_notices_notice_uuid_publish)
-20. [`POST /projects/{project_uuid}/notices/import/validate`](#20_post_projects_project_uuid_notices_import_validate)
-21. [`POST /projects/{project_uuid}/notices/import`](#21_post_projects_project_uuid_notices_import)
-22. [`POST /notices/{notice_uuid}/purposes/activate`](#22_post_notices_notice_uuid_purposes_activate)
-23. [`GET /notices/import/template`](#23_get_notices_import_template)
+6. [`POST /projects/{project_uuid}/notices/from-template`](#6_post_projects_project_uuid_notices_from_template)
+7. [`GET /notices/{notice_uuid}`](#7_get_notices_notice_uuid)
+8. [`PUT /notices/{notice_uuid}`](#8_put_notices_notice_uuid)
+9. [`GET /notices/{notice_uuid}/versions`](#9_get_notices_notice_uuid_versions)
+10. [`GET /notices/{notice_uuid}/purposes`](#10_get_notices_notice_uuid_purposes)
+11. [`POST /notices/{notice_uuid}/purposes`](#11_post_notices_notice_uuid_purposes)
+12. [`PUT /notices/{notice_uuid}/purposes/{purpose_uuid}`](#12_put_notices_notice_uuid_purposes_purpose_uuid)
+13. [`DELETE /notices/{notice_uuid}/purposes/{purpose_uuid}`](#13_delete_notices_notice_uuid_purposes_purpose_uuid)
+14. [`GET /notices/{notice_uuid}/languages`](#14_get_notices_notice_uuid_languages)
+15. [`POST /notices/{notice_uuid}/languages`](#15_post_notices_notice_uuid_languages)
+16. [`PUT /notices/{notice_uuid}/languages/{code}`](#16_put_notices_notice_uuid_languages_code)
+17. [`POST /notices/{notice_uuid}/languages/{code}/approve`](#17_post_notices_notice_uuid_languages_code_approve)
+18. [`GET /notices/{notice_uuid}/checklist`](#18_get_notices_notice_uuid_checklist)
+19. [`GET /notices/{notice_uuid}/preview`](#19_get_notices_notice_uuid_preview)
+20. [`POST /notices/{notice_uuid}/publish`](#20_post_notices_notice_uuid_publish)
+21. [`POST /projects/{project_uuid}/notices/import/validate`](#21_post_projects_project_uuid_notices_import_validate)
+22. [`POST /projects/{project_uuid}/notices/import`](#22_post_projects_project_uuid_notices_import)
+23. [`POST /notices/{notice_uuid}/purposes/activate`](#23_post_notices_notice_uuid_purposes_activate)
+24. [`GET /notices/import/template`](#24_get_notices_import_template)
 
 <a id="1_get_notices"></a>
 ## 1. `GET /notices` — All notices in scope
@@ -206,7 +207,8 @@ No request body.
     "created_at": "2026-09-17T12:00:00Z",
     "updated_at": "2026-09-17T12:00:00Z",
     "purpose_count": 1,
-    "language_count": 1
+    "language_count": 1,
+    "template_code": "string"
   }
 ]
 ```
@@ -294,7 +296,8 @@ Request body required: **yes**.
   "created_at": "2026-09-17T12:00:00Z",
   "updated_at": "2026-09-17T12:00:00Z",
   "purpose_count": 1,
-  "language_count": 1
+  "language_count": 1,
+  "template_code": "string"
 }
 ```
 
@@ -380,7 +383,8 @@ Request body required: **yes**.
   "created_at": "2026-09-17T12:00:00Z",
   "updated_at": "2026-09-17T12:00:00Z",
   "purpose_count": 1,
-  "language_count": 1
+  "language_count": 1,
+  "template_code": "string"
 }
 ```
 
@@ -402,8 +406,91 @@ Request body required: **yes**.
 }
 ```
 
-<a id="6_get_notices_notice_uuid"></a>
-## 6. `GET /notices/{notice_uuid}` — Get Notice
+<a id="6_post_projects_project_uuid_notices_from_template"></a>
+## 6. `POST /projects/{project_uuid}/notices/from-template` — Make this project's notice from a template, by its ID
+
+### API
+
+- **Operation ID:** `notice_from_template_projects__project_uuid__notices_from_template_post`
+- **Access:** Role-controlled `notices` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+The template's links, contact, audience, purposes and text, copied into
+a fresh draft with this project's own code. Then approved and published
+like any notice. A retired template is refused (409 `template_retired`).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `project_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`NoticeFromTemplateIn`](#schema-noticefromtemplatein)
+
+```json
+{
+  "template_code": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `201` | Successful Response | `application/json` | [`NoticeOut`](#schema-noticeout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `201` `application/json` response:**
+
+```json
+{
+  "notice_uuid": "00000000-0000-4000-8000-000000000000",
+  "notice_code": "string",
+  "version": 1,
+  "project_uuid": "00000000-0000-4000-8000-000000000000",
+  "project_name": "string",
+  "withdraw_url": "string",
+  "exercise_rights_url": "string",
+  "board_complaint_url": "string",
+  "dpo_contact": "string",
+  "recipients_text": "string",
+  "status": "string",
+  "note": "string",
+  "applicable_to": "string",
+  "change_class": "string",
+  "published_at": "2026-09-17T12:00:00Z",
+  "created_at": "2026-09-17T12:00:00Z",
+  "updated_at": "2026-09-17T12:00:00Z",
+  "purpose_count": 1,
+  "language_count": 1,
+  "template_code": "string"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="7_get_notices_notice_uuid"></a>
+## 7. `GET /notices/{notice_uuid}` — Get Notice
 
 ### API
 
@@ -449,7 +536,8 @@ No request body.
   "created_at": "2026-09-17T12:00:00Z",
   "updated_at": "2026-09-17T12:00:00Z",
   "purpose_count": 1,
-  "language_count": 1
+  "language_count": 1,
+  "template_code": "string"
 }
 ```
 
@@ -471,8 +559,8 @@ No request body.
 }
 ```
 
-<a id="7_put_notices_notice_uuid"></a>
-## 7. `PUT /notices/{notice_uuid}` — Draft only
+<a id="8_put_notices_notice_uuid"></a>
+## 8. `PUT /notices/{notice_uuid}` — Draft only
 
 ### API
 
@@ -533,7 +621,8 @@ Request body required: **yes**.
   "created_at": "2026-09-17T12:00:00Z",
   "updated_at": "2026-09-17T12:00:00Z",
   "purpose_count": 1,
-  "language_count": 1
+  "language_count": 1,
+  "template_code": "string"
 }
 ```
 
@@ -555,8 +644,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="8_get_notices_notice_uuid_versions"></a>
-## 8. `GET /notices/{notice_uuid}/versions` — Notice Versions
+<a id="9_get_notices_notice_uuid_versions"></a>
+## 9. `GET /notices/{notice_uuid}/versions` — Notice Versions
 
 ### API
 
@@ -603,7 +692,8 @@ No request body.
     "created_at": "2026-09-17T12:00:00Z",
     "updated_at": "2026-09-17T12:00:00Z",
     "purpose_count": 1,
-    "language_count": 1
+    "language_count": 1,
+    "template_code": "string"
   }
 ]
 ```
@@ -626,8 +716,8 @@ No request body.
 }
 ```
 
-<a id="9_get_notices_notice_uuid_purposes"></a>
-## 9. `GET /notices/{notice_uuid}/purposes` — List Notice Purposes
+<a id="10_get_notices_notice_uuid_purposes"></a>
+## 10. `GET /notices/{notice_uuid}/purposes` — List Notice Purposes
 
 ### API
 
@@ -703,8 +793,8 @@ No request body.
 }
 ```
 
-<a id="10_post_notices_notice_uuid_purposes"></a>
-## 10. `POST /notices/{notice_uuid}/purposes` — Attach Purpose
+<a id="11_post_notices_notice_uuid_purposes"></a>
+## 11. `POST /notices/{notice_uuid}/purposes` — Attach Purpose
 
 ### API
 
@@ -767,8 +857,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="11_put_notices_notice_uuid_purposes_purpose_uuid"></a>
-## 11. `PUT /notices/{notice_uuid}/purposes/{purpose_uuid}` — Narrow Rule 3(b) for this notice
+<a id="12_put_notices_notice_uuid_purposes_purpose_uuid"></a>
+## 12. `PUT /notices/{notice_uuid}/purposes/{purpose_uuid}` — Narrow Rule 3(b) for this notice
 
 ### API
 
@@ -851,8 +941,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="12_delete_notices_notice_uuid_purposes_purpose_uuid"></a>
-## 12. `DELETE /notices/{notice_uuid}/purposes/{purpose_uuid}` — Draft only
+<a id="13_delete_notices_notice_uuid_purposes_purpose_uuid"></a>
+## 13. `DELETE /notices/{notice_uuid}/purposes/{purpose_uuid}` — Draft only
 
 ### API
 
@@ -895,8 +985,8 @@ No request body.
 }
 ```
 
-<a id="13_get_notices_notice_uuid_languages"></a>
-## 13. `GET /notices/{notice_uuid}/languages` — List Languages
+<a id="14_get_notices_notice_uuid_languages"></a>
+## 14. `GET /notices/{notice_uuid}/languages` — List Languages
 
 ### API
 
@@ -958,8 +1048,8 @@ No request body.
 }
 ```
 
-<a id="14_post_notices_notice_uuid_languages"></a>
-## 14. `POST /notices/{notice_uuid}/languages` — Add Language
+<a id="15_post_notices_notice_uuid_languages"></a>
+## 15. `POST /notices/{notice_uuid}/languages` — Add Language
 
 ### API
 
@@ -1017,8 +1107,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="15_put_notices_notice_uuid_languages_code"></a>
-## 15. `PUT /notices/{notice_uuid}/languages/{code}` — Draft only
+<a id="16_put_notices_notice_uuid_languages_code"></a>
+## 16. `PUT /notices/{notice_uuid}/languages/{code}` — Draft only
 
 ### API
 
@@ -1080,8 +1170,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="16_post_notices_notice_uuid_languages_code_approve"></a>
-## 16. `POST /notices/{notice_uuid}/languages/{code}/approve` — Approve Language
+<a id="17_post_notices_notice_uuid_languages_code_approve"></a>
+## 17. `POST /notices/{notice_uuid}/languages/{code}/approve` — Approve Language
 
 ### API
 
@@ -1135,8 +1225,8 @@ No request body.
 }
 ```
 
-<a id="17_get_notices_notice_uuid_checklist"></a>
-## 17. `GET /notices/{notice_uuid}/checklist` — Checklist
+<a id="18_get_notices_notice_uuid_checklist"></a>
+## 18. `GET /notices/{notice_uuid}/checklist` — Checklist
 
 ### API
 
@@ -1193,8 +1283,8 @@ No request body.
 }
 ```
 
-<a id="18_get_notices_notice_uuid_preview"></a>
-## 18. `GET /notices/{notice_uuid}/preview` — Preview
+<a id="19_get_notices_notice_uuid_preview"></a>
+## 19. `GET /notices/{notice_uuid}/preview` — Preview
 
 ### API
 
@@ -1243,8 +1333,8 @@ No request body.
 }
 ```
 
-<a id="19_post_notices_notice_uuid_publish"></a>
-## 19. `POST /notices/{notice_uuid}/publish` — Publish
+<a id="20_post_notices_notice_uuid_publish"></a>
+## 20. `POST /notices/{notice_uuid}/publish` — Publish
 
 ### API
 
@@ -1290,7 +1380,8 @@ No request body.
   "created_at": "2026-09-17T12:00:00Z",
   "updated_at": "2026-09-17T12:00:00Z",
   "purpose_count": 1,
-  "language_count": 1
+  "language_count": 1,
+  "template_code": "string"
 }
 ```
 
@@ -1312,8 +1403,8 @@ No request body.
 }
 ```
 
-<a id="20_post_projects_project_uuid_notices_import_validate"></a>
-## 20. `POST /projects/{project_uuid}/notices/import/validate` — Dry run - reports what the document says, writes nothing
+<a id="21_post_projects_project_uuid_notices_import_validate"></a>
+## 21. `POST /projects/{project_uuid}/notices/import/validate` — Dry run - reports what the document says, writes nothing
 
 ### API
 
@@ -1370,8 +1461,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="21_post_projects_project_uuid_notices_import"></a>
-## 21. `POST /projects/{project_uuid}/notices/import` — Create the notice and its purposes from an uploaded document
+<a id="22_post_projects_project_uuid_notices_import"></a>
+## 22. `POST /projects/{project_uuid}/notices/import` — Create the notice and its purposes from an uploaded document
 
 ### API
 
@@ -1429,7 +1520,8 @@ Request body required: **yes**.
   "created_at": "2026-09-17T12:00:00Z",
   "updated_at": "2026-09-17T12:00:00Z",
   "purpose_count": 1,
-  "language_count": 1
+  "language_count": 1,
+  "template_code": "string"
 }
 ```
 
@@ -1451,8 +1543,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="22_post_notices_notice_uuid_purposes_activate"></a>
-## 22. `POST /notices/{notice_uuid}/purposes/activate` — Activate every draft purpose on this notice
+<a id="23_post_notices_notice_uuid_purposes_activate"></a>
+## 23. `POST /notices/{notice_uuid}/purposes/activate` — Activate every draft purpose on this notice
 
 ### API
 
@@ -1509,8 +1601,8 @@ No request body.
 }
 ```
 
-<a id="23_get_notices_import_template"></a>
-## 23. `GET /notices/import/template` — The notice document to fill in
+<a id="24_get_notices_import_template"></a>
+## 24. `GET /notices/import/template` — The notice document to fill in
 
 ### API
 
@@ -1617,6 +1709,15 @@ Start this project's notice from one that already exists.
 |---|---|---:|---|---|
 | `source_notice_uuid` | `string` | Yes | format: `uuid` | — |
 
+<a id="schema-noticefromtemplatein"></a>
+#### `NoticeFromTemplateIn`
+
+Start this project's notice from a template the DPO wrote (0044).
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `template_code` | `string` | Yes | min length: `3`; max length: `20` | — |
+
 <a id="schema-noticein"></a>
 #### `NoticeIn`
 
@@ -1657,6 +1758,7 @@ Start this project's notice from one that already exists.
 | `updated_at` | `string` | Yes | format: `date-time` | — |
 | `purpose_count` | `integer` or `null` | No | — | — |
 | `language_count` | `integer` or `null` | No | — | — |
+| `template_code` | `string` or `null` | No | — | — |
 
 <a id="schema-noticeupdate"></a>
 #### `NoticeUpdate`

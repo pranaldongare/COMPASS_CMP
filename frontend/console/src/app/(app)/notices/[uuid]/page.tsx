@@ -689,6 +689,14 @@ export default function NoticeDetailPage() {
                     </span>
                   )}
                 </DescriptionItem>
+                {n.template_code && (
+                  <DescriptionItem term="Made from">
+                    Template <Mono>{n.template_code}</Mono>
+                    <span className="block text-xs text-text-subtle">
+                      A copy: later changes to the template do not reach this notice.
+                    </span>
+                  </DescriptionItem>
+                )}
                 <DescriptionItem term="Recipients">
                   {n.recipients_text ?? (
                     <span className="text-text-subtle">

@@ -346,7 +346,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-204 of 296 operations accept or return personal data. Each table gives the
+204 of 307 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -714,7 +714,7 @@ selected.
 |---|---|---|---|---|
 | POST | `/breach-tickets/{ticket_uuid}/colleagues` | any signed-in session, own record | `email`, `full_name`, `mobile` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
 
-<!-- 204 of 296 operations carry personal data; 20 of them need no session. -->
+<!-- 204 of 307 operations carry personal data; 20 of them need no session. -->
 
 ## The public surface
 

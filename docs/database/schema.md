@@ -1,7 +1,7 @@
 # Schema
 
-52 tables, 39 enums, 1 view, 48 triggers, 83 named CHECK constraints and 147
-foreign keys, as of migration 0043. Those counts are read from the PostgreSQL
+55 tables, 39 enums, 1 view, 48 triggers, 85 named CHECK constraints and 153
+foreign keys, as of migration 0044. Those counts are read from the PostgreSQL
 catalogs after replaying every migration, not maintained by hand.
 
 The migrations are the source of truth: 0001 transcribed the original
@@ -20,7 +20,7 @@ its stated commit before trusting it against a later change.
 | Identity | `auth_user`, `person_type_history`, `delegation` |
 | Registry | `purpose`, `processor`, `processor_respondent`, `data_source`, `restricted_country` |
 | Projects | `project`, `project_status_history`, `project_approval`, `project_site`, `project_processor` |
-| Notices | `notice`, `notice_purpose`, `notice_language` |
+| Notices | `notice`, `notice_purpose`, `notice_language`, `notice_template`, `notice_template_purpose`, `notice_template_language` |
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant` |
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` |
 | Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_item_execution`, `rights_ticket_message`, `rights_response_file`, `rights_request_attachment`, `nomination`, `legal_hold` |
@@ -144,6 +144,15 @@ is one row per file - its kind (`email`, `proof`, `chat`, `other`, by CHECK),
 the name it came with and an optional note (both sealed), where it is stored,
 its SHA-256 and size - append-only by trigger and grant: a file is never
 replaced or removed.
+
+**A notice template is not evidence, since 0044.** `notice_template` is the
+DPO's notice before a project exists, with its purposes
+(`notice_template_purpose`) and its text per language
+(`notice_template_language`). Never served and never consented to, so edited
+in place; `status` is `active` or `retired` (by CHECK, with `retired_at` set
+exactly when retired), never deleted. `template_code` (`TPL-0007`) is minted
+by a sequence default. A project uses one by copying it into its own draft
+notice, and `notice.template_id` records which.
 
 **A document a requester sends is kept the same way, since 0043.**
 `rights_request_attachment` is one row per document a data principal sent

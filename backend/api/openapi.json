@@ -6618,6 +6618,60 @@
         }
       }
     },
+    "/projects/{project_uuid}/notices/from-template": {
+      "post": {
+        "tags": [
+          "notices"
+        ],
+        "summary": "Make this project's notice from a template, by its ID",
+        "description": "The template's links, contact, audience, purposes and text, copied into\na fresh draft with this project's own code. Then approved and published\nlike any notice. A retired template is refused (409 `template_retired`).",
+        "operationId": "notice_from_template_projects__project_uuid__notices_from_template_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoticeFromTemplateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoticeOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/notices/{notice_uuid}": {
       "get": {
         "tags": [
@@ -7513,6 +7567,522 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notice-templates": {
+      "get": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "The DPO's notice templates, newest first",
+        "operationId": "list_templates_notice_templates_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TemplateOut"
+                  },
+                  "title": "Response List Templates Notice Templates Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "Write a notice template, before any project exists",
+        "operationId": "create_template_notice_templates_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/cmp__api__routers__v1__notice_templates__TemplateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notice-templates/by-code/{template_code}": {
+      "get": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "Look up a template by the ID the DPO gave out, before attaching it",
+        "operationId": "find_template_notice_templates_by_code__template_code__get",
+        "parameters": [
+          {
+            "name": "template_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Template Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateFound"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notice-templates/{template_uuid}": {
+      "get": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "Get Template",
+        "operationId": "get_template_notice_templates__template_uuid__get",
+        "parameters": [
+          {
+            "name": "template_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "Update Template",
+        "operationId": "update_template_notice_templates__template_uuid__put",
+        "parameters": [
+          {
+            "name": "template_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notice-templates/{template_uuid}/status": {
+      "post": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "Retire a template, or bring it back",
+        "operationId": "set_template_status_notice_templates__template_uuid__status_post",
+        "parameters": [
+          {
+            "name": "template_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateStatusIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notice-templates/{template_uuid}/purposes": {
+      "post": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "Attach Template Purpose",
+        "operationId": "attach_template_purpose_notice_templates__template_uuid__purposes_post",
+        "parameters": [
+          {
+            "name": "template_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplatePurposeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notice-templates/{template_uuid}/purposes/{purpose_uuid}": {
+      "delete": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "Detach Template Purpose",
+        "operationId": "detach_template_purpose_notice_templates__template_uuid__purposes__purpose_uuid__delete",
+        "parameters": [
+          {
+            "name": "template_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Uuid"
+            }
+          },
+          {
+            "name": "purpose_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Purpose Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notice-templates/{template_uuid}/languages/{code}": {
+      "put": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "The template's text in one language, added or replaced",
+        "operationId": "set_template_language_notice_templates__template_uuid__languages__code__put",
+        "parameters": [
+          {
+            "name": "template_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Uuid"
+            }
+          },
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateLanguageIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "Remove Template Language",
+        "operationId": "remove_template_language_notice_templates__template_uuid__languages__code__delete",
+        "parameters": [
+          {
+            "name": "template_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Uuid"
+            }
+          },
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -15284,7 +15854,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TemplateIn"
+                "$ref": "#/components/schemas/cmp__api__routers__v1__messages__TemplateIn"
               }
             }
           }
@@ -15347,7 +15917,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TemplateIn"
+                "$ref": "#/components/schemas/cmp__api__routers__v1__messages__TemplateIn"
               }
             }
           }
@@ -24692,6 +25262,23 @@
         "title": "NoticeCopyIn",
         "description": "Start this project's notice from one that already exists."
       },
+      "NoticeFromTemplateIn": {
+        "properties": {
+          "template_code": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 3,
+            "title": "Template Code"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "template_code"
+        ],
+        "title": "NoticeFromTemplateIn",
+        "description": "Start this project's notice from a template the DPO wrote (0044)."
+      },
       "NoticeIn": {
         "properties": {
           "withdraw_url": {
@@ -25015,6 +25602,17 @@
               }
             ],
             "title": "Language Count"
+          },
+          "template_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Code"
           }
         },
         "type": "object",
@@ -30188,34 +30786,682 @@
         "title": "SubjectRequestOut",
         "description": "What she sees of her own request. No verification notes, no holders -\nthe holders are in the response itself, and the notes are ours."
       },
-      "TemplateIn": {
+      "TemplateDetail": {
         "properties": {
-          "subject": {
+          "template_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Template Uuid"
+          },
+          "template_code": {
+            "type": "string",
+            "title": "Template Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "withdraw_url": {
+            "type": "string",
+            "title": "Withdraw Url"
+          },
+          "exercise_rights_url": {
+            "type": "string",
+            "title": "Exercise Rights Url"
+          },
+          "board_complaint_url": {
+            "type": "string",
+            "title": "Board Complaint Url"
+          },
+          "dpo_contact": {
+            "type": "string",
+            "title": "Dpo Contact"
+          },
+          "applicable_to": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 200
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Subject"
+            "title": "Applicable To"
           },
-          "body": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "status": {
             "type": "string",
-            "maxLength": 6000,
+            "title": "Status"
+          },
+          "created_by_name": {
+            "type": "string",
+            "title": "Created By Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "retired_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retired At"
+          },
+          "purpose_count": {
+            "type": "integer",
+            "title": "Purpose Count"
+          },
+          "language_count": {
+            "type": "integer",
+            "title": "Language Count"
+          },
+          "used_count": {
+            "type": "integer",
+            "title": "Used Count"
+          },
+          "purposes": {
+            "items": {
+              "$ref": "#/components/schemas/TemplatePurposeOut"
+            },
+            "type": "array",
+            "title": "Purposes"
+          },
+          "languages": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateLanguageOut"
+            },
+            "type": "array",
+            "title": "Languages"
+          },
+          "notices": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateNoticeOut"
+            },
+            "type": "array",
+            "title": "Notices"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_uuid",
+          "template_code",
+          "title",
+          "withdraw_url",
+          "exercise_rights_url",
+          "board_complaint_url",
+          "dpo_contact",
+          "applicable_to",
+          "note",
+          "status",
+          "created_by_name",
+          "created_at",
+          "updated_at",
+          "retired_at",
+          "purpose_count",
+          "language_count",
+          "used_count",
+          "purposes",
+          "languages",
+          "notices"
+        ],
+        "title": "TemplateDetail"
+      },
+      "TemplateFound": {
+        "properties": {
+          "template_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Template Uuid"
+          },
+          "template_code": {
+            "type": "string",
+            "title": "Template Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "withdraw_url": {
+            "type": "string",
+            "title": "Withdraw Url"
+          },
+          "exercise_rights_url": {
+            "type": "string",
+            "title": "Exercise Rights Url"
+          },
+          "board_complaint_url": {
+            "type": "string",
+            "title": "Board Complaint Url"
+          },
+          "dpo_contact": {
+            "type": "string",
+            "title": "Dpo Contact"
+          },
+          "applicable_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicable To"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_by_name": {
+            "type": "string",
+            "title": "Created By Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "retired_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retired At"
+          },
+          "purpose_count": {
+            "type": "integer",
+            "title": "Purpose Count"
+          },
+          "language_count": {
+            "type": "integer",
+            "title": "Language Count"
+          },
+          "used_count": {
+            "type": "integer",
+            "title": "Used Count"
+          },
+          "purposes": {
+            "items": {
+              "$ref": "#/components/schemas/TemplatePurposeOut"
+            },
+            "type": "array",
+            "title": "Purposes"
+          },
+          "languages": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateLanguageOut"
+            },
+            "type": "array",
+            "title": "Languages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_uuid",
+          "template_code",
+          "title",
+          "withdraw_url",
+          "exercise_rights_url",
+          "board_complaint_url",
+          "dpo_contact",
+          "applicable_to",
+          "note",
+          "status",
+          "created_by_name",
+          "created_at",
+          "updated_at",
+          "retired_at",
+          "purpose_count",
+          "language_count",
+          "used_count",
+          "purposes",
+          "languages"
+        ],
+        "title": "TemplateFound",
+        "description": "What the R&D User sees before attaching one: what it carries, not where\nelse it was used."
+      },
+      "TemplateLanguageIn": {
+        "properties": {
+          "rendered_text": {
+            "type": "string",
             "minLength": 1,
-            "title": "Body"
+            "title": "Rendered Text"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "body"
+          "rendered_text"
         ],
-        "title": "TemplateIn",
-        "description": "The words. `subject` is required for email and refused for SMS; the\nservice says which, with every other problem, in one answer."
+        "title": "TemplateLanguageIn"
+      },
+      "TemplateLanguageOut": {
+        "properties": {
+          "language_code": {
+            "type": "string",
+            "title": "Language Code"
+          },
+          "rendered_text": {
+            "type": "string",
+            "title": "Rendered Text"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "updated_by_name": {
+            "type": "string",
+            "title": "Updated By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "language_code",
+          "rendered_text",
+          "updated_at",
+          "updated_by_name"
+        ],
+        "title": "TemplateLanguageOut"
+      },
+      "TemplateNoticeOut": {
+        "properties": {
+          "notice_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Notice Uuid"
+          },
+          "notice_code": {
+            "type": "string",
+            "title": "Notice Code"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "project_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Uuid"
+          },
+          "project_name": {
+            "type": "string",
+            "title": "Project Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "notice_uuid",
+          "notice_code",
+          "version",
+          "status",
+          "created_at",
+          "project_uuid",
+          "project_name"
+        ],
+        "title": "TemplateNoticeOut",
+        "description": "A project notice made from the template."
+      },
+      "TemplateOut": {
+        "properties": {
+          "template_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Template Uuid"
+          },
+          "template_code": {
+            "type": "string",
+            "title": "Template Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "withdraw_url": {
+            "type": "string",
+            "title": "Withdraw Url"
+          },
+          "exercise_rights_url": {
+            "type": "string",
+            "title": "Exercise Rights Url"
+          },
+          "board_complaint_url": {
+            "type": "string",
+            "title": "Board Complaint Url"
+          },
+          "dpo_contact": {
+            "type": "string",
+            "title": "Dpo Contact"
+          },
+          "applicable_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicable To"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_by_name": {
+            "type": "string",
+            "title": "Created By Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "retired_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retired At"
+          },
+          "purpose_count": {
+            "type": "integer",
+            "title": "Purpose Count"
+          },
+          "language_count": {
+            "type": "integer",
+            "title": "Language Count"
+          },
+          "used_count": {
+            "type": "integer",
+            "title": "Used Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_uuid",
+          "template_code",
+          "title",
+          "withdraw_url",
+          "exercise_rights_url",
+          "board_complaint_url",
+          "dpo_contact",
+          "applicable_to",
+          "note",
+          "status",
+          "created_by_name",
+          "created_at",
+          "updated_at",
+          "retired_at",
+          "purpose_count",
+          "language_count",
+          "used_count"
+        ],
+        "title": "TemplateOut"
+      },
+      "TemplatePurposeIn": {
+        "properties": {
+          "purpose_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Purpose Uuid"
+          },
+          "display_order": {
+            "type": "integer",
+            "maximum": 999.0,
+            "minimum": 0.0,
+            "title": "Display Order",
+            "default": 0
+          },
+          "is_mandatory": {
+            "type": "boolean",
+            "title": "Is Mandatory",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "purpose_uuid"
+        ],
+        "title": "TemplatePurposeIn"
+      },
+      "TemplatePurposeOut": {
+        "properties": {
+          "purpose_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Purpose Uuid"
+          },
+          "purpose_code": {
+            "type": "string",
+            "title": "Purpose Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "lawful_basis": {
+            "type": "string",
+            "title": "Lawful Basis"
+          },
+          "data_categories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Data Categories"
+          },
+          "display_order": {
+            "type": "integer",
+            "title": "Display Order"
+          },
+          "is_mandatory": {
+            "type": "boolean",
+            "title": "Is Mandatory"
+          }
+        },
+        "type": "object",
+        "required": [
+          "purpose_uuid",
+          "purpose_code",
+          "name",
+          "status",
+          "lawful_basis",
+          "data_categories",
+          "display_order",
+          "is_mandatory"
+        ],
+        "title": "TemplatePurposeOut"
+      },
+      "TemplateStatusIn": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "active or retired"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "TemplateStatusIn"
+      },
+      "TemplateUpdate": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "withdraw_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 8,
+                "pattern": "^https?://[^\\s<>\\\"]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Withdraw Url"
+          },
+          "exercise_rights_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 8,
+                "pattern": "^https?://[^\\s<>\\\"]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exercise Rights Url"
+          },
+          "board_complaint_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 8,
+                "pattern": "^https?://[^\\s<>\\\"]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Board Complaint Url"
+          },
+          "dpo_contact": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dpo Contact"
+          },
+          "applicable_to": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NoticeAudience"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "TemplateUpdate"
       },
       "ThreadOut": {
         "properties": {
@@ -31353,6 +32599,129 @@
           "channels"
         ],
         "title": "MessageOut"
+      },
+      "cmp__api__routers__v1__messages__TemplateIn": {
+        "properties": {
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 6000,
+            "minLength": 1,
+            "title": "Body"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "TemplateIn",
+        "description": "The words. `subject` is required for email and refused for SMS; the\nservice says which, with every other problem, in one answer."
+      },
+      "cmp__api__routers__v1__notice_templates__TemplateIn": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Title"
+          },
+          "withdraw_url": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 8,
+            "pattern": "^https?://[^\\s<>\\\"]+$",
+            "title": "Withdraw Url"
+          },
+          "exercise_rights_url": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 8,
+            "pattern": "^https?://[^\\s<>\\\"]+$",
+            "title": "Exercise Rights Url"
+          },
+          "board_complaint_url": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 8,
+            "pattern": "^https?://[^\\s<>\\\"]+$",
+            "title": "Board Complaint Url",
+            "description": "The Data Protection Board portal, NOT the internal grievance form"
+          },
+          "dpo_contact": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Dpo Contact"
+          },
+          "applicable_to": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NoticeAudience"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "rendered_text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rendered Text"
+          },
+          "language_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language Code"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "withdraw_url",
+          "exercise_rights_url",
+          "board_complaint_url",
+          "dpo_contact"
+        ],
+        "title": "TemplateIn"
       },
       "cmp__api__routers__v1__projects__TransitionsOut": {
         "properties": {

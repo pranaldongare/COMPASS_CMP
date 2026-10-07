@@ -77,6 +77,13 @@ _SPECS: dict[str, _Spec] = {
         subject_href="/my-consents",
         noun="Notice",
     ),
+    "notice_template": _Spec(
+        sql="""SELECT template_id AS id, template_uuid::text AS uuid,
+                      template_code AS label
+               FROM notice_template WHERE template_id = ANY(%s)""",
+        href="/notices/templates/{uuid}",
+        noun="Notice template",
+    ),
     "notice_language": _Spec(
         # The language rendition has no page of its own; it lives on the notice,
         # so that is where the link points.
