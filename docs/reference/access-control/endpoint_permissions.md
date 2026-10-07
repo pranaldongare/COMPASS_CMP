@@ -99,6 +99,10 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen` | NO | ALL | NO | NO | NO | NO | NO | NO | NO |
 | POST | `/breaches/{breach_uuid}/attachments` | NO | ALL | NO | NO | NO | NO | NO | NO | NO |
 | GET | `/breaches/{breach_uuid}/attachments/{attachment_uuid}` | NO | ALL | NO | NO | NO | NO | NO | NO | NO |
+| GET | `/breaches/{breach_uuid}/affected/upload/template` | NO | ALL | NO | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/affected/upload/check` | NO | ALL | NO | NO | NO | NO | NO | NO | NO |
+| POST | `/breaches/{breach_uuid}/affected/upload` | NO | ALL | NO | NO | NO | NO | NO | NO | NO |
+| GET | `/breaches/{breach_uuid}/affected/contacts` | NO | ALL | NO | NO | NO | NO | NO | NO | NO |
 
 ## Consent
 

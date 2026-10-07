@@ -21,9 +21,9 @@ from pydantic import AwareDatetime, Field
 from cmp.api import uploads
 from cmp.api.dependencies import BreachReader, BreachWriter
 from cmp.db.pool import connection, transaction
-from cmp.domain.breach import affected, board, notices, service, tickets
+from cmp.domain.breach import affected, board, lists, notices, service, tickets
 from cmp.schemas.common import Out, Schema
-from cmp.validation.files import BREACH_EVIDENCE
+from cmp.validation.files import BREACH_EVIDENCE, BREACH_LIST, check_upload
 
 router = APIRouter(prefix="/breaches", tags=["breaches"])
 
@@ -662,6 +662,157 @@ async def confirm_affected(
         )
 
 
+# ------------------------------------- a list somebody sends us (2026-10-07)
+
+ListKind = Annotated[str, Form(description="contacts (name, email, mobile) or assets (asset IDs)")]
+
+
+class BreachListErrorOut(Out):
+    row: int
+    message: str
+
+
+class BreachListReportOut(Out):
+    """What a file comes to: checked (nothing written) or taken."""
+
+    kind: str
+    rows_read: int
+    #: People with an account the file matched, not yet listed.
+    matched_people: int
+    #: People with no account, to be kept as this breach's contacts.
+    new_contacts: int
+    #: Rows already on the list, or repeated in the file: skipped.
+    already_listed: int
+    #: Rows that could not be read; the first fifty are in `errors`.
+    unreadable: int
+    #: Assets only: people in them who consented to nothing, and so name nobody.
+    untraceable: int
+    would_add: int
+    errors: list[BreachListErrorOut]
+    more_errors: int
+    upload_uuid: UUID | None = None
+
+
+class BreachContactOut(Out):
+    """Somebody the breach touched with no account. Name and contacts sealed."""
+
+    contact_uuid: UUID
+    full_name: str | None
+    email: str | None
+    mobile: str | None
+    added_at: datetime
+    upload_uuid: UUID
+    upload_kind: str
+
+
+class BreachUploadOut(Out):
+    upload_uuid: UUID
+    kind: str
+    file_name: str
+    sha256: str
+    rows_read: int
+    matched_people: int
+    new_contacts: int
+    already_listed: int
+    unreadable: int
+    untraceable: int
+    added_at: datetime
+    added_by_name: str | None
+
+
+class BreachContactsOut(Out):
+    total: int
+    contacts: list[BreachContactOut]
+    next_cursor: str | None
+    uploads: list[BreachUploadOut]
+
+
+async def _list_file(file: UploadFile) -> bytes:
+    payload = await file.read()
+    check_upload(payload, file.content_type, BREACH_LIST)
+    return payload
+
+
+@router.get(
+    "/{breach_uuid}/affected/upload/template",
+    summary="The CSV to fill in: people (name, email, mobile) or asset IDs",
+)
+async def list_template(
+    breach_uuid: UUID,
+    principal: BreachReader,
+    kind: Annotated[str, Query(pattern="^(contacts|assets)$")] = "contacts",
+) -> Response:
+    async with connection() as conn:
+        await service.require(conn, str(breach_uuid))
+    name = "breach-people.csv" if kind == "contacts" else "breach-assets.csv"
+    return Response(
+        content=lists.template(kind).encode("utf-8-sig"),
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="{name}"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+@router.post(
+    "/{breach_uuid}/affected/upload/check",
+    response_model=BreachListReportOut,
+    summary="What a list would add, and each row it cannot read - nothing is written",
+)
+async def check_list(
+    breach_uuid: UUID,
+    principal: BreachWriter,
+    kind: ListKind,
+    file: Annotated[UploadFile, File(description="The filled-in CSV, max 25 MB")],
+) -> dict[str, Any]:
+    payload = await _list_file(file)
+    async with connection() as conn:
+        return await lists.check(conn, breach_uuid=str(breach_uuid), kind=kind, payload=payload)
+
+
+@router.post(
+    "/{breach_uuid}/affected/upload",
+    response_model=BreachListReportOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add the people a list names, or the people in the assets it names",
+)
+async def take_list(
+    breach_uuid: UUID,
+    principal: BreachWriter,
+    kind: ListKind,
+    file: Annotated[UploadFile, File(description="The filled-in CSV, max 25 MB")],
+) -> dict[str, Any]:
+    """People with an account join the list as themselves; anybody else is
+    kept, sealed, as a contact of this breach alone, and is sent the notice by
+    email and SMS. Rows that cannot be read are left out and reported. The file
+    is not kept."""
+    payload = await _list_file(file)
+    async with transaction() as conn:
+        return await lists.take(
+            conn,
+            breach_uuid=str(breach_uuid),
+            kind=kind,
+            payload=payload,
+            file_name=uploads.safe_name(file.filename) or "list.csv",
+            actor_id=principal.user_id,
+        )
+
+
+@router.get(
+    "/{breach_uuid}/affected/contacts",
+    response_model=BreachContactsOut,
+    summary="People the breach touched who have no account, and the lists they came in",
+)
+async def list_contacts(
+    breach_uuid: UUID,
+    principal: BreachReader,
+    cursor: Annotated[str | None, Query(max_length=64)] = None,
+) -> dict[str, Any]:
+    async with connection() as conn:
+        return await lists.contacts(conn, breach_uuid=str(breach_uuid), after=cursor)
+
+
 # --------------------------------------------------- telling the people (S3-03)
 
 _Words = Annotated[str, Field(max_length=4000)]
@@ -712,7 +863,9 @@ class BreachDeliveryFailureOut(Out):
     attempt: int
     detail: dict[str, Any]
     recorded_at: datetime
-    person_uuid: UUID
+    #: Exactly one: an account, or a contact with no account (0045).
+    person_uuid: UUID | None = None
+    contact_uuid: UUID | None = None
     full_name: str | None
 
 
@@ -727,6 +880,8 @@ class BreachNoticesOut(Out):
     account: list[BreachDeliveryCountOut]
     failures: list[BreachDeliveryFailureOut]
     listed: int
+    #: Of `listed`, contacts with no account from an uploaded list (0045).
+    contacts: int = 0
     #: Listed people with no version yet whose every channel has an outcome.
     unnotified: int
     contents: list[BreachNoticeContentOut]

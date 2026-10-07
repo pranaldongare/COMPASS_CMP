@@ -261,6 +261,36 @@ earlier row stays as it was. A notice already sent cannot be unsent, and
 listing too many is the safe side of Rule 7. Each person a revision adds is
 notified in turn (S3-03).
 
+### People the records cannot show: a list sent to us
+
+Often the people a breach touched are not on the platform at all - a
+processor's own participants, a team's contact list - and before 2026-10-07
+the breach could then never close: the notice is owed to everyone listed, and
+nobody could be listed. **Add people from a list** takes the list from
+outside, in one of two forms, each from a template the DPO downloads there:
+
+| List | Columns | What happens to each row |
+|---|---|---|
+| People | `name`, `email`, `mobile` (either contact, or both; `name` optional) | Somebody whose email or mobile is an account's is listed as that account (*In a list sent to us*), and also sees the notice in their account. Anybody else is kept as a **contact of this breach alone** - name, email and mobile sealed - and is told by email and SMS. |
+| Asset IDs | `asset_id`, `source_code` (only where two sources share an ID) | The asset is found by the platform's asset ID or by the capture tool's own; the people who consented in it are listed. People in it who consented to nothing name nobody and cannot be traced: they are counted, and said. |
+
+- **Checked, then taken.** *Check the file* writes nothing: it counts what
+  the file would add - on the platform, not on the platform, already listed or
+  repeated (skipped), unreadable, untraceable - and names each row it cannot
+  read by its row number, with why (no contact, not an email, an unknown or
+  ambiguous asset). *Add N to the list* takes the rows that can be read; a
+  corrected file can be sent again, and rows already listed are skipped. A
+  spreadsheet is refused with how to save it as CSV.
+- **The file is not kept.** It is a list of contacts in the clear; what matters
+  is now sealed in the rows. Its sealed name, hash and counts are kept
+  (`breach_upload`), and listed under *Lists taken*.
+- **A contact is listed once per breach**, by the blind index of their email
+  and of their mobile, and is never removed - like everyone listed.
+- **They count.** *Principals notified* is owed to the accounts listed and the
+  contacts alike; a contact is sent the email and the SMS (never an account
+  they do not have), and each outcome counts toward the duty exactly as an
+  account's does. Contacts added after the duty completed reopen it.
+
 ## Telling the people it touched
 
 Rule 7(1): each affected principal is told, concisely, clearly and plainly and
@@ -286,7 +316,11 @@ breach's page is where they are written, approved and sent.
   data breach notices** in her portal - and queues an email to her registered
   email and an SMS to her registered mobile, each sent by the worker after the
   commit. The email carries all five; the SMS says a breach may affect her data
-  and points to her account, where the same notice is.
+  and points to her account, where the same notice is. **A contact with no
+  account** is sent the email and the SMS only, in their own words (*Personal
+  data breach notice, to someone with no account*): the email has all five
+  with no account to point to, and the SMS carries what happened, what they
+  can do and whom to ask.
 - **A resend never duplicates.** Send writes only what is missing for the
   latest approved version: people newly listed, channels never tried, and a new
   attempt where the last one failed. Two sends at once write each state once
@@ -478,7 +512,9 @@ nothing about it can be recorded.
 | `breach_ticket_message` | The ticket's thread: office, holder or platform; sealed body and file name. Append-only |
 | `breach_attachment` | A file kept with the incident: its kind, sealed name and note, where it is stored, its hash and size, who added it and when. Append-only: never replaced or removed |
 | `breach_temporary_access` | One grant of a breach-only login: whose, on which breach, through which ticket, whether the account was made for it, the role it held before, who granted it, and - once - when, by whom and why it ended (`breach_closed`, `ticket_withdrawn`, `account_deactivated`). One open grant per person per breach, by partial unique index; the end is written once and nothing else changes, by trigger; never deleted |
-| `breach_affected` | Each person listed, once per breach (`breach_affected_once`), with the revision that first listed them and what put them there - exports, assets or tables, never a value. Append-only |
+| `breach_affected` | Each person listed, once per breach (`breach_affected_once`), with the revision that first listed them and what put them there - exports, assets, tables or an uploaded list (`found_by` upload), never a value. Append-only |
+| `breach_upload` | Each list taken (0045): people or assets, its sealed file name and hash, and what it came to - rows read, matched, new contacts, skipped, unreadable, untraceable. The file is not kept. Append-only |
+| `breach_contact` | Somebody the breach touched with no account (0045): name, email and mobile sealed, with blind indexes so each is listed once per breach. Append-only. A delivery addresses an account or one of these, exactly one (`breach_notice_delivery_one_recipient`), and never writes a contact to an account (`breach_notice_delivery_portal_is_an_account`) |
 
 Every write takes the breach row first (`FOR UPDATE`), so two people recording
 at once act one after the other: two determinations of *yes* sent together
@@ -490,7 +526,7 @@ Every change writes an audit row against `breach`: `breach.recorded` (an
 incident logged - the key predates the incident-first order), `.determined`,
 `.confirmed` (recorded as a breach, with its BR), `.assessed`, `.cert_in_marked`, `.obligation_created`,
 `.obligation_completed`, `.obligation_not_applicable`,
-`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.obligation_reopened`, `.notice_drafted`, `.notice_edited`, `.notice_approved`, `.notice_sent` (with counts), `.closed`, `.reopened`, `.attachment_added` (the kind, never the name), `.attachment_read`. A breach ticket's events are against `breach_ticket`, with the holder as subject: `breach_ticket.assigned`, `.message`, `.returned` (with the outcome), `.sent_back`, `.closed`, `.withdrawn`, `.reopened`, `.file_read`, `.colleague_added` (with the adder's ticket's uuid); the administrator's trail names them by the breach reference only. A breach-only login's grant and end are against the account: `user.temporary_access_granted` and `user.temporary_access_ended`, with the breach reference and the cause, never a name or an address. Each person whose account a notice is written to gets `breach_notice.delivered` against her, naming the breach reference (the BR) and the version: that is her portal's notification, and the only breach event she is shown. The
+`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.affected_uploaded` (a list taken: its kind and counts), `.obligation_reopened`, `.notice_drafted`, `.notice_edited`, `.notice_approved`, `.notice_sent` (with counts), `.closed`, `.reopened`, `.attachment_added` (the kind, never the name), `.attachment_read`. A breach ticket's events are against `breach_ticket`, with the holder as subject: `breach_ticket.assigned`, `.message`, `.returned` (with the outcome), `.sent_back`, `.closed`, `.withdrawn`, `.reopened`, `.file_read`, `.colleague_added` (with the adder's ticket's uuid); the administrator's trail names them by the breach reference only. A breach-only login's grant and end are against the account: `user.temporary_access_granted` and `user.temporary_access_ended`, with the breach reference and the cause, never a name or an address. Each person whose account a notice is written to gets `breach_notice.delivered` against her, naming the breach reference (the BR) and the version: that is her portal's notification, and the only breach event she is shown. The
 detail carries the reference, the outcome, which duty, a due time and that a
 reason was given - never the office's words, which are sealed on their rows
 ([ADR 0015](../decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md)).

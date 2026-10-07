@@ -44,6 +44,7 @@ function notices(over: Partial<BreachNotices>): BreachNotices {
     account: [],
     failures: [],
     listed: 3,
+    contacts: 0,
     unnotified: 3,
     contents: [],
     duty: "Principals notified",

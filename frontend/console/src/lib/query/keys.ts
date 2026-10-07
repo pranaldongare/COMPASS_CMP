@@ -185,6 +185,7 @@ export const keys = {
     detail: (uuid: Uuid) => ["breach", uuid] as const,
     assessments: (uuid: Uuid) => ["breach", uuid, "assessments"] as const,
     affected: (uuid: Uuid) => ["breach", uuid, "affected"] as const,
+    contacts: (uuid: Uuid) => ["breach", uuid, "affected", "contacts"] as const,
     notices: (uuid: Uuid) => ["breach", uuid, "notices"] as const,
     orgBoard: (uuid: Uuid) => ["breach", uuid, "org-board"] as const,
     tickets: (uuid: Uuid) => ["breach", uuid, "tickets"] as const,

@@ -134,6 +134,16 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
     "rights_response_file": {
         "file_name": DataType.FILE_NAME,
     },
+    # A breach's people from a list somebody sent us (0045): the contacts with
+    # no account, and the name of the file they came in.
+    "breach_contact": {
+        "full_name": DataType.NAME,
+        "email": DataType.EMAIL,
+        "mobile": DataType.MOBILE,
+    },
+    "breach_upload": {
+        "file_name": DataType.FILE_NAME,
+    },
     # A document the requester sent with the request (0043): its name may
     # name her, or somebody else.
     "rights_request_attachment": {
@@ -245,6 +255,11 @@ BLIND_INDEXED: dict[str, dict[str, str]] = {
     },
     "rights_request": {
         "submitted_contact": "submitted_contact_hash",
+    },
+    # A breach's contact with no account (0045): listed once per breach.
+    "breach_contact": {
+        "email": "email_hash",
+        "mobile": "mobile_hash",
     },
 }
 

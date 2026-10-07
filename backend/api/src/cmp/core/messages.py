@@ -72,6 +72,7 @@ class Message(StrEnum):
     OFFICE_NOTE = "office_note"
     # breach
     BREACH_NOTICE = "breach_notice"
+    BREACH_NOTICE_DIRECT = "breach_notice_direct"
     BREACH_TICKET_WAITING = "breach_ticket_waiting"
     BREACH_TICKET_ACCESS = "breach_ticket_access"
 
@@ -853,6 +854,60 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "{organisation}: a personal data breach may affect your data ({breach_reference}). "
             "What happened, what it means and what you can do are in your account: "
             "{portal_url} Questions: {contact}"
+        ),
+    ),
+    Junction(
+        key=Message.BREACH_NOTICE_DIRECT,
+        title="Personal data breach notice, to someone with no account",
+        description=(
+            "Rule 7(1), to a person the breach touched who has no account here - named in a "
+            "list sent to the Privacy Office (2026-10-07). The same five as the notice, in "
+            "full, with no account to point to: by email, and by SMS."
+        ),
+        group="Breach",
+        channels=BOTH,
+        variables=(
+            Variable("breach_reference", "The breach's reference.", "BR-2026-0003"),
+            Variable(
+                "what_happened",
+                "Rule 7(1)(a): its nature, extent and timing.",
+                "On 28 September a copy of a lab's contact list was sent to the wrong address.",
+            ),
+            Variable(
+                "consequences",
+                "Rule 7(1)(b): the consequences likely for her.",
+                "Someone outside the lab may have seen your name and mobile number.",
+            ),
+            Variable(
+                "measures",
+                "Rule 7(1)(c): what has been and is being done.",
+                "The recipient has confirmed deletion, and the list is now sent only encrypted.",
+            ),
+            Variable(
+                "protective_steps",
+                "Rule 7(1)(d): what she can do.",
+                "Be wary of calls or messages that mention the study and ask for anything.",
+            ),
+            Variable(
+                "contact",
+                "Rule 7(1)(e): whom to ask.",
+                "The Privacy Office, privacy@example.org, +91 20 0000 0000",
+            ),
+            ORGANISATION,
+        ),
+        email_subject="{organisation}: a personal data breach that may affect you",
+        email_body=(
+            "We are writing to tell you about a personal data breach that may affect your "
+            "personal data ({breach_reference}).\n\n"
+            "What happened\n{what_happened}\n\n"
+            "What it may mean for you\n{consequences}\n\n"
+            "What we have done, and are doing\n{measures}\n\n"
+            "What you can do\n{protective_steps}\n\n"
+            "Questions\n{contact}"
+        ),
+        sms_body=(
+            "{organisation}: a personal data breach may affect your data ({breach_reference}). "
+            "{what_happened} What you can do: {protective_steps} Questions: {contact}"
         ),
     ),
     Junction(

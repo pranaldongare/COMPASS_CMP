@@ -88,16 +88,20 @@ def send_breach_notice(self: Any, delivery_uuid: str) -> dict[str, Any]:
         _record(delivery_uuid, "failed", {"error": "NoContact", "attempts": 1})
         return {"failed": "NoContact"}
     try:
-        deliver(
-            Message.BREACH_NOTICE,
-            to=contact,
-            breach_reference=job["reference"],
-            what_happened=job["what_happened"],
-            consequences=job["consequences"],
-            measures=job["measures"],
-            protective_steps=job["protective_steps"],
-            contact=job["contact"],
-        )
+        words = {
+            "breach_reference": job["reference"],
+            "what_happened": job["what_happened"],
+            "consequences": job["consequences"],
+            "measures": job["measures"],
+            "protective_steps": job["protective_steps"],
+            "contact": job["contact"],
+        }
+        if job.get("contact_id"):
+            # Somebody with no account (0045) is told in full, with no account
+            # to point to.
+            deliver(Message.BREACH_NOTICE_DIRECT, to=contact, **words)
+        else:
+            deliver(Message.BREACH_NOTICE, to=contact, **words)
     except RETRYABLE as exc:
         tries = int(self.request.retries) + 1
         if tries > MAX_RETRIES:

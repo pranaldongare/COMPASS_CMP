@@ -77,6 +77,22 @@ REQUEST_DOCUMENT = UploadRules(
     allowed_suffixes=(".pdf", ".png", ".jpg", ".jpeg", ".txt", ".docx"),
 )
 
+#: A list of the people a breach touched, or of its assets (2026-10-07): a CSV
+#: from the template. Spreadsheet types are let through so the reader can say
+#: "save it as CSV" rather than "wrong type": Windows labels a .csv as Excel's.
+BREACH_LIST = UploadRules(
+    field="file",
+    max_bytes=25 * 1024 * 1024,
+    allowed_mime=(
+        "text/csv",
+        "application/csv",
+        "text/plain",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ),
+    allowed_suffixes=(".csv", ".txt"),
+)
+
 #: What arrives with an incident (2026-10-06): the email that reported it,
 #: saved as .eml or Outlook's .msg; a screenshot or a photo; a PDF; a chat or
 #: a log exported as text; a Word document. Nothing that runs.

@@ -282,6 +282,9 @@ class Event:
     BREACH_ATTACHMENT_READ = "breach.attachment_read"
     #: A confirmation of who the breach touched: counts, never people (S3-02).
     BREACH_AFFECTED_REVISED = "breach.affected_revised"
+    #: A list of the people a breach touched, or of its assets, was taken
+    #: (2026-10-07). Detail: its kind and counts - never a name or contact.
+    BREACH_AFFECTED_UPLOADED = "breach.affected_uploaded"
     #: The principals' duty owed again: people listed after it completed.
     BREACH_OBLIGATION_REOPENED = "breach.obligation_reopened"
     # Notices to the people it touched (S3-03).

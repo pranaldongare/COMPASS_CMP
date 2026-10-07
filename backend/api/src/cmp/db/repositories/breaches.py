@@ -462,6 +462,8 @@ NOT_ABOUT_A_PRINCIPAL: dict[str, str] = {
     "breach_affected_revision": "a note on a revision of this list",
     "breach_notice": "what everyone a breach touched is told; it names nobody",
     "breach_attachment": "the office's evidence on an incident; a person it names is added by hand",
+    "breach_contact": "someone a breach touched who has no account; already on that breach's list",
+    "breach_upload": "the name of a list of people or assets sent for a breach",
 }
 
 

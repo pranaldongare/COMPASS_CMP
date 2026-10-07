@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict eyqzwX4wLFFeJgmbQ0WQLKEwWddlEqIea0QGC3OSon9dYI4k4YAEgey5cdehmpX
+\restrict WalpD8IqChoVTpY6ES04zbTxfaWCePILJ9lyvzywJIVusgT89pfgCmvSNG5pFmt
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -1519,7 +1519,7 @@ CREATE TABLE public.breach_affected (
     auth_user_id integer NOT NULL,
     found_by character varying(12) NOT NULL,
     evidence jsonb DEFAULT '{}'::jsonb NOT NULL,
-    CONSTRAINT breach_affected_found_by CHECK (((found_by)::text = ANY ((ARRAY['processor'::character varying, 'data_source'::character varying, 'platform'::character varying, 'dpo'::character varying])::text[])))
+    CONSTRAINT breach_affected_found_by CHECK (((found_by)::text = ANY ((ARRAY['processor'::character varying, 'data_source'::character varying, 'platform'::character varying, 'dpo'::character varying, 'upload'::character varying])::text[])))
 );
 
 
@@ -1729,6 +1729,73 @@ ALTER SEQUENCE public.breach_breach_id_seq OWNED BY public.breach.breach_id;
 
 
 --
+-- Name: breach_contact; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_contact (
+    contact_id integer NOT NULL,
+    contact_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    breach_id integer NOT NULL,
+    upload_id integer NOT NULL,
+    full_name text,
+    email text,
+    mobile text,
+    email_hash text,
+    mobile_hash text,
+    added_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT breach_contact_reachable CHECK (((email IS NOT NULL) OR (mobile IS NOT NULL)))
+);
+
+
+--
+-- Name: TABLE breach_contact; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.breach_contact IS 'Somebody a breach touched who has no account, from an uploaded list. Only ever added to';
+
+
+--
+-- Name: COLUMN breach_contact.full_name; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_contact.full_name IS 'Sealed (NAME)';
+
+
+--
+-- Name: COLUMN breach_contact.email; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_contact.email IS 'Sealed (EMAIL); email_hash is its blind index';
+
+
+--
+-- Name: COLUMN breach_contact.mobile; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_contact.mobile IS 'Sealed (MOBILE); mobile_hash is its blind index';
+
+
+--
+-- Name: breach_contact_contact_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_contact_contact_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_contact_contact_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_contact_contact_id_seq OWNED BY public.breach_contact.contact_id;
+
+
+--
 -- Name: breach_determination; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1817,15 +1884,18 @@ CREATE TABLE public.breach_notice_delivery (
     delivery_id integer NOT NULL,
     delivery_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
     notice_id integer NOT NULL,
-    auth_user_id integer NOT NULL,
+    auth_user_id integer,
     channel character varying(8) NOT NULL,
     attempt integer NOT NULL,
     status character varying(10) NOT NULL,
     detail jsonb DEFAULT '{}'::jsonb NOT NULL,
     recorded_at timestamp with time zone DEFAULT now() NOT NULL,
+    contact_id integer,
     CONSTRAINT breach_notice_delivery_attempt CHECK ((attempt >= 1)),
     CONSTRAINT breach_notice_delivery_channel CHECK (((channel)::text = ANY ((ARRAY['portal'::character varying, 'email'::character varying, 'sms'::character varying])::text[]))),
+    CONSTRAINT breach_notice_delivery_one_recipient CHECK ((num_nonnulls(auth_user_id, contact_id) = 1)),
     CONSTRAINT breach_notice_delivery_portal_at_once CHECK ((((channel)::text <> 'portal'::text) OR ((status)::text = 'delivered'::text))),
+    CONSTRAINT breach_notice_delivery_portal_is_an_account CHECK ((((channel)::text <> 'portal'::text) OR (auth_user_id IS NOT NULL))),
     CONSTRAINT breach_notice_delivery_status CHECK (((status)::text = ANY ((ARRAY['queued'::character varying, 'delivered'::character varying, 'failed'::character varying])::text[])))
 );
 
@@ -2316,6 +2386,64 @@ CREATE SEQUENCE public.breach_ticket_ticket_id_seq
 --
 
 ALTER SEQUENCE public.breach_ticket_ticket_id_seq OWNED BY public.breach_ticket.ticket_id;
+
+
+--
+-- Name: breach_upload; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_upload (
+    upload_id integer NOT NULL,
+    upload_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    breach_id integer NOT NULL,
+    kind character varying(10) NOT NULL,
+    file_name text NOT NULL,
+    sha256 character(64) NOT NULL,
+    rows_read integer NOT NULL,
+    matched_people integer NOT NULL,
+    new_contacts integer NOT NULL,
+    already_listed integer NOT NULL,
+    unreadable integer NOT NULL,
+    untraceable integer DEFAULT 0 NOT NULL,
+    added_by integer NOT NULL,
+    added_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT breach_upload_counts CHECK (((rows_read >= 0) AND (matched_people >= 0) AND (new_contacts >= 0) AND (already_listed >= 0) AND (unreadable >= 0) AND (untraceable >= 0))),
+    CONSTRAINT breach_upload_kind CHECK (((kind)::text = ANY ((ARRAY['contacts'::character varying, 'assets'::character varying])::text[])))
+);
+
+
+--
+-- Name: TABLE breach_upload; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.breach_upload IS 'A list of the people a breach touched, or of its assets, as sent to us. The file is not kept';
+
+
+--
+-- Name: COLUMN breach_upload.file_name; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_upload.file_name IS 'The name it was uploaded with. Sealed (FILE_NAME)';
+
+
+--
+-- Name: breach_upload_upload_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_upload_upload_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_upload_upload_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_upload_upload_id_seq OWNED BY public.breach_upload.upload_id;
 
 
 --
@@ -4175,6 +4303,13 @@ ALTER TABLE ONLY public.breach_attachment ALTER COLUMN attachment_id SET DEFAULT
 
 
 --
+-- Name: breach_contact contact_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_contact ALTER COLUMN contact_id SET DEFAULT nextval('public.breach_contact_contact_id_seq'::regclass);
+
+
+--
 -- Name: breach_determination determination_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4249,6 +4384,13 @@ ALTER TABLE ONLY public.breach_ticket_event ALTER COLUMN event_id SET DEFAULT ne
 --
 
 ALTER TABLE ONLY public.breach_ticket_message ALTER COLUMN message_id SET DEFAULT nextval('public.breach_ticket_message_message_id_seq'::regclass);
+
+
+--
+-- Name: breach_upload upload_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_upload ALTER COLUMN upload_id SET DEFAULT nextval('public.breach_upload_upload_id_seq'::regclass);
 
 
 --
@@ -4655,6 +4797,38 @@ ALTER TABLE ONLY public.breach
 
 
 --
+-- Name: breach_contact breach_contact_contact_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_contact
+    ADD CONSTRAINT breach_contact_contact_uuid_key UNIQUE (contact_uuid);
+
+
+--
+-- Name: breach_contact breach_contact_email_once; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_contact
+    ADD CONSTRAINT breach_contact_email_once UNIQUE (breach_id, email_hash);
+
+
+--
+-- Name: breach_contact breach_contact_mobile_once; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_contact
+    ADD CONSTRAINT breach_contact_mobile_once UNIQUE (breach_id, mobile_hash);
+
+
+--
+-- Name: breach_contact breach_contact_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_contact
+    ADD CONSTRAINT breach_contact_pkey PRIMARY KEY (contact_id);
+
+
+--
 -- Name: breach_determination breach_determination_determination_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4683,7 +4857,7 @@ ALTER TABLE ONLY public.breach_notice_delivery
 --
 
 ALTER TABLE ONLY public.breach_notice_delivery
-    ADD CONSTRAINT breach_notice_delivery_once UNIQUE (notice_id, auth_user_id, channel, attempt, status);
+    ADD CONSTRAINT breach_notice_delivery_once UNIQUE NULLS NOT DISTINCT (notice_id, auth_user_id, contact_id, channel, attempt, status);
 
 
 --
@@ -4884,6 +5058,22 @@ ALTER TABLE ONLY public.breach_ticket
 
 ALTER TABLE ONLY public.breach_ticket
     ADD CONSTRAINT breach_ticket_ticket_uuid_key UNIQUE (ticket_uuid);
+
+
+--
+-- Name: breach_upload breach_upload_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_upload
+    ADD CONSTRAINT breach_upload_pkey PRIMARY KEY (upload_id);
+
+
+--
+-- Name: breach_upload breach_upload_upload_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_upload
+    ADD CONSTRAINT breach_upload_upload_uuid_key UNIQUE (upload_uuid);
 
 
 --
@@ -5696,10 +5886,24 @@ CREATE INDEX idx_breach_attachment ON public.breach_attachment USING btree (brea
 
 
 --
+-- Name: idx_breach_contact; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_breach_contact ON public.breach_contact USING btree (breach_id, contact_id);
+
+
+--
 -- Name: idx_breach_determination; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_breach_determination ON public.breach_determination USING btree (breach_id, determination_id);
+
+
+--
+-- Name: idx_breach_notice_delivery_contact; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_breach_notice_delivery_contact ON public.breach_notice_delivery USING btree (contact_id) WHERE (contact_id IS NOT NULL);
 
 
 --
@@ -5749,6 +5953,13 @@ CREATE INDEX idx_breach_ticket_holder ON public.breach_ticket USING btree (holde
 --
 
 CREATE INDEX idx_breach_ticket_message ON public.breach_ticket_message USING btree (ticket_id, message_id);
+
+
+--
+-- Name: idx_breach_upload; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_breach_upload ON public.breach_upload USING btree (breach_id, upload_id);
 
 
 --
@@ -6242,6 +6453,13 @@ CREATE TRIGGER trg_breach_attachment_append_only BEFORE DELETE OR UPDATE ON publ
 
 
 --
+-- Name: breach_contact trg_breach_contact_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_contact_append_only BEFORE DELETE OR UPDATE ON public.breach_contact FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
 -- Name: breach_determination trg_breach_determination_append_only; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -6330,6 +6548,13 @@ CREATE TRIGGER trg_breach_ticket_message_append_only BEFORE DELETE OR UPDATE ON 
 --
 
 CREATE TRIGGER trg_breach_ticket_read_only BEFORE DELETE OR UPDATE ON public.breach_ticket FOR EACH ROW EXECUTE FUNCTION public.cmp_breach_ticket_read_only();
+
+
+--
+-- Name: breach_upload trg_breach_upload_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_upload_append_only BEFORE DELETE OR UPDATE ON public.breach_upload FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
 
 
 --
@@ -6626,6 +6851,22 @@ ALTER TABLE ONLY public.breach_attachment
 
 
 --
+-- Name: breach_contact breach_contact_breach_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_contact
+    ADD CONSTRAINT breach_contact_breach_id_fkey FOREIGN KEY (breach_id) REFERENCES public.breach(breach_id);
+
+
+--
+-- Name: breach_contact breach_contact_upload_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_contact
+    ADD CONSTRAINT breach_contact_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES public.breach_upload(upload_id);
+
+
+--
 -- Name: breach_determination breach_determination_breach_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6687,6 +6928,14 @@ ALTER TABLE ONLY public.breach_notice
 
 ALTER TABLE ONLY public.breach_notice_delivery
     ADD CONSTRAINT breach_notice_delivery_auth_user_id_fkey FOREIGN KEY (auth_user_id) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_notice_delivery breach_notice_delivery_contact_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_notice_delivery
+    ADD CONSTRAINT breach_notice_delivery_contact_id_fkey FOREIGN KEY (contact_id) REFERENCES public.breach_contact(contact_id);
 
 
 --
@@ -6895,6 +7144,22 @@ ALTER TABLE ONLY public.breach_ticket_message
 
 ALTER TABLE ONLY public.breach_ticket
     ADD CONSTRAINT breach_ticket_parent_ticket_id_fkey FOREIGN KEY (parent_ticket_id) REFERENCES public.breach_ticket(ticket_id);
+
+
+--
+-- Name: breach_upload breach_upload_added_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_upload
+    ADD CONSTRAINT breach_upload_added_by_fkey FOREIGN KEY (added_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_upload breach_upload_breach_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_upload
+    ADD CONSTRAINT breach_upload_breach_id_fkey FOREIGN KEY (breach_id) REFERENCES public.breach(breach_id);
 
 
 --
@@ -7749,5 +8014,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict eyqzwX4wLFFeJgmbQ0WQLKEwWddlEqIea0QGC3OSon9dYI4k4YAEgey5cdehmpX
+\unrestrict WalpD8IqChoVTpY6ES04zbTxfaWCePILJ9lyvzywJIVusgT89pfgCmvSNG5pFmt
 

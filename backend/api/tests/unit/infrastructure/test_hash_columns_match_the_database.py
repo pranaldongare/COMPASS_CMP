@@ -28,6 +28,11 @@ def test_every_hash_column_is_named_hash() -> None:
             assert hashed == f"{source}_hash", f"{table}.{source} maps to {hashed}"
 
 
+#: Tables whose hash columns were created with them, after 0029 renamed the
+#: rest - and the migration that created each.
+BORN_HASHED = {"breach_contact": "0045_breach_contact_upload.py"}
+
+
 def test_the_rename_migration_covers_exactly_these_columns() -> None:
     text = (MIGRATIONS / "0029_hash_columns.py").read_text()
     renamed = {
@@ -36,6 +41,14 @@ def test_the_rename_migration_covers_exactly_these_columns() -> None:
     expected = {
         (table, f"{source}_idx", hashed)
         for table, columns in BLIND_INDEXED.items()
+        if table not in BORN_HASHED
         for source, hashed in columns.items()
     }
     assert renamed == expected
+
+
+def test_a_table_born_with_hash_columns_creates_them() -> None:
+    for table, migration in BORN_HASHED.items():
+        text = (MIGRATIONS / migration).read_text()
+        for hashed in BLIND_INDEXED[table].values():
+            assert f"{hashed} " in text, f"{migration} does not create {table}.{hashed}"

@@ -6,12 +6,15 @@
  * with the reference the regulator returned.
  */
 
-import { apiGet, apiPost, apiPut, queryString } from "@/lib/api";
+import { apiDownload, apiGet, apiPost, apiPut, queryString } from "@/lib/api";
 import { config } from "@/lib/config";
 import type {
   BreachAttachmentKind,
   Breach,
   BreachAffected,
+  BreachContacts,
+  BreachListKind,
+  BreachListReport,
   BreachAssessment,
   BreachAssessmentInput,
   BreachDutyKind,
@@ -101,6 +104,45 @@ export function listAffected(uuid: Uuid, cursor?: string | null): Promise<Breach
 
 export function previewAffected(uuid: Uuid, scopes: BreachScope[]): Promise<BreachPreview> {
   return apiPost<BreachPreview>(`/breaches/${uuid}/affected/preview`, { scopes });
+}
+
+/* ------------------------------------- a list somebody sends us (2026-10-07) */
+
+/** The CSV to fill in, as a file to save. */
+export function breachListTemplate(uuid: Uuid, kind: BreachListKind) {
+  return apiDownload(`/breaches/${uuid}/affected/upload/template${queryString({ kind })}`);
+}
+
+function listForm(kind: BreachListKind, file: File): FormData {
+  // A browser that does not type a .csv sends it untyped; the API checks the type.
+  const typed = file.type ? file : new File([file], file.name, { type: "text/csv" });
+  const form = new FormData();
+  form.set("kind", kind);
+  form.set("file", typed, typed.name);
+  return form;
+}
+
+/** What a list would add, and each row it cannot read. Writes nothing. */
+export function checkBreachList(
+  uuid: Uuid,
+  kind: BreachListKind,
+  file: File,
+): Promise<BreachListReport> {
+  return apiPost<BreachListReport>(`/breaches/${uuid}/affected/upload/check`, listForm(kind, file));
+}
+
+/** Add what a list names to the breach's list. */
+export function takeBreachList(
+  uuid: Uuid,
+  kind: BreachListKind,
+  file: File,
+): Promise<BreachListReport> {
+  return apiPost<BreachListReport>(`/breaches/${uuid}/affected/upload`, listForm(kind, file));
+}
+
+/** People the breach touched who have no account, and the lists they came in. */
+export function listBreachContacts(uuid: Uuid, cursor?: string | null): Promise<BreachContacts> {
+  return apiGet<BreachContacts>(`/breaches/${uuid}/affected/contacts${queryString({ cursor })}`);
 }
 
 export function confirmAffected(

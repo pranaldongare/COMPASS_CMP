@@ -12,7 +12,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Trash2, UserPlus, Users } from "lucide-react";
+import { Plus, Search, Trash2, Upload, UserPlus, Users } from "lucide-react";
 import * as React from "react";
 
 import {
@@ -32,6 +32,7 @@ import {
   Tr,
 } from "@/components/ui/primitives";
 import { lookupAudit } from "@/features/audit/api";
+import { BreachContacts, UploadList } from "@/features/breach/components/breach-lists";
 import { confirmAffected, listAffected, previewAffected } from "@/features/breach/api";
 import {
   ProcessorPicker,
@@ -57,6 +58,7 @@ const FOUND_BY: Record<BreachPerson["found_by"], string> = {
   data_source: "In the source's assets",
   platform: "In the platform's tables",
   dpo: "Added by the DPO",
+  upload: "In a list sent to us",
 };
 
 /** A scope being edited: the window as `datetime-local` text until it is sent. */
@@ -397,6 +399,7 @@ export function AffectedCard({ breach }: { breach: Breach }) {
     queryFn: () => listAffected(breach.breach_uuid),
   });
   const [revising, setRevising] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
   const data = query.data;
   // Pages beyond the first belong to the listing they were read from; a fresh
   // listing (a new revision) starts from its own first page again.
@@ -437,8 +440,10 @@ export function AffectedCard({ breach }: { breach: Breach }) {
             <ol className="space-y-1 text-xs text-text-muted">
               {data.revisions.map((r) => (
                 <li key={r.revision_uuid}>
-                  Revision {r.revision}, {formatDateTime(r.confirmed_at)} by {r.confirmed_by_name ?? "unknown"}: derived{" "}
-                  {r.derived}, left out {r.excluded}, added by hand {r.added_by_hand}, newly listed {r.newly_listed}
+                  Revision {r.revision}, {formatDateTime(r.confirmed_at)} by {r.confirmed_by_name ?? "unknown"}:{" "}
+                  {r.scopes[0]?.kind === "upload"
+                    ? `from a ${r.scopes[0]?.file === "assets" ? "list of assets" : "list of people"}, newly listed ${r.newly_listed}`
+                    : `derived ${r.derived}, left out ${r.excluded}, added by hand ${r.added_by_hand}, newly listed ${r.newly_listed}`}
                   {r.note && <span className="block whitespace-pre-wrap text-text">{r.note}</span>}
                 </li>
               ))}
@@ -472,13 +477,31 @@ export function AffectedCard({ breach }: { breach: Breach }) {
             )}
           </>
         ) : (
-          <p className="text-sm text-text-muted">{query.isLoading ? "Loading…" : "Nobody confirmed yet."}</p>
+          <p className="text-sm text-text-muted">
+            {query.isLoading ? "Loading…" : "Nobody on the platform confirmed yet."}
+          </p>
         )}
-        {breach.status === "open" && !revising && data && (
-          <Button variant="secondary" size="sm" onClick={() => setRevising(true)}>
-            <Users className="size-4" />
-            {data.revisions.length ? "Revise the list" : "Derive who it touched"}
-          </Button>
+        <BreachContacts breach={breach} />
+        {breach.status === "open" && !revising && !uploading && data && (
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setRevising(true)}>
+              <Users className="size-4" />
+              {data.revisions.length ? "Revise the list" : "Derive who it touched"}
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setUploading(true)}>
+              <Upload className="size-4" />
+              Add people from a list
+            </Button>
+          </div>
+        )}
+        {uploading && (
+          <UploadList
+            breach={breach}
+            onDone={() => {
+              setUploading(false);
+              void qc.invalidateQueries({ queryKey: keys.breach.affected(breach.breach_uuid) });
+            }}
+          />
         )}
         {revising && data && (
           <Revise

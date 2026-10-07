@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-33 operations; 33 appear in the existing OpenAPI/API docs. Added with S3-01 to S3-04; evidence links point at `HEAD`.
+37 operations; 37 appear in the existing OpenAPI/API docs. Added with S3-01 to S3-04; evidence links point at `HEAD`.
 
 An incident is logged first (`POST /breaches`); the first validation of *yes* records it as a breach ([ADR 0022](../../../decisions/0022-an-incident-first-and-a-breach-on-a-yes.md)). Every route is the DPO's and **hidden**: any other role - staff or principal - is answered **404**, on the register, on a breach that exists and on a write alike, where other DPO-only modules answer 403. That a breach is being handled is itself withheld.
 
@@ -41,6 +41,10 @@ An incident is logged first (`POST /breaches`); the first validation of *yes* re
 | POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen` | `dpo` | Full session; anonymous NO |
 | POST | `/breaches/{breach_uuid}/attachments` | `dpo` | Full session; anonymous NO |
 | GET | `/breaches/{breach_uuid}/attachments/{attachment_uuid}` | `dpo` | Full session; anonymous NO |
+| GET | `/breaches/{breach_uuid}/affected/upload/template` | `dpo` | Full session; anonymous NO |
+| POST | `/breaches/{breach_uuid}/affected/upload/check` | `dpo` | Full session; anonymous NO |
+| POST | `/breaches/{breach_uuid}/affected/upload` | `dpo` | Full session; anonymous NO |
+| GET | `/breaches/{breach_uuid}/affected/contacts` | `dpo` | Full session; anonymous NO |
 
 ## GET /breaches
 
@@ -503,3 +507,59 @@ Download a file kept with the incident; every download is audited.
 - **Resolved gate:** `RequireResource(breach, hidden=True)`.
 - **Rules:** The DPO's alone, hidden from every other role (404). A file of this breach only (404 otherwise). The response carries `X-Recorded-SHA256` (as kept) and `X-Content-SHA256` (as read); every read is `breach.attachment_read` on the trail. (2026-10-06)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## GET /breaches/{breach_uuid}/affected/upload/template
+
+The CSV to fill in: people (name, email, mobile) or asset IDs.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 404.
+- **Route guard:** `BreachReader`.
+- **Resolved gate:** `RequireResource(breach, hidden=True)`.
+- **Rules:** The DPO's alone, hidden from every other role (404). `kind` is contacts or assets; a header, guidance lines starting with #, and an example row. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/lists.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /breaches/{breach_uuid}/affected/upload/check
+
+What a list would add, and each row it cannot read - nothing is written.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 404.
+- **Route guard:** `BreachWriter`.
+- **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
+- **Rules:** Multipart `kind` and `file` (a CSV, 25 MB, 50,000 rows; a spreadsheet is refused with how to save it as CSV). Counts what would be added and names each unreadable row by number. Writes nothing. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/lists.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /breaches/{breach_uuid}/affected/upload
+
+Add the people a list names, or the people in the assets it names.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 404.
+- **Route guard:** `BreachWriter`.
+- **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
+- **Rules:** Refused on a closed breach. A person whose email or mobile is an account's is listed as that account (`found_by` upload); anybody else is kept as a contact of this breach, name/email/mobile sealed, deduplicated by blind index. Assets: matched by platform asset ID or by `source_asset_ref` (with `source_code` when two sources share it); their consented people are listed, untraceable subjects counted. The file is not kept, only its sealed name, hash and counts. The trail records counts, never a name or contact. 409 `nothing_new` when everybody is already listed. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/lists.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## GET /breaches/{breach_uuid}/affected/contacts
+
+People the breach touched who have no account, and the lists they came in.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; everyone else 404.
+- **Route guard:** `BreachReader`.
+- **Resolved gate:** `RequireResource(breach, hidden=True)`.
+- **Rules:** The DPO's alone, hidden from every other role (404). Name, email and mobile sealed; paged by `cursor`. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/lists.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).

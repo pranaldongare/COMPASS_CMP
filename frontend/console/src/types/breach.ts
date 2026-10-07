@@ -227,8 +227,65 @@ export interface BreachPerson {
   role: string;
   has_email: boolean;
   has_mobile: boolean;
-  found_by: BreachScopeKind | "dpo";
+  /** `upload`: matched by email or mobile in a list somebody sent (2026-10-07). */
+  found_by: BreachScopeKind | "dpo" | "upload";
   evidence: BreachEvidence;
+}
+
+/** A list of the people a breach touched, or of its assets (2026-10-07). */
+export type BreachListKind = "contacts" | "assets";
+
+/** What a list comes to: checked (nothing written), or taken. */
+export interface BreachListReport {
+  kind: BreachListKind;
+  rows_read: number;
+  /** People with an account the file matched, not yet listed. */
+  matched_people: number;
+  /** People with no account, kept as this breach's contacts. */
+  new_contacts: number;
+  /** Rows already on the list, or repeated: skipped. */
+  already_listed: number;
+  /** Rows that could not be read; the first fifty are in `errors`. */
+  unreadable: number;
+  /** Assets only: people in them who consented to nothing - nobody to trace. */
+  untraceable: number;
+  would_add: number;
+  errors: { row: number; message: string }[];
+  more_errors: number;
+  upload_uuid?: Uuid | null;
+}
+
+/** Somebody the breach touched who has no account: told by email and SMS. */
+export interface BreachContact {
+  contact_uuid: Uuid;
+  full_name: string | null;
+  email: string | null;
+  mobile: string | null;
+  added_at: Timestamp;
+  upload_uuid: Uuid;
+  upload_kind: BreachListKind;
+}
+
+export interface BreachUpload {
+  upload_uuid: Uuid;
+  kind: BreachListKind;
+  file_name: string;
+  sha256: string;
+  rows_read: number;
+  matched_people: number;
+  new_contacts: number;
+  already_listed: number;
+  unreadable: number;
+  untraceable: number;
+  added_at: Timestamp;
+  added_by_name: string | null;
+}
+
+export interface BreachContacts {
+  total: number;
+  contacts: BreachContact[];
+  next_cursor: string | null;
+  uploads: BreachUpload[];
 }
 
 export interface BreachAffectedPerson extends BreachPerson {
@@ -311,7 +368,9 @@ export interface BreachDeliveryFailure {
   attempt: number;
   detail: Record<string, unknown>;
   recorded_at: Timestamp;
-  person_uuid: Uuid;
+  /** Exactly one: an account, or a contact with no account. */
+  person_uuid: Uuid | null;
+  contact_uuid?: Uuid | null;
   full_name: string | null;
 }
 
@@ -321,6 +380,8 @@ export interface BreachNotices {
   account: BreachDeliveryCount[];
   failures: BreachDeliveryFailure[];
   listed: number;
+  /** Of `listed`, contacts with no account: email and SMS only. */
+  contacts: number;
   /** Listed people with no version yet whose every channel has an outcome. */
   unnotified: number;
   contents: { key: keyof BreachNoticeWords; label: string }[];

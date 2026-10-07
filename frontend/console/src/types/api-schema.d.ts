@@ -4560,6 +4560,80 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/breaches/{breach_uuid}/affected/upload/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The CSV to fill in: people (name, email, mobile) or asset IDs */
+        get: operations["list_template_breaches__breach_uuid__affected_upload_template_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/affected/upload/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** What a list would add, and each row it cannot read - nothing is written */
+        post: operations["check_list_breaches__breach_uuid__affected_upload_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/affected/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add the people a list names, or the people in the assets it names
+         * @description People with an account join the list as themselves; anybody else is
+         *     kept, sealed, as a contact of this breach alone, and is sent the notice by
+         *     email and SMS. Rows that cannot be read are left out and reported. The file
+         *     is not kept.
+         */
+        post: operations["take_list_breaches__breach_uuid__affected_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/affected/contacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** People the breach touched who have no account, and the lists they came in */
+        get: operations["list_contacts_breaches__breach_uuid__affected_contacts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/breaches/{breach_uuid}/notices": {
         parameters: {
             query?: never;
@@ -5539,6 +5613,19 @@ export interface components {
              */
             file: string;
         };
+        /** Body_check_list_breaches__breach_uuid__affected_upload_check_post */
+        Body_check_list_breaches__breach_uuid__affected_upload_check_post: {
+            /**
+             * Kind
+             * @description contacts (name, email, mobile) or assets (asset IDs)
+             */
+            kind: string;
+            /**
+             * File
+             * @description The filled-in CSV, max 25 MB
+             */
+            file: string;
+        };
         /** Body_create_import_imports_post */
         Body_create_import_imports_post: {
             /**
@@ -5679,6 +5766,19 @@ export interface components {
              * @description Optional evidence, max 25 MB
              */
             evidence?: string | null;
+        };
+        /** Body_take_list_breaches__breach_uuid__affected_upload_post */
+        Body_take_list_breaches__breach_uuid__affected_upload_post: {
+            /**
+             * Kind
+             * @description contacts (name, email, mobile) or assets (asset IDs)
+             */
+            kind: string;
+            /**
+             * File
+             * @description The filled-in CSV, max 25 MB
+             */
+            file: string;
         };
         /** Body_validate_import_imports_validate_post */
         Body_validate_import_imports_validate_post: {
@@ -5954,6 +6054,46 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /**
+         * BreachContactOut
+         * @description Somebody the breach touched with no account. Name and contacts sealed.
+         */
+        BreachContactOut: {
+            /**
+             * Contact Uuid
+             * Format: uuid
+             */
+            contact_uuid: string;
+            /** Full Name */
+            full_name: string | null;
+            /** Email */
+            email: string | null;
+            /** Mobile */
+            mobile: string | null;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+            /**
+             * Upload Uuid
+             * Format: uuid
+             */
+            upload_uuid: string;
+            /** Upload Kind */
+            upload_kind: string;
+        };
+        /** BreachContactsOut */
+        BreachContactsOut: {
+            /** Total */
+            total: number;
+            /** Contacts */
+            contacts: components["schemas"]["BreachContactOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+            /** Uploads */
+            uploads: components["schemas"]["BreachUploadOut"][];
+        };
         /** BreachDeliveryCountOut */
         BreachDeliveryCountOut: {
             /**
@@ -5992,11 +6132,10 @@ export interface components {
              * Format: date-time
              */
             recorded_at: string;
-            /**
-             * Person Uuid
-             * Format: uuid
-             */
-            person_uuid: string;
+            /** Person Uuid */
+            person_uuid?: string | null;
+            /** Contact Uuid */
+            contact_uuid?: string | null;
             /** Full Name */
             full_name: string | null;
         };
@@ -6189,6 +6328,41 @@ export interface components {
             missing: string[];
             duty: components["schemas"]["BreachDutyOut"] | null;
         };
+        /** BreachListErrorOut */
+        BreachListErrorOut: {
+            /** Row */
+            row: number;
+            /** Message */
+            message: string;
+        };
+        /**
+         * BreachListReportOut
+         * @description What a file comes to: checked (nothing written) or taken.
+         */
+        BreachListReportOut: {
+            /** Kind */
+            kind: string;
+            /** Rows Read */
+            rows_read: number;
+            /** Matched People */
+            matched_people: number;
+            /** New Contacts */
+            new_contacts: number;
+            /** Already Listed */
+            already_listed: number;
+            /** Unreadable */
+            unreadable: number;
+            /** Untraceable */
+            untraceable: number;
+            /** Would Add */
+            would_add: number;
+            /** Errors */
+            errors: components["schemas"]["BreachListErrorOut"][];
+            /** More Errors */
+            more_errors: number;
+            /** Upload Uuid */
+            upload_uuid?: string | null;
+        };
         /** BreachLocationOut */
         BreachLocationOut: {
             /** Kind */
@@ -6301,6 +6475,11 @@ export interface components {
             failures: components["schemas"]["BreachDeliveryFailureOut"][];
             /** Listed */
             listed: number;
+            /**
+             * Contacts
+             * @default 0
+             */
+            contacts: number;
             /** Unnotified */
             unnotified: number;
             /** Contents */
@@ -6674,6 +6853,39 @@ export interface components {
             current: string;
             /** Available */
             available: components["schemas"]["BreachTransitionOut"][];
+        };
+        /** BreachUploadOut */
+        BreachUploadOut: {
+            /**
+             * Upload Uuid
+             * Format: uuid
+             */
+            upload_uuid: string;
+            /** Kind */
+            kind: string;
+            /** File Name */
+            file_name: string;
+            /** Sha256 */
+            sha256: string;
+            /** Rows Read */
+            rows_read: number;
+            /** Matched People */
+            matched_people: number;
+            /** New Contacts */
+            new_contacts: number;
+            /** Already Listed */
+            already_listed: number;
+            /** Unreadable */
+            unreadable: number;
+            /** Untraceable */
+            untraceable: number;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+            /** Added By Name */
+            added_by_name: string | null;
         };
         /** ChannelOut */
         ChannelOut: {
@@ -19369,6 +19581,142 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BreachPreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_template_breaches__breach_uuid__affected_upload_template_get: {
+        parameters: {
+            query?: {
+                kind?: string;
+            };
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_list_breaches__breach_uuid__affected_upload_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_check_list_breaches__breach_uuid__affected_upload_check_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachListReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    take_list_breaches__breach_uuid__affected_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_take_list_breaches__breach_uuid__affected_upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachListReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_contacts_breaches__breach_uuid__affected_contacts_get: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachContactsOut"];
                 };
             };
             /** @description Validation Error */

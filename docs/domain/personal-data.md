@@ -242,6 +242,8 @@ register is the DPO's alone, hidden from every other role (404).
 **`breach_recording`** — `recorded_by`: who made the *yes* that recorded it as a breach (S3-06).
 **`breach_ticket`** — `holder_user_id` (a member of staff or a temporary ticket holder, who is a data principal too), `assigned_by`, `instruction` (sealed); `parent_ticket_id` says who added whom (S3-09).
 **`breach_attachment`** — `file_name`, `note` (sealed), `added_by`; the file itself in storage under `breach/`, by hash (2026-10-06). An email or a chat kept as evidence may name anyone.
+
+**`breach_contact`** (0045) — `full_name`, `email`, `mobile` (sealed), `email_hash`, `mobile_hash` (blind indexes): somebody a breach touched who has no account, named in a list sent to the Privacy Office, and told by email and SMS. **`breach_upload`** — the list's `file_name` (sealed) and hash; the file itself is not kept (2026-10-07).
 **`breach_temporary_access`** — `user_id`, `granted_by`, `ended_by`: whose breach-only login, and who gave and ended it, with the role the account held before (S3-09). No name and no address: a person without an account is made one in `auth_user`, sealed like every other.
 **`breach_ticket_event`** — `summary`, `reason` (sealed), `actor_user_id`.
 **`breach_ticket_message`** — `body`, `evidence_name` (sealed), `author_user_id` (S3-08).
@@ -346,7 +348,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-204 of 307 operations accept or return personal data. Each table gives the
+215 of 311 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -511,11 +513,11 @@ selected.
 | GET | `/breaches/{breach_uuid}/board/report` | DPO every row | — | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `document`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name` |
 | POST | `/breaches/{breach_uuid}/cert-in` | DPO every row | — | `added_by_name`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `determined_by_name`, `file_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes` |
 | POST | `/breaches/{breach_uuid}/determinations` | DPO every row | `reasoning` | `added_by_name`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `determined_by_name`, `file_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes` |
-| GET | `/breaches/{breach_uuid}/notices` | DPO every row | — | `approved_by_name`, `consequences`, `contact`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
-| POST | `/breaches/{breach_uuid}/notices` | DPO every row | `consequences`, `contact`, `protective_steps` | `approved_by_name`, `consequences`, `contact`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
-| POST | `/breaches/{breach_uuid}/notices/send` | DPO every row | — | `approved_by_name`, `consequences`, `contact`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
-| PUT | `/breaches/{breach_uuid}/notices/{notice_uuid}` | DPO every row | `consequences`, `contact`, `protective_steps` | `approved_by_name`, `consequences`, `contact`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
-| POST | `/breaches/{breach_uuid}/notices/{notice_uuid}/approve` | DPO every row | — | `approved_by_name`, `consequences`, `contact`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
+| GET | `/breaches/{breach_uuid}/notices` | DPO every row | — | `approved_by_name`, `consequences`, `contact`, `contact_uuid`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
+| POST | `/breaches/{breach_uuid}/notices` | DPO every row | `consequences`, `contact`, `protective_steps` | `approved_by_name`, `consequences`, `contact`, `contact_uuid`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
+| POST | `/breaches/{breach_uuid}/notices/send` | DPO every row | — | `approved_by_name`, `consequences`, `contact`, `contact_uuid`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
+| PUT | `/breaches/{breach_uuid}/notices/{notice_uuid}` | DPO every row | `consequences`, `contact`, `protective_steps` | `approved_by_name`, `consequences`, `contact`, `contact_uuid`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
+| POST | `/breaches/{breach_uuid}/notices/{notice_uuid}/approve` | DPO every row | — | `approved_by_name`, `consequences`, `contact`, `contact_uuid`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
 | POST | `/breaches/{breach_uuid}/obligations/board_report/extension` | DPO every row | — | `added_by_name`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `determined_by_name`, `file_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes` |
 | POST | `/breaches/{breach_uuid}/obligations/{duty}/complete` | DPO every row | `reported_to` | `added_by_name`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `determined_by_name`, `file_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes` |
 | GET | `/breaches/{breach_uuid}/org-board/brief` | DPO every row | — | `document` |
@@ -645,10 +647,20 @@ selected.
 
 ### Notices
 
-10 operations carry personal data.
+21 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
+| GET | `/notice-templates` | DPO every row | — | `created_by_name`, `dpo_contact` |
+| POST | `/notice-templates` | DPO every row | `dpo_contact` | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| GET | `/notice-templates/by-code/{template_code}` | DPO every row, R&D own rows | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| GET | `/notice-templates/{template_uuid}` | DPO every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| PUT | `/notice-templates/{template_uuid}` | DPO every row | `dpo_contact` | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| DELETE | `/notice-templates/{template_uuid}/languages/{code}` | DPO every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| PUT | `/notice-templates/{template_uuid}/languages/{code}` | DPO every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| POST | `/notice-templates/{template_uuid}/purposes` | DPO every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| DELETE | `/notice-templates/{template_uuid}/purposes/{purpose_uuid}` | DPO every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| POST | `/notice-templates/{template_uuid}/status` | DPO every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
 | GET | `/notices/{notice_uuid}` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | — | `dpo_contact` |
 | PUT | `/notices/{notice_uuid}` | DPO every row | `dpo_contact` | `dpo_contact` |
 | POST | `/notices/{notice_uuid}/publish` | DPO every row | — | `dpo_contact` |
@@ -657,6 +669,7 @@ selected.
 | GET | `/projects/{project_uuid}/notices` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | — | `dpo_contact` |
 | POST | `/projects/{project_uuid}/notices` | DPO every row | `dpo_contact` | `dpo_contact` |
 | POST | `/projects/{project_uuid}/notices/copy` | DPO every row, R&D own rows | — | `dpo_contact` |
+| POST | `/projects/{project_uuid}/notices/from-template` | DPO every row, R&D own rows | — | `dpo_contact` |
 | POST | `/projects/{project_uuid}/notices/import` | DPO every row, R&D own rows | `document` | `dpo_contact` |
 | POST | `/projects/{project_uuid}/notices/import/validate` | DPO every row, R&D own rows | `document` | — |
 
@@ -714,7 +727,7 @@ selected.
 |---|---|---|---|---|
 | POST | `/breach-tickets/{ticket_uuid}/colleagues` | any signed-in session, own record | `email`, `full_name`, `mobile` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
 
-<!-- 204 of 307 operations carry personal data; 20 of them need no session. -->
+<!-- 215 of 311 operations carry personal data; 20 of them need no session. -->
 
 ## The public surface
 

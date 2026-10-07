@@ -1,6 +1,6 @@
 {
-  "commit": "4e0e52e3a2329eb7c106b9c1a4c2d0221f0905b9",
-  "migration_head": "0044",
+  "commit": "7541f4fbf52b9797b2b691d57775c690d632c297",
+  "migration_head": "0045",
   "migrations": [
     {
       "revision": "0001",
@@ -177,6 +177,10 @@
     {
       "revision": "0044",
       "source": "backend/api/migrations/versions/0044_notice_template.py"
+    },
+    {
+      "revision": "0045",
+      "source": "backend/api/migrations/versions/0045_breach_contact_upload.py"
     }
   ],
   "postgres_version": "16.15",
@@ -232,6 +236,11 @@
       "comment": "A file kept with an incident as evidence: an email, a proof, a chat. Append-only; never replaced or removed"
     },
     {
+      "name": "breach_contact",
+      "kind": "r",
+      "comment": "Somebody a breach touched who has no account, from an uploaded list. Only ever added to"
+    },
+    {
       "name": "breach_determination",
       "kind": "r",
       "comment": null
@@ -285,6 +294,11 @@
       "name": "breach_ticket_message",
       "kind": "r",
       "comment": "A breach ticket's thread. Append-only by trigger and grant; body and evidence_name sealed"
+    },
+    {
+      "name": "breach_upload",
+      "kind": "r",
+      "comment": "A list of the people a breach touched, or of its assets, as sent to us. The file is not kept"
     },
     {
       "name": "collection",
@@ -1405,6 +1419,96 @@
       "comment": null
     },
     {
+      "table_name": "breach_contact",
+      "name": "contact_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_contact_contact_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "contact_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "breach_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "upload_id",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "full_name",
+      "position": 5,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Sealed (NAME)"
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "email",
+      "position": 6,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Sealed (EMAIL); email_hash is its blind index"
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "mobile",
+      "position": 7,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Sealed (MOBILE); mobile_hash is its blind index"
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "email_hash",
+      "position": 8,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "mobile_hash",
+      "position": 9,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "added_at",
+      "position": 10,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
       "table_name": "breach_determination",
       "name": "determination_id",
       "position": 1,
@@ -1634,7 +1738,7 @@
       "name": "auth_user_id",
       "position": 4,
       "type": "integer",
-      "not_null": true,
+      "not_null": false,
       "default_value": null,
       "comment": null
     },
@@ -1681,6 +1785,15 @@
       "type": "timestamp with time zone",
       "not_null": true,
       "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "contact_id",
+      "position": 11,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
       "comment": null
     },
     {
@@ -2398,6 +2511,132 @@
       "table_name": "breach_ticket_message",
       "name": "created_at",
       "position": 11,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "upload_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_upload_upload_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "upload_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "breach_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "kind",
+      "position": 4,
+      "type": "character varying(10)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "file_name",
+      "position": 5,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": "The name it was uploaded with. Sealed (FILE_NAME)"
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "sha256",
+      "position": 6,
+      "type": "character(64)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "rows_read",
+      "position": 7,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "matched_people",
+      "position": 8,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "new_contacts",
+      "position": 9,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "already_listed",
+      "position": 10,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "unreadable",
+      "position": 11,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "untraceable",
+      "position": 12,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "0",
+      "comment": null
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "added_by",
+      "position": 13,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "added_at",
+      "position": 14,
       "type": "timestamp with time zone",
       "not_null": true,
       "default_value": "now()",
@@ -7114,7 +7353,7 @@
       "table_name": "breach_affected",
       "name": "breach_affected_found_by",
       "kind": "c",
-      "definition": "CHECK (((found_by)::text = ANY ((ARRAY['processor'::character varying, 'data_source'::character varying, 'platform'::character varying, 'dpo'::character varying])::text[])))",
+      "definition": "CHECK (((found_by)::text = ANY ((ARRAY['processor'::character varying, 'data_source'::character varying, 'platform'::character varying, 'dpo'::character varying, 'upload'::character varying])::text[])))",
       "columns": [
         "found_by"
       ],
@@ -7476,6 +7715,118 @@
       "initially_deferred": false
     },
     {
+      "table_name": "breach_contact",
+      "name": "breach_contact_breach_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (breach_id) REFERENCES breach(breach_id)",
+      "columns": [
+        "breach_id"
+      ],
+      "referenced_table": "breach",
+      "referenced_columns": [
+        "breach_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "breach_contact_contact_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (contact_uuid)",
+      "columns": [
+        "contact_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "breach_contact_email_once",
+      "kind": "u",
+      "definition": "UNIQUE (breach_id, email_hash)",
+      "columns": [
+        "breach_id",
+        "email_hash"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "breach_contact_mobile_once",
+      "kind": "u",
+      "definition": "UNIQUE (breach_id, mobile_hash)",
+      "columns": [
+        "breach_id",
+        "mobile_hash"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "breach_contact_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (contact_id)",
+      "columns": [
+        "contact_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "breach_contact_reachable",
+      "kind": "c",
+      "definition": "CHECK (((email IS NOT NULL) OR (mobile IS NOT NULL)))",
+      "columns": [
+        "email",
+        "mobile"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "breach_contact_upload_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (upload_id) REFERENCES breach_upload(upload_id)",
+      "columns": [
+        "upload_id"
+      ],
+      "referenced_table": "breach_upload",
+      "referenced_columns": [
+        "upload_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "breach_determination",
       "name": "breach_determination_aware_when_yes",
       "kind": "c",
@@ -7752,6 +8103,23 @@
     },
     {
       "table_name": "breach_notice_delivery",
+      "name": "breach_notice_delivery_contact_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (contact_id) REFERENCES breach_contact(contact_id)",
+      "columns": [
+        "contact_id"
+      ],
+      "referenced_table": "breach_contact",
+      "referenced_columns": [
+        "contact_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice_delivery",
       "name": "breach_notice_delivery_delivery_uuid_key",
       "kind": "u",
       "definition": "UNIQUE (delivery_uuid)",
@@ -7786,13 +8154,30 @@
       "table_name": "breach_notice_delivery",
       "name": "breach_notice_delivery_once",
       "kind": "u",
-      "definition": "UNIQUE (notice_id, auth_user_id, channel, attempt, status)",
+      "definition": "UNIQUE NULLS NOT DISTINCT (notice_id, auth_user_id, contact_id, channel, attempt, status)",
       "columns": [
         "notice_id",
         "auth_user_id",
+        "contact_id",
         "channel",
         "attempt",
         "status"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "breach_notice_delivery_one_recipient",
+      "kind": "c",
+      "definition": "CHECK ((num_nonnulls(auth_user_id, contact_id) = 1))",
+      "columns": [
+        "auth_user_id",
+        "contact_id"
       ],
       "referenced_table": null,
       "referenced_columns": [],
@@ -7824,6 +8209,22 @@
       "columns": [
         "channel",
         "status"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "breach_notice_delivery_portal_is_an_account",
+      "kind": "c",
+      "definition": "CHECK ((((channel)::text <> 'portal'::text) OR (auth_user_id IS NOT NULL)))",
+      "columns": [
+        "channel",
+        "auth_user_id"
       ],
       "referenced_table": null,
       "referenced_columns": [],
@@ -8742,6 +9143,105 @@
       ],
       "delete_action": "a",
       "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "breach_upload_added_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (added_by) REFERENCES auth_user(id)",
+      "columns": [
+        "added_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "breach_upload_breach_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (breach_id) REFERENCES breach(breach_id)",
+      "columns": [
+        "breach_id"
+      ],
+      "referenced_table": "breach",
+      "referenced_columns": [
+        "breach_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "breach_upload_counts",
+      "kind": "c",
+      "definition": "CHECK (((rows_read >= 0) AND (matched_people >= 0) AND (new_contacts >= 0) AND (already_listed >= 0) AND (unreadable >= 0) AND (untraceable >= 0)))",
+      "columns": [
+        "rows_read",
+        "matched_people",
+        "new_contacts",
+        "already_listed",
+        "unreadable",
+        "untraceable"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "breach_upload_kind",
+      "kind": "c",
+      "definition": "CHECK (((kind)::text = ANY ((ARRAY['contacts'::character varying, 'assets'::character varying])::text[])))",
+      "columns": [
+        "kind"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "breach_upload_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (upload_id)",
+      "columns": [
+        "upload_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "breach_upload_upload_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (upload_uuid)",
+      "columns": [
+        "upload_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
       "deferrable": false,
       "initially_deferred": false
     },
@@ -12674,6 +13174,31 @@
       "definition": "CREATE INDEX idx_breach_attachment ON public.breach_attachment USING btree (breach_id, attachment_id)"
     },
     {
+      "table_name": "breach_contact",
+      "name": "breach_contact_contact_uuid_key",
+      "definition": "CREATE UNIQUE INDEX breach_contact_contact_uuid_key ON public.breach_contact USING btree (contact_uuid)"
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "breach_contact_email_once",
+      "definition": "CREATE UNIQUE INDEX breach_contact_email_once ON public.breach_contact USING btree (breach_id, email_hash)"
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "breach_contact_mobile_once",
+      "definition": "CREATE UNIQUE INDEX breach_contact_mobile_once ON public.breach_contact USING btree (breach_id, mobile_hash)"
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "breach_contact_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_contact_pkey ON public.breach_contact USING btree (contact_id)"
+    },
+    {
+      "table_name": "breach_contact",
+      "name": "idx_breach_contact",
+      "definition": "CREATE INDEX idx_breach_contact ON public.breach_contact USING btree (breach_id, contact_id)"
+    },
+    {
       "table_name": "breach_determination",
       "name": "breach_determination_determination_uuid_key",
       "definition": "CREATE UNIQUE INDEX breach_determination_determination_uuid_key ON public.breach_determination USING btree (determination_uuid)"
@@ -12716,12 +13241,17 @@
     {
       "table_name": "breach_notice_delivery",
       "name": "breach_notice_delivery_once",
-      "definition": "CREATE UNIQUE INDEX breach_notice_delivery_once ON public.breach_notice_delivery USING btree (notice_id, auth_user_id, channel, attempt, status)"
+      "definition": "CREATE UNIQUE INDEX breach_notice_delivery_once ON public.breach_notice_delivery USING btree (notice_id, auth_user_id, contact_id, channel, attempt, status) NULLS NOT DISTINCT"
     },
     {
       "table_name": "breach_notice_delivery",
       "name": "breach_notice_delivery_pkey",
       "definition": "CREATE UNIQUE INDEX breach_notice_delivery_pkey ON public.breach_notice_delivery USING btree (delivery_id)"
+    },
+    {
+      "table_name": "breach_notice_delivery",
+      "name": "idx_breach_notice_delivery_contact",
+      "definition": "CREATE INDEX idx_breach_notice_delivery_contact ON public.breach_notice_delivery USING btree (contact_id) WHERE (contact_id IS NOT NULL)"
     },
     {
       "table_name": "breach_notice_delivery",
@@ -12857,6 +13387,21 @@
       "table_name": "breach_ticket_message",
       "name": "idx_breach_ticket_message",
       "definition": "CREATE INDEX idx_breach_ticket_message ON public.breach_ticket_message USING btree (ticket_id, message_id)"
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "breach_upload_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_upload_pkey ON public.breach_upload USING btree (upload_id)"
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "breach_upload_upload_uuid_key",
+      "definition": "CREATE UNIQUE INDEX breach_upload_upload_uuid_key ON public.breach_upload USING btree (upload_uuid)"
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "idx_breach_upload",
+      "definition": "CREATE INDEX idx_breach_upload ON public.breach_upload USING btree (breach_id, upload_id)"
     },
     {
       "table_name": "collection",
@@ -13992,6 +14537,11 @@
       "definition": "CREATE TRIGGER trg_breach_attachment_append_only BEFORE DELETE OR UPDATE ON public.breach_attachment FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
     },
     {
+      "table_name": "breach_contact",
+      "name": "trg_breach_contact_append_only",
+      "definition": "CREATE TRIGGER trg_breach_contact_append_only BEFORE DELETE OR UPDATE ON public.breach_contact FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
       "table_name": "breach_determination",
       "name": "trg_breach_determination_append_only",
       "definition": "CREATE TRIGGER trg_breach_determination_append_only BEFORE DELETE OR UPDATE ON public.breach_determination FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
@@ -14050,6 +14600,11 @@
       "table_name": "breach_ticket_message",
       "name": "trg_breach_ticket_message_append_only",
       "definition": "CREATE TRIGGER trg_breach_ticket_message_append_only BEFORE DELETE OR UPDATE ON public.breach_ticket_message FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
+      "table_name": "breach_upload",
+      "name": "trg_breach_upload_append_only",
+      "definition": "CREATE TRIGGER trg_breach_upload_append_only BEFORE DELETE OR UPDATE ON public.breach_upload FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
     },
     {
       "table_name": "consent_artefact",
@@ -14225,6 +14780,9 @@
       "name": "breach_breach_id_seq"
     },
     {
+      "name": "breach_contact_contact_id_seq"
+    },
+    {
       "name": "breach_determination_determination_id_seq"
     },
     {
@@ -14262,6 +14820,9 @@
     },
     {
       "name": "breach_ticket_ticket_id_seq"
+    },
+    {
+      "name": "breach_upload_upload_id_seq"
     },
     {
       "name": "collection_collection_id_seq"
@@ -14462,13 +15023,13 @@
     }
   ],
   "counts": {
-    "application_tables": 55,
+    "application_tables": 57,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 666,
-    "foreign_keys": 153,
+    "table_columns": 691,
+    "foreign_keys": 158,
     "enums": 39,
-    "triggers": 48,
-    "checks": 85
+    "triggers": 50,
+    "checks": 90
   }
 }

@@ -1,7 +1,7 @@
 # Schema
 
-55 tables, 39 enums, 1 view, 48 triggers, 85 named CHECK constraints and 153
-foreign keys, as of migration 0044. Those counts are read from the PostgreSQL
+57 tables, 39 enums, 1 view, 50 triggers, 90 named CHECK constraints and 158
+foreign keys, as of migration 0045. Those counts are read from the PostgreSQL
 catalogs after replaying every migration, not maintained by hand.
 
 The migrations are the source of truth: 0001 transcribed the original
@@ -24,7 +24,7 @@ its stated commit before trusting it against a later change.
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant` |
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` |
 | Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_item_execution`, `rights_ticket_message`, `rights_response_file`, `rights_request_attachment`, `nomination`, `legal_hold` |
-| Breach | `breach`, `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event`, `breach_affected_revision`, `breach_affected`, `breach_notice`, `breach_notice_delivery`, `breach_recording`, `breach_ticket`, `breach_ticket_event`, `breach_ticket_message`, `breach_temporary_access`, `breach_attachment` |
+| Breach | `breach`, `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event`, `breach_affected_revision`, `breach_affected`, `breach_notice`, `breach_notice_delivery`, `breach_recording`, `breach_ticket`, `breach_ticket_event`, `breach_ticket_message`, `breach_temporary_access`, `breach_attachment`, `breach_upload`, `breach_contact` |
 | Audit | `audit_log` |
 
 ## The view
@@ -144,6 +144,16 @@ is one row per file - its kind (`email`, `proof`, `chat`, `other`, by CHECK),
 the name it came with and an optional note (both sealed), where it is stored,
 its SHA-256 and size - append-only by trigger and grant: a file is never
 replaced or removed.
+
+**A breach's people from a list, since 0045.** `breach_upload` records each
+list taken - kind (`contacts` or `assets`, by CHECK), sealed file name, hash
+and counts (each ≥ 0) - and `breach_contact` each person it named who has no
+account: name, email and mobile sealed, `email_hash`/`mobile_hash` blind
+indexes unique per breach, at least one contact by CHECK. Both append-only by
+trigger and grant. `breach_affected.found_by` gains `upload`.
+`breach_notice_delivery` now addresses `auth_user_id` or `contact_id`, exactly
+one (`num_nonnulls` CHECK), never `portal` to a contact, and its once-only
+constraint is `UNIQUE NULLS NOT DISTINCT` over both.
 
 **A notice template is not evidence, since 0044.** `notice_template` is the
 DPO's notice before a project exists, with its purposes

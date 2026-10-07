@@ -8,6 +8,23 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **A breach's people from a list sent to us** (2026-10-07). A breach whose
+  people were not on the platform could never close: the notice is owed to
+  everyone listed, and nobody could be listed. On People & notices, Add
+  people from a list takes one of two CSV templates - people (name, email,
+  mobile) or asset IDs (the platform's or the capture tool's, with the
+  source code where two sources share one). Check the file counts what it
+  would add and names every unreadable row, writing nothing; Add takes the
+  rest. Somebody already on the platform is listed as themselves; anybody
+  else is kept as a contact of that breach alone - name, email and mobile
+  sealed, listed once by blind index - and is sent the notice by email and
+  SMS in its own words (no account to point to). People in an asset who
+  consented to nothing cannot be traced and are counted. Contacts count
+  toward Principals notified like everyone listed, so the duty completes and
+  the breach can close. The file is not kept, only its sealed name, hash and
+  counts. Migration 0045: `breach_upload`, `breach_contact`;
+  `breach_notice_delivery` addresses an account or a contact. Four routes
+  under `/breaches/{uuid}/affected/upload` and `/affected/contacts`.
 - **Notice templates** (2026-10-07). The DPO writes notices before the
   projects that will use them exist, as many as they like: New notice
   template sits on the DPO's dashboard and at the top of Notices, and the

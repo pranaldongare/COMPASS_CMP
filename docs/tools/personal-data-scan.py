@@ -87,6 +87,8 @@ ACCOUNT_REF = {
     "owner_user_uuid", "responder_user_uuid", "reviewer_uuid",
     "uploaded_by_uuid", "imported_by_uuid", "changed_by_uuid",
     "nominee_user_uuid", "nominee_user_id", "person_uuid",
+    # A breach's person with no account (0045): the row holding their contacts.
+    "contact_uuid", "contact_id",
 }
 FREE_TEXT = {
     "request_text", "response_text", "remedy_text", "verification_note",
@@ -164,6 +166,8 @@ NOT_PERSONAL = {
     "internal_project_name": "the same study's internal code",
     "processor_name": "an organisation",
     "source_name": "a data source",
+    "contacts": "a count of a breach's people with no account, or the list holding them",
+    "new_contacts": "how many people with no account a list added",
 }
 
 #: Shapes that suggest a person. Anything matching and unclassified is reported.

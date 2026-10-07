@@ -13442,6 +13442,225 @@
         }
       }
     },
+    "/breaches/{breach_uuid}/affected/upload/template": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "The CSV to fill in: people (name, email, mobile) or asset IDs",
+        "operationId": "list_template_breaches__breach_uuid__affected_upload_template_get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(contacts|assets)$",
+              "default": "contacts",
+              "title": "Kind"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/affected/upload/check": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "What a list would add, and each row it cannot read - nothing is written",
+        "operationId": "check_list_breaches__breach_uuid__affected_upload_check_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_check_list_breaches__breach_uuid__affected_upload_check_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachListReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/affected/upload": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Add the people a list names, or the people in the assets it names",
+        "description": "People with an account join the list as themselves; anybody else is\nkept, sealed, as a contact of this breach alone, and is sent the notice by\nemail and SMS. Rows that cannot be read are left out and reported. The file\nis not kept.",
+        "operationId": "take_list_breaches__breach_uuid__affected_upload_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_take_list_breaches__breach_uuid__affected_upload_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachListReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/affected/contacts": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "People the breach touched who have no account, and the lists they came in",
+        "operationId": "list_contacts_breaches__breach_uuid__affected_contacts_get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachContactsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/breaches/{breach_uuid}/notices": {
       "get": {
         "tags": [
@@ -16672,6 +16891,27 @@
         ],
         "title": "Body_attach_document_me_requests__request_uuid__attachments_post"
       },
+      "Body_check_list_breaches__breach_uuid__affected_upload_check_post": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "description": "contacts (name, email, mobile) or assets (asset IDs)"
+          },
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "The filled-in CSV, max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "file"
+        ],
+        "title": "Body_check_list_breaches__breach_uuid__affected_upload_check_post"
+      },
       "Body_create_import_imports_post": {
         "properties": {
           "source": {
@@ -17006,6 +17246,27 @@
           "outcome"
         ],
         "title": "Body_return_ticket_requests__request_uuid__holders__holder_uuid__return_post"
+      },
+      "Body_take_list_breaches__breach_uuid__affected_upload_post": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "description": "contacts (name, email, mobile) or assets (asset IDs)"
+          },
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "The filled-in CSV, max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "file"
+        ],
+        "title": "Body_take_list_breaches__breach_uuid__affected_upload_post"
       },
       "Body_validate_import_imports_validate_post": {
         "properties": {
@@ -17900,6 +18161,115 @@
         ],
         "title": "BreachCompletionIn"
       },
+      "BreachContactOut": {
+        "properties": {
+          "contact_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Contact Uuid"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "mobile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mobile"
+          },
+          "added_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Added At"
+          },
+          "upload_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Uuid"
+          },
+          "upload_kind": {
+            "type": "string",
+            "title": "Upload Kind"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contact_uuid",
+          "full_name",
+          "email",
+          "mobile",
+          "added_at",
+          "upload_uuid",
+          "upload_kind"
+        ],
+        "title": "BreachContactOut",
+        "description": "Somebody the breach touched with no account. Name and contacts sealed."
+      },
+      "BreachContactsOut": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "contacts": {
+            "items": {
+              "$ref": "#/components/schemas/BreachContactOut"
+            },
+            "type": "array",
+            "title": "Contacts"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "uploads": {
+            "items": {
+              "$ref": "#/components/schemas/BreachUploadOut"
+            },
+            "type": "array",
+            "title": "Uploads"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "contacts",
+          "next_cursor",
+          "uploads"
+        ],
+        "title": "BreachContactsOut"
+      },
       "BreachDeliveryCountOut": {
         "properties": {
           "notice_uuid": {
@@ -17965,9 +18335,28 @@
             "title": "Recorded At"
           },
           "person_uuid": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Person Uuid"
+          },
+          "contact_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Uuid"
           },
           "full_name": {
             "anyOf": [
@@ -17988,7 +18377,6 @@
           "attempt",
           "detail",
           "recorded_at",
-          "person_uuid",
           "full_name"
         ],
         "title": "BreachDeliveryFailureOut"
@@ -18642,6 +19030,98 @@
         "title": "BreachIntimationOut",
         "description": "Rule 7(2)(a), drafted from the register. The platform never submits it."
       },
+      "BreachListErrorOut": {
+        "properties": {
+          "row": {
+            "type": "integer",
+            "title": "Row"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "row",
+          "message"
+        ],
+        "title": "BreachListErrorOut"
+      },
+      "BreachListReportOut": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "rows_read": {
+            "type": "integer",
+            "title": "Rows Read"
+          },
+          "matched_people": {
+            "type": "integer",
+            "title": "Matched People"
+          },
+          "new_contacts": {
+            "type": "integer",
+            "title": "New Contacts"
+          },
+          "already_listed": {
+            "type": "integer",
+            "title": "Already Listed"
+          },
+          "unreadable": {
+            "type": "integer",
+            "title": "Unreadable"
+          },
+          "untraceable": {
+            "type": "integer",
+            "title": "Untraceable"
+          },
+          "would_add": {
+            "type": "integer",
+            "title": "Would Add"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/BreachListErrorOut"
+            },
+            "type": "array",
+            "title": "Errors"
+          },
+          "more_errors": {
+            "type": "integer",
+            "title": "More Errors"
+          },
+          "upload_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Uuid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "rows_read",
+          "matched_people",
+          "new_contacts",
+          "already_listed",
+          "unreadable",
+          "untraceable",
+          "would_add",
+          "errors",
+          "more_errors"
+        ],
+        "title": "BreachListReportOut",
+        "description": "What a file comes to: checked (nothing written) or taken."
+      },
       "BreachLocationOut": {
         "properties": {
           "kind": {
@@ -19033,6 +19513,11 @@
           "listed": {
             "type": "integer",
             "title": "Listed"
+          },
+          "contacts": {
+            "type": "integer",
+            "title": "Contacts",
+            "default": 0
           },
           "unnotified": {
             "type": "integer",
@@ -20259,6 +20744,83 @@
           "available"
         ],
         "title": "BreachTransitionsOut"
+      },
+      "BreachUploadOut": {
+        "properties": {
+          "upload_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Uuid"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          },
+          "rows_read": {
+            "type": "integer",
+            "title": "Rows Read"
+          },
+          "matched_people": {
+            "type": "integer",
+            "title": "Matched People"
+          },
+          "new_contacts": {
+            "type": "integer",
+            "title": "New Contacts"
+          },
+          "already_listed": {
+            "type": "integer",
+            "title": "Already Listed"
+          },
+          "unreadable": {
+            "type": "integer",
+            "title": "Unreadable"
+          },
+          "untraceable": {
+            "type": "integer",
+            "title": "Untraceable"
+          },
+          "added_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Added At"
+          },
+          "added_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Added By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_uuid",
+          "kind",
+          "file_name",
+          "sha256",
+          "rows_read",
+          "matched_people",
+          "new_contacts",
+          "already_listed",
+          "unreadable",
+          "untraceable",
+          "added_at",
+          "added_by_name"
+        ],
+        "title": "BreachUploadOut"
       },
       "ChannelOut": {
         "properties": {

@@ -226,7 +226,8 @@ def test_nothing_in_the_breach_code_can_reach_a_regulator() -> None:
         for node in ast.walk(ast.parse(task))
         if isinstance(node, ast.Call) and getattr(node.func, "id", "") == "deliver"
     ]
-    assert delivered == ["Message.BREACH_NOTICE"]
+    # The notice, to an account holder or to a contact with no account (0045).
+    assert delivered == ["Message.BREACH_NOTICE_DIRECT", "Message.BREACH_NOTICE"]
 
     # Breach tickets (S3-08) tell a member of staff a ticket is waiting, from
     # their own task, and nothing else.

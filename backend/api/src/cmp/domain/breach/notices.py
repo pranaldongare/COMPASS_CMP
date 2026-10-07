@@ -34,6 +34,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
+from cmp.db.repositories import breach_lists as list_repo
 from cmp.db.repositories import breach_notices as repo
 from cmp.db.repositories import breaches as breach_repo
 from cmp.db.sql import Conn
@@ -163,9 +164,16 @@ async def send(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
     written = queued = retried = requeued = 0
     stale_before = datetime.now(UTC) - STALE_AFTER
     for person in people:
-        pid = int(person["person_id"])
-        if (pid, "portal") not in states and await repo.add_delivery(
-            conn, notice_id, pid, channel="portal", attempt=1, status="delivered"
+        to = repo.recipient_of(person)
+        # A contact with no account (0045) has no account to write to: email
+        # and SMS are how it hears.
+        pid = to[1] if to[0] == "user" else None
+        if (
+            pid is not None
+            and (to, "portal") not in states
+            and await repo.add_delivery(
+                conn, notice_id, to, channel="portal", attempt=1, status="delivered"
+            )
         ):
             written += 1
             # Her account: the portal's notifications are her audit rows.
@@ -181,7 +189,7 @@ async def send(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
         for channel, reachable in (("email", person["has_email"]), ("sms", person["has_mobile"])):
             if not reachable:
                 continue
-            last = states.get((pid, channel))
+            last = states.get((to, channel))
             if last is None:
                 attempt = 1
             elif last["status"] == "failed":
@@ -190,7 +198,7 @@ async def send(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
                 # Lost before the worker: queue the same delivery again. Its
                 # task checks the attempt has no outcome yet before sending.
                 again = await repo.queued_delivery(
-                    conn, notice_id, pid, channel=channel, attempt=int(last["attempt"])
+                    conn, notice_id, to, channel=channel, attempt=int(last["attempt"])
                 )
                 if again:
                     requeued += 1
@@ -199,7 +207,7 @@ async def send(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
             else:
                 continue  # queued recently, or delivered: nothing to add
             row = await repo.add_delivery(
-                conn, notice_id, pid, channel=channel, attempt=attempt, status="queued"
+                conn, notice_id, to, channel=channel, attempt=attempt, status="queued"
             )
             if row:
                 queued += 1
@@ -222,6 +230,14 @@ async def send(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
     return await overview(conn, breach_uuid=breach_uuid)
 
 
+async def listed_count(conn: Conn, breach_id: int) -> int:
+    """Everyone the notice is owed to: accounts listed, and contacts with no
+    account from an uploaded list (0045)."""
+    return await breach_repo.count_affected(conn, breach_id) + await list_repo.count_contacts(
+        conn, breach_id
+    )
+
+
 async def settle(conn: Conn, breach: Row, *, actor_id: int | None) -> bool:
     """Complete the principals' duty if every listed person has been notified.
 
@@ -231,7 +247,7 @@ async def settle(conn: Conn, breach: Row, *, actor_id: int | None) -> bool:
     found = (await service.duties_of(conn, breach_id)).get(Duty.PRINCIPALS)
     if not found or found[1]["state"] != State.OUTSTANDING:
         return False
-    listed = await breach_repo.count_affected(conn, breach_id)
+    listed = await listed_count(conn, breach_id)
     if listed == 0 or await repo.unnotified(conn, breach_id) > 0:
         return False
     await breach_repo.add_obligation_event(
@@ -293,7 +309,7 @@ async def record_result(
     await repo.add_delivery(
         conn,
         int(row["notice_id"]),
-        int(row["auth_user_id"]),
+        repo.recipient_of(row),
         channel=str(row["channel"]),
         attempt=int(row["attempt"]),
         status=status,
@@ -316,7 +332,9 @@ async def overview(conn: Conn, *, breach_uuid: str) -> Row:
         "versions": [{**v, "state": "approved" if v["approved_at"] else "draft"} for v in versions],
         "account": await repo.account(conn, breach_id),
         "failures": await repo.failures(conn, breach_id),
-        "listed": await breach_repo.count_affected(conn, breach_id),
+        "listed": await listed_count(conn, breach_id),
+        # Of them, contacts with no account (0045): email and SMS only.
+        "contacts": await list_repo.count_contacts(conn, breach_id),
         "unnotified": await repo.unnotified(conn, breach_id),
         "contents": [{"key": c, "label": LABELS[c]} for c in CONTENTS],
         "duty": clock.LABELS[Duty.PRINCIPALS],
@@ -349,7 +367,8 @@ async def account_for_report(conn: Conn, *, breach_uuid: str) -> Row:
         channels = by_version.setdefault(int(r["version"]), {})
         counts = channels.setdefault(str(r["channel"]), {"delivered": 0, "queued": 0, "failed": 0})
         counts[str(r["status"])] = int(r["people"])
-    listed = await breach_repo.count_affected(conn, breach_id)
+    listed = await listed_count(conn, breach_id)
+    contacts = await list_repo.count_contacts(conn, breach_id)
     notified = listed - await repo.unnotified(conn, breach_id)
     if not rows:
         statement = "No notice has yet been sent to the Data Principals affected. " + (
@@ -358,8 +377,14 @@ async def account_for_report(conn: Conn, *, breach_uuid: str) -> Row:
     else:
         statement = (
             f"{notified} of the {listed} Data Principals listed as affected have been notified: "
-            "the notice is in each one's account, and every email and SMS to them has an "
-            "outcome, delivered or failed after retrying."
+            "every email and SMS to them has an outcome, delivered or failed after retrying"
+            + (
+                f", and the notice is in the account of each of the {listed - contacts} "
+                f"with one; the other {contacts} have no account and were written to by "
+                "email and SMS."
+                if contacts
+                else ", and the notice is in each one's account."
+            )
         )
     return {
         "sent": bool(rows),

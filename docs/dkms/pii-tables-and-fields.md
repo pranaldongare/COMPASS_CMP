@@ -130,6 +130,10 @@ somebody - whose laptop, which account, who caused it.
 | `breach_ticket_message` | `evidence_name` | FILE_NAME | The name a file on the thread was uploaded with |
 | `breach_attachment` | `file_name` | FILE_NAME | The name a file kept with an incident was uploaded with (2026-10-06) |
 | `breach_attachment` | `note` | FREE_TEXT | What the file is, in a few words |
+| `breach_contact` | `full_name` | NAME | Somebody a breach touched with no account, from an uploaded list (2026-10-07) |
+| `breach_contact` | `email` | EMAIL | Their email; blind index `email_hash` |
+| `breach_contact` | `mobile` | MOBILE | Their mobile; blind index `mobile_hash` |
+| `breach_upload` | `file_name` | FILE_NAME | The name an uploaded list came with |
 | `breach_affected_revision` | `note` | FREE_TEXT | What a revision of who it touched is based on (S3-02) |
 | `breach_notice` | `what_happened` | FREE_TEXT | Rule 7(1)(a), as told to everyone it touched (S3-03) |
 | `breach_notice` | `consequences` | FREE_TEXT | Rule 7(1)(b) |

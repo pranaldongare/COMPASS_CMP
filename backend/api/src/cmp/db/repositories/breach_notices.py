@@ -94,41 +94,69 @@ async def latest_approved(conn: Conn, breach_id: int) -> Row | None:
 
 
 async def recipients(conn: Conn, breach_id: int) -> list[Row]:
-    """Everyone listed as touched, with whether each can be written to."""
+    """Everyone listed as touched, with whether each can be written to: the
+    accounts, then the contacts with no account (0045). Exactly one of
+    `person_id` and `contact_id` is set on each."""
     return await fetch_all(
         conn,
-        """SELECT a.auth_user_id AS person_id,
+        """SELECT a.auth_user_id AS person_id, NULL::int AS contact_id,
                   (u.email IS NOT NULL) AS has_email, (u.mobile IS NOT NULL) AS has_mobile
              FROM breach_affected a JOIN auth_user u ON u.id = a.auth_user_id
-            WHERE a.breach_id = %s ORDER BY a.affected_id""",
-        (breach_id,),
+            WHERE a.breach_id = %(b)s
+           UNION ALL
+           SELECT NULL::int, c.contact_id,
+                  (c.email IS NOT NULL), (c.mobile IS NOT NULL)
+             FROM breach_contact c
+            WHERE c.breach_id = %(b)s
+            ORDER BY 2 NULLS FIRST, 1""",
+        {"b": breach_id},
     )
 
 
+#: Who a delivery is to: an account, or a contact with no account (0045).
+#: `("user", id)` or `("contact", id)`.
+Recipient = tuple[str, int]
+
+
+def recipient_of(row: Row) -> Recipient:
+    if row.get("contact_id") is not None:
+        return ("contact", int(row["contact_id"]))
+    return ("user", int(row["auth_user_id"] if "auth_user_id" in row else row["person_id"]))
+
+
 _LATEST = """
-  SELECT DISTINCT ON (d.notice_id, d.auth_user_id, d.channel)
-         d.notice_id, d.auth_user_id, d.channel, d.attempt, d.status, d.detail, d.recorded_at
+  SELECT DISTINCT ON (d.notice_id, d.auth_user_id, d.contact_id, d.channel)
+         d.notice_id, d.auth_user_id, d.contact_id, d.channel, d.attempt, d.status, d.detail,
+         d.recorded_at
     FROM breach_notice_delivery d
     JOIN breach_notice n ON n.notice_id = d.notice_id
    WHERE n.breach_id = %(b)s
    -- The latest attempt; within it, an outcome over the queueing that preceded it.
-   ORDER BY d.notice_id, d.auth_user_id, d.channel, d.attempt DESC, (d.status = 'queued')
+   ORDER BY d.notice_id, d.auth_user_id, d.contact_id, d.channel, d.attempt DESC,
+            (d.status = 'queued')
 """
 
 
-async def latest_states(conn: Conn, breach_id: int, notice_id: int) -> dict[tuple[int, str], Row]:
+async def latest_states(
+    conn: Conn, breach_id: int, notice_id: int
+) -> dict[tuple[Recipient, str], Row]:
     rows = await fetch_all(
         conn,
         f"SELECT * FROM ({_LATEST}) s WHERE s.notice_id = %(n)s",
         {"b": breach_id, "n": notice_id},
     )
-    return {(int(r["auth_user_id"]), str(r["channel"])): r for r in rows}
+    return {(recipient_of(r), str(r["channel"])): r for r in rows}
+
+
+def _ids(to: Recipient) -> tuple[int | None, int | None]:
+    kind, ident = to
+    return (ident, None) if kind == "user" else (None, ident)
 
 
 async def add_delivery(
     conn: Conn,
     notice_id: int,
-    person_id: int,
+    to: Recipient,
     *,
     channel: str,
     attempt: int,
@@ -137,27 +165,30 @@ async def add_delivery(
 ) -> Row | None:
     """One state of one attempt. None when that state is already recorded -
     another send, or a worker recording the same outcome twice, got there first."""
+    person_id, contact_id = _ids(to)
     return await fetch_one(
         conn,
         """INSERT INTO breach_notice_delivery
-             (notice_id, auth_user_id, channel, attempt, status, detail)
-           VALUES (%s, %s, %s, %s, %s, %s)
+             (notice_id, auth_user_id, contact_id, channel, attempt, status, detail)
+           VALUES (%s, %s, %s, %s, %s, %s, %s)
            ON CONFLICT ON CONSTRAINT breach_notice_delivery_once DO NOTHING
            RETURNING delivery_id, delivery_uuid""",
-        (notice_id, person_id, channel, attempt, status, Jsonb(detail or {})),
+        (notice_id, person_id, contact_id, channel, attempt, status, Jsonb(detail or {})),
     )
 
 
 async def queued_delivery(
-    conn: Conn, notice_id: int, person_id: int, *, channel: str, attempt: int
+    conn: Conn, notice_id: int, to: Recipient, *, channel: str, attempt: int
 ) -> Row | None:
     """The queued row of one attempt, to queue its task again."""
+    person_id, contact_id = _ids(to)
     return await fetch_one(
         conn,
         """SELECT delivery_uuid FROM breach_notice_delivery
-            WHERE notice_id = %s AND auth_user_id = %s AND channel = %s
+            WHERE notice_id = %s AND auth_user_id IS NOT DISTINCT FROM %s
+              AND contact_id IS NOT DISTINCT FROM %s AND channel = %s
               AND attempt = %s AND status = 'queued'""",
-        (notice_id, person_id, channel, attempt),
+        (notice_id, person_id, contact_id, channel, attempt),
     )
 
 
@@ -166,19 +197,23 @@ async def job(conn: Conn, delivery_uuid: str) -> Row | None:
     attempt already has an outcome."""
     return await fetch_one(
         conn,
-        f"""SELECT d.delivery_uuid, d.notice_id, d.auth_user_id, d.channel, d.attempt, d.status,
+        f"""SELECT d.delivery_uuid, d.notice_id, d.auth_user_id, d.contact_id, d.channel,
+                   d.attempt, d.status,
                    n.breach_id, coalesce(rec.reference, b.reference) AS reference,
                    {", ".join("n." + c for c in CONTENTS)},
-                   u.email, u.mobile,
+                   coalesce(u.email, c.email) AS email, coalesce(u.mobile, c.mobile) AS mobile,
                    EXISTS (SELECT 1 FROM breach_notice_delivery o
-                            WHERE o.notice_id = d.notice_id AND o.auth_user_id = d.auth_user_id
+                            WHERE o.notice_id = d.notice_id
+                              AND o.auth_user_id IS NOT DISTINCT FROM d.auth_user_id
+                              AND o.contact_id IS NOT DISTINCT FROM d.contact_id
                               AND o.channel = d.channel AND o.attempt = d.attempt
                               AND o.status <> 'queued') AS settled
               FROM breach_notice_delivery d
               JOIN breach_notice n ON n.notice_id = d.notice_id
               JOIN breach b        ON b.breach_id = n.breach_id
               LEFT JOIN breach_recording rec ON rec.breach_id = b.breach_id
-              JOIN auth_user u     ON u.id = d.auth_user_id
+              LEFT JOIN auth_user u      ON u.id = d.auth_user_id
+              LEFT JOIN breach_contact c ON c.contact_id = d.contact_id
              WHERE d.delivery_uuid = %s""",
         (delivery_uuid,),
     )
@@ -195,13 +230,18 @@ async def unnotified(conn: Conn, breach_id: int) -> int:
         conn,
         f"""WITH latest AS ({_LATEST}),
                  done AS (
-                   SELECT auth_user_id FROM latest
-                    GROUP BY notice_id, auth_user_id
+                   SELECT auth_user_id, contact_id FROM latest
+                    GROUP BY notice_id, auth_user_id, contact_id
                    HAVING bool_and(status <> 'queued')
                  )
-            SELECT count(*) AS n FROM breach_affected a
-             WHERE a.breach_id = %(b)s
-               AND a.auth_user_id NOT IN (SELECT auth_user_id FROM done)""",
+            SELECT (SELECT count(*) FROM breach_affected a
+                     WHERE a.breach_id = %(b)s
+                       AND NOT EXISTS (SELECT 1 FROM done
+                                        WHERE done.auth_user_id = a.auth_user_id))
+                 + (SELECT count(*) FROM breach_contact c
+                     WHERE c.breach_id = %(b)s
+                       AND NOT EXISTS (SELECT 1 FROM done
+                                        WHERE done.contact_id = c.contact_id)) AS n""",
         {"b": breach_id},
     )
     return int(row["n"]) if row else 0
@@ -225,12 +265,14 @@ async def failures(conn: Conn, breach_id: int, *, limit: int = 200) -> list[Row]
     return await fetch_all(
         conn,
         f"""SELECT n.version, s.channel, s.attempt, s.detail, s.recorded_at,
-                   u.uuid AS person_uuid, u.full_name
+                   u.uuid AS person_uuid, c.contact_uuid,
+                   coalesce(u.full_name, c.full_name) AS full_name
               FROM ({_LATEST}) s
               JOIN breach_notice n ON n.notice_id = s.notice_id
-              JOIN auth_user u     ON u.id = s.auth_user_id
+              LEFT JOIN auth_user u      ON u.id = s.auth_user_id
+              LEFT JOIN breach_contact c ON c.contact_id = s.contact_id
              WHERE s.status = 'failed'
-             ORDER BY n.version, u.id LIMIT {int(limit)}""",
+             ORDER BY n.version, u.id NULLS LAST, c.contact_id LIMIT {int(limit)}""",
         {"b": breach_id},
     )
 

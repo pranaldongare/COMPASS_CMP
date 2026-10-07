@@ -96,7 +96,7 @@ function Account({ data }: { data: BreachNotices }) {
           <summary className="cursor-pointer">Failed deliveries ({data.failures.length})</summary>
           <ul className="mt-2 space-y-1">
             {data.failures.map((f) => (
-              <li key={`${f.person_uuid}:${f.version}:${f.channel}`}>
+              <li key={`${f.person_uuid ?? f.contact_uuid}:${f.version}:${f.channel}`}>
                 {f.full_name ?? "No name"} - {CHANNEL[f.channel]}, version {f.version}, attempt {f.attempt}:{" "}
                 {String(f.detail.error ?? "failed")} ({formatDateTime(f.recorded_at)})
               </li>
@@ -158,8 +158,9 @@ export function NoticesCard({ breach }: { breach: Breach }) {
           Telling the people it touched
         </CardTitle>
         <p className="mt-1 text-xs text-text-muted">
-          Rule 7(1): concise, clear and plain, without delay, to each person&apos;s account and their registered email or mobile. Nothing
-          is sent until you approve and send it. The words go to everyone listed: name nobody.
+          Rule 7(1): concise, clear and plain, without delay, to each person&apos;s account and their registered email or mobile;
+          to someone with no account, by email and SMS. Nothing is sent until you approve and send it. The words go to
+          everyone listed: name nobody.
         </p>
       </CardHeader>
       <CardBody className="space-y-4">
@@ -167,7 +168,8 @@ export function NoticesCard({ breach }: { breach: Breach }) {
           <p className="text-sm">
             {data.listed === 0
               ? "Nobody is listed as touched yet."
-              : `${data.listed - data.unnotified} of ${data.listed} listed ${data.listed === 1 ? "person has" : "people have"} been notified on every channel.`}
+              : `${data.listed - data.unnotified} of ${data.listed} listed ${data.listed === 1 ? "person has" : "people have"} been notified on every channel.` +
+                (data.contacts ? ` ${data.contacts} of them ${data.contacts === 1 ? "has" : "have"} no account and ${data.contacts === 1 ? "is" : "are"} told by email and SMS.` : "")}
           </p>
         )}
 

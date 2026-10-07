@@ -10,7 +10,7 @@
 <title>Schema</title>
 <polygon fill="#f7fafc" stroke="none" points="-36,36 -36,-1054 662.45,-1054 662.45,36 -36,36"/>
 <text xml:space="preserve" text-anchor="start" x="8" y="-988" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="30.00" fill="#142c44">COMPASS / PLATFORM</text>
-<text xml:space="preserve" text-anchor="start" x="8" y="-972.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0044 / full module tables with outgoing references / source 4e0e52e</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-972.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0045 / full module tables with outgoing references / source 7541f4f</text>
 <text xml:space="preserve" text-anchor="start" x="8" y="-946.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">FK arrow: child column to referenced key &#160;&#160;| &#160;&#160;Solid = required FK; dashed = nullable FK; dotted = view dependency</text>
 <text xml:space="preserve" text-anchor="start" x="13.43" y="-934.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">PK = primary key; FK = foreign key; UQ = member of unique constraint (possibly composite); ? = nullable column</text>
 <g id="clust1" class="cluster">
@@ -37,27 +37,27 @@
 </g>
 </g>
 <!-- message_template&#45;&gt;auth_user -->
-<g id="FK088" class="edge">
+<g id="FK093" class="edge">
 <title>message_template:e&#45;&gt;auth_user:w</title>
-<g id="a_FK088"><a xlink:title="FK088 / message_template_updated_by_fkey / message_template(updated_by) to auth_user(id) / FOREIGN KEY (updated_by) REFERENCES auth_user(id)">
+<g id="a_FK093"><a xlink:title="FK093 / message_template_updated_by_fkey / message_template(updated_by) to auth_user(id) / FOREIGN KEY (updated_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M212.01,-385C212.01,-385 360.03,-385.46 395.88,-385.58"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="395.45,-387.85 401.96,-385.59 395.47,-383.3 395.45,-387.85"/>
 </a>
 </g>
 </g>
 <!-- restricted_country&#45;&gt;auth_user -->
-<g id="FK126" class="edge">
+<g id="FK131" class="edge">
 <title>restricted_country:e&#45;&gt;auth_user:w</title>
-<g id="a_FK126"><a xlink:title="FK126 / restricted_country_lifted_by_fkey / restricted_country(lifted_by) to auth_user(id) / FOREIGN KEY (lifted_by) REFERENCES auth_user(id)">
+<g id="a_FK131"><a xlink:title="FK131 / restricted_country_lifted_by_fkey / restricted_country(lifted_by) to auth_user(id) / FOREIGN KEY (lifted_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M214.65,-648.4C214.65,-648.4 309.89,-595 309.89,-595 309.89,-595 383.92,-429.63 400.4,-392.81"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="402.37,-393.98 402.94,-387.12 398.21,-392.12 402.37,-393.98"/>
 </a>
 </g>
 </g>
 <!-- restricted_country&#45;&gt;auth_user -->
-<g id="FK127" class="edge">
+<g id="FK132" class="edge">
 <title>restricted_country:e&#45;&gt;auth_user:w</title>
-<g id="a_FK127"><a xlink:title="FK127 / restricted_country_listed_by_fkey / restricted_country(listed_by) to auth_user(id) / FOREIGN KEY (listed_by) REFERENCES auth_user(id)">
+<g id="a_FK132"><a xlink:title="FK132 / restricted_country_listed_by_fkey / restricted_country(listed_by) to auth_user(id) / FOREIGN KEY (listed_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M214.65,-698.8C214.65,-698.8 309.89,-595 309.89,-595 309.89,-595 383.92,-429.63 400.4,-392.81"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="402.37,-393.98 402.94,-387.12 398.21,-392.12 402.37,-393.98"/>
 </a>
