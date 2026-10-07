@@ -203,12 +203,9 @@ async def public_request(
 ) -> dict[str, Any]:
     """Recorded either way. A code goes to the channel we already hold - if we hold one."""
     _no_referrer(response)
-    if body.request_type not in ("access", "correction", "erasure", "grievance"):
-        from cmp.core.errors import ValidationFailed
+    from cmp.domain.rights.service import taken
 
-        raise ValidationFailed(
-            "Choose access, correction, erasure or grievance", field="request_type"
-        )
+    taken(body.request_type)
     async with transaction() as conn:
         return await rights_service.submit_public(
             conn,

@@ -33,7 +33,7 @@ import { useRequests } from "@/features/rights/queries";
 import { cn, formatDate, formatDateTime } from "@/lib/format";
 import { useAuth } from "@/providers";
 import type { RightsRequestRow } from "@/types";
-import { RIGHTS_REQUEST_STATUSES, RIGHTS_REQUEST_TYPES } from "@/types";
+import { RIGHTS_REQUEST_STATUSES, RIGHTS_REQUEST_TYPES_TAKEN } from "@/types";
 
 const STATUS_LABELS: Record<string, string> = {
   received: "Received",
@@ -104,7 +104,7 @@ function RequestsPageView() {
             setType(v);
             stack.reset();
           }}
-          options={RIGHTS_REQUEST_TYPES.map((t) => ({ value: t, label: REQUEST_TYPE_COPY[t].label }))}
+          options={RIGHTS_REQUEST_TYPES_TAKEN.map((t) => ({ value: t, label: REQUEST_TYPE_COPY[t].label }))}
           allLabel="All kinds"
         />
         <FilterSelect

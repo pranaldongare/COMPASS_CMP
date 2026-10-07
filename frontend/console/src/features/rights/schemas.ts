@@ -9,9 +9,10 @@
 
 import { z } from "zod";
 
-import { RIGHTS_REQUEST_TYPES } from "@/types";
+import { RIGHTS_REQUEST_TYPES_TAKEN } from "@/types";
 
-export const requestTypeSchema = z.enum(RIGHTS_REQUEST_TYPES);
+/** Access, erasure or a grievance - the three the office takes. */
+export const requestTypeSchema = z.enum(RIGHTS_REQUEST_TYPES_TAKEN);
 
 const requestText = z
   .string()

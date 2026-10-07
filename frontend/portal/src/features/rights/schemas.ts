@@ -10,9 +10,10 @@ import { z } from "zod";
 
 import { email, mobile } from "@/schemas/contacts";
 import { optional } from "@/schemas/primitives";
-import { RIGHTS_REQUEST_TYPES } from "@/types";
+import { RIGHTS_REQUEST_TYPES_TAKEN } from "@/types";
 
-export const requestTypeSchema = z.enum(RIGHTS_REQUEST_TYPES);
+/** Access, erasure or a grievance - the three the office takes. */
+export const requestTypeSchema = z.enum(RIGHTS_REQUEST_TYPES_TAKEN);
 
 const requestText = z
   .string()
@@ -25,8 +26,6 @@ export const myRequestSchema = z.object({
   request_type: requestTypeSchema,
   request_text: requestText,
   about_dpo: z.boolean().default(false),
-  /** One of her consents to confine the request to; null is everything. */
-  consent_uuid: z.string().nullable().default(null),
 });
 export type MyRequestForm = z.input<typeof myRequestSchema>;
 export type MyRequestValues = z.output<typeof myRequestSchema>;

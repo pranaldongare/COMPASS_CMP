@@ -63,7 +63,7 @@ import {
   type DisputeForm as DisputeFormValues,
   type DisputeValues,
 } from "@/features/rights/schemas";
-import { cn, formatDate, formatDateTime, saveBlob } from "@/lib/format";
+import { cn, formatBytes, formatDate, formatDateTime, saveBlob } from "@/lib/format";
 import { useToast } from "@/providers";
 import type { MyRequest } from "@/types";
 
@@ -230,6 +230,23 @@ export function RequestCard({
               </p>
             )}
             <p className="text-sm whitespace-pre-wrap text-text-muted">{r.request_text}</p>
+
+            {(r.attachments ?? []).length > 0 && (
+              <div>
+                <p className="text-2xs font-semibold tracking-wide text-text-subtle uppercase">
+                  Documents you sent
+                </p>
+                <ul className="mt-1 space-y-1">
+                  {r.attachments.map((a) => (
+                    <li key={a.attachment_uuid} className="flex items-center gap-2 text-sm">
+                      <Paperclip className="size-3.5 text-text-subtle" aria-hidden="true" />
+                      <span className="min-w-0 truncate">{a.file_name}</span>
+                      <span className="text-xs text-text-muted">{formatBytes(a.size_bytes)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {about && <AboutBlock request={r} about={about} onJump={onJump} />}
             {followedBy.length > 0 && (

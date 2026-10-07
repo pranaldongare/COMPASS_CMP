@@ -71,6 +71,7 @@ MODULES: dict[str, list[str]] = {
         "rights_request_item",
         "rights_ticket_message",
         "rights_response_file",
+        "rights_request_attachment",
         "rights_item_execution",
         "legal_hold",
         "nomination",

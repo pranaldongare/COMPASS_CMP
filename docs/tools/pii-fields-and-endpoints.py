@@ -35,6 +35,7 @@ COLUMNS: list[tuple[str, list[str]]] = [
                                "return_summary", "sent_back_reason", "contact_log", "brief"]),
     ("rights_ticket_message", ["body", "evidence_name", "evidence_ref"]),
     ("rights_response_file", ["file_name", "file_ref"]),
+    ("rights_request_attachment", ["file_name", "storage_ref"]),
     ("legal_hold", ["reason", "subject_user_id"]),
     # The breach register (S3-01): every narrative the office writes, sealed.
     ("breach", ["title", "location_detail"]),

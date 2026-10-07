@@ -1309,6 +1309,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/requests/{request_uuid}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a document with my request
+         * @description One document per call, up to ten on a request, while it is open: a proof
+         *     of who she is, a letter, a screenshot. Kept as it came; never replaced or
+         *     removed. Only her own request - not one a nominee raised for her.
+         */
+        post: operations["attach_document_me_requests__request_uuid__attachments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/requests/{request_uuid}/dispute": {
         parameters: {
             query?: never;
@@ -4080,6 +4102,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/requests/{request_uuid}/attachments/{attachment_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A document the requester sent; every download is audited */
+        get: operations["download_attachment_requests__request_uuid__attachments__attachment_uuid__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/requests/{request_uuid}/decide": {
         parameters: {
             query?: never;
@@ -5208,6 +5247,29 @@ export interface components {
              */
             is_mandatory: boolean;
         };
+        /**
+         * AttachmentOut
+         * @description A document the requester sent with the request. Its name is sealed;
+         *     the console opens it in its server layer, like every personal field.
+         */
+        AttachmentOut: {
+            /**
+             * Attachment Uuid
+             * Format: uuid
+             */
+            attachment_uuid: string;
+            /** File Name */
+            file_name: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Content Type */
+            content_type: string;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+        };
         /** AttentionOut */
         AttentionOut: {
             /** Threads Unread */
@@ -5324,6 +5386,14 @@ export interface components {
             kind: string;
             /** Note */
             note?: string | null;
+        };
+        /** Body_attach_document_me_requests__request_uuid__attachments_post */
+        Body_attach_document_me_requests__request_uuid__attachments_post: {
+            /**
+             * File
+             * @description PDF, image, text or Word; max 25 MB
+             */
+            file: string;
         };
         /** Body_create_import_imports_post */
         Body_create_import_imports_post: {
@@ -9355,6 +9425,8 @@ export interface components {
             linked_from: components["schemas"]["LinkedRefOut"][];
             /** Response Files */
             response_files?: components["schemas"]["ResponseFileOut"][];
+            /** Attachments */
+            attachments?: components["schemas"]["AttachmentOut"][];
         };
         /** RequestOut */
         RequestOut: {
@@ -9909,8 +9981,6 @@ export interface components {
              * @default false
              */
             about_dpo: boolean;
-            /** Consent Uuid */
-            consent_uuid?: string | null;
         };
         /**
          * SubjectRequestOut
@@ -9984,6 +10054,8 @@ export interface components {
             clock: components["schemas"]["ClockOut"];
             /** Response Files */
             response_files?: components["schemas"]["ResponseFileOut"][];
+            /** Attachments */
+            attachments?: components["schemas"]["AttachmentOut"][];
         };
         /**
          * TemplateIn
@@ -12485,6 +12557,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attach_document_me_requests__request_uuid__attachments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_attach_document_me_requests__request_uuid__attachments_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubjectRequestOut"];
                 };
             };
             /** @description Validation Error */
@@ -17711,6 +17818,38 @@ export interface operations {
             path: {
                 request_uuid: string;
                 file_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_attachment_requests__request_uuid__attachments__attachment_uuid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                attachment_uuid: string;
             };
             cookie?: never;
         };

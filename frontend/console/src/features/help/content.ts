@@ -435,20 +435,20 @@ export const SECTIONS: HelpSection[] = [
     id: "rights-requests",
     title: "Rights requests",
     summary:
-      "Access, correction, erasure and grievances - sections 11 to 14 - on a legal clock.",
+      "Access, erasure and grievances - sections 11 to 13 - on a legal clock, each about everything held about the person.",
     roles: ["dpo", "admin"],
     blocks: [
       {
         kind: "p",
-        text: "[[Rights requests]] lists every request with its clock. Filter by [[Status]], [[Kind]], [[Clock]] and [[Tickets]]. A request that arrived by email is logged with [[Log a request received by email]]. A request opens on where it stands - when it is due, its current step, who has it and the next move or what blocks it. [[Clock and path]] opens the full checkpoints and steps. Work through the path below; [[What happens next]] always says what may be done now and what blocks the rest.",
+        text: "[[Rights requests]] lists every request with its clock. Filter by [[Status]], [[Kind]], [[Clock]] and [[Tickets]]. A request that arrived by email is logged with [[Log a request received by email]]. A request opens on where it stands - when it is due, its current step, who has it and the next move or what blocks it. [[Clock and path]] opens the full checkpoints and steps. Work through the path below; [[What happens next]], under [[Next step]] straight after classification, always says what may be done now and what blocks the rest. Documents the person sent with the request are listed under the request text as [[Documents from the requester]]; each download is on the trail.",
       },
       {
         kind: "steps",
         title: "The path",
         items: [
           "Check identity: a request made signed in, or verified by code, is already verified.",
-          "Classify it in [[A valid … request?]] and click [[Confirm classification]]. For an erasure, confirm [[They mean erasure]] - erasure is not withdrawal.",
-          "Click [[In progress]].",
+          "Classify it in [[A valid … request?]] and click [[Confirm classification]]. For an erasure, confirm [[They mean erasure]] - erasure is not withdrawal. Not a rights request, or one that cannot be met? Click [[Refuse this request]], write the reason and click [[Refuse and close]] - the person is told why, with the grievance route.",
+          "Under [[Next step]], click [[In progress]].",
           "Holders: [[Derive from the records]], choose each holder's [[Respondent]] and [[Confirm]], then [[Issue tickets]]. Each ticket has a thread; [[Thread]] opens it.",
           "Erasure scope: [[Derive from asset_consent]]. For each asset choose [[Erase]], [[Redact]], [[Retain]] (a retention floor, with its date) or [[Quarantine]], give the basis and [[Record the decision]], then [[Apply]].",
           "Respond: write [[The response]], attach any files, choose the outcome and click [[Release and close]]. The person is told and downloads it from the portal.",

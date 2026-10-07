@@ -165,7 +165,8 @@ notice text beside the decision she is changing.
   applies the lapse behaviour the purpose declared, matching only rows still
   active so it is safe to rerun.
 - **Rights requests** derive who holds her data from the exports and assets
-  above, and an erasure request can be confined to one consent's chain.
+  above. A request is about all of it (2026-10-07); one confined to a single
+  consent's chain can no longer be made, and those made before keep it.
 
 ## What she can see
 

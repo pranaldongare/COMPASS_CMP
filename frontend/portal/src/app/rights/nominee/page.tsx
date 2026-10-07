@@ -34,7 +34,7 @@ import {
 import { nomineeRequest, nomineeStart } from "@/features/rights/api";
 import { REQUEST_TYPE_COPY } from "@/features/rights/components/copy";
 import type { RightsRequestType, RightsTriggerEvent } from "@/types";
-import { RIGHTS_REQUEST_TYPES } from "@/types";
+import { RIGHTS_REQUEST_TYPES_TAKEN } from "@/types";
 
 function messageOf(err: unknown, fallback: string): string {
   return err && typeof err === "object" && "userMessage" in err
@@ -203,7 +203,7 @@ function NomineeForm() {
                     <Field label="What you are asking for on their behalf" required>
                       {(p) => (
                         <Select {...p} value={type} onChange={(e) => setType(e.target.value as RightsRequestType)}>
-                          {RIGHTS_REQUEST_TYPES.map((t) => (
+                          {RIGHTS_REQUEST_TYPES_TAKEN.map((t) => (
                             <option key={t} value={t}>
                               {REQUEST_TYPE_COPY[t].label} ({REQUEST_TYPE_COPY[t].section})
                             </option>

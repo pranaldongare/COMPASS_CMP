@@ -1,6 +1,6 @@
 # Rights API
 
-Generated from `backend/api/openapi.json`. **44 operations.**
+Generated from `backend/api/openapi.json`. **45 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -48,8 +48,9 @@ For each operation the information is deliberately ordered as **API → Validati
 40. [`POST /requests/{request_uuid}/scope/{item_uuid}/execute`](#40_post_requests_request_uuid_scope_item_uuid_execute)
 41. [`POST /requests/{request_uuid}/respond`](#41_post_requests_request_uuid_respond)
 42. [`GET /requests/{request_uuid}/files/{file_uuid}`](#42_get_requests_request_uuid_files_file_uuid)
-43. [`POST /requests/{request_uuid}/decide`](#43_post_requests_request_uuid_decide)
-44. [`GET /requests/{request_uuid}/download`](#44_get_requests_request_uuid_download)
+43. [`GET /requests/{request_uuid}/attachments/{attachment_uuid}`](#43_get_requests_request_uuid_attachments_attachment_uuid)
+44. [`POST /requests/{request_uuid}/decide`](#44_post_requests_request_uuid_decide)
+45. [`GET /requests/{request_uuid}/download`](#45_get_requests_request_uuid_download)
 
 <a id="1_get_requests_attention"></a>
 ## 1. `GET /requests/attention` — What the office has not read
@@ -559,6 +560,15 @@ No request body.
       "size_bytes": 1,
       "content_type": "…",
       "created_at": "2026-09-17T12:00:00Z"
+    }
+  ],
+  "attachments": [
+    {
+      "attachment_uuid": "00000000-0000-4000-8000-000000000000",
+      "file_name": "string",
+      "size_bytes": 1,
+      "content_type": "string",
+      "added_at": "2026-09-17T12:00:00Z"
     }
   ]
 }
@@ -4524,8 +4534,58 @@ No request body.
 }
 ```
 
-<a id="43_post_requests_request_uuid_decide"></a>
-## 43. `POST /requests/{request_uuid}/decide` — Decide a grievance
+<a id="43_get_requests_request_uuid_attachments_attachment_uuid"></a>
+## 43. `GET /requests/{request_uuid}/attachments/{attachment_uuid}` — A document the requester sent; every download is audited
+
+### API
+
+- **Operation ID:** `download_attachment_requests__request_uuid__attachments__attachment_uuid__get`
+- **Access:** Role-controlled `rights` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `request_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `attachment_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | `object` |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+"string"
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="44_post_requests_request_uuid_decide"></a>
+## 44. `POST /requests/{request_uuid}/decide` — Decide a grievance
 
 ### API
 
@@ -4585,8 +4645,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="44_get_requests_request_uuid_download"></a>
-## 44. `GET /requests/{request_uuid}/download` — The released response file
+<a id="45_get_requests_request_uuid_download"></a>
+## 45. `GET /requests/{request_uuid}/download` — The released response file
 
 ### API
 
@@ -4961,6 +5021,7 @@ A request that arrived by email, logged by the DPO. Same record as the others.
 | `linked_request` | [`LinkedRequestOut`](#schema-linkedrequestout) or `null` | Yes | — | — |
 | `linked_from` | array of [`LinkedRefOut`](#schema-linkedrefout) | Yes | — | — |
 | `response_files` | array of [`ResponseFileOut`](#schema-responsefileout) | No | — | — |
+| `attachments` | array of [`AttachmentOut`](#schema-attachmentout) | No | — | — |
 
 <a id="schema-requestout"></a>
 #### `RequestOut`
@@ -5211,6 +5272,20 @@ A file released with the response, downloaded from the account.
 | `size_bytes` | `integer` | Yes | — | — |
 | `content_type` | `string` or `null` | Yes | — | — |
 | `created_at` | `string` | Yes | format: `date-time` | — |
+
+<a id="schema-attachmentout"></a>
+#### `AttachmentOut`
+
+A document the requester sent with the request. Its name is sealed;
+the console opens it in its server layer, like every personal field.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `attachment_uuid` | `string` | Yes | format: `uuid` | — |
+| `file_name` | `string` | Yes | — | — |
+| `size_bytes` | `integer` | Yes | — | — |
+| `content_type` | `string` | Yes | — | — |
+| `added_at` | `string` | Yes | format: `date-time` | — |
 
 <a id="schema-cmp_api_routers_v1_rights_messageout"></a>
 #### `cmp__api__routers__v1__rights__MessageOut`

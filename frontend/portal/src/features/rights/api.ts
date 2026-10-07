@@ -128,11 +128,38 @@ export interface MyRequestInput {
   request_type: RightsRequestType;
   request_text: string;
   about_dpo?: boolean;
-  consent_uuid?: string | null;
 }
 
 export function makeRequest(body: MyRequestInput): Promise<MyRequest> {
   return apiPost<MyRequest>("/me/requests", body);
+}
+
+/** What the API takes with a request: documents and images, nothing that
+ *  runs; 25 MB each, ten on a request (2026-10-07). */
+export const DOCUMENT_ACCEPT = ".pdf,.png,.jpg,.jpeg,.txt,.docx";
+export const DOCUMENT_MAX_BYTES = 25 * 1024 * 1024;
+export const DOCUMENT_MAX_COUNT = 10;
+
+const TYPE_BY_EXTENSION: Record<string, string> = {
+  pdf: "application/pdf",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  txt: "text/plain",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+};
+
+/** Send one document with her request. A file the browser did not type is
+ *  given the type the API checks from its extension. */
+export function attachToMyRequest(uuid: Uuid, file: File): Promise<MyRequest> {
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  const typed =
+    file.type || !TYPE_BY_EXTENSION[ext]
+      ? file
+      : new File([file], file.name, { type: TYPE_BY_EXTENSION[ext] });
+  const form = new FormData();
+  form.set("file", typed, typed.name);
+  return apiPost<MyRequest>(`/me/requests/${uuid}/attachments`, form);
 }
 
 export function listMyRequestTrail(uuid: Uuid): Promise<AuditEntry[]> {

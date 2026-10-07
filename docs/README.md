@@ -21,7 +21,7 @@ you need. **Every document is in this tree.** The one exception is a
 - [Roles and access](domain/roles-and-access.md): the eight roles and what each may reach
 - Behaviour, by obligation: [consent lifecycle](domain/consent-lifecycle.md), [collection and routing](domain/collection-and-routing.md), [rights requests](domain/rights-requests.md), [personal data breaches](domain/breaches.md), [messages the platform sends](domain/messages.md), [reading the audit trail](domain/audit-trail.md)
 - [Personal data](domain/personal-data.md): every table, store and endpoint that holds or moves something about a person, and what protects it
-- [PII fields and endpoints](domain/pii-fields-and-endpoints.md): the short form — the 88 personal columns by table, and every endpoint that carries one, by module
+- [PII fields and endpoints](domain/pii-fields-and-endpoints.md): the short form — the 90 personal columns by table, and every endpoint that carries one, by module
 - [Email](email/README.md): how every email goes out - the one path, the SMTP settings (STARTTLS, SSL or a plain relay), which failures are retried, testing a server with `scripts/send_test_email.py` - and [every message the platform sends](email/messages.md), generated from the code with the task and line that sends each
 - [DKMS — encryption of personal data](dkms/README.md): the documents on the key service — the sealed fields table by table, the backend, the frontend layer that decrypts, and the implementation plan — and [adding a personal field](dkms/adding-a-personal-field.md), the steps a new sealed column takes
 - [API](architecture/api.md): route families, the error contract, pagination, identifiers

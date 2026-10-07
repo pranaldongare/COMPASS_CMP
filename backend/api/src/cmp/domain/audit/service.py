@@ -292,6 +292,9 @@ class Event:
     BREACH_TICKET_COLLEAGUE_ADDED = "breach_ticket.colleague_added"
     RIGHTS_RESPONDED = "rights.responded"
     RIGHTS_RESPONSE_DOWNLOADED = "rights.response_downloaded"
+    #: A document the requester sent with the request, and every read of one.
+    RIGHTS_ATTACHMENT_ADDED = "rights.attachment_added"
+    RIGHTS_ATTACHMENT_READ = "rights.attachment_read"
     RIGHTS_CLOSED = "rights.closed"
     RIGHTS_GRIEVANCE_DECIDED = "rights.grievance_decided"
     NOMINATION_CREATED = "nomination.created"

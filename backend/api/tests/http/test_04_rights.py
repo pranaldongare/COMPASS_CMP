@@ -306,7 +306,7 @@ class TestErasureRefusedAndTheGrievance:
         self, http: httpx.AsyncClient, world: World, queued: Any, session_for: SessionFactory
     ) -> None:
         dpo, admin = world.dpo, world.admin
-        # Raised by her, signed in, about the consent she gave.
+        # Raised by her, signed in: about everything held on her (2026-10-07).
         made = await call(
             http,
             "POST",
@@ -316,11 +316,49 @@ class TestErasureRefusedAndTheGrievance:
             json={
                 "request_type": "erasure",
                 "request_text": "Erase the walking video.",
-                "consent_uuid": world.consent_uuid,
             },
         )
         ruuid = made.json()["request_uuid"]
         assert made.json()["request_text"].startswith("SE::")
+
+        # She sends a document with it; the office reads it back, audited.
+        letter = b"%PDF-1.4\n% Erase the walking video, please.\n"
+        sent = await call(
+            http,
+            "POST",
+            f"/me/requests/{ruuid}/attachments",
+            template="/me/requests/{request_uuid}/attachments",
+            session=world.principal,
+            expect=201,
+            files={"file": ("my letter.pdf", letter, "application/pdf")},
+        )
+        [doc] = sent.json()["attachments"]
+        assert (
+            str(doc["file_name"]).startswith("SE::") and plain(doc["file_name"]) == "my letter.pdf"
+        )
+        assert doc["size_bytes"] == len(letter)
+        await call(
+            http,
+            "POST",
+            f"/me/requests/{ruuid}/attachments",
+            template="/me/requests/{request_uuid}/attachments",
+            session=world.principal,
+            expect=422,
+            files={"file": ("run.sh", b"#!/bin/sh\necho hi\n", "application/x-sh")},
+        )
+        got = await call(
+            http,
+            "GET",
+            f"/requests/{ruuid}/attachments/{doc['attachment_uuid']}",
+            template=RIGHTS + "/attachments/{attachment_uuid}",
+            session=dpo,
+        )
+        assert got.content == letter
+        assert got.headers["X-Recorded-SHA256"] == got.headers["X-Content-SHA256"]
+        shown = await call(http, "GET", f"/requests/{ruuid}", template=RIGHTS, session=dpo)
+        assert [a["attachment_uuid"] for a in shown.json()["attachments"]] == [
+            doc["attachment_uuid"]
+        ]
 
         # Verification by hand, the scope derived, one item decided and applied.
         await call(

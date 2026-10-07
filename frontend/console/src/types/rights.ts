@@ -49,6 +49,18 @@ export const RIGHTS_REQUEST_TYPES = [
   "grievance",
 ] as const satisfies readonly RightsRequestType[];
 
+/** The requests the Privacy Office takes (DPO, 2026-10-07), each about
+ *  everything held: what every form offers. `RIGHTS_REQUEST_TYPES` keeps every
+ *  kind, for naming and finding a request made before. */
+export const RIGHTS_REQUEST_TYPES_TAKEN = [
+  "access",
+  "erasure",
+  "grievance",
+] as const satisfies readonly RightsRequestType[];
+
+/** A request a form may make. */
+export type TakenRequestType = (typeof RIGHTS_REQUEST_TYPES_TAKEN)[number];
+
 export const RIGHTS_REQUEST_STATUSES = [
   "received",
   "in_progress",
@@ -437,6 +449,16 @@ export interface ResponseFile {
   created_at: Timestamp;
 }
 
+/** A document the requester sent with the request (2026-10-07). The name is
+ *  sealed in the API's answer and opened by the client. */
+export interface RequestAttachment {
+  attachment_uuid: Uuid;
+  file_name: string;
+  size_bytes: number;
+  content_type: string;
+  added_at: Timestamp;
+}
+
 export interface RightsRequestDetail extends RightsRequest {
   holders: RightsHolder[];
   items: RightsScopeItem[];
@@ -448,6 +470,8 @@ export interface RightsRequestDetail extends RightsRequest {
   linked_request: LinkedRequest | null;
   linked_from: LinkedRef[];
   response_files: ResponseFile[];
+  /** What the requester sent with it. */
+  attachments: RequestAttachment[];
 }
 
 /** Her own request. Nothing here is ours. */

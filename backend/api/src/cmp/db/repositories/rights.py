@@ -20,7 +20,7 @@ from psycopg.types.json import Jsonb
 
 from cmp.core.pagination import PageRequest, build_page
 from cmp.core.permissions import Role
-from cmp.db.sql import Conn, Row, fetch_all, fetch_one, keyset_clause
+from cmp.db.sql import Conn, Row, fetch_all, fetch_one, fetch_val, keyset_clause
 from cmp.infrastructure.dkms import seal, unseal_value
 from cmp.infrastructure.dkms.blind import index_of, ngrams_of, search_ngrams
 
@@ -469,6 +469,72 @@ async def response_file_by_uuid(conn: Conn, request_id: int, file_uuid: str) -> 
         f"SELECT {_FILE_SELECT} WHERE f.request_id = %s AND f.file_uuid = %s",
         (request_id, file_uuid),
     )
+
+
+# ------------------------------------------- files from the requester (0043)
+_ATTACHMENT_SELECT = """
+  a.attachment_uuid, a.request_id, a.file_name, a.storage_ref, a.sha256, a.size_bytes,
+  a.content_type, a.added_at
+  FROM rights_request_attachment a
+"""
+
+
+async def add_attachment(
+    conn: Conn,
+    request_id: int,
+    *,
+    file_name: str,
+    storage_ref: str,
+    sha256: str,
+    size_bytes: int,
+    content_type: str,
+    added_by: int,
+) -> Row:
+    """A document the requester sent with the request. Kept; never edited."""
+    file_name = (await seal("rights_request_attachment", {"file_name": file_name}))["file_name"]
+    row = await fetch_one(
+        conn,
+        """INSERT INTO rights_request_attachment
+             (request_id, file_name, storage_ref, sha256, size_bytes, content_type, added_by)
+           VALUES (%s, %s, %s, %s, %s, %s, %s)
+           RETURNING attachment_uuid""",
+        (request_id, file_name, storage_ref, sha256, size_bytes, content_type, added_by),
+    )
+    assert row is not None
+    return row
+
+
+async def attachments_of(conn: Conn, request_id: int) -> list[Row]:
+    return await fetch_all(
+        conn,
+        f"SELECT {_ATTACHMENT_SELECT} WHERE a.request_id = %s ORDER BY a.attachment_id",
+        (request_id,),
+    )
+
+
+async def attachment_by_uuid(conn: Conn, request_id: int, attachment_uuid: str) -> Row | None:
+    return await fetch_one(
+        conn,
+        f"SELECT {_ATTACHMENT_SELECT} WHERE a.request_id = %s AND a.attachment_uuid = %s",
+        (request_id, attachment_uuid),
+    )
+
+
+async def lock(conn: Conn, request_id: int) -> None:
+    """Hold the request until the transaction ends, so two writes that count
+    what it has cannot both pass the count."""
+    await fetch_one(
+        conn, "SELECT 1 FROM rights_request WHERE request_id = %s FOR UPDATE", (request_id,)
+    )
+
+
+async def attachment_count(conn: Conn, request_id: int) -> int:
+    n = await fetch_val(
+        conn,
+        "SELECT count(*) FROM rights_request_attachment WHERE request_id = %s",
+        (request_id,),
+    )
+    return int(n or 0)
 
 
 # ------------------------------------------------------------------- holders

@@ -16,14 +16,14 @@ Each cell is **GET / non-GET endpoint counts** for which that role is eligible. 
 | [Delegations](modules/delegations.md) | 6 | 4 / 2 | 4 / 2 | 3 / 2 | 3 / 1 | 3 / 1 | 3 / 1 | 2 / 0 | 2 / 0 |
 | [Exchange](modules/exchange.md) | 19 | 16 / 3 | 3 / 0 | 16 / 3 | 15 / 3 | 15 / 3 | 9 / 0 | 3 / 0 | 0 / 0 |
 | [Legal holds](modules/legal_holds.md) | 3 | 1 / 2 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
-| [Me](modules/me.md) | 27 | 1 / 5 | 1 / 5 | 1 / 4 | 1 / 4 | 1 / 4 | 1 / 4 | 17 / 10 | 1 / 4 |
+| [Me](modules/me.md) | 28 | 1 / 5 | 1 / 5 | 1 / 4 | 1 / 4 | 1 / 4 | 1 / 4 | 18 / 10 | 1 / 4 |
 | [Messages](modules/messages.md) | 5 | 2 / 3 | 2 / 3 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
 | [Notices](modules/notices.md) | 23 | 10 / 13 | 0 / 0 | 9 / 0 | 9 / 0 | 9 / 0 | 10 / 3 | 0 / 0 | 0 / 0 |
 | [Projects](modules/projects.md) | 27 | 13 / 9 | 0 / 0 | 12 / 5 | 12 / 7 | 12 / 5 | 13 / 10 | 0 / 0 | 0 / 0 |
 | [Public Consent](modules/public_consent.md) | 6 | 2 / 3 | 2 / 3 | 2 / 3 | 2 / 3 | 2 / 3 | 2 / 3 | 2 / 4 | 2 / 3 |
 | [Public Information](modules/public_information.md) | 10 | 3 / 7 | 3 / 7 | 3 / 7 | 3 / 7 | 3 / 7 | 3 / 7 | 3 / 7 | 3 / 7 |
 | [Registry](modules/registry.md) | 23 | 10 / 13 | 10 / 9 | 8 / 4 | 8 / 4 | 8 / 4 | 8 / 0 | 1 / 0 | 0 / 0 |
-| [Rights](modules/rights.md) | 44 | 12 / 31 | 12 / 32 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| [Rights](modules/rights.md) | 45 | 13 / 31 | 13 / 32 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
 | [System](modules/system.md) | 8 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 |
 | [Tickets](modules/tickets.md) | 5 | 3 / 2 | 3 / 2 | 3 / 2 | 3 / 2 | 3 / 2 | 3 / 2 | 0 / 0 | 3 / 2 |
 | [Users](modules/users.md) | 13 | 5 / 0 | 5 / 8 | 1 / 0 | 1 / 0 | 1 / 0 | 1 / 0 | 0 / 0 | 0 / 0 |

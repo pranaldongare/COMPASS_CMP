@@ -61,6 +61,22 @@ EVIDENCE = UploadRules(
 )
 
 
+#: What a data principal sends with her request (2026-10-07): a proof of who
+#: she is, a letter, a screenshot of what she is complaining about. Documents
+#: and images; nothing that runs.
+REQUEST_DOCUMENT = UploadRules(
+    field="file",
+    max_bytes=25 * 1024 * 1024,
+    allowed_mime=(
+        "application/pdf",
+        "image/png",
+        "image/jpeg",
+        "text/plain",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ),
+    allowed_suffixes=(".pdf", ".png", ".jpg", ".jpeg", ".txt", ".docx"),
+)
+
 #: What arrives with an incident (2026-10-06): the email that reported it,
 #: saved as .eml or Outlook's .msg; a screenshot or a photo; a PDF; a chat or
 #: a log exported as text; a Word document. Nothing that runs.

@@ -20,6 +20,7 @@ import pytest
 
 from cmp.auth.authentication import otp
 from cmp.auth.rate_limit.service import contact_key
+from cmp.core.enums import RightsRequestType as Kind
 from cmp.core.errors import BadRequest, Conflict, Forbidden, NotFound, ValidationFailed
 from cmp.core.permissions import Role
 from cmp.core.security import new_token, token_fingerprint
@@ -142,6 +143,17 @@ async def _asset_with_her(
 async def _portal_request(
     conn: Any, seeded: dict[str, Any], kind: str, **kw: Any
 ) -> dict[str, Any]:
+    """A request as the portal makes it. A kind the office no longer takes
+    (correction, since 2026-10-07) is made as a row from before would be: an
+    access request, then given its kind - so how such a request is handled
+    to its end stays tested."""
+    if kind in {k.value for k in Kind} and kind not in {k.value for k in service.TAKEN}:
+        row = await _portal_request(conn, seeded, "access", **kw)
+        await conn.execute(
+            "UPDATE rights_request SET request_type = %s WHERE request_id = %s",
+            (kind, int(row["request_id"])),
+        )
+        return await service.reload(conn, row)
     return await service.create(
         conn,
         request_type=kind,
@@ -1416,16 +1428,57 @@ class TestConfinedToConsent:
         )
         assert len(candidates) == 1
 
-    async def test_a_consent_that_is_not_hers_is_not_found(
+    async def test_a_new_request_cannot_be_confined_to_one_consent(self) -> None:
+        """A request is about everything held (DPO, 2026-10-07): the portal no
+        longer takes a consent, and a body naming one is refused. A request
+        confined before keeps its consent, as the tests above show."""
+        from pydantic import ValidationError
+
+        from cmp.api.routers.v1.rights import SubjectRequestIn
+
+        with pytest.raises(ValidationError):
+            SubjectRequestIn(
+                request_type="access",
+                request_text="About one study",
+                consent_uuid="11111111-1111-4111-8111-111111111111",  # type: ignore[call-arg]
+            )
+
+
+class TestThreeKindsOfRequest:
+    """Access, erasure and a grievance (DPO, 2026-10-07). Correction is not
+    taken - on any channel, nor by reclassifying - and a correction from
+    before can still be confirmed as what it is."""
+
+    async def test_a_correction_is_refused_on_every_channel(
         self, conn: Any, seeded: dict[str, Any]
     ) -> None:
-        from cmp.api.routers.v1.rights import _own_consent_id
+        for channel in ("portal", "public_form", "staff_logged", "nominee"):
+            with pytest.raises(ValidationFailed) as refused:
+                await service.create(
+                    conn,
+                    request_type="correction",
+                    channel=channel,
+                    request_text="Please fix my name",
+                    submitted_contact="subject@test.local",
+                )
+            assert "access, erasure or a grievance" in refused.value.message
+        for kind in ("access", "erasure", "grievance"):
+            assert service.taken(kind).value == kind
 
-        first = await _consent(conn, seeded)
-        mine = await _own_consent_id(conn, str(first["consent_uuid"]), seeded["subject"]["id"])
-        assert mine == int(first["consent_id"])
-        with pytest.raises(NotFound):
-            await _own_consent_id(conn, str(first["consent_uuid"]), seeded["users"]["dpo"]["id"])
+    async def test_nothing_is_reclassified_as_a_correction(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        dpo = seeded["users"]["dpo"]["id"]
+        access = await _portal_request(conn, seeded, "access")
+        with pytest.raises(ValidationFailed):
+            await service.classify(
+                conn, access, request_type="correction", note=None, role=DPO, actor_id=dpo
+            )
+        older = await _portal_request(conn, seeded, "correction")
+        confirmed = await service.classify(
+            conn, older, request_type="correction", note=None, role=DPO, actor_id=dpo
+        )
+        assert confirmed["request_type"] == "correction"
 
 
 # ------------------------------------------------------- files with the response

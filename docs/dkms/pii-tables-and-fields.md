@@ -90,6 +90,7 @@ carry ciphertext their reader opens like any other value.
 | `rights_ticket_message` | `body` | FREE_TEXT | What was written on a ticket |
 | `rights_ticket_message` | `evidence_name` | FILE_NAME | The file a holder attached |
 | `rights_response_file` | `file_name` | FILE_NAME | A file released with a response |
+| `rights_request_attachment` | `file_name` | FILE_NAME | The name a document the requester sent was uploaded with (2026-10-07) |
 | `import_batch` | `file_name` | FILE_NAME | The manifest somebody uploaded |
 | `consent_artefact` | `ip_address` | IP | Where the consent was given from (s.6 evidence) |
 | `processor_respondent` | `name` | NAME | A named person at a processor |

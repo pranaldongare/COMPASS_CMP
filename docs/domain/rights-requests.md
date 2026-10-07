@@ -7,14 +7,22 @@ the enforcement inventory, is
 [rights.md](../architecture/rights-module.md); this page is the
 workflow as people experience it.
 
-## The four rights
+## The three requests
 
 | Type | Section | What she asks | What she gets back |
 |---|---|---|---|
 | `access` | s.11 | a summary of her data, the processing, and who it was shared with | the summary, and any files the office releases with it |
-| `correction` | s.12 | an update, completion or correction | the correction applied, or the reason it was not |
 | `erasure` | s.12 | erasure of her data | a decision per appearance of her in an asset: erased, redacted, retained or quarantined |
 | `grievance` | s.13 | a complaint, usually about how another request was handled | a finding: upheld or not, with the route to the Board |
+
+**Three, not four (DPO, 2026-10-07).** A new request is access, erasure or a
+grievance, on every channel - the portal, the public form, a nominee, and one
+the DPO logs - and nothing is reclassified as a correction. A correction to
+her name is made from her account (S3-05). The `correction` type stays in the
+database for requests made before, which are handled to the end as they were:
+the classification card offers a request its own type, and a correction
+counts as carried out as before. The server refuses the fourth
+(`cmp.domain.rights.service.taken`), so a stale client cannot bring it back.
 
 Every request has a reference like `RR-2026-000042`, minted by the database,
 which is what she quotes on the phone, in the public form, and in a grievance.
@@ -33,10 +41,21 @@ the contact is known, and the code goes only to a contact on file. An
 unverified request is closed by the nightly sweep after seven days, and a
 stranger who asks after it is told only that it is closed.
 
-A request can be **confined to one consent**: from her consent page she can
-ask for erasure of what was collected under that consent alone, and the
-holders are then derived from that consent's chain rather than her whole
-record.
+**A request is about everything held on her** (DPO, 2026-10-07): every
+project and every consent, never one. There is no project or consent to pick
+on any form, and the API refuses a `consent_uuid` on a new request. A request
+made before that and confined to one consent still shows the consent it was
+confined to, and its holders stay derived from that consent's chain.
+
+**Documents with a request** (2026-10-07). Signed in, she can send documents
+with her request - a proof of who she is, a letter, a screenshot: PDF, PNG,
+JPEG, text or Word, 25 MB each, at most ten, while the request is open. The
+portal sends them once the request is recorded, so the clock runs from the
+request; one refused does not undo it. Each is kept as it came
+(`rights_request_attachment`, append-only, the name sealed) and the DPO
+downloads it from the request page; every download is on the trail, which
+never records a name. The public form takes none: nobody is known until the
+code is confirmed.
 
 ## The clock
 

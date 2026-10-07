@@ -7,6 +7,14 @@ how, what every holder of her data was told to do, what was decided about each
 thing held, and what she was told in reply - all against a clock that starts
 on receipt.
 
+The office takes three of them as requests (DPO, 2026-10-07): access, erasure
+and a grievance, each about everything held on her - never one project or one
+consent. `service.taken` refuses a new correction on every channel and as a
+reclassification; a correction to her name is made from her account. Requests
+made before that - a correction, or one confined to a consent - are handled to
+the end as they were. She can send up to ten documents with a request while it
+is open (`rights_request_attachment`, 0043).
+
 The flows follow the five Privacy Engineering diagrams (access, erasure,
 redaction of assets holding more than one person, nomination, grievance).
 Where a diagram left a question open, the default taken is stated in

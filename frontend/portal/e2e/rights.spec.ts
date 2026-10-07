@@ -188,7 +188,7 @@ test.describe("data principal", () => {
     await page.getByLabel(/their mobile/i).fill(NOMINEE_MOBILE);
     await page.getByLabel(/their email/i).fill(NOMINEE);
     // Partial scope: access only.
-    for (const label of [/correction/i, /erasure/i, /grievance/i]) {
+    for (const label of [/erasure/i, /grievance/i]) {
       await page.getByRole("checkbox", { name: label }).uncheck();
     }
     await page.getByRole("button", { name: /^nominate$/i }).click();

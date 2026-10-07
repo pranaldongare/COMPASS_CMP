@@ -38,7 +38,7 @@ import {
 import { formatDate } from "@/lib/format";
 import { useToast } from "@/providers";
 import type { Nomination } from "@/types";
-import { RIGHTS_REQUEST_TYPES } from "@/types";
+import { RIGHTS_REQUEST_TYPES_TAKEN } from "@/types";
 
 const STATUS: Record<
   Nomination["status"],
@@ -202,7 +202,7 @@ function NominationForm() {
     nominee_name: "",
     nominee_mobile: "",
     nominee_email: "",
-    rights: [...RIGHTS_REQUEST_TYPES],
+    rights: [...RIGHTS_REQUEST_TYPES_TAKEN],
   });
   const rights = form.watch("rights") as string[];
 
@@ -258,7 +258,7 @@ function NominationForm() {
         label="Which of your rights they may exercise"
         hint="You can name somebody to ask for access without letting them ask for erasure."
         error={form.formState.errors.rights?.message}
-        options={RIGHTS_REQUEST_TYPES.map((t) => ({
+        options={RIGHTS_REQUEST_TYPES_TAKEN.map((t) => ({
           value: t,
           label: `${REQUEST_TYPE_COPY[t].label} (${REQUEST_TYPE_COPY[t].section})`,
         }))}

@@ -1,6 +1,6 @@
 {
-  "commit": "7a50d2710c8e082c90cfd5543a2a988f654ada52",
-  "migration_head": "0042",
+  "commit": "1d1917cd094560abc3805d4452dbcd04843fb47c",
+  "migration_head": "0043",
   "migrations": [
     {
       "revision": "0001",
@@ -169,6 +169,10 @@
     {
       "revision": "0042",
       "source": "backend/api/migrations/versions/0042_breach_attachment.py"
+    },
+    {
+      "revision": "0043",
+      "source": "backend/api/migrations/versions/0043_rights_request_attachment.py"
     }
   ],
   "postgres_version": "16.15",
@@ -417,6 +421,11 @@
       "name": "rights_request",
       "kind": "r",
       "comment": "A data principal's request under ss.11-14 of the DPDP Act, and its clock. The clock starts on receipt, not on verification."
+    },
+    {
+      "name": "rights_request_attachment",
+      "kind": "r",
+      "comment": "A file the data principal attached to her request. Append-only; never replaced or removed"
     },
     {
       "name": "rights_request_holder",
@@ -5460,6 +5469,96 @@
       "type": "text[]",
       "not_null": false,
       "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "rights_request_attachment",
+      "name": "attachment_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('rights_request_attachment_attachment_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "rights_request_attachment",
+      "name": "attachment_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "rights_request_attachment",
+      "name": "request_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "rights_request_attachment",
+      "name": "file_name",
+      "position": 4,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": "The name it was uploaded with. Sealed (FILE_NAME)"
+    },
+    {
+      "table_name": "rights_request_attachment",
+      "name": "storage_ref",
+      "position": 5,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "rights_request_attachment",
+      "name": "sha256",
+      "position": 6,
+      "type": "character(64)",
+      "not_null": true,
+      "default_value": null,
+      "comment": "The hash of the file as uploaded; a download carries it beside the hash of what was read"
+    },
+    {
+      "table_name": "rights_request_attachment",
+      "name": "size_bytes",
+      "position": 7,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "rights_request_attachment",
+      "name": "content_type",
+      "position": 8,
+      "type": "character varying(120)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "rights_request_attachment",
+      "name": "added_by",
+      "position": 9,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "rights_request_attachment",
+      "name": "added_at",
+      "position": 10,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
       "comment": null
     },
     {
@@ -11294,6 +11393,85 @@
       "initially_deferred": false
     },
     {
+      "table_name": "rights_request_attachment",
+      "name": "rights_request_attachment_added_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (added_by) REFERENCES auth_user(id)",
+      "columns": [
+        "added_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request_attachment",
+      "name": "rights_request_attachment_attachment_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (attachment_uuid)",
+      "columns": [
+        "attachment_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request_attachment",
+      "name": "rights_request_attachment_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (attachment_id)",
+      "columns": [
+        "attachment_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request_attachment",
+      "name": "rights_request_attachment_request_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (request_id) REFERENCES rights_request(request_id)",
+      "columns": [
+        "request_id"
+      ],
+      "referenced_table": "rights_request",
+      "referenced_columns": [
+        "request_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request_attachment",
+      "name": "rights_request_attachment_size",
+      "kind": "c",
+      "definition": "CHECK ((size_bytes > 0))",
+      "columns": [
+        "size_bytes"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "rights_request_holder",
       "name": "holder_channel",
       "kind": "c",
@@ -12774,6 +12952,21 @@
       "definition": "CREATE UNIQUE INDEX rights_request_request_uuid_key ON public.rights_request USING btree (request_uuid)"
     },
     {
+      "table_name": "rights_request_attachment",
+      "name": "idx_rights_request_attachment",
+      "definition": "CREATE INDEX idx_rights_request_attachment ON public.rights_request_attachment USING btree (request_id, attachment_id)"
+    },
+    {
+      "table_name": "rights_request_attachment",
+      "name": "rights_request_attachment_attachment_uuid_key",
+      "definition": "CREATE UNIQUE INDEX rights_request_attachment_attachment_uuid_key ON public.rights_request_attachment USING btree (attachment_uuid)"
+    },
+    {
+      "table_name": "rights_request_attachment",
+      "name": "rights_request_attachment_pkey",
+      "definition": "CREATE UNIQUE INDEX rights_request_attachment_pkey ON public.rights_request_attachment USING btree (attachment_id)"
+    },
+    {
       "table_name": "rights_request_holder",
       "name": "idx_rights_holder_request",
       "definition": "CREATE INDEX idx_rights_holder_request ON public.rights_request_holder USING btree (request_id)"
@@ -13437,6 +13630,11 @@
       "definition": "CREATE TRIGGER trg_item_execution_append_only BEFORE DELETE OR UPDATE ON public.rights_item_execution FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
     },
     {
+      "table_name": "rights_request_attachment",
+      "name": "trg_rights_request_attachment_append_only",
+      "definition": "CREATE TRIGGER trg_rights_request_attachment_append_only BEFORE DELETE OR UPDATE ON public.rights_request_attachment FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
       "table_name": "rights_ticket_message",
       "name": "trg_ticket_message_append_only",
       "definition": "CREATE TRIGGER trg_ticket_message_append_only BEFORE DELETE OR UPDATE ON public.rights_ticket_message FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
@@ -13605,6 +13803,9 @@
       "name": "rights_item_execution_execution_id_seq"
     },
     {
+      "name": "rights_request_attachment_attachment_id_seq"
+    },
+    {
       "name": "rights_request_holder_holder_id_seq"
     },
     {
@@ -13707,13 +13908,13 @@
     }
   ],
   "counts": {
-    "application_tables": 51,
+    "application_tables": 52,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 629,
-    "foreign_keys": 145,
+    "table_columns": 639,
+    "foreign_keys": 147,
     "enums": 39,
-    "triggers": 47,
-    "checks": 82
+    "triggers": 48,
+    "checks": 83
   }
 }

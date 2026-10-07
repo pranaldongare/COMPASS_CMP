@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 294,
-  "registered_business_and_system_operations": 297,
+  "documented_operations": 296,
+  "registered_business_and_system_operations": 299,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -11457,6 +11457,83 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
       ]
+    },
+    {
+      "module": "me",
+      "method": "POST",
+      "path": "/me/requests/{request_uuid}/attachments",
+      "summary": "Send a document with my request",
+      "function": "attach_document",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireDataSubject",
+      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DATA_SUBJECT))]",
+      "route_roles": [
+        "data_subject"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "NO",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "OWN",
+        "breach_holder": "NO"
+      },
+      "conditions": [
+        "Only her own request (404 otherwise, including one a nominee raised for her), and only while it is open (409 `request_closed`), checked before the file is stored. Multipart `file`: PDF, PNG, JPEG, text or .docx, at most 25 MB; at most 10 on a request (409 `too_many_attachments`). Kept as it came - never replaced or removed, by trigger and grant; the name sealed. The trail records `rights.attachment_added`, never the name. (2026-10-07)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "rights",
+      "method": "GET",
+      "path": "/requests/{request_uuid}/attachments/{attachment_uuid}",
+      "summary": "A document the requester sent; every download is audited",
+      "function": "download_attachment",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RightsReader",
+      "resolved_gate": "RequireResource(rights_request, write=False)",
+      "route_roles": [
+        "dpo",
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "rights_request",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "SCOPED",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO"
+      },
+      "conditions": [
+        "As every read of a request: the DPO all, the admin those about the DPO. A document of this request only (404 otherwise). The response carries `X-Recorded-SHA256` (as kept) and `X-Content-SHA256` (as read); every read is `rights.attachment_read` on the trail. (2026-10-07)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
     }
   ],
   "amended": [
@@ -11519,6 +11596,11 @@
       "on": "2026-10-06",
       "commit": "attachments",
       "note": "Files kept with an incident: POST /breaches/{breach_uuid}/attachments and GET /breaches/{breach_uuid}/attachments/{attachment_uuid} (resource breach, DPO only and hidden)."
+    },
+    {
+      "on": "2026-10-07",
+      "commit": "request documents",
+      "note": "Documents a data principal sends with her request: POST /me/requests/{request_uuid}/attachments (her own, open request) and GET /requests/{request_uuid}/attachments/{attachment_uuid} (as every read of a request)."
     }
   ]
 }

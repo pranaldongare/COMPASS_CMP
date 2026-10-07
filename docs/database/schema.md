@@ -1,7 +1,7 @@
 # Schema
 
-51 tables, 39 enums, 1 view, 47 triggers, 82 named CHECK constraints and 145
-foreign keys, as of migration 0042. Those counts are read from the PostgreSQL
+52 tables, 39 enums, 1 view, 48 triggers, 83 named CHECK constraints and 147
+foreign keys, as of migration 0043. Those counts are read from the PostgreSQL
 catalogs after replaying every migration, not maintained by hand.
 
 The migrations are the source of truth: 0001 transcribed the original
@@ -23,7 +23,7 @@ its stated commit before trusting it against a later change.
 | Notices | `notice`, `notice_purpose`, `notice_language` |
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant` |
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` |
-| Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_item_execution`, `rights_ticket_message`, `rights_response_file`, `nomination`, `legal_hold` |
+| Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_item_execution`, `rights_ticket_message`, `rights_response_file`, `rights_request_attachment`, `nomination`, `legal_hold` |
 | Breach | `breach`, `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event`, `breach_affected_revision`, `breach_affected`, `breach_notice`, `breach_notice_delivery`, `breach_recording`, `breach_ticket`, `breach_ticket_event`, `breach_ticket_message`, `breach_temporary_access`, `breach_attachment` |
 | Audit | `audit_log` |
 
@@ -144,6 +144,12 @@ is one row per file - its kind (`email`, `proof`, `chat`, `other`, by CHECK),
 the name it came with and an optional note (both sealed), where it is stored,
 its SHA-256 and size - append-only by trigger and grant: a file is never
 replaced or removed.
+
+**A document a requester sends is kept the same way, since 0043.**
+`rights_request_attachment` is one row per document a data principal sent
+with her request - the name it came with (sealed), where it is stored, its
+SHA-256, size and type, who and when - append-only by trigger and grant. At
+most ten per request, and only while it is open; that rule is the service's.
 
 **Who a breach touched is only ever added to, since 0035.** Each
 confirmation is a `breach_affected_revision` with its scopes and counts; each

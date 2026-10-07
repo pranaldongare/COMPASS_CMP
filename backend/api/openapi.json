@@ -2958,6 +2958,60 @@
         }
       }
     },
+    "/me/requests/{request_uuid}/attachments": {
+      "post": {
+        "tags": [
+          "me"
+        ],
+        "summary": "Send a document with my request",
+        "description": "One document per call, up to ten on a request, while it is open: a proof\nof who she is, a letter, a screenshot. Kept as it came; never replaced or\nremoved. Only her own request - not one a nominee raised for her.",
+        "operationId": "attach_document_me_requests__request_uuid__attachments_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_attach_document_me_requests__request_uuid__attachments_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubjectRequestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/me/requests/{request_uuid}/dispute": {
       "post": {
         "tags": [
@@ -11729,6 +11783,57 @@
         }
       }
     },
+    "/requests/{request_uuid}/attachments/{attachment_uuid}": {
+      "get": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "A document the requester sent; every download is audited",
+        "operationId": "download_attachment_requests__request_uuid__attachments__attachment_uuid__get",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "attachment_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Attachment Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/requests/{request_uuid}/decide": {
       "post": {
         "tags": [
@@ -15596,6 +15701,42 @@
         ],
         "title": "AttachPurpose"
       },
+      "AttachmentOut": {
+        "properties": {
+          "attachment_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attachment Uuid"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type"
+          },
+          "added_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Added At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attachment_uuid",
+          "file_name",
+          "size_bytes",
+          "content_type",
+          "added_at"
+        ],
+        "title": "AttachmentOut",
+        "description": "A document the requester sent with the request. Its name is sealed;\nthe console opens it in its server layer, like every personal field."
+      },
       "AttentionOut": {
         "properties": {
           "threads_unread": {
@@ -15945,6 +16086,21 @@
           "file"
         ],
         "title": "Body_add_attachment_breaches__breach_uuid__attachments_post"
+      },
+      "Body_attach_document_me_requests__request_uuid__attachments_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "PDF, image, text or Word; max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_attach_document_me_requests__request_uuid__attachments_post"
       },
       "Body_create_import_imports_post": {
         "properties": {
@@ -27926,6 +28082,13 @@
             },
             "type": "array",
             "title": "Response Files"
+          },
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/AttachmentOut"
+            },
+            "type": "array",
+            "title": "Attachments"
           }
         },
         "type": "object",
@@ -29727,18 +29890,6 @@
             "type": "boolean",
             "title": "About Dpo",
             "default": false
-          },
-          "consent_uuid": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Consent Uuid"
           }
         },
         "additionalProperties": false,
@@ -30000,6 +30151,13 @@
             },
             "type": "array",
             "title": "Response Files"
+          },
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/AttachmentOut"
+            },
+            "type": "array",
+            "title": "Attachments"
           }
         },
         "type": "object",

@@ -15,7 +15,7 @@ widened later without unwinding a record.
 from __future__ import annotations
 
 from datetime import UTC, date, datetime, timedelta
-from typing import Any
+from typing import Any, Final
 
 from cmp.auth.authentication import otp
 from cmp.auth.rate_limit import service as ratelimit
@@ -169,6 +169,28 @@ def _dispatch(task_name: str, *args: Any) -> None:
 
 
 # ------------------------------------------------------------------- receipt
+#: The requests the Privacy Office takes (DPO, 2026-10-07): access, erasure
+#: and a grievance, each about everything held - never one project or consent.
+#: Correction is not taken as a request; a person corrects their own name
+#: from their account (S3-05). Rows of another kind from before keep it.
+TAKEN: Final = (Kind.ACCESS, Kind.ERASURE, Kind.GRIEVANCE)
+
+
+def taken(request_type: Kind | str, *, field: str = "request_type") -> Kind:
+    """The kind, if it is one the office takes; otherwise a refusal that says
+    which it does - and, for a correction, where she can make one."""
+    if str(request_type) not in {k.value for k in Kind}:
+        raise ValidationFailed("Choose access, erasure or grievance", field=field)
+    kind = Kind(str(request_type))
+    if kind not in TAKEN:
+        raise ValidationFailed(
+            "Requests are for access, erasure or a grievance. A correction to your name "
+            "can be made from your account.",
+            field=field,
+        )
+    return kind
+
+
 async def create(
     conn: Conn,
     *,
@@ -198,7 +220,7 @@ async def create(
     written to the row, so the deadline of this request is what it was told,
     whatever the setting says later.
     """
-    kind = choice(Kind, request_type, field="request_type")
+    kind = taken(request_type)
     now = datetime.now(UTC)
     verified = verification_method in ("session", "code", "manual")
     row = await repo.create(
@@ -484,7 +506,13 @@ async def classify(
     """
     _may_act(row, role)
     _before_collation(row)
-    kind = choice(Kind, request_type, field="request_type")
+    # Confirming a request from before as what it is stays possible; turning
+    # anything into a kind the office no longer takes does not.
+    kind = (
+        choice(Kind, request_type, field="request_type")
+        if str(request_type) == row["request_type"]
+        else taken(request_type)
+    )
     cols: dict[str, Any] = {"classified_at": datetime.now(UTC), "classified_by": actor_id}
     if kind.value != row["request_type"]:
         cols["original_type"] = row["original_type"] or row["request_type"]
@@ -2632,6 +2660,81 @@ async def download_file(
     return payload, found
 
 
+#: Documents a requester may send with one request (2026-10-07).
+MAX_ATTACHMENTS: Final = 10
+
+
+def may_attach(row: Row, *, user_id: int) -> None:
+    """Her own request, still open, with room for another document. Checked
+    before the file is stored, and again under the lock when it is kept."""
+    if row.get("subject_user_id") != user_id:
+        raise NotFound("Rights request")
+    _open(row)
+
+
+async def add_attachment(
+    conn: Conn,
+    row: Row,
+    *,
+    file_name: str,
+    storage_ref: str,
+    sha256: str,
+    size_bytes: int,
+    content_type: str,
+    actor_id: int,
+) -> Row:
+    """A document she sends with her request: a proof of who she is, a letter,
+    a screenshot. Kept as it came, never replaced or removed; the trail says
+    one was added, never its name. The caller has stored the file and checked it."""
+    await repo.lock(conn, int(row["request_id"]))
+    row = await reload(conn, row)
+    may_attach(row, user_id=actor_id)
+    if await repo.attachment_count(conn, int(row["request_id"])) >= MAX_ATTACHMENTS:
+        raise Conflict(
+            f"A request takes at most {MAX_ATTACHMENTS} documents.", code="too_many_attachments"
+        )
+    made = await repo.add_attachment(
+        conn,
+        int(row["request_id"]),
+        file_name=file_name,
+        storage_ref=storage_ref,
+        sha256=sha256,
+        size_bytes=size_bytes,
+        content_type=content_type,
+        added_by=actor_id,
+    )
+    await _record(
+        conn,
+        row,
+        Event.RIGHTS_ATTACHMENT_ADDED,
+        actor_user_id=actor_id,
+        detail={"attachment": str(made["attachment_uuid"]), "size_bytes": size_bytes},
+    )
+    return made
+
+
+async def read_attachment(
+    conn: Conn, row: Row, *, attachment_uuid: str, actor_id: int
+) -> tuple[bytes, str, str]:
+    """One document the requester sent: its bytes, the name it came with and
+    the hash recorded when it was kept. Every read is audited."""
+    found = await repo.attachment_by_uuid(conn, int(row["request_id"]), attachment_uuid)
+    if not found:
+        raise NotFound("Attachment")
+    from cmp.infrastructure.storage.service import read_upload
+
+    payload = read_upload(str(found["storage_ref"]))
+    await _record(
+        conn,
+        row,
+        Event.RIGHTS_ATTACHMENT_READ,
+        actor_user_id=actor_id,
+        detail={"attachment": attachment_uuid},
+    )
+    name = await unseal_value("rights_request_attachment", "file_name", found["file_name"])
+    return payload, str(name or "attachment"), str(found["sha256"])
+
+
 async def dispute(conn: Conn, row: Row, *, subject_user_id: int, text: str, about_dpo: bool) -> Row:
     """She disputes the response: a grievance under s.13, linked to this request."""
     if row["subject_user_id"] != subject_user_id:
@@ -2681,7 +2784,7 @@ async def nominate(
     people claiming the same standing. Partial scope is allowed: which of her
     rights he may exercise is her decision, per right.
     """
-    wanted = sorted({choice(Kind, r, field="rights").value for r in rights})
+    wanted = sorted({taken(r, field="rights").value for r in rights})
     if not wanted:
         raise ValidationFailed("Choose at least one right the nominee may exercise", field="rights")
     mobile = normalise_mobile(nominee_mobile) if nominee_mobile else ""
@@ -3043,7 +3146,7 @@ async def nominee_submit(
     if not row or row["status"] != NominationStatus.ACTIVE:
         raise BadRequest("Invalid or expired code", code="otp_invalid", field="code")
     await otp.require(otp.Scope.NOMINEE_VERIFY, nomination_uuid, code)
-    kind = choice(Kind, request_type, field="request_type")
+    kind = taken(request_type)
     if kind.value not in list(row["rights"]):
         raise ValidationFailed(
             "That right was not included in the nomination", field="request_type"

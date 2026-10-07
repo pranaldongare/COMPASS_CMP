@@ -234,6 +234,10 @@ export function respond(uuid: Uuid, body: RespondInput): Promise<RightsRequest> 
 export function downloadResponseFile(uuid: Uuid, fileUuid: Uuid) {
   return apiDownload(`/requests/${uuid}/files/${fileUuid}`);
 }
+/** A document the requester sent; every download is on the trail. */
+export function downloadRequestAttachment(uuid: Uuid, attachmentUuid: Uuid) {
+  return apiDownload(`/requests/${uuid}/attachments/${attachmentUuid}`);
+}
 export interface GrievanceDecisionInput {
   upheld: boolean;
   remedy_text?: string | null;

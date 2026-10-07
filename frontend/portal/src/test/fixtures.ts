@@ -335,6 +335,7 @@ export function makeMyRequest(overrides: Partial<MyRequest> = {}): MyRequest {
     closed_at: null,
     clock: makeClock(),
     response_files: [],
+    attachments: [],
     ...overrides,
   };
 }

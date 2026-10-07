@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-44 operations; 44 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+45 operations; 45 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
@@ -50,6 +50,7 @@
 | POST | `/requests/{request_uuid}/verification/fail` | `dpo`, `admin` | Full session; anonymous NO |
 | POST | `/requests/{request_uuid}/verification/manual` | `dpo`, `admin` | Full session; anonymous NO |
 | POST | `/requests/{request_uuid}/withdrawal` | `dpo`, `admin` | Full session; anonymous NO |
+| GET | `/requests/{request_uuid}/attachments/{attachment_uuid}` | `dpo`, `admin` | Full session; anonymous NO |
 
 ## GET /requests
 
@@ -671,3 +672,17 @@ She meant withdrawal, not erasure.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
 - **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L853), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
+
+## GET /requests/{request_uuid}/attachments/{attachment_uuid}
+
+A document the requester sent; every download is audited.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; `admin` on a request about the DPO.
+- **Route guard:** `RightsReader`.
+- **Resolved gate:** `RequireResource(rights_request, write=False)`.
+- **Rules:** As every read of a request: the DPO all, the admin those about the DPO. A document of this request only (404 otherwise). The response carries `X-Recorded-SHA256` (as kept) and `X-Content-SHA256` (as read); every read is `rights.attachment_read` on the trail. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).

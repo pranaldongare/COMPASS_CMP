@@ -313,6 +313,7 @@ export function makeRequestDetail(overrides: Partial<RightsRequestDetail> = {}):
     linked_request: null,
     linked_from: [],
     response_files: [],
+    attachments: [],
     ...overrides,
   };
 }

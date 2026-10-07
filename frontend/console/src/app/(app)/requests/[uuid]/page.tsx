@@ -4,8 +4,9 @@
  * Where it stands comes first: due date, current step, who has it and the next
  * move (UX review 2026-10-05). Then the request itself, then the cards that do
  * the work, grouped in the order the path asks the questions - identity and
- * classification, the holders and the erasure scope, the response - and last
- * what was recorded. The full clock and path, the flow diagram's three
+ * classification, the next step (the moves the server offers, right after
+ * step 4), the holders and the erasure scope, the response - and last what
+ * was recorded. The full clock and path, the flow diagram's three
  * columns, is folded until asked for; the timing that matters is in the
  * summary. Nothing on this page decides what may happen next; every card
  * renders the server's answer and shows its sentence when it refuses.
@@ -45,6 +46,7 @@ import {
   LinkedRequestCard,
 } from "@/features/rights/components/linked-request-card";
 import { Path } from "@/features/rights/components/path";
+import { RequestDocuments } from "@/features/rights/components/request-documents";
 import { RequestSummary } from "@/features/rights/components/request-summary";
 import { RespondCard } from "@/features/rights/components/respond-card";
 import { ScopeCard } from "@/features/rights/components/scope-card";
@@ -77,6 +79,10 @@ export default function RequestDetailPage() {
 
   const closed = r.status === "closed";
   const withHolders = r.request_type !== "grievance";
+  const hasMoves = closed || r.transitions.some((t) => t.via === "transition");
+  const nextMoveIsResponse =
+    (r.transitions.find((t) => t.allowed) ?? r.transitions.find((t) => t.blocked_by))?.via ===
+    "respond";
 
   return (
     <>
@@ -104,7 +110,10 @@ export default function RequestDetailPage() {
       />
 
       <div className="space-y-6">
-        <RequestSummary request={r} actionsHref="#actions" />
+        <RequestSummary
+          request={r}
+          actionsHref={nextMoveIsResponse ? "#response" : "#actions"}
+        />
 
         <Group title="The request">
           <Card>
@@ -205,6 +214,7 @@ export default function RequestDetailPage() {
               <p className="mt-4 rounded-md bg-bg-inset p-3 text-sm whitespace-pre-wrap">
                 {r.request_text}
               </p>
+              <RequestDocuments request={r} />
             </CardBody>
           </Card>
 
@@ -243,6 +253,15 @@ export default function RequestDetailPage() {
           </div>
         </Group>
 
+        {/* `#actions`: where the summary's next move points. Straight after
+            step 4, so marking a request In progress is the next thing on the
+            page, not a scroll past the holders (2026-10-07). */}
+        {hasMoves && (
+          <Group title="Next step" id="actions">
+            <RequestTransitions request={r} />
+          </Group>
+        )}
+
         {(withHolders || r.request_type === "erasure") && (
           <Group title={r.request_type === "erasure" ? "Holders and what goes" : "Holders"}>
             {withHolders && <HoldersCard request={r} />}
@@ -250,13 +269,17 @@ export default function RequestDetailPage() {
           </Group>
         )}
 
-        {/* `#actions`: where the summary's next move points. */}
-        <Group title="Response and outcome" id="actions">
-          <div className="grid gap-6 lg:grid-cols-2">
-            <RequestTransitions request={r} />
+        {/* Only when there is something to show: the response once given, a
+            grievance's decision once it is open, or the server offering to
+            respond. */}
+        {(closed ||
+          (r.request_type === "grievance"
+            ? r.status !== "received"
+            : r.transitions.some((t) => t.via === "respond"))) && (
+          <Group title="Response and outcome" id="response">
             <RespondCard request={r} />
-          </div>
-        </Group>
+          </Group>
+        )}
 
         <Group title="History">
           <Card>

@@ -1,6 +1,6 @@
 # API documentation
 
-Reference for **294 operations over 257 paths**, grouped by OpenAPI module/tag.
+Reference for **296 operations over 259 paths**, grouped by OpenAPI module/tag.
 
 ## How to read an endpoint
 
@@ -27,14 +27,14 @@ Generated values are structural examples, not production credentials or semantic
 | Delegations | 6 | [`modules/delegations/api.md`](modules/delegations/api.md) |
 | Exchange | 19 | [`modules/exchange/api.md`](modules/exchange/api.md) |
 | Legal Holds | 3 | [`modules/legal_holds/api.md`](modules/legal_holds/api.md) |
-| Me | 27 | [`modules/me/api.md`](modules/me/api.md) |
+| Me | 28 | [`modules/me/api.md`](modules/me/api.md) |
 | Messages | 5 | [`modules/messages/api.md`](modules/messages/api.md) |
 | Notices | 23 | [`modules/notices/api.md`](modules/notices/api.md) |
 | Projects | 27 | [`modules/projects/api.md`](modules/projects/api.md) |
 | Public Consent | 6 | [`modules/public_consent/api.md`](modules/public_consent/api.md) |
 | Public Information | 10 | [`modules/public_information/api.md`](modules/public_information/api.md) |
 | Registry | 23 | [`modules/registry/api.md`](modules/registry/api.md) |
-| Rights | 44 | [`modules/rights/api.md`](modules/rights/api.md) |
+| Rights | 45 | [`modules/rights/api.md`](modules/rights/api.md) |
 | System | 5 | [`modules/system/api.md`](modules/system/api.md) |
 | Tickets | 5 | [`modules/tickets/api.md`](modules/tickets/api.md) |
 | Users | 13 | [`modules/users/api.md`](modules/users/api.md) |

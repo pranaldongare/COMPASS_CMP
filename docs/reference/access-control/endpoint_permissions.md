@@ -221,6 +221,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | GET | `/me/requests/{request_uuid}/files/{file_uuid}` | NO | NO | NO | NO | NO | NO | NO | OWN | NO |
 | GET | `/me/requests/{request_uuid}/trail` | NO | NO | NO | NO | NO | NO | NO | OWN | NO |
 | DELETE | `/me/secondary-email` | NO | OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
+| POST | `/me/requests/{request_uuid}/attachments` | NO | NO | NO | NO | NO | NO | NO | OWN | NO |
 
 ## Messages
 
@@ -408,6 +409,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/requests/{request_uuid}/verification/fail` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 | POST | `/requests/{request_uuid}/verification/manual` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 | POST | `/requests/{request_uuid}/withdrawal` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| GET | `/requests/{request_uuid}/attachments/{attachment_uuid}` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 ## System
 

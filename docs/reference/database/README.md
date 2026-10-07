@@ -1,6 +1,6 @@
 # COMPASS complete database schema
 
-The diagrams, the table reference and the enum reference are generated from the catalogue of a scratch database built by replaying migrations **0001 → 0042**, on 2026-10-06; rebuild them with `python3 docs/tools/generate-schema-docs.py --database <db>`. The notes on this page follow them by hand.
+The diagrams, the table reference and the enum reference are generated from the catalogue of a scratch database built by replaying migrations **0001 → 0043**, on 2026-10-07; rebuild them with `python3 docs/tools/generate-schema-docs.py --database <db>`. The notes on this page follow them by hand.
 
 ## Open the diagrams
 
@@ -22,7 +22,7 @@ The complete SVG is a large, zoomable vector drawing. Open it in a browser or ve
 | Notices | `notice`, `notice_language`, `notice_purpose` | [Open SVG](modules/notices.svg) |
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant`, `v_current_consent` | [Open SVG](modules/consent.svg) |
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` | [Open SVG](modules/exchange.svg) |
-| Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_ticket_message`, `rights_response_file`, `rights_item_execution`, `legal_hold`, `nomination` | [Open SVG](modules/rights.svg) |
+| Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_ticket_message`, `rights_response_file`, `rights_request_attachment`, `rights_item_execution`, `legal_hold`, `nomination` | [Open SVG](modules/rights.svg) |
 | Breach | `breach`, `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event`, `breach_affected_revision`, `breach_affected`, `breach_notice`, `breach_notice_delivery`, `breach_recording`, `breach_ticket`, `breach_ticket_event`, `breach_ticket_message`, `breach_temporary_access`, `breach_attachment` | [Open SVG](modules/breach.svg) |
 | Platform | `audit_log`, `message_template`, `restricted_country` | [Open SVG](modules/platform.svg) |
 
@@ -68,6 +68,8 @@ Since **0027–0030** the personal columns are `text` rather than `varchar(n)` -
 **0041** (S3-09) adds breach-only logins: the `breach_holder` value of `user_role`, and `breach_temporary_access`, one grant per person per breach, its end written once and never deleted.
 
 **0042** adds files kept with an incident: `breach_attachment`, each file's kind, sealed name and note, hash and size; append-only.
+
+**0043** adds documents a requester sends with a rights request: `rights_request_attachment`, each one's sealed name, hash, size and type; append-only.
 
 ## Reading relationships and keys
 

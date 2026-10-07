@@ -13,7 +13,7 @@
  */
 "use client";
 
-import { AlertTriangle, ArrowRight, Lock } from "lucide-react";
+import { AlertTriangle, ArrowRight, Ban, Lock } from "lucide-react";
 import * as React from "react";
 
 import {
@@ -47,7 +47,7 @@ import { useUsers } from "@/features/users";
 import { formatDateTime } from "@/lib/format";
 import { useAuth, useToast } from "@/providers";
 import type { RightsRequestDetail, RightsRequestType } from "@/types";
-import { RIGHTS_REQUEST_TYPES } from "@/types";
+import { RIGHTS_REQUEST_TYPES, RIGHTS_REQUEST_TYPES_TAKEN } from "@/types";
 
 function messageOf(err: unknown, fallback: string): string {
   return err && typeof err === "object" && "userMessage" in err
@@ -262,7 +262,9 @@ export function ClassificationCard({ request: r }: { request: RightsRequestDetai
               <Field label="This is a request for">
                 {(p) => (
                   <Select {...p} value={type} onChange={(e) => setType(e.target.value as RightsRequestType)}>
-                    {RIGHTS_REQUEST_TYPES.map((t) => (
+                    {RIGHTS_REQUEST_TYPES.filter(
+                      (t) => (RIGHTS_REQUEST_TYPES_TAKEN as readonly string[]).includes(t) || t === r.request_type,
+                    ).map((t) => (
                       <option key={t} value={t}>
                         {REQUEST_TYPE_COPY[t].label} ({REQUEST_TYPE_COPY[t].section})
                       </option>
@@ -377,19 +379,40 @@ export function ClassificationCard({ request: r }: { request: RightsRequestDetai
             <Field label="Note" hint="Optional. Recorded with whichever decision you take.">
               {(p) => <Textarea {...p} rows={2} value={note} onChange={(e) => setNote(e.target.value)} />}
             </Field>
-            <Button variant="ghost" size="sm" onClick={() => setRefusing((v) => !v)}>
-              Not a rights request, or refused
-            </Button>
-            {refusing && (
-              <div className="rounded-md border border-danger-border bg-danger-subtle p-3">
-                <Field label="Reason, in writing" hint="Sent to the requester with the grievance route. A refusal is still a response." required>
-                  {(p) => <Textarea {...p} rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />}
-                </Field>
-                <Button variant="primary" size="sm" className="mt-2" disabled={reason.trim().length < 3} loading={refuse.isPending} onClick={() => run(() => refuse.mutateAsync(reason.trim()), "Refused, with reasons")}>
-                  Refuse and close
+            {/* The other way out of step 4 (2026-10-07): a button that reads
+                as one, with what it does beside it - it was a grey line of
+                text the DPO did not know could be clicked. */}
+            <div className="rounded-md border border-border p-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">Not a rights request, or cannot be met?</p>
+                  <p className="mt-0.5 text-xs text-text-muted">
+                    Refuse it with a written reason. The requester is told why, with the grievance
+                    route, and the request closes.
+                  </p>
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="border-danger-border text-danger-text hover:border-danger-border hover:bg-danger-subtle"
+                  aria-expanded={refusing}
+                  onClick={() => setRefusing((v) => !v)}
+                >
+                  <Ban className="size-4" />
+                  {refusing ? "Keep the request" : "Refuse this request"}
                 </Button>
               </div>
-            )}
+              {refusing && (
+                <div className="mt-3 rounded-md border border-danger-border bg-danger-subtle p-3">
+                  <Field label="Reason, in writing" hint="Sent to the requester with the grievance route. A refusal is still a response." required>
+                    {(p) => <Textarea {...p} rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />}
+                  </Field>
+                  <Button variant="danger" size="sm" className="mt-2" disabled={reason.trim().length < 3} loading={refuse.isPending} onClick={() => run(() => refuse.mutateAsync(reason.trim()), "Refused, with reasons")}>
+                    Refuse and close
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </CardBody>

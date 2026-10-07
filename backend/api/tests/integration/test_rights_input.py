@@ -24,7 +24,7 @@ from tests.integration.test_rights_flows import _portal_request
 pytestmark = pytest.mark.integration
 
 DPO = Role.DPO
-KINDS = "Choose access, correction, erasure or grievance"
+KINDS = "Choose access, erasure or grievance"
 
 
 class TestUnknownChoices:

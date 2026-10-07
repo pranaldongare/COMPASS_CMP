@@ -1,8 +1,10 @@
 /**
  * Asking for something: the data principal's form, and the public one.
  *
- * The same four rights in the same words, with the section of the Act beside
- * each so she can look it up. One thing the form says out loud because people
+ * The same three requests in the same words - access, erasure, a grievance
+ * (DPO, 2026-10-07) - with the section of the Act beside each so she can look
+ * it up. Each is about everything held about her, never one project or one
+ * consent. One thing the form says out loud because people
  * get it wrong: erasure is not withdrawal. Withdrawing stops future processing
  * and is one click on her consent record; erasure is a request the Privacy
  * Office fulfils, and the DPO will confirm which she means before anything is
@@ -13,21 +15,22 @@
  * person who typed a new address and waited for a code that never came would
  * otherwise conclude the form was broken.
  *
- * Signed in, she can confine a request to one consent: the access she wants
- * is the data under that consent, the erasure is of that data and no other.
- * From her consents page the consent is already chosen; from her requests
- * page she picks it, or asks about everything.
+ * Signed in, she can send documents with it (2026-10-07). They go once the
+ * request is recorded, one by one; one refused does not undo the request, and
+ * the toast says which and why. The public form takes none: nobody is known
+ * until the code is confirmed, and a file from nobody is not kept.
  */
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import * as React from "react";
 
 import { FormError, useApiForm } from "@/components/forms";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Alert, Button, Field, Input, Select, Textarea } from "@/components/ui/primitives";
-import { useMyConsents } from "@/features/my-consents";
-import { submitPublicRequest } from "@/features/rights/api";
+import { attachToMyRequest, submitPublicRequest } from "@/features/rights/api";
 import { REQUEST_TYPE_COPY } from "@/features/rights/components/copy";
+import { DocumentPicker } from "@/features/rights/components/document-picker";
 import { useMakeRequest } from "@/features/rights/mutations";
 import {
   myRequestSchema,
@@ -37,29 +40,27 @@ import {
   type PublicRequestForm as PublicRequestFormValues,
   type PublicRequestValues,
 } from "@/features/rights/schemas";
-import { formatDate } from "@/lib/format";
+import { ApiError } from "@/lib/errors";
 import { useToast } from "@/providers";
-import type { MyConsent, MyRequest, PublicRequestReceipt, RightsRequestType } from "@/types";
-import { RIGHTS_REQUEST_TYPES } from "@/types";
+import type { MyRequest, PublicRequestReceipt, TakenRequestType } from "@/types";
+import { RIGHTS_REQUEST_TYPES_TAKEN } from "@/types";
 
 function TypeSelect({
   value,
   onChange,
   inputProps,
-  exclude = [],
 }: {
-  value: RightsRequestType;
-  onChange: (next: RightsRequestType) => void;
+  value: TakenRequestType;
+  onChange: (next: TakenRequestType) => void;
   inputProps: Record<string, unknown>;
-  exclude?: RightsRequestType[];
 }) {
   return (
     <Select
       {...inputProps}
       value={value}
-      onChange={(e) => onChange(e.target.value as RightsRequestType)}
+      onChange={(e) => onChange(e.target.value as TakenRequestType)}
     >
-      {RIGHTS_REQUEST_TYPES.filter((t) => !exclude.includes(t)).map((t) => (
+      {RIGHTS_REQUEST_TYPES_TAKEN.map((t) => (
         <option key={t} value={t}>
           {REQUEST_TYPE_COPY[t].label} ({REQUEST_TYPE_COPY[t].section})
         </option>
@@ -68,7 +69,7 @@ function TypeSelect({
   );
 }
 
-function TypeBlurb({ type }: { type: RightsRequestType }) {
+function TypeBlurb({ type }: { type: TakenRequestType }) {
   return (
     <Alert tone={type === "erasure" ? "warning" : "info"}>
       <p className="text-sm">{REQUEST_TYPE_COPY[type].blurb}</p>
@@ -76,71 +77,59 @@ function TypeBlurb({ type }: { type: RightsRequestType }) {
   );
 }
 
-/** One consent, the way the picker and the fixed box name it. */
-export function consentLabel(c: MyConsent): string {
-  return `${c.project_name} · ${c.notice_code} v${c.version} · ${formatDate(c.affirmative_action_at)}${c.is_withdrawal && c.granted_count === 0 ? " (withdrawn)" : ""}`;
-}
-
-function ConsentPicker({
-  value,
-  onChange,
-  inputProps,
-}: {
-  value: string | null;
-  onChange: (next: string | null) => void;
-  inputProps: Record<string, unknown>;
-}) {
-  const consents = useMyConsents();
-  const list = consents.data ?? [];
-  return (
-    <Select
-      {...inputProps}
-      value={value ?? ""}
-      onChange={(e) => onChange(e.target.value || null)}
-      disabled={consents.isLoading}
-    >
-      <option value="">Everything you hold about me</option>
-      {list.map((c) => (
-        <option key={c.consent_uuid} value={c.consent_uuid}>
-          {consentLabel(c)}
-        </option>
-      ))}
-    </Select>
-  );
-}
-
 /** Signed in: the session is the verification, so the clock starts on submit. */
 export function MyRequestForm({
   onDone,
   initialType = "access",
-  consent = null,
 }: {
   onDone: (created: MyRequest) => void;
-  initialType?: RightsRequestType;
-  /** Already chosen - from her consents page - and not changeable here. */
-  consent?: MyConsent | null;
+  initialType?: TakenRequestType;
 }) {
   const toast = useToast();
+  const qc = useQueryClient();
   const make = useMakeRequest();
+  const [documents, setDocuments] = React.useState<File[]>([]);
+  const [sending, setSending] = React.useState(false);
   const form = useApiForm<MyRequestValues, MyRequestFormValues>(myRequestSchema, {
     request_type: initialType,
     request_text: "",
     about_dpo: false,
-    consent_uuid: consent?.consent_uuid ?? null,
   });
-  const type = form.watch("request_type") as RightsRequestType;
-  const confined = (form.watch("consent_uuid") as string | null) ?? null;
+  const type = form.watch("request_type") as TakenRequestType;
 
   const submit = form.submit(async (values) => {
-    const created = await make.mutateAsync({
-      ...values,
-      // A grievance is about handling, not about one consent.
-      consent_uuid: values.request_type === "grievance" ? null : values.consent_uuid,
-    });
+    const created = await make.mutateAsync(values);
+    // The request first - its clock runs from now - then its documents.
+    const refused: string[] = [];
+    if (documents.length) {
+      setSending(true);
+      try {
+        for (const file of documents) {
+          try {
+            await attachToMyRequest(created.request_uuid, file);
+          } catch (err) {
+            refused.push(
+              `${file.name}: ${err instanceof ApiError ? err.userMessage() : "not accepted"}`,
+            );
+          }
+        }
+      } finally {
+        setSending(false);
+        void qc.invalidateQueries({ queryKey: ["me"] });
+      }
+    }
+    const sent = documents.length - refused.length;
     toast.success(
       `Recorded as ${created.reference}`,
-      `You will hear from us by ${new Date(created.due_at).toLocaleDateString()}.`,
+      `You will hear from us by ${new Date(created.due_at).toLocaleDateString()}.` +
+        (sent ? ` ${sent} document${sent === 1 ? "" : "s"} sent with it.` : ""),
     );
+    if (refused.length) {
+      toast.error(
+        `${refused.length} document${refused.length === 1 ? " was" : "s were"} not sent`,
+        `${refused.join("; ")}. Your request is recorded; send the document to the Privacy Office if it matters.`,
+      );
+    }
     onDone(created);
   });
 
@@ -154,53 +143,25 @@ export function MyRequestForm({
               inputProps={p}
               value={type}
               onChange={(next) => form.setValue("request_type", next, { shouldValidate: true })}
-              exclude={consent ? ["grievance"] : []}
             />
           )}
         </Field>
         <TypeBlurb type={type} />
 
-        {consent ? (
-          <div className="rounded-md border border-border bg-bg-inset p-3 text-sm">
-            <p className="text-2xs font-semibold uppercase tracking-wide text-text-subtle">
-              About this consent only
-            </p>
-            <p className="mt-1">{consentLabel(consent)}</p>
-            <p className="mt-1 text-xs text-text-muted">
-              Only the data held under this consent is in question. Holders, what is in scope
-              and the response are all confined to it.
-            </p>
-          </div>
-        ) : (
-          type !== "grievance" && (
-            <Field
-              label="About"
-              hint="Everything we hold about you, or one consent - the request then covers only the data under it."
-              error={form.formState.errors.consent_uuid?.message}
-            >
-              {(p) => (
-                <ConsentPicker
-                  inputProps={p}
-                  value={confined}
-                  onChange={(next) => form.setValue("consent_uuid", next, { shouldValidate: true })}
-                />
-              )}
-            </Field>
-          )
-        )}
+        <p className="text-xs text-text-muted">
+          A request is about everything we hold about you - every project and every consent.
+        </p>
 
         <Field
           label="Your request"
-          hint={
-            confined
-              ? "In your own words. Which data under this consent, and what you want done."
-              : "In your own words. Which project, which data, what you want done."
-          }
+          hint="In your own words: what you are asking for and, if it helps, which data."
           required
           error={form.formState.errors.request_text?.message}
         >
           {(p) => <Textarea {...p} rows={5} maxLength={20_000} {...form.register("request_text")} />}
         </Field>
+
+        <DocumentPicker files={documents} onChange={setDocuments} />
 
         {type === "grievance" && (
           <label className="flex items-start gap-2 text-sm">
@@ -220,7 +181,7 @@ export function MyRequestForm({
       </div>
 
       <DialogFooter>
-        <Button type="submit" variant="primary" loading={make.isPending}>
+        <Button type="submit" variant="primary" loading={make.isPending || sending}>
           Send the request
         </Button>
       </DialogFooter>
@@ -241,7 +202,7 @@ export function PublicRequestForm({
     name: "",
     request_text: "",
   });
-  const type = form.watch("request_type") as RightsRequestType;
+  const type = form.watch("request_type") as TakenRequestType;
 
   const submit = form.submit(async (values) => {
     setPending(true);
@@ -282,7 +243,7 @@ export function PublicRequestForm({
 
       <Field
         label="Your request"
-        hint="In your own words. Which project, which data, what you want done."
+        hint="In your own words: what you are asking for and, if it helps, which data."
         required
         error={form.formState.errors.request_text?.message}
       >

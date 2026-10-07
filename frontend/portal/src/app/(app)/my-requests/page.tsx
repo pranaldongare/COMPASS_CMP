@@ -81,7 +81,7 @@ export default function MyRequestsPage() {
     <>
       <PageHeader
         title="My requests"
-        description="Ask for access to your data, a correction or erasure, or raise a complaint. Every request runs on a published clock, and you can see where it is."
+        description="Ask for access to everything we hold about you, ask for it to be erased, or raise a complaint. Every request runs on a published clock, and you can see where it is."
         actions={
           <Button variant="primary" onClick={() => setAsking(true)}>
             <Plus className="size-4" />

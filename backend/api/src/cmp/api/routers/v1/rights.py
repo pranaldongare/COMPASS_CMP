@@ -19,6 +19,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, Form, Query, Request, Response, UploadFile, status
 from pydantic import Field
 
+from cmp.api import uploads
 from cmp.api.dependencies import (
     Paging,
     RequireDataSubject,
@@ -27,12 +28,11 @@ from cmp.api.dependencies import (
     RightsWriter,
     reject_unknown_filters,
 )
-from cmp.core.errors import NotFound, ValidationFailed
+from cmp.core.errors import NotFound
 from cmp.core.pagination import PageRequest
 from cmp.core.security import file_hash
 from cmp.db.pool import connection, transaction
 from cmp.db.repositories import audit as audit_repo
-from cmp.db.repositories import consent as consent_repo
 from cmp.db.repositories import entities as entity_repo
 from cmp.db.repositories import rights as repo
 from cmp.db.repositories import users as user_repo
@@ -41,7 +41,7 @@ from cmp.infrastructure.storage.service import storage
 from cmp.schemas.common import LongText, OtpCode, Out, Page, Schema, ShortText
 from cmp.validation import Email, Mobile
 from cmp.validation.contacts import Contact
-from cmp.validation.files import EVIDENCE, check_upload
+from cmp.validation.files import EVIDENCE, REQUEST_DOCUMENT, check_upload
 from cmp.validation.strings import ReasonText
 
 router = APIRouter(prefix="/requests", tags=["rights"])
@@ -362,6 +362,17 @@ class ResponseFileOut(Out):
     created_at: datetime
 
 
+class AttachmentOut(Out):
+    """A document the requester sent with the request. Its name is sealed;
+    the console opens it in its server layer, like every personal field."""
+
+    attachment_uuid: UUID
+    file_name: str
+    size_bytes: int
+    content_type: str
+    added_at: datetime
+
+
 class RequestDetail(RequestOut):
     holders: list[HolderOut]
     items: list[ItemOut]
@@ -373,6 +384,7 @@ class RequestDetail(RequestOut):
     linked_request: LinkedRequestOut | None
     linked_from: list[LinkedRefOut]
     response_files: list[ResponseFileOut] = Field(default_factory=list)
+    attachments: list[AttachmentOut] = Field(default_factory=list)
 
 
 class TransitionsOut(Out):
@@ -414,6 +426,8 @@ class SubjectRequestOut(Out):
     closed_at: datetime | None
     clock: ClockOut
     response_files: list[ResponseFileOut] = Field(default_factory=list)
+    #: The documents she sent with it.
+    attachments: list[AttachmentOut] = Field(default_factory=list)
 
 
 class NominationOut(Out):
@@ -548,12 +562,11 @@ class GrievanceDecisionIn(Schema):
 
 
 class SubjectRequestIn(Schema):
+    #: access, erasure or grievance - about everything held, never one
+    #: project or consent (DPO, 2026-10-07).
     request_type: str
     request_text: LongText
     about_dpo: bool = False
-    #: Confine the request to one of her consents: the access, correction or
-    #: erasure is of the data under that consent and no other.
-    consent_uuid: UUID | None = None
 
 
 class DisputeIn(Schema):
@@ -602,10 +615,15 @@ async def _detail(conn: Any, row: dict[str, Any], principal: Any) -> dict[str, A
         "linked_request": await _linked(conn, row, principal),
         "linked_from": await repo.linked_from(conn, request_id),
         "response_files": await repo.response_files_of(conn, request_id),
+        "attachments": await repo.attachments_of(conn, request_id),
     }
 
 
-def _subject_view(row: dict[str, Any], files: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+def _subject_view(
+    row: dict[str, Any],
+    files: list[dict[str, Any]] | None = None,
+    attachments: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     expires = row.get("download_expires_at")
     return {
         **_with_clock(row),
@@ -613,19 +631,20 @@ def _subject_view(row: dict[str, Any], files: list[dict[str, Any]] | None = None
             row.get("response_file_ref") and expires and expires > datetime.now(expires.tzinfo)
         ),
         "response_files": files or [],
+        "attachments": attachments or [],
     }
 
 
 async def _subject_views(conn: Any, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Her requests with the files released on each - only closed ones have any."""
+    """Her requests with the documents she sent and the files released on
+    each - only closed ones have released files."""
     out = []
     for r in rows:
+        request_id = int(r["request_id"])
         files = (
-            await repo.response_files_of(conn, int(r["request_id"]))
-            if r.get("status") == "closed"
-            else []
+            await repo.response_files_of(conn, request_id) if r.get("status") == "closed" else []
         )
-        out.append(_subject_view(r, files))
+        out.append(_subject_view(r, files, await repo.attachments_of(conn, request_id)))
     return out
 
 
@@ -1484,6 +1503,21 @@ async def download_response_file(
     return _released(payload, found)
 
 
+@router.get(
+    "/{request_uuid}/attachments/{attachment_uuid}",
+    summary="A document the requester sent; every download is audited",
+)
+async def download_attachment(
+    request_uuid: UUID, attachment_uuid: UUID, principal: RightsReader
+) -> Response:
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        payload, name, recorded = await service.read_attachment(
+            conn, row, attachment_uuid=str(attachment_uuid), actor_id=principal.user_id
+        )
+    return uploads.download(payload, name, recorded)
+
+
 def _released(payload: bytes, found: dict[str, Any]) -> Response:
     return Response(
         content=payload,
@@ -1561,24 +1595,11 @@ async def my_requests(principal: RequireDataSubject) -> list[dict[str, Any]]:
 async def make_request(body: SubjectRequestIn, principal: RequireDataSubject) -> dict[str, Any]:
     """From the dashboard. The session is the verification, so the clock starts
     and the acknowledgement goes out in the same moment."""
-    if body.request_type not in ("access", "correction", "erasure", "grievance"):
-        raise ValidationFailed(
-            "Choose access, correction, erasure or grievance", field="request_type"
-        )
-    if body.consent_uuid and body.request_type == "grievance":
-        raise ValidationFailed(
-            "A grievance is about how a request was handled, not about one consent",
-            field="consent_uuid",
-        )
+    service.taken(body.request_type)
     async with transaction() as conn:
         me = await user_repo.by_id(conn, principal.user_id)
         if not me:
             raise NotFound("User")
-        consent_id = (
-            await _own_consent_id(conn, str(body.consent_uuid), principal.user_id)
-            if body.consent_uuid
-            else None
-        )
         row = await service.create(
             conn,
             request_type=body.request_type,
@@ -1590,18 +1611,10 @@ async def make_request(body: SubjectRequestIn, principal: RequireDataSubject) ->
             actor_id=principal.user_id,
             verification_method="session",
             about_dpo=body.about_dpo,
-            consent_id=consent_id,
         )
-    return _subject_view(row, await repo.response_files_of(conn, int(row["request_id"])))
-
-
-async def _own_consent_id(conn: Any, consent_uuid: str, user_id: int) -> int:
-    """Hers, or 404 - the ownership test is the scope, and it does not say
-    whether somebody else's record exists."""
-    artefact = await consent_repo.artefact_by_uuid(conn, consent_uuid)
-    if not artefact or int(artefact["auth_user_id"]) != user_id:
-        raise NotFound("Consent record")
-    return int(artefact["consent_id"])
+    # New: nothing released and nothing attached yet - the documents follow,
+    # one call each, to /me/requests/{uuid}/attachments.
+    return _subject_view(row)
 
 
 async def _mine(conn: Any, request_uuid: UUID, user_id: int) -> dict[str, Any]:
@@ -1682,6 +1695,41 @@ async def my_download_file(
             conn, row, file_uuid=str(file_uuid), actor_id=principal.user_id, as_subject=True
         )
     return _released(payload, found)
+
+
+@subject_router.post(
+    "/requests/{request_uuid}/attachments",
+    response_model=SubjectRequestOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Send a document with my request",
+)
+async def attach_document(
+    request_uuid: UUID,
+    principal: RequireDataSubject,
+    file: Annotated[UploadFile, File(description="PDF, image, text or Word; max 25 MB")],
+) -> dict[str, Any]:
+    """One document per call, up to ten on a request, while it is open: a proof
+    of who she is, a letter, a screenshot. Kept as it came; never replaced or
+    removed. Only her own request - not one a nominee raised for her."""
+    # Checked before the file is stored, so a refusal leaves nothing behind.
+    async with connection() as conn:
+        service.may_attach(
+            await _mine(conn, request_uuid, principal.user_id), user_id=principal.user_id
+        )
+    stored = await uploads.kept(file, subdir="requests", rules=REQUEST_DOCUMENT)
+    async with transaction() as conn:
+        row = await _mine(conn, request_uuid, principal.user_id)
+        await service.add_attachment(
+            conn,
+            row,
+            file_name=stored.file_name,
+            storage_ref=stored.storage_ref,
+            sha256=stored.sha256,
+            size_bytes=stored.size_bytes,
+            content_type=stored.content_type,
+            actor_id=principal.user_id,
+        )
+        return (await _subject_views(conn, [await service.reload(conn, row)]))[0]
 
 
 @subject_router.post(

@@ -19,8 +19,8 @@ import {
   type LogRequestValues,
 } from "@/features/rights/schemas";
 import { useToast } from "@/providers";
-import type { RightsRequest, RightsRequestType } from "@/types";
-import { RIGHTS_REQUEST_TYPES } from "@/types";
+import type { RightsRequest, TakenRequestType } from "@/types";
+import { RIGHTS_REQUEST_TYPES_TAKEN } from "@/types";
 
 export function LogRequestForm({ onDone }: { onDone: (created: RightsRequest) => void }) {
   const toast = useToast();
@@ -32,7 +32,7 @@ export function LogRequestForm({ onDone }: { onDone: (created: RightsRequest) =>
     request_text: "",
     about_dpo: false,
   });
-  const type = form.watch("request_type") as RightsRequestType;
+  const type = form.watch("request_type") as TakenRequestType;
 
   const submit = form.submit(async (values) => {
     const created = await log.mutateAsync({ ...values, name: values.name || null });
@@ -46,8 +46,8 @@ export function LogRequestForm({ onDone }: { onDone: (created: RightsRequest) =>
       <div className="space-y-4">
         <Field label="Kind of request" required error={form.formState.errors.request_type?.message}>
           {(p) => (
-            <Select {...p} value={type} onChange={(e) => form.setValue("request_type", e.target.value as RightsRequestType, { shouldValidate: true })}>
-              {RIGHTS_REQUEST_TYPES.map((t) => (
+            <Select {...p} value={type} onChange={(e) => form.setValue("request_type", e.target.value as TakenRequestType, { shouldValidate: true })}>
+              {RIGHTS_REQUEST_TYPES_TAKEN.map((t) => (
                 <option key={t} value={t}>
                   {REQUEST_TYPE_COPY[t].label} ({REQUEST_TYPE_COPY[t].section})
                 </option>

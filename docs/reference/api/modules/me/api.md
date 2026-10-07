@@ -1,6 +1,6 @@
 # Me API
 
-Generated from `backend/api/openapi.json`. **27 operations.**
+Generated from `backend/api/openapi.json`. **28 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -28,11 +28,12 @@ For each operation the information is deliberately ordered as **API → Validati
 20. [`GET /me/requests/{request_uuid}/trail`](#20_get_me_requests_request_uuid_trail)
 21. [`GET /me/requests/{request_uuid}/download`](#21_get_me_requests_request_uuid_download)
 22. [`GET /me/requests/{request_uuid}/files/{file_uuid}`](#22_get_me_requests_request_uuid_files_file_uuid)
-23. [`POST /me/requests/{request_uuid}/dispute`](#23_post_me_requests_request_uuid_dispute)
-24. [`GET /me/nominations`](#24_get_me_nominations)
-25. [`POST /me/nominations`](#25_post_me_nominations)
-26. [`GET /me/nominee-of`](#26_get_me_nominee_of)
-27. [`DELETE /me/nominations/{nomination_uuid}`](#27_delete_me_nominations_nomination_uuid)
+23. [`POST /me/requests/{request_uuid}/attachments`](#23_post_me_requests_request_uuid_attachments)
+24. [`POST /me/requests/{request_uuid}/dispute`](#24_post_me_requests_request_uuid_dispute)
+25. [`GET /me/nominations`](#25_get_me_nominations)
+26. [`POST /me/nominations`](#26_post_me_nominations)
+27. [`GET /me/nominee-of`](#27_get_me_nominee_of)
+28. [`DELETE /me/nominations/{nomination_uuid}`](#28_delete_me_nominations_nomination_uuid)
 
 <a id="1_get_me"></a>
 ## 1. `GET /me` — Get Me
@@ -959,6 +960,15 @@ No request body.
         "content_type": "…",
         "created_at": "…"
       }
+    ],
+    "attachments": [
+      {
+        "attachment_uuid": "…",
+        "file_name": "…",
+        "size_bytes": "…",
+        "content_type": "…",
+        "added_at": "…"
+      }
     ]
   }
 ]
@@ -990,8 +1000,7 @@ Request body required: **yes**.
 {
   "request_type": "string",
   "request_text": "string",
-  "about_dpo": false,
-  "consent_uuid": "00000000-0000-4000-8000-000000000000"
+  "about_dpo": false
 }
 ```
 
@@ -1059,6 +1068,15 @@ Request body required: **yes**.
       "size_bytes": 1,
       "content_type": "…",
       "created_at": "2026-09-17T12:00:00Z"
+    }
+  ],
+  "attachments": [
+    {
+      "attachment_uuid": "00000000-0000-4000-8000-000000000000",
+      "file_name": "string",
+      "size_bytes": 1,
+      "content_type": "string",
+      "added_at": "2026-09-17T12:00:00Z"
     }
   ]
 }
@@ -1164,6 +1182,15 @@ No request body.
       "size_bytes": 1,
       "content_type": "…",
       "created_at": "2026-09-17T12:00:00Z"
+    }
+  ],
+  "attachments": [
+    {
+      "attachment_uuid": "00000000-0000-4000-8000-000000000000",
+      "file_name": "string",
+      "size_bytes": 1,
+      "content_type": "string",
+      "added_at": "2026-09-17T12:00:00Z"
     }
   ]
 }
@@ -1337,8 +1364,135 @@ No request body.
 }
 ```
 
-<a id="23_post_me_requests_request_uuid_dispute"></a>
-## 23. `POST /me/requests/{request_uuid}/dispute` — Dispute the response - a grievance under s.13
+<a id="23_post_me_requests_request_uuid_attachments"></a>
+## 23. `POST /me/requests/{request_uuid}/attachments` — Send a document with my request
+
+### API
+
+- **Operation ID:** `attach_document_me_requests__request_uuid__attachments_post`
+- **Access:** Authenticated caller acting on their own records.
+
+One document per call, up to ten on a request, while it is open: a proof
+of who she is, a letter, a screenshot. Kept as it came; never replaced or
+removed. Only her own request - not one a nominee raised for her.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `request_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `multipart/form-data`  
+**Schema:** [`Body_attach_document_me_requests__request_uuid__attachments_post`](#schema-body_attach_document_me_requests_request_uuid_attachments_post)
+
+```json
+{
+  "file": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `201` | Successful Response | `application/json` | [`SubjectRequestOut`](#schema-subjectrequestout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `201` `application/json` response:**
+
+```json
+{
+  "request_uuid": "00000000-0000-4000-8000-000000000000",
+  "reference": "string",
+  "request_type": "string",
+  "status": "string",
+  "outcome": "string",
+  "channel": "string",
+  "request_text": "string",
+  "received_at": "2026-09-17T12:00:00Z",
+  "due_at": "2026-09-17T12:00:00Z",
+  "acknowledged_at": "2026-09-17T12:00:00Z",
+  "verification_status": "string",
+  "responded_at": "2026-09-17T12:00:00Z",
+  "response_text": "string",
+  "refusal_reason": "string",
+  "remedy_text": "string",
+  "grievance_upheld": true,
+  "download_available": true,
+  "download_expires_at": "2026-09-17T12:00:00Z",
+  "linked_reference": "string",
+  "linked_request_uuid": "00000000-0000-4000-8000-000000000000",
+  "consent_uuid": "00000000-0000-4000-8000-000000000000",
+  "consent_project": "string",
+  "consent_notice_code": "string",
+  "consent_notice_version": 1,
+  "consent_at": "2026-09-17T12:00:00Z",
+  "consent_purposes": [
+    "string"
+  ],
+  "closed_at": "2026-09-17T12:00:00Z",
+  "clock": {
+    "received_at": "2026-09-17T12:00:00Z",
+    "due_at": "2026-09-17T12:00:00Z",
+    "acknowledge_by": "2026-09-17T12:00:00Z",
+    "tickets_by": "2026-09-17T12:00:00Z",
+    "halfway_at": "2026-09-17T12:00:00Z",
+    "collate_by": "2026-09-17T12:00:00Z",
+    "days_remaining": 1,
+    "overdue": true,
+    "at_risk": true,
+    "progress": 1.0,
+    "checkpoints": [
+      {}
+    ],
+    "next_checkpoint": "string"
+  },
+  "response_files": [
+    {
+      "file_uuid": "00000000-0000-4000-8000-000000000000",
+      "file_name": "string",
+      "file_hash": "string",
+      "size_bytes": 1,
+      "content_type": "…",
+      "created_at": "2026-09-17T12:00:00Z"
+    }
+  ],
+  "attachments": [
+    {
+      "attachment_uuid": "00000000-0000-4000-8000-000000000000",
+      "file_name": "string",
+      "size_bytes": 1,
+      "content_type": "string",
+      "added_at": "2026-09-17T12:00:00Z"
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="24_post_me_requests_request_uuid_dispute"></a>
+## 24. `POST /me/requests/{request_uuid}/dispute` — Dispute the response - a grievance under s.13
 
 ### API
 
@@ -1430,6 +1584,15 @@ Request body required: **yes**.
       "content_type": "…",
       "created_at": "2026-09-17T12:00:00Z"
     }
+  ],
+  "attachments": [
+    {
+      "attachment_uuid": "00000000-0000-4000-8000-000000000000",
+      "file_name": "string",
+      "size_bytes": 1,
+      "content_type": "string",
+      "added_at": "2026-09-17T12:00:00Z"
+    }
   ]
 }
 ```
@@ -1452,8 +1615,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="24_get_me_nominations"></a>
-## 24. `GET /me/nominations` — Whom I have nominated
+<a id="25_get_me_nominations"></a>
+## 25. `GET /me/nominations` — Whom I have nominated
 
 ### API
 
@@ -1501,8 +1664,8 @@ No request body.
 ]
 ```
 
-<a id="25_post_me_nominations"></a>
-## 25. `POST /me/nominations` — Nominate somebody - s.14
+<a id="26_post_me_nominations"></a>
+## 26. `POST /me/nominations` — Nominate somebody - s.14
 
 ### API
 
@@ -1581,8 +1744,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="26_get_me_nominee_of"></a>
-## 26. `GET /me/nominee-of` — Who has nominated me
+<a id="27_get_me_nominee_of"></a>
+## 27. `GET /me/nominee-of` — Who has nominated me
 
 ### API
 
@@ -1645,8 +1808,8 @@ No request body.
 ]
 ```
 
-<a id="27_delete_me_nominations_nomination_uuid"></a>
-## 27. `DELETE /me/nominations/{nomination_uuid}` — Revoke a nomination
+<a id="28_delete_me_nominations_nomination_uuid"></a>
+## 28. `DELETE /me/nominations/{nomination_uuid}` — Revoke a nomination
 
 ### API
 
@@ -1724,6 +1887,13 @@ For state changes whose only interesting output is that they happened.
 |---|---|---:|---|---|
 | `ok` | `boolean` | No | default: `True` | — |
 | `message` | `string` or `null` | No | — | — |
+
+<a id="schema-body_attach_document_me_requests_request_uuid_attachments_post"></a>
+#### `Body_attach_document_me_requests__request_uuid__attachments_post`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `file` | `string` | Yes | — | PDF, image, text or Word; max 25 MB |
 
 <a id="schema-contactcoderequest"></a>
 #### `ContactCodeRequest`
@@ -1823,7 +1993,6 @@ For state changes whose only interesting output is that they happened.
 | `request_type` | `string` | Yes | — | — |
 | `request_text` | `string` | Yes | min length: `1`; max length: `20000` | — |
 | `about_dpo` | `boolean` | No | default: `False` | — |
-| `consent_uuid` | `string` or `null` | No | format: `uuid` | — |
 
 <a id="schema-subjectrequestout"></a>
 #### `SubjectRequestOut`
@@ -1862,6 +2031,7 @@ the holders are in the response itself, and the notes are ours.
 | `closed_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `clock` | [`ClockOut`](#schema-clockout) | Yes | — | — |
 | `response_files` | array of [`ResponseFileOut`](#schema-responsefileout) | No | — | — |
+| `attachments` | array of [`AttachmentOut`](#schema-attachmentout) | No | — | — |
 
 <a id="schema-updateme"></a>
 #### `UpdateMe`
@@ -1923,3 +2093,17 @@ A file released with the response, downloaded from the account.
 | `size_bytes` | `integer` | Yes | — | — |
 | `content_type` | `string` or `null` | Yes | — | — |
 | `created_at` | `string` | Yes | format: `date-time` | — |
+
+<a id="schema-attachmentout"></a>
+#### `AttachmentOut`
+
+A document the requester sent with the request. Its name is sealed;
+the console opens it in its server layer, like every personal field.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `attachment_uuid` | `string` | Yes | format: `uuid` | — |
+| `file_name` | `string` | Yes | — | — |
+| `size_bytes` | `integer` | Yes | — | — |
+| `content_type` | `string` | Yes | — | — |
+| `added_at` | `string` | Yes | format: `date-time` | — |

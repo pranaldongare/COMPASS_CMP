@@ -159,15 +159,15 @@ export const SECTIONS: HelpSection[] = [
   {
     id: "requests",
     title: "Making a request",
-    summary: "Access, correction, erasure or a grievance - with a deadline you can see.",
+    summary: "Access, erasure or a grievance - with a deadline you can see.",
     blocks: [
       {
         kind: "steps",
         items: [
           "Click [[My requests]], then [[Make a request]].",
-          "Choose [[What are you asking for]]: [[Access (s.11)]], [[Correction (s.12)]], [[Erasure (s.12(3))]] or [[Grievance (s.13)]].",
-          "Under [[About]] choose everything we hold, or one consent.",
-          "Say what you want in [[Your request]] and click [[Send the request]].",
+          "Choose [[What are you asking for]]: [[Access (s.11)]], [[Erasure (s.12(3))]] or [[Grievance (s.13)]]. A request is about everything we hold about you - every project and every consent.",
+          "Say what you want in [[Your request]]. To send documents with it - a proof of who you are, a letter, a screenshot - click [[Add documents]]: PDF, image, text or Word, up to 10 files of 25 MB each.",
+          "Click [[Send the request]]. Your documents are sent once the request is recorded; if one is not accepted you are told which, and the request stands.",
           "You are given a reference, [[RR-…]], and the date you will hear by. Signed in, your request counts as verified and the clock starts at once.",
         ],
       },

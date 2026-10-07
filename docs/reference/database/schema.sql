@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict RRLFrX1XlyUV99qfOhjgVU6mQYPmjwMJ2oaa4ukaErnobxzeiypRjDguQbsR1Cv
+\restrict l9VmNEsQglH0ydjz6qdujOlVdRm4PJkBkIyVsFOtTTOdif0B6eBwTAmMTQPVxSV
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -3641,6 +3641,66 @@ COMMENT ON COLUMN public.rights_request.due_at IS 'Copied from the published res
 
 
 --
+-- Name: rights_request_attachment; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.rights_request_attachment (
+    attachment_id integer NOT NULL,
+    attachment_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    request_id integer NOT NULL,
+    file_name text NOT NULL,
+    storage_ref text NOT NULL,
+    sha256 character(64) NOT NULL,
+    size_bytes integer NOT NULL,
+    content_type character varying(120) NOT NULL,
+    added_by integer NOT NULL,
+    added_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT rights_request_attachment_size CHECK ((size_bytes > 0))
+);
+
+
+--
+-- Name: TABLE rights_request_attachment; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.rights_request_attachment IS 'A file the data principal attached to her request. Append-only; never replaced or removed';
+
+
+--
+-- Name: COLUMN rights_request_attachment.file_name; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.rights_request_attachment.file_name IS 'The name it was uploaded with. Sealed (FILE_NAME)';
+
+
+--
+-- Name: COLUMN rights_request_attachment.sha256; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.rights_request_attachment.sha256 IS 'The hash of the file as uploaded; a download carries it beside the hash of what was read';
+
+
+--
+-- Name: rights_request_attachment_attachment_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.rights_request_attachment_attachment_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: rights_request_attachment_attachment_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.rights_request_attachment_attachment_id_seq OWNED BY public.rights_request_attachment.attachment_id;
+
+
+--
 -- Name: rights_request_holder; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4232,6 +4292,13 @@ ALTER TABLE ONLY public.rights_item_execution ALTER COLUMN execution_id SET DEFA
 --
 
 ALTER TABLE ONLY public.rights_request ALTER COLUMN request_id SET DEFAULT nextval('public.rights_request_request_id_seq'::regclass);
+
+
+--
+-- Name: rights_request_attachment attachment_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rights_request_attachment ALTER COLUMN attachment_id SET DEFAULT nextval('public.rights_request_attachment_attachment_id_seq'::regclass);
 
 
 --
@@ -5119,6 +5186,22 @@ ALTER TABLE ONLY public.rights_item_execution
 
 
 --
+-- Name: rights_request_attachment rights_request_attachment_attachment_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rights_request_attachment
+    ADD CONSTRAINT rights_request_attachment_attachment_uuid_key UNIQUE (attachment_uuid);
+
+
+--
+-- Name: rights_request_attachment rights_request_attachment_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rights_request_attachment
+    ADD CONSTRAINT rights_request_attachment_pkey PRIMARY KEY (attachment_id);
+
+
+--
 -- Name: rights_request_holder rights_request_holder_holder_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5670,6 +5753,13 @@ CREATE INDEX idx_rights_item_request ON public.rights_request_item USING btree (
 
 
 --
+-- Name: idx_rights_request_attachment; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rights_request_attachment ON public.rights_request_attachment USING btree (request_id, attachment_id);
+
+
+--
 -- Name: idx_rights_request_contact_hash; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6150,6 +6240,13 @@ CREATE TRIGGER trg_purpose_touch BEFORE UPDATE ON public.purpose FOR EACH ROW EX
 --
 
 CREATE TRIGGER trg_restricted_country_lift_only BEFORE DELETE OR UPDATE ON public.restricted_country FOR EACH ROW EXECUTE FUNCTION public.cmp_restricted_country_lift_only();
+
+
+--
+-- Name: rights_request_attachment trg_rights_request_attachment_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_rights_request_attachment_append_only BEFORE DELETE OR UPDATE ON public.rights_request_attachment FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
 
 
 --
@@ -7165,6 +7262,22 @@ ALTER TABLE ONLY public.rights_item_execution
 
 
 --
+-- Name: rights_request_attachment rights_request_attachment_added_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rights_request_attachment
+    ADD CONSTRAINT rights_request_attachment_added_by_fkey FOREIGN KEY (added_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: rights_request_attachment rights_request_attachment_request_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rights_request_attachment
+    ADD CONSTRAINT rights_request_attachment_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.rights_request(request_id);
+
+
+--
 -- Name: rights_request rights_request_classified_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7344,5 +7457,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict RRLFrX1XlyUV99qfOhjgVU6mQYPmjwMJ2oaa4ukaErnobxzeiypRjDguQbsR1Cv
+\unrestrict l9VmNEsQglH0ydjz6qdujOlVdRm4PJkBkIyVsFOtTTOdif0B6eBwTAmMTQPVxSV
 

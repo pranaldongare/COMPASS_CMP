@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-27 operations; 27 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+28 operations; 28 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
@@ -33,6 +33,7 @@
 | GET | `/me/requests/{request_uuid}/files/{file_uuid}` | `data_subject` | Full session; anonymous NO |
 | GET | `/me/requests/{request_uuid}/trail` | `data_subject` | Full session; anonymous NO |
 | DELETE | `/me/secondary-email` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | Full session; anonymous NO |
+| POST | `/me/requests/{request_uuid}/attachments` | `data_subject` | Full session; anonymous NO |
 
 ## GET /me
 
@@ -440,3 +441,17 @@ Notices about a personal data breach written to my account (Rule 7(1)).
 - **Route guard:** `RequireDataSubject`.
 - **Rules:** Her own: the breach notices written to her account (S3-03), only versions actually sent to her.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/me.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/breach_notices.py).
+
+## POST /me/requests/{request_uuid}/attachments
+
+Send a document with my request.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO |
+
+- **Who:** `data_subject`, on her own request only.
+- **Route guard:** `RequireDataSubject`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DATA_SUBJECT))]`.
+- **Rules:** Only her own request (404 otherwise, including one a nominee raised for her), and only while it is open (409 `request_closed`), checked before the file is stored. Multipart `file`: PDF, PNG, JPEG, text or .docx, at most 25 MB; at most 10 on a request (409 `too_many_attachments`). Kept as it came - never replaced or removed, by trigger and grant; the name sealed. The trail records `rights.attachment_added`, never the name. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).

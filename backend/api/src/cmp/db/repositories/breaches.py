@@ -419,6 +419,10 @@ PLATFORM_TABLES: dict[str, str] = {
     "rights_response_file": """SELECT r.subject_user_id, f.created_at FROM rights_response_file f
                                JOIN rights_request r ON r.request_id = f.request_id
                                WHERE r.subject_user_id IS NOT NULL""",
+    "rights_request_attachment": """SELECT r.subject_user_id, a.added_at
+                                    FROM rights_request_attachment a
+                                    JOIN rights_request r ON r.request_id = a.request_id
+                                    WHERE r.subject_user_id IS NOT NULL""",
     # Both people in a nomination: the principal, and a nominee with an account.
     "nomination": """SELECT principal_user_id, created_at FROM nomination
                      UNION ALL

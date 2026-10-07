@@ -159,6 +159,12 @@ store was done.
 **`rights_response_file`** — `file_ref`, `file_hash`, `file_name`,
 `content_type`, `size_bytes`, `uploaded_by`.
 
+**`rights_request_attachment`** (0043) — `file_name` (sealed), `storage_ref`,
+`sha256`, `size_bytes`, `content_type`, `added_by`; the document itself in
+storage under `requests/`. What a person sends with her request - a proof of
+who she is, a letter, a screenshot - and it may name anyone. Traced to her
+through the request for a database breach.
+
 **`nomination`** — `principal_user_id`, `nominee_name`, `nominee_email`,
 `nominee_mobile`, `nominee_user_id`, `accept_token_hash`, and `rights` (which
 rights the nominee may exercise), with `nominee_email_hash`,
@@ -340,7 +346,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-203 of 294 operations accept or return personal data. Each table gives the
+204 of 296 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -377,7 +383,7 @@ selected.
 
 ### The data principal's own records — `/me/*`
 
-22 operations carry personal data.
+23 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
@@ -399,8 +405,9 @@ selected.
 | GET | `/me/nominee-of` | Principal own rows | — | `contact`, `principal_name` |
 | POST | `/me/person-type` | DPO own rows, Admin own rows, Principal own rows | `person_type`, `reason` | — |
 | GET | `/me/requests` | Principal own rows | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `content_type`, `download_available`, `download_expires_at`, `file_name`, `file_uuid`, `refusal_reason`, `remedy_text`, `request_text`, `response_files`, `response_text`, `size_bytes` |
-| POST | `/me/requests` | Principal own rows | `consent_uuid`, `request_text` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `content_type`, `download_available`, `download_expires_at`, `file_name`, `file_uuid`, `refusal_reason`, `remedy_text`, `request_text`, `response_files`, `response_text`, `size_bytes` |
+| POST | `/me/requests` | Principal own rows | `request_text` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `content_type`, `download_available`, `download_expires_at`, `file_name`, `file_uuid`, `refusal_reason`, `remedy_text`, `request_text`, `response_files`, `response_text`, `size_bytes` |
 | GET | `/me/requests/{request_uuid}` | Principal own rows | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `content_type`, `download_available`, `download_expires_at`, `file_name`, `file_uuid`, `refusal_reason`, `remedy_text`, `request_text`, `response_files`, `response_text`, `size_bytes` |
+| POST | `/me/requests/{request_uuid}/attachments` | Principal own rows | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `content_type`, `download_available`, `download_expires_at`, `file_name`, `file_uuid`, `refusal_reason`, `remedy_text`, `request_text`, `response_files`, `response_text`, `size_bytes` |
 | POST | `/me/requests/{request_uuid}/dispute` | Principal own rows | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `content_type`, `download_available`, `download_expires_at`, `file_name`, `file_uuid`, `refusal_reason`, `remedy_text`, `request_text`, `response_files`, `response_text`, `size_bytes` |
 | GET | `/me/requests/{request_uuid}/files/{file_uuid}` | Principal own rows | `file_uuid` | — |
 
@@ -707,7 +714,7 @@ selected.
 |---|---|---|---|---|
 | POST | `/breach-tickets/{ticket_uuid}/colleagues` | any signed-in session, own record | `email`, `full_name`, `mobile` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
 
-<!-- 203 of 294 operations carry personal data; 20 of them need no session. -->
+<!-- 204 of 296 operations carry personal data; 20 of them need no session. -->
 
 ## The public surface
 

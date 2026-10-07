@@ -8,6 +8,17 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Documents with a rights request** (2026-10-07). Signed in, a data
+  principal can send documents with her request - a proof of who she is, a
+  letter, a screenshot: PDF, PNG, JPEG, text or Word, 25 MB each, at most ten,
+  while the request is open. The portal sends them once the request is
+  recorded, and one refused does not undo it; her request card lists them.
+  The DPO sees them under the request text, each downloadable, every download
+  on the trail. Migration 0043: `rights_request_attachment`, append-only by
+  trigger and grant, the name sealed (FILE_NAME), traced to her for a
+  database breach. `POST /me/requests/{uuid}/attachments` (her own, open
+  request; checked before the file is stored) and
+  `GET /requests/{uuid}/attachments/{attachment_uuid}`.
 - **Email: five settings, one designed template, and a document of every
   message** (2026-10-06). Email is configured by `SMTP_SERVER`, `SMTP_PORT`,
   `SMTP_USERNAME`, `SMTP_PASSWORD` and `SENDER_EMAIL`, and nothing else: with
@@ -492,6 +503,19 @@ as a release yet.
 - `CONTRIBUTING.md`.
 
 ### Changed
+- **Three requests, about everything** (DPO, 2026-10-07). A new rights
+  request is access, erasure or a grievance - correction is no longer offered
+  on any form or channel, nor as a reclassification; a correction to a name is
+  made from the account. A request is about everything held on the person:
+  the portal's consent picker and "Ask about this consent" are gone, and the
+  API refuses `consent_uuid` on a new request. Requests made before - a
+  correction, or one confined to a consent - are shown and handled to the end
+  as they were.
+- **The request page, for the DPO** (2026-10-07). Refusing at step 4 is a
+  button that says what it does ("Refuse this request", with the reason it
+  asks for), not a grey line of text. The next step - In progress and the
+  other moves - comes straight after classification, before the holders, and
+  the summary's next move links to it; the response card has its own group.
 - **A breach's page is in tabs, like a project's.** It had grown to eight
   cards in one column. Closing it - with what still stands in the way - now
   sits at the top beside its details; the work is in tabs in the order it
