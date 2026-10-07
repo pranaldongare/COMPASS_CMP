@@ -42,14 +42,22 @@ export function TemplateStatusBadge({ status }: { status: "active" | "retired" }
   );
 }
 
-export function NewTemplateButton() {
+/** Starts a template from wherever the DPO is: the Notices header, either
+ *  tab; the empty Templates list; the dashboard. Opens the new template. */
+export function NewTemplateButton({
+  variant = "primary",
+  size = "sm",
+}: {
+  variant?: "primary" | "secondary";
+  size?: "sm" | "md";
+}) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   return (
     <>
-      <Button variant="primary" size="sm" onClick={() => setOpen(true)}>
+      <Button variant={variant} size={size} onClick={() => setOpen(true)}>
         <Plus className="size-4" />
-        New template
+        New notice template
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent

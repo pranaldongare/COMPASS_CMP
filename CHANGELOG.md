@@ -9,8 +9,9 @@ as a release yet.
 
 ### Added
 - **Notice templates** (2026-10-07). The DPO writes notices before the
-  projects that will use them exist, as many as they like: on the Notices
-  screen's new Templates tab, each template has a name, the Rule 3 links and
+  projects that will use them exist, as many as they like: New notice
+  template sits on the DPO's dashboard and at the top of Notices, and the
+  templates are listed in Notices' new Templates tab. Each template has a name, the Rule 3 links and
   DPO contact, an audience, purposes from the register and its text in each
   language, under an ID the database mints (`TPL-0007`). Nothing on a template
   is approved or served; it is edited in place and retired, never deleted.

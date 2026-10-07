@@ -28,12 +28,19 @@ describe("QuickAction", () => {
     expect(screen.getByRole("dialog", { name: "Log an incident" })).toBeInTheDocument();
   });
 
+  it("gives the DPO a notice template beside it, which opens the template form", async () => {
+    const { user } = render(<QuickAction me={makeMe({ role: "dpo", writes: ["breach", "notice"] })} />);
+    await user.click(screen.getByRole("button", { name: "New notice template" }));
+    expect(screen.getByRole("dialog", { name: "New notice template" })).toBeInTheDocument();
+  });
+
   it("gives an R&D user Register a project and an administrator Provision an account", () => {
     const { unmount } = render(<QuickAction me={makeMe({ role: "rnd_user", writes: ["project"] })} />);
     expect(screen.getByRole("button", { name: "Register a project" })).toBeInTheDocument();
     unmount();
     render(<QuickAction me={makeMe({ role: "admin", writes: ["user"] })} />);
     expect(screen.getByRole("button", { name: "Provision an account" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "New notice template" })).not.toBeInTheDocument();
   });
 
   it("gives the collection roles nothing to start without a project or a site", () => {

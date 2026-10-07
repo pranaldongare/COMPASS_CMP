@@ -58,7 +58,7 @@ function NoticesPageView() {
       <PageHeader
         title="Notices"
         description={description}
-        actions={tab === "templates" ? <NewTemplateButton /> : undefined}
+        actions={<NewTemplateButton />}
       />
       <Tabs value={tab} onValueChange={setTab} label="Notices">
         <TabList>

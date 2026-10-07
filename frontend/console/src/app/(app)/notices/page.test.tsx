@@ -65,13 +65,13 @@ describe("NoticesPage", () => {
     );
   });
 
-  it("lets the DPO write a template with no project, and opens it", async () => {
+  it("lets the DPO write a template with no project from either tab, and opens it", async () => {
     role = "dpo";
-    window.history.replaceState(null, "", "/notices?tab=templates");
+    window.history.replaceState(null, "", "/notices");
     const created = vi.fn();
     serve(created);
     const { user } = render(<NoticesPage />);
-    await user.click(await screen.findByRole("button", { name: /New template/ }));
+    await user.click(await screen.findByRole("button", { name: /New notice template/ }));
 
     await user.type(screen.getByLabelText(/Template name/), "Speech studies");
     await user.type(screen.getByLabelText(/DPO contact/), "dpo@example.org");
@@ -98,6 +98,6 @@ describe("NoticesPage", () => {
     render(<NoticesPage />);
     await screen.findByText(/No notices yet/);
     expect(screen.queryByRole("tab", { name: "Templates" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /New template/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /New notice template/ })).not.toBeInTheDocument();
   });
 });

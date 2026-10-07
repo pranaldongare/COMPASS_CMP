@@ -22,6 +22,7 @@ import * as React from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/primitives";
 import { RecordBreachForm } from "@/features/breach/components/record-breach";
+import { NewTemplateButton } from "@/features/notice-templates/components/templates-panel";
 import { ProjectForm } from "@/features/projects/components";
 import { UserForm } from "@/features/users/components/forms";
 import type { Me } from "@/types";
@@ -57,6 +58,9 @@ export function QuickAction({ me }: { me: Me | null | undefined }) {
         <Icon className="size-4" />
         {copy.label}
       </Button>
+      {/* The DPO's second start (2026-10-07): a notice written before the
+          project that will use it exists. Secondary - the incident leads. */}
+      {me?.role === "dpo" && <NewTemplateButton variant="secondary" size="md" />}
       <Dialog open={open} onOpenChange={setOpen}>
         {action === "incident" && (
           <DialogContent

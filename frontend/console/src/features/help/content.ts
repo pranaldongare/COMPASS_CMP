@@ -312,7 +312,7 @@ export const SECTIONS: HelpSection[] = [
         kind: "steps",
         title: "Write a notice template (DPO)",
         items: [
-          "Open [[Notices]], then the [[Templates]] tab, and click [[New template]].",
+          "Click [[New notice template]] - on your dashboard, or at the top of [[Notices]]. Your templates are listed in the [[Templates]] tab there.",
           "Give it a [[Template name]], the DPO contact and the three links, and paste the text if you have it. Click [[Create template]].",
           "On its page, add its purposes and the text in each language. Nothing on a template needs approving - each language is approved on the project's notice made from it.",
           "Give its ID to the study's R&D User; [[Copy ID]] puts it on the clipboard. [[Retire]] stops it being used; notices already made from it are unaffected.",
