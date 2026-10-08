@@ -13,7 +13,7 @@
  */
 "use client";
 
-import { AlertTriangle, ArrowRight, Ban, Lock } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Ban, Lock } from "lucide-react";
 import * as React from "react";
 
 import {
@@ -426,8 +426,11 @@ export function ClassificationCard({ request: r }: { request: RightsRequestDetai
 export function RequestTransitions({ request: r }: { request: RightsRequestDetail }) {
   const toast = useToast();
   const move = useTransitionRequest(r.request_uuid);
-  // Sending tickets moves a request to awaiting holders by itself.
-  const generic = r.transitions.filter((t) => t.via === "transition" && !AUTOMATIC.includes(t.to));
+  // Sending tickets moves a request to awaiting holders by itself; from
+  // collating the same move is the way back (2026-10-08), so it is offered.
+  const generic = r.transitions.filter(
+    (t) => t.via === "transition" && (!AUTOMATIC.includes(t.to) || r.status === "collating"),
+  );
 
   if (r.status === "closed") {
     return (
@@ -441,9 +444,9 @@ export function RequestTransitions({ request: r }: { request: RightsRequestDetai
   }
   if (generic.length === 0) return null;
 
-  async function run(to: string) {
+  async function run(to: string, reason?: string) {
     try {
-      await move.mutateAsync({ to });
+      await move.mutateAsync(reason ? { to, reason } : { to });
       toast.success(`Moved to ${STATUS_COPY[to as keyof typeof STATUS_COPY]?.label ?? to}`);
     } catch (err) {
       toast.error("Could not move this request", messageOf(err, "The server refused."));
@@ -459,7 +462,10 @@ export function RequestTransitions({ request: r }: { request: RightsRequestDetai
         </p>
       </CardHeader>
       <CardBody className="space-y-3">
-        {generic.map((option) => (
+        {generic.map((option) =>
+          option.reason_required ? (
+            <GoBack key={option.to} to={option.to} pending={move.isPending} onGo={(reason) => run(option.to, reason)} />
+          ) : (
           <div key={option.to} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border px-4 py-3">
             <div className="min-w-0">
               <p className="text-sm font-medium">Move to {STATUS_COPY[option.to].label.toLowerCase()}</p>
@@ -482,8 +488,48 @@ export function RequestTransitions({ request: r }: { request: RightsRequestDetai
               <ArrowRight className="size-4" />
             </Button>
           </div>
-        ))}
+          ),
+        )}
       </CardBody>
     </Card>
+  );
+}
+
+/** Why a request goes back from collating (2026-10-08): codes the trail keeps. */
+const BACK_REASONS: { value: string; label: string }[] = [
+  { value: "new_holder", label: "A holder still to ask" },
+  { value: "more_from_holder", label: "More needed from a holder" },
+  { value: "other", label: "Something else" },
+];
+
+function GoBack({ to, pending, onGo }: { to: RightsRequestDetail["status"]; pending: boolean; onGo: (reason: string) => void }) {
+  const [reason, setReason] = React.useState("");
+  const where = STATUS_COPY[to].label.toLowerCase();
+  return (
+    <div className="space-y-2 rounded-md border border-border px-4 py-3">
+      <p className="text-sm font-medium">Back to {where}</p>
+      <p className="text-xs text-text-muted">
+        Moved to collating too soon? Go back to add a holder or ask a holder for more, then send
+        the ticket from Holders and tickets. The clock does not pause.
+      </p>
+      <div className="flex flex-wrap items-end gap-2">
+        <Field label="Why">
+          {(p) => (
+            <Select {...p} value={reason} onChange={(e) => setReason(e.target.value)}>
+              <option value="">Choose…</option>
+              {BACK_REASONS.map((b) => (
+                <option key={b.value} value={b.value}>
+                  {b.label}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+        <Button variant="secondary" size="sm" disabled={!reason} loading={pending} onClick={() => onGo(reason)}>
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          Back to {where}
+        </Button>
+      </div>
+    </div>
   );
 }

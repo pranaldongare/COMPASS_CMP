@@ -198,6 +198,33 @@ class TestTheOfficeReadsConsents:
             "the office sees consents; every sealed field in them was checked"
         )
         c = world.consent_uuid
+        # Filtered by project, site, status and when (2026-10-08): the world's
+        # consent is found by its own project and site, and not by another day.
+        mine = await call(
+            http,
+            "GET",
+            "/consents",
+            session=world.dpo,
+            params={
+                "project": world.project_uuid,
+                "site": world.site_uuid,
+                "from": "2026-01-01T00:00:00Z",
+            },
+        )
+        # The world's consent was withdrawn earlier, which superseded it: the
+        # current one has its own uuid. What is listed is that project's, at that site.
+        assert mine.json()["items"]
+        assert {(r["project_uuid"], r["site_uuid"]) for r in mine.json()["items"]} == {
+            (world.project_uuid, world.site_uuid)
+        }
+        none = await call(
+            http,
+            "GET",
+            "/consents",
+            session=world.dpo,
+            params={"site": world.site_uuid, "to": "2000-01-01T00:00:00Z"},
+        )
+        assert none.json()["items"] == []
         await call(
             http, "GET", f"/consents/{c}", template="/consents/{consent_uuid}", session=world.dpo
         )

@@ -8590,7 +8590,7 @@
           "consent"
         ],
         "summary": "All consents in scope",
-        "description": "Every current consent in scope. Status is derived, never stored.",
+        "description": "Every current consent in scope. Status is derived, never stored:\nconsented (every purpose), partial (some), declined, withdrawn. Filtered\nby project, site, status, and when it was given (`from` and `to`,\nboth inclusive).",
         "operationId": "list_all_consents_consents_get",
         "parameters": [
           {
@@ -8624,6 +8624,57 @@
                 }
               ],
               "title": "Project"
+            }
+          },
+          {
+            "name": "site",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Site"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
             }
           },
           {
@@ -11868,6 +11919,70 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SendBackIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/holders/{holder_uuid}/correct-contact": {
+      "post": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "Correct a holder's email: the ticket goes again to the right address",
+        "description": "For a mistyped address (2026-10-08). Nobody at the wrong address is\nwritten to; an outside holder gets a new link, the old one stops working.",
+        "operationId": "correct_contact_requests__request_uuid__holders__holder_uuid__correct_contact_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectContactIn"
               }
             }
           }
@@ -23224,6 +23339,34 @@
         ],
         "title": "CopySourceOut"
       },
+      "CorrectContactIn": {
+        "properties": {
+          "responder_contact": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Responder Contact"
+          },
+          "responder_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responder Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "responder_contact"
+        ],
+        "title": "CorrectContactIn"
+      },
       "Count": {
         "properties": {
           "key": {
@@ -24536,6 +24679,11 @@
             "type": "integer",
             "title": "Sent Back Count",
             "default": 0
+          },
+          "has_address": {
+            "type": "boolean",
+            "title": "Has Address",
+            "default": true
           },
           "link_issued_at": {
             "anyOf": [

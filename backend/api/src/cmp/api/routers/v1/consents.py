@@ -202,9 +202,15 @@ async def list_all_consents(
     page: Annotated[PageRequest, Depends(consent_paging)],
     consent_status: Annotated[str | None, Query(alias="status")] = None,
     project: Annotated[UUID | None, Query()] = None,
+    site: Annotated[UUID | None, Query()] = None,
+    date_from: Annotated[datetime | None, Query(alias="from")] = None,
+    date_to: Annotated[datetime | None, Query(alias="to")] = None,
 ) -> dict[str, Any]:
-    """Every current consent in scope. Status is derived, never stored."""
-    reject_unknown_filters(request, {"status", "project"})
+    """Every current consent in scope. Status is derived, never stored:
+    consented (every purpose), partial (some), declined, withdrawn. Filtered
+    by project, site, status, and when it was given (`from` and `to`,
+    both inclusive)."""
+    reject_unknown_filters(request, {"status", "project", "site", "from", "to"})
     async with connection() as conn:
         items, cursor, total = await repo.list_all_consents(
             conn,
@@ -213,6 +219,9 @@ async def list_all_consents(
             user_id=principal.user_id,
             status=consent_status,
             project_uuid=str(project) if project else None,
+            site_uuid=str(site) if site else None,
+            date_from=date_from,
+            date_to=date_to,
         )
     return {"items": items, "next_cursor": cursor, "total": total}
 

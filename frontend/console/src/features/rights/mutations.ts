@@ -153,6 +153,11 @@ export const useSetInstruction = (uuid: Uuid) =>
     uuid,
     ({ holderUuid, instruction }) => api.setInstruction(uuid, holderUuid, instruction),
   );
+export const useCorrectContact = (uuid: Uuid) =>
+  useRequestAction<
+    RightsHolder,
+    { holderUuid: Uuid; responder_contact: string; responder_name?: string | null }
+  >(uuid, ({ holderUuid, ...body }) => api.correctContact(uuid, holderUuid, body));
 export const useRemoveHolder = (uuid: Uuid) =>
   useRequestAction<void, Uuid>(uuid, (holderUuid) => api.removeHolder(uuid, holderUuid));
 

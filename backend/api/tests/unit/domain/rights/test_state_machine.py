@@ -140,15 +140,27 @@ class TestHoldersAndTheClock:
         assert available(S.AWAITING_HOLDERS, Role.DPO, chased)[0]["allowed"] is True
 
     def test_closure_is_made_by_responding(self) -> None:
-        [option] = available(S.COLLATING, Role.DPO, READY)
+        option, _back = available(S.COLLATING, Role.DPO, READY)
         assert option["to"] == "closed"
         assert option["via"] == "respond"
+
+    def test_collating_can_go_back_with_a_reason(self) -> None:
+        """2026-10-08: a holder still to add, or more needed from one."""
+        _close, back = available(S.COLLATING, Role.DPO, RequestFacts(tickets_issued=2))
+        assert back == {
+            "to": "awaiting_holders",
+            "allowed": True,
+            "via": "transition",
+            "reason_required": True,
+        }
+        _close, back = available(S.COLLATING, Role.DPO, RequestFacts(tickets_issued=0))
+        assert back["to"] == "in_progress"
 
     def test_erasure_cannot_close_with_an_undecided_item(self) -> None:
         facts = RequestFacts(
             request_type="erasure", verified=True, classified=True, items_undecided=2
         )
-        [option] = available(S.COLLATING, Role.DPO, facts)
+        option, _back = available(S.COLLATING, Role.DPO, facts)
         assert option["allowed"] is False
         assert "basis" in str(option["blocked_by"])
 

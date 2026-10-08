@@ -12,6 +12,9 @@ Five states, walked forward, and closure carries an outcome:
 | `in_progress`      | `collating`        | DPO            | no ticket outstanding                                                 |
 | `awaiting_holders` | `collating`        | DPO            | every outstanding ticket returned, or escalated once                  |
 | `collating`        | `closed`           | DPO            | via `respond`: erasure needs every scope item decided                 |
+| `collating`        | `awaiting_holders` | DPO            | back, with a reason (2026-10-08): a holder to add, more from a holder |
+|                    | (or `in_progress`  |                | - `in_progress` when no ticket was ever sent                          |
+|                    | if none was sent)  |                |                                                                       |
 
 The early exits on the flow diagrams - identity not verified, not a rights
 request, she meant withdrawal, the event not evidenced - are not transitions.
@@ -230,7 +233,14 @@ def _transitions(status: Status, f: RequestFacts) -> list[Transition]:
             ]
 
         case Status.COLLATING:
-            return [_close(f)]
+            # Back, when the DPO finds a holder still to ask or more needed
+            # from one (2026-10-08). To awaiting holders, or to in progress if
+            # no ticket was ever sent; the reason is one of BACK_REASONS.
+            back = Status.AWAITING_HOLDERS if f.tickets_issued else Status.IN_PROGRESS
+            return [
+                _close(f),
+                Transition(to=back, actors=actors_for(f), reason_required=True),
+            ]
 
         case Status.CLOSED:
             # Terminal. Disagreement with the outcome is a grievance, which is a
@@ -311,6 +321,11 @@ def validate(
         )
 
     return match
+
+
+#: Why a request goes back from collating: codes, so the trail can say why
+#: without holding anybody's words.
+BACK_REASONS: frozenset[str] = frozenset({"new_holder", "more_from_holder", "other"})
 
 
 #: The states from which an early exit - not verified, refused, reclassified as

@@ -10,7 +10,7 @@ Four deployable projects in one repository, one API:
 
 | Path | Stack | What it is |
 |---|---|---|
-| [`backend/api/`](backend/api) | FastAPI 0.141, PostgreSQL 16, Redis 7, Celery 5, Python 3.12 | The API: 324 operations, 58 tables, raw SQL over psycopg 3, no ORM, 49 migrations |
+| [`backend/api/`](backend/api) | FastAPI 0.141, PostgreSQL 16, Redis 7, Celery 5, Python 3.12 | The API: 325 operations, 58 tables, raw SQL over psycopg 3, no ORM, 49 migrations |
 | [`backend/dkms/`](backend/dkms) | FastAPI, `cryptography`, Python 3.12 | The key service on port 32688: seals personal fields on the way into the database and opens them for the portals' servers; computes the keyed hashes that let a sealed column be looked up |
 | [`frontend/console/`](frontend/console) | Next.js 16, React 19, Tailwind 4, TanStack Query | The staff console on port 3000: password and emailed code sign-in, the registers, the DPO's rights queue and breach register, and My tasks: the rights and breach tickets addressed to each person - a temporary login's included |
 | [`frontend/portal/`](frontend/portal) | the same | The data principal's portal on port 3001: the consent link, sign-up, code sign-in, the rights pages, her own consents and requests, any breach notice sent to her, and the page where a holder outside the organisation answers a rights ticket, by link and code |

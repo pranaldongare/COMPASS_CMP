@@ -74,7 +74,7 @@ def test_an_answer_is_reviewed_accepted_or_sent_back() -> None:
 
 def test_the_rest_of_the_path() -> None:
     assert moves(holder(ticket_status="pending", confirmed_at=None)) == ["confirm", "remove"]
-    assert moves(holder(ticket_status="pending")) == ["remove"]
+    assert moves(holder(ticket_status="pending")) == ["edit_responder", "remove"]
     assert moves(holder(ticket_status="withdrawn")) == ["reopen"]
     assert moves(holder(ticket_status="unreturned")) == []
     # In the console, the team answers; there is no mail to note.
@@ -94,3 +94,20 @@ def test_a_holder_answering_by_its_link_answers_itself() -> None:
     assert [m["move"] for m in by_link if m["primary"]] == []
     [record] = [m for m in by_link if m["move"] == "record_answer"]
     assert record["label"] == "Record their answer for them"
+
+
+def test_a_mistyped_address_can_be_corrected_on_an_open_ticket() -> None:
+    """2026-10-08: by email or on a temporary login, never a member of staff."""
+    assert "correct_contact" in moves(holder())
+    assert "correct_contact" in moves(holder(channel="portal", temporary_access="pending"))
+    assert "correct_contact" not in moves(holder(channel="portal"))
+    assert "correct_contact" not in moves(holder(ticket_status="returned"))
+
+
+def test_a_holder_with_nobody_to_send_to_says_so() -> None:
+    def has(**over: Any) -> bool:
+        return bool(tickets.view(holder(**over), request_status="in_progress")["has_address"])
+
+    assert not has(responder_contact=None, responder_user_id=None)
+    assert has(responder_contact="SE::sealed")
+    assert has(responder_user_id=7)

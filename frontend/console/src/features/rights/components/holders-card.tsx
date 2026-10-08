@@ -61,6 +61,7 @@ import {
   useAcceptTicket,
   useAddHolder,
   useConfirmHolder,
+  useCorrectContact,
   useDeriveHolders,
   useEscalateTicket,
   useIssueTickets,
@@ -93,6 +94,11 @@ function messageOf(err: unknown, fallback: string): string {
   return err && typeof err === "object" && "userMessage" in err
     ? (err as { userMessage: () => string }).userMessage()
     : fallback;
+}
+
+/** Shaped like an email address: the server checks it properly. */
+function looksLikeEmail(v: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 }
 
 /** The end of the chosen day: a ticket due today is overdue tomorrow. */
@@ -287,6 +293,9 @@ export function HoldersCard({ request: r }: { request: RightsRequestDetail }) {
                       </button>
                       <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-text-muted">
                         <Reach holder={h} />
+                        {!h.has_address && (
+                          <span className="font-medium text-danger-text"> · No email - add one before sending</span>
+                        )}
                         {h.responder_user_name || h.responder_name ? ` · ${h.responder_user_name ?? h.responder_name}` : ""}
                         <UnreadBadge count={h.unread_for_office} />
                       </span>
@@ -735,6 +744,10 @@ function MoveForm({
       );
     case "confirm":
       return frame(<ConfirmForm request={r} holder={h} onDone={onDone} />);
+    case "edit_responder":
+      return frame(<ConfirmForm request={r} holder={h} onDone={onDone} editing />);
+    case "correct_contact":
+      return frame(<CorrectContactForm request={r} holder={h} onDone={onDone} />);
     case "record_answer":
       return frame(<ReturnForm request={r} holder={h} onDone={onDone} />);
     case "send_back":
@@ -765,7 +778,18 @@ function FormButtons({ pending, disabled, label, onCancel }: { pending: boolean;
   );
 }
 
-function ConfirmForm({ request: r, holder: h, onDone }: { request: RightsRequestDetail; holder: RightsHolder; onDone: () => void }) {
+function ConfirmForm({
+  request: r,
+  holder: h,
+  onDone,
+  editing = false,
+}: {
+  request: RightsRequestDetail;
+  holder: RightsHolder;
+  onDone: () => void;
+  /** Changing who answers on a confirmed holder, before its ticket goes. */
+  editing?: boolean;
+}) {
   const toast = useToast();
   const confirm = useConfirmHolder(r.request_uuid);
   const respondents = useRespondents(h.processor_uuid ?? undefined);
@@ -784,7 +808,10 @@ function ConfirmForm({ request: r, holder: h, onDone }: { request: RightsRequest
               ? { holderUuid: h.holder_uuid, respondent_uuid: respondentUuid }
               : { holderUuid: h.holder_uuid, responder_name: name || null, responder_contact: contact || null },
           );
-          toast.success("Confirmed", "Send the tickets when every holder is confirmed.");
+          toast.success(
+            editing ? "Saved" : "Confirmed",
+            editing ? "Their ticket goes here when you send it." : "Send the tickets when every holder is confirmed.",
+          );
           onDone();
         } catch (err) {
           toast.error("Not confirmed", messageOf(err, "The server refused."));
@@ -809,13 +836,69 @@ function ConfirmForm({ request: r, holder: h, onDone }: { request: RightsRequest
         {!respondentUuid && (
           <div className="grid gap-2 sm:grid-cols-2">
             <Field label="Their name">{(p) => <Input {...p} value={name} onChange={(e) => setName(e.target.value)} />}</Field>
-            <Field label="Their email" hint="The ticket is emailed here.">
+            <Field label="Their email" hint="Required: the ticket is emailed here." required>
               {(p) => <Input {...p} type="email" value={contact} onChange={(e) => setContact(e.target.value)} />}
             </Field>
           </div>
         )}
       </div>
-      <FormButtons pending={confirm.isPending} label="Confirm" onCancel={onDone} />
+      <FormButtons
+        pending={confirm.isPending}
+        disabled={!respondentUuid && !looksLikeEmail(contact)}
+        label={editing ? "Save" : "Confirm"}
+        onCancel={onDone}
+      />
+    </form>
+  );
+}
+
+function CorrectContactForm({ request: r, holder: h, onDone }: { request: RightsRequestDetail; holder: RightsHolder; onDone: () => void }) {
+  const toast = useToast();
+  const correct = useCorrectContact(r.request_uuid);
+  const [contact, setContact] = React.useState(h.responder_contact ?? "");
+  const [name, setName] = React.useState(h.responder_name ?? "");
+  const [error, setError] = React.useState<string | null>(null);
+  return (
+    <form
+      method="post"
+      noValidate
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setError(null);
+        try {
+          await correct.mutateAsync({
+            holderUuid: h.holder_uuid,
+            responder_contact: contact.trim(),
+            responder_name: name.trim() && name.trim() !== h.responder_name ? name.trim() : null,
+          });
+          toast.success("Email corrected", "The ticket has been sent again to the right address.");
+          onDone();
+        } catch (err) {
+          setError(messageOf(err, "Could not correct it."));
+        }
+      }}
+    >
+      <div className="space-y-3">
+        <p className="text-xs text-text-muted">
+          The ticket goes again to the corrected address, and nobody at the old one is written to.
+          {h.link_issued_at ? " The old link stops working; a new one is sent." : ""}
+        </p>
+        {error && <Alert tone="danger">{error}</Alert>}
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Field label="Their email" required>
+            {(p) => <Input {...p} type="email" value={contact} onChange={(e) => setContact(e.target.value)} />}
+          </Field>
+          <Field label="Their name" hint="Leave as it is unless it was wrong too.">
+            {(p) => <Input {...p} value={name} onChange={(e) => setName(e.target.value)} />}
+          </Field>
+        </div>
+      </div>
+      <FormButtons
+        pending={correct.isPending}
+        disabled={!looksLikeEmail(contact) || contact.trim() === (h.responder_contact ?? "").trim()}
+        label="Correct and send again"
+        onCancel={onDone}
+      />
     </form>
   );
 }
@@ -995,6 +1078,7 @@ const CONTACT_LABEL: Record<string, string> = {
   returned_on_portal: "Answered in the console",
   returned_by_link: "Answered by link",
   sent_back: "Sent back",
+  corrected: "Email corrected",
   reminder: "Reminder sent",
   reassigned: "Sent to someone else",
   withdrawn: "Withdrawn",
@@ -1142,10 +1226,25 @@ function AddHolderForm({ request: r, onDone }: { request: RightsRequestDetail; o
         </Field>
         <div className="grid gap-2 sm:grid-cols-2">
           <Field label="Who answers: name">{(p) => <Input {...p} value={name} onChange={(e) => setName(e.target.value)} />}</Field>
-          <Field label="Their email">{(p) => <Input {...p} type="email" value={contact} onChange={(e) => setContact(e.target.value)} />}</Field>
+          <Field
+            label="Their email"
+            required={!processor}
+            hint={processor ? "Or leave empty for the processor's own respondent." : "Required: the ticket is emailed here."}
+          >
+            {(p) => <Input {...p} type="email" value={contact} onChange={(e) => setContact(e.target.value)} />}
+          </Field>
         </div>
       </div>
-      <FormButtons pending={add.isPending} disabled={!processor && label.trim().length === 0} label="Add" onCancel={onDone} />
+      <FormButtons
+        pending={add.isPending}
+        disabled={
+          (!processor && label.trim().length === 0) ||
+          (!processor && !looksLikeEmail(contact)) ||
+          (contact.trim() !== "" && !looksLikeEmail(contact))
+        }
+        label="Add"
+        onCancel={onDone}
+      />
     </form>
   );
 }

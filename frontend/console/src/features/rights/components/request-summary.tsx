@@ -53,7 +53,10 @@ export function nextMove(r: RightsRequestDetail): {
   if (r.status === "closed") return null;
   const holders = holdersMove(r);
   if (holders) return { label: holders, href: "#holders" };
-  const open = r.transitions.find((t) => t.allowed && !AUTOMATIC.includes(t.to));
+  // Never a way back (one that asks why): the next move is forward.
+  const open = r.transitions.find(
+    (t) => t.allowed && !AUTOMATIC.includes(t.to) && !t.reason_required,
+  );
   if (open) {
     return {
       label:
@@ -62,7 +65,9 @@ export function nextMove(r: RightsRequestDetail): {
           : `Move to ${STATUS_COPY[open.to].label.toLowerCase()}`,
     };
   }
-  const blocked = r.transitions.find((t) => t.blocked_by && !AUTOMATIC.includes(t.to));
+  const blocked = r.transitions.find(
+    (t) => t.blocked_by && !AUTOMATIC.includes(t.to) && !t.reason_required,
+  );
   if (blocked?.blocked_by) {
     return {
       label:

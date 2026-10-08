@@ -776,16 +776,19 @@ async def transition(
     )
     if match.via == "respond":
         raise Conflict("Closure is made by responding, which records the outcome as well")
-    await repo.update(conn, int(row["request_id"]), status=match.to.value)
     before = row["status"]
+    detail: dict[str, Any] = {"from": before, "to": match.to.value, "reason_given": bool(reason)}
+    if before == Status.COLLATING:
+        # Back from collating (2026-10-08): the reason is a code, kept on the
+        # trail - a holder to add, more needed from one, or other.
+        if (reason or "").strip() not in sm.BACK_REASONS:
+            raise ValidationFailed(
+                "Say why it goes back: new_holder, more_from_holder or other", field="reason"
+            )
+        detail["why"] = (reason or "").strip()
+    await repo.update(conn, int(row["request_id"]), status=match.to.value)
     row = await reload(conn, row)
-    await _record(
-        conn,
-        row,
-        Event.RIGHTS_STATUS_CHANGED,
-        actor_user_id=actor_id,
-        detail={"from": before, "to": match.to.value, "reason_given": bool(reason)},
-    )
+    await _record(conn, row, Event.RIGHTS_STATUS_CHANGED, actor_user_id=actor_id, detail=detail)
     return row
 
 
@@ -840,6 +843,30 @@ async def derive_holders(conn: Conn, row: Row, *, role: Role | str, actor_id: in
     return await repo.holders_of(conn, int(row["request_id"]))
 
 
+def _ticket_email(raw: str | None) -> str | None:
+    """A holder's address: the ticket is emailed to it, so it has to be one
+    (2026-10-08). None when nothing was given."""
+    if raw is None or not raw.strip():
+        return None
+    address = raw.strip()
+    local, _, domain = address.partition("@")
+    if not local or "." not in domain or " " in address or len(address) > 255:
+        raise ValidationFailed(
+            "Give an email address: the ticket is emailed to whoever answers",
+            field="responder_contact",
+        )
+    return address
+
+
+async def _has_respondents(conn: Conn, processor_id: int | None) -> bool:
+    return bool(processor_id and await registry_repo.respondents_of(conn, processor_id))
+
+
+def _reachable(holder: Row) -> bool:
+    """Somebody to send the ticket to: an account, or an address."""
+    return bool(holder.get("responder_user_id") or holder.get("responder_contact"))
+
+
 async def add_holder(
     conn: Conn,
     row: Row,
@@ -863,6 +890,14 @@ async def add_holder(
         label = label.strip() or str(processor["legal_name"])
     if not label.strip():
         raise ValidationFailed("Name the holder", field="label")
+    responder_contact = _ticket_email(responder_contact)
+    if not responder_contact and not await _has_respondents(conn, processor_id):
+        # The ticket is emailed once it is sent: whoever answers needs an
+        # address now, or a processor that has registered respondents.
+        raise ValidationFailed(
+            "Give the email address of whoever answers for this holder",
+            field="responder_contact",
+        )
     result = await repo.add_holder(
         conn,
         int(row["request_id"]),
@@ -908,6 +943,14 @@ async def confirm_holder(
     holder = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
     if not holder:
         raise NotFound("Holder")
+    if holder["ticket_status"] != Ticket.PENDING and (
+        respondent_uuid or responder_name is not None or responder_contact is not None
+    ):
+        raise Conflict(
+            "The ticket is sent: correct the email address on the ticket instead",
+            code="ticket_already_sent",
+        )
+    responder_contact = _ticket_email(responder_contact)
     cols: dict[str, Any] = {}
     if holder["confirmed_at"] is None:
         cols.update(confirmed_at=datetime.now(UTC), confirmed_by=actor_id)
@@ -933,6 +976,12 @@ async def confirm_holder(
             # Typing over an account's details means: not the portal after all.
             cols.update(respondent_id=None, responder_user_id=None, channel="email")
     await repo.update_holder(conn, int(holder["holder_id"]), **cols)
+    if not _reachable({**holder, **cols}):
+        raise ValidationFailed(
+            f"Who answers for {holder['label']}? Choose a respondent, or give a name and an "
+            "email address",
+            field="responder_contact",
+        )
     await _record(
         conn,
         row,
@@ -1046,6 +1095,13 @@ async def issue_tickets(
         raise Conflict(
             "No confirmed holder is waiting for a ticket. Confirm the holders first.",
             code="no_holders",
+        )
+    nobody = [str(h["label"]) for h in to_issue if not _reachable(h)]
+    if nobody:
+        raise Conflict(
+            "Give an email address to " + ", ".join(nobody) + " before sending: each "
+            "ticket is emailed to whoever answers",
+            code="holder_without_address",
         )
     when = due_at or clock.compute(row["received_at"], row["due_at"]).halfway_at
     if when > row["due_at"]:
@@ -2256,10 +2312,14 @@ async def reassign_holder(
     responder_contact: str | None,
     role: Role | str,
     actor_id: int,
+    correction: bool = False,
 ) -> Row:
     """An open ticket goes to somebody else: the person left, or the wrong
-    person was named. The instruction and the brief are delivered again to
-    the new respondent, the thread says so, and the new person has not seen
+    person was named. With `correction` (2026-10-08) it is the same person at
+    the right address: the wrong one is not written to, the name is kept
+    unless a new one is given, and the trail says it was corrected. The
+    instruction and the brief are delivered again to the new respondent, the
+    thread says so, and the new person has not seen
     it until they have."""
     _may_act(row, role)
     _open(row)
@@ -2280,29 +2340,37 @@ async def reassign_holder(
             raise NotFound("Respondent")
         cols = _respondent_columns(chosen)
     else:
-        if not (responder_name or "").strip() or not (responder_contact or "").strip():
+        address = _ticket_email(responder_contact)
+        named = (responder_name or "").strip()
+        if not address or (not named and not correction):
             raise ValidationFailed(
-                "Name the new respondent and where the instruction goes", field="responder_contact"
+                "Give the email address the ticket goes to"
+                if correction
+                else "Name the new respondent and give the email address the ticket goes to",
+                field="responder_contact",
             )
         cols = {
             "respondent_id": None,
             "responder_user_id": None,
-            "responder_name": str(responder_name).strip(),
-            "responder_contact": str(responder_contact).strip(),
+            "responder_contact": address,
             "channel": "email",
         }
+        if named:
+            cols["responder_name"] = named
     cols["holder_read_at"] = None
-    # Whoever had it is told it has moved, before it does (2026-10-08).
-    await _tell_holder(
-        conn,
-        row,
-        holder,
-        author_id=actor_id,
-        event="The Privacy Office has passed this ticket to someone else. Nothing more is "
-        "needed from you, and its link no longer opens it.",
-        body="The Privacy Office has passed this ticket to someone else. Nothing more is "
-        "needed from you on it.",
-    )
+    if not correction:
+        # Whoever had it is told it has moved, before it does (2026-10-08).
+        # A wrong address is not: nobody there was meant to have it.
+        await _tell_holder(
+            conn,
+            row,
+            holder,
+            author_id=actor_id,
+            event="The Privacy Office has passed this ticket to someone else. Nothing more is "
+            "needed from you, and its link no longer opens it.",
+            body="The Privacy Office has passed this ticket to someone else. Nothing more is "
+            "needed from you on it.",
+        )
     await repo.update_holder(conn, int(holder["holder_id"]), **cols)
     # Whoever had it loses what came with it (0049): a temporary login ends,
     # and the link they held stops working - the new person gets a new one.
@@ -2326,7 +2394,9 @@ async def reassign_holder(
         side="office",
         kind="status",
         body=(
-            f"Sent to {fresh['responder_name']} "
+            "The email address was corrected; the ticket has been sent again."
+            if correction
+            else f"Sent to {fresh['responder_name']} "
             f"({'in the console' if fresh['channel'] == 'portal' else 'by email'}) "
             "instead; the ticket has been sent to them."
         ),
@@ -2335,7 +2405,12 @@ async def reassign_holder(
     await repo.append_contact(
         conn,
         int(holder["holder_id"]),
-        _contact_entry("reassigned", to=await _sealed_address(fresh), by=actor_id, note=None),
+        _contact_entry(
+            "corrected" if correction else "reassigned",
+            to=await _sealed_address(fresh),
+            by=actor_id,
+            note=None,
+        ),
     )
     await _deliver_ticket(
         conn,
@@ -2349,7 +2424,7 @@ async def reassign_holder(
     await _record(
         conn,
         row,
-        Event.RIGHTS_TICKET_REASSIGNED,
+        Event.RIGHTS_HOLDER_CONTACT_CORRECTED if correction else Event.RIGHTS_TICKET_REASSIGNED,
         actor_user_id=actor_id,
         entity_type="rights_request_holder",
         entity_id=int(holder["holder_id"]),
@@ -2368,6 +2443,32 @@ async def reassign_holder(
     final = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
     assert final is not None
     return final
+
+
+async def correct_contact(
+    conn: Conn,
+    row: Row,
+    *,
+    holder_uuid: str,
+    responder_name: str | None,
+    responder_contact: str,
+    role: Role | str,
+    actor_id: int,
+) -> Row:
+    """A ticket sent to a mistyped address goes again to the right one
+    (2026-10-08). As a reassignment, but nobody at the wrong address is
+    written to, and the trail says corrected."""
+    return await reassign_holder(
+        conn,
+        row,
+        holder_uuid=holder_uuid,
+        respondent_uuid=None,
+        responder_name=responder_name,
+        responder_contact=responder_contact,
+        role=role,
+        actor_id=actor_id,
+        correction=True,
+    )
 
 
 async def _send_reminder(

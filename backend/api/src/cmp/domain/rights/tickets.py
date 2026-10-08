@@ -102,7 +102,16 @@ def moves(holder: Row, *, request_status: str, now: datetime | None = None) -> l
             _move("remove", "Remove"),
         ]
     if at == "not_sent":
-        return [_move("remove", "Remove")]
+        # Who answers can still change until the ticket goes (2026-10-08).
+        reachable = bool(holder.get("responder_user_id") or holder.get("responder_contact"))
+        return [
+            _move(
+                "edit_responder",
+                "Change who answers" if reachable else "Add their email",
+                primary=not reachable,
+            ),
+            _move("remove", "Remove"),
+        ]
     if at in ("waiting", "sent_back", "overdue", "final_reminder"):
         out: list[Row] = []
         if at == "overdue":
@@ -119,6 +128,11 @@ def moves(holder: Row, *, request_status: str, now: datetime | None = None) -> l
         if not console:
             out.append(_move("log_contact", "Note a call or email"))
         out.append(_move("reassign", "Send to someone else", emails=True))
+        if not console or holder.get("temporary_access"):
+            # A mistyped address: the ticket goes again to the right one,
+            # and nobody at the wrong one is written to (2026-10-08). Not for
+            # a member of staff, whose address is their account's.
+            out.append(_move("correct_contact", "Correct their email", emails=True))
         out.append(_move("withdraw", "Withdraw", reason=True, emails=True))
         return out
     if at == "review":
@@ -158,6 +172,8 @@ def view(holder: Row, *, request_status: str, now: datetime | None = None) -> Ro
     """The holder as the console shows it: state, overdue, moves."""
     at = state(holder, now=now)
     return {
+        # Somebody to send the ticket to: an account, or an address.
+        "has_address": bool(holder.get("responder_user_id") or holder.get("responder_contact")),
         "state": at,
         "state_label": STATES[at],
         "overdue": overdue(holder, now=now),

@@ -636,6 +636,9 @@ async def list_all_consents(
     user_id: int,
     status: str | None = None,
     project_uuid: str | None = None,
+    site_uuid: str | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
 ) -> tuple[list[Row], str | None, int]:
     """Every current consent this caller may see, across projects.
 
@@ -649,6 +652,16 @@ async def list_all_consents(
     if project_uuid:
         where.append("p.project_uuid = %s")
         params.append(project_uuid)
+    # The site it was given at, and when (2026-10-08).
+    if site_uuid:
+        where.append("s.site_uuid = %s")
+        params.append(site_uuid)
+    if date_from:
+        where.append("ca.affirmative_action_at >= %s")
+        params.append(date_from)
+    if date_to:
+        where.append("ca.affirmative_action_at <= %s")
+        params.append(date_to)
 
     status_sql = {
         # Withdrawn is a withdrawal that left nothing granted. One purpose of

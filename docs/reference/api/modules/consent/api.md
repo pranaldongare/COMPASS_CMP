@@ -108,7 +108,10 @@ No request body.
 - **Operation ID:** `list_all_consents_consents_get`
 - **Access:** Role-controlled `consent` operation. See [`../../roles/README.md`](../../roles/README.md).
 
-Every current consent in scope. Status is derived, never stored.
+Every current consent in scope. Status is derived, never stored:
+consented (every purpose), partial (some), declined, withdrawn. Filtered
+by project, site, status, and when it was given (`from` and `to`,
+both inclusive).
 
 ### Validation
 
@@ -116,6 +119,9 @@ Every current consent in scope. Status is derived, never stored.
 |---|---|---:|---|---|---|
 | `status` | query | No | `string` or `null` | — | — |
 | `project` | query | No | `string` or `null` | format: `uuid` | — |
+| `site` | query | No | `string` or `null` | format: `uuid` | — |
+| `from` | query | No | `string` or `null` | format: `date-time` | — |
+| `to` | query | No | `string` or `null` | format: `date-time` | — |
 | `limit` | query | No | `integer` or `null` | minimum: `1`; maximum: `200` | — |
 | `cursor` | query | No | `string` or `null` | max length: `512` | — |
 | `sort` | query | No | `string` or `null` | max length: `64` | — |

@@ -3049,7 +3049,10 @@ export interface paths {
         };
         /**
          * All consents in scope
-         * @description Every current consent in scope. Status is derived, never stored.
+         * @description Every current consent in scope. Status is derived, never stored:
+         *     consented (every purpose), partial (some), declined, withdrawn. Filtered
+         *     by project, site, status, and when it was given (`from` and `to`,
+         *     both inclusive).
          */
         get: operations["list_all_consents_consents_get"];
         put?: never;
@@ -4115,6 +4118,27 @@ export interface paths {
          *     reason and a date, the holder is told, and the request waits again.
          */
         post: operations["send_back_ticket_requests__request_uuid__holders__holder_uuid__send_back_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/holders/{holder_uuid}/correct-contact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Correct a holder's email: the ticket goes again to the right address
+         * @description For a mistyped address (2026-10-08). Nobody at the wrong address is
+         *     written to; an outside holder gets a new link, the old one stops working.
+         */
+        post: operations["correct_contact_requests__request_uuid__holders__holder_uuid__correct_contact_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7831,6 +7855,13 @@ export interface components {
             /** Language Count */
             language_count: number;
         };
+        /** CorrectContactIn */
+        CorrectContactIn: {
+            /** Responder Contact */
+            responder_contact: string;
+            /** Responder Name */
+            responder_name?: string | null;
+        };
         /** Count */
         Count: {
             /** Key */
@@ -8286,6 +8317,11 @@ export interface components {
              * @default 0
              */
             sent_back_count: number;
+            /**
+             * Has Address
+             * @default true
+             */
+            has_address: boolean;
             /** Link Issued At */
             link_issued_at?: string | null;
             /** Temporary Access */
@@ -17125,6 +17161,9 @@ export interface operations {
             query?: {
                 status?: string | null;
                 project?: string | null;
+                site?: string | null;
+                from?: string | null;
+                to?: string | null;
                 limit?: number | null;
                 cursor?: string | null;
                 sort?: string | null;
@@ -19059,6 +19098,42 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SendBackIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    correct_contact_requests__request_uuid__holders__holder_uuid__correct_contact_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrectContactIn"];
             };
         };
         responses: {

@@ -8,6 +8,19 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Rights requests: a holder's email, and going back from collating**
+  (2026-10-08). Every holder now needs an email address - whoever answers is
+  emailed the ticket - so a holder is not added or confirmed without one (or
+  a registered respondent who signs in), and sending refuses any holder still
+  without one; the holders card marks it, with *Add their email*. Before the
+  ticket goes, *Change who answers*; after, *Correct their email* sends it
+  again to the right address and writes to nobody at the wrong one (an
+  outside holder gets a new link). A request moved to collating too soon goes
+  *Back to awaiting holders* (or in progress) with a reason - a holder to
+  add, more from a holder, other - kept on the audit trail.
+- **Consent register filters** (2026-10-08): project, its site, status (full
+  - every purpose, partial, declined, withdrawn) and the days a consent was
+  given, kept in the address bar.
 - **Email test mode** (2026-10-08). `EMAIL_REDIRECT_TO` in `backend/api/.env`,
   for a UAT or test server: every email and every text message goes only to
   up to five configured addresses, by email, with "[TEST]" in the subject and

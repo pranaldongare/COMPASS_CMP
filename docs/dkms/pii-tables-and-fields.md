@@ -235,7 +235,7 @@ sealed column after everything it writes.
 | With a `*_ngrams` search column | 3 |
 | Plaintext by nature (ids, flags, hashes, tokens, storage paths, jsonb) | 30 - the other 108 − 78 |
 | Plaintext by decision | 1 (`minor_until`, derived from `dob` and not counted in the 108) |
-| API endpoints carrying any of it | 228, of 324 |
+| API endpoints carrying any of it | 229, of 325 |
 
 The full 108-column listing with the endpoints that carry each is in
 [pii-fields-and-endpoints.md](../domain/pii-fields-and-endpoints.md),

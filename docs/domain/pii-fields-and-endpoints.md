@@ -86,7 +86,7 @@ hash and no email is written
 rows from before that change stand as written, because the trail is
 hash-chained and cannot be rewritten.
 
-## 2. API endpoints that carry PII — 228 endpoints in 22 modules
+## 2. API endpoints that carry PII — 229 endpoints in 22 modules
 
 Every GET, POST, PUT, PATCH and DELETE whose request or response includes a
 personal field. *In* is what the caller sends (body, path and query); *out* is
@@ -162,7 +162,7 @@ these need no session; they are marked **public**.
 | POST | `/rights/requests` **public** | `contact`, `request_text` | — |
 | POST | `/rights/requests/verify` **public** | `code` | — |
 
-### Rights requests — Privacy Office (`/requests`) — 39 endpoints
+### Rights requests — Privacy Office (`/requests`) — 40 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
@@ -180,6 +180,7 @@ these need no session; they are marked **public**.
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/accept` | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/confirm` | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/contact` | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/correct-contact` | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/escalate` | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | PUT | `/requests/{request_uuid}/holders/{holder_uuid}/instruction` | `instruction` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/reassign` | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |

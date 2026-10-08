@@ -438,6 +438,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/reopen` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 | DELETE | `/requests/{request_uuid}/holders/{holder_uuid}` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 | PUT | `/requests/{request_uuid}/holders/{holder_uuid}/instruction` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/correct-contact` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 ## System
 

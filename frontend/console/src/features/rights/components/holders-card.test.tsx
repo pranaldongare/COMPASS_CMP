@@ -65,6 +65,7 @@ const holder = (over: Partial<RightsHolder> = {}): RightsHolder => ({
   sent_back_at: null,
   sent_back_reason: null,
   sent_back_count: 0,
+  has_address: true,
   link_issued_at: null,
   temporary_access: null,
   accepted_at: null,
@@ -186,5 +187,44 @@ describe("HoldersCard", () => {
     expect(within(ours).getByText(/temporary login · not yet signed in/)).toBeInTheDocument();
     const theirs = screen.getByText("Vendor archive").closest("tr") as HTMLElement;
     expect(within(theirs).getByText(/outside · answers by link/i)).toBeInTheDocument();
+  });
+
+  it("warns of a holder with no email, and corrects a mistyped one", async () => {
+    let body: unknown = null;
+    server.use(
+      http.post(`${API}/requests/${REQUEST}/holders/${HOLDER}/correct-contact`, async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json(holder());
+      }),
+      http.get(`${API}/requests/${REQUEST}/holders/${HOLDER}/thread`, () =>
+        HttpResponse.json({ holder: holder(), messages: [] }),
+      ),
+    );
+    const open = holder({
+      ticket_status: "issued",
+      channel: "email",
+      responder_contact: "keepr@vendor.example",
+      return_summary: null,
+      return_outcome: null,
+      state: "waiting",
+      state_label: "Waiting",
+      moves: [move("record_answer", "Record their answer", true), move("correct_contact", "Correct their email")],
+    });
+    const { user, unmount } = render(<HoldersCard request={request([open])} />);
+    await user.click(screen.getByRole("button", { name: "Samsung R&D Bangalore" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: /more/i }));
+    await user.click(await screen.findByRole("menuitem", { name: "Correct their email" }));
+    const email = within(dialog).getByLabelText(/their email/i);
+    await user.clear(email);
+    await user.type(email, "keeper@vendor.example");
+    await user.click(within(dialog).getByRole("button", { name: "Correct and send again" }));
+    await vi.waitFor(() =>
+      expect(body).toEqual({ responder_contact: "keeper@vendor.example", responder_name: null }),
+    );
+    unmount();
+
+    render(<HoldersCard request={request([holder({ has_address: false, state: "not_sent", moves: [] })])} />);
+    expect(screen.getByText(/no email - add one before sending/i)).toBeInTheDocument();
   });
 });

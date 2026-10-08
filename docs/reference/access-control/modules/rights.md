@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-49 operations; 49 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+50 operations; 50 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
@@ -55,6 +55,7 @@
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/reopen` | `dpo`, `admin` | Full session; anonymous NO |
 | DELETE | `/requests/{request_uuid}/holders/{holder_uuid}` | `dpo`, `admin` | Full session; anonymous NO |
 | PUT | `/requests/{request_uuid}/holders/{holder_uuid}/instruction` | `dpo`, `admin` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/correct-contact` | `dpo`, `admin` | Full session; anonymous NO |
 
 ## GET /requests
 
@@ -745,4 +746,18 @@ What this holder's ticket will ask, before it is sent.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
 - **Rules:** Only before the ticket is sent (409 `ticket_already_sent`); empty or null goes back to the standard words. Sealed at rest, as every instruction. The trail records `rights.holder_instruction_set` with whether the words are the office's own, never the words. (2026-10-08)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py).
+
+## POST /requests/{request_uuid}/holders/{holder_uuid}/correct-contact
+
+Correct a holder's email: the ticket goes again to the right address.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; `admin` on a request about the DPO.
+- **Route guard:** `RightsWriter`.
+- **Resolved gate:** `RequireResource(rights_request, write=True)`.
+- **Rules:** Only an open ticket (409 `ticket_not_open`) reached by email or a temporary login; `responder_contact` must be an email address (422). Nobody at the wrong address is written to; the ticket is sent again to the right one, an outside holder with a new link (the old stops working), an internal address with no login given a temporary one. The trail records `rights.holder_contact_corrected`, never an address. (2026-10-08)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py).

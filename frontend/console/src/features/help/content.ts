@@ -395,6 +395,7 @@ export const SECTIONS: HelpSection[] = [
         items: [
           "[[Consents]] lists each person once, at their current decision: [[Consented]], [[Partial]], [[Declined]] or [[Withdrawn]]. A DCO or RCO sees only the sites they run.",
           "Withdrawn means a withdrawal left nothing agreed. Someone who withdrew one purpose of several is [[Partial]], and the rest still stands.",
+          "Narrow the list with [[Project]], [[Site]] (once a project is chosen), [[Status]] - [[Full - every purpose]] or [[Partial - some purposes]], declined or withdrawn - and [[Given from]] and [[Given to]], the days the consent was given. [[Clear filters]] shows everything again; the address bar keeps the filters, so a view can be bookmarked.",
           "Open a person for the record: the purposes agreed and refused, the exact notice text served, and the assets they appear in. [[Audit trail]] opens the trail filtered to that record.",
         ],
       },
@@ -474,6 +475,8 @@ export const SECTIONS: HelpSection[] = [
           "How each holder answers is settled as the ticket goes: a colleague with a console login answers in their [[My tasks]]; one inside the organisation without a login is given a temporary login; anyone outside - a vendor, a processor - is emailed a link, opens it with a code sent to the same address, and answers on the portal. Their row says which.",
           "When an answer comes, the holder shows [[Answered - review]]. [[Accept the answer]] to count it, or [[Send back]] with what is missing. Only an accepted answer counts toward closing the request.",
           "An overdue holder is reminded every day by itself; [[Send a reminder]] sends one now, and [[Send final reminder]] - only once it is overdue - lets the response go out partial, naming the gap. [[Withdraw]] a ticket sent in error, and [[Reopen]] it if needed; [[Remove]] a holder found by mistake before it is sent anything.",
+          "Every holder needs an email address: whoever answers is emailed the ticket. A holder without one says [[No email - add one before sending]]; click [[Add their email]]. Until the ticket goes, [[Change who answers]] changes the person or address. After it goes, a mistyped address is fixed with [[Correct their email]] under [[More]]: the ticket is sent again to the right address, and nobody at the wrong one is written to.",
+          "Moved to collating too soon - a holder still to ask, or more needed from one? Under [[What happens next]], choose [[Why]] and click [[Back to awaiting holders]] (or [[Back to in progress]] if no ticket was ever sent). The reason is kept on the audit trail; the clock does not pause.",
           "Erasure scope: [[Find what is held]]. For each asset choose [[Erase]], [[Redact]], [[Retain]] (a retention floor, with its date) or [[Quarantine]], give the basis and [[Record the decision]], then [[Apply]].",
           "Respond: write [[The response]], attach any files, choose the outcome and click [[Release and close]]. The person is told and downloads it from the portal.",
         ],

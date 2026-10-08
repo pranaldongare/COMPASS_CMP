@@ -186,6 +186,9 @@ class HolderOut(Out):
     #: When the office accepted the answer (0048); None: not yet, or none.
     #: An outside holder answers on the portal by a link (0049): when the
     #: current one was sent. Null for a holder in the console.
+    #: Whether there is anybody to send the ticket to - an account or an
+    #: email address (2026-10-08). False: the office has to add one.
+    has_address: bool = True
     link_issued_at: datetime | None = None
     #: A colleague given a temporary login for this ticket (0049): pending
     #: until they first sign in, then active; ended when the ticket is done.
@@ -1238,6 +1241,35 @@ async def send_back_ticket(
             holder_uuid=str(holder_uuid),
             reason=body.reason,
             due_at=body.due_at,
+            role=principal.role,
+            actor_id=principal.user_id,
+        )
+
+
+class CorrectContactIn(Schema):
+    #: The right address; the name is kept unless a new one is given.
+    responder_contact: Annotated[str, Field(min_length=3, max_length=255)]
+    responder_name: Annotated[str | None, Field(default=None, max_length=200)] = None
+
+
+@router.post(
+    "/{request_uuid}/holders/{holder_uuid}/correct-contact",
+    response_model=HolderOut,
+    summary="Correct a holder's email: the ticket goes again to the right address",
+)
+async def correct_contact(
+    request_uuid: UUID, holder_uuid: UUID, body: CorrectContactIn, principal: RightsWriter
+) -> dict[str, Any]:
+    """For a mistyped address (2026-10-08). Nobody at the wrong address is
+    written to; an outside holder gets a new link, the old one stops working."""
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        return await service.correct_contact(
+            conn,
+            row,
+            holder_uuid=str(holder_uuid),
+            responder_name=body.responder_name,
+            responder_contact=body.responder_contact,
             role=principal.role,
             actor_id=principal.user_id,
         )

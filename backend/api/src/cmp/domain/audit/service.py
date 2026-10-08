@@ -253,6 +253,7 @@ class Event:
     RIGHTS_TICKET_REOPENED = "rights.ticket_reopened"
     RIGHTS_HOLDER_REMOVED = "rights.holder_removed"
     RIGHTS_HOLDER_INSTRUCTION_SET = "rights.holder_instruction_set"
+    RIGHTS_HOLDER_CONTACT_CORRECTED = "rights.holder_contact_corrected"
     PROCESSOR_RESPONDENT_ADDED = "registry.respondent_added"
     PROCESSOR_RESPONDENT_REMOVED = "registry.respondent_removed"
     RIGHTS_SCOPE_DERIVED = "rights.scope_derived"

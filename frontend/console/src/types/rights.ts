@@ -175,6 +175,8 @@ export interface RightsHolder {
   sent_back_at: Timestamp | null;
   sent_back_reason: string | null;
   sent_back_count: number;
+  /** Somebody to send the ticket to - an account or an email (2026-10-08). */
+  has_address: boolean;
   /** An outside holder answers on the portal by a link (0049): when it was sent. */
   link_issued_at: Timestamp | null;
   /** A colleague's temporary login for this ticket (0049); null when there is none. */
@@ -216,7 +218,9 @@ export type TicketMoveName =
   | "withdraw"
   | "accept"
   | "send_back"
-  | "reopen";
+  | "reopen"
+  | "edit_responder"
+  | "correct_contact";
 
 export interface TicketMove {
   move: TicketMoveName;

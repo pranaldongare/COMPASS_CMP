@@ -215,6 +215,16 @@ class TestAnAccessRequestThroughTheOffice:
             expect=(200, 204),
             json={"responder_name": "Rahul at Acme", "responder_contact": fresh_email("rahul")},
         )
+        # A mistyped address, corrected: the ticket goes again (2026-10-08).
+        corrected = await call(
+            http,
+            "POST",
+            f"/requests/{ruuid}/holders/{huuid}/correct-contact",
+            template=HOLDER + "/correct-contact",
+            session=dpo,
+            json={"responder_contact": fresh_email("rahul-right")},
+        )
+        assert corrected.json()["responder_contact"].startswith("SE::")
 
         # The holder answers from the office's side, is sent back once, answers again.
         await call(
@@ -742,7 +752,11 @@ class TestTicketsFromTheHoldersSide:
             template=RIGHTS + "/holders",
             session=dpo,
             expect=(200, 201),
-            json={"label": "Never asked"},
+            json={
+                "label": "Never asked",
+                "responder_name": "Nobody yet",
+                "responder_contact": fresh_email("never"),
+            },
         )
         listed = (
             third.json()

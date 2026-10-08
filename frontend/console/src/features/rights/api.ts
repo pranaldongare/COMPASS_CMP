@@ -204,6 +204,12 @@ export const reopenTicket = (uuid: Uuid, holderUuid: Uuid, dueOn: string) =>
 /** This holder's own instruction, before its ticket is sent; null for the standard words. */
 export const setInstruction = (uuid: Uuid, holderUuid: Uuid, instruction: string | null) =>
   apiPut<RightsHolder>(action(uuid, `holders/${holderUuid}/instruction`), { instruction });
+/** A mistyped address corrected: the ticket goes again to the right one (2026-10-08). */
+export const correctContact = (
+  uuid: Uuid,
+  holderUuid: Uuid,
+  body: { responder_contact: string; responder_name?: string | null },
+) => apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/correct-contact`), body);
 /** A holder found by mistake, before anything is sent to it. */
 export const removeHolder = (uuid: Uuid, holderUuid: Uuid) =>
   apiDelete<void>(action(uuid, `holders/${holderUuid}`));

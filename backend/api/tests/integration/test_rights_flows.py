@@ -313,8 +313,8 @@ class TestAccessRequest:
             conn,
             row,
             holder_uuid=str(holder["holder_uuid"]),
-            responder_name=None,
-            responder_contact=None,
+            responder_name="Records team",
+            responder_contact="records@processor.example",
             role=DPO,
             actor_id=dpo,
         )
@@ -498,8 +498,8 @@ class TestErasureRequest:
             conn,
             row,
             holder_uuid=str(holder["holder_uuid"]),
-            responder_name=None,
-            responder_contact=None,
+            responder_name="Records team",
+            responder_contact="records@processor.example",
             role=DPO,
             actor_id=dpo,
         )

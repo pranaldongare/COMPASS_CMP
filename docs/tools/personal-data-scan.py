@@ -166,6 +166,7 @@ NOT_PERSONAL = {
     "medium": "email or SMS",
     "mediums": "which mediums are available",
     "label": "the name of a team or a holder, not a person",
+    "has_address": "whether a rights holder can be written to - a flag, never the address",
     "location": "where a collection site is",
     "site_label": "the name of a site",
     "subject": "the subject line of a message template",

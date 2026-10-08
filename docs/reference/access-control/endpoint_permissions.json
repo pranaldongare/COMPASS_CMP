@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 324,
-  "registered_business_and_system_operations": 327,
+  "documented_operations": 325,
+  "registered_business_and_system_operations": 328,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -12643,6 +12643,43 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py"
       ]
+    },
+    {
+      "module": "rights",
+      "method": "POST",
+      "path": "/requests/{request_uuid}/holders/{holder_uuid}/correct-contact",
+      "summary": "Correct a holder's email: the ticket goes again to the right address",
+      "function": "correct_contact",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RightsWriter",
+      "resolved_gate": "RequireResource(rights_request, write=True)",
+      "route_roles": [
+        "dpo",
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "rights_request",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "SCOPED",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO"
+      },
+      "conditions": [
+        "Only an open ticket (409 `ticket_not_open`) reached by email or a temporary login; `responder_contact` must be an email address (422). Nobody at the wrong address is written to; the ticket is sent again to the right one, an outside holder with a new link (the old stops working), an internal address with no login given a temporary one. The trail records `rights.holder_contact_corrected`, never an address. (2026-10-08)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py"
+      ]
     }
   ],
   "amended": [
@@ -12735,6 +12772,11 @@
       "on": "2026-10-08",
       "commit": "rights tickets phase 2",
       "note": "An outside holder answers its rights ticket on the portal by a link and a one-time code: eight public /holder-tickets/{token} routes. Each holder's own instruction before its ticket is sent: PUT /requests/{request_uuid}/holders/{holder_uuid}/instruction."
+    },
+    {
+      "on": "2026-10-08",
+      "commit": "holder email",
+      "note": "A mistyped holder address is corrected and the ticket sent again: POST /requests/{request_uuid}/holders/{holder_uuid}/correct-contact. GET /consents gains site, from and to filters."
     }
   ]
 }

@@ -86,6 +86,7 @@ stateDiagram-v2
   in_progress --> collating: nothing to ask anyone
   awaiting_holders --> collating: every answer accepted, or a final reminder sent
   collating --> closed: respond
+  collating --> awaiting_holders: back, with a reason (in_progress if no ticket was sent)
   received --> closed: early exit
   in_progress --> closed: early exit
   awaiting_holders --> closed: early exit
@@ -115,6 +116,21 @@ DPO, who may add one by hand, and remove one found by mistake while nothing
 has been sent to it. Each confirmed holder gets one **ticket**: the
 instruction to return what it holds, addressed to a **respondent** of that
 processor.
+
+**Every holder needs an email address** (2026-10-08): whoever answers is
+emailed the ticket. A holder is not added or confirmed without one, or a
+registered respondent who signs in; sending tickets refuses any holder still
+without one (`holder_without_address`), and the card marks it. Until the
+ticket goes, *Change who answers* changes the person or the address; after,
+*Correct their email* (`POST .../correct-contact`) sends the ticket again to
+the right address, writes to nobody at the wrong one, gives an outside holder
+a new link, and records `rights.holder_contact_corrected`.
+
+**A request goes back from collating** when the office moved it too soon - a
+holder still to ask, more needed from one. *Back to awaiting holders* (or to
+in progress, if no ticket was ever sent) takes a reason, one of
+`new_holder`, `more_from_holder` or `other`, kept on the trail as `why`. The
+clock does not pause.
 
 Each holder's ticket asks in its own words: it starts from the standard words
 for the kind of request (and the consent it is confined to), and the DPO may

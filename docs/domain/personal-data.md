@@ -5,7 +5,7 @@ that accepts or returns it. Written for the questions that have to be answered
 quickly and exactly: what do we hold, where does it go, who can see it, and
 which call would expose it.
 
-The counts here are measured, not remembered. **228 of the API's 324
+The counts here are measured, not remembered. **229 of the API's 325
 operations** carry personal data; **28 of those need no session**. They come
 from joining three artefacts the repository already keeps current, and the
 last section says how to redo the join after a change.
@@ -361,7 +361,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-228 of 324 operations accept or return personal data. Each table gives the
+229 of 325 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -456,7 +456,7 @@ selected.
 
 ### Rights requests, the office's side — `/requests/*`
 
-39 operations carry personal data.
+40 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
@@ -474,6 +474,7 @@ selected.
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/accept` | DPO every row, Admin rows in scope | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/confirm` | DPO every row, Admin rows in scope | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/contact` | DPO every row, Admin rows in scope | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/correct-contact` | DPO every row, Admin rows in scope | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/escalate` | DPO every row, Admin rows in scope | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | PUT | `/requests/{request_uuid}/holders/{holder_uuid}/instruction` | DPO every row, Admin rows in scope | `instruction` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/reassign` | DPO every row, Admin rows in scope | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
@@ -760,7 +761,7 @@ selected.
 | GET | `/holder-tickets/{token}/ticket` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/holder-tickets/{token}/verify` | **public** — the request carries its own credential (password, link token, one-time code) | `code`, `token` | — |
 
-<!-- 228 of 324 operations carry personal data; 28 of them need no session. -->
+<!-- 229 of 325 operations carry personal data; 28 of them need no session. -->
 
 ## The public surface
 
