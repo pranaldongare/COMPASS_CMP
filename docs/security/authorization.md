@@ -55,8 +55,10 @@ has (profile, notifications, sessions). `RequireStaff` - the guard on routes
 any member of staff may call - excludes it, so everything else answers 403,
 and the register 404 like everyone's. It is not in `STAFF_ROLES`, the staff
 directory or any picker, and `POST /users` and the change-role route refuse it:
-the role is set and put back only by a breach ticket's grant
-([ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)).
+the role is set and put back only by a ticket's grant - a breach ticket's
+([ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)) or,
+since 0049, a rights ticket's, given by `reach.place` to a colleague with no
+console login.
 
 ## Where it lives
 
@@ -64,7 +66,7 @@ the role is set and put back only by a breach ticket's grant
 |---|---|
 | `core/permissions.py` | `Role`, `Scope`, `Grant`, `MATRIX`, `NAV_BY_ROLE` — data, no behaviour |
 | `auth/authorization/roles.py` | staff/privileged sets, the MFA rule |
-| `auth/authorization/resources.py` | the 22 resource names as constants; the roster and the matrix are asserted equal at import |
+| `auth/authorization/resources.py` | the 23 resource names as constants; the roster and the matrix are asserted equal at import |
 | `auth/authorization/scopes.py` | `ScopeContext`, `narrower_of` |
 | `auth/authorization/evaluator.py` | pure decisions, returning a reason |
 | `auth/authorization/policy.py` | `authorize()` — the front door; logs the denial |

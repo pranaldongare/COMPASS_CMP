@@ -73,8 +73,8 @@ transitions endpoint.
 
 ## Changing the schema
 
-1. `alembic revision -m "what it does"` and write the SQL by hand,
-   both directions.
+1. `alembic revision --rev-id 0050 -m "what it does"` (the next number in
+   `migrations/versions`) and write the SQL by hand, both directions.
 2. If the change adds a rule, add it as a constraint or trigger and add a
    test under `tests/integration/enforcement/` that breaks it with raw SQL.
 3. Prefer a `BEFORE INSERT` trigger to a `NOT VALID` CHECK for a rule that

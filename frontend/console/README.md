@@ -62,14 +62,18 @@ src/
                           cookie-presence redirect (Next 16's middleware.ts)
   app/                    routes
     dkms/decrypt/         route handler: opens sealed values through the key
-                          service, for a request carrying a session cookie
+                          service, for a request carrying a session or ticket
+                          cookie (the file is shared with the portal)
     (app)/                authenticated — RequireAuth, AppShell, RequireSection
                           dashboard, projects (one workspace in tabs),
-                          approvals, notices, purposes, processors, sources,
-                          sites, links, consents, exports, imports,
-                          collections, requests (the rights queue), breaches,
-                          tickets (a respondent's own), users, messages, audit,
-                          delegate (cover), notifications, account
+                          approvals, notices (with notice templates), purposes,
+                          processors, sources, sites, links, consents, exports,
+                          imports, collections, requests (the rights queue),
+                          breaches (with the Board and the organisation's board
+                          pages), tickets (My tasks: a holder's own rights and
+                          breach tickets - to do, waiting on the Privacy Office,
+                          done), users, messages, audit, delegate (cover),
+                          notifications, account
     help/                 the manual, open without signing in
     not-found.tsx         an unknown address, with a way back
     sign-in/              staff password + MFA step-up, reset; each page
@@ -171,9 +175,10 @@ origin. The rest of the variables are in
 
 The browser suite has five Playwright projects: `setup` signs in every role
 once and saves the sessions, then `chromium`, `mobile`, `localhost-cookies` and
-`visual` run the specs (account contacts, audit, auth, controls, detail pages,
-forms, links, messages, navigation coverage, notice review, notice upload,
-routing, sealed values never shown, visual). Run it serially and never
+`visual` run the specs (account contacts, audit, auth, breaches, breach
+tickets, controls, detail pages, forms, links, list state, messages, name,
+navigation coverage, notice review, notice upload, routing, sealed values never
+shown, visual). Run it serially and never
 alongside pytest; the why is in
 [docs/operations/testing.md](../../docs/operations/testing.md).
 

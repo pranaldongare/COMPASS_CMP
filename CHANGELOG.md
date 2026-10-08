@@ -8,6 +8,24 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **The documents, swept against the code** (2026-10-08). Every hand-written
+  document was checked against HEAD and brought up to date: counts (324
+  operations, 58 tables, 49 migrations, 78 sealed columns, 11 keyed hashes),
+  route and module lists, the security documents (the outside holder's ticket
+  cookie, the CSRF exception for its routes, nine one-time-code flows, three
+  capability-token routes), temporary logins for rights tickets throughout,
+  correction no longer a request type, the glossary's new terms, the
+  middleware order, the runbook (outside holders, Celery results filling
+  Redis), configuration and READMEs. New: six decision records - **0024** how a
+  rights holder is reached, **0025** an answer counts once accepted, **0026**
+  three kinds of request about everything, **0027** breach contacts from a list,
+  **0028** notice templates, **0029** copies and files - and amendment notes on
+  0009, 0010, 0013, 0016, 0019, 0021 and 0022; **docs/reviews/README.md**, every
+  review's findings with their status, the parked backlog items the documents
+  cite, and the open decisions with their owners; a portal help topic for an
+  outside holder; and the **UAT pack v1.6** for build 833b58f - 156 cases, a new
+  breach area (BRE-01 to BRE-18), the rights cases rewritten for the new
+  tickets, RGT-19 retired.
 - **Rights tickets for holders outside the console** (2026-10-08, phase 2 of
   the redesign). How a holder is reached is settled as its ticket is sent. A
   colleague with a console login answers in My tasks, as before. A colleague
@@ -49,10 +67,8 @@ as a release yet.
   done, what you hold, proof - and writing to the office no longer closes the
   window. Holders are told when the office records or accepts their answer,
   and when a ticket moves away from them. Plain words throughout: no table
-  names on screen, *in the console* for *on the portal*. Phase 2 - external
-  holders answering on the portal by a one-time code, temporary logins,
-  per-holder instructions - is planned in
-  `docs/domain/rights-tickets-redesign.md`.
+  names on screen, *in the console* for *on the portal*. Phase 2 followed the
+  same day (the entry above).
 - **Log an incident asks what is known so far** (2026-10-08). Eleven
   optional questions under the incident's details: is it a cyber attack
   (Yes - reportable to CERT-In / No / Not known yet; yes creates the CERT-In
@@ -840,6 +856,10 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **Two labels** (2026-10-08). The audit trail's Area filter listed
+  "Incidents and breaches" twice; breach notice deliveries are now
+  "Breach notices". The Rights requests page no longer lists correction among
+  the requests the office takes.
 - **Tests no longer queue real tasks** (2026-10-08). The test suites rolled
   their rows back, but tasks they queued still ran on the live worker: since
   every DPO is told of each new rights request, one integration run against a

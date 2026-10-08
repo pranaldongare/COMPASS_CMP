@@ -15,7 +15,8 @@ years later, to somebody who was not there.
 flowchart LR
   subgraph People
     S[Data principal<br/>browser or phone]
-    T[Staff<br/>DPO, owners, admin,<br/>breach ticket holders]
+    T[Staff<br/>DPO, owners, admin,<br/>temporary ticket holders]
+    H[Outside holder<br/>a vendor, by a ticket link]
   end
   subgraph Portals
     P[frontend/portal<br/>Next.js, port 3001]
@@ -33,6 +34,7 @@ flowchart LR
     F[(File storage)]
   end
   S --> P
+  H -- "/ticket/{token}" --> P
   T --> C
   P -- "/api proxied, first-party cookie" --> A
   C -- "/api proxied, first-party cookie" --> A
@@ -50,6 +52,7 @@ flowchart LR
   W --> F
   W -- "email / SMS" --> S
   W -- "email" --> T
+  W -- "email: link and code" --> H
 ```
 
 | Component | Directory | Runs as | Talks to |
@@ -86,9 +89,11 @@ is why `NEXT_PUBLIC_API_URL` stays unset in local development.
 ## How a request travels
 
 1. The browser calls `/api/...` on its own origin; Next.js forwards it to the API.
-2. Middleware: trusted host, CORS, gzip, then the request id (first, so every
-   later line can be correlated), security headers, the body limit, the access
-   log with the consent token scrubbed.
+2. Middleware, in the order Starlette runs it: the request id (first of
+   ours, so every later line can be correlated), security headers, the body
+   limit, the access log with the token in `/c/`, `/rights/nominations/` and
+   `/holder-tickets/` paths scrubbed, then gzip, CORS and trusted host -
+   added first, so run last ([how a request works](../backend/02-how-a-request-works.md#the-middleware-a-request-passes-through)).
 3. Dependencies resolve the session from the cookie, check the CSRF header on
    unsafe verbs, resolve the principal, and consult the permission matrix.
 4. The router opens one transaction and calls one domain service. The service
@@ -113,8 +118,10 @@ is why `NEXT_PUBLIC_API_URL` stays unset in local development.
 7. The response goes back with each personal field as it is stored: sealed,
    a string starting `SE::`. The API does not open it.
 8. The portal's API client sees sealed values in the response and sends them,
-   in one batch, to its own server route `/dkms/decrypt`. That route checks for
-   a session and calls `${DKMS_URL}/bulk_decrypt`; the page receives
+   in one batch, to its own server route `/dkms/decrypt`. That route checks
+   that a `cmp_session` or `cmp_ticket` cookie is present - not its value, an
+   open gap ([csrf](../security/csrf.md)) - and calls
+   `${DKMS_URL}/bulk_decrypt`; the page receives
    plaintext. The browser never learns where the key service is.
 
 The key service, [`backend/dkms`](../../backend/dkms/README.md), holds the key

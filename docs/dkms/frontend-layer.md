@@ -13,11 +13,14 @@ running stack on 2026-09-22.
 
 The platform API encrypts personal columns on write and **serves them as
 stored** - `SE::…` - on every endpoint, list or detail, GET or the body a
-POST returns. It never decrypts for a response. Each portal's API client
+POST returns. It never decrypts for a response, but for two links that carry
+no session ([the backend document](backend-api.md)). Each portal's API client
 walks every JSON response it receives, collects every `SE::` string wherever
 it sits (a field, a nested object, an element of an array), and opens them
 all in **one** call to the portal's own `/dkms/decrypt` route. That route
-runs in the portal's server, requires the session cookie, and forwards the
+runs in the portal's server, requires a session cookie - `cmp_session`, or
+an outside holder's `cmp_ticket` - though it checks the value of neither (the
+open gap in [csrf](../security/csrf.md)), and forwards the
 batch to the key service named by `DKMS_URL` as
 `POST ${DKMS_URL}/bulk_decrypt` with exactly `{ data, key, method }`. The
 page receives plaintext and never learns any of this happened.
@@ -29,7 +32,7 @@ browser page ──► GET /api/users ─────────────►
       │                              │  decryptDeep(): every SE:: in the body
       │                              ▼
       │                 POST /dkms/decrypt  (this portal's server route)
-      │                              │  session cookie required
+      │                              │  cmp_session or cmp_ticket present
       │                              ▼
       └──────────────────  POST ${DKMS_URL}/bulk_decrypt  {data, key, method}
 ```
@@ -112,7 +115,7 @@ they are found.
 | [`src/lib/dkms/deep.ts`](../../frontend/console/src/lib/dkms/deep.ts) | The walker: finds every `SE::`, reads the data type off byte 3 of the envelope - or, when the envelope is not this implementation's, off the field's name - batches, puts plaintext back in place. A refused batch is retried one value at a time so one bad value costs only itself; an unreachable service leaves values as they arrived, visibly |
 | [`src/lib/dkms/field-types.ts`](../../frontend/console/src/lib/dkms/field-types.ts) | `TYPE_BY_FIELD`: the fallback, field name → type. A hand-kept mirror of `ENCRYPTED_FIELDS` plus the joined names responses carry (`created_by_name`, `subject_email`, …); `name` and `contact` are left out on purpose, because they are a purpose's or a queue's everywhere but one table. **Nothing checks it against the backend** - a new sealed field, or a new alias for one, is added here by hand in both portals ([the checklist](adding-a-personal-field.md)) |
 | [`src/lib/dkms/api.ts`](../../frontend/console/src/lib/dkms/api.ts) | `decryptRecords()`: the call to `/dkms/decrypt`; error messages name the service and its answer |
-| [`src/app/dkms/decrypt/route.ts`](../../frontend/console/src/app/dkms/decrypt/route.ts) | The server route: session required, the pure contract to `${DKMS_URL}/bulk_decrypt`, 10 s bound, one diagnostic log line on failure naming the host and never a value |
+| [`src/app/dkms/decrypt/route.ts`](../../frontend/console/src/app/dkms/decrypt/route.ts) | The server route: a `cmp_session` or `cmp_ticket` cookie required (present, not checked), the pure contract to `${DKMS_URL}/bulk_decrypt`, 10 s bound, one diagnostic log line on failure naming the host and never a value |
 
 Configuration is one variable per portal, **required, no fallback**:
 

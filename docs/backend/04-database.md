@@ -8,7 +8,7 @@ PostgreSQL, reached with psycopg 3 and hand-written SQL. There is no ORM
 
 - `alembic.ini` points at `migrations/`; `migrations/env.py` takes the
   connection string from the application's own settings.
-- `migrations/versions/0001_baseline_schema.py` … `0033_one_published_notice_per_project.py`
+- `migrations/versions/0001_baseline_schema.py` … `0049_rights_holder_links.py`
   are one linear chain. Revision ids are the bare numbers (`revision =
   "0019"`, `down_revision = "0018"`).
 - There is no model metadata (`target_metadata = None`) - nothing is
@@ -143,6 +143,13 @@ migration named:
 | A contact belongs to one person | `auth_user` | 0025, rewritten 0028-0029 |
 | A legal hold can only be released once; a restriction only lifted once | `legal_hold`, `restricted_country` | 0031, 0032 |
 | One published notice per project (a partial unique index) | `notice` | 0033 |
+| Only a breach's status moves (`cmp_breach_status_only`; it compares the whole row since 0047, so a new column is covered) | `breach` | 0034, rewritten 0047 |
+| Append-only, the breach register | `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event` / `breach_affected`, `breach_affected_revision` / `breach_notice_delivery` / `breach_recording` / `breach_ticket_event`, `breach_ticket_message` / `breach_attachment` / `breach_upload`, `breach_contact` | 0034 / 0035 / 0036 / 0038 / 0040 / 0042 / 0045 |
+| An approved breach notice is frozen (`cmp_breach_notice_frozen`) | `breach_notice` | 0036 |
+| A report to the organisation's board records to whom (`cmp_breach_org_board_reported_to`) | `breach_obligation_event` | 0039 |
+| A breach ticket changes only its read markers (`cmp_breach_ticket_read_only`) | `breach_ticket` | 0040 |
+| A temporary login's grant ends once and is never deleted (`cmp_breach_temporary_access_end_once`; `holder_id` is fixed too since 0049) | `breach_temporary_access` | 0041, rewritten 0049 |
+| Append-only: a document a requester sent | `rights_request_attachment` | 0043 |
 | Project ownership follows its primary site and source (derives, does not refuse) | `project_site`, `data_source` | 0005-0008 |
 
 Each rule is proven by a test in `tests/integration/enforcement/` that tries
@@ -194,7 +201,7 @@ because the audit chain's lock is held until commit.
 
 ## Repositories
 
-`src/cmp/db/repositories/` - thirteen modules of `async def fn(conn, ...)`
+`src/cmp/db/repositories/` - twenty-one modules of `async def fn(conn, ...)`
 functions. Each takes a connection, runs SQL, returns dicts, and never opens a
 connection. The helpers in `src/cmp/db/sql.py`:
 

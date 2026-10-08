@@ -1,6 +1,8 @@
 # Authentication
 
-Two populations, two mechanisms, and the difference is deliberate.
+Two populations, two mechanisms, and the difference is deliberate. A third,
+narrower one serves an outside holder answering a rights ticket
+([below](#outside-holders-of-a-rights-ticket)).
 
 ## Staff
 
@@ -11,22 +13,41 @@ internal role, because the others can still mint consent links, read consent
 records and move data. The list is `MFA_REQUIRED_ROLES`, derived from the role
 enum by default; a deployment may narrow it, and answers for that.
 
-A **temporary ticket holder** (`breach_holder`, S3-09) signs in the same way -
+A **temporary ticket holder** (`breach_holder`, S3-09; since 0049 also a
+colleague given a rights ticket with no console login) signs in the same way -
 a password set through the reset flow's code, then the emailed second factor -
 and needs the second factor whatever `MFA_REQUIRED_ROLES` says: `requires_mfa`
-answers yes for it before reading the list, because a breach-only login made
+answers yes for it before reading the list, because a temporary login made
 by the platform rather than an administrator is not one a deployment should be
 able to leave on a password alone. It is not staff: `RequireStaff` excludes it.
-It keeps its password when its part in a breach is over, to read its ticket;
+It keeps its password when its part is over - the breach closes, the request
+closes, or its ticket is withdrawn or sent to somebody else - to read its ticket;
 an administrator's **End temporary access** clears it, and the account cannot
 sign in again until a new grant sends a new code
 ([ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)).
 
 A **partial session** exists between password verification and MFA. It authorises
-exactly one route, the verify endpoint; every other endpoint answers 401 with
+exactly two routes, `POST /auth/mfa/verify` and `POST /auth/mfa/resend`; every
+other endpoint answers 401 with
 `mfa_required` until it is promoted. It is a distinct dependency type
 (`PartialUser`) rather than a flag on the full one, because a flag is one missed
 `if` away from an MFA bypass.
+
+## Outside holders of a rights ticket
+
+A vendor or third-party processor asked to answer a rights ticket has no
+account and is given none (0049, `domain/rights/holder_link.py`). Its ticket
+comes as a link to the portal, `/ticket/{token}`. The link alone shows the
+reference, the holder's name and where a code will go, masked. The code goes
+to the address on the ticket - never one typed on the page - so holding the
+link is not enough: the holder must also read that mailbox. The code (scope
+`holder_ticket`) opens an hour on that one ticket in the HttpOnly,
+`SameSite=Strict` cookie `cmp_ticket`; Redis keeps its fingerprint at `hts:*`,
+naming the holder and the link. Every call names the link in its path as
+well, and the two must agree, so a link sent to somebody else since shuts the
+old hour. It mints no session: no role, no matrix, nothing beyond the
+`/holder-tickets/{token}/*` routes. Every way a link can fail answers the
+same 404.
 
 ## Data subjects
 

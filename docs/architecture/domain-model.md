@@ -1,6 +1,7 @@
 # Domain model
 
-Forty-five tables, one view, thirty-nine enumerations, forty triggers.
+Fifty-eight tables, one view, thirty-nine enumerations, fifty triggers (at
+migration 0049).
 The column-level reference is
 [schema.md](../database/schema.md), and the migrations
 that built it are listed in
@@ -74,9 +75,9 @@ erDiagram
 | Notices | `notice`, `notice_language`, `notice_purpose`, `notice_template`, `notice_template_purpose`, `notice_template_language` | A notice per project version; a rendition per language, each approved; the purposes it covers, with per-notice Rule 3 overrides. A template: the DPO's notice before a project exists, never served, copied into a project's draft notice by its ID (0044). |
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant` | Links store only a fingerprint. An artefact is one decision on one notice, one grant per purpose, superseded by withdrawal. |
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` | A disclosure record per export and per person, with the generated file kept in storage (`file_ref`); an import batch produces a collection of assets; a junction says which consent covers whom in which asset, with a disposition. |
-| Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_ticket_message`, `rights_response_file`, `rights_request_attachment`, `nomination` | A request with its clock - access, erasure or a grievance, about everything held on the person; one holder per party asked, with a message thread; one scope item per appearance; files released with the response; documents the requester sent; the nominee arrangement. |
+| Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_item_execution`, `rights_ticket_message`, `rights_response_file`, `rights_request_attachment`, `legal_hold`, `nomination` | A request with its clock - access, erasure or a grievance, about everything held on the person; one holder per party asked, with a message thread and, for an outside holder, its link (0049); one scope item per appearance, and each attempt to carry out an erasure on it (0031); files released with the response; documents the requester sent; a legal hold that stops an erasure until released (S2-03); the nominee arrangement. |
 | Breach | `breach`, `breach_recording`, `breach_ticket`, `breach_ticket_event`, `breach_ticket_message`, `breach_temporary_access`, `breach_attachment`, `breach_upload`, `breach_contact`, `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event`, `breach_affected_revision`, `breach_affected`, `breach_notice`, `breach_notice_delivery` | An incident as logged and, on the first validation of yes, the breach it is recorded as (ADR 0022); who it touched (derived, confirmed, only ever added to), what they were told and whether it reached them, whether it is one (a person's determination, never computed), what is known (revised by new rows), and one duty per statutory obligation with its due time stored once. Only a breach's status changes; everything else is append-only; every narrative is sealed. See [breaches.md](../domain/breaches.md). |
-| Platform | `audit_log`, `message_template`, `message_copy` | The audit log is append-only and hash-chained. `message_template` holds the office's replacement words per message and channel; absence means the code default. Sessions, one-time codes, rate counters and lockouts live in Redis, not here. |
+| Platform | `audit_log`, `message_template`, `message_copy`, `restricted_country` | The audit log is append-only and hash-chained. `message_template` holds the office's replacement words per message and channel; absence means the code default. `message_copy` holds the office's CC addresses per message, sealed with a blind index, never for a message with a code, a link or a principal's own record (0046). `restricted_country` is the s.16 list the Privacy Office keeps (S2-04). Sessions, one-time codes, rate counters and lockouts live in Redis, not here. |
 
 Personal columns are sealed: the row holds `SE::…` ciphertext from the key
 service, never the value. Which columns, and as which data type, is
@@ -141,7 +142,7 @@ with raw SQL that bypasses the service layer.
 | A breach is recorded once, and its reference never withdrawn | `breach_recording` `UNIQUE (breach_id)`; `trg_breach_recording_append_only` |
 | A report to the organisation's board records to whom | `trg_breach_org_board_reported_to` |
 | A breach ticket is one per person per breach and changes only its read markers; its events and thread are append-only | `breach_ticket_once`; `cmp_breach_ticket_read_only()`; `trg_breach_ticket_event_append_only`, `trg_breach_ticket_message_append_only` |
-| A breach-only login's grant is open once per person per breach, ends once, and is never deleted | `breach_temporary_access_open` (partial unique); `cmp_breach_temporary_access_end_once()` |
+| A temporary login's grant is for one breach ticket or one rights ticket, never both; it is open once per person per breach or per rights ticket, ends once, and is never deleted | `temporary_access_for_one_ticket` (CHECK, 0049); `breach_temporary_access_open`, `rights_temporary_access_open` (partial unique); `cmp_breach_temporary_access_end_once()` |
 | A file kept with an incident is never replaced or removed | `trg_breach_attachment_append_only` |
 | A breach's contact with no account is listed once per breach and never removed; a delivery goes to an account or a contact, exactly one | `breach_contact_email_once`, `breach_contact_mobile_once`, `trg_breach_contact_append_only`; `breach_notice_delivery_one_recipient` |
 | A document a requester sent is never replaced or removed | `trg_rights_request_attachment_append_only` |
@@ -157,8 +158,9 @@ chain position is drawn inside a lock is
 Every table has an integer surrogate key for joins and a `uuid` for the
 outside world. No integer key leaves the process: not in a path, a body, a
 CSV or a log line. Where the platform needs an unguessable handle it uses a
-random token and stores only its SHA-256 (`consent_link`, nomination
-acceptance).
+random token and stores only its keyed digest, `HMAC-SHA256` under
+`SECRET_KEY` (`consent_link`, nomination acceptance,
+`rights_request_holder.link_token`).
 
 ## What is not in the database
 
@@ -169,6 +171,7 @@ acceptance).
 | A mirror of the office's message words, for the worker (five minutes) | Redis db 0, key `cache:message_templates` |
 | One-time codes, MFA codes, their attempt counts | Redis db 0, with TTLs |
 | Rate-limit buckets and lockouts | Redis db 0, keys `rate:*` |
+| An outside holder's hour on its ticket (one hour) | Redis db 0, keys `hts:*`, the `cmp_ticket` cookie's fingerprint naming the holder and the link |
 | Celery broker and results | Redis db 1 and db 2 |
 | Uploaded documents and released files | `UPLOAD_ROOT` (`backend/api/var/uploads` locally) under the local storage backend, referenced by path and hash |
 | The key personal fields are sealed under | the key service, `DKMS_MASTER_KEY`; the API never holds it |

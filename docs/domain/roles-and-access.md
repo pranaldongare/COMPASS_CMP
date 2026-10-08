@@ -2,22 +2,23 @@
 
 Eight roles. Six are staff and sign in on the console with a password and an
 emailed code; the seventh is the data principal, who signs in on the portal
-with a code alone; the eighth, the temporary ticket holder, is a breach-only
-login that signs in like staff but reaches nothing except the tickets
-addressed to it (S3-09). What each may reach is a static matrix in
-`backend/api/src/cmp/core/permissions.py`, consulted before any work is done,
+with a code alone; the eighth, the temporary ticket holder, is a temporary
+login for a breach ticket (S3-09) or a rights ticket (0049) that signs in
+like staff but reaches nothing except the tickets addressed to it. What each
+may reach is a static matrix in `backend/api/src/cmp/core/permissions.py`,
+consulted before any work is done,
 and the rows each may see are a scope compiled into every query.
 
 ## The roles
 
 | Role | Enum value | Who they are | What they mainly do |
 |---|---|---|---|
-| Data Protection Officer | `dpo` | The Privacy Office | Composes and approves notices, activates purposes, approves projects and publishes their notices, sees every register, runs the rights queue, reads the audit trail |
+| Data Protection Officer | `dpo` | The Privacy Office | Composes and approves notices, writes notice templates, activates purposes, approves projects and publishes their notices, sees every register, runs the rights queue, reads the audit trail |
 | Administrator | `admin` | Provisions the platform | Creates accounts and assigns roles, sees the audit trail, arranges cover for anyone, edits the words of every message the platform sends, and is the independent reviewer for a grievance about the DPO |
 | Data Collection Owner | `dco` | Accountable for a third party's collection | Registers data sources and sites under their processors, mints and replaces consent links, exports and imports, answers tickets addressed to them |
 | DCO Admin | `dco_admin` | Routes third-party collection | Receives an approved project that names a third-party processor, attaches sources, registers sites and names who runs them |
 | Research Collection Owner | `rco` | A DCO for in-house collection | The same as a DCO, restricted to the organisation's own sources and sites |
-| R&D User | `rnd_user` | Owns a study | Registers the project, names the collectors, brings the notice as a filled-in document or a copy of an approved one, uploads approval proofs, asks to add a collector after approval |
+| R&D User | `rnd_user` | Owns a study | Registers the project, names the collectors, brings the notice as a filled-in document, a copy of an approved one, or from a notice template by its ID, uploads approval proofs, asks to add a collector after approval |
 | Data principal | `data_subject` | The person the data is about | Reads and withdraws her consents, sees her disclosures, makes and follows rights requests, names a nominee |
 | Temporary ticket holder | `breach_holder` | Somebody inside the organisation, with no console login, asked to act on a breach or - since 0049 - to answer a rights ticket | Answers the breach and rights tickets addressed to them, and brings colleagues into a breach ticket; nothing else. Never given by hand: set when the DPO (or a holder) asks them by email, or a rights ticket is sent to their internal address; the administrator's End temporary access is the off switch ([ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)) |
 
@@ -167,7 +168,7 @@ register's button reads "End staff access" for a staff row: the role becomes
 account stays active so they still reach the consents they gave and the rights
 they hold. A data principal's account, having nothing to be kept as, is
 switched off as before. For a temporary ticket holder the button reads "End
-temporary access" and removes their breach-only login instead (below); it
+temporary access" and removes their temporary login instead (below); it
 never marks them an ex-employee.
 
 **A person may correct their own name** from the account page, on either
@@ -228,12 +229,13 @@ replacement, because the invitation carries the reset flow's own code rather
 than a second kind; an administrator can also send it again from the register,
 but only while the account is still pending.
 
-**The one exception: a breach-only login** (S3-09,
+**The one exception: a temporary login** (S3-09,
 [ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)). When
 the DPO asks somebody to act on a recorded breach and they have no console
 login - or a ticket holder brings in a colleague who has none - the server
 gives them one without an administrator. It is bounded three ways: to one
-breach, to an address on `BREACH_TICKET_EMAIL_DOMAINS`, and to the role
+breach (or, since 0049, one rights ticket, below), to an address on
+`BREACH_TICKET_EMAIL_DOMAINS`, and to the role
 `breach_holder`, which reaches only the tickets addressed to it, notifications
 and the profile. The address is looked up by its keyed hash:
 
@@ -310,12 +312,13 @@ review**, apart from **Needs your action** (UX review 2026-10-05).
 | DCO, RCO | tickets past their date; tickets addressed to them; imports that did not reconcile; assets with unmapped subjects |
 | DCO Admin | tickets past their date; sites awaiting a data source; sources with nobody accountable; processors with no collection set up; tickets addressed to them |
 | R&D User | projects needing something from them; tickets addressed to them |
-| Temporary ticket holder | no dashboard: the console sends it to **My tasks**, where its breach tickets are |
+| Temporary ticket holder | no dashboard: the console sends it to **My tasks**, where its breach and rights tickets are |
 
 Three roles start something from nothing, and its button sits at the top of
 their dashboard (2026-10-06): the DPO **Log an incident** - the organisation's
 board is owed word within thirty minutes of its being first noticed, so it is
-never a menu away - an R&D User **Register a project**, an administrator
+never a menu away - with **New notice template** beside it as a secondary
+button, an R&D User **Register a project**, an administrator
 **Provision an account**. The collection roles get none: a link, a site or a
 source belongs to a project or a site, which their queues already lead to.
 
@@ -385,7 +388,7 @@ that. A temporary ticket holder always needs the code, whatever the list
 says: it is checked in code, not configuration. Data principals have no
 password: their sign-in *is* a code, to the mobile or the email they chose -
 and a code sign-in on the portal is a data principal's session whatever the
-account's role, a breach-only login's included. See
+account's role, a temporary login's included. See
 [ADR 0006](../decisions/0006-mfa-for-every-staff-role.md).
 
 ## Delegation

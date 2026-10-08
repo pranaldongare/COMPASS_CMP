@@ -1,6 +1,8 @@
 # 0010. The rights clock starts at receipt, and the open questions have defaults
 
-Status: accepted. Migration 0013 onward, September 2026.
+Status: accepted. Migration 0013 onward, September 2026. Amended 2026-10-07:
+a new request is access, erasure or a grievance, about everything held - see
+the end and [ADR 0026](0026-a-rights-request-is-access-erasure-or-a-grievance-about-everything.md).
 
 ## Context
 
@@ -52,3 +54,26 @@ not deleted when one of them asks. Consent artefacts are never erased.
 
 Legal publishes the standard of proof or a shorter period. Both are
 configuration or a note, not a migration.
+
+## Amended 2026-10-07: three kinds, about everything
+
+The DPO set how requests are taken (commit 4e0e52e). Two things above no
+longer describe a new request:
+
+- **Three kinds, not four.** A new request is access, erasure or a
+  grievance, on every channel - the portal, the public form, a nominee, and
+  one the DPO logs - and nothing is reclassified as a correction. The server
+  refuses the fourth (`TAKEN` and `taken()` in
+  `backend/api/src/cmp/domain/rights/service.py`), saying that a name is
+  corrected from her account (S3-05). The Context's "four things to ask for"
+  is the Act; the platform now takes three of them as requests.
+- **About everything held.** A new request is never confined to one
+  consent: the input has no `consent_uuid`, and the API refuses one as an
+  unknown field (422). "Consent-scoped requests" in the Consequences was an
+  addition of migration 0019 that new requests no longer use.
+
+Requests made before keep what they were. A correction is still handled to
+the end as it was, and a request confined to one consent still shows that
+consent and keeps the holders derived from it. No stored record changes
+meaning, which is the property the Consequences claim. The decision and its
+reasons are [ADR 0026](0026-a-rights-request-is-access-erasure-or-a-grievance-about-everything.md).

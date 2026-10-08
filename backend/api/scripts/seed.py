@@ -10,7 +10,7 @@ every other part of the platform is set up against:
   project that is approved and has a live consent link.
 
 Every other account - the DPO, collection owners, R&D users, data principals -
-is created by the administrator from the console (Users → Invite), which is
+is created by the administrator from the console (Users → Provision account), which is
 how a real deployment gets them. Until a DPO exists, nobody can open the
 project or the notice: those are the DPO's, and the administrator's role
 reads purposes, processors and sources but not projects.

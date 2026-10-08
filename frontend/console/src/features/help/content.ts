@@ -548,9 +548,9 @@ export const SECTIONS: HelpSection[] = [
   },
   {
     id: "temporary-holder",
-    title: "If you were given a login for a breach ticket",
+    title: "If you were given a login for a ticket",
     summary:
-      "The Privacy Office has asked for your help with a personal data breach, and given you a login that lasts as long as the work does.",
+      "The Privacy Office has asked for your help - with a personal data breach, or with a person's request about their data - and given you a login that lasts as long as the work does.",
     roles: ["breach_holder"],
     blocks: [
       {
@@ -559,16 +559,17 @@ export const SECTIONS: HelpSection[] = [
         items: [
           "Your email from the Privacy Office has a link and a code. Open the link, type the [[Code]], choose a [[New password]] of at least 12 characters, confirm it and click [[Set the new password]].",
           "Sign in with your work email and that password. A six-digit code is emailed to you: type it in [[6-digit code]] and click [[Verify and continue]].",
-          "You land on [[My tasks]]. Your breach ticket is there.",
+          "You land on [[My tasks]]. Your ticket is there: a breach ticket at the top, a ticket on a rights request under [[To do]].",
         ],
       },
       {
         kind: "list",
         title: "What you can see",
         items: [
-          "Your ticket: the breach reference, what you are asked, the date to answer by if there is one, and the conversation with the Privacy Office. Nothing else about the breach.",
+          "A breach ticket: the breach reference, what you are asked, the date to answer by if there is one, and the conversation with the Privacy Office. Nothing else about the breach.",
+          "A rights ticket: the request's reference, what you are asked, what the platform already holds about the person, for an erasure the items you hold and what to do with each, and the conversation. Click [[Answer]], then [[Submit your answer]] when your work is done; the Privacy Office reviews it.",
           "[[My tasks]], your notifications and your profile. Nothing else in the console is open to you.",
-          "Answer on the ticket as anyone does: write, attach a file, and when you are done choose what was done and tick [[This is my return]].",
+          "On a breach ticket, answer as anyone does: write, attach a file, and when you are done choose what was done and tick [[This is my return]].",
         ],
       },
       {

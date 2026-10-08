@@ -1,7 +1,8 @@
 # 0013. Every account is a data principal; staff is a role the session acts with
 
 Status: accepted. September 2026. Migration 0025. Amended 2026-09-21: the
-contact rules are enforced on keyed hashes (below).
+contact rules are enforced on keyed hashes (below). Amended 2026-10-08: an
+outside holder's ticket code is not a sign-in (below).
 
 ## Context
 
@@ -101,3 +102,15 @@ comparing `email_hash` with `secondary_email_hash` (renamed from `*_idx` in
 0029). The rule, and the unique violation the application reports as a
 conflict, are unchanged. The code sign-in lookup matches a confirmed
 secondary address by its hash (`users.by_contact`). See [ADR 0017](0017-lookup-by-keyed-hash-and-name-ngrams.md).
+
+## Amended 2026-10-08: a holder's ticket code is not a sign-in
+
+Since migration 0049 the portal sends one more one-time code: to the address
+on a rights ticket, for its outside holder
+([ADR 0024](0024-a-rights-tickets-holder-is-reached-three-ways.md)). It
+mints no session and touches no account. It opens that one ticket for an
+hour, through a `cmp_ticket` cookie whose fingerprint in Redis names the
+ticket and its link (`domain/rights/holder_link.py`), and every call names
+the link in its path as well. So "a code is worth exactly what a data
+principal can do" still holds for every sign-in: this code is not one. No
+route that reads a session accepts it, and it reaches nothing but its ticket.

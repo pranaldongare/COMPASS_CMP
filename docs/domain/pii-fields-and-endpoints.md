@@ -60,9 +60,13 @@ tables), `ip_address`, `name` and `contact` on `processor_respondent`, every
 (`title`, `location_detail`, `reasoning`, the nine assessment facts, a duty
 event's and a revision's `note`, `reported_to`, the five words of a breach notice, and a
 breach ticket's `instruction`, `summary`, `reason`, `body` and `evidence_name`, and an
-attached file's `file_name` and `note`) — 62 columns in 25 tables. The eight the platform
-looks rows up by whole (`email`, `secondary_email`, `mobile`, `username`,
-`organization_id`, `nominee_email`, `nominee_mobile`, `submitted_contact`) carry
+attached file's `file_name` and `note`; since 0043-0049 also the names of documents
+sent with a request and of breach uploads, a breach contact's name and contacts,
+the incident's *what is known* answers, and the office's copy addresses) — 78
+columns in 29 tables. The eleven the platform looks rows up by whole (`email`,
+`secondary_email`, `mobile`, `username`, `organization_id`, `nominee_email`,
+`nominee_mobile`, `submitted_contact`, a breach contact's `email` and `mobile`,
+and a copy's `address`) carry
 a keyed hash beside them - `*_hash`, an HMAC of the normalised value - and three
 names (`auth_user.full_name`, `rights_request.submitted_name`,
 `nomination.nominee_name`) carry `*_ngrams`, the hashed three-character runs a

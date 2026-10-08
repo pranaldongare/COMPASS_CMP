@@ -23,8 +23,9 @@ reaches a log line.
 | `after_commit.hook_failed` or `task.dispatch_failed` | A notification was due after a commit and the broker did not take it; the row exists, the message did not go |
 | `sms.gateway_refused` | The SMS gateway refused a message with a 4xx other than 429 - a bad number, a bad token. Not retried: the same request would be refused again. Codes to mobiles are not arriving |
 | `sms.gateway_busy`, `sms.gateway_timeout`, `sms.gateway_unreachable` | The gateway answered 429 or 5xx, timed out, or could not be reached. The message is retried with the task's backoff (five times, from five seconds); a steady stream means the gateway is down |
-| Redis `used_memory` near `maxmemory` | Redis runs `noeviction`; at the limit it refuses writes and sign-in fails with 503 rather than silently evicting sessions |
-| `cmp.maintenance.sweep_rights_requests` failing | Unverified requests are not being closed, ticket due dates are not being marked, and erasures waiting on a store are not being retried; a clock is running unwatched |
+| Redis `used_memory` near `maxmemory` | Redis runs `noeviction`; at the limit it refuses writes and sign-in fails with 503 rather than silently evicting sessions. Celery's task results (database 2, kept 24 hours) are the usual filler after a burst of tasks |
+| `cmp.maintenance.sweep_rights_requests` failing | Unverified requests are not being closed, holders are not being reminded (three days before, on the day, then daily while overdue), and erasures waiting on a store are not being retried; a clock is running unwatched |
+| `cmp.maintenance.alert_breach_duties` failing | Runs every five minutes. While it fails, no DPO is emailed that a breach duty is about to fall due or is overdue; the register still shows the clocks |
 | `rights.erasure_failed` in the logs, or `erasures_attempted` on `maintenance.rights_swept` staying high while `erasures_finished` stays at zero | An erasure store fails every time it is tried - a defect, not a holder being slow ([runbook](runbook.md#an-erasure-is-not-finishing)) |
 | Rights requests past a checkpoint on the dashboard | The office is late; the response period is published and binding |
 | **Breach duties overdue** on the DPO's dashboard (`breach_duties_late`) | A breach duty is past its due time - the organisation's board's thirty minutes from first noticed, CERT-In's six hours, the Board's 72 - or past the internal target for "without delay" once one is set. An overdue organisation's-board duty is critical like the rest: the board has not been told, or the report was not recorded. Statutory and the most urgent thing on the platform; wiring it to a page is part of P-08 |
@@ -103,7 +104,7 @@ already has.
 
 Passwords, one-time codes, session tokens, consent link tokens, the contents
 of a data asset, and the arguments of a Celery task — which carry the first two
-of those (see the task monitor, above). The access log scrubs `/c/{token}` to `/c/[token]`, because a
+of those (see the task monitor, above). The access log scrubs the token in `/c/{token}`, `/rights/nominations/{token}` and `/holder-tickets/{token}` to `[token]`, because a
 link in a log file is a credential in a file that gets shipped to an aggregator
 and read by people who were never meant to hold it.
 

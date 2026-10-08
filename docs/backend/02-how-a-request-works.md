@@ -31,8 +31,9 @@ three logical databases: `/0` sessions, limits and codes, `/1` the Celery
 broker, `/2` task results.
 
 Routers are mounted in the order of `ROUTERS` in `api/routers/__init__.py`:
-`system` and `auth`, then the public consent and rights routers, then the
-signed-in ones. `/dev/codes` is added only when `DEV_SHOW_CODES` is on, which
+`system` and `auth`, then the public consent, rights and holder-ticket
+routers (`/holder-tickets/{token}`, an outside holder's ticket, 0049), then
+the signed-in ones. `/dev/codes` is added only when `DEV_SHOW_CODES` is on, which
 is refused outside local/test; it answers each browser tab with the codes
 its own requests caused, matched on the `X-CMP-Dev-Client` header, which the
 request context carries into Celery task headers. `/metrics` (Prometheus) is installed last and
@@ -219,7 +220,8 @@ never on messages.
 ## Work that happens later: Celery
 
 - **The app** (`tasks/app.py`): JSON only, `acks_late`, prefetch 1, six
-  queues. The eight one-time-code tasks go to `high_priority`, other
+  queues. The nine one-time-code tasks (the last, `send_holder_ticket_code`,
+an outside holder's code) go to `high_priority`, other
   notifications to `notifications`, maintenance to `default`.
 - **Queueing** (`tasks/dispatch.py`):
   - `dispatch_required(task, ...)` queues now and turns a broker failure into
@@ -238,9 +240,10 @@ never on messages.
   opens the sealed recipient, renders the wording, and hands it to the email
   or SMS transport. Locally both transports append to
   `backend/api/var/outbox.log`.
-- **Scheduled** (Celery beat): expire consent links every 15 minutes,
-  retention lapse 02:00, rights-request sweep 02:30, audit-chain
-  verification 03:00, unmapped assets every six hours.
+- **Scheduled** (Celery beat), six tasks: expire consent links every 15
+  minutes, breach duties' alerts every five minutes, retention lapse 02:00,
+  rights-request sweep 02:30, audit-chain verification 03:00, unmapped
+  assets every six hours.
 
 Worker command, from `backend/api`:
 

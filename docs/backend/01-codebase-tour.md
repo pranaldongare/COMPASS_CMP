@@ -13,8 +13,8 @@ otherwise.
 | `schemas/` | The base classes every request and response model uses: `Schema` (requests, unknown fields refused), `Out` (responses, unknown fields dropped), `Page[T]` | `schemas/common.py` |
 | `validation/` | Constrained types (`ShortText`, `Mobile`, `DateOfBirth` …), `choice()` for enum fields, contact normalisation | - |
 | `auth/` | Who you are and what you may do: password and MFA, one-time codes, password reset, sessions in Redis, roles, the authorisation evaluator, rate limiting and lockout | `auth/authentication/service.py` |
-| `domain/` | One package per area - `projects`, `notices`, `consent`, `exchange`, `rights`, `breach`, `registry`, `users`, `delegations`, `messaging`, `audit`. The business rules and state machines live here | `domain/projects/service.py` |
-| `db/` | The connection pool and `transaction()`, SQL helpers, Redis, and `repositories/` - thirteen modules of hand-written SQL | `db/pool.py`, `db/sql.py` |
+| `domain/` | One package per area - `projects`, `notices`, `consent`, `exchange`, `rights`, `breach`, `registry`, `users`, `delegations`, `messaging`, `alerts`, `audit`. The business rules and state machines live here | `domain/projects/service.py` |
+| `db/` | The connection pool and `transaction()`, SQL helpers, Redis, and `repositories/` - twenty-one modules of hand-written SQL | `db/pool.py`, `db/sql.py` |
 | `infrastructure/` | Adapters to the outside: email and SMS transports, file storage, message delivery (`deliver()`), and the key-service client that seals and opens personal fields | `infrastructure/dkms/` |
 | `core/` | Settings, the exception classes, the permission matrix and navigation, pagination cursors, the request context, enums, token and hash helpers | `core/permissions.py`, `core/errors.py` |
 | `tasks/` | The Celery app, the dispatch helpers, and the tasks: notifications (codes, receipts, tickets) and nightly maintenance | `tasks/app.py`, `tasks/dispatch.py` |
@@ -42,16 +42,20 @@ bootstrap → api → auth / tasks → domain → db → infrastructure → vali
   talks to the database and, for sealing, to `infrastructure/dkms`.
 - Nothing in `domain` or `db` knows about HTTP.
 
-**How it is kept:** by review. There is no import-linter; the pre-commit hooks
-are ruff, mypy and the unit tests. Two checks run at import time:
+**How it is kept:** partly by a test, the rest by review. There is no
+import-linter; the pre-commit hooks are ruff, mypy and the unit tests, and one
+of those, `tests/unit/test_layer_boundaries.py` (since 2026-10-05), reads the
+source and fails if a router records an audit row or writes through a
+repository, or if a router, a domain service or `auth` runs SQL of its own
+(the audit writer excepted). Two checks run at import time:
 `auth/authorization/permissions.py` refuses to load if the resource roster and
 the permission matrix disagree, and `api/errors/mapping.py` refuses to load if
 an exception class in `core/errors.py` lacks a status or code.
 
-The direction is not perfectly kept today - some routers write through
-repositories and record audit rows themselves, and a few services import from
-`auth` and `tasks` inside functions. [Known gaps](06-known-gaps.md) lists
-them. Follow the rule in new code; do not copy the exceptions.
+The direction is not perfectly kept today - two maintenance sweeps run SQL
+directly, a few repositories import another's predicates, and a few services
+import from `auth` and `tasks` inside functions. [Known gaps](06-known-gaps.md)
+lists them. Follow the rule in new code; do not copy the exceptions.
 
 ## Where to find things
 

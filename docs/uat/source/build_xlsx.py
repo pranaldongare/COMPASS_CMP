@@ -17,7 +17,7 @@ from openpyxl.worksheet.datavalidation import DataValidation
 
 HERE = Path(__file__).parent
 OUT = sys.argv[1]
-AREAS = ["ACC", "REG", "PRJ", "CON", "RGT", "OVS"]
+AREAS = ["ACC", "REG", "PRJ", "CON", "RGT", "BRE", "OVS"]
 cases = [c for a in AREAS if (HERE / f"{a}.json").exists() for c in json.loads((HERE / f"{a}.json").read_text())]
 AREA_NAMES = list(dict.fromkeys(c["area"] for c in cases))
 
@@ -82,7 +82,8 @@ ws.column_dimensions["A"].width = 26
 ws.column_dimensions["B"].width = 110
 rows = [
     ("COMPASS CMP - User Acceptance Testing", None),
-    ("Build under test", "Branch sprint-3/breach-and-correction, commit ce91d31 - 5 October 2026"),
+    ("Build under test", "Branch sprint-3/breach-and-correction, commit 833b58f - 8 October 2026 (pack version 1.6)"),
+    ("Retired case IDs", "RGT-19 (a correction nobody carried out cannot close as Complete) - correction is no longer a kind of rights request. Other IDs keep their numbers."),
     ("Read first", "COMPASS-CMP-UAT-Runbook-and-Test-Cases.docx, Part A (the runbook). It explains the system, the accounts, the test outbox for one-time codes, and how to record results."),
     ("Where to record results", "Test Cases sheet: one row per case - fill in Tester, Date, Status, Actual result / notes, Defect IDs. Test Steps sheet: optional, one row per step, for a failed or complex case. Defect Log: one row per defect."),
     ("Cells you fill in", "Only the pale yellow cells. Everything else is the test definition - do not edit it; tell the coordinator if a step is wrong."),

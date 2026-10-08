@@ -67,8 +67,9 @@ so the bell's links and older addresses such as `#notices` open the right one.
 
 ## Logging an incident
 
-**Breaches → Log an incident.** Three things are asked for, and every time is
-typed in, never filled with "now":
+**Breaches → Log an incident.** Three things are asked for first, and every
+time is typed in, never filled with "now". **What is known so far** follows
+them (below).
 
 | Field | Means | Anchors |
 |---|---|---|
@@ -217,7 +218,7 @@ their own clocks; nothing waits for the assessment.
 | Duty | Created when | Due | Basis |
 |---|---|---|---|
 | Organisation's board | **every incident, when it is logged** | 30 minutes from first noticed (`BREACH_ORG_BOARD_MINUTES`) | internal policy |
-| Report to CERT-In | **Mark reportable to CERT-In** | 6 hours from first noticed | CERT-In Directions 2022, IT Act s.70B |
+| Report to CERT-In | **Mark reportable to CERT-In**, or *Yes* to *Is it a cyber attack?* when logged | 6 hours from first noticed | CERT-In Directions 2022, IT Act s.70B |
 | Board - initial intimation | validation *yes* | without delay | Rule 7(2)(a) |
 | Board - detailed report | validation *yes* | 72 hours from awareness, or the date the Board allows | Rule 7(2)(b) |
 | Principals notified | validation *yes* | without delay | Rule 7(1) |
@@ -287,6 +288,8 @@ listing too many is the safe side of Rule 7. Each person a revision adds is
 notified in turn (S3-03).
 
 ### People the records cannot show: a list sent to us
+
+The decision: [ADR 0027](../decisions/0027-a-breach-can-reach-people-with-no-account.md).
 
 Often the people a breach touched are not on the platform at all - a
 processor's own participants, a team's contact list - and before 2026-10-07
@@ -391,7 +394,11 @@ accounts, so the thirty minutes never wait on one person.
 Board's documents, tracks every clock, and records a submission after a person
 has made it through the regulator's own channel. A source test holds that
 nothing in the breach code imports a way to reach anywhere else, and that the
-one task that sends anything sends the principals' notice.
+breach tasks send only the principals' notice (`breach_notice`, or
+`breach_notice_direct` to a person with no account) and, to a member of staff
+holding a ticket, `breach_ticket_waiting`. The office's own reminders -
+`breach_duty_due` and `breach_ticket_returned`, to every active DPO - go from
+`tasks/notifications/alerts.py`, with every other module's notices to staff.
 
 **Documents for the Board**, from a breach's page, drafts both from the
 register as it stands - at any point, as often as wanted; each says when it was
@@ -411,8 +418,8 @@ notified on every channel.
 **Recording a submission** - **Record submission** on the duty - is a new row
 with when it was made and the reference the regulator returned; the Board's
 extension of the detailed report moves only that duty's due time. **CERT-In**
-is the duty created by **Mark reportable to CERT-In**, due six hours from
-detection; whoever files follows CERT-In's own format and records the filing
+is the duty created by **Mark reportable to CERT-In**, or by *Yes* to *Is it a
+cyber attack?* when the incident is logged, due six hours from detection; whoever files follows CERT-In's own format and records the filing
 the same way. Who files with CERT-In - the DPO or corporate security - is not
 yet decided; today only the DPO can record it.
 
@@ -542,7 +549,7 @@ nothing about it can be recorded.
 | `breach_ticket_event` | What happened to a ticket: returned (outcome, sealed summary), sent back, closed, withdrawn, reopened (each but close with a sealed reason). Append-only |
 | `breach_ticket_message` | The ticket's thread: office, holder or platform; sealed body and file name. Append-only |
 | `breach_attachment` | A file kept with the incident: its kind, sealed name and note, where it is stored, its hash and size, who added it and when. Append-only: never replaced or removed |
-| `breach_temporary_access` | One grant of a breach-only login: whose, on which breach, through which ticket, whether the account was made for it, the role it held before, who granted it, and - once - when, by whom and why it ended (`breach_closed`, `ticket_withdrawn`, `account_deactivated`). One open grant per person per breach, by partial unique index; the end is written once and nothing else changes, by trigger; never deleted |
+| `breach_temporary_access` | One grant of a temporary login: whose, on which breach, through which ticket, whether the account was made for it, the role it held before, who granted it, and - once - when, by whom and why it ended (`breach_closed`, `request_closed`, `ticket_withdrawn`, `reassigned`, `account_deactivated`). Since 0049 a grant may instead be for a rights ticket, `holder_id`, with `breach_id` and `ticket_id` then empty - exactly one of the two, by CHECK. One open grant per person per breach, or per rights ticket, by partial unique index; the end is written once and nothing else changes, by trigger; never deleted |
 | `breach_affected` | Each person listed, once per breach (`breach_affected_once`), with the revision that first listed them and what put them there - exports, assets, tables or an uploaded list (`found_by` upload), never a value. Append-only |
 | `breach_upload` | Each list taken (0045): people or assets, its sealed file name and hash, and what it came to - rows read, matched, new contacts, skipped, unreadable, untraceable. The file is not kept. Append-only |
 | `breach_contact` | Somebody the breach touched with no account (0045): name, email and mobile sealed, with blind indexes so each is listed once per breach. Append-only. A delivery addresses an account or one of these, exactly one (`breach_notice_delivery_one_recipient`), and never writes a contact to an account (`breach_notice_delivery_portal_is_an_account`) |

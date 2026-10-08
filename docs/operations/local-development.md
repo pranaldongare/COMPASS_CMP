@@ -1,9 +1,9 @@
 # Local development
 
 Everything needed to run the platform on one machine, sign in as every role,
-and read the codes it sends. Five processes and two datastores, started in
-this order: PostgreSQL and Redis, the key service, the API and its worker,
-then the two portals. The key service comes before the seed, because the
+and read the codes it sends. Six processes and two datastores, started in
+this order: PostgreSQL and Redis, the key service, the API, its worker and
+one beat, then the two portals. The key service comes before the seed, because the
 seed writes personal data and personal data is sealed through it on the way
 in. Windows is the primary development platform; the
 commands are the same on macOS and Linux unless noted.
@@ -62,7 +62,7 @@ python3.12 -m venv .venv
 . .venv/bin/activate            # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
 cp .env.example .env            # PUBLIC_BASE_URL, CONSOLE_BASE_URL - see below
-alembic upgrade head            # 33 migrations; 0028 and 0030 call the key service
+alembic upgrade head            # 49 migrations; 0028 and 0030 call the key service
 python scripts/seed.py          # one coherent world; refuses outside local/test
 python -m cmp --port 8000
 ```
@@ -82,7 +82,7 @@ Settings worth checking in `.env` for local work:
 |---|---|---|
 | `ENVIRONMENT` | `local` | enables `/docs`, the outbox, the seed and reset scripts |
 | `POSTGRES_DB` | `cmp` | the database `dev-services.yml` creates |
-| `PUBLIC_BASE_URL` | `http://localhost:3001` | where the links in emails land: consent links, nomination acceptance |
+| `PUBLIC_BASE_URL` | `http://localhost:3001` | where the links in emails land: consent links, nomination acceptance, an outside holder's ticket |
 | `CONSOLE_BASE_URL` | `http://localhost:3000` | where staff links land: tickets, requests |
 | `MFA_REQUIRED_ROLES` | every staff role | the default; leave it |
 | `SMTP_SERVER` | empty | no email is sent; see the outbox, and `var/outbox-html/` for each email laid out |
@@ -142,7 +142,7 @@ their five data sources, two purposes, and an approved project with a
 published notice (English and Hindi) and a live consent link, printed at the
 end of the run. Each is a table at the top of the script; edit it and re-run.
 
-Every other account is created by the administrator: **Users → Invite** in
+Every other account is created by the administrator: **Users → Provision account** in
 the console. The invitation carries a code that sets the password (with
 `DEV_SHOW_CODES=true` it pops up on the page). Invite a DPO first: the
 project and the notice are the DPO's to open, not the administrator's.

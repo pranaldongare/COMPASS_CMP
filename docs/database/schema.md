@@ -6,7 +6,7 @@ catalogs after replaying every migration, not maintained by hand.
 
 The migrations are the source of truth: 0001 transcribed the original
 `DATA-MODEL.md` specification (which is not in this repository) and 0002 to
-0030 built the rest. This document explains the parts whose shape is not
+0049 built the rest. This document explains the parts whose shape is not
 obvious; the relationships are drawn in
 [docs/architecture/domain-model.md](../architecture/domain-model.md),
 and every column, constraint, index and trigger is listed and diagrammed in
@@ -138,6 +138,11 @@ most one open per person per breach (`breach_temporary_access_open`, a partial
 unique index), the end written once with its cause and nothing else changed
 (`cmp_breach_temporary_access_end_once`), and never deleted. Ending a grant
 does not change the account (decided 2026-10-06): the login stays, read only.
+Since 0049 a grant may be for one rights ticket instead: `holder_id` set and
+`breach_id`, `ticket_id` empty, exactly one of the two by
+`temporary_access_for_one_ticket`; at most one open per person per rights
+ticket (`rights_temporary_access_open`); ended as `request_closed`,
+`ticket_withdrawn` or `reassigned`.
 
 **A file kept with an incident is evidence, since 0042.** `breach_attachment`
 is one row per file - its kind (`email`, `proof`, `chat`, `other`, by CHECK),

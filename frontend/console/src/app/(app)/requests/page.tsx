@@ -74,7 +74,7 @@ function RequestsPageView() {
         description={
           isAdmin
             ? "Grievances about the DPO, escalated to you as the independent reviewer. Accountability cannot review itself."
-            : "Access, correction, erasure and grievance - sections 11 to 14. Every request runs on the published clock from the moment it arrives."
+            : "Access, erasure and grievance - sections 11 to 13, and a nominee acting under section 14. Every request runs on the published clock from the moment it arrives."
         }
         actions={
           !isAdmin ? (

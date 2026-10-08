@@ -1,6 +1,6 @@
 # 0016. Personal data is sealed by a separate key service, and opened only where a person reads it
 
-**Status:** accepted · 2026-09-21
+**Status:** accepted · 2026-09-21; amended 2026-10-08 (the decrypt route also takes an outside holder's ticket cookie, which leaves SEC-1 open - see the end)
 
 ## Context
 
@@ -94,3 +94,17 @@ A vendor key-management service replaces the local scheme (`DKMS_PROVIDER=sdk`
 exists for this); the decrypt route's review concludes; or a consumer outside
 the two portals needs plaintext, which would need its own trust decision
 rather than a copy of this route.
+
+## Amended 2026-10-08: the decrypt route also takes a ticket cookie
+
+Since migration 0049 an outside holder answers a rights ticket on the portal
+without a session ([ADR 0024](0024-a-rights-tickets-holder-is-reached-three-ways.md)),
+and its page shows sealed values like any other. Both portals' decrypt
+routes (`frontend/console/src/app/dkms/decrypt/route.ts`,
+`frontend/portal/src/app/dkms/decrypt/route.ts`) now answer when either a
+`cmp_session` or a `cmp_ticket` cookie is present, and still check the value
+of neither. This widens the open question above; it does not settle it. The
+route can open any ciphertext for anybody who sends a cookie of either name
+with any value. That is review SEC-1, an open decision for the senior
+engineer ([csrf.md](../security/csrf.md#not-covered-the-portals-own-dkmsdecrypt),
+[reviews](../reviews/README.md)).

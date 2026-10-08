@@ -9,7 +9,7 @@ const R = require("./runbook");
 
 const HERE = __dirname;
 const OUT = process.argv[2];
-const AREAS = ["ACC", "REG", "PRJ", "CON", "RGT", "OVS"];
+const AREAS = ["ACC", "REG", "PRJ", "CON", "RGT", "BRE", "OVS"];
 const cases = AREAS.flatMap((a) => {
   const f = path.join(HERE, `${a}.json`);
   return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, "utf8")) : [];
@@ -81,7 +81,7 @@ children.push(
     ["Version", R.BUILD.version],
     ["Date", R.BUILD.date],
     ["Build under test", `Branch ${R.BUILD.branch}, commit ${R.BUILD.commit}`],
-    ["Test cases", `${cases.length} across ${AREAS.length} areas`],
+    ["Test cases", `${cases.length} across ${AREAS.length} areas` + (R.RETIRED && R.RETIRED.length ? ` (retired: ${R.RETIRED.map((r) => r[0]).join(", ")})` : "")],
     ["Companion workbook", "COMPASS-CMP-UAT-Test-Cases.xlsx - record results there, one row per test case, one per step"],
   ]),
 );
@@ -108,17 +108,22 @@ children.push(
   p("There are two websites:"),
   bullet("The staff console (http://localhost:3000) - for the Privacy Office, researchers, collection owners and administrators."),
   bullet("The data principal portal (http://localhost:3001) - for the people whose data is collected: giving and withdrawing consent, and making rights requests."),
-  p("A typical study flows like this: an R&D user registers a project and its notice; the Privacy Office approves it; a collection owner creates a consent link for a site; people open the link, read the notice and consent; the collection owner exports the list of consenting people and later imports what was collected; people can see and withdraw their consent and ask for access, correction or erasure; every step is recorded in the audit trail.", { before: 60 }),
+  p("A typical study flows like this: an R&D user registers a project and its notice; the Privacy Office approves it; a collection owner creates a consent link for a site; people open the link, read the notice and consent; the collection owner exports the list of consenting people and later imports what was collected; people can see and withdraw their consent, ask for access to or erasure of their data, or complain; the Privacy Office answers each request with the help of whoever holds the data, through tickets; a personal data breach is logged as an incident and handled to its close; every step is recorded in the audit trail.", { before: 60 }),
 );
 children.push(h3("Words you will meet"));
 children.push(table([2300, CONTENT - 2300], ["Term", "Meaning"], R.GLOSSARY, { zebra: true, boldFirst: true }));
 
 children.push(h2("3. Scope of this test cycle", { pageBreak: true }));
-children.push(p("Everything built so far is in scope. The test cases are grouped into six areas:"));
+children.push(p(`Everything built so far is in scope. The test cases are grouped into ${AREAS.length} areas:`));
 children.push(table([2400, CONTENT - 2400 - 900, 900], ["Area", "What it covers", "Case IDs"], R.SCOPE_IN.map(([a, b, c]) => [a, b, `${c}-..`]), { zebra: true, boldFirst: true }));
-children.push(h3("New in this release (Sprint 2)"));
-children.push(p("These four changes are new since the last demonstration. Test cases that exercise them name the item in their Reference field."));
+children.push(h3("New in this release"));
+children.push(p(`Changes since the last demonstration. The rows marked v${R.BUILD.version} are new in this version of the pack. Test cases that exercise a change name it in their Reference field or in the row below.`));
 children.push(table([900, 2400, CONTENT - 3300], ["Item", "Change", "What you should notice"], R.NEW_IN_RELEASE, { zebra: true, boldFirst: true }));
+if (R.RETIRED && R.RETIRED.length) {
+  children.push(h3("Retired test cases"));
+  children.push(p("These IDs are no longer used. The other IDs keep their numbers, so results from earlier cycles still line up."));
+  children.push(table([1100, CONTENT - 1100], ["ID", "Why it was retired"], R.RETIRED, { zebra: true, boldFirst: true }));
+}
 children.push(h3("Not in scope"));
 R.SCOPE_OUT.forEach((t) => children.push(bullet(t)));
 children.push(h3("Known limits - not defects"));

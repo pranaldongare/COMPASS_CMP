@@ -9,7 +9,7 @@
     "type": "Positive",
     "ref": "Core",
     "preconditions": [
-      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
       "No project named 'UAT Study 01' exists yet (search for it first)."
     ],
     "test_data": [
@@ -73,7 +73,7 @@
     "type": "Negative",
     "ref": "Core",
     "preconditions": [
-      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar."
+      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar."
     ],
     "test_data": [
       "Project name: UAT Incomplete 01",
@@ -114,7 +114,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-01 completed (UAT Study 01 is In Draft with no notice and no approval).",
-      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar."
+      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar."
     ],
     "test_data": [
       "Project: UAT Study 01"
@@ -138,7 +138,7 @@
       },
       {
         "action": "Click the 'Setup' tab and look at the 'Notices' card.",
-        "expected": "It shows 'No notice yet' with the buttons 'Upload a notice document' and 'Copy an existing notice'. There is NO 'New notice' button."
+        "expected": "It shows 'No notice yet' with the buttons 'Upload a notice document', 'Copy an existing notice' and 'Use a notice template'. There is NO 'New notice' button."
       },
       {
         "action": "Look at the 'Approvals' card.",
@@ -162,7 +162,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-01 completed.",
-      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar."
+      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar."
     ],
     "test_data": [
       "Unfilled template: download it from the dialog's 'Download it' link (DPDP_Consent_Notice_Template_v0_2.docx) and do not edit it",
@@ -211,7 +211,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-01 completed (UAT Study 01 has no notice yet).",
-      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
       "The test coordinator has handed over a filled copy of the template (tests/fixtures/notice_filled.docx is a valid example: English, 9 purposes, 7 data categories)."
     ],
     "test_data": [
@@ -269,7 +269,7 @@
     "type": "Positive",
     "ref": "Core",
     "preconditions": [
-      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
       "Seeded notice NTC-GAIT-2026 v1 is published."
     ],
     "test_data": [
@@ -321,7 +321,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-05 completed (NTC-UAT-STUDY-01-2026 v1 is a Draft).",
-      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar."
+      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar."
     ],
     "test_data": [
       "Project: UAT Study 01",
@@ -330,7 +330,7 @@
     "steps": [
       {
         "action": "Open project 'UAT Study 01', click the 'Setup' tab and look at the buttons on the 'Notices' card.",
-        "expected": "'Upload a notice document' and 'Copy an existing notice' are shown; there is NO 'New notice' button."
+        "expected": "'Upload a notice document', 'Copy an existing notice' and 'Use a notice template' are shown; there is NO 'New notice' button."
       },
       {
         "action": "Click 'NTC-UAT-STUDY-01-2026 v1' in the 'Notices' card.",
@@ -366,7 +366,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-05 completed (only 'No approval with a proof file' still blocks).",
-      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar."
+      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar."
     ],
     "test_data": [
       "Type: Security",
@@ -425,7 +425,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-08 completed (UAT Study 01 is Pending Approval; its notice's purposes are Draft and English text is not approved).",
-      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar."
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar."
     ],
     "test_data": [
       "Project: UAT Study 01",
@@ -478,7 +478,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-09 completed (DPO is on the notice page of NTC-UAT-STUDY-01-2026 v1).",
-      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar."
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar."
     ],
     "test_data": [
       "Notice: NTC-UAT-STUDY-01-2026 v1 (9 draft purposes from the uploaded document)"
@@ -522,7 +522,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-10 completed.",
-      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar."
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar."
     ],
     "test_data": [
       "Extra sentence for English: 'Contact the Privacy Office at dpo@example.org with any question.'",
@@ -575,7 +575,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-11 completed (checklist says the notice is complete).",
-      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar."
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar."
     ],
     "test_data": [
       "Project: UAT Study 01",
@@ -628,7 +628,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-12 completed (NTC-UAT-STUDY-01-2026 v1 is Published).",
-      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
       "Kavya Rao (rnd@cmp.local) available for the second half."
     ],
     "test_data": [
@@ -678,7 +678,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-12 completed (UAT Study 01 Approved, names SEED).",
-      "Signed in to the console (http://localhost:3000) as Nikhil Bose, DCO Admin (dcoadmin@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "Signed in to the console (http://localhost:3000) as Nikhil Bose, DCO Admin (dcoadmin@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
       "Seeded data source 'CIT' (SRC-SEED-CIT) under SEED is owned by Arun Shetty."
     ],
     "test_data": [
@@ -741,7 +741,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-14 completed.",
-      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
       "Meera Iyer (rco@cmp.local) available. Seeded source 'SE' (SRC-SRIB-SE) under SRIB is owned by Meera Iyer."
     ],
     "test_data": [
@@ -792,7 +792,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-14 and PRJ-15 completed (two sites added after publication).",
-      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar."
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar."
     ],
     "test_data": [
       "Notice code (set by hand): NTC-UAT-STUDY-01-2026",
@@ -852,7 +852,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-14 completed (CIT site on UAT Study 01 owned by Arun Shetty, no live link).",
-      "Signed in to the console (http://localhost:3000) as Arun Shetty, DCO (dco@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar."
+      "Signed in to the console (http://localhost:3000) as Arun Shetty, DCO (dco@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar."
     ],
     "test_data": [
       "Expires at: empty, then yesterday's date/time",
@@ -901,7 +901,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-17 completed.",
-      "Signed in to the console (http://localhost:3000) as Arun Shetty, DCO (dco@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "Signed in to the console (http://localhost:3000) as Arun Shetty, DCO (dco@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
       "PRJ-16 completed is recommended so the link serves notice v2."
     ],
     "test_data": [
@@ -956,7 +956,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-18 completed (URL saved in a notepad as 'old URL').",
-      "Signed in to the console (http://localhost:3000) as Arun Shetty, DCO (dco@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar."
+      "Signed in to the console (http://localhost:3000) as Arun Shetty, DCO (dco@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar."
     ],
     "test_data": [
       "Site: CIT (UAT Study 01)"
@@ -1008,7 +1008,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-15 completed (SE site on UAT Study 01 owned by Meera Iyer).",
-      "Signed in to the console (http://localhost:3000) as Meera Iyer, RCO (rco@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar."
+      "Signed in to the console (http://localhost:3000) as Meera Iyer, RCO (rco@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar."
     ],
     "test_data": [
       "Site: SE (UAT Study 01)",
@@ -1054,7 +1054,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-20 completed (SE link revoked, no live link on SE).",
-      "Signed in to the console (http://localhost:3000) as Meera Iyer, RCO (rco@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar."
+      "Signed in to the console (http://localhost:3000) as Meera Iyer, RCO (rco@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar."
     ],
     "test_data": [
       "Expires at: about 3 minutes from now"
@@ -1094,7 +1094,7 @@
     "ref": "Core",
     "preconditions": [
       "PRJ-16 and PRJ-19 completed (NTC-UAT-STUDY-01-2026 v2 is published; the CIT link saved as 'new URL' is active).",
-      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
       "The test coordinator relays one-time codes, and Anjali Verma (+91 90000 00001) has a portal account."
     ],
     "test_data": [
@@ -1128,5 +1128,212 @@
       }
     ],
     "pass_criteria": "Publishing a notice under a new code supersedes the one in force, so a project never has two published notices; an existing consent link keeps working and shows the notice now in force; another project's notice code cannot be used."
+  },
+  {
+    "id": "PRJ-23",
+    "area": "Projects, notices and links",
+    "title": "DPO writes a notice template before any project exists, finds it under Templates and edits it",
+    "feature": "Notice templates - create, purposes, languages, edit (new in this release)",
+    "role": "DPO",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
+      "The seed has no notice templates: this case makes the first one. The register holds the seeded purposes 'Gait model training' (PUR-GAIT-TRAIN) and 'Recording quality assurance' (PUR-QUALITY), both active."
+    ],
+    "test_data": [
+      "Template name: UAT Gait template 01; after editing: UAT Gait template 01 (adults)",
+      "DPO contact: dpo@example.org",
+      "Applies to: Data subjects — people outside the organisation",
+      "Note for the collector: Read the notice aloud if the person asks.",
+      "Withdraw consent URL: https://example.org/withdraw",
+      "Exercise rights URL: https://example.org/rights",
+      "Board complaint URL: https://example.org/complain",
+      "Language: English; Notice text: 'UAT template notice. We record gait video and facial images to train and check gait models. Contact the Privacy Office at dpo@example.org with any question.'",
+      "Purposes: Gait model training (Mandatory ticked), Recording quality assurance (Mandatory not ticked)",
+      "Hindi text: 'यह UAT टेम्पलेट सूचना है। (UAT template notice - Hindi)'",
+      "Template ID: minted by the system as TPL- and four digits (for example TPL-0001). Write down the one you get; PRJ-24 and PRJ-25 use it."
+    ],
+    "steps": [
+      {
+        "action": "Click 'Dashboard' in the sidebar and look at the buttons at the top right of the page.",
+        "expected": "Two buttons: 'Log an incident' (highlighted) and beside it 'New notice template'."
+      },
+      {
+        "action": "Click 'New notice template'.",
+        "expected": "A dialog 'New notice template' opens: 'A notice written before any project exists. A project uses it by its ID, which makes that project's own draft notice from it.' Fields: 'Template name', 'DPO contact', 'Applies to' (showing 'Not decided yet'), 'Note for the collector', 'Withdraw consent URL', 'Exercise rights URL', 'Board complaint URL', then 'Language' (showing 'English') and 'Notice text'. Buttons 'Cancel' and 'Create template'. There is no project field and no notice-code field."
+      },
+      {
+        "action": "Fill every field from the test data (choose 'Data subjects — people outside the organisation' in 'Applies to', leave 'Language' on 'English' and paste the English text) and click 'Create template'.",
+        "expected": "The dialog closes and a green toast 'Template TPL-<number> created' says 'Add its purposes and languages, then give the ID to the study's R&D User.' The template's own page opens: small heading 'Notice template', title 'UAT Gait template 01', the badge 'Active' and the buttons 'Edit details' and 'Retire'."
+      },
+      {
+        "action": "Read the 'Template ID' card at the top, then click 'Copy ID'.",
+        "expected": "It shows the ID in large type (TPL- and four digits) with 'Give this to the study's R&D User. On their project they choose Use a notice template and enter it; the project gets its own draft notice from it, to approve and publish.' After 'Copy ID' a toast '<ID> copied' appears. Write the ID down."
+      },
+      {
+        "action": "Read the 'Details' card.",
+        "expected": "'Written by Priya Menon on <date and time> · last changed <date and time>', and the values you typed under 'Applies to', 'DPO contact', 'Withdraw consent', 'Exercise rights', 'Board complaint' and 'Note for the collector'."
+      },
+      {
+        "action": "In the 'Purposes · 0' card ('No purposes yet.'), open 'Add a purpose', choose 'Gait model training (PUR-GAIT-TRAIN)', tick 'Mandatory' and click 'Add'.",
+        "expected": "'Add' is greyed out until a purpose is chosen. After it, the card title reads 'Purposes · 1' and lists 'Gait model training PUR-GAIT-TRAIN' with 'Mandatory' and its data categories. A draft purpose would be offered too, ending ' - draft'."
+      },
+      {
+        "action": "Choose 'Recording quality assurance (PUR-QUALITY)', leave 'Mandatory' unticked and click 'Add'.",
+        "expected": "'Purposes · 2'; the new line reads 'Optional'. 'Gait model training' is no longer offered in 'Add a purpose'."
+      },
+      {
+        "action": "In the 'Text · 1 language' card (one row 'English' with 'Priya Menon · <time>', 'Edit' and a bin icon), click 'Add a language'.",
+        "expected": "A dialog 'Add a language' opens with 'Language' (English is not offered, it is already there) and 'Notice text'. 'Save text' is greyed out until text is typed."
+      },
+      {
+        "action": "Choose 'Hindi', paste the Hindi text and click 'Save text'.",
+        "expected": "A toast 'Text saved'. The card reads 'Text · 2 languages' with rows 'English' and 'Hindi'. Nothing on the page asks for a legal approval: that is given on each project's notice made from the template."
+      },
+      {
+        "action": "Click 'Notice templates' at the top of the page.",
+        "expected": "The 'Notices' page opens on its 'Templates' tab (beside 'Project notices'), with a blue note 'Write a notice here before the project exists...', 'Search' ('ID or name'), a 'Status' filter on 'Active', and a table ID, Name, Status, Purposes, Languages, Used by, Updated. Your template's row reads 'UAT Gait template 01', 'Active', 2, 2, '0 projects'. 'New notice template' is at the top right; click 'Project notices' and it is still there."
+      },
+      {
+        "action": "Click 'Templates', then your template's ID. Click 'Edit details', change 'Template name' to 'UAT Gait template 01 (adults)' and click 'Save changes'.",
+        "expected": "A dialog 'Edit the template' opens with the same fields except 'Language' and 'Notice text' (those are edited on the page). After saving, the toast 'Template saved' appears and the title reads 'UAT Gait template 01 (adults)'; 'last changed' shows the new time. Purposes and text are unchanged."
+      }
+    ],
+    "pass_criteria": "The DPO can write a notice with no project under a system-minted TPL- ID, give it purposes from the register and text in two languages with no approval step, find it under the Templates tab, and edit it in place."
+  },
+  {
+    "id": "PRJ-24",
+    "area": "Projects, notices and links",
+    "title": "R&D User makes a new project's draft notice from a template with 'Use a notice template'",
+    "feature": "Notice templates - use on a project (new in this release)",
+    "role": "R&D User, DPO",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "PRJ-23 completed (template 'UAT Gait template 01 (adults)' is Active; you have its ID).",
+      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
+      "Priya Menon (dpo@cmp.local) available for the second half."
+    ],
+    "test_data": [
+      "Project name: UAT Study 03",
+      "Description: Template-notice UAT project.",
+      "Processor: SEED",
+      "Template ID: the one from PRJ-23, typed in lower case (e.g. tpl-0001)",
+      "A made-up ID: TPL-9999",
+      "Expected notice code: NTC-UAT-STUDY-03-2026 (a suffix such as -2 is added if that code exists from an earlier run)",
+      "Sentence added to the template afterwards: 'Template change after use.'"
+    ],
+    "steps": [
+      {
+        "action": "On the 'Dashboard' click 'Register a project' at the top right (the R&D User's only button there). Enter the name and description, tick 'SEED' and click 'Register project'.",
+        "expected": "The same 'Register a project' dialog as on the Projects page. A toast 'Project registered' appears and the 'UAT Study 03' page opens straight away with status 'In Draft'."
+      },
+      {
+        "action": "Click the 'Setup' tab. In the 'Notices' card ('No notice yet') click 'Use a notice template'.",
+        "expected": "The card offers 'Upload a notice document', 'Copy an existing notice' and 'Use a notice template'. A dialog 'Use a notice template' opens: 'A notice the Privacy Office wrote ahead of the project. Enter the ID they gave you.' with 'Template ID' (hint 'The ID the Privacy Office gave you, like TPL-0007.'), 'Look up', 'Cancel' and a greyed-out 'Make this project's notice from it'."
+      },
+      {
+        "action": "Type TPL-9999 in 'Template ID' and click 'Look up'.",
+        "expected": "A yellow box: 'There is no template TPL-9999. Check the ID with the Privacy Office.' 'Make this project's notice from it' stays greyed out."
+      },
+      {
+        "action": "Clear the box, type the PRJ-23 ID in lower case and click 'Look up'.",
+        "expected": "It is shown in capitals and found. A box shows '<ID> · UAT Gait template 01 (adults)', 'For Data subjects — people outside the organisation · 2 languages (english, hindi)', and the purposes 'Gait model training · mandatory' and 'Recording quality assurance · optional'. Below: 'This project gets its own draft notice: the wording, the purposes and every language are copied, under the project's own notice code. Nothing is approved yet, and a later change to the template does not reach it.' The 'Make this project's notice from it' button is now clickable."
+      },
+      {
+        "action": "Click 'Make this project's notice from it'.",
+        "expected": "A toast 'NTC-UAT-STUDY-03-2026 made from <ID>' says 'A draft. Approve each language, then publish it.' The notice page opens: 'NTC-UAT-STUDY-03-2026 · version 1', badge 'Draft'."
+      },
+      {
+        "action": "Read the 'Rule 3 elements' card.",
+        "expected": "'Withdraw consent', 'Exercise rights', 'Board complaint' and 'DPO contact' show the template's values. A line 'Made from' reads 'Template <ID>' with 'A copy: later changes to the template do not reach this notice.'"
+      },
+      {
+        "action": "Look at the 'Purposes', 'Legal approval, per language' and 'Publication checklist' cards.",
+        "expected": "Purposes: 'Gait model training' and 'Recording quality assurance', both 'Active'. Legal approval: English and Hindi rows, each 'Not legally approved'. The checklist lists 'the english text is not legally approved' and 'the hindi text is not legally approved'. As for any draft, there is NO 'Approve' and NO 'Publish this notice' for the R&D User."
+      },
+      {
+        "action": "Click 'UAT Study 03' at the top of the notice page to return to the project, open the 'Setup' tab and look at the 'Notices' card and 'What happens next'.",
+        "expected": "The card lists 'NTC-UAT-STUDY-03-2026 v1' with '2 purposes · 2 language(s)' and 'Draft'. Under 'Moves the project to Pending Approval' the notice lines are gone; only 'No approval with a proof file' remains. From here the project goes on as in PRJ-08 to PRJ-12."
+      },
+      {
+        "action": "Sign out and sign in as dpo@cmp.local. Click 'Notices', then the 'Templates' tab, and open the template.",
+        "expected": "The list row now says '1 project' under 'Used by'. On the template page 'Used by · 1' lists 'NTC-UAT-STUDY-03-2026 v1', 'UAT Study 03' and 'Draft'. The template itself is unchanged: badge 'Active', 'Purposes · 2', 'Text · 2 languages'."
+      },
+      {
+        "action": "Click 'Edit details' and read the top of the dialog, then click 'Cancel'.",
+        "expected": "A blue note: '1 project notice was made from this template. They are copies and keep what they were made with; changes here reach only notices made from now on.'"
+      },
+      {
+        "action": "In 'Text · 2 languages' click 'Edit' on the 'English' row. In 'Edit the text' add the sentence from the test data at the end and click 'Save text'.",
+        "expected": "A toast 'Text saved'; the template's English text now ends with the new sentence."
+      },
+      {
+        "action": "In 'Used by' click 'NTC-UAT-STUDY-03-2026 v1' and read its 'Notice text' card.",
+        "expected": "The project's notice still has the English text as it was copied, WITHOUT 'Template change after use.' It is still 'Draft' and its English row still reads 'Not legally approved'."
+      }
+    ],
+    "pass_criteria": "'Use a notice template' looks the ID up first, then makes the project's own draft notice under the project's code with the template's links, purposes and both languages, nothing approved; the notice names the template it came from, the template is listed as used but otherwise untouched, and a later edit to the template does not reach the notice."
+  },
+  {
+    "id": "PRJ-25",
+    "area": "Projects, notices and links",
+    "title": "Only the DPO writes notice templates; an incomplete one is refused and a retired one cannot be used",
+    "feature": "Notice templates - who, validation, retire (new in this release)",
+    "role": "R&D User, DCO, DPO",
+    "priority": "Medium",
+    "type": "Negative",
+    "ref": "Core",
+    "preconditions": [
+      "PRJ-23 and PRJ-24 completed.",
+      "Signed in to the console (http://localhost:3000) as Kavya Rao, R&D User (rnd@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
+      "Arun Shetty (dco@cmp.local) and Priya Menon (dpo@cmp.local) available."
+    ],
+    "test_data": [
+      "Template ID: the one from PRJ-23",
+      "Incomplete template: name 'UAT Bad template', DPO contact dpo@example.org, Withdraw consent URL example.org/withdraw (no https://), the other two URLs as in PRJ-23"
+    ],
+    "steps": [
+      {
+        "action": "As Kavya Rao look at the top right of the 'Dashboard', then click 'Notices' in the sidebar.",
+        "expected": "The dashboard offers only 'Register a project' - no 'New notice template'. The 'Notices' page has no 'New notice template' button and no 'Project notices' / 'Templates' tabs: only the list of project notices."
+      },
+      {
+        "action": "Sign out and sign in as dco@cmp.local. Open project 'UAT Study 01' (Projects > search > click the name) and click the 'Setup' tab.",
+        "expected": "The 'Notices' card lists the project's notices but offers none of 'Upload a notice document', 'Copy an existing notice' or 'Use a notice template': bringing a notice is for the project's R&D User and the DPO."
+      },
+      {
+        "action": "Sign out and sign in as dpo@cmp.local. Click 'Notices', then 'New notice template', and click 'Create template' with every field empty.",
+        "expected": "The dialog stays open with messages under the fields: 'Give it a name the list can show - what kind of study it is for', 'State how the DPO can be reached', 'The withdrawal URL is required', 'The rights URL is required' and 'The Board complaint URL is required'."
+      },
+      {
+        "action": "Fill the fields from the 'Incomplete template' test data and click 'Create template'.",
+        "expected": "Under 'Withdraw consent URL': 'The withdrawal URL has to start with http:// or https://'. No template is created."
+      },
+      {
+        "action": "Click 'Cancel'. On the 'Templates' tab type 'UAT Bad' in 'Search' (the list updates as you type).",
+        "expected": "'No templates match'. Clear the search."
+      },
+      {
+        "action": "Open the PRJ-23 template and click 'Retire'.",
+        "expected": "A toast '<ID> retired' says 'It can no longer be attached to a project.' The badge reads 'Retired', the button now reads 'Bring back', and the 'Template ID' card says 'Retired: it can no longer be used. Notices already made from it are unaffected. Bring it back to use it again.' 'Used by · 1' still lists the UAT Study 03 notice."
+      },
+      {
+        "action": "Click 'Notice templates'. With 'Status' on 'Active' look for the template, then set 'Status' to 'Retired'.",
+        "expected": "It is not in the 'Active' list; under 'Retired' it is listed with the badge 'Retired'."
+      },
+      {
+        "action": "Sign out and sign in as rnd@cmp.local. Open 'UAT Study 03', click 'Setup', then 'Use a notice template' at the top of the 'Notices' card. Type the ID and click 'Look up'.",
+        "expected": "The template is found and shown, with a yellow box 'The Privacy Office has retired this template. Ask them which one to use instead.' 'Make this project's notice from it' stays greyed out. Click 'Cancel': the Notices card still shows only NTC-UAT-STUDY-03-2026 v1."
+      },
+      {
+        "action": "Restore: sign in as dpo@cmp.local, open the template and click 'Bring back'.",
+        "expected": "A toast '<ID> is back in use'; the badge reads 'Active' again."
+      }
+    ],
+    "pass_criteria": "Only the DPO can create or change a template; a template without a name, contact or valid links is refused field by field and nothing is saved; a retired template is found by ID but cannot be used on a project, and the notice already made from it is unaffected."
   }
 ]

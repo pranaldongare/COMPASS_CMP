@@ -31,8 +31,9 @@ from cmp.core.permissions import Role
 async def current_principal(request: Request) -> Principal:
     """A fully authenticated caller. Partial (pre-MFA) sessions are refused here.
 
-    A partial session authorises exactly one route - `/auth/mfa/verify` - which
-    depends on `partial_principal` instead. No other endpoint accepts it.
+    A partial session authorises two routes - `/auth/mfa/verify` and
+    `/auth/mfa/resend` - which depend on `partial_principal` instead. No other
+    endpoint accepts it.
     """
     session = await session_from_request(request)
     if session.partial:

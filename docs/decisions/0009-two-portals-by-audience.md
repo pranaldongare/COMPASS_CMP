@@ -1,6 +1,8 @@
 # 0009. Two portals, split by audience, one API
 
-Status: accepted. September 2026. Supersedes the single frontend.
+Status: accepted. September 2026. Supersedes the single frontend. Amended
+2026-10-08: the portal also serves a rights ticket's outside holder - see the
+end and [ADR 0024](0024-a-rights-tickets-holder-is-reached-three-ways.md).
 
 ## Context
 
@@ -42,3 +44,14 @@ state machine.
 
 The shared `src/lib` drifts between the two. A workspace package would be
 the fix.
+
+## Amended 2026-10-08: outside ticket holders
+
+The portal now also serves people who are neither staff nor data principals:
+a vendor or third-party processor that holds a person's data and answers a
+rights ticket. It opens `/ticket/{token}`, enters a one-time code sent to the
+address on the ticket, and answers there (migration 0049,
+[ADR 0024](0024-a-rights-tickets-holder-is-reached-three-ways.md)). The page
+reaches one ticket and nothing of the console, so the split above stands:
+nothing a member of staff uses ships on the portal. A holder inside the
+organisation still answers on the console.

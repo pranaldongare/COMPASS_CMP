@@ -326,8 +326,9 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.DCO_ADMIN: Grant(Scope.OWN, write=True),
         Role.RCO: Grant(Scope.OWN, write=True),
         Role.RND_USER: Grant(Scope.OWN, write=True),
-        # BD-19: so the shared Tickets page needs no role check. A temporary
-        # holder is in no staff picker, so no rights ticket is ever theirs.
+        # BD-19: so the shared Tickets page needs no role check. Since 0049 a
+        # temporary holder may hold a rights ticket too: `reach.place` gives an
+        # internal holder with no console login a temporary one for it.
         Role.BREACH_HOLDER: Grant(Scope.OWN, write=True),
     },
     # A breach ticket addressed to me (S3-08): the same rows as `ticket`. OWN

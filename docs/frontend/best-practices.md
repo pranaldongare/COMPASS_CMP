@@ -90,7 +90,7 @@ validation layer, a configuration layer — each in one place.
 ```
 frontend/console/src/
   app/                    routes only: (app)/ for the shell, sign-in/, dkms/decrypt/route.ts
-  features/<area>/        one folder per business area (17 in the console)
+  features/<area>/        one folder per business area (20 in the console)
     api.ts                typed functions over the API client — the service layer
     queries.ts            useQuery hooks, keyed from lib/query/keys
     mutations.ts          useMutation hooks, each naming what it invalidates
@@ -111,7 +111,7 @@ frontend/console/src/
     api/                  the axios client and the four verbs — the only network code
     query/                keys.ts (every query key), options.ts (shared hook types)
     errors/               ApiError and classification
-    permissions/          the role matrix mirrored from the API
+    permissions/          reads me.nav and me.writes; holds no copy of the matrix
     security/             public-routes, sanitize, session-timeout
     format/               dates, names, references as a person reads them
     config/               the one read of process.env
@@ -244,8 +244,8 @@ omission:
 
 What *is* server-side, and must stay so: the root layout (metadata,
 viewport, the CSP nonce minted per request in [`proxy.ts`](../../frontend/console/src/proxy.ts)),
-the `/dkms/decrypt` route handler (server-only `DKMS_URL`, session cookie
-required), and the `/api` rewrite that keeps the API first-party.
+the `/dkms/decrypt` route handler (server-only `DKMS_URL`, a session cookie -
+or an outside holder's ticket cookie - required), and the `/api` rewrite that keeps the API first-party.
 
 **Rule for new work.** Do not add server-side data fetching for an
 authenticated page. A new Server Component is justified for static,
@@ -310,7 +310,7 @@ RequestsPage
   transition. A transition the API may reject is shown after the response.
 
 **Caching layers to think about.** Browser → `/api` rewrite (no cache;
-`Cache-Control: no-store` on `/c` and `/my-consents`) → TanStack cache
+`Cache-Control: no-store` on `/c`, `/ticket` and `/my-consents`) → TanStack cache
 (per-key, `staleTime`) → API. Ask: is it user-specific (always, here)? who
 invalidates it? is stale acceptable? Nothing personal is ever cached by an
 intermediary.
@@ -491,7 +491,7 @@ Not everything end-to-end.
 | Component / integration | Vitest + Testing Library + **MSW at the network boundary** | the real axios client, interceptors and query layer run; only the server is fake. A mocked hook proves nothing about the URL, credentials, CSRF or envelope — and those are where the bugs were |
 | Contract | `api-contract.test-d.ts` | curated types match the generated OpenAPI schema |
 | Sealing | `lib/api/client.test.ts` | a sealed body comes out opened in one decrypt call, nothing else changed |
-| End-to-end | Playwright, three projects (desktop, mobile, cookie-domain) | sign-in and MFA, every nav section per role, the rights journeys, the consent flow, detail pages resolve, visual snapshots, and `sealed-never-shown.spec.ts`: the API answered sealed, the page shows the person |
+| End-to-end | Playwright: `setup` (sign in once, save sessions), `chromium`, `mobile`, `localhost-cookies`, and in the console `visual` | sign-in and MFA, every nav section per role, the rights journeys, the consent flow, detail pages resolve, visual snapshots, and `sealed-never-shown.spec.ts`: the API answered sealed, the page shows the person |
 | Accessibility | `eslint-plugin-jsx-a11y` as errors, labels asserted in e2e | |
 
 `onUnhandledRequest: "error"` in the MSW setup: a request no handler covers
@@ -579,8 +579,9 @@ compatibility is held by the contract test, not by a version in the path.
 middleware for cheap cross-cutting work only, authorisation on the server.
 
 **Here.** `(app)/` is the shell for signed-in staff; `sign-in/` and the
-public pages sit outside it. Dynamic segments are uuids (`requests/[uuid]`,
-`c/[token]`). `proxy.ts` does two cheap jobs — CSP nonce and the no-cookie
+public pages sit outside it. Dynamic segments are uuids (`requests/[uuid]`) or
+capability tokens (`c/[token]`, and the portal's `ticket/[token]` for an
+outside holder's rights ticket). `proxy.ts` does two cheap jobs — CSP nonce and the no-cookie
 redirect — and explicitly is *not* authorisation. Per-section access is
 `RequireSection` at render plus the API's 403; a route is never trusted to be
 a permission.
@@ -636,7 +637,7 @@ one of them could be bypassed and the API would still answer 401, 403 or
 
 | Layer | Where | What it does |
 |---|---|---|
-| No cookie at all | [`proxy.ts`](../../frontend/console/src/proxy.ts) | A request for a non-public path carrying no session cookie is redirected to `/sign-in?next=<path>`. It sees only whether a cookie is present, never whether it is valid. Public paths are one list, `lib/security/public-routes.ts`, shared with the auth provider |
+| No cookie at all | [`proxy.ts`](../../frontend/console/src/proxy.ts) | A request for a non-public path carrying no session cookie is redirected to `/sign-in?next=<path>`. It sees only whether a cookie is present, never whether it is valid. Public paths are one list, `lib/security/public-routes.ts`, shared with the auth provider; in the portal it includes `/ticket/`, where an outside holder answers a rights ticket with a code and an hour-long ticket cookie, never a principal session |
 | A protected page | `RequireAuth` in `providers/auth-provider.tsx`, wrapping `(app)/layout.tsx` | Renders nothing until the session resolves, so no page flashes its contents. No session: `/sign-in?next=`. A 401 from any request lands in the same place, through the one handler the provider wires into the API client |
 | An auth page | `AuthPageGate` in `components/security/auth-page-gate.tsx` | Sends away the people a sign-in form was not written for, below |
 | An unknown age (portal only) | `RequireAge` in `components/security/require-age.tsx`, inside `RequireSection` in `(app)/layout.tsx` | When `me.is_minor` is `null` - the server's "unknown", never "adult" - every page shows the date-of-birth question instead, bar `/my-consents`, `/my-requests` and `/my-nominations`, which stay open with a reminder: withdrawing, making a request and naming a nominee are not consents. The answer goes to `PATCH /me` and the session is re-read. The consent-link page asks the same question between the code and the notice. The server is what refuses (`age_required`); this asks at the moment it can be answered (S2-01) |

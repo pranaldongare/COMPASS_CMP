@@ -99,8 +99,7 @@ other end - everyone a processor or a source holds - so a change to how
 holdings are derived reaches both (S3-02). One ticket per confirmed
 holder, addressed to one of the processor's **respondents** (0016): an account
 on the platform for an in-house team, who sees the ticket on the dashboard and
-the console's tickets page, or a name and an address for a third party, who
-is written to. A ticket is a **thread** (0017) that opens with the brief and on
+the console's tickets page, or a name and an address for a third party. A ticket is a **thread** (0017) that opens with the brief and on
 which either side writes, with files; unread messages are counted at both ends
 and the office's count is `GET /requests/attention`. A ticket can be
 withdrawn, reassigned or reminded (0018), and a returned one sent back with a
@@ -109,6 +108,40 @@ halfway. A holder that misses its date is escalated once; the transition to
 collation then opens, and the response goes out **partial and on time**, with
 the gap named. The server refuses to call a response with an unreturned
 ticket "complete".
+
+**How a holder is reached** is decided when its ticket is sent
+(`cmp.domain.rights.reach.place`, 0049), by the responder's address. An
+account that signs in to the console sees the ticket in My tasks. An address
+on one of the organisation's own domains (`BREACH_TICKET_EMAIL_DOMAINS`) with
+no console login is given a temporary login, as a breach ticket's holder is
+(S3-09), and answers in the console; the grant ends when the request closes or
+the ticket is withdrawn or sent to somebody else. Any other address - a
+vendor, a third-party processor - is sent an email carrying a link and
+nothing of the request, and answers on the portal at `/ticket/{token}` after a
+one-time code to the address on the ticket
+([authentication](../security/authentication.md#outside-holders-of-a-rights-ticket)).
+A ticket sent to somebody else gets a new link, and the old one stops working.
+
+**An answer is reviewed before it counts** (0048). A return carries the
+holder's outcome - `done`, `partial` or `failed` (0037), and only `done` counts
+as done - and waits for the DPO, who accepts it (`accepted_at`,
+`accepted_by`) or sends it back with a reason. Only an accepted answer settles
+the request or, for an erasure, marks the holder's copy gone. An answer the
+office records on a holder's behalf is accepted as it is recorded.
+
+**The server says what a ticket is and what may be done next**
+(`cmp.domain.rights.tickets`): for each holder its `state` in plain words
+(not sent, waiting, overdue, final reminder sent, answered - review, accepted
+and the rest), whether it is `overdue` - one rule, the due moment has passed -
+and its `moves`, each with its label, whether it is the main one, whether it
+needs a reason and whether it sends an email. The console draws that and holds
+no copy of the rules.
+
+**Reminders and the daily digest.** The nightly sweep reminds a holder three
+days before the date, on the day, and every day it is overdue - at most once
+a day for any ticket - and the office may remind on demand. The same sweep
+sends the Privacy Office a daily list of open requests that are overdue or at
+risk of missing their date, only when there is something on it.
 
 A respondent's name and contact, the holder's instruction, the thread's
 messages and their file names are sealed. A ticket email is addressed by
@@ -175,10 +208,11 @@ She names a nominee while well: name, mobile, an optional email, and which of he
 
 | Audience | Routes |
 |---|---|
-| Public | `POST /rights/requests`, `POST /rights/requests/verify`, `GET /rights/nominations/{token}`, `POST /rights/nominations/{token}[/code|/accept|/decline]`, `POST /rights/nominee/start`, `POST /rights/nominee/requests` |
-| Data principal | `GET/POST /me/requests`, `GET /me/requests/{uuid}[/trail|/download|/files/{uuid}]`, `POST /me/requests/{uuid}/dispute`, `POST /me/consents/{uuid}/erasure-request` (0019), `GET/POST/DELETE /me/nominations` |
-| Respondent (any staff role) | `GET /tickets`, `GET /tickets/{uuid}`, `POST /tickets/{uuid}/messages`, `POST /tickets/{uuid}/respond`, files on messages |
-| DPO (administrator: escalated grievances only) | `GET/POST /requests`, `GET /requests/attention`, `GET /requests/{uuid}[/transitions|/trail|/download]`, one action route per step on the path, the ticket routes (issue, message, send back, withdraw, reassign, remind, escalate), and `POST /requests/{uuid}/files` for what is released with the response (0021); `POST /requests/{uuid}/scope/{item}/execute` to try an item's stores again (S2-03) |
+| Public | `POST /rights/requests`, `POST /rights/requests/verify`, `GET /rights/nominations/{token}`, `POST /rights/nominations/{token}[/code\|/accept\|/decline]`, `POST /rights/nominee/start`, `POST /rights/nominee/requests` |
+| Data principal | `GET/POST /me/requests`, `GET /me/requests/{uuid}[/trail\|/download\|/files/{uuid}]`, `POST /me/requests/{uuid}/attachments` (0043), `POST /me/requests/{uuid}/dispute`, `GET/POST/DELETE /me/nominations` |
+| Respondent (any staff role, and a temporary holder) | `GET /tickets`, `GET /tickets/{uuid}`, `POST /tickets/{uuid}/messages`, `POST /tickets/{uuid}/return`, files on messages |
+| Outside holder, by its link (0049) | `GET /holder-tickets/{token}`, `POST /holder-tickets/{token}[/code\|/verify\|/sign-out]`, `GET /holder-tickets/{token}/ticket`, `POST /holder-tickets/{token}[/messages\|/answer]`, `GET /holder-tickets/{token}/messages/{uuid}/evidence` |
+| DPO (administrator: escalated grievances only) | `GET/POST /requests`, `GET /requests/attention`, `GET /requests/{uuid}[/transitions\|/trail\|/download]`, one action route per step on the path, the ticket routes (issue, message, set the instruction, accept an answer (0048), send back, reopen, withdraw, reassign, remind, escalate, remove a holder not yet sent), and `POST /requests/{uuid}/files` for what is released with the response (0021); `POST /requests/{uuid}/scope/{item}/execute` to try an item's stores again (S2-03) |
 | DPO only | `GET/POST /legal-holds`, `POST /legal-holds/{uuid}/release` - what stops an erasure (S2-03) |
 
 Every write is audited with the request reference in its detail, so
@@ -213,7 +247,10 @@ Taken as defaults, and changeable without unwinding a record:
 The module shipped with migration 0013 and grew through 0016 to 0022 without
 changing the meaning of a stored record: respondents per processor, the
 ticket thread, ticket robustness, a request confined to one consent, send-back,
-response files, and the invoked nomination. The workflow as people experience
+response files, and the invoked nomination. Since then: what a returned
+ticket says was done (0037), the documents a requester attaches (0043), the
+review of a holder's answer before it counts (0048), and holders outside the
+console - by a temporary login or by a link (0049). The workflow as people experience
 it, with the console and portal pages, is in
 [docs/domain/rights-requests.md](../domain/rights-requests.md); the
 defaults above are recorded as

@@ -1,6 +1,6 @@
 # 0022. An incident is logged first, and a breach is recorded on a yes; the organisation's board is told within 30 minutes
 
-**Status:** accepted · 2026-10-05; amended 2026-10-06 (the team's answers, at the end). Amends [ADR 0021](0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md).
+**Status:** accepted · 2026-10-05; amended 2026-10-06 (the team's answers, at the end); amended 2026-10-08 (what is known when an incident is logged, at the end). Amends [ADR 0021](0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md).
 Migrations 0038 (S3-06) and 0039 (S3-07).
 
 ## Context
@@ -85,3 +85,18 @@ S3-08); or someone other than the DPO team should be able to log an incident.
 - **Tickets only for recorded breaches**: not during validation. The guard in
   `tickets.assign` stays.
 
+
+## Amended 2026-10-08: what is known when an incident is logged
+
+Logging an incident also asks what is already known (migration 0047, commit
+7d0da97). Eleven fields, every one optional, because at the moment of
+logging much is not known yet: `origin`, `discovery`, `affected_systems`,
+`incident_details`, `impact_scale`, `countries_involved`, `data_nature`,
+`subject_types`, `entities_involved`, `third_parties` - free text, sealed -
+and `cyber_attack`, yes, no or not known. They are the incident *as logged*:
+`cmp_breach_status_only` now compares the whole row but its status, so these
+columns, and any added later, never change. What is learned afterwards goes
+in the assessment. A *yes* to "Is it a cyber attack?" creates the CERT-In
+duty at once, in the same transaction, as Mark reportable to CERT-In does
+(`domain/breach/service.py`). That is a person's answer, not an inference:
+the platform still computes no determination.

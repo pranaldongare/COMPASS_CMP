@@ -9,6 +9,10 @@ the defaults are what is sent until they do. The catalogue lives in
 
 ## The junctions
 
+There are 41, in the order of the catalogue. Who each is sent to, the task
+that sends it and the code that queues it are listed per module in
+[docs/notifications/](../notifications/README.md).
+
 | Group | Junction | Channels | Sent when |
 |---|---|---|---|
 | Sign-in | `mfa_code` | email | a member of staff has entered a correct password |
@@ -29,21 +33,52 @@ the defaults are what is sent until they do. The catalogue lives in
 | Rights | `nomination_code` | email, SMS | a nominee proves a recorded contact before accepting or declining |
 | Rights | `nomination_invitation` | email, SMS | somebody is nominated |
 | Rights | `nomination_accepted` | email, SMS | a nominee accepts |
-| Rights | `holder_instruction` | email, SMS | a ticket is issued to a holder |
+| Rights | `holder_instruction` | email, SMS | a ticket is sent to a holder inside the organisation: a member of staff, or a colleague given a temporary login. A holder outside it is sent `holder_ticket_link` instead |
 | Rights | `ticket_reminder` | email, SMS | a ticket's date is near, today or past |
 | Rights | `ticket_message` | email, SMS | a message is written on a ticket thread |
+| Rights | `holder_ticket_link` | email | anything happens on an outside holder's ticket - sent, written on, moved or reopened (0049): says what happened, the date to answer by and the link to the ticket on the portal, and nothing of the request |
+| Rights | `holder_ticket_code` | email | somebody opens an outside holder's ticket link: the code, to the address on the ticket, that opens it |
 | Staff | `office_note` | email | the office resends a notification from the console |
 | Breach | `breach_notice` | email, SMS | the DPO sends an approved notice about a personal data breach to the people it touched - only once it is recorded as a breach; the email carries all five Rule 7(1) contents, the SMS points to her account, where the same notice is. `breach_reference` is the breach reference (`BR-`), never the incident's |
+| Breach | `breach_notice_direct` | email, SMS | the same notice to a person the breach touched who has no account, named in a list sent to the Privacy Office (0045): all five Rule 7(1) contents by email, and by SMS |
 | Breach | `breach_ticket_waiting` | email | a breach ticket is assigned to a member of staff, sent back, or reopened (S3-08): says only that a ticket from the Privacy Office is waiting in the console, and names no breach - no reference, no title, no words (BD-18) |
 | Breach | `breach_ticket_access` | email | somebody without a console login is asked to act on a breach - by the DPO, or as a colleague by a holder - or asked again after an administrator ended their login (S3-09): says the Privacy Office has given them temporary console access to answer a ticket - when the matter is closed they can still read it, no longer answer it (2026-10-06) - with the reset link, the code and how long it lasts. A login that already signs in is sent `breach_ticket_waiting` instead. Sent by the sign-in service, like `staff_invitation`, never from breach code, and names no breach (BD-18) |
+| Projects | `project_submitted` | email | an R&D User submits a project for approval; to every active DPO |
+| Projects | `project_approved` | email | the Privacy Office approves a project, which publishes its notice; to the R&D User who owns it |
+| Projects | `project_sent_back` | email | the Privacy Office sends a project back to draft, with its reason; to the R&D User who owns it |
+| Projects | `project_closed` | email | a project is closed and its consent links stop working; to the R&D User who owns it |
+| Projects | `project_collector_assigned` | email | a project's site or data source is assigned to a Data Collection Owner; to them |
+| Rights | `rights_request_received` | email | a rights request arrives, from the portal, the public form or a nominee; to every active DPO, with its reference, kind and due date and never her words |
+| Rights | `rights_due_digest` | email | daily, when open requests are overdue or at risk of missing their date; to every active DPO, and only when there is something on it |
+| Rights | `rights_grievance_about_dpo` | email | a grievance concerns the DPO's own decisions; to every active administrator, so somebody independent reviews it |
+| Breach | `breach_duty_due` | email | a breach duty with a deadline - the organisation's board, CERT-In, the Board's report - is about to fall due, and again if overdue; to every active DPO, once per stage per duty |
+| Breach | `breach_ticket_returned` | email | the holder of a breach ticket returns it with their answer; to every active DPO |
+| Accounts | `staff_role_changed` | email | an administrator changes a member of staff's role; to them |
+| Accounts | `staff_access_ended` | email | an administrator ends a member of staff's console access; to them. A consent or request they made as a person is unaffected |
+| Accounts | `delegation_arranged` | email | cover is arranged; to the person away and to the colleague acting for them |
 
 The channel is chosen by the shape of the contact, once it has been opened
 (below): an address gets the email words, a number gets the SMS words. SMS bodies are separate and short, at
 most 480 characters, because a phone screen is not an inbox.
 
+## Copies and files
+
+From Message templates the office may copy an email to up to five addresses,
+per message (`PUT /messages/{key}/copies`, kept in `message_copy`, 0046). Only
+the messages in `COPYABLE` may be copied: the work between the office and its
+staff or holders. Never one that carries a code or a link, because a copy
+would hand the key to somebody else, and never one written to a data
+principal about herself, because a copy would disclose her data. The service
+refuses the rest.
+
+Two messages may carry files by email (`ATTACHABLE`), and only files the
+recipient already owns: `consent_receipt` carries her own consent record, and
+`ticket_message` carries the file the office put on the message, to the
+ticket's holder only.
+
 ## Editing the words
 
-The console's **Messages** page (administrator and DPO) lists every junction
+The console's **Message templates** page (administrator and DPO) lists every junction
 with its variables, its default words, and the words in force. For each
 channel the editor offers the subject (email only) and body, chips that
 insert the variables the message provides, a preview rendered with sample

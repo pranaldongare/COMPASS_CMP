@@ -39,8 +39,12 @@ service does not have (it parses `backend/dkms/app/dkms/types.py`), a column
 in both `ENCRYPTED_FIELDS` and `LOOKUP_FIELDS`, a lookup exclusion with no
 reason, `GENERIC` anywhere. And by `test_hash_columns_match_the_database.py`:
 every `BLIND_INDEXED` entry must end `_hash`. That file also pins the map to
-exactly the eight columns migration 0029 renamed, so **a ninth hash column
-fails it** until its expectation is widened to include the new migration.
+exactly the eight columns migration 0029 renamed, apart from the tables in
+its `BORN_HASHED` - tables created with their hash columns after the rename,
+each named with the migration that made it (`breach_contact`, 0045;
+`message_copy`, 0046), whose migration must create every hash column the map
+gives it. So **a new hash column fails it** until its table is added to
+`BORN_HASHED` with the migration that creates the column.
 
 A new type is a change to the key service as well: `DataType` and
 `TYPE_IDS` in `backend/dkms/app/dkms/types.py`, the same two in

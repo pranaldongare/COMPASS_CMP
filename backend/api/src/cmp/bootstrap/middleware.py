@@ -1,15 +1,16 @@
-"""Installing the middleware stack, outermost first.
+"""Installing the middleware stack.
 
-Two groups, and the order between them matters more than the order within
-either.
+Two groups, registered in this order: Starlette's own (host allow-listing,
+CORS, compression), then ours - `cmp.api.middleware.install` registers the four
+that need application knowledge: correlation id, security headers, body limit,
+access log.
 
-**Starlette's own, first.** Host allow-listing, CORS and compression. A request
-for a host we do not serve should be refused before it reaches anything that
-logs or allocates — including our own request-context middleware, which mints an
-id and binds a contextvar.
-
-**Ours, second.** `cmp.api.middleware.install` registers the four that need
-application knowledge: correlation id, security headers, body limit, access log.
+Starlette runs middleware in reverse registration order, so a request enters
+ours first and Starlette's after: RequestContext, SecurityHeaders, BodyLimit,
+AccessLog, then GZip, CORS, TrustedHost. A request for a host we do not serve
+is therefore given a request id and an access-log line before it is refused -
+the opposite of what this module once said it did. Harmless (nothing is
+allocated beyond the id), but noted in docs/backend/06-known-gaps.md.
 
 CORS carries credentials because the session cookie has to travel, and exposes
 the handful of headers a browser client legitimately reads — without

@@ -1,0 +1,1245 @@
+[
+  {
+    "id": "BRE-01",
+    "title": "DPO logs an incident with what is known so far and a file kept as evidence",
+    "feature": "Console - Breaches - Log an incident; 'What is known so far'; Attachments",
+    "role": "DPO (Priya Menon) on console",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "S3-06",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request.",
+      "Times are typed in the browser's own date-and-time boxes, in local time. 'First noticed' and every other time must not be in the future.",
+      "The tester has two small files to hand: uat-incident-01-email.pdf (any small PDF) and uat-incident-01-photo.png (any small image), each under 25 MB."
+    ],
+    "test_data": [
+      "Title: UAT Incident 01 - field laptop lost",
+      "First noticed: today, 10 minutes before now",
+      "Began: today, 2 hours before now",
+      "Where it occurred: Elsewhere; Where, in words: Field laptop LT-UAT-01 used at the Pune collection site",
+      "Is it a cyber attack?: Not known yet",
+      "Where it started: Pune collection site, field team 01",
+      "How it was found: Tester01 reported it by phone to the Privacy Office",
+      "Systems affected: Laptop LT-UAT-01 with a local copy of a participant contact sheet",
+      "What happened: The laptop was left in a taxi; its disk may not be encrypted.",
+      "How much is affected: About 40 participant rows (estimate)",
+      "Countries involved: India",
+      "Kinds of personal data: Names, mobile numbers, email addresses",
+      "Whose data: Study participants",
+      "Our entities involved or affected: Pune research office",
+      "Third parties involved: None known",
+      "File 1: uat-incident-01-email.pdf as Email. Later file: uat-incident-01-photo.png as Proof, note: Photo of the taxi receipt",
+      "Note the reference shown (called INC-A in later cases)."
+    ],
+    "steps": [
+      {
+        "action": "In Browser B open http://localhost:3000. Type dpo@cmp.local in 'Email or username' and SeedPassw0rd!2026 in 'Password' and click 'Sign in'. If the 'Verify it is you' page appears, ask the coordinator for the code, type it in '6-digit code' and click 'Verify and continue'.",
+        "expected": "The Dashboard opens, signed in as Priya Menon (DPO)."
+      },
+      {
+        "action": "In the sidebar under 'Your work' click 'Breaches'.",
+        "expected": "The page 'Incidents and personal data breaches' opens with a 'Log an incident' button at the top right. Above the list are 'Search' (hint 'INC-, BR-, title or place'), 'Show' (set to 'Open'), 'Validation', 'Duties', 'Recent activity', 'Tickets' and 'Sort'."
+      },
+      {
+        "action": "Click 'Log an incident'.",
+        "expected": "A dialog 'Log an incident' opens with the line 'As it was noticed. Every time is entered, not filled in: the clocks run from what you type.' It has 'Title', 'First noticed' (hint 'When it was detected. Starts the CERT-In clock'), 'Began', 'Where it occurred' (set to 'The platform's own database'), 'Where, in words', a box 'What is known so far' and 'Attachments'. 'Log the incident' is greyed out."
+      },
+      {
+        "action": "Type the title, 'First noticed' and 'Began' from the test data. In 'Where it occurred' choose 'Elsewhere'.",
+        "expected": "The hint under 'Where, in words' changes to 'Which store or system' and the field becomes required; 'Log the incident' stays greyed out until it is filled. Type the words from the test data."
+      },
+      {
+        "action": "Read the box 'What is known so far'.",
+        "expected": "It says 'All optional - answer what you can now. These are kept as logged; what is learned later goes in the assessment.' It asks 'Is it a cyber attack?' with 'Yes - reportable to CERT-In', 'No' and 'Not known yet', and the line 'Yes starts the CERT-In duty: six hours from when it was first noticed.' Below are ten boxes: 'Where it started', 'How it was found', 'Systems affected', 'What happened', 'How much is affected', 'Countries involved', 'Kinds of personal data', 'Whose data', 'Our entities involved or affected' and 'Third parties involved'."
+      },
+      {
+        "action": "Choose 'Not known yet' and fill in all ten boxes from the test data.",
+        "expected": "A 'Clear' link appears beside the three choices. Each box takes the text."
+      },
+      {
+        "action": "Under 'Attachments' click 'Attach a file'. Choose uat-incident-01-email.pdf with the file picker and leave 'What it is' as it is.",
+        "expected": "The file's name and size are shown. 'What it is' is set to 'Email' and offers 'Email', 'Proof', 'Chat' and 'Other'. The button now reads 'Attach another file'."
+      },
+      {
+        "action": "Click 'Log the incident'.",
+        "expected": "The message '<reference> logged' appears with \"With 1 attached file. Validate it next: is it a personal data breach?\". The incident's page opens: eyebrow 'Incident, being validated', the reference INC-YYYY-NNNN as heading, the title under it, the badges 'Still validating' and 'Open', and the buttons 'Brief for the organisation's board', 'Documents for the Board' and 'Audit trail'. Write down the reference (INC-A)."
+      },
+      {
+        "action": "Look above the tabs.",
+        "expected": "A card 'Close' shows a 'Not yet' box listing 'Record whether this is a personal data breach before closing it'; 'Close the breach' is greyed out. An information box 'Not validated yet' reads 'Is it a personal data breach under s.2(u)? A yes records it and starts the DPDP duties.' with a 'Record the validation' link."
+      },
+      {
+        "action": "Read the 'Details' card (beside the 'Close' card; below the tabs on a narrow screen).",
+        "expected": "It shows 'Recorded as a breach': 'Not yet: a validation of yes records it'; 'First noticed' and 'Began' as typed; 'Became aware': 'Set with a validation of yes'; 'Where': 'Elsewhere' with the words typed; 'Cyber attack': 'Not known yet'; then each of the ten answers under its own label; and 'Logged' with the time and \"by Priya Menon\"."
+      },
+      {
+        "action": "Look at the 'Duties' tab (open by default).",
+        "expected": "One row: 'Organisation's board' with 'Internal policy: within 30 minutes of first noticed' under it, the badge 'Outstanding', a due time 30 minutes after 'First noticed', a clock such as '<time> left' and a 'Record the report' button. There is no 'Report to CERT-In' row; instead a box asks whether it is a reportable cyber incident, with a 'Mark reportable to CERT-In' button."
+      },
+      {
+        "action": "Click the 'Attachments' tab.",
+        "expected": "The tab count is 1. The card 'Attachments' says 'The email that reported it, proofs, chats, logs - kept as evidence. A file is never replaced or removed; every download is recorded on the audit trail.' The file is listed with the badge 'Email', its size, \"added <date> by Priya Menon\", the start of its fingerprint and a 'Download' button. There is no delete or replace control."
+      },
+      {
+        "action": "Click 'Attach a file'. Choose uat-incident-01-photo.png under 'File', set 'What it is' to 'Proof', type the note from the test data in 'Note' and click 'Attach'.",
+        "expected": "The message 'File attached' with 'Kept with the incident as evidence.' appears. A second row shows 'Proof', the file name and the note. The tab count is 2."
+      },
+      {
+        "action": "Click 'Download' on the email PDF.",
+        "expected": "The same PDF that was attached downloads and opens."
+      }
+    ],
+    "pass_criteria": "The incident is logged with an INC- reference from the typed times, every answer under 'What is known so far' is kept and shown under 'Details', the organisation's board duty starts with a 30-minute clock, and files are kept with it as evidence that cannot be removed.",
+    "area": "Breach and incidents"
+  },
+  {
+    "id": "BRE-02",
+    "title": "An incident logged with nothing optional; 'Yes' to cyber attack starts the CERT-In duty, and its filing is recorded",
+    "feature": "Console - Log an incident (minimal) - 'Is it a cyber attack?'; Duties - Report to CERT-In",
+    "role": "DPO (Priya Menon) on console",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "S3-06",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "Priya Menon (DPO, dpo@cmp.local) is signed in to the console in Browser B (BRE-01 step 1).",
+      "Times are typed in the browser's own date-and-time boxes, in local time. 'First noticed' and every other time must not be in the future."
+    ],
+    "test_data": [
+      "Title: UAT Incident 02 - phishing on the capture rig",
+      "First noticed: today, 20 minutes before now",
+      "Where it occurred: A processor - Pune Motion Lab Pvt Ltd",
+      "Is it a cyber attack?: Yes - reportable to CERT-In",
+      "Everything else left empty; no file",
+      "CERT-In filing: Submitted at: today, 5 minutes before now; Reference returned: CERTIN-UAT-01",
+      "Note the reference shown (called INC-B in later cases)."
+    ],
+    "steps": [
+      {
+        "action": "Click 'Breaches', then 'Log an incident'. Type the title and 'First noticed'. In 'Where it occurred' choose 'A processor'.",
+        "expected": "Two fields appear: a search box (hint 'Name or code') and 'Processor', set to 'Choose…'. 'Log the incident' is greyed out until a processor is chosen."
+      },
+      {
+        "action": "Type Pune in the search box, then choose Pune Motion Lab Pvt Ltd in 'Processor'.",
+        "expected": "The list narrows to the processors matching the words, A to Z. Pune Motion Lab Pvt Ltd is chosen."
+      },
+      {
+        "action": "Under 'Is it a cyber attack?' choose 'Yes - reportable to CERT-In'. Leave 'Began', the ten boxes and 'Attachments' empty. Click 'Log the incident'.",
+        "expected": "The message '<reference> logged' appears with 'Validate it next: is it a personal data breach?'. The incident's page opens. Write down the reference (INC-B)."
+      },
+      {
+        "action": "Read the 'Details' card.",
+        "expected": "'Began' reads 'Not known'; 'Where' reads 'Processor: <name>' (Pune Motion Lab Pvt Ltd); 'Cyber attack' reads 'Yes - reportable to CERT-In'. None of the ten 'What is known so far' labels appears - only what was said is shown."
+      },
+      {
+        "action": "Look at the 'Duties' tab.",
+        "expected": "Two rows: 'Organisation's board' (30 minutes) and 'Report to CERT-In' with 'CERT-In Directions 2022 (IT Act s.70B): within 6 hours of noticing' under it, due 6 hours after 'First noticed', with a clock such as \"5 h 40 min left\" and a 'Record submission' button. There is no 'Mark reportable to CERT-In' box - the duty already exists."
+      },
+      {
+        "action": "On 'Report to CERT-In' click 'Record submission'.",
+        "expected": "A dialog opens, titled with 'Record the submission' and the duty, with 'The platform never submits to a regulator. Record what was submitted through the regulator's own channel, when, and the reference it returned.' It has 'Submitted at' (hint 'When it was made, not when you are recording it'), 'Reference returned' (hint 'Acknowledgement or filing number') and 'Note'. 'Record' is greyed out."
+      },
+      {
+        "action": "Type a 'Submitted at' time but leave 'Reference returned' empty.",
+        "expected": "'Record' stays greyed out: the reference is required."
+      },
+      {
+        "action": "Type CERTIN-UAT-01 in 'Reference returned', change 'Submitted at' to tomorrow and click 'Record'.",
+        "expected": "The message 'Not recorded' with 'This time is in the future' appears. The duty is still 'Outstanding'."
+      },
+      {
+        "action": "Change 'Submitted at' to one hour before 'First noticed' and click 'Record'.",
+        "expected": "The message 'Not recorded' with 'A submission cannot come before its clock started' appears."
+      },
+      {
+        "action": "Change 'Submitted at' to today, 5 minutes before now, and click 'Record'.",
+        "expected": "A message ending ': recorded' appears with 'The submission and its reference are on the record.' The row shows the badge 'Done' with the time and CERTIN-UAT-01; its clock and button are gone."
+      },
+      {
+        "action": "Read the 'Close' card.",
+        "expected": "The 'Not yet' box lists 'Record whether this is a personal data breach before closing it' and the organisation's board duty, with a line ending 'is outstanding'. CERT-In is no longer listed."
+      }
+    ],
+    "pass_criteria": "An incident is logged with only the three required facts; 'Yes' to a cyber attack creates the CERT-In duty at once with a six-hour clock; the filing is refused without a reference, in the future or before the clock started, and recorded otherwise.",
+    "area": "Breach and incidents"
+  },
+  {
+    "id": "BRE-03",
+    "title": "Log an incident refuses a missing title or time, a future time, a start after noticing, and an unnamed place",
+    "feature": "Console - Log an incident - validation",
+    "role": "DPO (Priya Menon) on console",
+    "priority": "Medium",
+    "type": "Negative",
+    "ref": "S3-06",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "Priya Menon (DPO, dpo@cmp.local) is signed in to the console in Browser B (BRE-01 step 1).",
+      "Times are typed in the browser's own date-and-time boxes, in local time. 'First noticed' and every other time must not be in the future."
+    ],
+    "test_data": [
+      "Title: UAT Incident 99 - refused input",
+      "Future time: tomorrow, 10:00",
+      "First noticed: today, 1 hour before now; Began: today, 30 minutes before now"
+    ],
+    "steps": [
+      {
+        "action": "Click 'Breaches', then 'Log an incident'. Leave 'Title' empty and type a 'First noticed' time.",
+        "expected": "'Log the incident' is greyed out. Type the title: it becomes available. Clear 'First noticed': it is greyed out again."
+      },
+      {
+        "action": "Type tomorrow, 10:00 in 'First noticed' and click 'Log the incident'.",
+        "expected": "The message 'Not logged' with 'This time is in the future' appears. The dialog stays open."
+      },
+      {
+        "action": "Change 'First noticed' to 1 hour before now and type 30 minutes before now in 'Began'. Click 'Log the incident'.",
+        "expected": "The message 'Not logged' with 'It cannot have begun after it was first noticed' appears."
+      },
+      {
+        "action": "Clear 'Began'. In 'Where it occurred' choose 'A data source'.",
+        "expected": "A field 'Data source' set to 'Choose…' appears; 'Log the incident' is greyed out until one is chosen."
+      },
+      {
+        "action": "Choose 'Elsewhere' and leave 'Where, in words' empty.",
+        "expected": "'Log the incident' is greyed out; the hint under 'Where, in words' reads 'Which store or system'."
+      },
+      {
+        "action": "Under 'Is it a cyber attack?' choose 'Yes - reportable to CERT-In', then click 'Clear'.",
+        "expected": "None of the three choices stays selected and the 'Clear' link disappears: the question can be left unanswered."
+      },
+      {
+        "action": "Click 'Cancel'. In 'Search' type Incident 99 and press Enter.",
+        "expected": "The dialog closes. The register shows 'Nothing matches' with 'No incident in this register matches the search and filters.' - nothing was logged by the refused attempts. Click 'Clear filters'."
+      }
+    ],
+    "pass_criteria": "The form cannot be sent without a title and a first-noticed time or a named place, and the server refuses a future time and a start after noticing, logging nothing.",
+    "area": "Breach and incidents"
+  },
+  {
+    "id": "BRE-04",
+    "title": "The organisation's board within 30 minutes: brief, print, record the report; a late-logged incident starts overdue",
+    "feature": "Console - Brief for the organisation's board; Duties - Organisation's board; Dashboard; duty alert email",
+    "role": "DPO (Priya Menon) on console",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "S3-07",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request.",
+      "The API, the worker and the one beat scheduler are running (the worker sends every email and SMS; the beat checks breach duties every 5 minutes).",
+      "Priya Menon (DPO, dpo@cmp.local) is signed in to the console in Browser B (BRE-01 step 1).",
+      "Times are typed in the browser's own date-and-time boxes, in local time. 'First noticed' and every other time must not be in the future.",
+      "BRE-01 has been run; the 'Organisation's board' duty on INC-A is still 'Outstanding'."
+    ],
+    "test_data": [
+      "INC-A: Reported at: today, 2 minutes before now; Reported to: The chair of the board, by phone (Tester01)",
+      "New incident: Title: UAT Incident 03 - email sent to the wrong list; First noticed: today, 45 minutes before now; Where it occurred: The platform's own database; Is it a cyber attack?: No",
+      "Note the new reference (called INC-C in later cases)."
+    ],
+    "steps": [
+      {
+        "action": "In the sidebar under 'Your work' click 'Breaches', then click the reference INC-A in the 'Reference' column.",
+        "expected": "The page for INC-A opens, with an 'Incidents and breaches' back link above the heading."
+      },
+      {
+        "action": "Click 'Brief for the organisation's board'.",
+        "expected": "A page opens headed 'Brief for the organisation's board' with INC-A, the eyebrow 'Incident', a 'Back to the incident' link and a 'Print' button. Its line reads 'Drafted from the register as it stands. The platform does not report to the board: tell it through the organisation's own channel, then record when and to whom on the incident's duties.'"
+      },
+      {
+        "action": "Read the brief.",
+        "expected": "The card is headed 'Internal policy: within 30 minutes of first noticed' with 'Drafted <date and time> from the register.' A box 'Not yet in the register' lists 'Whether it is a personal data breach - validation is still pending', 'The nature and extent of what happened' and 'Who it touched - no list has been confirmed'. It shows 'Reference', 'What', 'First noticed', 'Began', 'Where it occurred', 'Validation' ('Still validating'), 'Reportable to CERT-In' ('Not marked'), 'Who it touched' ('No list confirmed yet') and 'Duties and their clocks'. No person's name appears - not even who logged it."
+      },
+      {
+        "action": "Click 'Print', look at the preview, then cancel the print.",
+        "expected": "The browser's print preview shows the brief without the sidebar, the 'Print' button or the back link."
+      },
+      {
+        "action": "Click 'Back to the incident'. On 'Organisation's board' click 'Record the report'.",
+        "expected": "A dialog 'Record the report - Organisation's board' opens with 'The platform never reports to the organisation's board. Record when a person reported to it, and to whom.' It has 'Reported at', 'Reported to' (hint 'Who was told, and how - for example the chair, by phone') and 'Note' - no 'Reference returned'. 'Record' is greyed out."
+      },
+      {
+        "action": "Type 'Reported at' only.",
+        "expected": "'Record' stays greyed out: whom it was reported to is required."
+      },
+      {
+        "action": "Type 'Reported to' from the test data and click 'Record'.",
+        "expected": "A message ending ': recorded' appears with 'The report and whom it was made to are on the record.' The row shows 'Done' with the time and \"to The chair of the board, by phone (Tester01)\". The 'Close' card no longer lists the organisation's board."
+      },
+      {
+        "action": "Click 'Breaches', then 'Log an incident', and log the new incident from the test data (45 minutes ago, 'The platform's own database', 'No').",
+        "expected": "The new incident's page opens. Write down its reference (INC-C)."
+      },
+      {
+        "action": "Look at the 'Duties' tab.",
+        "expected": "The 'Organisation's board' row is tinted red with a red 'Outstanding' badge and a clock such as 'Overdue by <time>' (about 15 min). The tab shows '<n> late' beside 'Duties'. There is no 'Report to CERT-In' row; the 'Mark reportable to CERT-In' box is offered (answering 'No' creates nothing)."
+      },
+      {
+        "action": "Click 'Dashboard' in the sidebar.",
+        "expected": "'Needs attention' lists 'Breach duties overdue'. A card 'Open breaches' lists INC-A, INC-B and INC-C with each duty's badge and clock; INC-C's organisation's board reads 'Overdue by ...' in red."
+      },
+      {
+        "action": "Wait up to 10 minutes, then ask the coordinator to check the outbox for mail to dpo@cmp.local about INC-C.",
+        "expected": "One email whose subject starts with INC-C and says the organisation's board duty is overdue since <time>, with a link to the incident. Asked again 10 minutes later, the coordinator finds no repeat of it. (Similar emails may arrive for INC-B, whose board report is never recorded, and for any duty that falls due while testing.)"
+      }
+    ],
+    "pass_criteria": "The brief is drafted from the register with counts and no names and prints cleanly; the report to the board is recorded with when and to whom; an incident logged after 30 minutes starts overdue, shows on the dashboard and the DPOs are emailed once.",
+    "area": "Breach and incidents"
+  },
+  {
+    "id": "BRE-05",
+    "title": "Validation 'No': the incident stays an incident, nothing reaches anyone, and it closes once the board is told",
+    "feature": "Console - Validation tab ('Not a personal data breach'); Close",
+    "role": "DPO (Priya Menon) on console",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "S3-06",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "Priya Menon (DPO, dpo@cmp.local) is signed in to the console in Browser B (BRE-01 step 1).",
+      "BRE-04 has been run; INC-C is open, still validating, with its organisation's board duty overdue."
+    ],
+    "test_data": [
+      "Validation: Not a personal data breach",
+      "Reasoning: The email reached five internal staff only; all confirmed deletion. No personal data left the organisation. Tester01.",
+      "Organisation's board: Reported at: today, 1 minute before now; Reported to: Head of Security, by email (Tester01)"
+    ],
+    "steps": [
+      {
+        "action": "In the sidebar under 'Your work' click 'Breaches', then click the reference INC-C in the 'Reference' column.",
+        "expected": "The page for INC-C opens, with an 'Incidents and breaches' back link above the heading."
+      },
+      {
+        "action": "In the 'Not validated yet' box click 'Record the validation'.",
+        "expected": "The 'Validation' tab opens with the card 'Validation - is it a personal data breach under s.2(u)?' and 'Still validating. The clocks already running keep running.' It has 'Validation' (set to 'Yes, record it as a personal data breach'), 'Became aware at' (hint 'Starts every DPDP clock'), 'Reasoning' and a greyed-out 'Record the validation' button."
+      },
+      {
+        "action": "In 'Validation' choose 'Not a personal data breach'.",
+        "expected": "'Became aware at' disappears. 'Record the validation' stays greyed out while 'Reasoning' is empty."
+      },
+      {
+        "action": "Type the reasoning and click 'Record the validation'.",
+        "expected": "The message 'Validation recorded' with 'Not a personal data breach' appears. The card lists 'Not a personal data breach' with the time, Priya Menon and the reasoning."
+      },
+      {
+        "action": "Look at the header and the 'Details' card.",
+        "expected": "The heading is still INC-C (no BR- reference was issued) and the eyebrow still 'Incident, being validated'. The green badge reads 'Not a personal data breach'. 'Recorded as a breach' still reads 'Not yet: a validation of yes records it'. The 'Not validated yet' box is gone."
+      },
+      {
+        "action": "Click the 'Duties' tab.",
+        "expected": "Only 'Organisation's board' is listed. There is no 'Board - initial intimation', 'Board - detailed report' or 'Principals notified'."
+      },
+      {
+        "action": "Click the 'People & notices' tab, then the 'Tickets' tab.",
+        "expected": "Under 'Telling the people it touched' a box 'Not sent before the breach is recorded' reads \"Record the breach before anyone is notified: validate it as a personal data breach first\". On 'Tickets' a box 'Tickets wait for the breach to be recorded' is shown and there is no 'Assign a ticket' button."
+      },
+      {
+        "action": "Read the 'Close' card.",
+        "expected": "The 'Not yet' box lists only the organisation's board duty, ending 'is outstanding'. 'Close the breach' is greyed out."
+      },
+      {
+        "action": "On the 'Duties' tab click 'Record the report' and record it with the test data.",
+        "expected": "The row shows 'Done'. The 'Close' card has no 'Not yet' box and 'Close the breach' is available."
+      },
+      {
+        "action": "Click 'Close the breach'.",
+        "expected": "The message 'Breach closed' appears. The badge reads 'Closed'. The card is now 'Reopen' with 'Why it is being reopened' and a greyed-out 'Reopen the breach'. The 'Validation' tab no longer has a form and the 'Duties' tab no longer offers 'Mark reportable to CERT-In'."
+      },
+      {
+        "action": "Click the 'Activity' tab.",
+        "expected": "'History' lists, newest first, 'Open' → 'Closed' and 'Logged as' 'Open', each with Priya Menon and the time."
+      },
+      {
+        "action": "Click 'Breaches'. Change 'Show' from 'Open' to 'Closed'.",
+        "expected": "With 'Open', INC-C is not listed. With 'Closed', INC-C is listed with the 'Closed' badge and 'Not a personal data breach' under 'Validation', and 'None' under 'Outstanding duties'."
+      }
+    ],
+    "pass_criteria": "'No' keeps the INC- reference and its reasoning, creates no DPDP duty, blocks notices and tickets, and the incident closes once the organisation's board has been told.",
+    "area": "Breach and incidents"
+  },
+  {
+    "id": "BRE-06",
+    "title": "Validation 'Yes' records the incident as a BR- breach and starts the DPDP duties",
+    "feature": "Console - Validation tab ('Yes, record it as a personal data breach'); Duties; Close",
+    "role": "DPO (Priya Menon) on console",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "S3-06",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "Priya Menon (DPO, dpo@cmp.local) is signed in to the console in Browser B (BRE-01 step 1).",
+      "Times are typed in the browser's own date-and-time boxes, in local time. 'First noticed' and every other time must not be in the future.",
+      "BRE-04 has been run; INC-A's organisation's board duty is 'Done'."
+    ],
+    "test_data": [
+      "Validation: Yes, record it as a personal data breach",
+      "Reasoning: Contact details of about 40 participants on an unencrypted laptop were lost: a loss of control under s.2(u). Tester01.",
+      "Became aware at (refused): yesterday, 09:00; (refused): tomorrow, 09:00; (accepted): today, 5 minutes before now",
+      "Note the breach reference shown (called BR-A in later cases)."
+    ],
+    "steps": [
+      {
+        "action": "In the sidebar under 'Your work' click 'Breaches', then click the reference INC-A in the 'Reference' column. Click the 'Validation' tab.",
+        "expected": "The page for INC-A opens, with an 'Incidents and breaches' back link above the heading. The 'Validation' tab is shown."
+      },
+      {
+        "action": "Leave 'Validation' on 'Yes, record it as a personal data breach', type the reasoning, type yesterday 09:00 in 'Became aware at' and click 'Record the validation'.",
+        "expected": "The message 'Not recorded' with 'Awareness cannot come before the event was first noticed' appears. Nothing is listed on the card."
+      },
+      {
+        "action": "Change 'Became aware at' to tomorrow 09:00 and click 'Record the validation'.",
+        "expected": "The message 'Not recorded' with 'This time is in the future' appears."
+      },
+      {
+        "action": "Change 'Became aware at' to 5 minutes before now and click 'Record the validation'.",
+        "expected": "The message 'Recorded as <BR reference>' with 'The DPDP duties have started.' appears. Write down the BR-YYYY-NNNN reference (BR-A)."
+      },
+      {
+        "action": "Look at the header and the 'Details' card.",
+        "expected": "The eyebrow reads 'Personal data breach' and the heading is now BR-A. The red badge reads 'A personal data breach'. 'Details' shows 'Logged as' INC-A, 'Recorded as a breach' with the time and \"by Priya Menon\", and 'Became aware' with the time typed."
+      },
+      {
+        "action": "Click the 'Duties' tab.",
+        "expected": "Besides 'Organisation's board' ('Done'), three rows: 'Board - initial intimation' ('Rule 7(2)(a): without delay', due 'Without delay', clock '<time> since awareness' followed by '(no internal target set)', 'Record submission'); 'Board - detailed report' ('Rule 7(2)(b): within 72 hours of becoming aware, or as the Board allows', due 72 hours after 'Became aware', clock about \"2 d 23 h left\", 'Record submission' and 'Extension'); 'Principals notified' ('Rule 7(1): without delay, to each affected Data Principal', no button, the line 'Completes when every notice is delivered')."
+      },
+      {
+        "action": "Read the 'Close' card.",
+        "expected": "The 'Not yet' box lists one line for each of the three new duties, each ending 'is outstanding'. 'Close the breach' is greyed out."
+      },
+      {
+        "action": "Click the 'Validation' tab and open the 'Validation' list.",
+        "expected": "The yes is listed with 'aware <time>'. The list now offers 'A personal data breach', 'Not a personal data breach' and 'Still validating' - a later yes would issue no second BR number."
+      },
+      {
+        "action": "Click the 'Tickets' tab.",
+        "expected": "There is an 'Assign a ticket' button and the line 'No ticket yet.'; the 'Tickets wait for the breach to be recorded' box is gone."
+      },
+      {
+        "action": "Click 'Breaches'. Find the row and then type the INC-A reference in 'Search' and press Enter.",
+        "expected": "The row shows BR-A with 'logged as <INC reference>' (INC-A) under it, the title, 'A personal data breach' under 'Validation', and the three DPDP duties under 'Outstanding duties' with their clocks. Searching by INC-A still finds BR-A."
+      }
+    ],
+    "pass_criteria": "Awareness before noticing or in the future is refused; the first yes issues a BR- reference, keeps the INC- one beside it, and creates the initial intimation, detailed report and principals duties with clocks from awareness.",
+    "area": "Breach and incidents"
+  },
+  {
+    "id": "BRE-07",
+    "title": "The register is searched and filtered; the dashboard is a way in",
+    "feature": "Console - Incidents and personal data breaches - Search, Show, Validation, Duties, Recent activity, Tickets, Sort; Dashboard",
+    "role": "DPO (Priya Menon) on console",
+    "priority": "Medium",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "Priya Menon (DPO, dpo@cmp.local) is signed in to the console in Browser B (BRE-01 step 1).",
+      "BRE-01 to BRE-06 have been run: BR-A (a breach, open), INC-B (still validating, open, its organisation's board never recorded) and INC-C (not a breach, closed). No ticket has been assigned yet."
+    ],
+    "test_data": [
+      "Search words: laptop; Pune Motion; zzz",
+      "References: INC-B"
+    ],
+    "steps": [
+      {
+        "action": "Click 'Breaches' and look at the list with no filter.",
+        "expected": "'Show' is 'Open'. BR-A and INC-B are listed; INC-C is not. The columns are 'Reference', 'Where', 'Validation', 'Outstanding duties', 'Tickets', 'Last activity' and 'First noticed'. 'Tickets' reads 'None open' for both."
+      },
+      {
+        "action": "Type laptop in 'Search' and press Enter.",
+        "expected": "Only BR-A remains. A line '<n> of <m> shown' (here 1 of 2) appears and a 'Clear filters' button is shown."
+      },
+      {
+        "action": "Replace the search with Pune Motion, then with the INC-B reference.",
+        "expected": "Each time only INC-B remains (its 'Where' reads 'Processor: <name>', here Pune Motion Lab Pvt Ltd)."
+      },
+      {
+        "action": "Click 'Clear filters'. In 'Validation' choose 'Still validating', then 'A personal data breach'.",
+        "expected": "'Still validating' shows INC-B only; 'A personal data breach' shows BR-A only."
+      },
+      {
+        "action": "Set 'Show' to 'All' and 'Validation' to 'Not a personal data breach'.",
+        "expected": "Only INC-C is listed, with the 'Closed' badge."
+      },
+      {
+        "action": "Click 'Clear filters' and set 'Show' back to 'Open'. In 'Duties' choose 'Overdue', then 'Due within 24 hours'.",
+        "expected": "'Overdue' shows INC-B, tinted red, its organisation's board reading 'Overdue by ...'. 'Due within 24 hours' shows only incidents with a duty falling due within a day and none that is late."
+      },
+      {
+        "action": "Set 'Duties' to 'Any'. In 'Tickets' choose 'With an open ticket'.",
+        "expected": "'Nothing matches' with 'No incident in this register matches the search and filters.' and a 'Clear filters' button - no ticket exists yet."
+      },
+      {
+        "action": "Set 'Tickets' to 'Any', 'Recent activity' to 'In the last 24 hours' and 'Sort' to 'Due soonest, late first'. Copy the address bar and open it in a new tab.",
+        "expected": "BR-A and INC-B are listed, INC-B (late) first. The new tab shows the same list with the same filters already set: the filters live in the address."
+      },
+      {
+        "action": "Click 'Dashboard'. Click 'Log an incident' in the page header.",
+        "expected": "The same 'Log an incident' dialog opens as on 'Breaches'. Click 'Cancel'."
+      },
+      {
+        "action": "Read the dashboard and click BR-A in the 'Open breaches' card.",
+        "expected": "'Needs attention' lists 'Breach duties overdue' and 'Breach duties outstanding'. 'Open breaches' lists BR-A and INC-B, each duty with its badge and clock. Clicking BR-A opens its page."
+      }
+    ],
+    "pass_criteria": "The register finds an incident by either reference, title words or place, each filter narrows it as named, an empty result offers 'Clear filters', the filters survive in the address, and the dashboard leads to the register and to logging.",
+    "area": "Breach and incidents"
+  },
+  {
+    "id": "BRE-08",
+    "title": "The assessment is recorded and revised; the Board's documents are drafted and the intimation and an extension recorded",
+    "feature": "Console - Assessment tab; Documents for the Board; Duties - Record submission, Extension",
+    "role": "DPO (Priya Menon) on console",
+    "priority": "Medium",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "Priya Menon (DPO, dpo@cmp.local) is signed in to the console in Browser B (BRE-01 step 1).",
+      "Times are typed in the browser's own date-and-time boxes, in local time. 'First noticed' and every other time must not be in the future.",
+      "BRE-06 has been run; BR-A is open."
+    ],
+    "test_data": [
+      "Nature and extent: A field laptop holding a contact sheet of about 40 study participants was lost in a taxi.",
+      "Likely impact: Low to moderate: unwanted calls or messages. Revision 2: Moderate: possible phishing using the study's name.",
+      "Consequences likely for the people affected: Calls or messages from strangers who know of the study.",
+      "Events, circumstances and reasons: The laptop was taken off site against the field guide.",
+      "Mitigation implemented, under way or proposed: Laptop locked remotely; taxi company asked to search.",
+      "What people can do to protect themselves: Ignore unexpected calls about the study; never share a code.",
+      "Findings on who caused it: Field team member 01 did not follow the guide.",
+      "Remedial measures against recurrence: Full-disk encryption on every field laptop.",
+      "Who answers people's questions: The Privacy Office, privacy@cmp.local",
+      "Categories: Names and mobile numbers (not sealed); Email addresses (Sealed ticked, Key exposed not ticked)",
+      "Initial intimation: Submitted at: today, 2 minutes before now; Reference returned: DPB-UAT-INT-01",
+      "Extension (refused): Asked for at: now; Allowed until: tomorrow. Extension (accepted): Allowed until: 6 days from today; The Board's reference: DPB-UAT-EXT-01"
+    ],
+    "steps": [
+      {
+        "action": "In the sidebar under 'Your work' click 'Breaches', then click the reference BR-A in the 'Reference' column. Click the 'Assessment' tab.",
+        "expected": "The page for BR-A opens, with an 'Incidents and breaches' back link above the heading. The 'Assessment' tab is shown."
+      },
+      {
+        "action": "Read the card, then click 'Start the assessment'.",
+        "expected": "Before the click: 'Assessment' with 'Nothing assessed yet.'. After: 'Began' (hint 'If now known. Leave empty to keep what is recorded'), nine boxes each labelled with its fact and rule - 'Nature and extent', 'Likely impact', 'Consequences likely for the people affected', 'Events, circumstances and reasons', 'Mitigation implemented, under way or proposed', 'What people can do to protect themselves', 'Findings on who caused it' (hint 'Sealed; it may name an employee'), 'Remedial measures against recurrence', 'Who answers people's questions' - then 'Data categories exposed' with 'Add a category', and 'Record this revision'."
+      },
+      {
+        "action": "Click 'Record this revision' with every box empty.",
+        "expected": "The message 'Not recorded' with 'An assessment records at least one fact' appears."
+      },
+      {
+        "action": "Fill the nine boxes (revision 1 words). Click 'Add a category' twice; type the two categories. On the second tick 'Sealed', then look at 'Key exposed' on both.",
+        "expected": "'Key exposed' is greyed out on the first category (not sealed) and clickable on the second once 'Sealed' is ticked. Leave it unticked."
+      },
+      {
+        "action": "Click 'Record this revision'.",
+        "expected": "The message 'Revision <n> recorded' (revision 1) with 'The previous revision is kept as it was.' appears. The card shows each fact with its rule, and 'Data categories' with Names and mobile numbers - 'not sealed' and Email addresses - 'sealed, key safe'. The line under the title ends \"Revision 1 of 1, <date> by Priya Menon.\""
+      },
+      {
+        "action": "Click 'Revise the assessment', change 'Likely impact' to the revision 2 words and click 'Record this revision'.",
+        "expected": "The form opened with the previous words filled in. After saving, the line reads \"Revision 2 of 2, ...\" and 'Likely impact' shows the new words. The tab count is 2."
+      },
+      {
+        "action": "Click 'Documents for the Board' in the header.",
+        "expected": "A page opens headed 'Documents for the Board' with BR-A, the eyebrow 'Personal data breach', a back link 'The breach' and a 'Print' button. Two cards: 'Initial intimation - <rule>' (Rule 7(2)(a)) and 'Detailed report - <rule>' (Rule 7(2)(b)), each with 'Drafted <date and time> from the register.'"
+      },
+      {
+        "action": "Read the initial intimation.",
+        "expected": "No 'Not yet in the register' box. It shows 'Reference' (BR-A), 'Validation' ('A personal data breach'), 'First noticed', 'Became aware', 'Began', 'Where it occurred', and 'Nature and extent' and 'Likely impact' from revision 2, then a line naming the 'Board - initial intimation' duty and its clock."
+      },
+      {
+        "action": "Read the detailed report.",
+        "expected": "'Assessment' reads \"Revision 2 of 2, <date>\"; 'Determinations' lists the yes with its reasoning; sections follow for 'The events, circumstances and reasons leading to the breach', 'Measures implemented or proposed to mitigate the risk', 'Findings on the person who caused the breach' and 'Remedial measures taken to prevent recurrence', each with the assessment's words; '(vi) The account of notices to the Data Principals affected' reads \"No notice has yet been sent to the Data Principals affected. Nobody is yet listed as affected.\""
+      },
+      {
+        "action": "Click 'Print', look at the preview, then cancel.",
+        "expected": "The preview shows both documents without the sidebar, the 'Print' button or the back link."
+      },
+      {
+        "action": "Click 'The breach'. On 'Board - initial intimation' click 'Record submission', enter the test data and click 'Record'.",
+        "expected": "A message ending ': recorded' with 'The submission and its reference are on the record.' appears; the row shows 'Done' with the time and DPB-UAT-INT-01."
+      },
+      {
+        "action": "On 'Board - detailed report' click 'Extension'. Enter the refused extension and click 'Record the extension'.",
+        "expected": "The dialog 'The Board allowed longer' (with 'Asked for at', 'Allowed until' and 'The Board's reference') shows the message 'Not recorded' with 'The date allowed must be later than the report's current due time'."
+      },
+      {
+        "action": "Change 'Allowed until' to 6 days from today, type the Board's reference and click 'Record the extension'.",
+        "expected": "The message 'Extension recorded' with 'The detailed report is now due on the date the Board allowed.' appears. The 'Due' cell shows the new date with 'extended by the Board'; the clock now shows about 6 days left. 'Board - initial intimation' is unchanged ('Done')."
+      }
+    ],
+    "pass_criteria": "Each assessment revision is kept and the latest is current, with categories sealed or not; the Board's documents draw on the register as it stands and print; the intimation's submission and the Board's extension are recorded, the extension moving only the detailed report.",
+    "area": "Breach and incidents"
+  },
+  {
+    "id": "BRE-09",
+    "title": "Who it touched: a principal added by hand, and people the records cannot show taken from an uploaded list",
+    "feature": "Console - People & notices - Who it touched; Add people from a list (template, Check the file, Add to the list)",
+    "role": "DPO (Priya Menon) on console",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "Priya Menon (DPO, dpo@cmp.local) is signed in to the console in Browser B (BRE-01 step 1).",
+      "BRE-06 has been run; BR-A is open and nobody is listed yet.",
+      "A spreadsheet program or text editor is available to fill in a CSV file."
+    ],
+    "test_data": [
+      "Add by hand: subject@cmp.local (Anjali Verma); Note: Her mobile was on the lost contact sheet.",
+      "List file uat-bre-people-01.csv, saved as CSV UTF-8, exactly these lines (header first, no # lines, no example row):",
+      "name,email,mobile",
+      "UAT Contact 01,tester01.contact1@example.org,+91 90000 01101",
+      "UAT Contact 02,tester01.contact2@example.org,",
+      "UAT No Contact 03,,",
+      "Anjali Verma,subject@cmp.local,"
+    ],
+    "steps": [
+      {
+        "action": "In the sidebar under 'Your work' click 'Breaches', then click the reference BR-A in the 'Reference' column. Click the 'People & notices' tab.",
+        "expected": "The page for BR-A opens, with an 'Incidents and breaches' back link above the heading. The 'People & notices' tab is shown."
+      },
+      {
+        "action": "Read the two cards.",
+        "expected": "'Who it touched' says 'Nobody on the platform confirmed yet.' with 'Derive who it touched' and 'Add people from a list'. 'Telling the people it touched' says 'Nobody is listed as touched yet.' and shows a box 'Confirm who it touched first'."
+      },
+      {
+        "action": "Click 'Derive who it touched'.",
+        "expected": "An editor opens with 'Look in' set to 'The platform's own tables', 'Affected tables' with nothing ticked, 'Rows written from' and 'Rows written until', 'Another place to look' and a greyed-out 'Show what the records say'."
+      },
+      {
+        "action": "Click the bin icon beside 'Look in' ('Remove this place'). In 'Add someone the records cannot show' type subject@cmp.local and click 'Find'.",
+        "expected": "The place to look disappears. Anjali Verma is offered with an 'Add' button."
+      },
+      {
+        "action": "Click 'Add', type the note in 'Note' and click 'Confirm the list'.",
+        "expected": "A chip 'Anjali Verma' appeared after 'Add'. After confirming, the message 'Revision <n> confirmed' (revision 1) with '<n> newly listed; <m> in all.' (1 and 1) appears and the editor closes."
+      },
+      {
+        "action": "Read 'Who it touched'.",
+        "expected": "It says 1 listed across 1 revision, and \"Revision 1, <date> by Priya Menon:\" with derived 0, left out 0, added by hand 1, newly listed 1, and the note. The table ('Person', 'How found', 'Reachable by', 'Revision') shows Anjali Verma, 'Added by the DPO', reachable by email, SMS and their account, revision 1."
+      },
+      {
+        "action": "Click 'Add people from a list'.",
+        "expected": "A panel 'Add people from a list' opens: 'What the list holds' with 'People: name, email, mobile' (chosen) and 'Asset IDs', each with a hint; 'Download the template'; 'Choose the filled-in file'; greyed-out 'Check the file' and 'Add to the list'."
+      },
+      {
+        "action": "Click 'Download the template' and open the file.",
+        "expected": "A CSV downloads. Its first line is name,email,mobile, followed by guidance lines starting with # and an example row for Asha Rao. Make uat-bre-people-01.csv from the test data and save it as CSV UTF-8."
+      },
+      {
+        "action": "Click 'Choose the filled-in file', choose uat-bre-people-01.csv, then click 'Check the file'.",
+        "expected": "The file name is shown and the button reads 'Choose another file'. The check shows 'Rows read', 'On the platform, to be listed' 0, 'Not on the platform, to be listed' 2, 'Already listed or repeated - skipped' 1 and 'Could not be read' 1. 'Rows that could not be read (<n>)' (1) lists row 4 with 'Neither an email nor a mobile'. 'Adding it takes the rows that can be read. Correct the others and send the file again - rows already listed are skipped.' Nothing has been added yet."
+      },
+      {
+        "action": "Click 'Add <n> to the list' (Add 2 to the list).",
+        "expected": "The message \"2 people added to the list\" with 'Send the approved notice to reach them: email and SMS, and the account of anyone on the platform.' appears and the panel closes."
+      },
+      {
+        "action": "Read 'Who it touched' again and open 'Lists taken (<n>)'.",
+        "expected": "A second revision line reads from a list of people, newly listed 2. Below: '<n> not on the platform - told by email and SMS.' (2) and a table 'Name', 'Email', 'Mobile', 'From' with UAT Contact 01 and UAT Contact 02 (mobile '—'), each with the badge 'People list'. 'Lists taken' shows the time, uat-bre-people-01.csv, Priya Menon and the counts: 0 on the platform, 2 not, 1 skipped, 1 unreadable."
+      },
+      {
+        "action": "Click 'Add people from a list' again, choose the same file and click 'Check the file'.",
+        "expected": "'Not on the platform, to be listed' is 0 and 'Already listed or repeated - skipped' is 3. A warning reads \"Nothing in this file would be added: everybody in it is already listed.\" 'Add to the list' is greyed out. Click 'Cancel'."
+      },
+      {
+        "action": "Read 'Telling the people it touched'.",
+        "expected": "It now says 0 of 3 listed people have been notified on every channel, and that 2 of them have no account and are told by email and SMS. The 'Confirm who it touched first' box is gone."
+      }
+    ],
+    "pass_criteria": "A principal is listed by hand; a people list is checked before anything is written, unreadable rows are named by row number, the readable new people are taken as contacts of this breach, repeats are skipped, and everyone listed counts toward the notice.",
+    "area": "Breach and incidents"
+  },
+  {
+    "id": "BRE-10",
+    "title": "The notice to the people it touched is drafted, refused while incomplete, approved, sent and accounted for",
+    "feature": "Console - Telling the people it touched (draft, approve, send, delivery account); Principals notified; Board report (vi)",
+    "role": "DPO (Priya Menon) on console",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request.",
+      "The API, the worker and the one beat scheduler are running (the worker sends every email and SMS; the beat checks breach duties every 5 minutes).",
+      "Priya Menon (DPO, dpo@cmp.local) is signed in to the console in Browser B (BRE-01 step 1).",
+      "BRE-08 and BRE-09 have been run; three people are listed on BR-A (Anjali Verma and two contacts)."
+    ],
+    "test_data": [
+      "The five contents come pre-filled from the assessment; keep them, except:",
+      "Who to contact (first, left empty to be refused); then: The Privacy Office, privacy@cmp.local, +91 20 0000 0000",
+      "Detailed report: Submitted at: today, 1 minute before now; Reference returned: DPB-UAT-REP-01"
+    ],
+    "steps": [
+      {
+        "action": "In the sidebar under 'Your work' click 'Breaches', then click the reference BR-A in the 'Reference' column. Click the 'People & notices' tab.",
+        "expected": "The page for BR-A opens, with an 'Incidents and breaches' back link above the heading. The 'People & notices' tab is shown."
+      },
+      {
+        "action": "Under 'Telling the people it touched' click 'Draft the notice'.",
+        "expected": "The message 'Draft started' with 'Complete all five, save, then approve.' appears. 'Version 1' with the badge 'Draft' shows five boxes: 'What happened - its nature, extent and timing (Rule 7(1)(a))', 'The consequences likely for her (Rule 7(1)(b))', 'What has been done, and is being done, to limit them (Rule 7(1)(c))', 'What she can do to protect herself (Rule 7(1)(d))' and 'Who to contact with questions (Rule 7(1)(e))', filled in from the assessment."
+      },
+      {
+        "action": "Empty the box 'Who to contact with questions (Rule 7(1)(e))'.",
+        "expected": "The line 'Save the draft before approving it.' appears and 'Approve' is greyed out. Click 'Save draft': the message 'Draft saved' appears."
+      },
+      {
+        "action": "Click 'Approve'.",
+        "expected": "The message 'Not done' with \"A notice says all five things Rule 7(1) requires. Missing: Who to contact with questions (Rule 7(1)(e))\" appears. The version is still 'Draft'."
+      },
+      {
+        "action": "Type the contact from the test data, click 'Save draft', then 'Approve'.",
+        "expected": "The message 'Notice approved' with 'Send it when you are ready.' appears. 'Version 1' now has the badge 'Approved' with the time and Priya Menon, and shows the five contents as text - nothing can be edited. The buttons 'Start an updated notice' and 'Send version 1' are shown."
+      },
+      {
+        "action": "Click 'Send version 1'.",
+        "expected": "The message 'Version <n> sent' with 'Each email and SMS is sent by the worker.' appears. A table 'Version', 'Channel', 'Delivered', 'Queued', 'Failed' shows rows for 'Their account', 'Email' and 'SMS'."
+      },
+      {
+        "action": "Wait one minute and read the table and the line above it.",
+        "expected": "Nothing is queued any longer. 'Their account' shows 1 delivered (Anjali), 'Email' 3 and 'SMS' 2 (UAT Contact 02 has no mobile); 'Failed' is 0. The line says 3 of 3 listed people have been notified on every channel. (If a delivery failed, 'Failed deliveries' lists it - note it as a finding.)"
+      },
+      {
+        "action": "Click the 'Duties' tab.",
+        "expected": "'Principals notified' shows 'Done' with a time - it completed by delivery; nobody pressed a button for it."
+      },
+      {
+        "action": "Ask the coordinator to check the outbox for the notice.",
+        "expected": "An email to subject@cmp.local whose subject ends ': a personal data breach that may affect you', carrying BR-A and all five contents; an SMS to +91 90000 00001 saying a personal data breach may affect her data and pointing to her account; an email and an SMS for UAT Contact 01 and an email only for UAT Contact 02, carrying what happened, what to do and whom to ask. None names any other person."
+      },
+      {
+        "action": "Click 'Send version 1' again.",
+        "expected": "The counts in the table do not change, and the coordinator finds no second copy for anyone: a resend writes only what is missing."
+      },
+      {
+        "action": "Click 'Documents for the Board' and read item (vi) of the detailed report.",
+        "expected": "'(vi) The account of notices to the Data Principals affected' now says 3 of the 3 Data Principals listed as affected have been notified, and that 2 have no account and were written to by email and SMS, with a table 'Version', 'Approved', 'Channel', 'Delivered', 'Queued', 'Failed'."
+      },
+      {
+        "action": "Click 'The breach'. On 'Board - detailed report' click 'Record submission', enter the test data and click 'Record'.",
+        "expected": "The row shows 'Done' with DPB-UAT-REP-01. The 'Close' card's 'Not yet' box no longer lists any duty."
+      }
+    ],
+    "pass_criteria": "The notice cannot be approved with any of the five missing, an approved notice is frozen, sending reaches each person's account, email and SMS (contacts by email and SMS only), a resend duplicates nothing, 'Principals notified' completes by delivery and the Board's report carries the account.",
+    "area": "Breach and incidents"
+  },
+  {
+    "id": "BRE-11",
+    "title": "The data principal reads the breach notice on the portal, and an update appears above it",
+    "feature": "Portal - Updates; Personal data breach notices; Console - Start an updated notice",
+    "role": "Data principal (Anjali Verma) on portal; DPO",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "The portal is running at http://localhost:3001 and Anjali Verma (subject@cmp.local / +91 90000 00001) can sign in to it.",
+      "The console is running at http://localhost:3000.",
+      "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request.",
+      "Use two separate browsers or browser profiles: Browser A for the portal (the data principal or nominee) and Browser B for the console (staff). The two sites share one sign-in on this machine, so one browser cannot hold both sessions.",
+      "BRE-10 has been run; version 1 of BR-A's notice was delivered to Anjali Verma's account.",
+      "Priya Menon (DPO, dpo@cmp.local) is signed in to the console in Browser B (BRE-01 step 1)."
+    ],
+    "test_data": [
+      "Version 2, 'What has been done, and is being done, to limit them': The laptop was recovered by the taxi company on <date> and has been wiped. Tester01."
+    ],
+    "steps": [
+      {
+        "action": "In Browser A open http://localhost:3001/sign-in. Under 'Sign in with' choose 'Email', type subject@cmp.local in 'Email address' and click 'Send me a code'. Ask the coordinator for the code, type it in 'Six-digit code' and click 'Verify'.",
+        "expected": "A 'Check your messages' box appears after the first click. After 'Verify' you are signed in and the 'My consents' page opens; the sidebar shows 'My consents' and 'My requests'."
+      },
+      {
+        "action": "In the sidebar click 'Updates'.",
+        "expected": "The newest entry is about the breach notice, with the line 'We wrote to tell you about a personal data breach that may affect your data: what happened, what it may mean for you, and what you can do.' and a link naming the 'Notice about personal data breach' with BR-A."
+      },
+      {
+        "action": "Open the entry and follow its link, or open http://localhost:3001/breach-notices.",
+        "expected": "The page 'Personal data breach notices' opens with 'When a breach may affect your personal data, we tell you here and by your registered email or mobile: what happened, what it may mean for you, what we are doing, what you can do, and whom to ask.' One card is headed BR-A, with 'Written to your account <date and time>'."
+      },
+      {
+        "action": "Read the card.",
+        "expected": "Five sections in order - 'What happened', 'What it may mean for you', 'What we have done, and are doing', 'What you can do', 'Questions' - with the words approved in BRE-10. No INC- reference, incident title, other person's name or staff name appears."
+      },
+      {
+        "action": "In Browser B (DPO) open BR-A, tab 'People & notices', click 'Start an updated notice'. Change 'What has been done, and is being done, to limit them (Rule 7(1)(c))' to the test data, click 'Save draft', 'Approve', then 'Send version <n>' (version 2).",
+        "expected": "'Update started' appears and 'Version <n>' (2) 'Draft' opens with version 1's words. After approving, 'Send version <n>' is offered; after sending, the table gains rows for version 2 that move from 'Queued' to 'Delivered'."
+      },
+      {
+        "action": "In Browser A reload 'Personal data breach notices'.",
+        "expected": "Two cards: the top one headed BR-A with '- update <n>' (update 1) and the new words under 'What we have done, and are doing'; the original below it, unchanged."
+      },
+      {
+        "action": "Ask the coordinator to check the outbox for mail to subject@cmp.local.",
+        "expected": "A second notice email to subject@cmp.local carries the updated words; UAT Contact 01 and 02 also have a second email."
+      }
+    ],
+    "pass_criteria": "The notice the office sent is in her account with the five contents in plain words and her own updates feed points to it; an updated notice is a new version shown above the earlier one, which stays.",
+    "area": "Breach and incidents"
+  },
+  {
+    "id": "BRE-12",
+    "title": "A breach ticket to a member of staff: answered in My tasks, sent back, returned and closed",
+    "feature": "Console - Tickets tab (Assign a ticket, Send back, Close the ticket); My tasks - Breach tickets",
+    "role": "DPO; R&D User (Kavya Rao)",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "S3-08",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request.",
+      "The API, the worker and the one beat scheduler are running (the worker sends every email and SMS; the beat checks breach duties every 5 minutes).",
+      "BREACH_TICKET_EMAIL_DOMAINS is left at its default (cmp.local): any @cmp.local address counts as internal, any @example.org address does not.",
+      "Priya Menon (DPO, dpo@cmp.local) is signed in to the console in Browser B (BRE-01 step 1).",
+      "Two more browser windows are available: Browser C (a second profile) for Kavya Rao, and Browser D (a private window) for the temporary ticket holder.",
+      "BRE-06 has been run; BR-A is open.",
+      "A small text file sync-log-01.txt to attach."
+    ],
+    "test_data": [
+      "Who: Kavya Rao (rnd@cmp.local)",
+      "What you are asking them to do: Please confirm whether the contact sheet on LT-UAT-01 was synced to the shared drive, and attach the sync log. Tester01.",
+      "Answer by: 3 days from today",
+      "Kavya's message: Checking with IT now.",
+      "First return: Did only part of it - Sync log attached; could not reach IT about the backup. File: sync-log-01.txt",
+      "Send-back reason: Please confirm the backup as well.",
+      "Second return: Did all of it - Backup checked: no copy of the sheet exists."
+    ],
+    "steps": [
+      {
+        "action": "In the sidebar under 'Your work' click 'Breaches', then click the reference BR-A in the 'Reference' column. Click the 'Tickets' tab.",
+        "expected": "The page for BR-A opens, with an 'Incidents and breaches' back link above the heading. The 'Tickets' tab is shown."
+      },
+      {
+        "action": "Click 'Assign a ticket'.",
+        "expected": "A dialog 'Assign a ticket' opens with 'To somebody on the organisation's own email domains. They see the breach reference, your instruction and the thread - nothing else from the register.' It offers 'A member of staff' (chosen) and 'Someone without a console login', then 'Find them', 'Who' ('Choose a member of staff'), 'What you are asking them to do', 'Answer by' and a greyed-out 'Assign'."
+      },
+      {
+        "action": "Type Kavya in 'Find them', choose Kavya Rao · rnd@cmp.local in 'Who', type the instruction, set 'Answer by' and click 'Assign'.",
+        "expected": "The message 'Ticket assigned' with 'They are emailed that a ticket is waiting; the email names no breach.' appears. The table ('Holder', 'State', 'Answer by', 'Last activity') shows Kavya Rao, 'Waiting on the holder', the date, and an 'Open' button. There is no 'Temporary login' badge."
+      },
+      {
+        "action": "Ask the coordinator to check the outbox for mail to rnd@cmp.local.",
+        "expected": "An email 'A ticket from the <organisation> Privacy Office is waiting for you' with a link to the console. It names no breach: no BR-A, no title, no words of the instruction."
+      },
+      {
+        "action": "In Browser C open http://localhost:3000. Type rnd@cmp.local in 'Email or username' and SeedPassw0rd!2026 in 'Password' and click 'Sign in'. If the 'Verify it is you' page appears, ask the coordinator for the code, type it in '6-digit code' and click 'Verify and continue'.",
+        "expected": "The Dashboard opens, signed in as Kavya Rao (R&D User). A queue on the dashboard lists BR-A with 'Answer the Privacy Office's breach ticket'."
+      },
+      {
+        "action": "In Browser C click 'My tasks' in the sidebar.",
+        "expected": "The page 'My tasks' opens. A section 'Breach tickets · <n> open' (1) holds a card: BR-A, the badges 'Personal data breach' and 'Waiting on the holder', 'From the Privacy Office · <date>', 'Answer by <date>', 'What you are asked' with the instruction, and the buttons 'Respond' and 'Add a colleague'. Nothing else about the breach is shown - no title, no people."
+      },
+      {
+        "action": "Click 'Respond'. Type Kavya's message and click 'Send'.",
+        "expected": "The dialog '<reference> · breach ticket' showed 'Everything said so far, and your response. Tick the box to make a response your return.', the instruction in the thread, 'When you return the ticket: what was done?', the message box, 'Attach a file' and the box 'This is my return'. After 'Send' the message 'Message sent' with 'The Privacy Office can see it.' appears and the dialog closes."
+      },
+      {
+        "action": "Click 'Respond' again. Type the first return's words, tick 'This is my return' without choosing what was done, and click 'Return the ticket'.",
+        "expected": "The button read 'Return the ticket' once the box was ticked. An error says 'Choose what was done before returning the ticket.' Nothing is returned."
+      },
+      {
+        "action": "In 'When you return the ticket: what was done?' choose 'Did only part of it', attach sync-log-01.txt and click 'Return the ticket'.",
+        "expected": "The message 'Ticket returned' appears. The card shows 'Returned' and an 'Open' button in place of 'Respond'."
+      },
+      {
+        "action": "In Browser B reload the 'Tickets' tab and click 'Dashboard'. Ask the coordinator for mail to dpo@cmp.local.",
+        "expected": "Kavya Rao's row reads 'Returned' with a '<n> new' badge. 'Needs attention' lists 'Breach tickets returned'. An email says Kavya Rao answered their ticket on BR-A."
+      },
+      {
+        "action": "Open BR-A's 'Tickets' tab, click 'Open' on Kavya's row, then 'Send back'. Type the reason in 'What is missing or wrong? The holder reads this.' and click 'Send back'.",
+        "expected": "The dialog 'Ticket for <name>' (Kavya Rao) showed the thread - her message, her return marked 'Returned' with the file and a 'download' link - and the buttons 'Send back', 'Close the ticket' and 'Withdraw'. After sending back, 'Sent back' appears, the state is 'Waiting on the holder' and the thread ends with 'Sent back by the Privacy Office' and the reason."
+      },
+      {
+        "action": "Ask the coordinator for mail to rnd@cmp.local. In Browser C reload 'My tasks', click 'Respond', and return the ticket with 'Did all of it' and the second return's words.",
+        "expected": "A new 'is waiting for you' email to rnd@cmp.local names no breach. The card was 'Waiting on the holder' with the reason in the thread; after returning, 'Ticket returned' appears."
+      },
+      {
+        "action": "In Browser B open Kavya's ticket and click 'Close the ticket'.",
+        "expected": "No reason is asked. 'Ticket closed' appears; the state is 'Closed'; the message box is replaced by 'This ticket is not open; reopen it to write.' and 'Reopen' is offered."
+      },
+      {
+        "action": "In Browser C reload 'My tasks' and click 'Open' on the card.",
+        "expected": "The section reads 'Breach tickets · <n> open' (0); the card shows 'Closed'. The dialog says 'Everything said is kept. Only the Privacy Office closes a ticket.' and, in place of the message box, 'This ticket is closed. Nothing further is needed from you.'"
+      }
+    ],
+    "pass_criteria": "A member of staff is asked by a ticket that names only the breach reference; they write and return it with an outcome in 'My tasks'; the DPO sends it back with a reason and closes it; emails never name the breach.",
+    "area": "Breach and incidents"
+  },
+  {
+    "id": "BRE-13",
+    "title": "Breach tickets are refused before recording, to outside addresses, without a name, twice to one person and with a past date",
+    "feature": "Console - Tickets tab - Assign a ticket - refusals",
+    "role": "DPO (Priya Menon) on console",
+    "priority": "Medium",
+    "type": "Negative",
+    "ref": "S3-08",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request.",
+      "BREACH_TICKET_EMAIL_DOMAINS is left at its default (cmp.local): any @cmp.local address counts as internal, any @example.org address does not.",
+      "Priya Menon (DPO, dpo@cmp.local) is signed in to the console in Browser B (BRE-01 step 1).",
+      "BRE-12 has been run: Kavya Rao holds a ticket on BR-A. INC-B is still being validated."
+    ],
+    "test_data": [
+      "Outside address: tester01@example.org, name UAT Outsider 01",
+      "Internal address with no account, no name: tester01.nobody@cmp.local",
+      "Instruction (each time): Please check the access log. Tester01.",
+      "Past date: yesterday; member of staff: Meera Iyer (rco@cmp.local)"
+    ],
+    "steps": [
+      {
+        "action": "In the sidebar under 'Your work' click 'Breaches', then click the reference INC-B in the 'Reference' column. Click the 'Tickets' tab.",
+        "expected": "The page for INC-B opens, with an 'Incidents and breaches' back link above the heading. The 'Tickets' tab is shown."
+      },
+      {
+        "action": "Read the tab.",
+        "expected": "A box 'Tickets wait for the breach to be recorded' reads 'A ticket reaches a person on the breach's account, so it is assigned once validation records this as a personal data breach.' There is no 'Assign a ticket' button."
+      },
+      {
+        "action": "Open BR-A's 'Tickets' tab, click 'Assign a ticket' and choose 'Someone without a console login'.",
+        "expected": "A note explains the login for this breach only, then 'Their name' (hint 'Needed when nobody has an account at this address'), 'Their work email' (hint 'On one of the organisation's own domains') and 'Their mobile' ('Optional'). 'Assign' is greyed out until the email and the instruction are filled."
+      },
+      {
+        "action": "Enter the outside address and name and the instruction, and click 'Assign'.",
+        "expected": "The message 'Not assigned' with 'Breach tickets go to internal staff only: this email address is not on one of the organisation's own domains' appears. The message does not repeat the address."
+      },
+      {
+        "action": "Clear 'Their name', change the email to tester01.nobody@cmp.local and click 'Assign'.",
+        "expected": "The message 'Not assigned' with 'Give their name: nobody has an account at this address' appears."
+      },
+      {
+        "action": "Choose 'A member of staff', pick Kavya Rao in 'Who' and click 'Assign'.",
+        "expected": "The message 'Not assigned' with 'This person already holds a ticket on this breach' appears."
+      },
+      {
+        "action": "Choose 'Someone without a console login', type rnd@cmp.local in 'Their work email' and click 'Assign'.",
+        "expected": "The same 'This person already holds a ticket on this breach' - an address with a console login is treated as that person."
+      },
+      {
+        "action": "Choose 'A member of staff', pick Meera Iyer, set 'Answer by' to yesterday and click 'Assign'.",
+        "expected": "The message 'Not assigned' with 'The answer-by date has already passed' appears. Click 'Cancel'."
+      },
+      {
+        "action": "Look at the table and ask the coordinator to check the outbox.",
+        "expected": "Only Kavya Rao's ticket is listed. No email went to tester01@example.org, tester01.nobody@cmp.local or rco@cmp.local."
+      }
+    ],
+    "pass_criteria": "No ticket can be assigned before the breach is recorded, to an address outside the organisation's domains, to a new address without a name, a second time to the same person, or with an answer-by date in the past; nothing is sent.",
+    "area": "Breach and incidents"
+  },
+  {
+    "id": "BRE-14",
+    "title": "An internal person with no console login is given a temporary login, answers in My tasks and adds a colleague",
+    "feature": "Console - Assign a ticket to 'Someone without a console login'; temporary login; Set your password; My tasks; Add a colleague",
+    "role": "DPO; temporary ticket holder",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "S3-09",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request.",
+      "The API, the worker and the one beat scheduler are running (the worker sends every email and SMS; the beat checks breach duties every 5 minutes).",
+      "BREACH_TICKET_EMAIL_DOMAINS is left at its default (cmp.local): any @cmp.local address counts as internal, any @example.org address does not.",
+      "Priya Menon (DPO, dpo@cmp.local) is signed in to the console in Browser B (BRE-01 step 1).",
+      "Two more browser windows are available: Browser C (a second profile) for Kavya Rao, and Browser D (a private window) for the temporary ticket holder.",
+      "BRE-12 has been run; BR-A is open.",
+      "tester01.holder@cmp.local and tester01.colleague@cmp.local have no account on the platform (check 'Users' as the Administrator if unsure)."
+    ],
+    "test_data": [
+      "Their name: UAT Holder 01; Their work email: tester01.holder@cmp.local; Their mobile: +91 90000 01201",
+      "What you are asking them to do: Please check the taxi company's lost-property log and tell us what you find. Tester01.",
+      "New password: UatHolder01!Pass",
+      "Colleague: UAT Colleague 01, tester01.colleague@cmp.local; note: Please confirm the laptop's encryption status. Tester01.",
+      "Holder's return: Did all of it - The taxi company has no laptop in its lost-property log."
+    ],
+    "steps": [
+      {
+        "action": "In Browser B open BR-A's 'Tickets' tab, click 'Assign a ticket' and choose 'Someone without a console login'.",
+        "expected": "The note reads 'They are given a login for this breach only: they set a password from the email, sign in with a code like all staff, and see only their ticket. It ends when you withdraw their ticket or the breach closes. If the address already has a console login, the ticket goes to it as usual.'"
+      },
+      {
+        "action": "Enter the holder's name, email, mobile and the instruction, and click 'Assign'.",
+        "expected": "The message 'Ticket assigned' with 'They are emailed how to sign in, or that a ticket is waiting if they already can; the email names no breach.' appears. A row UAT Holder 01 shows the badge 'Temporary login · not yet signed in' and 'Waiting on the holder'."
+      },
+      {
+        "action": "Ask the coordinator for the email to tester01.holder@cmp.local.",
+        "expected": "An email 'The <organisation> Privacy Office has asked for your help' gives temporary access to the console to answer a ticket, says that when the matter is closed they can still read it but no longer answer it, and carries a set-password link and a code. It names no breach."
+      },
+      {
+        "action": "In Browser D open the link from the email.",
+        "expected": "The page 'Set your password' opens with 'Enter the code sent to <email> and choose a password...' (tester01.holder@cmp.local), and the fields 'Code', 'New password' and 'Confirm new password' with a 'Set the new password' button."
+      },
+      {
+        "action": "Type the code and UatHolder01!Pass twice, and click 'Set the new password'.",
+        "expected": "A green box 'Password changed' reads 'Every other session has been signed out. Taking you to sign in…' and the sign-in page opens."
+      },
+      {
+        "action": "Sign in with tester01.holder@cmp.local and UatHolder01!Pass. On 'Verify it is you' type the code the coordinator relays and click 'Verify and continue'.",
+        "expected": "The page 'My tasks' opens (not a dashboard). The sidebar under 'Your work' shows only 'My tasks'."
+      },
+      {
+        "action": "Read the page.",
+        "expected": "'Breach tickets · <n> open' (1) with one card: BR-A, 'Personal data breach', 'Waiting on the holder', 'What you are asked' with the instruction, 'Respond' and 'Add a colleague'. Nothing else about the breach or any other work is shown."
+      },
+      {
+        "action": "In the address bar type http://localhost:3000/breaches and press Enter.",
+        "expected": "The box 'Not part of your account' with 'This section belongs to a different role, so there is nothing here for you.' is shown - no register."
+      },
+      {
+        "action": "Go back to 'My tasks'. In Browser B reload BR-A's 'Tickets' tab.",
+        "expected": "UAT Holder 01's badge now reads 'Temporary login'."
+      },
+      {
+        "action": "In Browser D click 'Add a colleague', fill in the colleague from the test data and click 'Add'.",
+        "expected": "The dialog 'Add a colleague' asked for 'Their name', 'Their work email', 'Their mobile' and 'What you are asking them to do'. The message 'Colleague added' with 'They have their own ticket on this, opening with your note, and are emailed about it. The Privacy Office can see that you added them.' appears."
+      },
+      {
+        "action": "In Browser B reload the 'Tickets' tab and ask the coordinator for mail to tester01.colleague@cmp.local.",
+        "expected": "A row UAT Colleague 01, indented under UAT Holder 01, with 'added by <name>' (UAT Holder 01), 'Temporary login · not yet signed in' and 'Waiting on the holder'. The colleague has the same 'asked for your help' email, naming no breach."
+      },
+      {
+        "action": "In Browser D click 'Respond', choose 'Did all of it', type the return, tick 'This is my return' and click 'Return the ticket'.",
+        "expected": "The message 'Ticket returned' appears; the card reads 'Returned'. In Browser B the holder's row reads 'Returned'."
+      }
+    ],
+    "pass_criteria": "An internal address with no console login gets a breach-only login by email, sets a password, signs in with a code and sees only its ticket in 'My tasks'; the register stays closed to it; it can add a colleague who gets their own ticket; the office sees whose login it is and whether it is in use.",
+    "area": "Breach and incidents"
+  },
+  {
+    "id": "BRE-15",
+    "title": "Withdrawing a temporary holder's ticket leaves a read-only login; reopening it lets them answer again",
+    "feature": "Console - ticket Withdraw / Reopen / Close the ticket; temporary login read only",
+    "role": "DPO; temporary ticket holder",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "S3-09",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request.",
+      "The API, the worker and the one beat scheduler are running (the worker sends every email and SMS; the beat checks breach duties every 5 minutes).",
+      "Priya Menon (DPO, dpo@cmp.local) is signed in to the console in Browser B (BRE-01 step 1).",
+      "BRE-14 has been run; UAT Holder 01 is signed in to the console in Browser D and their ticket is 'Returned'."
+    ],
+    "test_data": [
+      "Withdraw reason: Found by the taxi company; no further check needed. Tester01.",
+      "Reopen reason: Please also confirm the date the laptop was handed in. Tester01.",
+      "Holder's second return: Did all of it - Handed in on <date>.",
+      "Colleague withdraw reason: Encryption status confirmed by IT directly. Tester01."
+    ],
+    "steps": [
+      {
+        "action": "In Browser B on BR-A's 'Tickets' tab click 'Open' on UAT Holder 01's row.",
+        "expected": "The dialog 'Ticket for <name>' (UAT Holder 01) shows the badges 'Returned' and 'Temporary login', the thread, and 'Send back', 'Close the ticket' and 'Withdraw'."
+      },
+      {
+        "action": "Click 'Withdraw', type the reason in 'Why is it withdrawn? The holder reads this.' and click 'Withdraw'.",
+        "expected": "'Ticket withdrawn' appears. The state is 'Withdrawn', the badge 'Temporary login · read only', the thread ends with 'Withdrawn by the Privacy Office' and the reason, and only 'Reopen' is offered."
+      },
+      {
+        "action": "In Browser D reload 'My tasks'.",
+        "expected": "They are still signed in. The section reads 'Breach tickets · <n> open' (0); the card shows 'Withdrawn' with only an 'Open' button - no 'Respond', no 'Add a colleague'."
+      },
+      {
+        "action": "Click 'Open' on the card.",
+        "expected": "The thread shows the withdrawal and its reason. In place of the message box: 'This ticket is closed. Nothing further is needed from you.'"
+      },
+      {
+        "action": "In Browser D sign out and sign in again with tester01.holder@cmp.local, UatHolder01!Pass and a relayed code.",
+        "expected": "Sign-in works: the login stays. 'My tasks' opens with the withdrawn ticket, read only."
+      },
+      {
+        "action": "In Browser B open the ticket again, click 'Reopen', type the reason in 'Why is it reopened? The holder reads this.' and click 'Reopen'.",
+        "expected": "'Ticket reopened' appears. The state is 'Waiting on the holder' and the badge 'Temporary login'."
+      },
+      {
+        "action": "Ask the coordinator for mail to tester01.holder@cmp.local.",
+        "expected": "A new email tells them a ticket is waiting; it names no breach."
+      },
+      {
+        "action": "In Browser D reload 'My tasks', click 'Respond' and return the ticket with the second return.",
+        "expected": "The card was 'Waiting on the holder' with 'Respond' and 'Add a colleague' back, and the reopen reason in the thread. 'Ticket returned' appears."
+      },
+      {
+        "action": "In Browser B open the ticket and click 'Close the ticket'.",
+        "expected": "'Ticket closed' appears; the state is 'Closed'."
+      },
+      {
+        "action": "Open UAT Colleague 01's ticket, click 'Withdraw', type the colleague reason and click 'Withdraw'.",
+        "expected": "'Ticket withdrawn' appears; the colleague's row reads 'Withdrawn' with 'Temporary login · read only'."
+      },
+      {
+        "action": "Look at the 'Tickets' tab and the 'Close' card.",
+        "expected": "No ticket is 'Waiting on the holder' or 'Returned'. The 'Close' card no longer lists an open breach ticket."
+      }
+    ],
+    "pass_criteria": "Withdrawing a temporary holder's ticket ends their part: the login stays and reads the ticket but cannot write; reopening restores their part and emails them; only the DPO closes the ticket.",
+    "area": "Breach and incidents"
+  },
+  {
+    "id": "BRE-16",
+    "title": "The breach closes when nothing is outstanding, is read only while closed, and reopens with a reason",
+    "feature": "Console - Close the breach / Reopen the breach; Activity - History; read-only tickets after close",
+    "role": "DPO; temporary ticket holder; R&D User",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "Priya Menon (DPO, dpo@cmp.local) is signed in to the console in Browser B (BRE-01 step 1).",
+      "BRE-01 to BRE-15 have been run: on BR-A every duty is 'Done', Kavya's and UAT Holder 01's tickets are 'Closed' and UAT Colleague 01's is 'Withdrawn'.",
+      "UAT Holder 01 is signed in in Browser D and Kavya Rao in Browser C."
+    ],
+    "test_data": [
+      "Reopen reason: The taxi company found a second device from the same team. Tester01."
+    ],
+    "steps": [
+      {
+        "action": "In the sidebar under 'Your work' click 'Breaches', then click the reference BR-A in the 'Reference' column.",
+        "expected": "The page for BR-A opens, with an 'Incidents and breaches' back link above the heading."
+      },
+      {
+        "action": "Read the 'Close' card.",
+        "expected": "There is no 'Not yet' box and 'Close the breach' is available. (If a 'Not yet' box is shown, write down its lines - they name what is still outstanding - and clear them first.)"
+      },
+      {
+        "action": "Click 'Close the breach'.",
+        "expected": "'Breach closed' appears. The badge reads 'Closed'. The card becomes 'Reopen' with 'Why it is being reopened' and a greyed-out 'Reopen the breach'."
+      },
+      {
+        "action": "Go through the tabs.",
+        "expected": "Nothing can be recorded: 'Duties' has no 'Record...' buttons; 'Validation' has no form; 'Assessment' has no 'Revise the assessment'; 'People & notices' has no 'Revise the list', 'Add people from a list' or 'Start an updated notice'; 'Tickets' has no 'Assign a ticket'; 'Attachments' has no 'Attach a file' and says 'The breach is closed: reopen it to attach more.'"
+      },
+      {
+        "action": "On the 'Tickets' tab read the badges.",
+        "expected": "UAT Holder 01's row now reads 'Temporary login · read only' - closing the breach ended their part. Kavya Rao's row has no badge."
+      },
+      {
+        "action": "In Browser D reload 'My tasks' and open the ticket. In Browser C (Kavya) do the same.",
+        "expected": "Both still see the ticket, 'Closed', with only 'Open' and 'This ticket is closed. Nothing further is needed from you.' The holder is still signed in; Kavya's own menu is unchanged."
+      },
+      {
+        "action": "In Browser B click 'Breaches' and set 'Show' to 'Closed'; then open 'Dashboard'.",
+        "expected": "BR-A is listed as 'Closed'. The dashboard's 'Open breaches' card no longer lists BR-A."
+      },
+      {
+        "action": "Open BR-A. In 'Why it is being reopened' type the reason and click 'Reopen the breach'.",
+        "expected": "'Reopen the breach' was greyed out until the reason was typed. 'Breach reopened' appears; the badge reads 'Open' and the 'Close' card is back."
+      },
+      {
+        "action": "Look at the 'Tickets' tab.",
+        "expected": "The tickets keep their states ('Closed', 'Withdrawn') - reopening the breach reopens nobody's ticket - and UAT Holder 01 is still 'Temporary login · read only'."
+      },
+      {
+        "action": "Click the 'Activity' tab.",
+        "expected": "'History', newest first: 'Closed' → 'Open' with the reopen reason in quotation marks, 'Open' → 'Closed', and 'Logged as' 'Open', each with Priya Menon and the time."
+      },
+      {
+        "action": "Click 'Close the breach' again.",
+        "expected": "'Breach closed' appears; BR-A is closed again."
+      }
+    ],
+    "pass_criteria": "The breach closes only when validated, every duty is done and no ticket is open; while closed nothing can be recorded and ticket holders keep a read-only view; reopening needs a reason, is kept in the history and reopens no ticket.",
+    "area": "Breach and incidents"
+  },
+  {
+    "id": "BRE-17",
+    "title": "The administrator ends a temporary login with 'End temporary access'",
+    "feature": "Console - Users - End temporary access",
+    "role": "Administrator; temporary ticket holder",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "S3-09",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request.",
+      "BRE-16 has been run; UAT Holder 01 (tester01.holder@cmp.local) still has a read-only login and is signed in in Browser D; UAT Colleague 01 never set a password."
+    ],
+    "test_data": [
+      "Account: tester01.holder@cmp.local (UAT Holder 01)",
+      "Account: tester01.colleague@cmp.local (UAT Colleague 01)"
+    ],
+    "steps": [
+      {
+        "action": "In Browser C open http://localhost:3000. Type admin@cmp.local in 'Email or username' and SeedPassw0rd!2026 in 'Password' and click 'Sign in'. If the 'Verify it is you' page appears, ask the coordinator for the code, type it in '6-digit code' and click 'Verify and continue'.",
+        "expected": "The Dashboard opens, signed in as System Admin (Administrator)."
+      },
+      {
+        "action": "Click 'Users'. Type tester01.holder@cmp.local in the search box and press Enter.",
+        "expected": "One row: UAT Holder 01 with the role badge 'Temporary ticket holder' and the status 'Active'. Among its buttons is 'End temporary access'; hovering it shows 'Ends their console login, including reading their tickets. An account made for a ticket is switched off; one that was a data principal's goes back to being one.'"
+      },
+      {
+        "action": "Click 'End temporary access'.",
+        "expected": "The message 'Temporary access ended' appears with the server's words saying the account was deactivated and how many sessions were terminated. The status reads 'Deactivated' and a 'Reactivate' button replaces 'End temporary access'."
+      },
+      {
+        "action": "In Browser D reload the page.",
+        "expected": "The holder is signed out and sees the sign-in page."
+      },
+      {
+        "action": "Sign in again with tester01.holder@cmp.local and UatHolder01!Pass.",
+        "expected": "Sign-in is refused; no code is sent and 'My tasks' does not open."
+      },
+      {
+        "action": "In Browser C search for tester01.colleague@cmp.local and click 'End temporary access' on its row.",
+        "expected": "Before: the role 'Temporary ticket holder' and the status 'Pending'. After: 'Temporary access ended' and the status 'Deactivated'."
+      },
+      {
+        "action": "Sign in as the DPO in Browser B (if signed out) and open BR-A's 'Tickets' tab.",
+        "expected": "Both rows are still listed with their threads and 'Temporary login · read only'; the evidence stays."
+      }
+    ],
+    "pass_criteria": "Only the administrator's 'End temporary access' removes a temporary login: the account made for the ticket is switched off, every session ends at once, and the tickets and their threads stay on the breach.",
+    "area": "Breach and incidents"
+  },
+  {
+    "id": "BRE-18",
+    "title": "No other role can see the register; the administrator's trail shows references only; the DPO's trail records every step",
+    "feature": "Console - Breaches access; Audit trail (Incidents and breaches, Breach tickets)",
+    "role": "R&D User; DCO; RCO; Administrator; DPO",
+    "priority": "High",
+    "type": "Negative",
+    "ref": "Core",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request.",
+      "BRE-01 to BRE-17 have been run.",
+      "The DPO has copied BR-A's page address from Browser B (http://localhost:3000/breaches/<uuid>)."
+    ],
+    "test_data": [
+      "Accounts: rnd@cmp.local, dco@cmp.local, rco@cmp.local, admin@cmp.local, dpo@cmp.local",
+      "BR-A page address"
+    ],
+    "steps": [
+      {
+        "action": "In Browser C open http://localhost:3000. Type rnd@cmp.local in 'Email or username' and SeedPassw0rd!2026 in 'Password' and click 'Sign in'. If the 'Verify it is you' page appears, ask the coordinator for the code, type it in '6-digit code' and click 'Verify and continue'.",
+        "expected": "The Dashboard opens, signed in as Kavya Rao (R&D User). The sidebar has no 'Breaches'; the dashboard has no 'Open breaches' card and no 'Log an incident' button."
+      },
+      {
+        "action": "In the address bar type http://localhost:3000/breaches, then paste BR-A's page address.",
+        "expected": "Both show only the box 'Not part of your account' with 'This section belongs to a different role, so there is nothing here for you.' and 'Back to your dashboard'. No reference, title or duty of any incident is shown."
+      },
+      {
+        "action": "Sign out. Repeat the two checks signed in as dco@cmp.local (Arun Shetty), then as rco@cmp.local (Meera Iyer).",
+        "expected": "For each: no 'Breaches' in the sidebar, and both addresses show 'Not part of your account'."
+      },
+      {
+        "action": "Sign out and sign in as admin@cmp.local. Look at the sidebar, then type http://localhost:3000/breaches.",
+        "expected": "There is no 'Breaches' item; the address shows 'Not part of your account'."
+      },
+      {
+        "action": "Click 'Audit trail'. In 'Area' choose 'Incidents and breaches'.",
+        "expected": "Rows for the breach events appear (logged, validated, recorded as a breach, assessed, duties completed, people listed, notice drafted, approved and sent, closed, reopened). The 'Record' column names each by reference only - 'Incident' with an INC- reference, or 'Breach' with BR-A and its INC- reference in brackets. No incident title (such as UAT Incident 01) or reasoning appears."
+      },
+      {
+        "action": "Open one entry, then choose 'Breach tickets' in 'Area'.",
+        "expected": "The entry's dialog carries the reference and what kind of thing happened, never the office's words. The ticket rows name each record as 'Breach ticket on' with BR-A."
+      },
+      {
+        "action": "Sign out and sign in as dpo@cmp.local. Open BR-A and click 'Audit trail' in its header.",
+        "expected": "The trail opens filtered to BR-A. It lists, among others, the incident being logged, each validation, its recording as a breach, each assessment, the CERT-In marking or duty events, each duty completed or extended, each list revision and upload, the notice drafted, edited, approved and sent, each attachment added and each download, and each close and reopening - each with Priya Menon and the time."
+      },
+      {
+        "action": "In 'Area' choose 'Breach tickets' (clear the BR-A chip if it hides them).",
+        "expected": "Rows for the tickets assigned, messages, returns, the send-back, closes, withdrawals, the reopening, the colleague added and the file downloaded are listed."
+      }
+    ],
+    "pass_criteria": "Every role but the DPO is told the register is not part of their account, even with a direct link; the administrator's trail names breaches by reference only; the DPO's trail holds an entry for every step taken on the breach and its tickets.",
+    "area": "Breach and incidents"
+  }
+]

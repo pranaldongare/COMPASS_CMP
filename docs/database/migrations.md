@@ -175,12 +175,14 @@ nothing; `--table` limits it to one table.
 Three things about it belong here rather than only in the runbook:
 
 - It refuses to run with `DKMS_ENABLED=false`.
-- For the four append-only tables it writes to (`consent_artefact`,
-  `rights_ticket_message`, `project_status_history`,
-  `person_type_history`), it disables the append-only trigger for the length
-  of that column's transaction and re-enables it before the commit
-  (reseal.py:85-98). That needs the table owner: the application role cannot
-  `ALTER TABLE`, and 0003 revoked its `UPDATE` on those tables. This bypass
+- For a table whose trigger refuses an UPDATE - the append-only evidence
+  tables, `legal_hold`'s fixed reason, and the breach register and its
+  tickets, listed in `APPEND_ONLY` in `scripts/reseal.py` - it disables that
+  trigger for the length of the column's transaction and re-enables it before
+  the commit. That needs the table owner: the application role cannot
+  `ALTER TABLE`, and 0003 revoked its `UPDATE` on the evidence tables. The
+  breach tables were sealed from their first row, so they are listed for
+  completeness rather than for rows. This bypass
   is under review; see the amendment to
   [ADR 0002](../decisions/0002-evidence-enforced-in-the-database.md).
 - It works one transaction per column, so a table being resealed is locked
@@ -191,7 +193,7 @@ How to run it is in the [runbook](../operations/runbook.md).
 ## Adding one
 
 ```bash
-alembic revision -m "what it does"      # inside backend/api's .venv
+alembic revision --rev-id 0050 -m "what it does"   # inside backend/api's .venv; the next number
 ```
 
 Then write the SQL by hand. Both directions. Test the downgrade before you commit

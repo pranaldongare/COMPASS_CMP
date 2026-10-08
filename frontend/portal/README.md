@@ -24,7 +24,7 @@ The API and the key service must be running (see the backend README, or
 [docs/operations/local-development.md](../../docs/operations/local-development.md)
 for the whole stack). Node 22. The backend's
 `PUBLIC_BASE_URL` should point here, because the links it puts in emails - a
-nominee's acceptance link, for one - land on this portal.
+nominee's acceptance link, an outside holder's ticket link - land on this portal.
 
 **`DKMS_URL` is required.** The API serves personal fields sealed (`SE::…`);
 the client sends every sealed value in a response to `/dkms/decrypt` on this
@@ -51,7 +51,8 @@ restart after changing it. Every variable is in
 ```
 src/app/
   dkms/decrypt/         route handler: opens sealed values through the key
-                        service, for a request carrying a session cookie
+                        service, for a request carrying a session cookie or an
+                        outside holder's ticket cookie (cmp_ticket)
   c/[token]/            the public consent flow - the one screen a data subject must use
   sign-up/              data-principal self-registration (mobile, optional email, dual code)
   sign-in/              one-time code to the registered mobile or email. No password.
@@ -67,12 +68,18 @@ src/app/
   (app)/breach-notices/ notices about a breach that may affect her data (Rule 7)
   (app)/account/        her profile and sessions
   (app)/notifications/  her own events ("Updates" in the sidebar)
+  ticket/[token]/       an outside holder's rights ticket: the link, a code to the
+                        ticket's address, then the ticket and the answer; public, no-store
   help/                 the manual, open without signing in
 src/features/
   public-consent/       the consent flow's steps
   my-consents/          /me/consents*, /me/disclosures
   rights/               the public and /me halves of the rights API
   auth/                 registration and one-time codes - nothing with a password
+  holder-ticket/        an outside holder's ticket: the link, the code, the answer
+  breach-notices/       the breach notices sent to her
+  help/                 the manual's content
+  dev/                  development-only helpers (the code popup)
   account/ notifications/ meta/
 ```
 
@@ -102,8 +109,8 @@ npm run e2e                                 # end-to-end
 E2E_CONSENT_TOKEN=<token> npm run e2e       # includes the consent journey
 ```
 
-The end-to-end suite (specs: consent-flow, rights, sealed-never-shown,
-signup, staff-as-principal, subject) signs in once as the seeded data
+The end-to-end suite (specs: breach-notices, consent-flow, name, rights,
+sealed-never-shown, signup, staff-as-principal, subject) signs in once as the seeded data
 principal (mobile `+919000000001`) with a code read from
 `backend/api/var/outbox.log`, and drives sign-up with two codes, the consent
 link, the public rights pages, nomination acceptance, her own pages, a

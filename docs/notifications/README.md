@@ -54,13 +54,15 @@ else was told.
 | Every DPO / every administrator | Every **active** account holding the role |
 | A project's owner | The R&D User who created it |
 | A project's collector | The project's Data Collection Owner, as its site and source make it |
-| A rights ticket's holder | The holder's responder at the processor |
+| A rights ticket's holder | The responder named on the ticket: a staff account's email, a temporary login's, or - outside the organisation - the address on the ticket, sent the link only |
 | A breach's people | Each person listed: an account's email, or a contact from an uploaded list |
 
 Addresses are sealed at rest and stay sealed in the task queue; only
 `deliver()` opens them, at the moment of sending.
 
 ### 3. CC: the Privacy Office's choice, within a fixed rule
+
+The decision and its reasons: [ADR 0029](../decisions/0029-copies-and-files-never-on-a-code-a-link-or-her-own-record.md).
 
 **No email is copied by default.** The Privacy Office may copy an email to up
 to **five** addresses - a team mailbox that follows the work up, an approvals
@@ -139,7 +141,7 @@ is recorded, because the principals' duty counts them.
 | [Users and accounts](users.md) | 12 | The person signing in or up; staff being invited, reset, changed, ended, covered; whoever the office resends a note to |
 | [Projects](projects.md) | 5 | Every DPO (submitted), the owner (approved, sent back, closed), the collector (assigned) |
 | [Consent](consent.md) | 2 | The data principal |
-| [Rights requests](rights.md) | 14 | The requester, the nominee, the holder's responder, every DPO, every administrator |
+| [Rights requests](rights.md) | 16 | The requester, the nominee, the holder's responder (inside the organisation in full; outside, the link and the code), every DPO, every administrator |
 | [Breaches](breach.md) | 6 | Each person a breach touched, the ticket holder, every DPO |
 
 ## Adding an email

@@ -19,16 +19,16 @@ you need. **Every document is in this tree.** The one exception is a
 
 - [Domain model](architecture/domain-model.md): the tables, the state machines, and the invariants the database holds
 - [Roles and access](domain/roles-and-access.md): the eight roles and what each may reach
-- Behaviour, by obligation: [consent lifecycle](domain/consent-lifecycle.md), [collection and routing](domain/collection-and-routing.md), [rights requests](domain/rights-requests.md), [personal data breaches](domain/breaches.md), [messages the platform sends](domain/messages.md), [reading the audit trail](domain/audit-trail.md)
+- Behaviour, by obligation: [consent lifecycle](domain/consent-lifecycle.md), [collection and routing](domain/collection-and-routing.md), [rights requests](domain/rights-requests.md) (and [the ticket redesign](domain/rights-tickets-redesign.md) of 2026-10-08: the guided path, the review step, holders outside the console), [personal data breaches](domain/breaches.md), [messages the platform sends](domain/messages.md), [reading the audit trail](domain/audit-trail.md)
 - [Personal data](domain/personal-data.md): every table, store and endpoint that holds or moves something about a person, and what protects it
-- [PII fields and endpoints](domain/pii-fields-and-endpoints.md): the short form — the 98 personal columns by table, and every endpoint that carries one, by module
+- [PII fields and endpoints](domain/pii-fields-and-endpoints.md): the short form — the 108 personal columns by table, and every endpoint that carries one, by module
 - [Notification management strategy](notifications/README.md): every module's emails end to end - when, to, CC, attachment, subject and body - in one file per module (users, projects, consent, rights, breach), the rules for copies and files, and the plan of 2026-10-08
 - [Email](email/README.md): how every email goes out - the one path, the SMTP settings (STARTTLS, SSL or a plain relay), which failures are retried, testing a server with `scripts/send_test_email.py` - and [every message the platform sends](email/messages.md), generated from the code with the task and line that sends each
 - [DKMS — encryption of personal data](dkms/README.md): the documents on the key service — the sealed fields table by table, the backend, the frontend layer that decrypts, and the implementation plan — and [adding a personal field](dkms/adding-a-personal-field.md), the steps a new sealed column takes
 - [API](architecture/api.md): route families, the error contract, pagination, identifiers
 - [Frontend](frontend/README.md): what is written about the two portals beyond how to run them. Chiefly [best practices](frontend/best-practices.md): the React and Next.js standard — each rule, how the portals meet it and where, what is deliberately different, and the decision matrix a pull request answers
 - [Testing](operations/testing.md): what each suite proves and how to run it without fighting the rate limiter
-- [User acceptance testing](uat/): the first cycle's runbook and 130 step-by-step test cases (Word), and the workbook testers record results and defects in (Excel), for the build at `ce91d31` (pack v1.5)
+- [User acceptance testing](uat/): the cycle's runbook and 156 step-by-step test cases in seven areas, breach included (Word), and the workbook testers record results and defects in (Excel), for the build at `833b58f` (pack v1.6, 8 October 2026)
 - [Contributing](../CONTRIBUTING.md): the checks a change must pass and how commits are written
 
 **Running it somewhere**
@@ -38,10 +38,10 @@ you need. **Every document is in this tree.** The one exception is a
 
 **Understanding why**
 
-- [Decisions](decisions/README.md): the architecture decision records, one per choice that would otherwise be re-litigated. The latest: [0016](decisions/0016-personal-data-sealed-by-a-separate-key-service.md), personal data sealed by a separate key service; [0017](decisions/0017-lookup-by-keyed-hash-and-name-ngrams.md), lookup by keyed hash and name n-grams; [0018](decisions/0018-pip-and-a-virtualenv-no-containers.md), pip and a virtualenv, no containers; [0019](decisions/0019-erasure-reaches-every-store-but-the-record.md), erasure reaches every store that holds an item, and never the record of what happened; [0020](decisions/0020-cross-border-transfer-checked-at-export.md), a transfer is checked at export, and an unknown place is refused; [0021](decisions/0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md), a breach is recorded and its duties tracked, and the platform never submits to a regulator; [0022](decisions/0022-an-incident-first-and-a-breach-on-a-yes.md), an incident is logged first, a breach is recorded on a yes, and the organisation's board is told within 30 minutes; [0023](decisions/0023-breach-tickets-and-breach-only-logins.md), breach tickets reach internal staff only, through breach-only logins that end with the breach
-- [Reviews](reviews/2026-09-10-implementation-review.md): what an external review found, what was done about each finding, and why the suites had not caught it
+- [Decisions](decisions/README.md): the architecture decision records, one per choice that would otherwise be re-litigated. The latest: [0016](decisions/0016-personal-data-sealed-by-a-separate-key-service.md), personal data sealed by a separate key service; [0017](decisions/0017-lookup-by-keyed-hash-and-name-ngrams.md), lookup by keyed hash and name n-grams; [0018](decisions/0018-pip-and-a-virtualenv-no-containers.md), pip and a virtualenv, no containers; [0019](decisions/0019-erasure-reaches-every-store-but-the-record.md), erasure reaches every store that holds an item, and never the record of what happened; [0020](decisions/0020-cross-border-transfer-checked-at-export.md), a transfer is checked at export, and an unknown place is refused; [0021](decisions/0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md), a breach is recorded and its duties tracked, and the platform never submits to a regulator; [0022](decisions/0022-an-incident-first-and-a-breach-on-a-yes.md), an incident is logged first, a breach is recorded on a yes, and the organisation's board is told within 30 minutes; [0023](decisions/0023-breach-tickets-and-breach-only-logins.md), breach tickets reach internal staff only, through temporary logins that end with the breach; [0024](decisions/0024-a-rights-tickets-holder-is-reached-three-ways.md), a rights ticket's holder is reached three ways, and an outside holder answers by a link and a code; [0025](decisions/0025-a-holders-answer-counts-once-accepted-and-the-server-owns-the-moves.md), an answer counts once the Privacy Office accepts it; [0026](decisions/0026-a-rights-request-is-access-erasure-or-a-grievance-about-everything.md), a rights request is access, erasure or a grievance, about everything; [0027](decisions/0027-a-breach-can-reach-people-with-no-account.md), a breach can reach people with no account; [0028](decisions/0028-a-notice-template-is-copied-never-served.md), a notice template is copied, never served; [0029](decisions/0029-copies-and-files-never-on-a-code-a-link-or-her-own-record.md), copies and files never on a code, a link or her own record
+- [Reviews, and what became of them](reviews/README.md): every review, the status of each finding, the parked backlog items the documents cite, and the decisions still open with their owners. The reviews themselves: the [implementation review](reviews/2026-09-10-implementation-review.md) of 2026-09-10 and the [frontend architecture review](reviews/2026-10-01-frontend-architecture-review.md) of 2026-10-01
 - [DPDP Act gap assessment](reviews/2026-09-17-dpdp-act-gap-assessment.md): statutory requirement map, implemented capabilities, prioritised gaps and remediation sequence
-- [Personal data inventory](domain/personal-data.md): what the platform holds about people, where, and which of the 254 operations touch it
+- [Personal data inventory](domain/personal-data.md): what the platform holds about people, where, and which of the 324 operations touch it (228 do)
 - [Changelog](../CHANGELOG.md): what changed, by area and date
 
 ## Reference
@@ -74,6 +74,10 @@ when it changes; the third is reviewed by hand against it:
   [personal-data.md](domain/personal-data.md), joined from the OpenAPI
   document, the access-control reference and the schema inventory; `--check`
   exits non-zero on a field that looks personal and is not classified
+- `generate-email-docs.py`: the five [notifications/](notifications/README.md)
+  module files and [email/messages.md](email/messages.md), from
+  `core/messages.py` and the tasks that send each email; `--check` fails when
+  one is stale
 - `check-links.py`: asserts that every relative link in every document resolves
 - [ci-paths.md](tools/ci-paths.md) and `ci.yml.proposed`: the changes
   `.github/workflows/ci.yml` still needs after the restructure, and the

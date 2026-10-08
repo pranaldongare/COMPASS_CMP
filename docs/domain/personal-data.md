@@ -5,8 +5,8 @@ that accepts or returns it. Written for the questions that have to be answered
 quickly and exactly: what do we hold, where does it go, who can see it, and
 which call would expose it.
 
-The counts here are measured, not remembered. **188 of the API's 276
-operations** carry personal data; **20 of those need no session**. They come
+The counts here are measured, not remembered. **228 of the API's 324
+operations** carry personal data; **28 of those need no session**. They come
 from joining three artefacts the repository already keeps current, and the
 last section says how to redo the join after a change.
 
@@ -54,8 +54,10 @@ member of staff who acted.
 
 ## Where it lives: the database
 
-44 objects, of which **32 carry personal data** and 12 do not. Each table below
-lists only its personal-data columns; the full column list, with types,
+60 objects - 58 application tables, `alembic_version` and the view
+`v_current_consent` - of which **38 tables and the view carry personal data**
+and 21 tables do not ([the generated list](pii-fields-and-endpoints.md)).
+Each table below lists only its personal-data columns; the full column list, with types,
 defaults, constraints and triggers, is in
 [docs/reference/database/table_reference.md](../reference/database/table_reference.md).
 
@@ -119,7 +121,7 @@ the same exposure.
 
 ### Rights
 
-**`rights_request`** — 46 columns, of which these are personal:
+**`rights_request`** — 48 columns, of which these are personal:
 
 | Column | What it is |
 |---|---|
@@ -133,13 +135,16 @@ the same exposure.
 | `response_file_ref`, `response_file_hash`, `download_expires_at` | The response document and the window it can be fetched in |
 | `trigger_evidence_ref`, `trigger_evidence_hash` | Evidence of a death or incapacity that invoked a nomination |
 | `about_dpo`, `reviewer_user_id`, `grievance_upheld` | A grievance about the DPO, and the administrator reviewing it |
-| `consent_id` | The consent the request is about |
+| `consent_id` | The consent a request made before 2026-10-07 was confined to. Empty on a new request: the API refuses `consent_uuid`. A re-run a grievance orders carries the original's |
 
 **`rights_request_holder`** — the team asked to answer, and the person there who
 did: `responder_name`, `responder_contact`, `responder_user_id`, `instruction`,
 `brief`, `contact_log` (jsonb, every contact attempt), `return_summary`,
 `return_evidence_ref/hash/name`, `sent_back_reason`, `office_read_at`,
-`holder_read_at`.
+`holder_read_at`, and `accepted_by` (0048), who at the office accepted the
+answer. And a credential (0049): `link_token`, the keyed fingerprint of an
+outside holder's link, and `link_token_sealed`, the token sealed so a
+reminder carries the same link.
 
 **`rights_ticket_message`** — `author_user_id`, `body` (free text, both
 directions), `evidence_ref`, `evidence_hash`, `evidence_name`.
@@ -223,6 +228,9 @@ investigators.
 notice), `note` (an instruction to the collector, **never served to a data
 principal**), `recipients_text`.
 **`notice_language`** — `created_by`, `approved_by`.
+**`notice_template`** (0044) — `created_by`, `dpo_contact` (a role mailbox,
+copied into the notice made from it), `note` (an instruction to the
+collector, copied likewise). **`notice_template_language`** — `updated_by`.
 **`notice_purpose`** — `overridden_by`.
 **`purpose`** — `created_by`.
 **`message_template`** — `updated_by`, `subject`, `body`. The templates carry
@@ -246,7 +254,7 @@ register is the DPO's alone, hidden from every other role (404).
 **`breach_contact`** (0045) — `full_name`, `email`, `mobile` (sealed), `email_hash`, `mobile_hash` (blind indexes): somebody a breach touched who has no account, named in a list sent to the Privacy Office, and told by email and SMS. **`breach_upload`** — the list's `file_name` (sealed) and hash; the file itself is not kept (2026-10-07).
 
 **`message_copy`** (0046) — `address` (sealed), `address_hash`: a mailbox the office copies an email to. Usually a team's; sealed because it may be a person's.
-**`breach_temporary_access`** — `user_id`, `granted_by`, `ended_by`: whose breach-only login, and who gave and ended it, with the role the account held before (S3-09). No name and no address: a person without an account is made one in `auth_user`, sealed like every other.
+**`breach_temporary_access`** — `user_id`, `granted_by`, `ended_by`: whose temporary login, for a breach ticket or, since 0049, a rights ticket (`holder_id`), and who gave and ended it, with the role the account held before (S3-09). No name and no address: a person without an account is made one in `auth_user`, sealed like every other.
 **`breach_ticket_event`** — `summary`, `reason` (sealed), `actor_user_id`.
 **`breach_ticket_message`** — `body`, `evidence_name` (sealed), `author_user_id` (S3-08).
 **`breach_status_history`** — `reason` (sealed), `changed_by`.
@@ -267,8 +275,9 @@ person per breach (S3-02). `evidence` names exports, assets and tables.
 **`breach_notice`** — the five words of Rule 7(1), sealed; `created_by`,
 `approved_by`. Written to be sent to everyone listed, and naming nobody - sealed
 because it repeats the assessment and a draft may not yet be right.
-**`breach_notice_delivery`** — `auth_user_id`, the channel, the attempt and the
-outcome: **that she was told, and how** (Rule 7(2)(b)(vi)). `detail` holds an
+**`breach_notice_delivery`** — `auth_user_id`, or `contact_id`, a
+`breach_contact` (0045), exactly one of the two; the channel, the attempt and
+the outcome: **that she was told, and how** (Rule 7(2)(b)(vi)). `detail` holds an
 error's class and a count, never her address.
 
 All of it is append-only but for `breach.status`, so an erasure request cannot
@@ -305,6 +314,7 @@ happened; it is state that must disappear on its own.
 | `otpa:<scope>:<identity>` | Attempts against that code | With the code |
 | `mfa:*`, `lfail:*`, `lock:*` | Second-factor state, failed sign-ins, lockouts — keyed by the account's uuid, or the keyed hash of a login that names no account | The staff second factor is 5 minutes (`MFA_TTL_S`) and 5 attempts; 5 failed sign-ins in 30 minutes lock the account for 30 |
 | `rate:*` | Rate-limit counters, keyed by contact or address | The window |
+| `hts:<fingerprint>` | An outside holder's hour on one ticket after the code (0049): the cookie's fingerprint, naming the holder and the link it came through | One hour (`HOLDER_TICKET_SESSION_S`) |
 | `nsrv:*` | That the server showed a particular notice, in a particular rendition, to a particular person through a particular link — the fact a consent is checked against | Six hours (`NOTICE_SERVING_TTL`); past it, a consent is refused as `notice_stale` |
 
 The session token in the cookie is never stored: Redis holds a fingerprint of
@@ -312,14 +322,15 @@ it. A dump of Redis yields sessions you cannot resume and codes you cannot use.
 
 ### Files on disk
 
-Under `UPLOAD_ROOT` (`backend/api/var/uploads` in development), five
+Under `UPLOAD_ROOT` (`backend/api/var/uploads` in development), six
 directories, all of which contain personal data:
 
 | Directory | What is in it | Who put it there |
 |---|---|---|
 | `exports/` | **The export CSV**: one line per person — name, email, mobile, organisation id, person type, consent status, granted purposes, the consent link URL and the notice version they agreed to | A collection owner or the DPO |
-| `responses/` | The document answering a rights request, and the principal's own uploads | The office |
-| `rights/` | Ticket evidence, return evidence, trigger evidence (a death certificate, for instance) | The office and the holders |
+| `responses/` | The response package answering a rights request, and the files released with it | The office |
+| `requests/` | The documents a principal sends with her request (0043): a proof of who she is, a letter, a screenshot | The principal |
+| `rights/` | Ticket evidence, return evidence, trigger evidence (a death certificate, for instance) | The office, the holders and a nominee |
 | `approvals/` | Institutional approval proofs for a project | The R&D User |
 | `breach/` | Files on breach tickets' threads (S3-08), and files kept with an incident - the email that reported it, proofs, chats (2026-10-06) | The DPO and ticket holders |
 
@@ -753,9 +764,9 @@ selected.
 
 ## The public surface
 
-20 operations answer without a session. They are the ones worth re-reading
+28 operations answer without a session. They are the ones worth re-reading
 after any change, because everything else is behind an authenticated role.
-Eighteen rows below: two of them group sibling endpoints that take the same
+Nineteen rows below: three of them group sibling endpoints that take the same
 token and are protected the same way.
 
 | Endpoint | Anonymous? | What it takes | What stops it being an oracle |
@@ -778,6 +789,7 @@ token and are protected the same way.
 | `GET /rights/nominations/{token}` | Nomination token | — | Returns `principal_name` and `nominee_name` — **the one anonymous read that returns two people's names**, and the token is single-purpose, expiring and hashed at rest |
 | `POST /rights/nominations/{token}/accept`, `/decline`, `/code` | Nomination token | `code` | As above |
 | `POST /rights/nominee/start`, `/requests` | Carries a code or a token | `contact`, `request_text`, `evidence` | The nominee proves the trigger event before acting |
+| `/holder-tickets/{token}` and its seven siblings (`/code`, `/verify`, `/ticket`, `/messages`, the evidence, `/answer`, `/sign-out`) | Link token, then a code | `code`, `body`, `evidence` | An outside holder's ticket (0049). The token alone shows the reference, the holder's name and where a code will go. The code goes only to the address on the ticket, rate-limited per ticket, and opens that one ticket for an hour: an HttpOnly cookie whose fingerprint in Redis names the ticket and the link, and both must agree. A ticket sent to somebody else gets a new link, which shuts the old one |
 
 ## What protects it
 
@@ -786,7 +798,7 @@ rediscover them.
 
 | Control | Where |
 |---|---|
-| 34 personal columns - people's names and contacts, date of birth, free text, file names, the consent IP - are ciphertext at rest, and the API serves them that way | [docs/dkms/](../dkms/README.md), [encryption at rest](../security/encryption-at-rest.md) |
+| 78 personal columns - people's names and contacts, date of birth, free text, file names, the consent IP - are ciphertext at rest, and the API serves them that way | [docs/dkms/](../dkms/README.md), [encryption at rest](../security/encryption-at-rest.md) |
 | A password is Argon2, and `password_hash` appears in **no** response schema | `auth_user`, and the absence is the point |
 | A one-time code is never stored — Redis holds a keyed digest, and the check, the consumption and the attempt count are one atomic script | `cmp/auth/authentication/otp.py` |
 | A session token is never stored; Redis is keyed by its fingerprint | `cmp/auth/sessions/service.py` |
@@ -804,13 +816,13 @@ rediscover them.
 
 ## Encrypting it: the DKMS layer
 
-Thirty-three of the columns above, in 13 tables - the people's names and
-contacts, the date of birth, the free text and file names about them, and
-the consent IP - are encrypted by a separate key service before they reach
-the database, and the API serves them as ciphertext, `SE::…`. The portals
-open them in their own server at the moment a person reads them; the
+Seventy-eight columns, in 29 tables - the people's names and contacts, the
+date of birth, the free text and file names about them, every narrative on
+the breach register, and the consent IP - are encrypted by a separate key
+service before they reach the database, and the API serves them as
+ciphertext, `SE::…`. The portals open them in their own server at the moment a person reads them; the
 backend opens a value itself only where it has to act on it - a message,
-an export, a response package, the nomination link. Eight of the
+an export, a response package, the nomination link. Eleven of the
 columns carry a keyed hash, `*_hash`, so the platform can still find a row
 by a whole contact, and three names carry hashed runs, `*_ngrams`, so staff
 can find a person by part of a name.
@@ -867,7 +879,7 @@ Which endpoint satisfies which section, when she asks.
 | Who did you share it with? | `GET /me/disclosures` — built from `export_line`, which is written in the same transaction as the export |
 | Show me what I agreed to | `GET /me/consents/{uuid}/notice` — the frozen text, by content hash, not today's wording |
 | I withdraw | `POST /me/consents/{uuid}/withdraw` |
-| Correct this | `PATCH /me` - her name and her contacts from her profile - and `POST /requests` for anything the office holds |
+| Correct this | `PATCH /me` - her name and her contacts from her profile. Since 2026-10-07 a correction is not a rights request, and correcting anything else the office holds is not built yet (S3-05) |
 | Erase it | `POST /me/requests` with `request_type=erasure`; the scope is derived into `rights_request_item`, one row per appearance |
 | Act on my behalf | `POST /me/nominations`, then the nominee's own token flow |
 | I am not satisfied | `POST /me/requests/{uuid}/dispute`, which raises a grievance; one about the DPO is escalated to an administrator |

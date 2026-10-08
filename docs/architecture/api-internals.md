@@ -1,6 +1,6 @@
 # Architecture overview
 
-A layered FastAPI service over PostgreSQL 16 with **no ORM**, serving 312
+A layered FastAPI service over PostgreSQL 16 with **no ORM**, serving 324
 operations across 58 tables. The repository-wide picture, including the two
 portals, is in [docs/architecture/system-overview.md](../architecture/system-overview.md).
 
@@ -9,8 +9,8 @@ portals, is in [docs/architecture/system-overview.md](../architecture/system-ove
 A data fiduciary registers a project, states the purposes it will process
 personal data for, and publishes a notice. A data subject reads that notice at a
 collection site and agrees — or refuses — purpose by purpose. Later she may
-ask what is held, have it corrected or erased, complain, or name a nominee to
-act for her, and the office must answer within a published period. Everything
+ask what is held, have it erased, or complain, and she may name a nominee to
+act for her; the office must answer within a published period. Everything
 after that is about being able to prove what happened, years later, to somebody
 who was not there.
 
@@ -44,14 +44,14 @@ either calls it or is called by it.
 | Package | Modules | Role |
 |---|---|---|
 | `bootstrap/` | 7 | Assembly: factory, lifespan, middleware, routers, container |
-| `api/` | 37 | Routers (v1 + public), dependencies, middleware, errors |
+| `api/` | 45 | Routers (v1 + public), dependencies, middleware, errors |
 | `auth/` | 17 | Identity, authentication, authorisation, sessions, rate limits |
-| `domain/` | 28 | One package per aggregate (projects, notices, consent, exchange, registry, users, rights, audit); the only layer that writes |
+| `domain/` | 51 | One package per aggregate (projects, notices, consent, exchange, registry, users, rights, audit, breach, delegations, messaging, alerts); the only layer that writes |
 | `validation/` | 10 | The constrained types every request model is built from |
-| `db/` | 17 | Pool, SQL helpers, one repository per table cluster |
-| `infrastructure/` | 17 | Email, SMS, storage, outbound HTTP — swappable adapters; message delivery; the key service client, the sealed-field map and the keyed hashes |
+| `db/` | 26 | Pool, SQL helpers, one repository per table cluster |
+| `infrastructure/` | 20 | Email, SMS, storage, outbound HTTP — swappable adapters; message delivery; the key service client, the sealed-field map and the keyed hashes |
 | `core/` | 14 | Config, permissions, security, pagination, enums, errors, the message catalogue |
-| `tasks/` | 18 | Celery: 6 queues, 5 scheduled tasks; notifications, documents, exchange, maintenance, the rights sweep |
+| `tasks/` | 22 | Celery: 6 queues, 6 scheduled tasks; notifications, documents, exchange, maintenance, the rights sweep, the breach duties' alerts |
 
 ## Why no ORM
 

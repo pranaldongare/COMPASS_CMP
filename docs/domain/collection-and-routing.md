@@ -21,8 +21,11 @@ Three reference tables, maintained mostly by the DPO and read by everyone:
   export to it is refused until it is recorded (S2-04). A processor carries its
   **respondents**: for an in-house processor, accounts on the platform who
   answer a rights ticket in the console; for a third party, names and
-  addresses reached by email. Respondents are retired by stamping a date,
-  never deleted, so a closed ticket still points at who answered it. A third
+  addresses, sent a link to the portal and a one-time code to open the ticket
+  there. An address on the organisation's own domains with no console login
+  is given a temporary login for the ticket. Respondents are retired by
+  stamping a date, never deleted, so a closed ticket still points at who
+  answered it. A third
   party may also be represented by one of the organisation's own accounts.
 - **Data sources**: the rigs and systems that capture data, each belonging to
   one processor and owned by one person. The owner is who a site follows.
@@ -39,7 +42,8 @@ stateDiagram-v2
 ```
 
 An R&D user registers the project, names the processors that will collect
-("who is collecting"), and uploads its notice. Submitting for approval requires
+("who is collecting"), and uploads its notice, copies an approved one, or uses
+a notice template. Submitting for approval requires
 the pieces the DPO will judge: the notice, the collectors, the proofs.
 
 Every requirement on that move is the author's own, and nothing on it waits for
@@ -105,9 +109,10 @@ one site cannot mint a link for a colleague's site on the same study.
 ## Consent links
 
 A site's owner mints a **consent link** for it: a capability URL on the
-data-principal portal, tied to the notice version current at minting, with an
-expiry and a use budget. The database keeps the token digested and, beside
-the digest, encrypted under a key derived from the application secret
+data-principal portal, serving the project's notice in force, with an expiry
+and a use budget. Publishing a new notice moves every live link to it; a
+consent already given keeps its notice. The database keeps the token digested
+and, beside the digest, encrypted under a key derived from the application secret
 (`token_sealed` - not the key service that seals personal columns), so the
 address can be shown again to whoever has to share it; a link
 minted before that was so cannot be recovered, and the console says so rather
@@ -198,7 +203,7 @@ It hands over a workload, not a role.
 | Rule | Where |
 |---|---|
 | Only an approved project's site may have a link | `cmp_link_coherent()` trigger |
-| A link is tied to one notice version | the link row; a new notice version means a remint |
+| A link serves the notice in force | the link row's `notice_id`, moved by publication (`move_links_to_notice`); no remint |
 | A site's source belongs to a processor the project approved | `add_site` in the projects service |
 | Categories on a purpose are itemised | `CHECK cardinality(data_categories) >= 1` |
 | The disclosure record and the file agree | one transaction in the exchange service |

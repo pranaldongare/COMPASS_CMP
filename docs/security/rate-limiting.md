@@ -10,6 +10,7 @@ thing an attacker cannot cheaply rotate.
 | OTP verify | 5 attempts per code, for as long as the code lives | code | The cap is what makes six digits strong enough |
 | OTP request | 5 / hour per contact, 20 / hour per link | contact | Otherwise the form is an SMS pump aimed at someone else's number |
 | Public link | 60 / minute | address | Unauthenticated, and there is no account to key on |
+| An outside holder's ticket link | 60 / minute to open it, 20 / hour to ask for or enter a code; 5 codes / hour per ticket | address; ticket | The link is public; the code goes to the address on the ticket, so the per-ticket cap stops a mail pump at that address |
 
 Every bucket is a Redis key `rate:<bucket>:<identity>`, which is what a test
 suite clears between runs. The buckets in use:
@@ -24,6 +25,9 @@ suite clears between runs. The buckets in use:
 | `rights_public_contact`, `rights_public_ip`, `rights_verify_ip` | the public rights form and its verification; a request is neutral, so the address is the only handle a stranger has |
 | `nominee_start`, `nominee_start_ip`, `nominee_request_ip` | a nominee identifying themselves and acting |
 | `nomination_view_ip`, `nomination_act_ip` | opening and answering an acceptance link, so a link-holder cannot guess a code |
+| `nomination_code` | codes sent for one nomination's acceptance link, per nomination, 5 an hour |
+| `holder_link_ip`, `holder_link_act_ip` | an outside holder's ticket link (0049): opening it, 60 a minute per address; asking for and entering a code, 20 an hour per address |
+| `holder_ticket_code` | codes sent for one ticket's link, per ticket, 5 an hour |
 | `login_fail_ip`, `otp_login_fail_ip`, `reset_fail_ip` | failed staff sign-ins, code sign-ins and password resets, per address (failures only) |
 
 **The lockout counts the account, not what was typed.** `account_key()` keys

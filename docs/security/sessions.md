@@ -11,14 +11,15 @@ session held server-side is gone on the next request.
 The cost is a Redis lookup per request. That is the right trade for a system
 whose job is to be able to say what happened.
 
-## Two cookies, deliberately different
+## Three cookies, deliberately different
 
 | Cookie | HttpOnly | Why |
 |---|---|---|
 | `cmp_session` | **yes** | Script cannot read it, so an XSS bug cannot exfiltrate it |
 | `cmp_csrf` | **no** | The page must read it to set the header — that is the mechanism |
+| `cmp_ticket` | **yes** | Not a session: an outside holder's hour on one rights ticket (0049), `SameSite=Strict`, its fingerprint in Redis at `hts:*`. See [authentication](authentication.md#outside-holders-of-a-rights-ticket) |
 
-Both are `Secure` outside local development, and production refuses to start if
+All three are `Secure` outside local development, and production refuses to start if
 `COOKIE_SECURE` is false.
 
 ## SameSite and the first-party proxy
@@ -50,7 +51,8 @@ keeping itself awake.
 
 ## Partial sessions
 
-Between password and second factor. Authorises exactly one route. Promoted on
+Between password and second factor. Authorises exactly two routes,
+`/auth/mfa/verify` and `/auth/mfa/resend`. Promoted on
 successful MFA rather than replaced, so the session id is stable across the
 step-up and an operator following the audit trail sees one session, not two.
 
@@ -60,8 +62,10 @@ step-up and an operator following the audit trail sees one session, not two.
 is what makes "sign out everywhere" real, and it is also what an admin uses when
 an account is suspended.
 
-**A breach-only login** (S3-09) keeps its sessions when the breach closes or
-its ticket is withdrawn: the login stays, read only (decided 2026-10-06). An
+**A temporary login** (S3-09; since 0049 for a rights ticket too) keeps its
+sessions when its grant ends - the breach or the request closes, or its ticket
+is withdrawn or sent to somebody else: the login stays, read only (decided
+2026-10-06). An
 administrator's **End temporary access** removes it, and the users route
 revokes every session **after the transaction commits**, as it does for any
 deactivation: a session revoked in a transaction that then rolls back would

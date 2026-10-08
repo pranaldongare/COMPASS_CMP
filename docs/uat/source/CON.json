@@ -367,7 +367,7 @@
       "The data-principal portal is open at http://localhost:3001 in a fresh private (incognito) browser window, so no earlier sign-in carries over.",
       "You have the live consent link for the CIT site of the seeded project 'Gait Identification Study 2026' (valid until 8 Oct 2026) from the test coordinator, or one the DCO created from the console in PRJ-18. It looks like http://localhost:3001/c/<long code>.",
       "The test coordinator is available to read six-digit codes from the test outbox and relay them to you.",
-      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
       "The coordinator provides a staff account with no date of birth that may be marked as under 18 for this test, ideally one the administrator creates just for it (see REG-01), e.g. tester07@example.org. NEVER use a seeded account other testers need: the date cannot be changed afterwards from the portal."
     ],
     "test_data": [
@@ -485,7 +485,7 @@
       },
       {
         "action": "Read the page header and the card for 'Gait Identification Study 2026'.",
-        "expected": "Description: 'Everything you have agreed to, the exact wording you were shown, and who it has been shared with. You can withdraw at any time.' The card shows 'NTC-GAIT-2026 v1 · hindi · <date and time>', status 'Partial', 'You agreed to 1 of 2 purposes.' and the buttons 'See what you agreed to', 'What was recorded', 'Withdraw everything' and 'Ask about this consent'."
+        "expected": "Description: 'Everything you have agreed to, the exact wording you were shown, and who it has been shared with. You can withdraw at any time.' The card shows 'NTC-GAIT-2026 v1 · hindi · <date and time>', status 'Partial', 'You agreed to 1 of 2 purposes.' and the buttons 'See what you agreed to', 'What was recorded' and 'Withdraw everything'. There is no button for a request about this one consent: a rights request covers everything held about her and is made from 'My requests' (step 8)."
       },
       {
         "action": "Click 'See what you agreed to'.",
@@ -506,9 +506,13 @@
       {
         "action": "Click 'Hide details' and 'Hide the record'.",
         "expected": "Both sections close. Nothing has changed: the status is still 'Partial'."
+      },
+      {
+        "action": "Click 'My requests' in the sidebar, then 'Make a request'. Read the dialog, then close it with the × at its top right without sending anything.",
+        "expected": "A dialog 'Make a request' opens with 'What are you asking for' and 'Your request', and the line 'A request is about everything we hold about you - every project and every consent.' There is no box for choosing a consent or a project. Closing it sends nothing."
       }
     ],
-    "pass_criteria": "The principal can see per-purpose choices, the exact text served (in the language served) with 'Integrity verified', the record of what happened, and who the data was shared with."
+    "pass_criteria": "The principal can see per-purpose choices, the exact text served (in the language served) with 'Integrity verified', the record of what happened, and who the data was shared with; a rights request is made about everything from 'My requests', not about one consent."
   },
   {
     "id": "CON-10",
@@ -627,7 +631,7 @@
     "type": "Positive",
     "ref": "Core",
     "preconditions": [
-      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
       "CON-01, CON-03, CON-04, CON-05 and CON-10 are done."
     ],
     "test_data": [
@@ -735,7 +739,7 @@
     "type": "Positive",
     "ref": "S2-04",
     "preconditions": [
-      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
       "CON-01, CON-03, CON-04, CON-05 and CON-10 are done.",
       "Spreadsheet software (Excel or similar) to open a CSV. The file contains personal data: keep it on the test machine and delete it after the test."
     ],
@@ -797,7 +801,7 @@
     "type": "Negative",
     "ref": "S2-04",
     "preconditions": [
-      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
       "CON-14 passed (so an export would otherwise succeed); at least one current consent with an agreed purpose exists at the CIT site (run by processor SEED).",
       "REMEMBER: set SEED's Country back to IN and lift the test restriction at the end, even if the test fails."
     ],
@@ -853,7 +857,7 @@
     "type": "Negative",
     "ref": "S2-04",
     "preconditions": [
-      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
       "SG is not on the 'Restricted countries (s.16)' list (CON-15 lifted it).",
       "At the CIT site there is at least one current consent with agreed purposes (Anjali Verma). The seeded purposes 'Gait model training' (PUR-GAIT-TRAIN) and 'Recording quality assurance' (PUR-QUALITY) do not permit transfer outside India.",
       "REMEMBER: set SEED's Country back to IN at the end, even if the test fails."
@@ -904,7 +908,7 @@
     "type": "Negative",
     "ref": "S2-04",
     "preconditions": [
-      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
       "The coordinator has prepared an approved project (e.g. from the PRJ cases) with a collection site run by a processor whose 'Country' shows 'not recorded', and at least one person has agreed to a purpose at that site. The coordinator gives you the project and processor names. (An existing processor's country cannot be emptied from the Edit dialog, so this has to be prepared.)"
     ],
     "test_data": [
@@ -953,7 +957,7 @@
     "type": "Positive",
     "ref": "Core",
     "preconditions": [
-      "Signed in to the console (http://localhost:3000) as Arun Shetty, Data Collection Owner (dco@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "Signed in to the console (http://localhost:3000) as Arun Shetty, Data Collection Owner (dco@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
       "CON-14 is done and you have Anjali Verma's consent_uuid from the export CSV.",
       "A spreadsheet or text editor that can save a CSV (UTF-8)."
     ],
@@ -1022,7 +1026,7 @@
     "type": "Negative",
     "ref": "Core",
     "preconditions": [
-      "Signed in to the console (http://localhost:3000) as Arun Shetty, Data Collection Owner (dco@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "Signed in to the console (http://localhost:3000) as Arun Shetty, Data Collection Owner (dco@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
       "CON-18 is done (uat-manifest-01.csv was imported).",
       "R&D User account rnd@cmp.local for step 1 (same console sign-in)."
     ],
@@ -1086,7 +1090,7 @@
     "type": "Positive",
     "ref": "Core",
     "preconditions": [
-      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar.",
+      "Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar.",
       "CON-01 to CON-19 have been run (in any order), so the events exist."
     ],
     "test_data": [
@@ -1141,7 +1145,7 @@
       "The data-principal portal is open at http://localhost:3001 in a fresh private (incognito) browser window, so no earlier sign-in carries over.",
       "The test coordinator is available to read six-digit codes from the test outbox and relay them to you.",
       "CON-14 and CON-18 are done (Anjali is in an export; her consent is still 2 of 2).",
-      "For the last step: Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, use 'Sign out' in the sidebar."
+      "For the last step: Signed in to the console (http://localhost:3000) as Priya Menon, DPO (dpo@cmp.local): on 'Sign in' enter 'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar."
     ],
     "test_data": [
       "Mobile: +91 90000 00001",

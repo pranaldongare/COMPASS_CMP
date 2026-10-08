@@ -9,6 +9,8 @@ workflow as people experience it.
 
 ## The three requests
 
+Why, and what was given up: [ADR 0026](../decisions/0026-a-rights-request-is-access-erasure-or-a-grievance-about-everything.md).
+
 | Type | Section | What she asks | What she gets back |
 |---|---|---|---|
 | `access` | s.11 | a summary of her data, the processing, and who it was shared with | the summary, and any files the office releases with it |
@@ -84,8 +86,15 @@ stateDiagram-v2
   in_progress --> collating: nothing to ask anyone
   awaiting_holders --> collating: every answer accepted, or a final reminder sent
   collating --> closed: respond
-  received --> closed: not verified, or reclassified as a withdrawal
+  received --> closed: early exit
+  in_progress --> closed: early exit
+  awaiting_holders --> closed: early exit
 ```
+
+An **early exit** - not verified, refused, reclassified as a withdrawal, or
+the event not evidenced - closes the request from any state before
+collating (`OPEN_BEFORE_COLLATION`). Once the DPO is collating, the response
+is finished instead.
 
 Closure carries an **outcome**: `complete`, `partial`, `no_records`,
 `refused`, `not_verified`, `reclassified_withdrawal`, or for a grievance
@@ -119,7 +128,7 @@ the holder was, which become its own when it is asked.
 
 Decided with the product owner on 2026-10-08 and settled as the ticket is
 sent (`domain/rights/reach.py`), so the office may name and rename a responder
-freely until then. "Internal" is an address on `BREACH_TICKET_EMAIL_DOMAINS`.
+freely until then. "Internal" is an address on `BREACH_TICKET_EMAIL_DOMAINS`. The decision: [ADR 0024](../decisions/0024-a-rights-tickets-holder-is-reached-three-ways.md).
 
 | The responder | Reached | Answers |
 |---|---|---|
@@ -175,7 +184,7 @@ answer arrives as *Answered - review*; the DPO **accepts** it
 moves the request to collating or makes an erasure's holder copy done. An
 answer the office records itself, for a holder reached by email, is accepted
 as it is recorded. The holder is told when the office records or accepts their
-answer.
+answer. The decision: [ADR 0025](../decisions/0025-a-holders-answer-counts-once-accepted-and-the-server-owns-the-moves.md).
 
 **A return says what was done.** Whoever records it - the office for a third
 party, the team itself on the console - says whether the holder did **all of
@@ -342,7 +351,7 @@ In the console today a request is found by name through the audit trail's
 | One live nomination per person | partial unique index on `nomination` |
 | A nominee needs a mobile | `trg_nominee_needs_mobile` |
 | A nominee reaches the request they raised, and no other | `request_as_nominee`, joined through `nomination.nominee_user_id` |
-| A ticket is answered by the respondent it names | scope on `ticket` is `OWN` for every staff role |
+| A ticket is answered by the respondent it names | scope on `ticket` is `OWN` for every staff role and the temporary ticket holder; an outside holder only through its link (`holder_link.py`) |
 | A response file is hashed and time-boxed | `rights_response_file` |
 | Every action audited | the audit chain, same transaction |
 

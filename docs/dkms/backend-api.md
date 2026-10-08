@@ -10,8 +10,9 @@ and the threat model is [encryption at rest](../security/encryption-at-rest.md).
 ## The rule
 
 **The backend encrypts. The backend does not decrypt for a response** -
-with one exception, the anonymous nomination link, which has no session for
-a portal's decrypt route to accept. Every repository write of a column in
+with two exceptions, both links that carry no session: the nomination link
+opens two names, and an outside holder's ticket link serves the address its
+code goes to, masked. Every repository write of a column in
 `ENCRYPTED_FIELDS` goes through `seal()`; every read returns the row as
 stored — `SE::…` — and the API serves exactly that. Opening values is the
 portals' job. The places the backend opens a value itself are listed at the
@@ -151,7 +152,7 @@ nothing about which column it came from.
 
 | Module | Role |
 |---|---|
-| [`infrastructure/dkms/fields.py`](../../backend/api/src/cmp/infrastructure/dkms/fields.py) | The map: `ENCRYPTED_FIELDS` (table → column → type), `BLIND_INDEXED` (the eight `*_hash` columns), `NGRAM_INDEXED` (the three `*_ngrams` columns, with the reason each earns one), `LOOKUP_FIELDS` (now only `minor_until`), `TYPE_IDS`, and `PREFIX` - `"SE::"`, the one constant every "is this ciphertext" asks |
+| [`infrastructure/dkms/fields.py`](../../backend/api/src/cmp/infrastructure/dkms/fields.py) | The map: `ENCRYPTED_FIELDS` (table → column → type), `BLIND_INDEXED` (the eleven `*_hash` columns), `NGRAM_INDEXED` (the three `*_ngrams` columns, with the reason each earns one), `LOOKUP_FIELDS` (now only `minor_until`), `TYPE_IDS`, and `PREFIX` - `"SE::"`, the one constant every "is this ciphertext" asks |
 | [`infrastructure/dkms/client.py`](../../backend/api/src/cmp/infrastructure/dkms/client.py) | The HTTP client. Fails closed: `DkmsUnavailable` (503) rather than writing plaintext. `unseal_values_sync` for the worker, which has no event loop |
 | [`infrastructure/dkms/rows.py`](../../backend/api/src/cmp/infrastructure/dkms/rows.py) | `seal` / `seal_many` / `unseal` / `unseal_value` / `opened` — one call per row however many columns |
 | [`infrastructure/dkms/blind.py`](../../backend/api/src/cmp/infrastructure/dkms/blind.py) | Both hashes, computed locally: `index_of(kind, value)` for the whole-value lookup, `ngrams_of(value)` and `search_ngrams(term)` for the substring one, and the normalisation each uses. The key service computes the same values from the same key; this exists so a sign-in and a search still work when it is unreachable |
@@ -215,45 +216,38 @@ list does not send today; the audit trail's About picker is where a request
 is found by name in practice. `nominee_name_ngrams` is written with every
 nomination and read by no query yet.
 
-## The endpoints that carry personal data — 159
+## The endpoints that carry personal data — 228 of 324
 
-By module, as the documentation generator counts them:
+The documentation generator, `docs/tools/pii-fields-and-endpoints.py`, counts
+228 of the API's 324 operations whose request or response holds a personal
+field, in 22 modules, 28 of them public. The count by module and the fields
+each one carries are in
+[pii-fields-and-endpoints.md](../domain/pii-fields-and-endpoints.md), which
+is regenerated rather than copied here.
 
-| Module | Endpoints | Module | Endpoints |
-|---|---|---|---|
-| `/requests/*` — rights, the office's side | 35 | `/consents/*` | 4 |
-| `/me/*` — a principal's own records | 21 | `/tickets/*` | 4 |
-| `/projects/*` | 17 | `/collections/*` | 3 |
-| `/users/*` | 13 | `/links/*` | 3 |
-| `/auth/*` | 11 | `/imports/*` | 3 |
-| `/rights/*` — public | 8 | `/processors/*` | 2 |
-| `/c/{token}/*` — the consent link | 6 | `/exports/*` | 2 |
-| `/notices/*` | 5 | `/approvals` | 1 |
-| `/audit/*` | 5 | `/dashboard` | 1 |
-| `/messages/*` | 5 | `/sites/*` | 1 |
-| `/sources/*` | 5 | `/delegations/*` | 4 |
-
-Every one of them is exercised by `backend/api/tests/http/`, and every
-response is checked against one contract: a field named in `contract.SEALED`
+The HTTP suite, `backend/api/tests/http/`, checks every response it gets
+against one contract: a field named in `contract.SEALED`
 is `SE::…` or null, and nothing under a contact's name looks like an address.
-The per-endpoint field list is
-[pii-fields-and-endpoints.md](../domain/pii-fields-and-endpoints.md).
 
 ## Where the backend decrypts
 
 Each hands a value to somebody who is not looking at a portal page, or
 needs the plaintext to compute what is stored beside it. Nothing here is
-handed to a session-bearing response.
+handed to a session-bearing response, except a download's file name.
 
 | Where | What is opened | Why |
 |---|---|---|
-| [`infrastructure/messaging.deliver()`](../../backend/api/src/cmp/infrastructure/messaging/__init__.py) | The recipient, and every sealed template variable | An email cannot be addressed to ciphertext. **This is the step that makes a sign-in code depend on the key service** |
+| [`infrastructure/messaging.deliver()`](../../backend/api/src/cmp/infrastructure/messaging/__init__.py) | The recipient, every sealed template variable, and the office's copy addresses (`message_copy`) for a message that may be copied | An email cannot be addressed to ciphertext. **This is the step that makes a sign-in code depend on the key service** |
 | `rights/service._ticket_address()` | A holder's contact | The ticket's mail goes to a person |
 | `rights/service._tell_holder()`, `_tell_office()`; `opened_brief()` in `issue_tickets` and `reassign_holder` | The author's name on a ticket message; the subject's name and contacts in a brief | The prose of the mail |
 | `exchange/service` — `_project_export`, `render` | The people in the export CSV | The file is read outside the platform |
 | `api/routers/v1/audit.export_csv()` | Actor and subject names, and an entity label that names a person, in the audit CSV - one `unseal_strings` call for the file | As above: the DPO's copy of the trail is read outside the platform |
 | `rights/package.build_response()` | What is released to the data principal | As above |
-| `rights/service.nomination_from_token()` → `GET /rights/nominations/{token}` | `principal_name`, `nominee_name` | **The one response.** The nominee has no session, and a portal's `/dkms/decrypt` refuses a request without one. The token is single-purpose, expiring and hashed at rest; the contacts are served masked |
+| `rights/service.nomination_from_token()` → `GET /rights/nominations/{token}` | `principal_name`, `nominee_name` | **A response.** The nominee has no session, and a portal's `/dkms/decrypt` refuses a request with neither a `cmp_session` nor a `cmp_ticket` cookie. The token is single-purpose, expiring and hashed at rest; the contacts are served masked |
+| `rights/reach.masked_address()` → `GET /holder-tickets/{token}` | A holder's contact, served masked | **The other response.** The outside holder has no cookie yet when the link first opens, so the page is told where the code will go, masked |
+| `rights/reach.address()`; `reach.place()` | A holder's contact and name | The code and the ticket's mail go to that address; an internal address is matched to, or made, a console login |
+| `breach/tickets._require_internal()` | A colleague's email | Its domain decides whether they may hold a breach ticket; the address is never repeated |
+| `rights/service`, `breach/service`, `breach/tickets` — the file downloads | The name a file was uploaded with (`rights_request_attachment`, `breach_attachment`, `breach_ticket_message.evidence_name`) | A download is binary and bypasses the portal's opening, so the name for `Content-Disposition` is opened here |
 | `auth/authentication/service.invite_staff()` | The invited address | It goes into the invitation's URL, which `deliver()` never sees |
 | `api/routers/v1/registry.add_respondent()` | A staff account's name and email | The respondent row seals its own copy under its own types; ciphertext copied across would carry the wrong type |
 | `db/repositories/rights.create()` | A contact copied off another row | Its `submitted_contact_hash` has to be computed from the plaintext |

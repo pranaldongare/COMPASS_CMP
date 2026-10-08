@@ -6,14 +6,17 @@ key service, and the two portals.
 
 | Process | Settings | Template |
 |---|---|---|
-| API, worker, beat | `backend/api/src/cmp/core/config.py`, 83 fields | `backend/api/.env.example` |
+| API, worker, beat | `backend/api/src/cmp/core/config.py`, 93 fields | `backend/api/.env.example` |
 | Key service | `backend/dkms/app/config.py`, 14 fields | `backend/dkms/.env.example` |
 | Console, portal | `process.env` in `next.config.ts`, `src/lib/config`, `src/proxy.ts`, `src/app/dkms/decrypt/route.ts` | `frontend/*/.env.example` |
 
 The API's `Settings` refuses an unknown variable (`extra="forbid"`): a typo
-fails at startup. `backend/api/.env.example` lists 60 of the 83 fields. The
-other 23 have code defaults nobody has needed to change, and are set by
-their upper-case name like any other:
+fails at startup. `backend/api/.env.example` lists 66 of the 93 fields. Of
+the other 27, four are email settings the template sets under their newer
+names (`SMTP_HOST` as `SMTP_SERVER`, `NOTIFICATION_EMAIL_FROM` as
+`SENDER_EMAIL`) or keeps only as legacy (`EMAIL_TRANSPORT`, `SMTP_USE_TLS`).
+The remaining 23 have code defaults nobody has needed to change, and are set
+by their upper-case name like any other:
 
 `SERVICE_NAME`, `VERSION`, `ROOT_PATH`, `DB_POOL_TIMEOUT_S`,
 `DB_LOCK_TIMEOUT_MS`, `COOKIE_NAME`, `CSRF_COOKIE_NAME`, `CSRF_HEADER_NAME`,
@@ -67,7 +70,7 @@ boot: the second failure is loud and costs ten minutes.
 | Lockout | 5 attempts / 30 min window / 30 min lockout, per account however it is named (`LOGIN_*`). Per address: `AUTH_FAILURES_PER_ADDRESS` 30 failed attempts across every account in `AUTH_FAILURES_WINDOW_S` 900, at staff sign-in, code sign-in and password reset; successes do not count |
 | OTP & MFA | 6 digits, 10 minutes, 5 verify attempts; MFA codes live 5 minutes; `MFA_REQUIRED_ROLES` defaults to every staff role ([ADR 0006](../decisions/0006-mfa-for-every-staff-role.md)) |
 | Provisioning | `STAFF_INVITE_TTL_H` 48 — how long the code in a staff invitation lasts, in hours. It is the reset flow's own code, so an expired invitation needs no separate path: "Forgotten your password?" sends a working replacement |
-| URLs | `PUBLIC_BASE_URL` (the data-principal portal, port 3001: consent and acceptance links) and `CONSOLE_BASE_URL` (the staff console, port 3000: ticket and request links) |
+| URLs | `PUBLIC_BASE_URL` (the data-principal portal, port 3001: consent and acceptance links, and an outside holder's ticket link) and `CONSOLE_BASE_URL` (the staff console, port 3000: ticket and request links) |
 | Messages | `ORGANISATION_NAME`, the `{organisation}` every message may name and the sender's name; the words themselves are edited in the console ([messages.md](../domain/messages.md)) |
 | Rights | `RIGHTS_RESPONSE_PERIOD_DAYS` 90, `GRIEVANCE_RESPONSE_PERIOD_DAYS` 90, acknowledge 2, tickets 5, collate 5 before, download 30, unverified close 7, nomination accept 30. `HOLDER_TICKET_SESSION_S` 3600 and `HOLDER_TICKET_COOKIE` `cmp_ticket`: how long an outside holder's ticket stays open in its browser after the one-time code, and the cookie holding it (0049); the portal's decrypt route also reads `NEXT_PUBLIC_TICKET_COOKIE`, which must match |
 | Breach | `BREACH_WITHOUT_DELAY_TARGET_HOURS`, unset: the internal target for a duty Rule 7 says is due "without delay" - the Board's initial intimation and the notices to principals - in hours from awareness. The Rule sets no hours and the number is Legal's and the Programme's to choose; while it is unset the register shows the time elapsed and flags nothing ([breaches.md](../domain/breaches.md)). The 6 hours for CERT-In and 72 for the Board's report are statute and are not settings. `BREACH_ORG_BOARD_MINUTES`, 30: the internal policy for telling the organisation's board, in minutes from first noticed; read when an incident is logged and stored as its duty's due time, so a change moves nothing already running ([ADR 0022](../decisions/0022-an-incident-first-and-a-breach-on-a-yes.md)). `BREACH_TICKET_EMAIL_DOMAINS`, `cmp.local`: the email domains, comma-separated, that make a person internal enough to hold a breach ticket; checked for every assignee and every colleague ([ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)). Since 0049 the same list decides how a rights ticket's holder is reached: an internal address gets a console login, any other a link on the portal ([rights-requests.md](../domain/rights-requests.md#how-a-holder-is-reached)) |
@@ -138,6 +141,8 @@ starts, so a change needs a restart.
 |---|---|---|---|
 | `DKMS_URL` | both, server only | none | The key service `src/app/dkms/decrypt/route.ts` posts to (`${DKMS_URL}/bulk_decrypt`). **Required**: unset, every decrypt answers 503. Must be a service holding the master key the API sealed with, and reachable from the portal's server. `.env.example` carries the placeholder `http://<ip>:32688`; locally it is `http://localhost:32688` |
 | `NEXT_PUBLIC_SESSION_COOKIE` | both | `cmp_session` | The session cookie the decrypt route and `proxy.ts` look for. Must match the API's `COOKIE_NAME`. Not in `.env.example` |
+| `NEXT_PUBLIC_TICKET_COOKIE` | both | `cmp_ticket` | The cookie an outside holder's ticket page carries after its code (0049); the decrypt route accepts it as it accepts a session. Must match the API's `HOLDER_TICKET_COOKIE` |
+| `NEXT_PUBLIC_DEV_SHOW_CODES` | both, development | unset | `true` shows each one-time code in a popup, read from the API's development-only route; the API ignores it outside local/test |
 | `API_ORIGIN` | both, `next.config.ts` | `http://127.0.0.1:8000` | Where `/api` is proxied to |
 | `NEXT_PUBLIC_API_URL` | both | `/api` | Leave unset. Set, every request is cross-origin and the session cookie is dropped |
 | `NEXT_PUBLIC_APP_NAME` | both | per portal | |

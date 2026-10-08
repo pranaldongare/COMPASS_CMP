@@ -526,26 +526,26 @@ add(
         "Seeded account Meera Iyer (rco@cmp.local) is active.",
     ],
     test_data=[
-        "SEED respondent by mail - Name: UAT Respondent 01; Email address: uat.respondent01@cmp.local",
+        "SEED respondent by email - Name: UAT Respondent 01; Email address: uat.respondent01@cmp.local",
         "SRIB respondent account: Meera Iyer (rco@cmp.local)",
     ],
     steps=[
         sign_in("dpo@cmp.local"),
         {
             "action": "Open 'Processors' and click 'Respondents' on the SEED row.",
-            "expected": "A dialog 'Respondents · SEED' opens. A blue note explains a third party's respondent is usually a name and address, mailed and tracked by hand. Existing respondents are listed, or 'Nobody yet. Until somebody is named, the DPO types who answers on each request.'",
+            "expected": "A dialog 'Respondents · SEED' opens. A blue note explains a third party's respondent is usually a name and an address there, mailed and tracked by hand, or one of our own accounts whose ticket goes to their console. Existing respondents are listed, or 'Nobody yet. Until somebody is named, the DPO types who answers on each request.'",
         },
         {
-            "action": "Under 'Who answers for them' keep 'Somebody at the third party, by mail' selected. Type 'UAT Respondent 01' in 'Name' and uat.respondent01@cmp.local in 'Email address'. Click 'Add respondent'.",
-            "expected": "'Respondent added' appears. The list shows 'UAT Respondent 01' with a 'by mail' badge and the email address below.",
+            "action": "Under 'Who answers for them' (choices 'Somebody at the third party, by email' and 'One of our own accounts, in the console') keep 'Somebody at the third party, by email' selected. Type 'UAT Respondent 01' in 'Name' and uat.respondent01@cmp.local in 'Email address'. Click 'Add respondent'.",
+            "expected": "'Respondent added' appears. The list shows 'UAT Respondent 01' with a 'by email' badge and the email address below.",
         },
         {
             "action": "Close the dialog and click 'Respondents' on the SRIB row.",
-            "expected": "A dialog 'Respondents · SRIB' opens, saying for an in-house processor a respondent is a CMP account. There is no by-mail option - only an 'Account' drop-down.",
+            "expected": "A dialog 'Respondents · SRIB' opens, saying for an in-house processor a respondent is a CMP account. There is no 'Who answers for them' choice - only an 'Account' drop-down.",
         },
         {
             "action": "In 'Account' choose 'Meera Iyer · Rco · rco@cmp.local' and click 'Add respondent'.",
-            "expected": "'Respondent added' appears. Meera Iyer is listed with the badge 'on the portal · Rco'.",
+            "expected": "'Respondent added' appears. Meera Iyer is listed with the badge 'in the console · Rco'.",
         },
         {
             "action": "Click 'Remove' next to Meera Iyer.",
@@ -555,10 +555,10 @@ add(
         sign_in("rnd@cmp.local"),
         {
             "action": "Open 'Processors' and click 'Respondents' on the SEED row.",
-            "expected": "The dialog lists UAT Respondent 01 (by mail) but offers no 'Add respondent' form and no 'Remove' buttons (read-only).",
+            "expected": "The dialog lists UAT Respondent 01 ('by email') but offers no 'Add respondent' form and no 'Remove' buttons (read-only).",
         },
     ],
-    pass_criteria="The DPO can name a by-mail respondent for a third party and an account respondent for an in-house team, and remove one; other roles can view but not change respondents.",
+    pass_criteria="The DPO can name a by-email respondent for a third party and an account respondent for an in-house team, and remove one; other roles can view but not change respondents.",
 )
 
 # ---------------------------------------------------------------- data sources
@@ -734,11 +734,11 @@ add(
         sign_in("admin@cmp.local"),
         {
             "action": "In the sidebar under 'Your work' click 'Message templates'.",
-            "expected": "The 'Message templates' page opens with messages grouped under headings such as 'Sign-in', 'Consent', 'Rights' and 'Staff'.",
+            "expected": "The 'Message templates' page opens with messages grouped under the headings 'Sign-in', 'Consent', 'Rights', 'Staff', 'Breach', 'Projects' and 'Accounts', in that order.",
         },
         {
             "action": "Under 'Sign-in' find the card 'Staff account invitation'.",
-            "expected": "The card shows a 'Default words' badge, a 'Subject' field, a 'Body' field, the list 'Variables this message can use (click to insert)' (including {full_name}, {code}, {reset_url}) and the buttons 'Save' (disabled) and 'Preview'.",
+            "expected": "The card has no 'Copy to' box: a line with a padlock reads 'Never copied: it carries a code or a link, or a person's own record, and a copy would hand it to somebody else.' Below it are a 'Default words' badge, a 'Subject' field, a 'Body' field, the list 'Variables this message can use (click to insert)' (including {full_name}, {code}, {reset_url}) and the buttons 'Save' (disabled) and 'Preview'.",
         },
         {
             "action": "Click at the end of 'Body', press Enter twice and type 'UAT check: welcome aboard, '. Then click the variable chip '{full_name}' and type '.'",
@@ -776,7 +776,7 @@ add(
     steps=[
         {
             "action": "In the sidebar under 'Oversight' click 'Message templates' and find the card 'Staff sign-in code' under 'Sign-in'.",
-            "expected": "The card shows its 'Subject', 'Body' and the variables it can use. {full_name} is NOT in its variable list.",
+            "expected": "The card shows the line 'Never copied: it carries a code or a link, or a person's own record, and a copy would hand it to somebody else.' (no 'Copy to' box), then its 'Subject', 'Body' and the variables it can use. {full_name} is NOT in its variable list.",
         },
         {
             "action": "Replace the whole 'Body' with 'Dear {full_name}, your code is {code}.' and click 'Save'.",
@@ -870,6 +870,77 @@ add(
         },
     ],
     pass_criteria="R&D Users cannot reach Delegations, the Administrator can only oversee (not arrange), and a DPO with no same-role colleague cannot delegate.",
+)
+
+# ---------------------------------------------------------------- message copies
+NEVER_COPIED = ("Never copied: it carries a code or a link, or a person's own record, and a copy "
+                "would hand it to somebody else.")
+
+add(
+    title="The office copies a message to up to five addresses; codes and links are never copied",
+    feature="Message templates - Copy to",
+    role="Administrator (admin@cmp.local)",
+    priority="Medium",
+    type="Positive",
+    ref="Core",
+    preconditions=[
+        "REG-01 and REG-02 completed: UAT DCO 01 (uat.dco01@cmp.local) is an Active Data Collection Owner, and no delegation to or from it is live (REG-19 ended).",
+        "The 'Your role has changed' message is copied to nobody (its 'Copy to' box is empty).",
+        "The background worker is running, so emails reach the test outbox, and the test coordinator can read the outbox.",
+    ],
+    test_data=[
+        "Six addresses: uat.copy01@example.org, uat.copy02@example.org, uat.copy03@example.org, uat.copy04@example.org, uat.copy05@example.org, uat.copy06@example.org",
+        "A badly formed address: not-an-address",
+        "Role change for UAT DCO 01: to 'DCO Admin', then back to 'Data Collection Owner'; Reason: UAT - copy check",
+    ],
+    steps=[
+        sign_in("admin@cmp.local"),
+        {
+            "action": "In the sidebar under 'Your work' click 'Message templates'. Under 'Sign-in' look at the cards 'Staff sign-in code', 'Password reset code' and 'Staff account invitation'.",
+            "expected": f"None of the three has a 'Copy to' box. Each shows, with a padlock, the line '{NEVER_COPIED}' A code or a link is never copied.",
+        },
+        {
+            "action": "Scroll to the heading 'Accounts' and find the card 'Your role has changed'.",
+            "expected": "The card shows a 'Copy to' box with the hint 'Email only. Up to 5 addresses, one per line - a team mailbox, an approvals inbox. Each copy gets the same email, in Cc.' The box is empty (grey example approvals@example.org) and the 'Save copies' button is greyed out.",
+        },
+        {
+            "action": "In 'Copy to' type the six addresses from the test data, one per line.",
+            "expected": "'Save copies' stays greyed out: more than five addresses cannot be saved.",
+        },
+        {
+            "action": "Delete the sixth line (uat.copy06@example.org) and replace the second line with not-an-address. Click 'Save copies'.",
+            "expected": "A red message 'Not saved' reads 'Not an email address: not-an-address'. Nothing is saved.",
+        },
+        {
+            "action": "Reload the page and find the 'Your role has changed' card again.",
+            "expected": "'Copy to' is empty again: the refused list was not kept.",
+        },
+        {
+            "action": "Type uat.copy01@example.org and uat.copy02@example.org in 'Copy to', one per line, and click 'Save copies'. Reload the page.",
+            "expected": "A green message 'Copied to 2 addresses' appears. After the reload the card's 'Copy to' box still lists both addresses.",
+        },
+        {
+            "action": "Click 'Users', type uat.dco01@cmp.local in 'Search' and click 'Search'. Click 'Role' on the UAT DCO 01 row. In the 'Change role' dialog choose 'DCO Admin' in 'New role', type 'UAT - copy check' in 'Reason' and click 'Change role'.",
+            "expected": "A green message 'Role changed' appears and the row shows Role 'DCO Admin'.",
+        },
+        {
+            "action": "Ask the test coordinator for the newest email to uat.dco01@cmp.local in the test outbox.",
+            "expected": "The coordinator finds one email whose subject ends 'console role is now DCO Admin', saying the role changed from Data Collection Owner to DCO Admin. Directly under its 'to:' line, a 'cc:' line lists uat.copy01@example.org and uat.copy02@example.org: the copies went with the same email, not as separate messages.",
+        },
+        {
+            "action": "Back on 'Users', click 'Role' on the UAT DCO 01 row again, choose 'Data Collection Owner' in 'New role' and click 'Change role'.",
+            "expected": "'Role changed' appears and the row shows Role 'Data Collection Owner' again (this email is copied too).",
+        },
+        {
+            "action": "Return to 'Message templates', clear the 'Copy to' box of 'Your role has changed' and click 'Save copies'.",
+            "expected": "A green message 'No longer copied' appears and the box stays empty after a reload.",
+        },
+        {
+            "action": "Click 'Audit trail'. In 'Area' choose 'Messages' and in 'Event' choose 'Copies updated'. Click the newest row, then 'Show raw JSON'.",
+            "expected": "The two newest rows are 'Message template copies updated' by 'System Admin' with the 'Administrator' badge, timed at the two saves (the refused save is not there). The newest one's details name the message (\"message\": \"staff_role_changed\") and how many addresses it is copied to (\"copies\": 0); no email address appears anywhere in the entry.",
+        },
+    ],
+    pass_criteria="A copyable message is copied to at most five valid addresses - six or a malformed one are refused and nothing is kept; the copies travel in Cc on the same email; messages carrying a code or a link offer no 'Copy to' at all; every saved change is audited by count, never by address.",
 )
 
 for i, c in enumerate(cases, 1):

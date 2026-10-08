@@ -35,7 +35,7 @@ Done on 2026-10-08.
 | 9 | **One rule for overdue**, the server's: overdue once the due date has passed (the end of that day); a final reminder only then | `tickets.py` |
 | 10 | **Nobody left guessing.** The holder is told when the office records or accepts their answer; the person a ticket is moved away from is told; a holder cannot write on a closed request | `service.py` |
 | 11 | **Daily reminders** while overdue and unanswered, from the nightly sweep | `sweep_tickets` |
-| 12 | **My tasks for holders.** *To do · Waiting on the office · Done*; a clear *Submit your answer* form - what was done, then a summary, then a file; the dialog stays open after a message; withdrawn and no-answer tickets say so | console `tickets/page.tsx` |
+| 12 | **My tasks for holders.** *To do · Waiting on the Privacy Office · Done*; a clear *Submit your answer* form - what was done, then a summary, then a file; the dialog stays open after a message; withdrawn and no-answer tickets say so | console `tickets/page.tsx` |
 
 ## Phase 2: external holders on the portal, internal without a login, per-holder instructions
 

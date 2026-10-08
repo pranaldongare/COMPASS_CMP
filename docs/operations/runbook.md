@@ -124,7 +124,8 @@ Check them in order:
 
 In the browser's network tab, `/dkms/decrypt` answering 503 is case 1 or 2;
 401 means the session cookie is missing (`NEXT_PUBLIC_SESSION_COOKIE` must
-match the API's `COOKIE_NAME`).
+match the API's `COOKIE_NAME`) - or, on an outside holder's ticket page, the
+ticket cookie (`NEXT_PUBLIC_TICKET_COOKIE` and `HOLDER_TICKET_COOKIE`).
 
 ## Sign-in or a search finds nobody who is there
 
@@ -207,10 +208,21 @@ column, and whenever you want proof that nothing is in the clear.
   the blocked reasons are the missing prerequisites (not verified, not
   classified, intent not confirmed, event not evidenced, reviewer not
   assigned).
-- **A ticket was issued and nobody was told.** For an in-house respondent the
-  ticket is on their dashboard, not in email; check the processor's
-  respondents. For a third party, check the notifications queue and the
-  transport.
+- **A ticket was issued and nobody was told.** The holder's row on the
+  request says how they are reached. With a console login the ticket is in
+  their **My tasks** and they are emailed it in full; an internal address with
+  no login is given a temporary login (see "A holder cannot sign in"); any
+  other address is emailed only a link to the portal (`/ticket/…`). Check the
+  notifications queue and the transport; locally, the outbox.
+- **An outside holder cannot open their ticket.** The link stops working once
+  the ticket is sent to somebody else - they need the newer email. The code
+  goes to the address on the ticket, never one they type; it lasts ten
+  minutes and the ticket then stays open an hour in that browser
+  (`HOLDER_TICKET_SESSION_S`). "This link is not valid" on every link means
+  the API cannot find the ticket (wrong environment); sealed text on the page,
+  or `/dkms/decrypt` answering 401, means the portal's
+  `NEXT_PUBLIC_TICKET_COOKIE` does not match the API's `HOLDER_TICKET_COOKIE`.
+  The DPO can always record the answer for them from the request.
 - **The office's bell shows unread messages on a closed request.** Threads
   stay readable after closure; reading them clears the count.
 - **The sweep did not close an unverified request.** It runs at 02:30 and
@@ -338,8 +350,11 @@ breach's **Tickets** card.
 
 ## A holder cannot sign in
 
-Somebody given a breach-only login (S3-09) says the console will not let them
-in. Their row on the breach's **Tickets** card says which state they are in.
+Somebody given a temporary login - for a breach ticket (S3-09) or, since 0049,
+a rights ticket sent to an internal address - says the console will not let
+them in. Their row on the breach's **Tickets** card, or on the request's
+**Holders and tickets** card, says which state they are in. For a rights
+ticket, read "breach" below as "request".
 
 | Tickets card shows | Cause | Do |
 |---|---|---|
@@ -350,7 +365,9 @@ in. Their row on the breach's **Tickets** card says which state they are in.
 | No badge, and they are not staff | The address belongs to an account that was not active staff when asked - a suspended account is refused at assignment | An administrator reactivates the account, then assign again |
 
 A code typed on the **portal** signs them in as a data principal, never to
-their ticket: the console is where a holder works.
+their ticket: the console is where an internal holder works. (A holder
+outside the organisation is the other way round: it has no login, and answers
+on the portal by its ticket's link.)
 
 ## A grant is still open on a closed breach
 
@@ -454,7 +471,12 @@ pool reconnects.
   `noeviction` on purpose, so it refuses rather than evicting live sessions
   and codes. Raise `maxmemory` or find what is filling it (`redis-cli
   --bigkeys`); rate counters and codes expire within the hour, sessions
-  within eight.
+  within eight. **Celery's task results** live in database 2 and are kept 24
+  hours (`result_expires`, `tasks/app.py`); a burst of tasks fills it - on
+  2026-10-08 an integration run that queued about a hundred thousand emails
+  did. `redis-cli -n 2 dbsize` counts them; if database 2 is
+  `celery-task-meta-*` keys, `redis-cli -n 2 flushdb` frees it. Never flush
+  database 0 (sessions, codes) or 1 (the queues).
 
 ## The worker is running but nothing happens
 
@@ -509,7 +531,7 @@ service. So, before running them against a database with sealed rows in it:
   files. Nothing here is deleted by the application.
 - `var/outbox.log` in local: grows with every code sent. Truncate it.
 - Redis: sessions and codes expire on their own; a rate counter lasts an
-  hour.
+  hour; a task's result (database 2) lasts 24 hours.
 
 ## Resetting a development machine
 
@@ -528,7 +550,7 @@ point.
 | worker, beat | stdout |
 | key service | stdout; `dkms.ready` at start names the provider and pool |
 | a portal's server | stdout; `[dkms] …` lines when a decrypt fails, never a value |
-| a reverse proxy, if one is in front | its own access log; scrub `/c/{token}` to `/c/[token]` there too, as the application does |
+| a reverse proxy, if one is in front | its own access log; scrub the tokens in `/c/{token}`, `/rights/nominations/{token}`, `/holder-tickets/{token}` and the portal's `/ticket/{token}` there too, as the application does |
 | what was sent to whom | `audit_log` entries of type notification, and in local the outbox |
 
 Signals worth an alert are listed in

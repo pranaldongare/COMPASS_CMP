@@ -6,14 +6,13 @@ What happens between a socket and a row, in order.
 CLIENT
   │
   ▼
-TrustedHost → CORS → GZip                      bootstrap/middleware.py
-  │   a request for a host we do not serve is refused before it reaches
-  │   anything that logs or allocates
+Prometheus                                     bootstrap/application.py
+  │   timing and counts per route template, when installed
   ▼
 RequestContext                                 api/middleware/request_context.py
   │   mints or adopts a request id, binds it to a contextvar
-  │   FIRST, because everything after — including the failure of anything
-  │   after — needs somewhere to record which request it was
+  │   first of ours, because everything after — including the failure of
+  │   anything after — needs somewhere to record which request it was
   ▼
 SecurityHeaders                                api/middleware/security_headers.py
   ▼
@@ -21,7 +20,13 @@ BodyLimit                                      api/middleware/body_limit.py
   │   refuses an oversized body before anything parses it
   ▼
 AccessLog                                      api/middleware/access_log.py
-  │   one structured line; the consent token is scrubbed from the path
+  │   one structured line; the token in /c/, /rights/nominations/ and
+  │   /holder-tickets/ paths is scrubbed
+  ▼
+GZip → CORS → TrustedHost                      bootstrap/middleware.py
+  │   added first, so Starlette runs them last: after the request id,
+  │   headers, body limit and access log (TrustedHost only when
+  │   TRUSTED_HOSTS is not *)
   ▼
 Router match                                   api/routers/{v1,public}/
   ▼
@@ -52,7 +57,8 @@ Portal API client                              src/lib/api/client.ts
   │   finds the sealed values; one batch per response
   ▼
 Portal server route                            src/app/dkms/decrypt/route.ts
-  │   no session, no decryption; nothing logged
+  │   no cmp_session or cmp_ticket cookie, no decryption (its value is
+  │   not checked: SEC-1, open); nothing logged
   ▼
 Key service                                    POST ${DKMS_URL}/bulk_decrypt
       plaintext back to the page, never to the API

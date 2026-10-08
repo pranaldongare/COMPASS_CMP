@@ -9,10 +9,11 @@ code, [known gaps](06-known-gaps.md) says so.
 
 There are eight roles (`core/permissions.py`): `dpo`, `dco`, `dco_admin`,
 `rco`, `rnd_user`, `admin` - the **staff** - `data_subject`, the
-**data principals**, and `breach_holder`, a breach-only login that signs in
+**data principals**, and `breach_holder`, a temporary login that signs in
 like staff but is not staff: `RequireStaff` excludes it, MFA is always
-required for it, and it reaches only the tickets addressed to it (S3-09,
-ADR 0023). Staff sign in to the console with a password and a
+required for it, and it reaches only the tickets addressed to it - a breach
+ticket (S3-09, ADR 0023) or, since 0049, a rights ticket given to a colleague
+with no console login. Staff sign in to the console with a password and a
 second factor. Data principals have no password; they prove a contact with a
 one-time code.
 
@@ -63,9 +64,10 @@ activates the account and signs out every existing session.
 
 ## Data-principal sign-in
 
-**One-time codes** (`auth/authentication/otp.py`) serve eight flows - portal
+**One-time codes** (`auth/authentication/otp.py`) serve nine flows - portal
 sign-in, consent link, staff MFA, contact confirmation, rights verification,
-nominee verification, registration and nomination acceptance:
+nominee verification, registration, nomination acceptance and an outside
+holder opening its ticket:
 
 - A code is six digits from `secrets`.
 - Redis keeps only `HMAC(SECRET_KEY, "<scope>:<code>")` at
@@ -96,6 +98,11 @@ a new registration must prove every contact it gave. See
 |---|---|---|---|---|
 | `cmp_session` | yes | `COOKIE_SECURE` (true except in local `.env`) | `lax` | 8 h (5 min while partial) |
 | `cmp_csrf` | **no** - the page must read it | same | `lax` | same |
+| `cmp_ticket` | yes | `COOKIE_SECURE` | `strict` | 1 h |
+
+`cmp_ticket` is an outside holder's hour on one rights ticket (0049), not a
+session: Redis keeps its fingerprint at `hts:<HMAC(value)>`, naming the holder
+and the link it was opened through.
 
 - **Two limits**: eight hours absolute (`SESSION_TTL_S`) and 30 minutes idle
   (`SESSION_IDLE_TIMEOUT_S`). Each request slides the idle window, except one
@@ -117,8 +124,10 @@ Double submit, checked against the session. On POST, PUT, PATCH and DELETE,
 `X-CSRF-Token` header with the CSRF token stored in the Redis session, using
 a constant-time comparison. The frontends copy the `cmp_csrf` cookie into
 that header in their axios interceptor. Routes that do not load the session
-through this dependency - the unauthenticated forms, and one cookie route,
-see [known gaps](06-known-gaps.md) - are not checked.
+through this dependency - the unauthenticated forms, and an outside holder's
+`/holder-tickets/{token}/*`, which rely on the `SameSite=Strict` cookie and
+the link token in the path instead ([CSRF](../security/csrf.md)) - are not
+checked.
 
 ## Authorisation
 
@@ -169,6 +178,7 @@ buckets, which let requests through.
 | `consent_otp_contact` / `consent_otp_token` | contact / link | 5 / hour, 20 / hour |
 | `rights_public_contact` / `rights_public_ip` | contact / address | 5 / hour, 20 / hour |
 | nomination buckets | address or nomination | 5-60 per window |
+| `holder_link_ip` / `holder_link_act_ip` / `holder_ticket_code` | address / address / ticket | 60 / minute, 20 / hour, 5 / hour |
 | one code | the code | 5 attempts, then discarded |
 
 Full table: [rate limiting](../security/rate-limiting.md).
@@ -227,9 +237,11 @@ More: [encryption at rest](../security/encryption-at-rest.md),
 
 ## Capability tokens
 
-A consent link, a nominee's acceptance link and a session are all bearer
-tokens: 32 random bytes, stored only as `HMAC(SECRET_KEY, token)`. A consent
-link also keeps a sealed copy so the collector can copy the URL again.
+A consent link, a nominee's acceptance link, an outside holder's ticket link
+(`rights_request_holder.link_token`, 0049), its `cmp_ticket` cookie and a
+session are all bearer tokens: 32 random bytes, stored only as
+`HMAC(SECRET_KEY, token)`. A consent link and a ticket link also keep a sealed
+copy, so the URL can be sent again.
 Tokens are kept out of logs (`safe_path()` replaces them with `[token]`), out
 of metrics labels, out of referrers (`no-referrer` on those pages) and out of
 Celery's events. Rotating `SECRET_KEY` invalidates all of them, and every

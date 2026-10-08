@@ -1,7 +1,8 @@
 # Testing
 
 Seven suites, each answering a different question. Counts are as of
-2026-10-05 (S3-08) and change with every feature; the commands do not.
+2026-10-08 (rights tickets phase 2, migration 0049) and change with every
+feature; the commands do not.
 
 | Suite | Where | Runs against | Count |
 |---|---|---|---|
@@ -11,7 +12,7 @@ Seven suites, each answering a different question. Counts are as of
 | Backend HTTP | `backend/api/tests/http` | the ASGI app over HTTP, real datastores and key service; **commits** | 145 |
 | Key service | `backend/dkms/tests` | the service in-process; nothing else | 58 |
 | Portal unit | `src/**/*.test.ts*` in each portal | vitest with MSW | 382 console, 247 portal |
-| Browser | `e2e/` in each portal | the running stack in a real browser | 210 console and 78 portal test runs across the Playwright projects (setup included) |
+| Browser | `e2e/` in each portal | the running stack in a real browser | on 2026-10-08, the `chromium` project: console 92 (90 pass; the two project-form specs fail on a development database with more processors than the form loads), portal 33 |
 
 ### Which suites need the key service
 
@@ -127,7 +128,7 @@ All three are clean as of 2026-09-17; anything reported is new.
 
 ```bash
 cd backend/dkms && . .venv/bin/activate      # requirements-dev.txt installed
-pytest tests                                 # 55 tests, nothing running needed
+pytest tests                                 # 58 tests, nothing running needed
 ruff check app tests && mypy app
 ```
 
@@ -185,7 +186,7 @@ other specs leave their records.
 `breach-tickets.spec.ts` (S3-08) runs three roles in order: the DPO logs an
 incident, validates it a breach and assigns a ticket to the seeded DCO
 (`dco@cmp.local`, on `BREACH_TICKET_EMAIL_DOMAINS`' default `cmp.local`); the
-DCO returns it from **Tickets**; the DPO closes the ticket and then the breach.
+DCO returns it from **My tasks**; the DPO closes the ticket and then the breach.
 It closes the breach it made. The worker must have been restarted since
 `send_breach_ticket_waiting` was added, or the assignment email is dropped.
 
@@ -196,23 +197,23 @@ It closes the breach it made. The worker must have been restarted since
 | `E2E_PASSWORD` | console | `SeedPassw0rd!2026` | the seed's staff password is used by `auth.setup.ts` |
 | `E2E_CONSENT_TOKEN` | portal | none | the consent journey in `consent-flow.spec.ts` skips. The token is the last segment of an active link's `url_path` from `GET /links` |
 | `E2E_OUTBOX` | both | `backend/api/var/outbox.log` | |
-| `E2E_PORT` | both | 3100 console, 3201 portal | |
 | `E2E_BASE_URL` | both | `http://127.0.0.1:<E2E_PORT>` | set, the suite uses that server and builds nothing |
 | `E2E_SHOTS` | portal | empty | `rights.spec.ts` takes no screenshots |
 | `E2E_PORT` | both | 3100 console, 3201 portal | the port the suite builds and serves on. **A server already on that port is reused, whatever it serves** - on 1 October 2026 another checkout's dev server on 3100 answered 404 for pages this branch has, and the failures looked like the app's. Check `lsof -iTCP:3100 -sTCP:LISTEN` first, or set another port |
 
 The console suite has five projects. `setup` signs in every role once, with
 its emailed code, and saves the sessions; `chromium` and `mobile` run the
-specs (account contacts, audit, auth, controls, detail pages, forms, links,
-messages, navigation coverage, notice review, notice upload, routing, sealed
-values never shown); `localhost-cookies` re-runs the auth spec
+specs (account contacts, audit, auth, breaches, breach tickets, controls,
+detail pages, forms, links, list state, messages, name, navigation coverage,
+notice review, notice upload, routing, sealed values never shown); `localhost-cookies` re-runs the auth spec
 on the other origin; `visual` takes the screenshots. The suites read one-time
 codes from the outbox by shape (a code on its own line, "code is 123456", or
 a line opening with the code), so rewording a message on the Messages page
 that drops all three shapes will make them fail; keep one. The portal suite covers the
 consent flow, sign-up with two codes, the rights pages including nomination
-acceptance, the data principal's own pages, a member of staff signing in as a data
-principal, and sealed values never reaching the page. `expectNoSidewaysScroll` in
+acceptance, the data principal's own pages, her breach notices, a name
+correction, a member of staff signing in as a data principal, and sealed
+values never reaching the page. `expectNoSidewaysScroll` in
 `e2e/support/layout.ts` is asserted on every page the mobile project visits.
 
 ### Rules for running them
@@ -248,6 +249,9 @@ principal, and sealed values never reaching the page. `expectNoSidewaysScroll` i
   serialise writes; their throughput has not been measured.
 - The HTTP SMS gateway: the transport is unit-tested by shape only, since no
   gateway exists in a test environment.
+- The rights holders card and an outside holder's portal page `/ticket/[token]`
+  (0049) have vitest and HTTP-suite coverage, but no browser spec: the page
+  needs a ticket issued to an outside address first.
 
 ## Continuous integration
 

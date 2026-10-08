@@ -55,6 +55,13 @@ events only from the console's bell.
 
 All 13 are email only, and all may be copied by the office.
 
+**Since the plan (2026-10-08, migration 0049):** two more rights emails, for a
+holder outside the organisation - *Ticket link to an outside holder* (every
+email about its ticket: what happened, the date and the link, nothing of the
+request) and *Code to open a ticket*. Both are email only and never copied:
+they carry a link or a code. With them the platform sends 41 emails
+([README](README.md)).
+
 ## Left as it is, on purpose
 
 | What | Why |

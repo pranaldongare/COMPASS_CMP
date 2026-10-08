@@ -11,6 +11,7 @@
 "use client";
 
 import { LogOut } from "lucide-react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import * as React from "react";
 
@@ -189,6 +190,11 @@ function CodeStep({
           {sent ? "Send a new code" : "Send me a code"}
         </Button>
         {sent && <p className="text-text-muted" role="status">{sent}</p>}
+        <p className="text-xs text-text-subtle">
+          <Link href="/help#ticket-link" className="underline underline-offset-2">
+            How answering a ticket works
+          </Link>
+        </p>
         {sent && (
           <form method="post" noValidate onSubmit={verify} className="space-y-3">
             <Field label="Six-digit code" required>

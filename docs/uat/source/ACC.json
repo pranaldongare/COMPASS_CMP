@@ -20,7 +20,7 @@
     "steps": [
       {
         "action": "Open http://localhost:3000 in the browser.",
-        "expected": "You are taken to the page headed 'Sign in' with the text 'Sign in with your password, then the code sent to your email.' It shows the fields 'Email or username' and 'Password', a 'Sign in' button, a 'Forgotten your password?' link and, at the bottom, a 'Go to the consent portal' link."
+        "expected": "You are taken to the page headed 'Sign in' with the text 'Sign in with your password, then the code sent to your email.' It shows the fields 'Email or username' and 'Password', a 'Sign in' button, a 'Forgotten your password?' link and, at the bottom, the links 'Read the help manual' and 'Go to the consent portal'. In this test environment (development codes switched on) a folded panel 'Development accounts (<n>)' also sits under 'Forgotten your password?': opened, it lists the seed logins still on the seed password, each with a 'Use' button that fills the form. It is for development only - do not use it in this case; type the details."
       },
       {
         "action": "Type dpo@cmp.local in 'Email or username' and SeedPassw0rd!2026 in 'Password', then click 'Sign in'.",
@@ -32,7 +32,7 @@
       },
       {
         "action": "Ask the test coordinator for the code sent to dpo@cmp.local (from the test outbox). Clear the box, type the six-digit code into '6-digit code' and click 'Verify and continue'. Do this within 5 minutes of step 2.",
-        "expected": "You are signed in and land on the Dashboard. The page heading reads 'Good day, Priya'."
+        "expected": "You are signed in and land on the Dashboard. The page heading reads 'Good day, Priya', and beside it are the buttons 'Log an incident' and 'New notice template'."
       },
       {
         "action": "Look at the top right of the header.",
@@ -70,7 +70,7 @@
       },
       {
         "action": "Ask the test coordinator for the code sent to dco@cmp.local (from the test outbox), type it into '6-digit code' and click 'Verify and continue'.",
-        "expected": "The Dashboard opens with the heading 'Good day, Arun'. The header shows 'Arun Shetty' with the role badge 'Data Collection Owner'."
+        "expected": "The Dashboard opens with the heading 'Good day, Arun'. The header shows 'Arun Shetty' with the role badge 'Data Collection Owner'. No 'Log an incident', 'Register a project' or 'Provision an account' button is shown beside the heading: a collection role starts nothing from the dashboard."
       },
       {
         "action": "Read the sidebar menu from top to bottom.",
@@ -86,7 +86,7 @@
       },
       {
         "action": "Sign in as admin@cmp.local with SeedPassw0rd!2026, then enter the code the test coordinator gives you for admin@cmp.local (from the test outbox) and click 'Verify and continue'.",
-        "expected": "The Dashboard opens with the heading 'Good day, System'. The header shows 'System Admin' with the role badge 'Administrator'."
+        "expected": "The Dashboard opens with the heading 'Good day, System'. The header shows 'System Admin' with the role badge 'Administrator'. A 'Provision an account' button sits beside the heading."
       },
       {
         "action": "Read the sidebar menu.",
@@ -340,7 +340,7 @@
     "steps": [
       {
         "action": "In browser 1, sign in to http://localhost:3000 as rnd@cmp.local with the password and code. Click your name at the top right to open the account menu, then click 'My profile'.",
-        "expected": "The page 'My profile' opens with three tabs - 'Contacts' (selected), 'Active sessions' with a count, and 'Password' - and the 'Identity' card beside them. Identity shows Name 'Kavya Rao', Role 'R&D User', Status 'Active' and a 'Session expires' time about 8 hours from now."
+        "expected": "The page 'My profile' opens with three tabs - 'Contacts' (selected), 'Active sessions' with a count, and 'Password' - and the 'Identity' card beside them. Identity shows Name 'Kavya Rao' (with a 'Change' button beside it), Role 'R&D User', Status 'Active' and a 'Session expires' time about 8 hours from now."
       },
       {
         "action": "On the 'Contacts' tab, look at the 'Work email' row.",
@@ -422,7 +422,7 @@
       },
       {
         "action": "Click your name at the top right to open the account menu, then click 'My profile'.",
-        "expected": "'My profile' opens. Identity shows Name 'Tester One', Mobile and Email as entered, Role 'Data Subject', Status 'Active' and Date of birth 15 Aug 1990 (no under-18 badge). In Contacts, the mobile and email both show 'Confirmed'."
+        "expected": "'My profile' opens. Identity shows Name 'Tester One' (with a 'Change' button beside it), Mobile and Email as entered, Role 'Data Subject', Status 'Active' and Date of birth 15 Aug 1990 (no under-18 badge). In Contacts, the mobile and email both show 'Confirmed'."
       }
     ],
     "pass_criteria": "A new adult can register with a mobile, an optional email and a date of birth, must confirm every contact given with its own code, and is then signed in to 'My consents'."
@@ -962,5 +962,132 @@
       }
     ],
     "pass_criteria": "A portal session left unused for more than 30 minutes ends by itself and the next action leads to sign-in, well before the 8-hour absolute limit."
+  },
+  {
+    "id": "ACC-21",
+    "area": "Access and accounts",
+    "title": "A data principal corrects her name from My profile",
+    "feature": "Portal account - correct own name",
+    "role": "Data principal on portal",
+    "priority": "Medium",
+    "type": "Positive",
+    "ref": "S3-05",
+    "preconditions": [
+      "ACC-09 has been passed, so the tester owns the account Tester One (email tester01@example.org).",
+      "A fresh private/incognito browser window with nobody signed in.",
+      "The test coordinator can read the test outbox."
+    ],
+    "test_data": [
+      "Sign-in email: tester01@example.org",
+      "Corrected name: '  Tester One Corrected  ' (two spaces before and after)",
+      "Name to restore at the end: Tester One"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3001/sign-in, choose 'Email', type tester01@example.org and click 'Send me a code'. Enter the code the test coordinator gives you for tester01@example.org (from the test outbox) and click 'Verify'.",
+        "expected": "You land on 'My consents'. The header shows 'Tester One' with the role badge 'Data Subject'."
+      },
+      {
+        "action": "Click your name at the top right to open the account menu, then click 'My profile'. Look at the 'Identity' card.",
+        "expected": "'My profile' opens. In 'Identity' the 'Name' row reads 'Tester One' with a 'Change' button beside it. No other Identity row (Mobile, Email, Role, Person type, Status, Date of birth) has a 'Change' button."
+      },
+      {
+        "action": "Click 'Change' beside the name.",
+        "expected": "The row becomes a 'Name' box filled with 'Tester One', with the hint 'As you would like it to appear' and the buttons 'Save' and 'Cancel'."
+      },
+      {
+        "action": "Clear the box completely. Then type three spaces and nothing else.",
+        "expected": "With the box empty, 'Save' is greyed out and cannot be clicked; with only spaces in it, it stays greyed out. An empty name cannot be saved."
+      },
+      {
+        "action": "Click 'Cancel'.",
+        "expected": "The box closes and the name still reads 'Tester One'. Nothing was saved."
+      },
+      {
+        "action": "Click 'Change' again and, without editing the name, click 'Save'.",
+        "expected": "The box closes and the name still reads 'Tester One'. No 'Name changed' message appears: an unchanged name is not sent."
+      },
+      {
+        "action": "Click 'Change', replace the name with '  Tester One Corrected  ' (two spaces before and after) and click 'Save'.",
+        "expected": "A green message 'Name changed' reads 'Your account now reads Tester One Corrected.' The 'Name' row shows 'Tester One Corrected' with the spaces removed, and the header at the top right shows 'Tester One Corrected' too."
+      },
+      {
+        "action": "Reload the page.",
+        "expected": "The 'Name' row still reads 'Tester One Corrected'. Mobile, Email, Role 'Data Subject' and Date of birth are as they were: only the name changed."
+      },
+      {
+        "action": "Click 'Sign out'. Sign in again with 'Email' tester01@example.org and the new code the test coordinator gives you.",
+        "expected": "You are signed in as before and land on 'My consents'; the header shows 'Tester One Corrected'. Changing the name did not change how you sign in."
+      },
+      {
+        "action": "Restore the name: open 'My profile' from the account menu, click 'Change', type 'Tester One' and click 'Save'.",
+        "expected": "'Name changed' reads 'Your account now reads Tester One.' The 'Name' row and the header show 'Tester One' again."
+      }
+    ],
+    "pass_criteria": "A data principal can correct her own name from 'My profile' with 'Change': an empty name cannot be saved, an unchanged one sends nothing, a new one is trimmed, saved and shown at once in the profile and the header, and nothing else on the account changes."
+  },
+  {
+    "id": "ACC-22",
+    "area": "Access and accounts",
+    "title": "A member of staff corrects her own name on the console, and the change is audited without the name",
+    "feature": "Staff account page (My profile) - correct own name",
+    "role": "DPO on console",
+    "priority": "Medium",
+    "type": "Positive",
+    "ref": "S3-05",
+    "preconditions": [
+      "A fresh private/incognito browser window with nobody signed in.",
+      "The test coordinator can read the test outbox.",
+      "Agree the time with the test coordinator: until the name is restored at the end, other testers see 'Priya S. Menon' wherever the DPO's name is shown."
+    ],
+    "test_data": [
+      "Account: dpo@cmp.local (Priya Menon) / SeedPassw0rd!2026",
+      "Corrected name: Priya S. Menon",
+      "Name to restore at the end: Priya Menon",
+      "Part of the name to search for: Menon"
+    ],
+    "steps": [
+      {
+        "action": "Open http://localhost:3000/sign-in, sign in with dpo@cmp.local and SeedPassw0rd!2026, then enter the code the test coordinator gives you for dpo@cmp.local (from the test outbox) and click 'Verify and continue'.",
+        "expected": "The Dashboard opens with the heading 'Good day, Priya'. The header shows 'Priya Menon' with the role badge 'DPO'."
+      },
+      {
+        "action": "Click your name at the top right to open the account menu, then click 'My profile'.",
+        "expected": "'My profile' opens. The 'Identity' card shows Name 'Priya Menon' with a 'Change' button beside it, and Role 'DPO'."
+      },
+      {
+        "action": "Click 'Change' beside the name and clear the box completely.",
+        "expected": "A 'Name' box with the hint 'As you would like it to appear' and the buttons 'Save' and 'Cancel' is shown. With the box empty, 'Save' is greyed out and cannot be clicked."
+      },
+      {
+        "action": "Type 'Priya S. Menon' and click 'Save'.",
+        "expected": "A green message 'Name changed' reads 'Your account now reads Priya S. Menon.' The 'Name' row and the header show 'Priya S. Menon'. The role badge still reads 'DPO': a name changes nothing else."
+      },
+      {
+        "action": "Click 'Dashboard' in the sidebar.",
+        "expected": "The heading still reads 'Good day, Priya' (the first name did not change) and the sidebar is unchanged."
+      },
+      {
+        "action": "Under 'Oversight' click 'Users'. Type Menon in 'Search' and click 'Search'.",
+        "expected": "The register lists 'Priya S. Menon' (dpo@cmp.local) with Role 'DPO': the corrected name is still found by part of it."
+      },
+      {
+        "action": "Restore the name: open 'My profile' from the account menu, click 'Change', type 'Priya Menon' and click 'Save'.",
+        "expected": "'Name changed' reads 'Your account now reads Priya Menon.' The 'Name' row and the header show 'Priya Menon'."
+      },
+      {
+        "action": "Click 'Change' again and, without editing, click 'Save'.",
+        "expected": "The box closes; no 'Name changed' message appears and nothing is sent."
+      },
+      {
+        "action": "Click 'Audit trail' under 'Oversight'. In 'Area' choose 'Accounts' and in 'Event' choose 'Updated'. Then set 'About' to 'Member of staff', type Priya and pick 'Priya Menon'.",
+        "expected": "The chips 'Event Updated' and 'Actor Priya Menon' are shown. The two newest rows are 'User updated' entries timed at steps 4 and 7; there is no third entry for step 8."
+      },
+      {
+        "action": "Click the newest 'User updated' row, then click 'Show raw JSON'.",
+        "expected": "The dialog shows 'Who' Priya Menon with the 'DPO' badge. The recorded details say only that the change was made by the person herself (\"self_service\": true): neither 'Priya S. Menon' nor any other name or address appears in the details."
+      }
+    ],
+    "pass_criteria": "A member of staff corrects her own name from the console's 'My profile' just as a data principal does on the portal: an empty name cannot be saved, an unchanged one sends nothing, the new name shows at once and is still found by part of it, the role is untouched, and each change is audited as 'User updated' without the name."
   }
 ]

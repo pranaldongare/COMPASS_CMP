@@ -51,7 +51,7 @@ then goes the way every notice goes: each language approved, each purpose
 active, published. The notice remembers its template (`notice.template_id`);
 changing the template afterwards reaches no notice already made from it. Two
 projects that use one template have two notices, so "which text did she agree
-to, for which project" keeps one answer.
+to, for which project" keeps one answer. The decision: [ADR 0028](../decisions/0028-a-notice-template-is-copied-never-served.md).
 
 ## 2. The link and the site
 

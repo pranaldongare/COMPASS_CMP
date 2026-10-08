@@ -26,10 +26,15 @@ Sealed: every column in `ENCRYPTED_FIELDS`
 (`backend/api/src/cmp/infrastructure/dkms/fields.py`). That is names, emails,
 mobiles, usernames, employee ids and dates of birth on `auth_user`; the
 nominee's name and contacts; a rights request's submitted name and contact and
-every free-text field on it and on its holders and tickets; response and
-import file names; the IP address on a consent artefact; the respondent's name
-and contact; and the reason columns on history, delegation and processor
-decisions. The table-by-table list is
+every free-text field on it and on its holders and tickets; the names files
+were uploaded with - a response, an import, a requester's document
+(`rights_request_attachment`), a breach's files (`breach_attachment`) and its
+uploaded lists (`breach_upload`); the IP address on a consent artefact; the
+respondent's name and contact; the reason columns on history, delegation and
+processor decisions and a legal hold's reason (`legal_hold.reason`); every
+narrative of the breach register and its tickets; a person a breach touched
+with no account (`breach_contact`: name, email, mobile); and the office's copy
+addresses (`message_copy.address`). The table-by-table list is
 [docs/dkms/pii-tables-and-fields.md](../dkms/pii-tables-and-fields.md).
 
 Deliberately not sealed, in the database:
@@ -138,7 +143,7 @@ inventory is [docs/domain/personal-data.md](../domain/personal-data.md).
 | Redis `rate:*`, and `otp:*` for contact confirmation and consent links | The contact or IP the limit or code is keyed on | The window, an hour at most |
 | The Celery broker (Redis) | Task arguments. Some carry a contact in the clear: a data principal's sign-in code goes to the contact she typed; a staff invitation carries the opened address and name; a contact confirmation carries the contact. Others carry it sealed and the worker opens it | Until the task runs |
 | `exports/` on disk | The export CSV: names, emails, mobiles and employee ids, opened to write the file | As long as the export is kept |
-| `responses/`, `rights/`, `approvals/` on disk | Uploaded and generated files. Their names are sealed in the database; the contents are not encrypted | As long as they are kept |
+| `responses/`, `rights/`, `requests/`, `breach/`, `approvals/` on disk | Uploaded and generated files. Their names are sealed in the database; the contents are not encrypted | As long as they are kept |
 | `audit_log`, rows before 21 September 2026 | Raw client addresses (2,261 rows) and an email on eleven | For ever; the trail cannot be edited ([ADR 0015](../decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md)) |
 | `var/outbox.log`, development only | Every message, in full | Until deleted |
 | The browser | Opened values on the page. The decrypt route sends `no-store` | The page |

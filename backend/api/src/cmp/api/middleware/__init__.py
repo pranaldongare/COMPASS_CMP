@@ -17,9 +17,9 @@ Two placements in that list are load-bearing rather than arbitrary:
   Pydantic model or a file handler ever sees it. Parsing two gigabytes to
   discover it is too large is the attack this exists to stop.
 
-Host allow-listing, CORS and compression are Starlette's own and are installed
-by `bootstrap.middleware` ahead of these, because a request for a host we do not
-serve should not reach anything that logs or allocates.
+Host allow-listing, CORS and compression are Starlette's own, registered by
+`bootstrap.middleware` before these - so they run after them, inside the access
+log: a request for a host we do not serve is logged, then refused.
 """
 
 from __future__ import annotations

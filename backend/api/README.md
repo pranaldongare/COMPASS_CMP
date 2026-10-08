@@ -1,7 +1,7 @@
 # CMP backend
 
 The API of the consent management platform: FastAPI 0.141 on Python 3.12,
-PostgreSQL 16, Redis 7, Celery 5. 276 endpoints over 45 tables, every query
+PostgreSQL 16, Redis 7, Celery 5. 324 operations over 58 tables, every query
 hand-written SQL over psycopg 3, every migration raw DDL. Personal fields are
 sealed through the key service in [`../dkms`](../dkms) before they reach a
 table. The repository-wide documentation is under
@@ -30,8 +30,8 @@ python3.12 -m venv .venv
 pip install -r requirements-dev.txt # the runtime, the tools, and this package (editable)
 
 cp .env.example .env                # PUBLIC_BASE_URL and CONSOLE_BASE_URL to the two portals; DKMS_URL to the key service
-alembic upgrade head                # 37 migrations: 45 tables, triggers, grants, the lookup hashes
-python scripts/seed.py              # one coherent world: a user per role, processors, sources, sites, a project through to approved, a live link
+alembic upgrade head                # 49 migrations: 58 tables, triggers, grants, the lookup hashes
+python scripts/seed.py              # the administrator, processors, sources, purposes, an approved project with a published notice and a live link
 
 python -m cmp --port 8000
 celery -A cmp.tasks.app worker -Q high_priority,email,documents,reports,notifications,default -l info --pool=solo
@@ -121,8 +121,9 @@ purpose.
 ## Conventions
 
 - **Identifiers on the wire are uuids.** The integer key never appears in a
-  URL, a body, an export or a log. `/c/{token}` is the one capability-shaped
-  exception.
+  URL, a body, an export or a log. `/c/{token}`, `/rights/nominations/{token}`
+  and `/holder-tickets/{token}` are the capability-shaped exceptions; their
+  tokens are scrubbed from the access log.
 - **Pagination is by signed cursor**, never offset.
 - **Unknown query parameters are 400**, never ignored.
 - **Out of scope is 404.** Scope is compiled into the `WHERE`; 403 is for a
@@ -173,6 +174,7 @@ Scheduled work (Celery beat, exactly one instance):
 | `sweep_rights_requests` | 02:30 | closes only unverified requests past the window; marks only tickets past due |
 | `verify_audit_chain` | 03:00 | read-only |
 | `flag_unmapped_assets` | every 6 h at :30 | reconciliation only; flags, never deletes |
+| `alert_breach_duties` | every 5 min | each duty is alerted once per stage (due soon, overdue) |
 
 Celery runs with `acks_late` and `reject_on_worker_lost`, so delivery is
 at-least-once and every task is idempotent; imports upsert on
@@ -187,6 +189,8 @@ python scripts/reset_dev.py            # drop and rebuild the configured databas
 python scripts/healthcheck.py          # checks a running instance; read-only
 python scripts/db.py [table|SQL]        # read the database; every statement rolled back
 python scripts/reseal.py [--check] [--table T]   # seal plaintext left in sealed columns; --check only reports
+python scripts/seed_demo.py            # demo data through the API, as the people who would make it; local/test only
+python scripts/send_test_email.py --to you@example.org   # one email through the configured transport
 ```
 
 `reseal.py` needs the key service and the table owner's role, and is
@@ -200,9 +204,12 @@ src/cmp/
   main.py            ASGI entrypoint
   bootstrap/         assembly: factory, lifespan, middleware, routers, container
   api/
-    routers/v1/      audit, auth, consents, dashboard, delegations, exchange, me,
-                     messages, notices, projects, registry, rights, system, users
-    routers/public/  consent (the /c/{token} flow), rights (the public pages)
+    routers/v1/      audit, auth, breach_tickets, breaches, consents, dashboard,
+                     delegations, exchange, legal_holds, me, messages, notice_templates,
+                     notices, projects, registry, rights, system, transfers, users
+    routers/public/  consent (the /c/{token} flow), rights (the public pages),
+                     holder_tickets (an outside holder's ticket by link and code),
+                     devcodes (development only)
     dependencies/    sessions, csrf, authentication, authorization, paging, filters
     middleware/      request context, security headers, body limit, access log
     errors/          one error contract
@@ -210,18 +217,18 @@ src/cmp/
                      (roles, resources, scopes, evaluator, policy), sessions, rate limits
   domain/            one package per aggregate; the only layer that writes:
                      projects, notices, consent, exchange, registry, users, rights,
-                     messaging, audit, shared
+                     breach, delegations, alerts, messaging, audit, shared
   validation/        constrained types, choice(), contact normalisation
   db/                pool, SQL helpers, one repository per table cluster
   infrastructure/    email, sms, storage; messaging (the one path to a transport);
                      dkms (the key service client, the sealed-field map, the lookup hashes)
   core/              config, enums, constants, permissions, security, errors, pagination,
                      messages (every junction and its default words)
-  tasks/             Celery: authentication, notifications, maintenance, exchange, rights
+  tasks/             Celery: authentication, notifications, maintenance, exchange
 
-migrations/          32 Alembic revisions, raw SQL; 0028 and 0030 also backfill hashes in Python
+migrations/          49 Alembic revisions, raw SQL; 0028 and 0030 also backfill hashes in Python
 tests/               unit/, integration/ (with enforcement/, database/, auth/), security/, http/
-scripts/             seed, create_admin, reset_dev, healthcheck, db, reseal
+scripts/             seed, seed_demo, create_admin, reset_dev, healthcheck, db, reseal, send_test_email
 dev-services.yml     PostgreSQL and Redis for development; the one Docker file
 requirements*.txt    the runtime, pinned; and the tools on top of it
 openapi.json         the generated API document; regenerate after a route change

@@ -4,6 +4,8 @@
 Amended 2026-10-05: an incident is logged first and a breach is recorded on a
 *yes* - see [ADR 0022](0022-an-incident-first-and-a-breach-on-a-yes.md); breach tickets
 and breach-only logins - see [ADR 0023](0023-breach-tickets-and-breach-only-logins.md).
+Amended 2026-10-07: the people it touched may come from a list sent to the
+office - see the end and [ADR 0027](0027-a-breach-can-reach-people-with-no-account.md).
 
 ## Context
 
@@ -126,3 +128,18 @@ the evidence never edited, the register hidden, and nothing submitted.
 [ADR 0023](0023-breach-tickets-and-breach-only-logins.md) adds breach tickets:
 the DPO asks internal staff to act, on a recorded breach, and a breach does not
 close while one is open (migration 0040; temporary logins, migration 0041).
+
+## Amended 2026-10-07: people from a list sent to the office
+
+"Who it touched is derived" above assumed everyone touched has an account.
+Often they do not, and the principals' duty, owed to everyone listed, could
+then never complete. The DPO may now add people from a list sent to the
+office (migration 0045, commit c517f4e): a CSV of name, email and mobile, or
+of asset IDs. A row whose email or mobile is an account's lists that
+account, as before. Anybody else becomes a contact of this breach alone
+(`breach_contact`): sealed, with blind indexes so one contact is listed once,
+append-only, and never removed - like every person listed. A contact is sent
+the notice by email and SMS, never to an account they do not have, and
+counts toward *principals notified* exactly as an account does. The file
+itself is not kept. The decision is
+[ADR 0027](0027-a-breach-can-reach-people-with-no-account.md).

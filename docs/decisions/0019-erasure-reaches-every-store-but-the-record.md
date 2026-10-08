@@ -1,6 +1,8 @@
 # 0019. Erasure reaches every store that holds an item, and never the record of what happened
 
-**Status:** accepted · 2026-09-24. Migration 0031, backlog item S2-03. Amended 2026-10-01: a return carries an outcome (below).
+**Status:** accepted · 2026-09-24. Migration 0031, backlog item S2-03. Amended 2026-10-01: a return carries an outcome (below). Amended 2026-10-08:
+an answer counts only once the office accepts it - see the end and
+[ADR 0025](0025-a-holders-answer-counts-once-accepted-and-the-server-owns-the-moves.md).
 
 ## Context
 
@@ -88,3 +90,20 @@ the holder's word, and sending the ticket back is how the holder is asked
 again. Returns recorded before 0037 have no outcome and are read as done,
 which is how they were treated. The same rule applies to a correction: S2-02's
 guard counts only returns that say the work was done.
+
+## Amended 2026-10-08: an answer counts once the office accepts it
+
+A holder's answer used to count the moment it came back, before anybody at
+the office had read it. Now it waits for review (migration 0048, commit
+c59d9da): the DPO **accepts** it (`accepted_at`, `accepted_by` on
+`rights_request_holder`) or **sends it back**. The holder's copy is done only
+on an answer that is accepted and says *done*. Until then the store is
+*waiting*, with the reason `answer_to_review`; an accepted answer saying
+*partial* or *failed* records it *failed*, as before
+(`domain/rights/erasure.py`, `_holder_copy`; `domain/rights/execution.py`,
+`returned_done` and `returned_short`). An answer the office records itself,
+for a holder reached by email, is accepted as it is recorded: the office
+wrote it. Returns in the database before 0048 were marked accepted as of
+their return, so nothing that had settled unsettled. The rule for the whole
+ticket, not only erasure, is
+[ADR 0025](0025-a-holders-answer-counts-once-accepted-and-the-server-owns-the-moves.md).

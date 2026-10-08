@@ -10,12 +10,12 @@ Alembic's default names a revision with a random hex id. This repository
 numbers them, so give the next number yourself:
 
 ```bash
-alembic revision --rev-id 0034 -m "what it does"
+alembic revision --rev-id 0050 -m "what it does"
 ```
 
 Then rewrite the generated file in house style
 ([the database](04-database.md#what-a-migration-looks-like)): a docstring
-saying why, `Revises: 0033`, the SQL in `UPGRADE` and `DOWNGRADE` strings,
+saying why, `Revises: 0049`, the SQL in `UPGRADE` and `DOWNGRADE` strings,
 and `op.execute()`. Drop the generated `sqlalchemy` import if you do not use
 it. In the SQL:
 
@@ -74,7 +74,13 @@ connection:
 - put no personal data in the audit detail.
 
 A message about the change goes through `dispatch_optional` so it is sent
-only after the commit.
+only after the commit. A new message is a `Message` and a `Junction` in the
+catalogue, `core/messages.py` - and in `COPYABLE` if the office may copy it to
+somebody, or `ATTACHABLE` if it may carry a file, only where that is allowed.
+Its task sends it only through `deliver()` (`infrastructure/messaging`),
+never a transport directly. `docs/tools/generate-email-docs.py` then writes
+it into `docs/email/messages.md` and the module's page in
+`docs/notifications/`; `--check` says when they are stale.
 
 ## 5. The route
 
@@ -114,6 +120,14 @@ The key service must be running. Integration tests share the development
 database, so a row you created by hand can collide with a fixture on a
 unique index; see [testing](../operations/testing.md).
 
+A task is not rolled back with a test's rows: queued through Celery, it would
+run against the live worker. So the root fixture `_no_real_tasks`
+(`tests/conftest.py`) stops every `apply_async` in every test. A test that
+needs to see what was sent captures the dispatch itself, with a `sent` or
+`queued` fixture (`tests/integration/conftest.py` has `sent`); one that
+simulates a broker outage patches the broker, which the fixture leaves
+alone.
+
 ## 7. The generated documents
 
 ```bash
@@ -127,6 +141,9 @@ cd frontend/portal  && npm run api:check
 # the API reference, and the personal-data tables if the route carries any
 python3 docs/tools/generate-api-docs.py
 python3 docs/tools/pii-fields-and-endpoints.py
+
+# the messages, if a message was added or changed
+backend/api/.venv/bin/python docs/tools/generate-email-docs.py
 
 # the schema reference, from a scratch database at head
 createdb -h 127.0.0.1 -U cmp cmp_ref && POSTGRES_DB=cmp_ref alembic upgrade head

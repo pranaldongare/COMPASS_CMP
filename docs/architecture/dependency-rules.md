@@ -61,7 +61,7 @@ public when it was split.
 
 ## Local imports, and when they are legitimate
 
-A function-level import is usually a smell. There are two cases where it is
+A function-level import is usually a smell. There are three cases where it is
 correct here:
 
 * **A genuine cycle at module scope that is not one at call time.** The project
@@ -81,13 +81,18 @@ Anything else at function scope is deferring a problem rather than solving it.
 
 ## How this is enforced
 
-By review, and by the structure making a violation obvious. Two mechanical
-checks catch the cases that matter most:
+By review, by the structure making a violation obvious, and by three
+mechanical checks for the cases that matter most:
 
 * `auth/authorization/permissions.py` asserts at import that the resource roster
   and the matrix agree in both directions.
 * `api/errors/mapping.py` asserts at import that every domain exception declares
   a status and a code.
+* `tests/unit/test_layer_boundaries.py` (2026-10-05) reads the source and fails
+  if a router records an audit row or writes through a repository, or if a
+  router, a domain service or `auth` runs SQL of its own; the audit writer is
+  the one named exception. The maintenance sweeps and `infrastructure/messaging`
+  are not covered yet.
 
-Both fail the process at startup rather than producing a silent 403 or a 500
-that reads as an outage.
+The first two fail the process at startup rather than producing a silent 403
+or a 500 that reads as an outage; the third fails the unit tests.

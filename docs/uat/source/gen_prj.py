@@ -9,7 +9,8 @@ def signin(email, who):
         f"Signed in to the console (http://localhost:3000) as {who} ({email}): on 'Sign in' enter "
         f"'Email or username' and 'Password' ({PW}), click 'Sign in', then type the 6-digit code "
         "relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. "
-        "To change user, use 'Sign out' in the sidebar."
+        "If the sign-in page shows a 'Development accounts' panel (development builds only), its 'Use' "
+        "button beside a login fills both boxes for you. To change user, use 'Sign out' in the sidebar."
     )
 
 
@@ -112,7 +113,7 @@ cases.append(case(
         s("Try to click the 'Submit for approval' button on that row.",
           "The button is greyed out (disabled); nothing happens and the status stays 'In Draft'."),
         s("Click the 'Setup' tab and look at the 'Notices' card.",
-          "It shows 'No notice yet' with the buttons 'Upload a notice document' and 'Copy an existing notice'. There is NO 'New notice' button."),
+          "It shows 'No notice yet' with the buttons 'Upload a notice document', 'Copy an existing notice' and 'Use a notice template'. There is NO 'New notice' button."),
         s("Look at the 'Approvals' card.",
           "It shows count 0, 'No approval uploaded', the text 'A security approval with its proof file is what unlocks the move to pending approval.' and an 'Upload an approval' button."),
         s("Look at the buttons at the top of the page.",
@@ -207,7 +208,7 @@ cases.append(case(
     ["Project: UAT Study 01", "Notice: NTC-UAT-STUDY-01-2026 v1"],
     [
         s("Open project 'UAT Study 01', click the 'Setup' tab and look at the buttons on the 'Notices' card.",
-          "'Upload a notice document' and 'Copy an existing notice' are shown; there is NO 'New notice' button."),
+          "'Upload a notice document', 'Copy an existing notice' and 'Use a notice template' are shown; there is NO 'New notice' button."),
         s("Click 'NTC-UAT-STUDY-01-2026 v1' in the 'Notices' card.",
           "The notice page opens. The header shows the 'Draft' badge but NO 'Edit' button."),
         s("Look at the 'Publication checklist' card.",
@@ -602,6 +603,113 @@ cases.append(case(
           "The notice is not created. Under 'Notice code' a message reads 'NTC-GAIT-2026 is another project's notice code. Leave the code empty to have one generated, or use this project's own.' Close the dialog."),
     ],
     "Publishing a notice under a new code supersedes the one in force, so a project never has two published notices; an existing consent link keeps working and shows the notice now in force; another project's notice code cannot be used."))
+
+# ---------------------------------------------------------------- 23
+cases.append(case(
+    23, "DPO writes a notice template before any project exists, finds it under Templates and edits it",
+    "Notice templates - create, purposes, languages, edit (new in this release)", "DPO", "High", "Positive",
+    [DPO, "The seed has no notice templates: this case makes the first one. The register holds the seeded purposes 'Gait model training' (PUR-GAIT-TRAIN) and 'Recording quality assurance' (PUR-QUALITY), both active."],
+    ["Template name: UAT Gait template 01; after editing: UAT Gait template 01 (adults)",
+     "DPO contact: dpo@example.org", "Applies to: Data subjects — people outside the organisation",
+     "Note for the collector: Read the notice aloud if the person asks.",
+     "Withdraw consent URL: https://example.org/withdraw", "Exercise rights URL: https://example.org/rights",
+     "Board complaint URL: https://example.org/complain",
+     "Language: English; Notice text: 'UAT template notice. We record gait video and facial images to train and check gait models. Contact the Privacy Office at dpo@example.org with any question.'",
+     "Purposes: Gait model training (Mandatory ticked), Recording quality assurance (Mandatory not ticked)",
+     "Hindi text: 'यह UAT टेम्पलेट सूचना है। (UAT template notice - Hindi)'",
+     "Template ID: minted by the system as TPL- and four digits (for example TPL-0001). Write down the one you get; PRJ-24 and PRJ-25 use it."],
+    [
+        s("Click 'Dashboard' in the sidebar and look at the buttons at the top right of the page.",
+          "Two buttons: 'Log an incident' (highlighted) and beside it 'New notice template'."),
+        s("Click 'New notice template'.",
+          "A dialog 'New notice template' opens: 'A notice written before any project exists. A project uses it by its ID, which makes that project's own draft notice from it.' Fields: 'Template name', 'DPO contact', 'Applies to' (showing 'Not decided yet'), 'Note for the collector', 'Withdraw consent URL', 'Exercise rights URL', 'Board complaint URL', then 'Language' (showing 'English') and 'Notice text'. Buttons 'Cancel' and 'Create template'. There is no project field and no notice-code field."),
+        s("Fill every field from the test data (choose 'Data subjects — people outside the organisation' in 'Applies to', leave 'Language' on 'English' and paste the English text) and click 'Create template'.",
+          "The dialog closes and a green toast 'Template TPL-<number> created' says 'Add its purposes and languages, then give the ID to the study's R&D User.' The template's own page opens: small heading 'Notice template', title 'UAT Gait template 01', the badge 'Active' and the buttons 'Edit details' and 'Retire'."),
+        s("Read the 'Template ID' card at the top, then click 'Copy ID'.",
+          "It shows the ID in large type (TPL- and four digits) with 'Give this to the study's R&D User. On their project they choose Use a notice template and enter it; the project gets its own draft notice from it, to approve and publish.' After 'Copy ID' a toast '<ID> copied' appears. Write the ID down."),
+        s("Read the 'Details' card.",
+          "'Written by Priya Menon on <date and time> · last changed <date and time>', and the values you typed under 'Applies to', 'DPO contact', 'Withdraw consent', 'Exercise rights', 'Board complaint' and 'Note for the collector'."),
+        s("In the 'Purposes · 0' card ('No purposes yet.'), open 'Add a purpose', choose 'Gait model training (PUR-GAIT-TRAIN)', tick 'Mandatory' and click 'Add'.",
+          "'Add' is greyed out until a purpose is chosen. After it, the card title reads 'Purposes · 1' and lists 'Gait model training PUR-GAIT-TRAIN' with 'Mandatory' and its data categories. A draft purpose would be offered too, ending ' - draft'."),
+        s("Choose 'Recording quality assurance (PUR-QUALITY)', leave 'Mandatory' unticked and click 'Add'.",
+          "'Purposes · 2'; the new line reads 'Optional'. 'Gait model training' is no longer offered in 'Add a purpose'."),
+        s("In the 'Text · 1 language' card (one row 'English' with 'Priya Menon · <time>', 'Edit' and a bin icon), click 'Add a language'.",
+          "A dialog 'Add a language' opens with 'Language' (English is not offered, it is already there) and 'Notice text'. 'Save text' is greyed out until text is typed."),
+        s("Choose 'Hindi', paste the Hindi text and click 'Save text'.",
+          "A toast 'Text saved'. The card reads 'Text · 2 languages' with rows 'English' and 'Hindi'. Nothing on the page asks for a legal approval: that is given on each project's notice made from the template."),
+        s("Click 'Notice templates' at the top of the page.",
+          "The 'Notices' page opens on its 'Templates' tab (beside 'Project notices'), with a blue note 'Write a notice here before the project exists...', 'Search' ('ID or name'), a 'Status' filter on 'Active', and a table ID, Name, Status, Purposes, Languages, Used by, Updated. Your template's row reads 'UAT Gait template 01', 'Active', 2, 2, '0 projects'. 'New notice template' is at the top right; click 'Project notices' and it is still there."),
+        s("Click 'Templates', then your template's ID. Click 'Edit details', change 'Template name' to 'UAT Gait template 01 (adults)' and click 'Save changes'.",
+          "A dialog 'Edit the template' opens with the same fields except 'Language' and 'Notice text' (those are edited on the page). After saving, the toast 'Template saved' appears and the title reads 'UAT Gait template 01 (adults)'; 'last changed' shows the new time. Purposes and text are unchanged."),
+    ],
+    "The DPO can write a notice with no project under a system-minted TPL- ID, give it purposes from the register and text in two languages with no approval step, find it under the Templates tab, and edit it in place."))
+
+# ---------------------------------------------------------------- 24
+cases.append(case(
+    24, "R&D User makes a new project's draft notice from a template with 'Use a notice template'",
+    "Notice templates - use on a project (new in this release)", "R&D User, DPO", "High", "Positive",
+    ["PRJ-23 completed (template 'UAT Gait template 01 (adults)' is Active; you have its ID).", RND,
+     "Priya Menon (dpo@cmp.local) available for the second half."],
+    ["Project name: UAT Study 03", "Description: Template-notice UAT project.", "Processor: SEED",
+     "Template ID: the one from PRJ-23, typed in lower case (e.g. tpl-0001)", "A made-up ID: TPL-9999",
+     "Expected notice code: NTC-UAT-STUDY-03-2026 (a suffix such as -2 is added if that code exists from an earlier run)",
+     "Sentence added to the template afterwards: 'Template change after use.'"],
+    [
+        s("On the 'Dashboard' click 'Register a project' at the top right (the R&D User's only button there). Enter the name and description, tick 'SEED' and click 'Register project'.",
+          "The same 'Register a project' dialog as on the Projects page. A toast 'Project registered' appears and the 'UAT Study 03' page opens straight away with status 'In Draft'."),
+        s("Click the 'Setup' tab. In the 'Notices' card ('No notice yet') click 'Use a notice template'.",
+          "The card offers 'Upload a notice document', 'Copy an existing notice' and 'Use a notice template'. A dialog 'Use a notice template' opens: 'A notice the Privacy Office wrote ahead of the project. Enter the ID they gave you.' with 'Template ID' (hint 'The ID the Privacy Office gave you, like TPL-0007.'), 'Look up', 'Cancel' and a greyed-out 'Make this project's notice from it'."),
+        s("Type TPL-9999 in 'Template ID' and click 'Look up'.",
+          "A yellow box: 'There is no template TPL-9999. Check the ID with the Privacy Office.' 'Make this project's notice from it' stays greyed out."),
+        s("Clear the box, type the PRJ-23 ID in lower case and click 'Look up'.",
+          "It is shown in capitals and found. A box shows '<ID> · UAT Gait template 01 (adults)', 'For Data subjects — people outside the organisation · 2 languages (english, hindi)', and the purposes 'Gait model training · mandatory' and 'Recording quality assurance · optional'. Below: 'This project gets its own draft notice: the wording, the purposes and every language are copied, under the project's own notice code. Nothing is approved yet, and a later change to the template does not reach it.' The 'Make this project's notice from it' button is now clickable."),
+        s("Click 'Make this project's notice from it'.",
+          "A toast 'NTC-UAT-STUDY-03-2026 made from <ID>' says 'A draft. Approve each language, then publish it.' The notice page opens: 'NTC-UAT-STUDY-03-2026 · version 1', badge 'Draft'."),
+        s("Read the 'Rule 3 elements' card.",
+          "'Withdraw consent', 'Exercise rights', 'Board complaint' and 'DPO contact' show the template's values. A line 'Made from' reads 'Template <ID>' with 'A copy: later changes to the template do not reach this notice.'"),
+        s("Look at the 'Purposes', 'Legal approval, per language' and 'Publication checklist' cards.",
+          "Purposes: 'Gait model training' and 'Recording quality assurance', both 'Active'. Legal approval: English and Hindi rows, each 'Not legally approved'. The checklist lists 'the english text is not legally approved' and 'the hindi text is not legally approved'. As for any draft, there is NO 'Approve' and NO 'Publish this notice' for the R&D User."),
+        s("Click 'UAT Study 03' at the top of the notice page to return to the project, open the 'Setup' tab and look at the 'Notices' card and 'What happens next'.",
+          "The card lists 'NTC-UAT-STUDY-03-2026 v1' with '2 purposes · 2 language(s)' and 'Draft'. Under 'Moves the project to Pending Approval' the notice lines are gone; only 'No approval with a proof file' remains. From here the project goes on as in PRJ-08 to PRJ-12."),
+        s("Sign out and sign in as dpo@cmp.local. Click 'Notices', then the 'Templates' tab, and open the template.",
+          "The list row now says '1 project' under 'Used by'. On the template page 'Used by · 1' lists 'NTC-UAT-STUDY-03-2026 v1', 'UAT Study 03' and 'Draft'. The template itself is unchanged: badge 'Active', 'Purposes · 2', 'Text · 2 languages'."),
+        s("Click 'Edit details' and read the top of the dialog, then click 'Cancel'.",
+          "A blue note: '1 project notice was made from this template. They are copies and keep what they were made with; changes here reach only notices made from now on.'"),
+        s("In 'Text · 2 languages' click 'Edit' on the 'English' row. In 'Edit the text' add the sentence from the test data at the end and click 'Save text'.",
+          "A toast 'Text saved'; the template's English text now ends with the new sentence."),
+        s("In 'Used by' click 'NTC-UAT-STUDY-03-2026 v1' and read its 'Notice text' card.",
+          "The project's notice still has the English text as it was copied, WITHOUT 'Template change after use.' It is still 'Draft' and its English row still reads 'Not legally approved'."),
+    ],
+    "'Use a notice template' looks the ID up first, then makes the project's own draft notice under the project's code with the template's links, purposes and both languages, nothing approved; the notice names the template it came from, the template is listed as used but otherwise untouched, and a later edit to the template does not reach the notice."))
+
+# ---------------------------------------------------------------- 25
+cases.append(case(
+    25, "Only the DPO writes notice templates; an incomplete one is refused and a retired one cannot be used",
+    "Notice templates - who, validation, retire (new in this release)", "R&D User, DCO, DPO", "Medium", "Negative",
+    ["PRJ-23 and PRJ-24 completed.", RND,
+     "Arun Shetty (dco@cmp.local) and Priya Menon (dpo@cmp.local) available."],
+    ["Template ID: the one from PRJ-23", "Incomplete template: name 'UAT Bad template', DPO contact dpo@example.org, Withdraw consent URL example.org/withdraw (no https://), the other two URLs as in PRJ-23"],
+    [
+        s("As Kavya Rao look at the top right of the 'Dashboard', then click 'Notices' in the sidebar.",
+          "The dashboard offers only 'Register a project' - no 'New notice template'. The 'Notices' page has no 'New notice template' button and no 'Project notices' / 'Templates' tabs: only the list of project notices."),
+        s("Sign out and sign in as dco@cmp.local. Open project 'UAT Study 01' (Projects > search > click the name) and click the 'Setup' tab.",
+          "The 'Notices' card lists the project's notices but offers none of 'Upload a notice document', 'Copy an existing notice' or 'Use a notice template': bringing a notice is for the project's R&D User and the DPO."),
+        s("Sign out and sign in as dpo@cmp.local. Click 'Notices', then 'New notice template', and click 'Create template' with every field empty.",
+          "The dialog stays open with messages under the fields: 'Give it a name the list can show - what kind of study it is for', 'State how the DPO can be reached', 'The withdrawal URL is required', 'The rights URL is required' and 'The Board complaint URL is required'."),
+        s("Fill the fields from the 'Incomplete template' test data and click 'Create template'.",
+          "Under 'Withdraw consent URL': 'The withdrawal URL has to start with http:// or https://'. No template is created."),
+        s("Click 'Cancel'. On the 'Templates' tab type 'UAT Bad' in 'Search' (the list updates as you type).",
+          "'No templates match'. Clear the search."),
+        s("Open the PRJ-23 template and click 'Retire'.",
+          "A toast '<ID> retired' says 'It can no longer be attached to a project.' The badge reads 'Retired', the button now reads 'Bring back', and the 'Template ID' card says 'Retired: it can no longer be used. Notices already made from it are unaffected. Bring it back to use it again.' 'Used by · 1' still lists the UAT Study 03 notice."),
+        s("Click 'Notice templates'. With 'Status' on 'Active' look for the template, then set 'Status' to 'Retired'.",
+          "It is not in the 'Active' list; under 'Retired' it is listed with the badge 'Retired'."),
+        s("Sign out and sign in as rnd@cmp.local. Open 'UAT Study 03', click 'Setup', then 'Use a notice template' at the top of the 'Notices' card. Type the ID and click 'Look up'.",
+          "The template is found and shown, with a yellow box 'The Privacy Office has retired this template. Ask them which one to use instead.' 'Make this project's notice from it' stays greyed out. Click 'Cancel': the Notices card still shows only NTC-UAT-STUDY-03-2026 v1."),
+        s("Restore: sign in as dpo@cmp.local, open the template and click 'Bring back'.",
+          "A toast '<ID> is back in use'; the badge reads 'Active' again."),
+    ],
+    "Only the DPO can create or change a template; a template without a name, contact or valid links is refused field by field and nothing is saved; a retired template is found by ID but cannot be used on a project, and the notice already made from it is unaffected."))
 
 with open(
     str(__import__("pathlib").Path(__file__).with_name("PRJ.json")),

@@ -1,8 +1,8 @@
 [
   {
     "id": "RGT-01",
-    "title": "Data principal raises an access request from My requests",
-    "feature": "Portal - My requests - Make a request (access, s.11)",
+    "title": "Data principal raises an access request from My requests and sends a document with it",
+    "feature": "Portal - My requests - Make a request (access, s.11), with documents",
     "role": "Data principal (Anjali Verma) on portal",
     "priority": "High",
     "type": "Positive",
@@ -10,12 +10,13 @@
     "preconditions": [
       "The portal is running at http://localhost:3001 and Anjali Verma (subject@cmp.local / +91 90000 00001) can sign in to it.",
       "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request.",
-      "Use two separate browsers or browser profiles: Browser A for the portal (the data principal or nominee) and Browser B for the console (staff). The two sites share one sign-in on this machine, so one browser cannot hold both sessions."
+      "Use two separate browsers or browser profiles: Browser A for the portal (the data principal or nominee) and Browser B for the console (staff). The two sites share one sign-in on this machine, so one browser cannot hold both sessions.",
+      "A small PDF file is on the tester's computer, for example id-proof.pdf."
     ],
     "test_data": [
       "What are you asking for: Access (s.11)",
-      "About: Everything you hold about me",
       "Your request: Please give me a summary of all the personal data you hold about me and who it was shared with.",
+      "Document: id-proof.pdf (any small PDF)",
       "Note the reference shown (called RR-A in later cases)."
     ],
     "steps": [
@@ -25,27 +26,31 @@
       },
       {
         "action": "In the sidebar click 'My requests'.",
-        "expected": "The page 'My requests' opens with the text 'Ask for access to your data, a correction or erasure, or raise a complaint...' and a 'Make a request' button at the top right. At the foot of the page a line says naming someone to act for you is under 'My nominations'."
+        "expected": "The page 'My requests' opens with the text 'Ask for access to everything we hold about you, ask for it to be erased, or raise a complaint...' and a 'Make a request' button at the top right. At the foot of the page a line says naming someone to act for you is under 'My nominations'."
       },
       {
         "action": "Click 'Make a request'.",
-        "expected": "A dialog titled 'Make a request' opens with the line 'You are signed in, so this counts as verified and the clock starts now.' It has 'What are you asking for', 'About', 'Your request' and a 'Send the request' button."
+        "expected": "A dialog titled 'Make a request' opens with the line 'You are signed in, so this counts as verified and the clock starts now.' It has 'What are you asking for', the line 'A request is about everything we hold about you - every project and every consent.', 'Your request', a 'Documents' section marked '(optional)' with an 'Add documents' button, and a 'Send the request' button. There is no 'About' field and no list of consents to choose from."
       },
       {
-        "action": "In 'What are you asking for' choose 'Access (s.11)'.",
-        "expected": "A blue note under it reads 'A summary of the personal data we hold about you, what we do with it, and who it has been shared with.'"
+        "action": "Open 'What are you asking for' and choose 'Access (s.11)'.",
+        "expected": "The list has exactly three choices: 'Access (s.11)', 'Erasure (s.12(3))' and 'Complaint (grievance) (s.13)'. After choosing Access a blue note under it reads 'A summary of the personal data we hold about you, what we do with it, and who it has been shared with.'"
       },
       {
-        "action": "Leave 'About' on 'Everything you hold about me'. Type the test text in 'Your request'. Click 'Send the request'.",
-        "expected": "The dialog closes. A message 'Recorded as RR-YYYY-NNNNNN' appears with 'You will hear from us by <date>.' Write down the reference (RR-A)."
+        "action": "Type the test text in 'Your request'. Click 'Add documents' and choose id-proof.pdf.",
+        "expected": "id-proof.pdf is listed with its size and a small X to take it off the list. The button now reads 'Add more documents'. The hint says 'PDF, image, text or Word; up to 10 files, 25 MB each.'"
+      },
+      {
+        "action": "Click 'Send the request'.",
+        "expected": "The dialog closes. A message 'Recorded as RR-YYYY-NNNNNN' appears with 'You will hear from us by <date>. 1 document sent with it.' Write down the reference (RR-A)."
       },
       {
         "action": "Look at the new card for RR-A at the top of the list.",
-        "expected": "The card shows the reference, the badges 'Access · s.11' and 'Received', and the line 'Received <date and time> · you will hear by <date>'. Your request text is shown. There is NO yellow box saying 'We have not yet confirmed this came from you'."
+        "expected": "The card shows the reference, the badges 'Access · s.11' and 'Received', and the line 'Received <date and time> · you will hear by <date>'. Your request text is shown, and under it 'Documents you sent' lists id-proof.pdf with its size. There is NO yellow box saying 'We have not yet confirmed this came from you'."
       },
       {
         "action": "Look at the lower half of the card (it opens already expanded after sending).",
-        "expected": "Two columns are shown: 'Clock' with the checkpoints, and 'The path' with steps including 'Request received', 'Acknowledge', 'Identity verified?', 'A valid access request?' and 'The CMP answers its own records'. The button reads 'Hide details'."
+        "expected": "Two columns are shown: 'Clock' with the checkpoints, and 'The path' with steps including 'Request received', 'Acknowledge', 'Identity verified?', 'A valid access request?', 'The CMP answers its own records', 'Holders found, DPO confirms', 'Tickets sent to each holder' and 'Every answer accepted?'. The button reads 'Hide details'."
       },
       {
         "action": "Click 'Hide details', then 'Show details'.",
@@ -60,51 +65,63 @@
         "expected": "An acknowledgement for RR-A is in the outbox, quoting the reference and the date by which she will hear."
       }
     ],
-    "pass_criteria": "The access request is recorded with an RR- reference, is verified by the session (no 'not yet confirmed' warning), shows 'Received' with its clock and path, and an acknowledgement is sent.",
+    "pass_criteria": "The access request is about everything held (no consent picker), is recorded with an RR- reference, is verified by the session, carries the document she attached, and shows 'Received' with its clock and path; an acknowledgement is sent.",
     "area": "Rights requests"
   },
   {
     "id": "RGT-02",
-    "title": "Data principal raises a correction request from My requests",
-    "feature": "Portal - My requests - Make a request (correction, s.12)",
-    "role": "Data principal (Anjali Verma) on portal",
+    "title": "Correction is not a kind of request on any form; a name is corrected from the account",
+    "feature": "Portal - Make a request, public rights form, My nominations; Console - Log a request, classification (three kinds only)",
+    "role": "Data principal on portal; DPO on console",
     "priority": "Medium",
-    "type": "Positive",
+    "type": "Negative",
     "ref": "Core",
     "preconditions": [
       "The portal is running at http://localhost:3001 and Anjali Verma (subject@cmp.local / +91 90000 00001) can sign in to it.",
-      "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request.",
+      "The console is running at http://localhost:3000.",
       "Use two separate browsers or browser profiles: Browser A for the portal (the data principal or nominee) and Browser B for the console (staff). The two sites share one sign-in on this machine, so one browser cannot hold both sessions.",
-      "Anjali is signed in to the portal in Browser A (RGT-01 step 1)."
+      "Anjali is signed in to the portal in Browser A (RGT-01 step 1) and has no nomination in place.",
+      "RGT-01 has been run; RR-A is 'Received'.",
+      "A private window (not signed in) is available for the public page."
     ],
     "test_data": [
-      "What are you asking for: Correction (s.12)",
-      "Your request: My surname is recorded as 'Varma' in the gait study. Please correct it to 'Verma'.",
-      "Note the reference (called RR-C in later cases)."
+      "The three kinds offered everywhere: Access (s.11), Erasure (s.12(3)), Complaint (grievance) (s.13)"
     ],
     "steps": [
       {
-        "action": "In the sidebar click 'My requests', then click 'Make a request'.",
-        "expected": "The 'Make a request' dialog opens."
+        "action": "In Browser A click 'My requests', then 'Make a request', and open 'What are you asking for'.",
+        "expected": "Exactly three choices: 'Access (s.11)', 'Erasure (s.12(3))' and 'Complaint (grievance) (s.13)'. There is no 'Correction'. Close the dialog with Esc."
       },
       {
-        "action": "In 'What are you asking for' choose 'Correction (s.12)'.",
-        "expected": "The note under it reads 'Correct inaccurate personal data, or complete data that is incomplete.'"
+        "action": "In the sidebar click 'My nominations' and look at 'Which of your rights they may exercise'.",
+        "expected": "Three boxes: 'Access (s.11)', 'Erasure (s.12(3))' and 'Complaint (grievance) (s.13)'. There is no 'Correction' box."
       },
       {
-        "action": "Open the 'About' list without changing it.",
-        "expected": "The first option is 'Everything you hold about me'; the others are her consents, each shown as '<project> · <notice code> v<version> · <date>'. Leave it on 'Everything you hold about me'."
+        "action": "In the private window open http://localhost:3001/rights. In the 'Make a request' card open 'What are you asking for'.",
+        "expected": "The same three choices; no 'Correction'."
       },
       {
-        "action": "Type the test text in 'Your request' and click 'Send the request'.",
-        "expected": "A message 'Recorded as RR-...' with 'You will hear from us by <date>.' appears. Write down the reference (RR-C)."
+        "action": "In Browser B open http://localhost:3000. Type dpo@cmp.local in 'Email or username' and SeedPassw0rd!2026 in 'Password' and click 'Sign in'. If the 'Verify it is you' page appears, ask the coordinator for the code, type it in '6-digit code' and click 'Verify and continue'.",
+        "expected": "The Dashboard opens, signed in as Priya Menon (DPO)."
       },
       {
-        "action": "Look at the RR-C card and its path.",
-        "expected": "The card shows 'Correction · s.12' and 'Received'. 'The path' includes the step 'A valid correction request?'."
+        "action": "Click 'Rights requests' and open the 'Kind' filter.",
+        "expected": "The choices are 'All kinds', 'Access', 'Erasure' and 'Complaint (grievance)'. There is no 'Correction'."
+      },
+      {
+        "action": "Click 'Log a request received by email' and open 'Kind of request'.",
+        "expected": "The dialog 'Log a request received by email' opens. 'Kind of request' offers the same three kinds and no 'Correction'. Close the dialog with Esc without logging anything."
+      },
+      {
+        "action": "Open RR-A and, in the card '4 · A valid access request?', open 'This is a request for'. Do not confirm anything.",
+        "expected": "The same three kinds are offered; a request cannot be reclassified as a correction."
+      },
+      {
+        "action": "In Browser A click your name at the top right, then 'My profile'.",
+        "expected": "Beside her name there is a 'Change' button: a person corrects her own name here, not by a request (ACC-21 tests the change itself)."
       }
     ],
-    "pass_criteria": "A correction request is recorded with its own reference, type badge 'Correction · s.12' and status 'Received'.",
+    "pass_criteria": "No form on either site - the portal's request form, the public form, nominations, the DPO's log form and the classification - offers correction as a kind of request; the name is corrected from the account.",
     "area": "Rights requests"
   },
   {
@@ -124,7 +141,6 @@
     ],
     "test_data": [
       "What are you asking for: Erasure (s.12(3))",
-      "About: Everything you hold about me",
       "Your request: Please erase the gait recordings you collected of me. I no longer want you to keep them.",
       "Note the reference (called RR-E in later cases)."
     ],
@@ -134,7 +150,7 @@
         "expected": "A yellow (warning) note appears: 'Erase personal data that is no longer needed. Consent records are kept as evidence of what was agreed; withdrawing consent is a separate, quicker step you can take yourself.'"
       },
       {
-        "action": "Leave 'About' on 'Everything you hold about me', type the test text in 'Your request' and click 'Send the request'.",
+        "action": "Type the test text in 'Your request' and click 'Send the request'.",
         "expected": "'Recorded as RR-...' appears with the date she will hear by. Write down the reference (RR-E)."
       },
       {
@@ -143,7 +159,7 @@
       },
       {
         "action": "Read 'The path' on the RR-E card.",
-        "expected": "The steps include 'Withdrawal, or erasure?', 'Scope determined', 'Inside the one-year floor?', 'Holders derived, DPO confirms', 'Erasure instructions issued', 'All confirmations returned?' and 'Respond and close'."
+        "expected": "The steps include 'Withdrawal, or erasure?', 'Scope determined', 'Inside the one-year floor?', 'Holders found, DPO confirms', 'Erasure tickets sent', 'Every confirmation accepted?' and 'Respond and close'."
       },
       {
         "action": "Click 'My consents' in the sidebar.",
@@ -180,7 +196,7 @@
       },
       {
         "action": "In the same dialog change 'What are you asking for' to 'Complaint (grievance) (s.13)'.",
-        "expected": "The 'About' field disappears and a checkbox appears: 'This complaint is about the Data Protection Officer's own decisions.' with 'It will be reviewed by somebody independent of the DPO.' Close the dialog with Esc."
+        "expected": "A checkbox appears: 'This complaint is about the Data Protection Officer's own decisions.' with 'It will be reviewed by somebody independent of the DPO.' Close the dialog with Esc."
       },
       {
         "action": "In the private window open http://localhost:3001/rights. In 'Make a request' type 'ab' in 'The email or mobile you registered with', a full sentence in 'Your request', and click 'Send the request'.",
@@ -331,7 +347,7 @@
   {
     "id": "RGT-07",
     "title": "DPO finds a request in the register, checks identity, classifies it and starts it",
-    "feature": "Console - Rights requests register and request detail (steps 3-4)",
+    "feature": "Console - Rights requests register and request detail (steps 3-4, next step)",
     "role": "DPO (Priya Menon) on console",
     "priority": "High",
     "type": "Positive",
@@ -343,7 +359,8 @@
     ],
     "test_data": [
       "Request: RR-A (access)",
-      "This is a request for: Access (s.11)"
+      "This is a request for: Access (s.11)",
+      "Note: Clear access request"
     ],
     "steps": [
       {
@@ -352,7 +369,7 @@
       },
       {
         "action": "Click 'Rights requests'.",
-        "expected": "The page 'Rights requests' opens with the text 'Access, correction, erasure and grievance - sections 11 to 14...' and a 'Log a request received by email' button. Filters 'Status', 'Kind', 'Clock' and 'Tickets' are shown, and the columns 'Reference', 'Who', 'Kind', 'Status', 'Received', 'Due'."
+        "expected": "The page 'Rights requests' opens with a 'Log a request received by email' button. Filters 'Status', 'Kind', 'Clock' and 'Tickets' are shown, and the columns 'Reference', 'Who', 'Kind', 'Status', 'Received', 'Due'."
       },
       {
         "action": "In the 'Kind' filter choose 'Access'.",
@@ -360,22 +377,30 @@
       },
       {
         "action": "Click RR-A.",
-        "expected": "The heading is RR-A, the line under it reads 'Access · s.11 · Portal', and the badges 'Access · s.11' and 'Received' are at the right. The details show 'Who' (Anjali Verma with email and mobile), 'Contact given', 'Received' and 'Acknowledged', followed by her request text. Cards 'Clock' and 'The path, and where it can end early' follow."
+        "expected": "The heading is RR-A, the line under it reads 'Access · s.11 · Portal', and the badges 'Access · s.11' and 'Received' are at the right. A summary at the top shows 'Due', 'Current step', 'With' and 'Next'. Under 'The request' the details show 'Who' (Anjali Verma with email and mobile), 'Contact given', 'Received' and 'Acknowledged', then her request text and 'Documents from the requester · 1' (id-proof.pdf). A folded card 'Clock and path' follows."
       },
       {
         "action": "Look at the card '3 · Identity verified?'.",
         "expected": "A green note reads 'Verified by session on <date>'. No code or manual verification controls are shown."
       },
       {
-        "action": "Look at the card 'What happens next'.",
-        "expected": "It reads 'Currently received. Rendered from the server's answer.' The row 'Move to in progress' carries the warning 'The request has not been classified as a rights request' and its 'In progress' button is greyed out."
+        "action": "Look at the card '4 · A valid access request?'.",
+        "expected": "It has 'This is a request for' (showing 'Access (s.11)'), 'Confirm classification', a 'Note' box, and a box 'Not a rights request, or cannot be met?' with the text 'Refuse it with a written reason. The requester is told why, with the grievance route, and the request closes.' and a red-edged 'Refuse this request' button. Do not click it (RGT-28 does)."
       },
       {
-        "action": "In the card '4 · A valid access request?' check that 'This is a request for' shows 'Access (s.11)'. Type 'Clear access request' in 'Note' and click 'Confirm classification'.",
+        "action": "Look at the group 'Next step' straight below 'Identity and classification'.",
+        "expected": "It sits before the 'Holders' group. Its card 'What happens next' reads 'Currently received. Rendered from the server's answer.' The row 'Move to in progress' carries the warning 'The request has not been classified as a rights request' and its 'In progress' button is greyed out. In the summary, 'Next' reads 'Move to in progress' with the same warning."
+      },
+      {
+        "action": "Type 'Clear access request' in 'Note' and click 'Confirm classification'.",
         "expected": "The message 'Classified' appears and the card shows 'Classified as access on <date>.'"
       },
       {
-        "action": "In 'What happens next' click 'In progress'.",
+        "action": "Click 'Move to in progress' under 'Next' in the summary.",
+        "expected": "The page scrolls to the 'Next step' group, where 'In progress' can now be clicked."
+      },
+      {
+        "action": "Click 'In progress'.",
         "expected": "The message 'Moved to In progress' appears. The header badge reads 'In progress'. 'What happens next' now offers 'Move to awaiting holders' (warning 'No tickets have been issued yet') and 'Move to collating'."
       },
       {
@@ -387,79 +412,89 @@
         "expected": "RR-A now shows the badge 'In progress'."
       }
     ],
-    "pass_criteria": "The register lists and filters the request; the detail shows session verification; the start is blocked with the server's reason until classified, then the request moves to 'In progress' on both sides.",
+    "pass_criteria": "The register lists and filters the request; the detail shows session verification, the requester's document and a refuse button at step 4; the next step sits straight after classification and is blocked with the server's reason until classified, then the request moves to 'In progress' on both sides.",
     "area": "Rights requests"
   },
   {
     "id": "RGT-08",
-    "title": "DPO tickets a third-party holder by mail and records what it returned",
-    "feature": "Console - request detail - '6–8 · Holders, tickets, returns' (mail holder)",
-    "role": "DPO (Priya Menon) on console",
+    "title": "DPO sends a ticket to a holder outside the organisation, who answers by link on the portal; the DPO accepts the answer",
+    "feature": "Console - request detail - '6–8 · Holders and tickets' (outside holder); Portal - /ticket/<link>",
+    "role": "DPO (Priya Menon) on console; outside holder on the portal",
     "priority": "High",
     "type": "Positive",
     "ref": "Core",
     "preconditions": [
       "The console is running at http://localhost:3000.",
+      "The portal is running at http://localhost:3001 and Anjali Verma (subject@cmp.local / +91 90000 00001) can sign in to it.",
       "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request.",
       "Use two separate browsers or browser profiles: Browser A for the portal (the data principal or nominee) and Browser B for the console (staff). The two sites share one sign-in on this machine, so one browser cannot hold both sessions.",
       "RGT-07 has been run; RR-A is 'In progress'.",
-      "The third-party processor SEED is in the registry (seed data)."
+      "The third-party processor SEED is in the registry (seed data).",
+      "A private window (Browser D) is available for the outside holder; nobody is signed in there."
     ],
     "test_data": [
       "A registered processor: SEED",
-      "Responder name: SEED Privacy Desk",
-      "Responder contact: privacy.desk@seed.example",
-      "Contact note: Phoned the SEED desk; reply promised this week.",
-      "Summary of the return: SEED holds one CIT-campus gait video of her and a copy of the consent export; extract attached.",
-      "Evidence file: any small PDF, e.g. seed-return.pdf"
+      "Who answers: name: SEED Privacy Desk",
+      "Their email: privacy.desk@seed.example (outside the organisation)",
+      "Your own words, added to the end of 'What their ticket will ask': Please include the CIT campus recordings.",
+      "Their answer: Did all of it - SEED holds one CIT-campus gait video of her and a copy of the consent export; extract attached.",
+      "Proof: seed-return.pdf (any small PDF)"
     ],
     "steps": [
       {
-        "action": "Open RR-A and scroll to the card '6–8 · Holders, tickets, returns'.",
-        "expected": "The card says 'export_line and asset_consent are exact - the DPO adds what they miss.' and offers 'Derive from the records' and 'Add a holder'."
+        "action": "Open RR-A and scroll to the group 'Holders' and its card '6–8 · Holders and tickets'.",
+        "expected": "The card reads 'Who holds this person's data, what each was asked, and their answers. An answer counts once you accept it.' A row of steps shows '1 Find who holds the data', '2 Choose who answers', '3 Send tickets', '4 Wait for answers', '5 Review answers', the first highlighted. Buttons 'Find who holds the data' and 'Add a holder' are offered, and the text 'No holders yet. Find who holds the data from the records, or add one you know of.'"
       },
       {
         "action": "Click 'Add a holder'.",
-        "expected": "A dialog 'Add a holder' opens: 'A party the records did not name. Added and confirmed in one step - you are the source.' with 'A registered processor', 'Label', 'Responder name', 'Responder contact' and 'Add'."
+        "expected": "A dialog 'Add a holder' opens: 'Somebody the records did not name. Added as confirmed - you are the source.' with 'A registered processor', 'Who holds it', 'Who answers: name', 'Their email' and 'Add'."
       },
       {
-        "action": "Choose SEED in 'A registered processor', fill 'Responder name' and 'Responder contact' from the test data, and click 'Add'.",
-        "expected": "The message 'Holder added and confirmed' appears. A row 'SEED' shows the badges 'No ticket yet', 'confirmed' and 'by mail', and the line 'Added by the DPO · responder SEED Privacy Desk (privacy.desk@seed.example)'."
+        "action": "Choose SEED in 'A registered processor', fill 'Who answers: name' and 'Their email' from the test data, and click 'Add'.",
+        "expected": "The message 'Holder added' appears. A table with the columns 'Holder', 'State', 'Answer by', 'Last activity' and 'Next' shows a row for SEED with the badge 'Not sent' and 'By email · SEED Privacy Desk'. A box below reads '1 holder is ready for a ticket' with a 'Send tickets' button."
       },
       {
-        "action": "In the box '1 confirmed holder waiting for a ticket' click 'Issue tickets'.",
-        "expected": "The fields 'Instruction' (hint: leave empty for the standard instruction) and 'Due' (hint starts 'Halfway (<date>) unless you set a date.') appear with 'Issue the ticket' and 'Cancel'."
+        "action": "Click the holder's name (SEED) in the table.",
+        "expected": "A dialog titled with the holder's name opens: 'Not sent. Reached by email at privacy.desk@seed.example; an internal colleague gets a console login, anyone else a link, when the ticket is sent.' It shows 'What their ticket will ask', already filled with the standard words, the hint 'The standard words for this kind of request. Change them for this holder if you need to.' and a greyed-out 'Save'."
       },
       {
-        "action": "Leave both empty and click 'Issue the ticket'.",
-        "expected": "The message 'Tickets issued' with 'The request is now awaiting holders.' appears. SEED's badge reads 'Issued' and a line 'Issued <date>' with its due date appears. The summary under the card title reads '1 ticket issued · 0 returned'. The header badge reads 'Awaiting holders'."
+        "action": "Add the test sentence to the end of 'What their ticket will ask' and click 'Save'. Close the dialog.",
+        "expected": "The message 'Saved for this holder' appears; the hint now reads 'Your words for this holder.' and a 'Use the standard words' button appears."
       },
       {
-        "action": "Ask the coordinator to check the outbox for mail to privacy.desk@seed.example.",
-        "expected": "The instruction for RR-A has been mailed to privacy.desk@seed.example."
+        "action": "In the box '1 holder is ready for a ticket' click 'Send tickets'. Leave 'Answer by' empty and click 'Send the ticket'.",
+        "expected": "Before sending, 'Answer by' has the hint 'Halfway to the response date (<date>) unless you choose a day...'. After the click the message 'Ticket sent' with 'You will see each answer here when it comes.' appears. SEED's row shows 'Waiting', 'Outside · answers by link' and its answer-by date. The header badge reads 'Awaiting holders' and the steps are at 'Wait for answers'."
       },
       {
-        "action": "On the SEED row click 'Mail · log a contact'. In 'What happened' choose 'I chased them', type the contact note in 'Note' and click 'Log it'.",
-        "expected": "The dialog 'SEED · by mail' closes with the message 'Contact logged'. A 'Contact log' line appears on the row; expanding it shows an entry 'Chased' with the note."
+        "action": "Ask the coordinator for the email sent to privacy.desk@seed.example.",
+        "expected": "Its subject is 'Rights request <RR-A>: a ticket for <holder>'. It carries a link starting http://localhost:3001/ticket/ and says a one-time code is sent when it is opened. It does NOT contain the instruction, Anjali's name or anything else about the request."
       },
       {
-        "action": "Look at 'What happens next'.",
-        "expected": "'Move to collating' carries the warning 'A holder has not returned its ticket - escalate once before responding partial' and is greyed out."
+        "action": "In Browser D open the link from the email.",
+        "expected": "A page headed 'A ticket for <holder>' opens with a card 'Rights request <RR-A>', the line 'To answer · answer by <date>', a sentence saying a six-digit code goes to a masked form of the address, and a 'Send me a code' button. Nothing about the request or the person is shown yet."
       },
       {
-        "action": "On the SEED row click 'Record the return'.",
-        "expected": "A dialog 'What SEED returned' opens: 'A confirmation of what was done and how - not an assurance...' The 'Record' button is greyed out while 'Summary of the return' is empty."
+        "action": "Click 'Send me a code'. Ask the coordinator for the code sent to privacy.desk@seed.example, type it in 'Six-digit code' and click 'Open the ticket'.",
+        "expected": "After the first click 'A code is on its way to the address on the ticket.' appears, the button becomes 'Send a new code' and 'Open the ticket' stays greyed out until six digits are typed. The code email's subject is '<code> is your code to open the ticket on rights request <RR-A>'. The ticket opens: the reference, the badge 'To answer', 'For <holder>', 'Answer by <date>', 'What you are asked' with the DPO's words including the added sentence, a 'Submit your answer' button, 'Messages' with 'Write to the Privacy Office', and 'Close the ticket on this device' at the top."
       },
       {
-        "action": "Type the summary, choose the evidence file under 'Evidence', and click 'Record'.",
-        "expected": "The message 'Return recorded' appears. SEED's badge reads 'Returned' and a grey box shows 'Returned: <summary>' with an 'evidence' link. The summary reads '1 ticket issued · 1 returned'. The header badge changes by itself to 'Collating'."
+        "action": "Click 'Submit your answer'. Choose 'Did all of it' under '1 · What was done?', type the answer in '2 · What you hold, and what you did', choose seed-return.pdf under '3 · Proof' and click 'Send your answer'.",
+        "expected": "'Send your answer' is greyed out until an option is chosen and text typed. After sending, the badge reads 'Answered - with the Privacy Office' with the note 'Your answer is with the Privacy Office. They accept it, or send it back with what is missing.' and a 'Your answer' box shows the text with 'Did all of it'."
       },
       {
-        "action": "Click the 'evidence' link.",
-        "expected": "The uploaded evidence file downloads."
+        "action": "In Browser B reload RR-A.",
+        "expected": "SEED's row shows 'Answered - review' and its 'Next' button reads 'Accept the answer'. The steps are at 'Review answers' and the summary's 'Next' reads 'Review an answer'. The header badge still reads 'Awaiting holders'."
+      },
+      {
+        "action": "Click 'Accept the answer' on SEED's row.",
+        "expected": "The ticket opens on a box 'Accept the answer': 'Accepting takes this answer as the holder's. It then counts toward closing the request.' with 'Accept the answer' and 'Cancel'. Below, 'Their answer' shows the text and a link to seed-return.pdf."
+      },
+      {
+        "action": "Click 'Accept the answer' in the box. Close the dialog.",
+        "expected": "The message 'Answer accepted' appears. SEED's row reads 'Accepted'. The header badge changes by itself to 'Collating'."
       }
     ],
-    "pass_criteria": "A third party is added, ticketed by mail, a contact is logged, and the DPO records its return with evidence; the last return moves the request to 'Collating' automatically.",
+    "pass_criteria": "A holder outside the organisation is emailed only a link; a one-time code to the ticket's address opens the ticket on the portal; their answer waits for review and counts once the DPO accepts it, which moves the request to 'Collating' by itself.",
     "area": "Rights requests"
   },
   {
@@ -549,7 +584,7 @@
     "steps": [
       {
         "action": "In 'Rights requests' set 'Kind' to 'Erasure' and open RR-E.",
-        "expected": "The line under the heading reads 'Erasure · s.12(3) · Portal'. The cards include '4 · Withdrawal, or erasure?', '7–9 · Holders, instructions, confirmations' and '5–6 · Scope determined; inside the one-year floor?'."
+        "expected": "The line under the heading reads 'Erasure · s.12(3) · Portal'. The cards include '4 · Withdrawal, or erasure?' and, in the group 'Holders and what goes', '7–9 · Holders and tickets' and '5–6 · Scope determined; inside the one-year floor?'."
       },
       {
         "action": "In '4 · Withdrawal, or erasure?' read the yellow box.",
@@ -589,8 +624,8 @@
   },
   {
     "id": "RGT-11",
-    "title": "DPO derives the holders, confirms the in-house holder with its respondent and issues the ticket",
-    "feature": "Console - '7–9 · Holders, instructions, confirmations' (in-house holder)",
+    "title": "DPO finds the holders, chooses who answers for the in-house holder, words its ticket and sends it",
+    "feature": "Console - '7–9 · Holders and tickets' (in-house holder): find, confirm, instruction, remove, send",
     "role": "DPO (Priya Menon) on console",
     "priority": "High",
     "type": "Positive",
@@ -601,42 +636,55 @@
       "Use two separate browsers or browser profiles: Browser A for the portal (the data principal or nominee) and Browser B for the console (staff). The two sites share one sign-in on this machine, so one browser cannot hold both sessions.",
       "RGT-10 has been run; RR-E is 'In progress'.",
       "The coordinator has imported a manifest naming the principal's consent (see CON cases): she appears in two collected assets at the in-house source SRC-SRIB-SE (processor SRIB) - asset A containing only her, and asset B containing her and one other person. Write down both asset references.",
-      "Meera Iyer (rco@cmp.local) is registered on the Processors page as a respondent with an account for SRIB (see REG-12)."
+      "Meera Iyer (rco@cmp.local) is registered on the Processors page as a respondent for SRIB (see REG-12; REG-12 removes her at its end, so the coordinator adds her back)."
     ],
     "test_data": [
-      "Respondent: Meera Iyer · rco@cmp.local · portal"
+      "Who answers: Meera Iyer · rco@cmp.local · in the console",
+      "Words added to the ticket, then taken back: Please also check the backup share."
     ],
     "steps": [
       {
-        "action": "Open RR-E and find '7–9 · Holders, instructions, confirmations'.",
-        "expected": "It reads 'No holders yet. Derive them from the records, or add what you know.' with 'Derive from the records' and 'Add a holder'."
+        "action": "Open RR-E and find '7–9 · Holders and tickets' in the group 'Holders and what goes'.",
+        "expected": "It reads 'No holders yet. Find who holds the data from the records, or add one you know of.' with 'Find who holds the data' and 'Add a holder'."
       },
       {
-        "action": "Click 'Derive from the records'.",
-        "expected": "The message 'Holders derived' with 'Confirm each one, then issue tickets.' appears. A row 'SRIB' shows the badges 'No ticket yet', 'derived, not confirmed' and 'in-house', and a line starting 'Named by' that counts the exports and assets naming it. (A row for any other processor her data went to may also appear; leave it for this case.)"
+        "action": "Click 'Find who holds the data'.",
+        "expected": "The message 'Holders found' with 'Confirm who answers for each, then send the tickets.' appears. A row for SRIB shows the badge 'Not confirmed' and a 'Next' button 'Confirm who answers'. The steps are at 'Choose who answers' with '1 to confirm' (or more if other holders were found). The summary's 'Next' reads 'Confirm who answers' (or 'Confirm who answers for <n> holders')."
       },
       {
-        "action": "Under the SRIB row open 'Respondent'.",
-        "expected": "The list starts with 'Type one below instead…' and includes 'Meera Iyer · rco@cmp.local · portal'."
+        "action": "If a row for any holder other than SRIB was found (for example SEED, from the export in CON-14), open it, click 'More', choose 'Remove' and click 'Remove' in the box.",
+        "expected": "The box reads 'Remove this holder from the request. Nothing has been sent to them, so nothing is lost.' After the click 'Holder removed' appears and the row is gone. Only SRIB remains."
       },
       {
-        "action": "Choose 'Meera Iyer · rco@cmp.local · portal' and click 'Confirm' on the SRIB row.",
-        "expected": "'Holder confirmed' appears. The row shows 'confirmed' and 'on the portal', and the line adds '· responder Meera Iyer (...) · returns it in their console'."
+        "action": "Click 'Confirm who answers' on the SRIB row.",
+        "expected": "The ticket opens on a box 'Confirm who answers' with 'Who answers' (hint 'Somebody with a console login answers there; anybody else is emailed.'), listing 'Somebody else - type them below' and 'Meera Iyer · rco@cmp.local · in the console', and buttons 'Cancel' and 'Confirm'."
       },
       {
-        "action": "In the box '1 confirmed holder waiting for a ticket' click 'Issue tickets', leave 'Instruction' and 'Due' empty, and click 'Issue the ticket'.",
-        "expected": "'Tickets issued' appears. SRIB's badge reads 'Issued' with the issued date and due date, and 'Not yet seen by the team'. The header badge reads 'Awaiting holders'."
+        "action": "Choose 'Meera Iyer · rco@cmp.local · in the console' and click 'Confirm'.",
+        "expected": "The message 'Confirmed' with 'Send the tickets when every holder is confirmed.' appears. The ticket now shows 'What their ticket will ask' with the standard words. In the table SRIB reads 'Not sent' with 'In the console · Meera Iyer'."
+      },
+      {
+        "action": "Add the test sentence to the end of 'What their ticket will ask' and click 'Save'.",
+        "expected": "'Saved for this holder' appears; the hint reads 'Your words for this holder.' and 'Use the standard words' is offered."
+      },
+      {
+        "action": "Click 'Use the standard words'.",
+        "expected": "The message 'Back to the standard words' appears, the text is the standard words again, the hint reads 'The standard words for this kind of request. Change them for this holder if you need to.' and 'Use the standard words' is gone. Close the dialog."
+      },
+      {
+        "action": "In the box '1 holder is ready for a ticket' click 'Send tickets', leave 'Answer by' empty and click 'Send the ticket'.",
+        "expected": "'Ticket sent' appears. SRIB reads 'Waiting' with 'In the console · Meera Iyer' and its answer-by date. The header badge reads 'Awaiting holders'."
       },
       {
         "action": "Look at 'What happens next' and for a respond card.",
-        "expected": "Only 'Move to collating' is offered, with the warning 'A holder has not returned its ticket - escalate once before responding partial', greyed out. There is no '10 · Respond and close' card yet."
+        "expected": "Only 'Move to collating' is offered, with the warning 'A holder has not answered - wait, or send them a final reminder once it is overdue, then respond partial', greyed out. There is no 'Response and outcome' group yet."
       },
       {
         "action": "Ask the coordinator to check the outbox for mail to rco@cmp.local.",
-        "expected": "A notice to Meera Iyer that a ticket for RR-E is waiting for her is in the outbox."
+        "expected": "An email to Meera Iyer with the subject 'Action required by <date>: rights request <RR-E>' is in the outbox."
       }
     ],
-    "pass_criteria": "The holder is derived from the records, confirmed with the processor's registered portal respondent, and the ticket is issued; the request waits for it.",
+    "pass_criteria": "The holders are found from the records; a holder found in error is removed before anything is sent; the in-house holder is confirmed with its registered respondent, its words can be changed and put back, and its ticket is sent to her console; the request waits for the answer.",
     "area": "Rights requests"
   },
   {
@@ -662,11 +710,11 @@
     "steps": [
       {
         "action": "Open RR-E and find '5–6 · Scope determined; inside the one-year floor?'.",
-        "expected": "A blue note reads 'Consent artefacts are never erased. They are the evidence that past processing was lawful...' and the card says 'No scope yet. Derive it from the records the requester appears in.' with a button 'Derive from asset_consent'."
+        "expected": "A blue note reads 'Consent artefacts are never erased. They are the evidence that past processing was lawful...' and the card says 'No scope yet. Derive it from the records the requester appears in.' with a button 'Find what is held'."
       },
       {
-        "action": "Click 'Derive from asset_consent'.",
-        "expected": "'Scope derived' with '2 appearances of the requester in collected assets.' appears. Two rows show: asset A with its type badge and 'only the requester', and asset B with a warning badge 'holds 1 other person'. Each row names the project, source (SRC-SRIB-SE), 'held by SRIB' and the collection date."
+        "action": "Click 'Find what is held'.",
+        "expected": "'Found' with '2 appearances of the requester in collected assets.' appears. Two rows show: asset A with its type badge and 'only the requester', and asset B with a warning badge 'holds 1 other person'. Each row names the project, source (SRC-SRIB-SE), 'held by SRIB' and the collection date."
       },
       {
         "action": "On asset A look at 'Decision', 'Basis' and 'Record the decision'.",
@@ -754,7 +802,7 @@
       "The portal is running at http://localhost:3001 and Anjali Verma (subject@cmp.local / +91 90000 00001) can sign in to it.",
       "Use two separate browsers or browser profiles: Browser A for the portal (the data principal or nominee) and Browser B for the console (staff). The two sites share one sign-in on this machine, so one browser cannot hold both sessions.",
       "RGT-12 has been run: asset A in RR-E is 'decided: erase' and not applied.",
-      "SRIB's ticket on RR-E is still 'Issued' (not returned)."
+      "SRIB's ticket on RR-E is still 'Waiting' (not answered)."
     ],
     "test_data": [
       "Request: RR-E, asset A"
@@ -782,7 +830,7 @@
       },
       {
         "action": "Look at 'What happens next' and the header.",
-        "expected": "The request is still 'Awaiting holders'; 'Move to collating' is still blocked by 'A holder has not returned its ticket - escalate once before responding partial'."
+        "expected": "The request is still 'Awaiting holders'; 'Move to collating' is still blocked by 'A holder has not answered - wait, or send them a final reminder once it is overdue, then respond partial'."
       },
       {
         "action": "In Browser A (Anjali) reload 'My requests' and look at RR-E.",
@@ -794,8 +842,8 @@
   },
   {
     "id": "RGT-15",
-    "title": "In-house respondent answers the ticket on 'My tasks' (thread, attach file, return)",
-    "feature": "Console - My tasks; request detail - ticket thread",
+    "title": "In-house respondent answers the ticket in My tasks; the DPO sends it back once, then accepts it",
+    "feature": "Console - My tasks (To do / Waiting on the Privacy Office / Done); request detail - review, Send back, Accept the answer",
     "role": "Respondent (Meera Iyer, rco@cmp.local); DPO",
     "priority": "High",
     "type": "Positive",
@@ -803,20 +851,22 @@
     "preconditions": [
       "The console is running at http://localhost:3000.",
       "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request.",
-      "RGT-14 has been run; RR-E's SRIB ticket is 'Issued' to Meera Iyer.",
+      "RGT-14 has been run; RR-E's SRIB ticket is 'Waiting' on Meera Iyer, asset A is decided for erasure and applied, asset B decided for redaction and applied.",
       "Browser B holds the DPO session; use a third browser or profile (Browser C) for Meera Iyer."
     ],
     "test_data": [
       "Question: We hold two recordings of this person at SRC-SRIB-SE. Please confirm both are in scope.",
       "Attach a file: srib-inventory.csv (any small CSV)",
       "DPO reply: Yes - erase her own recording and remove her from the shared one.",
-      "Return: Her solo recording deleted from the SE lab store; her segment cut from the shared recording. Deletion log attached.",
-      "Return evidence: srib-deletion-log.pdf (any small PDF)"
+      "First answer: Did only part of it - her solo recording is deleted; the shared one is not yet cut.",
+      "Send back reason: Please cut her segment from the shared recording too, and attach the deletion log.",
+      "Second answer: Did all of it - solo recording deleted from the SE lab store; her segment cut from the shared recording. Deletion log attached.",
+      "Proof: srib-deletion-log.pdf (any small PDF)"
     ],
     "steps": [
       {
         "action": "In Browser C sign in to http://localhost:3000 as rco@cmp.local with password SeedPassw0rd!2026 (enter the relayed code if 'Verify it is you' appears).",
-        "expected": "Meera Iyer's dashboard opens. Under 'Your work' the sidebar shows 'My tasks' with a count; there is no 'Rights requests' link."
+        "expected": "Meera Iyer's dashboard opens. Under 'Your work' the sidebar shows 'My tasks'; there is no 'Rights requests' link."
       },
       {
         "action": "Type http://localhost:3000/requests in the address bar.",
@@ -824,50 +874,50 @@
       },
       {
         "action": "Click 'My tasks'.",
-        "expected": "The page 'My tasks' shows tiles 'Open', 'Overdue', 'Due within 7 days', 'Unread from the Privacy Office' and a section 'Open · 1'. The ticket card shows RR-E, 'Erasure · s.12(3)', 'Issued', 'For SRIB · about Anjali Verma · issued <date>', the due date and an 'Instruction'."
+        "expected": "The page 'My tasks' reads 'What the Privacy Office has asked of you: tickets on rights requests and on personal data breaches...'. Tiles show 'To do', 'Overdue', 'Due within 7 days' and 'Unread from the Privacy Office', and a group 'To do · 1'. The card shows RR-E, 'Erasure · s.12(3)', the badge 'To answer', 'For SRIB · about Anjali Verma · sent <date and time>', the due date, 'What you are asked' with the instruction, and an 'Answer' button."
       },
       {
-        "action": "Click 'Respond'.",
-        "expected": "A dialog 'RR-E · SRIB' opens with 'What the platform already knows', the messages so far, a 'Message' box ('Ask the Privacy Office a question, or say what you hold and where.'), 'Attach a file', the checkbox 'This is my return - close the ticket with it', and a 'Send' button greyed out while the box is empty."
+        "action": "Click 'Answer'.",
+        "expected": "A dialog '<RR-E> · SRIB' opens with 'What the platform already knows', a table 'What to do with each item' listing asset A with 'Erase it' and asset B with 'Remove the person from it; keep the other person', the messages so far, a 'Submit your answer' button, and a message box ('Write to the Privacy Office: a question, or what you have found so far.') with 'Attach a file' and 'Send'."
       },
       {
-        "action": "Type the question, choose srib-inventory.csv under 'Attach a file' and click 'Send' (leave the checkbox unticked).",
-        "expected": "The message appears in the thread with 'File: srib-inventory.csv'. The ticket stays open."
+        "action": "Type the question, choose srib-inventory.csv under 'Attach a file' and click 'Send'.",
+        "expected": "The message 'Message sent' with 'The Privacy Office can see it.' appears. The question shows in the thread with 'File: srib-inventory.csv'. The window stays open."
       },
       {
-        "action": "In Browser B (DPO) open 'Rights requests' and then RR-E.",
-        "expected": "RR-E's row carries a '1 new' badge. On the request, the SRIB row shows '1 new' and a 'Thread' button with a count."
+        "action": "In Browser B (DPO) open RR-E, click SRIB in the holders table, type the DPO reply in the box under 'Messages' and click 'Send'. Close the dialog.",
+        "expected": "Before replying, SRIB's row carries an unread-message badge and the dialog's 'Messages' shows Meera's question with a link to the file. The box's placeholder reads 'Write to them - they read it in the console.' The reply appears in the thread."
       },
       {
-        "action": "Click 'Thread' on the SRIB row.",
-        "expected": "A dialog 'SRIB · the ticket's thread' shows Meera's question and a link to the attached file. Placeholder: 'Write to the team, or ask for more.'"
+        "action": "In Browser C close the dialog, reload 'My tasks' and click 'Answer' again.",
+        "expected": "'Unread from the Privacy Office' showed 1 before the dialog was opened; the DPO's reply is in the thread."
       },
       {
-        "action": "Type the DPO reply and click 'Send'. Close the dialog.",
-        "expected": "The reply appears in the thread."
+        "action": "Click 'Submit your answer'. Choose 'Did only part of it', type the first answer and click 'Send your answer'.",
+        "expected": "The message 'Answer sent' with 'The Privacy Office will review it.' appears and the dialog closes. The card moves to 'Waiting on the Privacy Office · 1' with the badge 'Answered - with the Privacy Office' and the note 'Your answer is with the Privacy Office. They accept it, or send it back with what is missing.'"
+      },
+      {
+        "action": "In Browser B reload RR-E. Click SRIB, then 'More', then 'Send back'. Type the reason in 'What is missing or wrong', leave 'Answer again by' empty and click 'Send it back'.",
+        "expected": "Before: SRIB reads 'Answered - review · did only part of it' and the summary's 'Next' reads 'Review an answer'; the form says 'The ticket opens again with your reason and a date; what they sent stays on the record.' After: the message 'Sent back' appears and SRIB reads 'Sent back'."
       },
       {
         "action": "In Browser C reload 'My tasks'.",
-        "expected": "'Unread from the Privacy Office' shows 1 and the card shows '1 new'. Clicking 'Respond' shows the DPO's reply."
+        "expected": "The card is back under 'To do' with the badge 'Sent back to you' and a yellow box 'Sent back to you <date and time>' quoting the reason and 'Answer again by <date>.'"
       },
       {
-        "action": "Type the return text, attach srib-deletion-log.pdf and tick 'This is my return - close the ticket with it'.",
-        "expected": "The button changes from 'Send' to 'Return the ticket'."
+        "action": "Click 'Answer', then 'Submit your answer'. Choose 'Did all of it', type the second answer, choose srib-deletion-log.pdf under '3 · Proof' and click 'Send your answer'.",
+        "expected": "'Answer sent' appears; the card is under 'Waiting on the Privacy Office' again."
       },
       {
-        "action": "Click 'Return the ticket'.",
-        "expected": "The message 'Ticket returned' with 'The Privacy Office can see it.' appears, the dialog closes and the card moves to 'Returned · 1' with 'Returned <date>: <text>' and the badge 'Returned'. Its button now reads 'Open'."
+        "action": "In Browser B reload RR-E and click 'Accept the answer' on SRIB's row, then 'Accept the answer' in the box.",
+        "expected": "'Answer accepted' appears. SRIB reads 'Accepted'; the header badge changes by itself to 'Collating'. In the scope card asset A shows the badge 'erased' with 'The holder's copy: confirmed gone by the holder' and 'The platform's pointer to it: cleared'; asset B shows 'redacted' with 'The holder's copy: confirmed gone by the holder'. No 'Try again now' buttons remain."
       },
       {
-        "action": "In Browser B reload RR-E.",
-        "expected": "SRIB shows 'Returned', 'Returned: <text>' and an 'evidence' link; the summary reads '1 ticket issued · 1 returned'; the header badge reads 'Collating'."
-      },
-      {
-        "action": "Look at the scope card.",
-        "expected": "Asset A shows the badge 'erased' with 'The holder's copy: confirmed gone by the holder' and 'The platform's pointer to it: cleared'; asset B shows 'redacted' with 'The holder's copy: confirmed gone by the holder'. No 'Try again now' buttons remain."
+        "action": "In Browser C reload 'My tasks'.",
+        "expected": "The card is under 'Done · 1' with the badge 'Accepted' and the note 'The Privacy Office accepted your answer on <date>. Nothing further is needed.' Its button reads 'Open'."
       }
     ],
-    "pass_criteria": "The in-house respondent sees only her ticket, exchanges messages and files with the office on the thread and returns it; the return moves the request to 'Collating' and completes the waiting erasure and redaction.",
+    "pass_criteria": "The in-house respondent sees only her ticket and the items it covers, writes to the office without closing the window, and gives her answer on its own form; the answer waits for review, can be sent back with a reason and answered again, and only the accepted answer moves the request to 'Collating' and completes the erasure and redaction.",
     "area": "Rights requests"
   },
   {
@@ -904,7 +954,7 @@
       },
       {
         "action": "Look at the scope card.",
-        "expected": "Asset A still shows 'erased' and asset B 'redacted'. No 'Apply', 'Try again now', 'Place a legal hold' or 'Derive from asset_consent' buttons are offered."
+        "expected": "Asset A still shows 'erased' and asset B 'redacted'. No 'Apply', 'Try again now', 'Place a legal hold' or 'Find what is held' buttons are offered."
       },
       {
         "action": "Ask the coordinator to show the response mail to subject@cmp.local.",
@@ -929,7 +979,7 @@
   {
     "id": "RGT-17",
     "title": "A legal hold stops an erasure; releasing it lets the erasure finish",
-    "feature": "Console - erasure scope - 'Place a legal hold' / 'Release hold'",
+    "feature": "Console - erasure scope - 'Place a legal hold' / 'Release hold'; ticket items",
     "role": "DPO; respondent (Meera Iyer); data principal",
     "priority": "High",
     "type": "Positive",
@@ -946,7 +996,7 @@
       "Erasure request text: Please erase the new recording of me.",
       "Erase basis: Section 12(3) request.",
       "Hold reason: Evidence in a live legal matter - Legal ref LM-2026-17.",
-      "Return text: Recording H deleted from the SE lab store.",
+      "Answer: Did all of it - recording H deleted from the SE lab store.",
       "Note the new reference (RR-H)."
     ],
     "steps": [
@@ -959,32 +1009,36 @@
         "expected": "'Classified', 'Erasure confirmed' and 'Moved to In progress' appear in turn."
       },
       {
-        "action": "In the holders card click 'Derive from the records', choose 'Meera Iyer · rco@cmp.local · portal' in 'Respondent', click 'Confirm', then 'Issue tickets' and 'Issue the ticket'.",
-        "expected": "SRIB shows 'confirmed', 'on the portal' and 'Issued'. The request is 'Awaiting holders'."
+        "action": "In the holders card click 'Find who holds the data'. Remove any holder other than SRIB as in RGT-11. On SRIB click 'Confirm who answers', choose 'Meera Iyer · rco@cmp.local · in the console' and click 'Confirm'. Close the dialog.",
+        "expected": "SRIB reads 'Not sent' with 'In the console · Meera Iyer'."
       },
       {
-        "action": "In the scope card click 'Derive from asset_consent'. On asset H keep 'Erase - the asset holds only the requester', type the erase basis and click 'Record the decision'.",
-        "expected": "'Scope derived' shows 1 appearance; asset H shows 'only the requester' and 'decided: erase'."
+        "action": "In the scope card click 'Find what is held'. On asset H keep 'Erase - the asset holds only the requester', type the erase basis and click 'Record the decision'.",
+        "expected": "'Found' with '1 appearance of the requester in collected assets.' appears; asset H shows 'only the requester', then 'decided: erase'."
       },
       {
-        "action": "On asset H click 'Place a legal hold'.",
-        "expected": "A field 'Why this asset must not be erased' appears with the hint 'Sealed, and shown only to the Privacy Office.' and buttons 'Place the hold' (greyed out until at least 3 characters are typed) and 'Cancel'."
+        "action": "Click SRIB in the holders table.",
+        "expected": "Under 'What their ticket will ask' a table 'Items their ticket will list · 1' shows asset H with its collection date and 'Erase it' under 'What to do'. Close the dialog."
       },
       {
-        "action": "Type the hold reason and click 'Place the hold'.",
-        "expected": "The message 'Legal hold placed' with 'Nothing covered by it is erased until it is released.' appears."
+        "action": "Click 'Send tickets', then 'Send the ticket'.",
+        "expected": "'Ticket sent' appears; SRIB reads 'Waiting' and the request is 'Awaiting holders'."
+      },
+      {
+        "action": "On asset H click 'Place a legal hold', type the hold reason and click 'Place the hold'.",
+        "expected": "A field 'Why this asset must not be erased' appeared with the hint 'Sealed, and shown only to the Privacy Office.' and 'Place the hold' (greyed out until at least 3 characters are typed) and 'Cancel'. After the click 'Legal hold placed' with 'Nothing covered by it is erased until it is released.' appears."
       },
       {
         "action": "Click 'Apply' on asset H.",
         "expected": "'Quarantined' appears. The row shows a red badge 'legal hold' with a lock and the line 'Legal hold: stopped until the hold is released'. There is no 'Try again now' and no 'erased' badge; a 'Release hold' button is offered."
       },
       {
-        "action": "In Browser C (Meera) open 'My tasks', click 'Respond' on RR-H, type the return text, tick 'This is my return - close the ticket with it' and click 'Return the ticket'.",
-        "expected": "'Ticket returned' appears and the ticket moves to 'Returned'."
+        "action": "In Browser C (Meera) open 'My tasks', click 'Answer' on RR-H, then 'Submit your answer'. Choose 'Did all of it', type the answer and click 'Send your answer'.",
+        "expected": "The dialog's 'What to do with each item' lists asset H with 'Erase it'. After sending, 'Answer sent' appears and the ticket moves to 'Waiting on the Privacy Office'."
       },
       {
-        "action": "In Browser B reload RR-H.",
-        "expected": "SRIB shows 'Returned' and the request is 'Collating', but asset H is still NOT erased: it still shows 'legal hold' and 'Legal hold: stopped until the hold is released'. The hold wins over the returned ticket."
+        "action": "In Browser B reload RR-H and accept the answer ('Accept the answer' on SRIB's row, then 'Accept the answer' in the box).",
+        "expected": "'Answer accepted' appears; SRIB reads 'Accepted' and the request is 'Collating', but asset H is still NOT erased: it still shows 'legal hold' and 'Legal hold: stopped until the hold is released'. The hold wins over the accepted answer."
       },
       {
         "action": "Look at '10 · Respond and close'.",
@@ -992,18 +1046,14 @@
       },
       {
         "action": "On asset H click 'Release hold'.",
-        "expected": "The message 'Hold released' with 'What it was stopping carries on.' appears."
-      },
-      {
-        "action": "Look at asset H again.",
-        "expected": "Asset H shows the badge 'erased' with 'The holder's copy: confirmed gone by the holder' and 'The platform's pointer to it: cleared'. The 'legal hold' badge, the 'Legal hold: stopped...' line and the 'Release hold' button are gone."
+        "expected": "The message 'Hold released' with 'What it was stopping carries on.' appears. Asset H shows the badge 'erased' with 'The holder's copy: confirmed gone by the holder' and 'The platform's pointer to it: cleared'; the 'legal hold' badge and 'Release hold' are gone."
       },
       {
         "action": "Look at '10 · Respond and close', then choose 'Complete', type a response and click 'Release and close'.",
         "expected": "The warning has gone and 'Complete' can be chosen. 'Released and closed' appears and the request shows 'Complete'."
       }
     ],
-    "pass_criteria": "A legal hold stops erasure of the asset even after the holder confirms, keeps the response from claiming Complete, and releasing the hold carries the erasure out at once.",
+    "pass_criteria": "The ticket lists the item its holder must erase; a legal hold stops erasure of the asset even after the holder's answer is accepted, keeps the response from claiming Complete, and releasing the hold carries the erasure out at once.",
     "area": "Rights requests"
   },
   {
@@ -1033,12 +1083,12 @@
         "expected": "'Recorded as RR-...' appears."
       },
       {
-        "action": "In Browser B open RR-P, click 'Confirm classification', 'They mean erasure' and then 'In progress'. Do NOT derive or add holders.",
-        "expected": "The request is 'In progress'; the holders card reads 'No holders yet...'."
+        "action": "In Browser B open RR-P, click 'Confirm classification', 'They mean erasure' and then 'In progress'. Do NOT find or add holders.",
+        "expected": "The request is 'In progress'; the holders card reads 'No holders yet. Find who holds the data from the records, or add one you know of.'"
       },
       {
-        "action": "In the scope card click 'Derive from asset_consent'.",
-        "expected": "One row, asset P, 'only the requester', undecided."
+        "action": "In the scope card click 'Find what is held'.",
+        "expected": "'Found' appears; one row, asset P, 'only the requester', undecided."
       },
       {
         "action": "In 'What happens next' look at both rows, then click 'Collating'.",
@@ -1074,53 +1124,6 @@
       }
     ],
     "pass_criteria": "The DPO cannot respond while an item is undecided, cannot choose Complete while an item is not carried out (the server's reason is shown), and the response goes out Partial, naming what remains, without claiming erasure.",
-    "area": "Rights requests"
-  },
-  {
-    "id": "RGT-19",
-    "title": "A correction nobody carried out cannot close as Complete",
-    "feature": "Console - '9–10 · Collate, review, release' guard for correction",
-    "role": "DPO on console; data principal on portal",
-    "priority": "Medium",
-    "type": "Negative",
-    "ref": "S2-02",
-    "preconditions": [
-      "The console is running at http://localhost:3000.",
-      "The portal is running at http://localhost:3001 and Anjali Verma (subject@cmp.local / +91 90000 00001) can sign in to it.",
-      "Use two separate browsers or browser profiles: Browser A for the portal (the data principal or nominee) and Browser B for the console (staff). The two sites share one sign-in on this machine, so one browser cannot hold both sessions.",
-      "RGT-02 has been run; RR-C is 'Received'."
-    ],
-    "test_data": [
-      "This is a request for: Correction (s.12)",
-      "The response: We have not yet been able to confirm the correction with the team holding the record; we will follow up."
-    ],
-    "steps": [
-      {
-        "action": "In Browser B open RR-C.",
-        "expected": "The line under the heading reads 'Correction · s.12 · Portal'; the classification card is titled '4 · A valid correction request?'; there is no scope card."
-      },
-      {
-        "action": "Click 'Confirm classification' (with 'Correction (s.12)'), then 'In progress'.",
-        "expected": "'Classified' and 'Moved to In progress' appear."
-      },
-      {
-        "action": "Without adding any holder, click 'Collating' in 'What happens next'.",
-        "expected": "'Moved to Collating' appears and the card '9–10 · Collate, review, release' is shown."
-      },
-      {
-        "action": "Read the warning on '9–10 · Collate, review, release' and open 'Outcome'.",
-        "expected": "The warning reads 'Nothing in this request has been corrected: no item in scope has been carried out and no holder has returned its ticket. Answer it as partial, or as no records if nothing is held.' 'Complete' is greyed out; 'Partial - a gap is named' is selected."
-      },
-      {
-        "action": "Read the hint under 'The response', type the response and click 'Release and close'.",
-        "expected": "The hint reads 'What the requester is being given, and what could not be provided.' 'Released and closed' appears and the badge reads 'Partial'."
-      },
-      {
-        "action": "In Browser A reload 'My requests' and click 'Show details' on RR-C.",
-        "expected": "RR-C shows 'Partial' with the response and a 'Dispute this response' button."
-      }
-    ],
-    "pass_criteria": "A correction with nothing carried out cannot be called Complete; the server's reason is shown and the response closes Partial.",
     "area": "Rights requests"
   },
   {
@@ -1285,16 +1288,16 @@
       "Their name: Rahul Verma",
       "Their mobile: +91 90000 00077",
       "Their email: rahul.nominee@example.org",
-      "Rights: keep 'Access (s.11)' and 'Erasure (s.12(3))' ticked; untick 'Correction (s.12)' and 'Complaint (grievance) (s.13)'",
+      "Rights: keep 'Access (s.11)' and 'Erasure (s.12(3))' ticked; untick 'Complaint (grievance) (s.13)'",
       "Wrong code: 000000"
     ],
     "steps": [
       {
         "action": "In Browser A click 'My nominations' in the sidebar and find the card 'Somebody to act for you'.",
-        "expected": "The card explains 'Section 14. A person you name, while you are well, to exercise these rights if you die or cannot act. Nothing is in effect until they accept...' and shows 'Their name', 'Their mobile', 'Their email', 'Which of your rights they may exercise' (four boxes, all ticked) and 'Nominate'."
+        "expected": "The card explains 'Section 14. A person you name, while you are well, to exercise these rights if you die or cannot act. Nothing is in effect until they accept...' and shows 'Their name', 'Their mobile', 'Their email', 'Which of your rights they may exercise' (three boxes - 'Access (s.11)', 'Erasure (s.12(3))', 'Complaint (grievance) (s.13)' - all ticked) and 'Nominate'."
       },
       {
-        "action": "Fill in the test data, untick 'Correction (s.12)' and 'Complaint (grievance) (s.13)', and click 'Nominate'.",
+        "action": "Fill in the test data, untick 'Complaint (grievance) (s.13)', and click 'Nominate'.",
         "expected": "'Nomination recorded' with 'We have asked Rahul Verma to accept. It is not usable until they do.' appears."
       },
       {
@@ -1428,7 +1431,7 @@
       "Made-up reference: 3f2b8c1e-0000-4000-8000-000000000000",
       "Nominee contact: +91 90000 00077",
       "Wrong code: 000000",
-      "Right not granted: Correction (s.12)",
+      "Right not granted: Complaint (grievance) (s.13)",
       "Self-nomination: name Anjali Verma, mobile +91 90000 00001"
     ],
     "steps": [
@@ -1441,7 +1444,7 @@
         "expected": "A red box reads 'Invalid or expired code'. No reference is shown."
       },
       {
-        "action": "Reload the page, send a new code, enter the correct relayed code, choose 'Correction (s.12)' and click 'Record the request'.",
+        "action": "Reload the page, send a new code, enter the correct relayed code, choose 'Complaint (grievance) (s.13)' and click 'Record the request'.",
         "expected": "A red box reads 'That right was not included in the nomination'. Nothing is recorded."
       },
       {
@@ -1473,7 +1476,7 @@
     "type": "Positive",
     "ref": "Core",
     "preconditions": [
-      "RGT-01 to RGT-24 have been run, so Anjali Verma has at least six requests, some closed (for example RR-A, answered in RGT-09) and some open.",
+      "RGT-01 to RGT-24 have been run (RGT-19 is retired), so Anjali Verma has at least six requests, some closed (for example RR-A, answered in RGT-09) and some open.",
       "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request."
     ],
     "test_data": [
@@ -1507,6 +1510,221 @@
       }
     ],
     "pass_criteria": "A principal with several requests can show only open or only closed ones and find one by reference, kind or words; nothing is lost - 'Show all requests' and links between requests always bring the right card into view.",
+    "area": "Rights requests"
+  },
+  {
+    "id": "RGT-26",
+    "title": "A colleague with no console login is given a temporary login, answers in My tasks, and keeps it read only once the request closes",
+    "feature": "Console - holders card (internal address, temporary login); My tasks; Users - 'End temporary access'",
+    "role": "DPO; colleague on a temporary login; Administrator",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "The portal is running at http://localhost:3001 and Anjali Verma (subject@cmp.local / +91 90000 00001) can sign in to it.",
+      "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request.",
+      "Use two separate browsers or browser profiles: Browser A for the portal (the data principal or nominee) and Browser B for the console (staff). The two sites share one sign-in on this machine, so one browser cannot hold both sessions.",
+      "The address uat.holder01@cmp.local belongs to nobody yet (check 'Users' as the Administrator). Addresses on cmp.local count as the organisation's own (BREACH_TICKET_EMAIL_DOMAINS, default cmp.local).",
+      "Browser C is a fresh private window for the colleague."
+    ],
+    "test_data": [
+      "Access request text (RR-T): Please tell me what the archive team holds about me.",
+      "Add a holder - Who holds it: UAT Archive Team 01; Who answers: name: UAT Holder 01; Their email: uat.holder01@cmp.local",
+      "Colleague's password: UatPassw0rd!2026",
+      "Answer: Did all of it - the archive holds her signed consent form scan only.",
+      "Response text: We hold your consent records and one scanned consent form in our archive."
+    ],
+    "steps": [
+      {
+        "action": "In Browser A make an access request ('Access (s.11)') with the test text. Note RR-T. In Browser B open RR-T, click 'Confirm classification', then 'In progress'.",
+        "expected": "'Recorded as RR-...', then 'Classified' and 'Moved to In progress' appear."
+      },
+      {
+        "action": "In the holders card click 'Add a holder'. Leave 'A registered processor' on 'Not in the registry', fill 'Who holds it', 'Who answers: name' and 'Their email' from the test data and click 'Add'.",
+        "expected": "'Holder added' appears. The row 'UAT Archive Team 01' reads 'Not sent' with 'By email · UAT Holder 01'."
+      },
+      {
+        "action": "Click 'Send tickets', then 'Send the ticket'.",
+        "expected": "'Ticket sent' appears. The row reads 'Waiting' and 'In the console · temporary login · not yet signed in · UAT Holder 01'."
+      },
+      {
+        "action": "Ask the coordinator for the emails sent to uat.holder01@cmp.local.",
+        "expected": "One has the subject 'The COMPASS Privacy Office has asked for your help' (COMPASS is ORGANISATION_NAME, its default), a link to set a password, a code, and the line 'What the ticket is about is in the console only.' It names no request and no person."
+      },
+      {
+        "action": "In Browser C open the link from that email. Type the code in 'Code' and UatPassw0rd!2026 in 'New password' and 'Confirm new password', and click 'Set the new password'.",
+        "expected": "The page 'Set your password' reads 'Enter the code sent to uat.holder01@cmp.local and choose a password.' After the click 'Password changed' appears and the 'Sign in' page opens."
+      },
+      {
+        "action": "Sign in as uat.holder01@cmp.local with the new password and the relayed code ('Verify and continue').",
+        "expected": "The console opens with the role badge 'Temporary ticket holder'. The sidebar offers only 'My tasks'."
+      },
+      {
+        "action": "Click 'My tasks', then 'Answer' on RR-T, then 'Submit your answer'. Choose 'Did all of it', type the answer and click 'Send your answer'.",
+        "expected": "The card for RR-T is under 'To do' with the badge 'To answer' and 'For UAT Archive Team 01'. After sending, 'Answer sent' appears and it moves to 'Waiting on the Privacy Office'."
+      },
+      {
+        "action": "In Browser B reload RR-T.",
+        "expected": "The row reads 'Answered - review' and 'In the console · temporary login · UAT Holder 01' (no longer 'not yet signed in')."
+      },
+      {
+        "action": "Click 'Accept the answer' on the row and confirm with 'Accept the answer'. In 'Response and outcome' keep 'Complete', type the response text and click 'Release and close'.",
+        "expected": "'Answer accepted' appears and the request moves to 'Collating'; then 'Released and closed' appears and the header badge reads 'Complete'. The row now reads 'In the console · temporary login · read only · UAT Holder 01'."
+      },
+      {
+        "action": "In Browser C reload 'My tasks' and click 'Open' on RR-T.",
+        "expected": "The card is under 'Done' with the badge 'Accepted'. The dialog shows the ticket and its messages; in place of the message box it reads 'The request is closed; nothing more can be written.'"
+      },
+      {
+        "action": "In Browser B sign out and sign in as admin@cmp.local. Open 'Users' and find uat.holder01@cmp.local.",
+        "expected": "The row shows the role 'Temporary ticket holder' and a button 'End temporary access' (its tooltip says it ends their console login, including reading their tickets)."
+      },
+      {
+        "action": "Click 'End temporary access'.",
+        "expected": "The message 'Temporary access ended' appears. In Browser C, the next click or reload returns to the 'Sign in' page, and signing in with UatPassw0rd!2026 no longer works."
+      }
+    ],
+    "pass_criteria": "A ticket to an address on the organisation's own domain with no console login creates a temporary login whose email names nothing of the request; the colleague answers in My tasks; once the request closes the login is read only; only the administrator's 'End temporary access' removes it.",
+    "area": "Rights requests"
+  },
+  {
+    "id": "RGT-27",
+    "title": "Ticket moves: a final reminder only once overdue, sent to someone else (the old link stops working), withdrawn and reopened",
+    "feature": "Console - ticket dialog: 'Send final reminder', 'More' (Send to someone else, Withdraw, Reopen); Portal - an old ticket link",
+    "role": "DPO on console; outside holder on the portal",
+    "priority": "Medium",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "The console is running at http://localhost:3000.",
+      "The portal is running at http://localhost:3001 and Anjali Verma (subject@cmp.local / +91 90000 00001) can sign in to it.",
+      "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request.",
+      "Use two separate browsers or browser profiles: Browser A for the portal (the data principal or nominee) and Browser B for the console (staff). The two sites share one sign-in on this machine, so one browser cannot hold both sessions.",
+      "Browser D is a private window for the outside holder."
+    ],
+    "test_data": [
+      "Access request text (RR-M): Please tell me who you have shared my data with.",
+      "Add a holder - A registered processor: SEED; Who answers: name: UAT Desk 01; Their email: uat.desk01@example.org",
+      "Answer by (at sending): yesterday's date - the quickest way to make a ticket overdue for this test",
+      "Send to someone else: Their name: UAT Desk 02; Their email: uat.desk02@example.org",
+      "Withdraw - Why: Sent in error; SEED holds nothing for this request.",
+      "Reopen - Answer by: first yesterday's date, then a date next week"
+    ],
+    "steps": [
+      {
+        "action": "In Browser A make an access request with the test text and note RR-M. In Browser B open RR-M, click 'Confirm classification', then 'In progress'. Add the holder from the test data with 'Add a holder'.",
+        "expected": "RR-M is 'In progress' and the SEED row reads 'Not sent'."
+      },
+      {
+        "action": "Click 'Send tickets'. Set 'Answer by' to yesterday's date and click 'Send the ticket'.",
+        "expected": "'Ticket sent' appears. The row is tinted red: 'Overdue', with the answer-by date in red beside a warning sign. Its 'Next' button reads 'Send final reminder'. The summary's 'Next' reads 'Chase an overdue holder'."
+      },
+      {
+        "action": "Ask the coordinator for the link email sent to uat.desk01@example.org and keep the link (called L1).",
+        "expected": "The email's subject is 'Rights request <RR-M>: a ticket for <holder>' and it carries a /ticket/ link."
+      },
+      {
+        "action": "Click 'Send final reminder' on the row.",
+        "expected": "The ticket opens on a box 'Send final reminder': 'Send UAT Desk 01 a final reminder that the date has passed. It is sent once, and lets the response go out without their answer, saying it is missing.' with 'Send final reminder' and 'Cancel'."
+      },
+      {
+        "action": "Click 'Send final reminder' in the box.",
+        "expected": "'Final reminder sent' appears; the row reads 'Final reminder sent'. The coordinator finds a second email to uat.desk01@example.org carrying the same link and nothing of the request."
+      },
+      {
+        "action": "In the ticket click 'More'.",
+        "expected": "The menu lists 'Record their answer for them', 'Send a reminder', 'Note a call or email', 'Send to someone else' and 'Withdraw'. 'Send final reminder' is not offered again."
+      },
+      {
+        "action": "Choose 'Send to someone else'. If 'Who answers instead' is shown, keep 'Somebody else - type them below'. Fill 'Their name' and 'Their email' from the test data and click 'Send to them'.",
+        "expected": "The form reads 'The ticket and what it asks go to them; whoever had it is told it has moved.' and 'Send to them' is greyed out until both fields are filled. After the click 'Sent to someone else' with 'They have the ticket; whoever had it has been told.' appears and the row names UAT Desk 02."
+      },
+      {
+        "action": "Ask the coordinator for the newest emails to uat.desk01@example.org and uat.desk02@example.org.",
+        "expected": "uat.desk01@example.org was told the ticket has moved; uat.desk02@example.org received a new link (L2), different from L1."
+      },
+      {
+        "action": "In Browser D open L1, then L2.",
+        "expected": "L1 shows 'This link is not valid' with 'It may have been replaced by a newer one, or never existed. Ask the Privacy Office for a new link.' L2 opens the page 'A ticket for <holder>' with 'Send me a code'."
+      },
+      {
+        "action": "In Browser B open the ticket, click 'More', choose 'Withdraw', type the reason in 'Why' and click 'Withdraw the ticket'.",
+        "expected": "The form reads 'For a ticket sent in error, or a holder that turns out to hold nothing. Not an answer, and not a gap in the response.' After the click 'Ticket withdrawn' appears with '<holder> has been told. You can reopen it if needed.' The row reads 'Withdrawn' and, with nothing outstanding, the header badge changes by itself to 'Collating'."
+      },
+      {
+        "action": "Open the ticket, click 'More', choose 'Reopen', set 'Answer by' to yesterday's date and click 'Reopen'.",
+        "expected": "The error 'The new date cannot be in the past' is shown and the ticket stays withdrawn."
+      },
+      {
+        "action": "Set 'Answer by' to a date next week and click 'Reopen'.",
+        "expected": "'Ticket reopened' appears. The row reads 'Waiting' with the new date, and the header badge reads 'Awaiting holders' again. The coordinator finds an email to uat.desk02@example.org saying the ticket is open again."
+      }
+    ],
+    "pass_criteria": "A final reminder is offered only once a ticket is overdue and is sent once; sending a ticket to someone else gives them a new link and the old one stops working; a withdrawn ticket settles the request and can be reopened only with a date that is not in the past.",
+    "area": "Rights requests"
+  },
+  {
+    "id": "RGT-28",
+    "title": "The DPO reads the documents a requester sent, then refuses the request at step 4 with a written reason",
+    "feature": "Portal - Make a request with documents; Console - 'Documents from the requester', 'Refuse this request'",
+    "role": "Data principal on portal; DPO on console",
+    "priority": "High",
+    "type": "Positive",
+    "ref": "Core",
+    "preconditions": [
+      "The portal is running at http://localhost:3001 and Anjali Verma (subject@cmp.local / +91 90000 00001) can sign in to it.",
+      "The console is running at http://localhost:3000.",
+      "The test coordinator can read the test outbox (backend/api/var/outbox.log) and relays codes, links and emails on request.",
+      "Use two separate browsers or browser profiles: Browser A for the portal (the data principal or nominee) and Browser B for the console (staff). The two sites share one sign-in on this machine, so one browser cannot hold both sessions.",
+      "A small PDF (letter.pdf) is on the tester's computer."
+    ],
+    "test_data": [
+      "What are you asking for: Access (s.11)",
+      "Your request: Please send me the marketing list you bought my number from.",
+      "Document: letter.pdf",
+      "Reason, in writing: We have bought no marketing list and hold no such data; this is not a request about data we process.",
+      "Note the reference (RR-R)."
+    ],
+    "steps": [
+      {
+        "action": "In Browser A click 'Make a request', choose 'Access (s.11)', type the request, click 'Add documents', choose letter.pdf and click 'Send the request'.",
+        "expected": "letter.pdf is listed. After sending, 'Recorded as RR-...' appears with '... 1 document sent with it.' Note RR-R. Its card lists letter.pdf under 'Documents you sent'."
+      },
+      {
+        "action": "In Browser B open RR-R.",
+        "expected": "Under the request text 'Documents from the requester · 1' lists letter.pdf with its size, the date it was added and a 'Download' button."
+      },
+      {
+        "action": "Click 'Download' beside letter.pdf and open the file.",
+        "expected": "The same letter.pdf downloads and opens."
+      },
+      {
+        "action": "Under 'History', on 'What was recorded' click 'Show'.",
+        "expected": "The entries include 'Rights attachment added' and 'Rights attachment read' (the download just made). Neither shows the file's name."
+      },
+      {
+        "action": "In '4 · A valid access request?' click 'Refuse this request'.",
+        "expected": "A red box opens with 'Reason, in writing' (hint 'Sent to the requester with the grievance route. A refusal is still a response.') and a greyed-out 'Refuse and close'. The button now reads 'Keep the request'."
+      },
+      {
+        "action": "Click 'Keep the request'.",
+        "expected": "The red box closes and nothing is recorded; the button reads 'Refuse this request' again."
+      },
+      {
+        "action": "Click 'Refuse this request', type the reason and click 'Refuse and close'.",
+        "expected": "The message 'Refused, with reasons' appears. The header badge reads 'Refused'. The 'Next step' card reads 'Closed. Disagreement with the outcome is a grievance - a new request linked to this one.'"
+      },
+      {
+        "action": "In Browser A reload 'My requests' and click 'Show details' on RR-R.",
+        "expected": "RR-R shows the badge 'Refused', 'Our response · <date>' with the reason, and a 'Dispute this response' button. 'Documents you sent' still lists letter.pdf."
+      },
+      {
+        "action": "Ask the coordinator for the email sent to subject@cmp.local about RR-R.",
+        "expected": "An email with the subject 'About your request <RR-R>' gives the reason and the grievance route."
+      }
+    ],
+    "pass_criteria": "A document sent with a request reaches the DPO, every read of it is recorded without the file's name; the refuse button at step 4 asks for a written reason, can be backed out of, and closes the request as 'Refused' with the reason sent to the requester.",
     "area": "Rights requests"
   }
 ]

@@ -309,6 +309,49 @@ export const SECTIONS: HelpSection[] = [
     ],
   },
   {
+    id: "ticket-link",
+    title: "If we sent you a link to a ticket",
+    summary:
+      "For a company or team outside our organisation that holds some of a person's data: how to open the ticket, answer it, and what happens next.",
+    blocks: [
+      {
+        kind: "p",
+        text: "A person has asked us about their personal data - what we hold, or to erase it - and you hold some of it for us. We answer them on a fixed legal clock, so we ask you for your part on a ticket. Our email carries only a link and the date to answer by; what we ask is on the ticket.",
+      },
+      {
+        kind: "steps",
+        title: "Opening the ticket",
+        items: [
+          "Open the link in our email. The page names the ticket and shows where the code will go - the address the ticket was sent to.",
+          "Click [[Send me a code]]. Type the code from your email in [[Six-digit code]] and click [[Open the ticket]].",
+          "The ticket stays open on that device for an hour. After that, ask for a new code. [[Close the ticket on this device]] closes it sooner.",
+        ],
+      },
+      {
+        kind: "list",
+        title: "What the ticket shows",
+        items: [
+          "[[What you are asked]]: what we need from you, and the date to answer by.",
+          "For an erasure, each item you hold and what to do with it: erase it, remove the person from it, keep it until a date, or set it aside until we decide.",
+          "The messages so far, starting with what our records show about the person, so you can find them in yours.",
+        ],
+      },
+      {
+        kind: "steps",
+        title: "Answering",
+        items: [
+          "To ask us something, write in [[Write to the Privacy Office]], attach a file if it helps, and click [[Send]]. We are told at once, and you are emailed when we reply.",
+          "When your work is done, click [[Submit your answer]]: choose what was done - all of it, part of it, or none - say what you hold and what you did, attach any proof, and click [[Send your answer]].",
+          "We review your answer. If something is missing we send it back with what we need and a new date; you are emailed, and the same link opens it.",
+        ],
+      },
+      {
+        kind: "note",
+        text: "If the page says the link is not valid, the ticket has been sent to somebody else or replaced by a newer email - use the newest one, or ask the Privacy Office. Please answer on the ticket rather than by replying to our email.",
+      },
+    ],
+  },
+  {
     id: "troubleshooting",
     title: "Troubleshooting",
     summary: "Common questions and what to do.",

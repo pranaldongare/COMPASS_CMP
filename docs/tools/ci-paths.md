@@ -70,8 +70,8 @@ applying it as it stands leaves CI red for a different reason.
   both fail with sealing off. The same step also re-runs the unit,
   integration and security suites the three steps before it already ran.
 - **None of the documentation checks.** `check-links.py`,
-  `personal-data-scan.py --check` and the generated references are not
-  checked for freshness.
+  `personal-data-scan.py --check`, `generate-email-docs.py --check` and the
+  generated references are not checked for freshness.
 
 See [testing.md](../operations/testing.md#which-suites-need-the-key-service)
 for which suites need the key service.

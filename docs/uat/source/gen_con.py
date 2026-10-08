@@ -15,8 +15,9 @@ CODES = "The test coordinator is available to read six-digit codes from the test
 def console(name, email, role):
     return (f"Signed in to the console (http://localhost:3000) as {name}, {role} ({email}): on 'Sign in' enter "
             "'Email or username' and 'Password' (SeedPassw0rd!2026), click 'Sign in', then type the 6-digit code "
-            "relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. To change user, "
-            "use 'Sign out' in the sidebar.")
+            "relayed by the test coordinator on 'Verify it is you' and click 'Verify and continue'. If the sign-in "
+            "page shows a 'Development accounts' panel (development builds only), its 'Use' button beside a login "
+            "fills both boxes for you. To change user, use 'Sign out' in the sidebar.")
 
 
 DPO = console("Priya Menon", "dpo@cmp.local", "DPO")
@@ -324,7 +325,7 @@ case(
     steps=[
         portal_sign_in("tester01@example.org"),
         S("Read the page header and the card for 'Gait Identification Study 2026'.",
-          "Description: 'Everything you have agreed to, the exact wording you were shown, and who it has been shared with. You can withdraw at any time.' The card shows 'NTC-GAIT-2026 v1 · hindi · <date and time>', status 'Partial', 'You agreed to 1 of 2 purposes.' and the buttons 'See what you agreed to', 'What was recorded', 'Withdraw everything' and 'Ask about this consent'."),
+          "Description: 'Everything you have agreed to, the exact wording you were shown, and who it has been shared with. You can withdraw at any time.' The card shows 'NTC-GAIT-2026 v1 · hindi · <date and time>', status 'Partial', 'You agreed to 1 of 2 purposes.' and the buttons 'See what you agreed to', 'What was recorded' and 'Withdraw everything'. There is no button for a request about this one consent: a rights request covers everything held about her and is made from 'My requests' (step 8)."),
         S("Click 'See what you agreed to'.",
           "The button changes to 'Hide details'. 'Gait model training' shows the badge 'Consented' and a 'Withdraw just this one' button; 'Recording quality assurance' shows 'Declined' and no withdraw button. Each shows 'Data:' and 'Kept for:'."),
         S("Click 'Show the exact notice I was given'.",
@@ -335,8 +336,10 @@ case(
           "Before any export (CON-14): 'No sharing recorded here' / 'This lists every file of your details this platform has sent to a processor. None has been sent.' After CON-14: an entry naming the processor 'SEED' with the project name and date."),
         S("Click 'Hide details' and 'Hide the record'.",
           "Both sections close. Nothing has changed: the status is still 'Partial'."),
+        S("Click 'My requests' in the sidebar, then 'Make a request'. Read the dialog, then close it with the × at its top right without sending anything.",
+          "A dialog 'Make a request' opens with 'What are you asking for' and 'Your request', and the line 'A request is about everything we hold about you - every project and every consent.' There is no box for choosing a consent or a project. Closing it sends nothing."),
     ],
-    pass_criteria="The principal can see per-purpose choices, the exact text served (in the language served) with 'Integrity verified', the record of what happened, and who the data was shared with.",
+    pass_criteria="The principal can see per-purpose choices, the exact text served (in the language served) with 'Integrity verified', the record of what happened, and who the data was shared with; a rights request is made about everything from 'My requests', not about one consent.",
 )
 
 # ---------------------------------------------------------------- CON-10

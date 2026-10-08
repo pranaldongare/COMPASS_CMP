@@ -1,6 +1,6 @@
 # The API
 
-One FastAPI service, 276 endpoints over 240 paths, all under the API's root
+One FastAPI service, 324 endpoints over 284 paths, all under the API's root
 with no version prefix. The interactive reference is at `/docs` in local
 development, and `backend/api/openapi.json` is the same document, regenerated
 from the application whenever a route or schema changes. This page is the map;
@@ -13,13 +13,17 @@ the reference is the territory.
 | `/auth/*` | staff and data principals | password sign-in, MFA, self-registration and its verification, one-time-code sign-in, sessions, password reset |
 | `/c/{token}/*` | public | the consent flow: validate the link, register, confirm contacts, read the notice, record consent |
 | `/rights`, `/rights/*`, `/notice/{uuid}` | public | the rights information page, the public request form and its verification, nomination acceptance, the nominee's entry point, the public notice viewer |
+| `/holder-tickets/{token}/*` | public: an outside holder, by its link (0049) | what the link opens, a code to the address on the ticket and the check of it, the ticket, writing to the office with a file, the answer, a file's download, signing out. The portal's `/ticket/{token}` page calls these |
 | `/me/*` | the signed-in data principal | profile, consents and their history, disclosures, requests, files, disputes, nominations, notifications |
 | `/projects/*`, `/approvals/*`, `/sites/*` | staff | projects and their transitions, processors and their decisions, approvals and proofs, sites, owners, agents and links |
 | `/purposes/*`, `/processors/*`, `/sources/*` | staff | the registry: purposes, processors and their respondents, data sources and their owners |
 | `/notices/*` | staff | notices, purposes on a notice, language renditions, checklist, publication, document import |
+| `/notice-templates/*` | the DPO writes; staff look one up by its ID | notice templates before a project exists (0044): write, retire, purposes, languages, and the look-up by `TPL-####` before one is copied into a draft notice |
 | `/links/*`, `/consents/*` | staff | consent links, the consent register, artefacts, grants, history |
 | `/exports/*`, `/imports/*`, `/collections/*`, `/assets/*` | staff | the disclosure register, import batches, collections and their exceptions, assets and their subjects |
 | `/requests/*`, `/tickets/*` | DPO, administrator; respondents for tickets | the rights register and every action on a request; a respondent's own tickets |
+| `/legal-holds/*` | the DPO | holds that stop an erasure of an asset or a person, and their release (S2-03) |
+| `/restricted-countries/*` | the DPO; the administrator reads | the s.16 restricted-country list: read, restrict, lift (S2-04) |
 | `/breaches/*` | the DPO; every other role is answered 404 | incidents and breaches, their duties, who it touched, notices, the Board's and the organisation's board's documents, breach tickets |
 | `/breach-tickets/*` | every member of staff and the temporary ticket holder, their own only | breach tickets addressed to me (S3-08): read, write, return, and bring in a colleague (S3-09). Managing them is `/breaches/{uuid}/tickets/*`, the DPO's and hidden |
 | `/delegations/*` | staff | delegation (Delegate in the console): arranging it, ending it, what I hold |
@@ -36,13 +40,17 @@ never be shadowed by a path parameter on another router.
 
 - A session is an `HttpOnly`, `SameSite=Lax` cookie, `cmp_session`, holding
   an opaque id; the session itself lives in Redis. There is no bearer token.
+- An outside holder has no session. After the code, its `HttpOnly`,
+  `SameSite=Strict` cookie `cmp_ticket` opens one ticket for an hour, and only
+  on `/holder-tickets/{token}/*`, whose path must name the same link
+  ([authentication](../security/authentication.md#outside-holders-of-a-rights-ticket)).
 - Unsafe verbs carry the double-submit CSRF header `X-CSRF-Token`, copied by
   the page from the readable cookie `cmp_csrf`.
 - A request carrying `X-CMP-Background: 1` is authenticated like any other
   but does not slide the session's idle window: it is how a page polling on a
   timer says it is not the person's activity ([sessions](../security/sessions.md)).
 - A staff sign-in returns `mfa_required: true` and a **partial session** that
-  authorises only `/auth/mfa/verify`. Every other route answers 401 with code
+  authorises only `/auth/mfa/verify` and `/auth/mfa/resend`. Every other route answers 401 with code
   `mfa_required` until the code is verified.
 - Both portals reach the API through their own `/api` proxy so the cookie is
   first-party. A direct cross-origin call from a browser will lose it.
@@ -54,7 +62,8 @@ Details: [sessions.md](../security/sessions.md),
 ## Conventions every route follows
 
 **Identifiers are uuids.** No integer primary key appears in a path, a body,
-an export or a log. `/c/{token}` is the one capability-shaped exception.
+an export or a log. Three capability-shaped exceptions carry a token instead:
+`/c/{token}`, `/rights/nominations/{token}` and `/holder-tickets/{token}`.
 
 **Lists are cursor-paginated.** `limit` and `cursor`; never an offset, which
 skips or repeats rows while a collection campaign is writing. Cursors are
@@ -141,6 +150,8 @@ difference would tell a stranger something about who is registered:
 - `POST /rights/requests/verify` and `POST /rights/nominee/start`: the same
   sentence for an unknown reference and a wrong code
 - `GET /rights/nominations/{token}`: every failure is the same 404
+- `/holder-tickets/{token}`: every way a link can fail - unknown, replaced,
+  or its ticket not yet issued - is the same 404
 
 ## Rate limits and lockout
 

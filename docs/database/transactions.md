@@ -75,10 +75,13 @@ transaction and keeps it until commit
 ([ADR 0005](../decisions/0005-audit-chain-position-inside-the-lock.md)). A
 transaction that records an audit row and *then* seals something waits on the
 key service with that lock held, and every other audited write on the
-platform waits with it. `PATCH /me` does this today: it records
-`user.contact_changed` (`api/routers/v1/me.py:166`) and then adds a secondary
-email, which seals it (`me.py:176` → `users.set_secondary_email` →
-`db/repositories/users.py:339`). Nothing enforces "seal before the first
+platform waits with it. `PATCH /me` does this today when it is given a new
+mobile and a secondary email together: `update_own_profile` records
+`user.contact_changed` for the mobile (`domain/users/service.py:371`) and then
+adds the secondary email (`service.py:381` →
+`auth/authentication/service.py` `add_secondary_email()` →
+`users.set_secondary_email`, which seals it at
+`db/repositories/users.py:358`). Nothing enforces "seal before the first
 audit row"; keep new code in that order.
 
 **Reading is mostly outside.** The API serves rows as stored and the portals
@@ -116,6 +119,12 @@ and both succeed.
 Each integration test gets a connection whose transaction is rolled back
 afterwards, so tests neither see nor leave each other's rows — and the suite can
 run against a database with real data in it without touching it.
+
+A task is not rolled back. Queued through Celery, it would run against the
+live worker whatever happened to the test's rows, so the root fixture
+`_no_real_tasks` (`tests/conftest.py`) stops every `apply_async` in every test.
+A test that needs to see what was sent captures the dispatch itself, with a
+`sent` or `queued` fixture.
 
 ## Side effects wait for the commit
 
