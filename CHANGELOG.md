@@ -8,6 +8,12 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Copies from the deployment's settings** (2026-10-08). `EMAIL_CC_ADDRESSES`
+  in `backend/api/.env`: up to five addresses, comma-separated, copied (Cc) on
+  every email that may be copied - the 17 about work between the office, its
+  staff and its holders - on top of the office's own Copy to. Never on an
+  email with a code, a link or a person's own record (ADR 0029, extended).
+  Checked at startup; Message templates says how many there are.
 - **The documents, swept against the code** (2026-10-08). Every hand-written
   document was checked against HEAD and brought up to date: counts (324
   operations, 58 tables, 49 migrations, 78 sealed columns, 11 keyed hashes),

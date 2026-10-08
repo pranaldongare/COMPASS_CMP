@@ -35,6 +35,8 @@ NEVER_COPIED = {
     Message.BREACH_NOTICE,
     Message.BREACH_NOTICE_DIRECT,
     Message.BREACH_TICKET_ACCESS,
+    Message.HOLDER_TICKET_LINK,
+    Message.HOLDER_TICKET_CODE,
 }
 
 
@@ -87,3 +89,54 @@ def test_files_only_on_a_message_that_carries_them(sent: NullEmailTransport) -> 
         messaging.deliver(
             Message.MFA_CODE, to="a@corp.example", attachments=[receipt], **_vars(Message.MFA_CODE)
         )
+
+
+def test_the_deployments_own_copies_join_the_offices_on_a_copyable_email(
+    sent: NullEmailTransport, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """EMAIL_CC_ADDRESSES (2026-10-08): on every copyable email, after the
+    office's copies, each address once and never the recipient's own."""
+    from cmp.core.config import settings
+
+    monkeypatch.setattr(
+        settings,
+        "email_cc_addresses",
+        ("audit@corp.example", "team@corp.example", "holder@corp.example"),
+    )
+    key = next(iter(COPYABLE))
+    messaging.deliver(key, to="holder@corp.example", **_vars(key))
+    [one] = sent.sent
+    assert one["cc"] == ["team@corp.example", "audit@corp.example"]
+
+
+def test_the_deployments_copies_never_go_on_a_code_a_link_or_her_record(
+    sent: NullEmailTransport, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from cmp.core.config import settings
+
+    monkeypatch.setattr(settings, "email_cc_addresses", ("audit@corp.example",))
+    for key in (Message.MFA_CODE, Message.HOLDER_TICKET_LINK, Message.CONSENT_RECEIPT):
+        messaging.deliver(key, to="person@corp.example", **_vars(key))
+    assert [m["cc"] for m in sent.sent] == [[], [], []]
+
+
+@pytest.mark.parametrize(
+    ("raw", "ok"),
+    [
+        ("Audit@Corp.example, team@corp.example,audit@corp.example", True),
+        ("", True),
+        ("not-an-address", False),
+        ("a@x.io,b@x.io,c@x.io,d@x.io,e@x.io,f@x.io", False),
+    ],
+)
+def test_email_cc_addresses_is_checked_at_startup(raw: str, ok: bool) -> None:
+    from pydantic import ValidationError
+
+    from cmp.core.config import Settings
+
+    if ok:
+        parsed = Settings(email_cc_addresses=raw).email_cc_addresses  # type: ignore[arg-type]
+        assert all(a == a.lower() for a in parsed) and len(parsed) == len(set(parsed))
+    else:
+        with pytest.raises(ValidationError):
+            Settings(email_cc_addresses=raw)  # type: ignore[arg-type]

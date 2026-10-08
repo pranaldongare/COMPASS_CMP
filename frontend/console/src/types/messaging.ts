@@ -40,6 +40,9 @@ export interface MessageTemplate {
   /** Whether the office may copy it by email to somebody else (2026-10-08).
    *  Never a message with a code, a link or a person's own record. */
   copyable: boolean;
+  /** How many addresses the deployment copies every copyable email to
+   *  (EMAIL_CC_ADDRESSES), on top of the office's own. A count only. */
+  deployment_copies?: number;
   /** Whether it may carry files by email - only files its recipient owns. */
   attachable: boolean;
   /** Who it is copied to. Each `email` is sealed, opened by the client. */

@@ -34477,6 +34477,11 @@
             "type": "array",
             "title": "Copies"
           },
+          "deployment_copies": {
+            "type": "integer",
+            "title": "Deployment Copies",
+            "default": 0
+          },
           "variables": {
             "items": {
               "$ref": "#/components/schemas/VariableOut"

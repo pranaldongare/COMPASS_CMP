@@ -12,7 +12,7 @@ before anybody waits on a sign-in code.
 | [Notification strategy](../notifications/README.md) | **Every module's emails end to end** - to, CC, attachment, subject and body - one file per module, and the rules for copies and files |
 | [domain/messages.md](../domain/messages.md) | The messages as the office sees them, and how their words are edited |
 
-## The settings: five, and nothing else
+## The settings: five for the server, one for copies
 
 In `backend/api/.env`:
 
@@ -23,6 +23,7 @@ In `backend/api/.env`:
 | `SMTP_USERNAME` | `svc-cmp` | The login. Empty: no login, for a relay that accepts this machine without one |
 | `SMTP_PASSWORD` | `…` | The password. Never logged, printed or returned |
 | `SENDER_EMAIL` | `privacy@corp.example` | The address every email comes from, shown as "`ORGANISATION_NAME` Privacy Office". **Must be real in production** - the API refuses `example.org` and `example.com` |
+| `EMAIL_CC_ADDRESSES` | `privacy-team@corp.example` | Optional. Up to five addresses, comma-separated, copied in `Cc` on **every email that may be copied** - the 17 about work between the office, its staff and its holders - on top of what the office sets per email in **Message templates → Copy to**. Never on an email with a code, a link or a person's own record ([ADR 0029](../decisions/0029-copies-and-files-never-on-a-code-a-link-or-her-own-record.md)). Each is checked as an address when the API and worker start; a bad one stops them. Message templates shows how many there are, never which |
 
 ```bash
 SMTP_SERVER=smtp.corp.example
@@ -30,6 +31,7 @@ SMTP_PORT=25
 SMTP_USERNAME=svc-cmp
 SMTP_PASSWORD=...
 SENDER_EMAIL=privacy@corp.example
+EMAIL_CC_ADDRESSES=privacy-team@corp.example
 ```
 
 Restart the API and the worker after changing them: the worker is what sends.
@@ -118,7 +120,7 @@ what would be sent.
 |---|---|
 | From | `ORGANISATION_NAME Privacy Office <SENDER_EMAIL>` |
 | To | The one recipient - opened from its sealed form only at this moment |
-| Cc | The addresses the Privacy Office set for this email in **Message templates → Copy to**, at most five - only on an email that may be copied (never one with a code, a link or a person's own record), opened from their sealed form like the recipient |
+| Cc | The addresses the Privacy Office set for this email in **Message templates → Copy to** (at most five), then those in `EMAIL_CC_ADDRESSES` (at most five), each once and never the recipient - only on an email that may be copied (never one with a code, a link or a person's own record). The office's are opened from their sealed form like the recipient |
 | Subject | The message's subject, with its values filled in |
 | Date | When it was sent, in UTC |
 | Message-ID | Unique, on the sender's domain; returned and logged so a delivery can be traced |

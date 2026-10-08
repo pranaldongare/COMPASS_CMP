@@ -64,6 +64,11 @@ Addresses are sealed at rest and stay sealed in the task queue; only
 
 The decision and its reasons: [ADR 0029](../decisions/0029-copies-and-files-never-on-a-code-a-link-or-her-own-record.md).
 
+**The deployment may add its own.** `EMAIL_CC_ADDRESSES` in
+`backend/api/.env` - up to five addresses, comma-separated - is copied on
+every copyable email, after the office's, under the same rule. Message
+templates says how many there are ([email/README.md](../email/README.md)).
+
 **No email is copied by default.** The Privacy Office may copy an email to up
 to **five** addresses - a team mailbox that follows the work up, an approvals
 inbox - in **Message templates → Copy to**, per email. The copies get the same

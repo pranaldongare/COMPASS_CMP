@@ -242,9 +242,10 @@ def test_copies_go_in_cc_and_files_after_the_text_and_html() -> None:
 
 
 def test_too_many_copies_or_too_much_attached_is_refused() -> None:
-    with pytest.raises(ValueError, match="at most 5 copies"):
+    # Five the office sets per email, five from EMAIL_CC_ADDRESSES.
+    with pytest.raises(ValueError, match="at most 10 copies"):
         transport(port=25).send(
-            to="a@corp.example", subject="s", body="b", cc=[f"c{i}@corp.example" for i in range(6)]
+            to="a@corp.example", subject="s", body="b", cc=[f"c{i}@corp.example" for i in range(11)]
         )
     with pytest.raises(ValueError, match="email address"):
         transport(port=25).send(to="a@corp.example", subject="s", body="b", cc=["not-an-address"])

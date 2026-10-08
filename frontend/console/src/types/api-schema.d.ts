@@ -11491,6 +11491,11 @@ export interface components {
             attachable: boolean;
             /** Copies */
             copies?: components["schemas"]["CopyOut"][];
+            /**
+             * Deployment Copies
+             * @default 0
+             */
+            deployment_copies: number;
             /** Variables */
             variables: components["schemas"]["VariableOut"][];
             /** Channels */

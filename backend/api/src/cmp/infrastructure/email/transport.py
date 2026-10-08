@@ -56,8 +56,11 @@ log = get_logger("cmp.infrastructure.email")
 #: more than 10-25 MB, and the encoding grows a file by a third.
 MAX_ATTACHMENT_BYTES: Final = 10 * 1024 * 1024
 
-#: Copies one email may carry.
+#: Copies the office may set on one email, in Message templates.
 MAX_CC: Final = 5
+
+#: Copies set for every copyable email in the environment (EMAIL_CC_ADDRESSES).
+MAX_ENV_CC: Final = 5
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,8 +77,8 @@ def _checked(
     cc: Sequence[str], attachments: Sequence[Attachment]
 ) -> tuple[list[str], list[Attachment]]:
     copies = [c.strip() for c in cc if c and c.strip()]
-    if len(copies) > MAX_CC:
-        raise ValueError(f"An email carries at most {MAX_CC} copies")
+    if len(copies) > MAX_CC + MAX_ENV_CC:
+        raise ValueError(f"An email carries at most {MAX_CC + MAX_ENV_CC} copies")
     if any("@" not in c for c in copies):
         raise ValueError("A copy goes to an email address")
     files = list(attachments)

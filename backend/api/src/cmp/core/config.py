@@ -233,6 +233,12 @@ class Settings(BaseSettings):
     # refuses to start with the list empty or holding only that.
     breach_ticket_email_domains: Annotated[tuple[str, ...], NoDecode] = ("cmp.local",)
 
+    #: EMAIL_CC_ADDRESSES: up to five addresses, comma-separated, copied on
+    #: every email the catalogue lets be copied (`COPYABLE`), on top of the
+    #: copies the office sets per email in Message templates. Never on an email
+    #: carrying a code, a link or a person's own record (ADR 0029). Empty: none.
+    email_cc_addresses: Annotated[tuple[str, ...], NoDecode] = ()
+
     # ---------------------------------------------------------------- external
     #: How the organisation names itself in messages ({organisation}).
     organisation_name: str = "COMPASS"
@@ -305,6 +311,7 @@ class Settings(BaseSettings):
         "allowed_manifest_mime",
         "breach_ticket_email_domains",
         "dev_seed_logins",
+        "email_cc_addresses",
         mode="before",
     )
     @classmethod
@@ -320,6 +327,23 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return tuple(part.strip() for part in v.split(",") if part.strip())
         return v
+
+    @field_validator("email_cc_addresses")
+    @classmethod
+    def _cc_addresses(cls, v: tuple[str, ...]) -> tuple[str, ...]:
+        """Each an email address, lower-cased, once; at most five. A typo here
+        would fail every copyable email at send time, so it fails at startup."""
+        seen: list[str] = []
+        for raw in v:
+            address = raw.strip().lower()
+            local, _, domain = address.partition("@")
+            if not local or "." not in domain or " " in address or len(address) > 255:
+                raise ValueError(f"EMAIL_CC_ADDRESSES: not an email address: {raw[:60]!r}")
+            if address not in seen:
+                seen.append(address)
+        if len(seen) > 5:
+            raise ValueError("EMAIL_CC_ADDRESSES: at most five addresses")
+        return tuple(seen)
 
     @model_validator(mode="after")
     def _production_guards(self) -> Settings:

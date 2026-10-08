@@ -1,6 +1,7 @@
 # 0029. The office copies emails and attaches files, never on a code, a link or a person's own record
 
-**Status:** accepted · 2026-10-08. Migration 0046, commit 0359149; outside
+**Status:** accepted · 2026-10-08; extended 2026-10-08 (copies from the
+deployment's settings - see the end). Migration 0046, commit 0359149; outside
 holders' emails from migration 0049
 ([ADR 0024](0024-a-rights-tickets-holder-is-reached-three-ways.md)). Builds
 on [ADR 0012](0012-side-effects-after-commit.md) (every email after the
@@ -91,3 +92,17 @@ was decided with the product owner on that basis.
 The office wants a copy on a single email rather than on every email of a
 kind; a person asks for her rights response by email; a breach ticket email
 needs to carry evidence; or an SMS needs copying.
+
+## Extended 2026-10-08: copies set in the deployment's settings
+
+`EMAIL_CC_ADDRESSES` in the API's `.env` names up to five addresses copied on
+every copyable email, after the office's own copies, each once and never the
+recipient (`infrastructure/messaging`, `deliver`). The same rule binds it: it
+never reaches an email with a code, a link or a person's own record, whatever
+the setting holds. It is for a deployment that wants one mailbox to follow
+all the office's work without the office setting it email by email. The
+addresses are checked when the API and worker start; Message templates shows
+how many there are, never which, since they are the deployment's to change. A
+copyable email may now carry up to ten copies: five the office sets, five the
+deployment does.
+

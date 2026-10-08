@@ -35,7 +35,7 @@ one stays and points forward.
 | [0026](0026-a-rights-request-is-access-erasure-or-a-grievance-about-everything.md) | A rights request is access, erasure or a grievance, about everything a person has | accepted |
 | [0027](0027-a-breach-can-reach-people-with-no-account.md) | A breach can reach people with no account: contacts from a list sent to the office | accepted |
 | [0028](0028-a-notice-template-is-copied-never-served.md) | A notice template is a separate record, copied into a project's draft, never approved or served | accepted |
-| [0029](0029-copies-and-files-never-on-a-code-a-link-or-her-own-record.md) | The office copies emails and attaches files, never on a code, a link or a person's own record | accepted |
+| [0029](0029-copies-and-files-never-on-a-code-a-link-or-her-own-record.md) | The office copies emails and attaches files, never on a code, a link or a person's own record | accepted; extended 2026-10-08 |
 
 ## Writing one
 

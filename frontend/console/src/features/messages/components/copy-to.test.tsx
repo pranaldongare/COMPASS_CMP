@@ -50,4 +50,14 @@ describe("CopyTo", () => {
     expect(screen.getByText(/Never copied/)).toBeInTheDocument();
     expect(screen.queryByLabelText(/Copy to/)).not.toBeInTheDocument();
   });
+
+  it("says when the platform's settings copy it too, by count", () => {
+    render(<CopyTo message={message({ deployment_copies: 2 })} />);
+    expect(screen.getByText(/also copied to 2 addresses/i)).toBeInTheDocument();
+  });
+
+  it("says nothing of the platform's copies when there are none", () => {
+    render(<CopyTo message={message({ deployment_copies: 0 })} />);
+    expect(screen.queryByText(/also copied to/i)).not.toBeInTheDocument();
+  });
 });

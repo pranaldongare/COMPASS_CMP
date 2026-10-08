@@ -252,6 +252,13 @@ def deliver(
                         error=str(exc),
                     )
                     raise
+            # The deployment's own copies (EMAIL_CC_ADDRESSES), on every
+            # copyable email, after the office's; each address once.
+            from cmp.core.config import settings
+
+            for address in settings.email_cc_addresses:
+                if address != to.lower() and address not in cc:
+                    cc.append(address)
         result = dict(
             build_email_transport().send(
                 to=to, subject=subject, body=body, cc=cc, attachments=attachments

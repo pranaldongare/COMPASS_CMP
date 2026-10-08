@@ -75,6 +75,14 @@ export function CopyTo({ message }: { message: MessageTemplate }) {
           />
         )}
       </Field>
+      {(message.deployment_copies ?? 0) > 0 && (
+        <p className="text-xs text-text-muted">
+          Also copied to {message.deployment_copies}{" "}
+          {message.deployment_copies === 1 ? "address" : "addresses"} set for every copyable email
+          in the platform&apos;s settings (EMAIL_CC_ADDRESSES). Ask whoever runs the platform to
+          change {message.deployment_copies === 1 ? "it" : "them"}.
+        </p>
+      )}
       <Button
         variant="secondary"
         size="sm"

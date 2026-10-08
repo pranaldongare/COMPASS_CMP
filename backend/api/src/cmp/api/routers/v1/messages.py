@@ -13,10 +13,11 @@ from datetime import datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Path
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from cmp.api.dependencies import RequireResource
 from cmp.auth.identity import Principal
+from cmp.core.config import settings
 from cmp.core.messages import MAX_EMAIL_BODY_CHARS, MAX_SUBJECT_CHARS
 from cmp.db.pool import connection, transaction
 from cmp.domain.messaging import service
@@ -66,8 +67,17 @@ class MessageOut(Out):
     #: Whether it may carry files by email - only files its recipient owns.
     attachable: bool = False
     copies: list[CopyOut] = Field(default_factory=list)
+    #: How many addresses the deployment copies every copyable email to
+    #: (EMAIL_CC_ADDRESSES), on top of `copies`. A count, never the addresses:
+    #: they are the deployment's, changed only in its settings.
+    deployment_copies: int = 0
     variables: list[VariableOut]
     channels: list[ChannelOut]
+
+    @model_validator(mode="after")
+    def _deployment_copies(self) -> MessageOut:
+        self.deployment_copies = len(settings.email_cc_addresses) if self.copyable else 0
+        return self
 
 
 class TemplateIn(Schema):
