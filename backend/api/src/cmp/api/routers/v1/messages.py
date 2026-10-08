@@ -71,12 +71,16 @@ class MessageOut(Out):
     #: (EMAIL_CC_ADDRESSES), on top of `copies`. A count, never the addresses:
     #: they are the deployment's, changed only in its settings.
     deployment_copies: int = 0
+    #: Test mode (EMAIL_REDIRECT_TO): how many addresses every message goes
+    #: to instead of its recipient. 0: off, messages go where they should.
+    redirected_to: int = 0
     variables: list[VariableOut]
     channels: list[ChannelOut]
 
     @model_validator(mode="after")
     def _deployment_copies(self) -> MessageOut:
         self.deployment_copies = len(settings.email_cc_addresses) if self.copyable else 0
+        self.redirected_to = len(settings.email_redirect_to)
         return self
 
 

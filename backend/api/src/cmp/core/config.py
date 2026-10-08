@@ -239,6 +239,12 @@ class Settings(BaseSettings):
     #: carrying a code, a link or a person's own record (ADR 0029). Empty: none.
     email_cc_addresses: Annotated[tuple[str, ...], NoDecode] = ()
 
+    #: EMAIL_REDIRECT_TO - test mode, for a UAT or test server: up to five
+    #: addresses, comma-separated. While set, every message - all emails and
+    #: every text - goes only to these, by email, saying whom it was for; no
+    #: real recipient is written to. Refused in production. Empty: off.
+    email_redirect_to: Annotated[tuple[str, ...], NoDecode] = ()
+
     # ---------------------------------------------------------------- external
     #: How the organisation names itself in messages ({organisation}).
     organisation_name: str = "COMPASS"
@@ -312,6 +318,7 @@ class Settings(BaseSettings):
         "breach_ticket_email_domains",
         "dev_seed_logins",
         "email_cc_addresses",
+        "email_redirect_to",
         mode="before",
     )
     @classmethod
@@ -328,21 +335,22 @@ class Settings(BaseSettings):
             return tuple(part.strip() for part in v.split(",") if part.strip())
         return v
 
-    @field_validator("email_cc_addresses")
+    @field_validator("email_cc_addresses", "email_redirect_to")
     @classmethod
     def _cc_addresses(cls, v: tuple[str, ...]) -> tuple[str, ...]:
         """Each an email address, lower-cased, once; at most five. A typo here
-        would fail every copyable email at send time, so it fails at startup."""
+        would fail every email it applies to at send time, so it fails at
+        startup."""
         seen: list[str] = []
         for raw in v:
             address = raw.strip().lower()
             local, _, domain = address.partition("@")
             if not local or "." not in domain or " " in address or len(address) > 255:
-                raise ValueError(f"EMAIL_CC_ADDRESSES: not an email address: {raw[:60]!r}")
+                raise ValueError(f"not an email address: {raw[:60]!r}")
             if address not in seen:
                 seen.append(address)
         if len(seen) > 5:
-            raise ValueError("EMAIL_CC_ADDRESSES: at most five addresses")
+            raise ValueError("at most five addresses")
         return tuple(seen)
 
     @model_validator(mode="after")
@@ -362,6 +370,12 @@ class Settings(BaseSettings):
                 raise ValueError("CORS_ORIGINS must be explicit in production")
             # A transport that does not deliver is a sign-in nobody can
             # complete. In production the choice has to be explicit and real.
+            # Test mode writes to nobody real: a production that redirected
+            # would send nobody their sign-in code.
+            if self.email_redirect_to:
+                raise ValueError(
+                    "EMAIL_REDIRECT_TO is for test servers; it must be empty in production"
+                )
             if self.email_mode != "smtp" or not self.smtp_host.strip():
                 raise ValueError("SMTP_SERVER must be set in production: email has to be delivered")
             # Mail from a placeholder domain is mail nobody can reply to, and

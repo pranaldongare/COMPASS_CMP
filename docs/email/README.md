@@ -12,7 +12,7 @@ before anybody waits on a sign-in code.
 | [Notification strategy](../notifications/README.md) | **Every module's emails end to end** - to, CC, attachment, subject and body - one file per module, and the rules for copies and files |
 | [domain/messages.md](../domain/messages.md) | The messages as the office sees them, and how their words are edited |
 
-## The settings: five for the server, one for copies
+## The settings: five for the server, one for copies, one for test mode
 
 In `backend/api/.env`:
 
@@ -24,6 +24,7 @@ In `backend/api/.env`:
 | `SMTP_PASSWORD` | `…` | The password. Never logged, printed or returned |
 | `SENDER_EMAIL` | `privacy@corp.example` | The address every email comes from, shown as "`ORGANISATION_NAME` Privacy Office". **Must be real in production** - the API refuses `example.org` and `example.com` |
 | `EMAIL_CC_ADDRESSES` | `privacy-team@corp.example` | Optional. Up to five addresses, comma-separated, copied in `Cc` on **every email that may be copied** - the 17 about work between the office, its staff and its holders - on top of what the office sets per email in **Message templates → Copy to**. Never on an email with a code, a link or a person's own record ([ADR 0029](../decisions/0029-copies-and-files-never-on-a-code-a-link-or-her-own-record.md)). Each is checked as an address when the API and worker start; a bad one stops them. Message templates shows how many there are, never which |
+| `EMAIL_REDIRECT_TO` | `uat-inbox@corp.example` | **Test mode**, for a UAT or test server. Up to five addresses. While set, **every** message - all 41 emails and every text message - goes only to these, by email: the subject starts `[TEST]` and the body opens with whom it was for (and who it would have been copied to). No real recipient, copy or mobile gets anything. **Production refuses to start with it set.** Message templates shows a test-mode warning on every message. Leave it empty when running the browser suites, which read codes by recipient |
 
 ```bash
 SMTP_SERVER=smtp.corp.example
@@ -32,6 +33,8 @@ SMTP_USERNAME=svc-cmp
 SMTP_PASSWORD=...
 SENDER_EMAIL=privacy@corp.example
 EMAIL_CC_ADDRESSES=privacy-team@corp.example
+# On a UAT server only:
+# EMAIL_REDIRECT_TO=uat-inbox@corp.example
 ```
 
 Restart the API and the worker after changing them: the worker is what sends.

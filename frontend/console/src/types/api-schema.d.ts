@@ -11496,6 +11496,11 @@ export interface components {
              * @default 0
              */
             deployment_copies: number;
+            /**
+             * Redirected To
+             * @default 0
+             */
+            redirected_to: number;
             /** Variables */
             variables: components["schemas"]["VariableOut"][];
             /** Channels */

@@ -6,12 +6,12 @@ key service, and the two portals.
 
 | Process | Settings | Template |
 |---|---|---|
-| API, worker, beat | `backend/api/src/cmp/core/config.py`, 94 fields | `backend/api/.env.example` |
+| API, worker, beat | `backend/api/src/cmp/core/config.py`, 95 fields | `backend/api/.env.example` |
 | Key service | `backend/dkms/app/config.py`, 14 fields | `backend/dkms/.env.example` |
 | Console, portal | `process.env` in `next.config.ts`, `src/lib/config`, `src/proxy.ts`, `src/app/dkms/decrypt/route.ts` | `frontend/*/.env.example` |
 
 The API's `Settings` refuses an unknown variable (`extra="forbid"`): a typo
-fails at startup. `backend/api/.env.example` lists 67 of the 94 fields. Of
+fails at startup. `backend/api/.env.example` lists 68 of the 95 fields. Of
 the other 27, four are email settings the template sets under their newer
 names (`SMTP_HOST` as `SMTP_SERVER`, `NOTIFICATION_EMAIL_FROM` as
 `SENDER_EMAIL`) or keeps only as legacy (`EMAIL_TRANSPORT`, `SMTP_USE_TLS`).
@@ -78,7 +78,7 @@ boot: the second failure is loud and costs ten minutes.
 | API | 50 default page size, 200 max; public link 60/min |
 | Outbound HTTP | `EXTERNAL_HTTP_TIMEOUT_S` 10, `EXTERNAL_HTTP_RETRIES` 3 |
 | Logging | `LOG_LEVEL`, `LOG_JSON` (false for a terminal) |
-| Email | Five settings: `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SENDER_EMAIL`; and `EMAIL_CC_ADDRESSES` (empty), up to five addresses copied on every email that may be copied, checked at startup. `SMTP_SERVER` empty writes to the outbox; the port decides the connection (465 SSL, 587 STARTTLS, 25 plain). See [email/README.md](../email/README.md) |
+| Email | Five settings: `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SENDER_EMAIL`; and `EMAIL_CC_ADDRESSES` (empty), up to five addresses copied on every email that may be copied, checked at startup; and `EMAIL_REDIRECT_TO` (empty), test mode - every email and text goes only to up to five addresses, saying whom it was for; production refuses to start with it set. `SMTP_SERVER` empty writes to the outbox; the port decides the connection (465 SSL, 587 STARTTLS, 25 plain). See [email/README.md](../email/README.md) |
 | Transports | `SMS_TRANSPORT` (`console`, `http`, `null`), `STORAGE_BACKEND` (`local`; `object` is not built, and any environment refuses to start with it - until 2026-10-05 it started and failed the first upload). With more than one API or worker replica, `UPLOAD_ROOT` must be one durable volume they all mount: a proof saved by one replica is read back by another. The `http` SMS transport POSTs `{"to","body","from"}` as JSON with a bearer token to `SMS_HTTP_URL`; put a provider-specific adapter in front of it |
 | Key service | See below |
 

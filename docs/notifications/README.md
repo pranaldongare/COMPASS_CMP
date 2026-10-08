@@ -69,6 +69,11 @@ The decision and its reasons: [ADR 0029](../decisions/0029-copies-and-files-neve
 every copyable email, after the office's, under the same rule. Message
 templates says how many there are ([email/README.md](../email/README.md)).
 
+**Test mode sends nothing to anybody real.** On a UAT or test server,
+`EMAIL_REDIRECT_TO` sends every email and every text only to the addresses
+it names, saying at the top whom each was for. Production refuses to start
+with it set.
+
 **No email is copied by default.** The Privacy Office may copy an email to up
 to **five** addresses - a team mailbox that follows the work up, an approvals
 inbox - in **Message templates → Copy to**, per email. The copies get the same

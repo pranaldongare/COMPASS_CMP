@@ -60,4 +60,9 @@ describe("CopyTo", () => {
     render(<CopyTo message={message({ deployment_copies: 0 })} />);
     expect(screen.queryByText(/also copied to/i)).not.toBeInTheDocument();
   });
+
+  it("warns in test mode that the message goes only to the redirect addresses", () => {
+    render(<CopyTo message={message({ copyable: false, redirected_to: 1 })} />);
+    expect(screen.getByText(/test mode: this message goes only to the 1 address/i)).toBeInTheDocument();
+  });
 });

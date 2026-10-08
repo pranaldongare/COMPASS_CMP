@@ -8,6 +8,12 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Email test mode** (2026-10-08). `EMAIL_REDIRECT_TO` in `backend/api/.env`,
+  for a UAT or test server: every email and every text message goes only to
+  up to five configured addresses, by email, with "[TEST]" in the subject and
+  a line saying whom it was for; no real recipient, copy or mobile gets
+  anything. Production refuses to start with it set; Message templates shows
+  a test-mode warning on every message.
 - **Copies from the deployment's settings** (2026-10-08). `EMAIL_CC_ADDRESSES`
   in `backend/api/.env`: up to five addresses, comma-separated, copied (Cc) on
   every email that may be copied - the 17 about work between the office, its

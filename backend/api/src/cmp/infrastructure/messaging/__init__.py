@@ -229,7 +229,10 @@ def deliver(
         raise ValueError(f"'{j.key.value}' does not carry files")
 
     subject, body = render(key, ch, variables)
-    if ch is Channel.SMS:
+    if settings.email_redirect_to:
+        # Test mode (EMAIL_REDIRECT_TO): nobody real is written to.
+        result = _redirected(j, ch, to=to, subject=subject, body=body, attachments=attachments)
+    elif ch is Channel.SMS:
         from cmp.infrastructure.sms import build_sms_transport
 
         result = dict(build_sms_transport().send(to=to, body=body))
@@ -237,34 +240,80 @@ def deliver(
         from cmp.infrastructure.email import build_email_transport
 
         assert subject is not None
-        cc: list[str] = []
-        if j.copyable:
-            sealed = load_copies().get(j.key.value, [])
-            if sealed:
-                try:
-                    cc = [c for c in unseal_values_sync(sealed) if c and c != to]
-                except (DkmsUnavailable, SealedValueUnreadable) as exc:
-                    log.error(
-                        "message.not_sent",
-                        message=j.key.value,
-                        reason="the key service could not open a copy address",
-                        retried=isinstance(exc, DkmsUnavailable),
-                        error=str(exc),
-                    )
-                    raise
-            # The deployment's own copies (EMAIL_CC_ADDRESSES), on every
-            # copyable email, after the office's; each address once.
-            from cmp.core.config import settings
-
-            for address in settings.email_cc_addresses:
-                if address != to.lower() and address not in cc:
-                    cc.append(address)
         result = dict(
             build_email_transport().send(
-                to=to, subject=subject, body=body, cc=cc, attachments=attachments
+                to=to, subject=subject, body=body, cc=_copies(j, to), attachments=attachments
             )
         )
     result["message"] = j.key.value
+    return result
+
+
+def _copies(j: Junction, to: str) -> list[str]:
+    """Who an email is copied to: nobody, unless the catalogue lets it be
+    copied; then the office's copies, then the deployment's own
+    (EMAIL_CC_ADDRESSES), each once and never the recipient."""
+    if not j.copyable:
+        return []
+    from cmp.infrastructure.dkms import unseal_values_sync
+    from cmp.infrastructure.dkms.client import DkmsUnavailable, SealedValueUnreadable
+
+    cc: list[str] = []
+    sealed = load_copies().get(j.key.value, [])
+    if sealed:
+        try:
+            cc = [c for c in unseal_values_sync(sealed) if c and c != to]
+        except (DkmsUnavailable, SealedValueUnreadable) as exc:
+            log.error(
+                "message.not_sent",
+                message=j.key.value,
+                reason="the key service could not open a copy address",
+                retried=isinstance(exc, DkmsUnavailable),
+                error=str(exc),
+            )
+            raise
+    for address in settings.email_cc_addresses:
+        if address != to.lower() and address not in cc:
+            cc.append(address)
+    return cc
+
+
+def _redirected(
+    j: Junction,
+    ch: Channel,
+    *,
+    to: str,
+    subject: str | None,
+    body: str,
+    attachments: Sequence[Attachment],
+) -> dict[str, Any]:
+    """Test mode (EMAIL_REDIRECT_TO, refused in production): every message -
+    every email and every text - goes only to the configured addresses, by
+    email, and says at its top whom it was for. The recipient and anybody it
+    would have been copied to are written to by nobody."""
+    from cmp.infrastructure.email import build_email_transport
+
+    inbox = list(settings.email_redirect_to)
+    if ch is Channel.SMS:
+        subject = f"[TEST] Text message for {to}: {j.title}"
+        note = f"This text message was for {to}. It would have read:"
+        files: Sequence[Attachment] = ()
+    else:
+        copies = _copies(j, to)
+        subject = f"[TEST] {subject}"
+        note = f"This email was for {to}" + (f", copied to {', '.join(copies)}." if copies else ".")
+        files = attachments
+    body = (
+        "TEST MODE - this message was redirected by EMAIL_REDIRECT_TO. "
+        f"{note}\n\n{'-' * 60}\n\n{body}"
+    )
+    result = dict(
+        build_email_transport().send(
+            to=inbox[0], subject=subject, body=body, cc=inbox[1:], attachments=files
+        )
+    )
+    result["redirected"] = True
+    log.info("message.redirected", message=j.key.value, channel=ch.value)
     return result
 
 

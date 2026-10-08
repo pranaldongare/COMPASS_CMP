@@ -43,6 +43,9 @@ export interface MessageTemplate {
   /** How many addresses the deployment copies every copyable email to
    *  (EMAIL_CC_ADDRESSES), on top of the office's own. A count only. */
   deployment_copies?: number;
+  /** Test mode (EMAIL_REDIRECT_TO): how many addresses every message goes to
+   *  instead of its recipient; 0 when off. */
+  redirected_to?: number;
   /** Whether it may carry files by email - only files its recipient owns. */
   attachable: boolean;
   /** Who it is copied to. Each `email` is sealed, opened by the client. */

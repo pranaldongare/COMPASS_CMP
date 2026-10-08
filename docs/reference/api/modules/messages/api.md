@@ -52,6 +52,7 @@ No request body.
       }
     ],
     "deployment_copies": 0,
+    "redirected_to": 0,
     "variables": [
       {
         "name": "…",
@@ -116,6 +117,7 @@ No request body.
     }
   ],
   "deployment_copies": 0,
+  "redirected_to": 0,
   "variables": [
     {
       "name": "string",
@@ -272,6 +274,7 @@ Request body required: **yes**.
     }
   ],
   "deployment_copies": 0,
+  "redirected_to": 0,
   "variables": [
     {
       "name": "string",
@@ -364,6 +367,7 @@ Request body required: **yes**.
     }
   ],
   "deployment_copies": 0,
+  "redirected_to": 0,
   "variables": [
     {
       "name": "string",
@@ -446,6 +450,7 @@ No request body.
     }
   ],
   "deployment_copies": 0,
+  "redirected_to": 0,
   "variables": [
     {
       "name": "string",
@@ -526,6 +531,7 @@ Every address the message is now copied to; an empty list copies it to nobody.
 | `attachable` | `boolean` | No | default: `False` | — |
 | `copies` | array of [`CopyOut`](#schema-copyout) | No | — | — |
 | `deployment_copies` | `integer` | No | default: `0` | — |
+| `redirected_to` | `integer` | No | default: `0` | — |
 | `variables` | array of [`VariableOut`](#schema-variableout) | Yes | — | — |
 | `channels` | array of [`ChannelOut`](#schema-channelout) | Yes | — | — |
 

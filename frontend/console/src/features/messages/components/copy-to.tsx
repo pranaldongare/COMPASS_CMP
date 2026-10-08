@@ -8,7 +8,7 @@
  */
 "use client";
 
-import { Lock, Save } from "lucide-react";
+import { FlaskConical, Lock, Save } from "lucide-react";
 import * as React from "react";
 
 import { Button, Field, Textarea } from "@/components/ui/primitives";
@@ -33,13 +33,26 @@ export function CopyTo({ message }: { message: MessageTemplate }) {
     setText(current);
   }
 
+  const testMode =
+    (message.redirected_to ?? 0) > 0 ? (
+      <p className="flex items-start gap-2 rounded-md border border-warning-border bg-warning-subtle px-3 py-2 text-xs text-warning-text">
+        <FlaskConical className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+        Test mode: this message goes only to the {message.redirected_to}{" "}
+        {message.redirected_to === 1 ? "address" : "addresses"} set in the platform&apos;s
+        settings (EMAIL_REDIRECT_TO), never to its recipient or its copies.
+      </p>
+    ) : null;
+
   if (!message.copyable) {
     return (
-      <p className="flex items-start gap-2 text-xs text-text-muted">
-        <Lock className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-        Never copied: it carries a code or a link, or a person&apos;s own record, and a copy would
-        hand it to somebody else.
-      </p>
+      <div className="space-y-2">
+        {testMode}
+        <p className="flex items-start gap-2 text-xs text-text-muted">
+          <Lock className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+          Never copied: it carries a code or a link, or a person&apos;s own record, and a
+          copy would hand it to somebody else.
+        </p>
+      </div>
     );
   }
 
@@ -52,7 +65,9 @@ export function CopyTo({ message }: { message: MessageTemplate }) {
     try {
       await save.mutateAsync({ key: message.key, addresses });
       toast.success(
-        addresses.length ? `Copied to ${addresses.length} ${addresses.length === 1 ? "address" : "addresses"}` : "No longer copied",
+        addresses.length
+          ? `Copied to ${addresses.length} ${addresses.length === 1 ? "address" : "addresses"}`
+          : "No longer copied",
       );
     } catch (err) {
       toast.error("Not saved", userMessage(err, "The server refused."));
@@ -61,6 +76,7 @@ export function CopyTo({ message }: { message: MessageTemplate }) {
 
   return (
     <div className="space-y-2 rounded-md border border-border p-3">
+      {testMode}
       <Field
         label="Copy to"
         hint="Email only. Up to 5 addresses, one per line - a team mailbox, an approvals inbox. Each copy gets the same email, in Cc."
@@ -78,9 +94,9 @@ export function CopyTo({ message }: { message: MessageTemplate }) {
       {(message.deployment_copies ?? 0) > 0 && (
         <p className="text-xs text-text-muted">
           Also copied to {message.deployment_copies}{" "}
-          {message.deployment_copies === 1 ? "address" : "addresses"} set for every copyable email
-          in the platform&apos;s settings (EMAIL_CC_ADDRESSES). Ask whoever runs the platform to
-          change {message.deployment_copies === 1 ? "it" : "them"}.
+          {message.deployment_copies === 1 ? "address" : "addresses"} set for every copyable
+          email in the platform&apos;s settings (EMAIL_CC_ADDRESSES). Ask whoever runs the
+          platform to change {message.deployment_copies === 1 ? "it" : "them"}.
         </p>
       )}
       <Button

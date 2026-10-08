@@ -34482,6 +34482,11 @@
             "title": "Deployment Copies",
             "default": 0
           },
+          "redirected_to": {
+            "type": "integer",
+            "title": "Redirected To",
+            "default": 0
+          },
           "variables": {
             "items": {
               "$ref": "#/components/schemas/VariableOut"

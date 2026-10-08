@@ -106,3 +106,8 @@ how many there are, never which, since they are the deployment's to change. A
 copyable email may now carry up to ten copies: five the office sets, five the
 deployment does.
 
+Test mode is the one exception to "never on a code or a link", and it is not
+a copy: `EMAIL_REDIRECT_TO` sends every message *instead of* to its
+recipient, never as well, to a test team's own inbox, and production refuses
+to start with it set. Nobody real receives anything while it is on.
+

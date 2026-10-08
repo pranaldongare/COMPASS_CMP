@@ -37,6 +37,10 @@ pytest -k rights                 # by name
 pytest --cov                     # with coverage
 ```
 
+**Test mode must be off for the browser suites.** With `EMAIL_REDIRECT_TO`
+set, every code goes to the redirect inbox, and the suites, which read codes
+from the outbox by recipient, find none.
+
 **No test queues a real task.** A root fixture (`_no_real_tasks` in
 `tests/conftest.py`) stops every Celery task at `apply_async`: the suites roll
 their rows back, but a queued task would run against the live worker all the

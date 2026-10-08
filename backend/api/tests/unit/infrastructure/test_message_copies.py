@@ -140,3 +140,59 @@ def test_email_cc_addresses_is_checked_at_startup(raw: str, ok: bool) -> None:
     else:
         with pytest.raises(ValidationError):
             Settings(email_cc_addresses=raw)  # type: ignore[arg-type]
+
+
+def test_test_mode_sends_every_email_only_to_the_redirect_addresses(
+    sent: NullEmailTransport, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """EMAIL_REDIRECT_TO (2026-10-08): the recipient and the copies get
+    nothing; the configured inboxes get it, saying whom it was for."""
+    from cmp.core.config import settings
+
+    monkeypatch.setattr(settings, "email_redirect_to", ("uat@corp.example", "qa@corp.example"))
+    key = next(iter(COPYABLE))
+    messaging.deliver(key, to="holder@corp.example", **_vars(key))
+    messaging.deliver(Message.MFA_CODE, to="dpo@corp.example", **_vars(Message.MFA_CODE))
+    first, second = sent.sent
+    for one in (first, second):
+        assert one["to"] == "uat@corp.example" and one["cc"] == ["qa@corp.example"]
+        assert one["subject"].startswith("[TEST] ")
+        assert one["body"].startswith("TEST MODE")
+    assert "This email was for holder@corp.example, copied to team@corp.example." in first["body"]
+    assert "This email was for dpo@corp.example." in second["body"]
+
+
+def test_test_mode_turns_a_text_into_an_email_to_the_redirect_addresses(
+    sent: NullEmailTransport, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from cmp.core.config import settings
+
+    def no_sms() -> Any:
+        raise AssertionError("no text may be sent in test mode")
+
+    monkeypatch.setattr("cmp.infrastructure.sms.build_sms_transport", no_sms)
+    monkeypatch.setattr(settings, "email_redirect_to", ("uat@corp.example",))
+    messaging.deliver(Message.LOGIN_CODE, to="+919000000001", **_vars(Message.LOGIN_CODE))
+    [one] = sent.sent
+    assert one["to"] == "uat@corp.example" and one["cc"] == []
+    assert one["subject"].startswith("[TEST] Text message for +919000000001")
+    assert "This text message was for +919000000001." in one["body"]
+
+
+def test_production_refuses_test_mode() -> None:
+    from pydantic import ValidationError
+
+    from cmp.core.config import Settings
+
+    with pytest.raises(ValidationError, match="EMAIL_REDIRECT_TO"):
+        Settings(
+            environment="production",
+            secret_key="x" * 40,
+            postgres_password="a-real-password",
+            cookie_secure=True,
+            debug=False,
+            cors_origins="https://console.corp.example",
+            smtp_host="smtp.corp.example",
+            notification_email_from="privacy@corp.example",
+            email_redirect_to="uat@corp.example",
+        )  # type: ignore[arg-type]

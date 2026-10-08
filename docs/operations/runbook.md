@@ -64,6 +64,12 @@ portals over https removes the whole class.
 
 ## No message of any kind is sent, and the request said one was
 
+**First, is test mode on?** With `EMAIL_REDIRECT_TO` set in the API's `.env`,
+every email and every text goes only to the addresses it names, with
+"[TEST]" in the subject - nobody real receives anything, by design. Message
+templates shows a test-mode warning on every message. Empty it and restart
+the API and worker (production refuses to start with it set).
+
 Every message is addressed to a contact that is **sealed in the database**.
 The worker opens it through the key service on the way out - that is the one
 step between "a code was queued" and "a code was sent" - so a key service it
