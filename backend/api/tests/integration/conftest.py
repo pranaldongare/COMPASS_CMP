@@ -35,3 +35,18 @@ async def redis_conn() -> AsyncIterator[Any]:
         yield client
     finally:
         await close_redis()
+
+
+@pytest.fixture
+def sent(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, tuple[Any, ...]]]:
+    """What a test queued, by task name and arguments, instead of queueing it."""
+    from cmp.tasks import dispatch as dispatch_mod
+
+    out: list[tuple[str, tuple[Any, ...]]] = []
+
+    def capture(task: Any, *args: Any, **kwargs: Any) -> str:
+        out.append((task.name.rsplit(".", 1)[-1], args))
+        return "queued-in-a-test"
+
+    monkeypatch.setattr(dispatch_mod, "dispatch_optional", capture)
+    return out

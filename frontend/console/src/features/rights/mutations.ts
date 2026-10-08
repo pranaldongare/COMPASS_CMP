@@ -148,6 +148,11 @@ export const useReopenTicket = (uuid: Uuid) =>
   useRequestAction<RightsHolder, { holderUuid: Uuid; dueOn: string }>(uuid, ({ holderUuid, dueOn }) =>
     api.reopenTicket(uuid, holderUuid, dueOn),
   );
+export const useSetInstruction = (uuid: Uuid) =>
+  useRequestAction<RightsHolder, { holderUuid: Uuid; instruction: string | null }>(
+    uuid,
+    ({ holderUuid, instruction }) => api.setInstruction(uuid, holderUuid, instruction),
+  );
 export const useRemoveHolder = (uuid: Uuid) =>
   useRequestAction<void, Uuid>(uuid, (holderUuid) => api.removeHolder(uuid, holderUuid));
 

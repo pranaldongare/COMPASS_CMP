@@ -82,3 +82,15 @@ def test_the_rest_of_the_path() -> None:
     assert "log_contact" not in console and "record_answer" in console
     # A closed request takes no moves at all.
     assert moves(holder(), status="closed") == []
+
+
+def test_a_holder_answering_by_its_link_answers_itself() -> None:
+    """Outside holders answer on the portal (0049): recording their answer for
+    them stays possible, but it is not the main move, as it is for one the
+    office reaches only by email."""
+    by_email = tickets.moves(holder(), request_status="awaiting_holders", now=NOW)
+    by_link = tickets.moves(holder(link_issued_at=NOW), request_status="awaiting_holders", now=NOW)
+    assert [m["move"] for m in by_email if m["primary"]] == ["record_answer"]
+    assert [m["move"] for m in by_link if m["primary"]] == []
+    [record] = [m for m in by_link if m["move"] == "record_answer"]
+    assert record["label"] == "Record their answer for them"

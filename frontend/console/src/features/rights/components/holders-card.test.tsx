@@ -65,6 +65,8 @@ const holder = (over: Partial<RightsHolder> = {}): RightsHolder => ({
   sent_back_at: null,
   sent_back_reason: null,
   sent_back_count: 0,
+  link_issued_at: null,
+  temporary_access: null,
   accepted_at: null,
   accepted_by_name: null,
   last_activity_at: "2026-10-05T10:00:00Z",
@@ -163,5 +165,26 @@ describe("HoldersCard", () => {
     render(<HoldersCard request={request([holder({ moves: [] })], "closed")} />);
     expect(screen.queryByRole("button", { name: /find who holds the data/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Send tickets" })).not.toBeInTheDocument();
+  });
+
+  it("says how each holder answers: a temporary login, or a link for an outside holder", () => {
+    render(
+      <HoldersCard
+        request={request([
+          holder({ temporary_access: "pending" }),
+          holder({
+            holder_uuid: "33333333-3333-4333-8333-333333333333",
+            label: "Vendor archive",
+            channel: "email",
+            link_issued_at: "2026-10-02T10:00:00Z",
+          }),
+        ])}
+      />,
+    );
+
+    const ours = screen.getByText("Samsung R&D Bangalore").closest("tr") as HTMLElement;
+    expect(within(ours).getByText(/temporary login · not yet signed in/)).toBeInTheDocument();
+    const theirs = screen.getByText("Vendor archive").closest("tr") as HTMLElement;
+    expect(within(theirs).getByText(/outside · answers by link/i)).toBeInTheDocument();
   });
 });

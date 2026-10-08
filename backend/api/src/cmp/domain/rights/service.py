@@ -35,6 +35,7 @@ from cmp.core.permissions import Role
 from cmp.core.security import new_token, token_fingerprint
 from cmp.db.redis import K_CACHE, get_redis
 from cmp.db.redis import key as rkey
+from cmp.db.repositories import breach_tickets as breach_ticket_repo
 from cmp.db.repositories import holdings
 from cmp.db.repositories import registry as registry_repo
 from cmp.db.repositories import rights as repo
@@ -42,7 +43,8 @@ from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
-from cmp.domain.rights import clock, erasure, execution
+from cmp.domain.breach import access
+from cmp.domain.rights import clock, erasure, execution, reach
 from cmp.domain.rights import state_machine as sm
 from cmp.domain.rights.scope import consent_scope, scope_text
 from cmp.domain.rights.state_machine import RequestFacts
@@ -949,9 +951,10 @@ def _default_instruction(row: Row) -> str:
     kind = Kind(row["request_type"])
     if kind is Kind.ERASURE:
         return (
-            f"Erasure request {row['reference']}: erase the personal data you hold for the "
-            "person named, or where an asset also holds other people, remove her from it "
-            "and return evidence of what was removed and how. Confirm using the form provided."
+            f"Erasure request {row['reference']}: for each item listed on this ticket, do "
+            "what it says - erase it; where it also holds other people, remove the person "
+            "named from it; or keep it until the date given - and erase anything else you "
+            "hold for the person named. Return evidence of what was removed and how."
         )
     if kind is Kind.CORRECTION:
         return (
@@ -963,6 +966,57 @@ def _default_instruction(row: Row) -> str:
         "for the person named, the processing you carry out on it, and anyone you have "
         "shared it with. Use the structured return form."
     )
+
+
+def default_instruction(row: Row) -> str:
+    """What a ticket asks when the office writes nothing of its own: the
+    standard words for the request's kind, and its confinement. Each holder's
+    instruction starts from it (2026-10-08)."""
+    text = _default_instruction(row)
+    confinement = scope_text(consent_scope(row))
+    return f"{text}\n\n{confinement}" if confinement else text
+
+
+async def set_instruction(
+    conn: Conn,
+    row: Row,
+    *,
+    holder_uuid: str,
+    instruction: str | None,
+    role: Role | str,
+    actor_id: int,
+) -> Row:
+    """This holder's own instruction, written before its ticket is sent.
+
+    Kept on the holder (sealed, as the instruction always is) and sent with
+    its ticket; empty goes back to the standard words. Once sent, what a
+    ticket asks is fixed: anything more is a message on its thread.
+    """
+    _may_act(row, role)
+    _open(row)
+    holder = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    if not holder:
+        raise NotFound("Holder")
+    if holder["ticket_status"] != Ticket.PENDING:
+        raise Conflict(
+            "The ticket is sent: write to the holder on its thread instead",
+            code="ticket_already_sent",
+        )
+    text = (instruction or "").strip() or None
+    await repo.update_holder(conn, int(holder["holder_id"]), instruction=text)
+    await _record(
+        conn,
+        row,
+        Event.RIGHTS_HOLDER_INSTRUCTION_SET,
+        actor_user_id=actor_id,
+        entity_type="rights_request_holder",
+        entity_id=int(holder["holder_id"]),
+        # Whether there are words of the office's own; never the words.
+        detail={"label": holder["label"], "own_words": text is not None},
+    )
+    fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    assert fresh is not None
+    return fresh
 
 
 async def issue_tickets(
@@ -996,16 +1050,28 @@ async def issue_tickets(
     when = due_at or clock.compute(row["received_at"], row["due_at"]).halfway_at
     if when > row["due_at"]:
         raise ValidationFailed("A ticket cannot fall due after the response itself", field="due_at")
-    text = (instruction or "").strip() or _default_instruction(row)
-    # A confined request says so on every ticket, whatever the DPO wrote: the
-    # holder acts on the data under that consent and nothing else.
+    shared = (instruction or "").strip() or _default_instruction(row)
     scope = consent_scope(row)
     confinement = scope_text(scope)
-    if confinement and confinement not in text:
-        text = f"{text}\n\n{confinement}"
     scope_ids = await _scope_ids(conn, row)
     now = datetime.now(UTC)
     for h in to_issue:
+        # How this holder is reached is settled as its ticket goes (0049):
+        # a console login - temporary if need be - or a link on the portal.
+        h = await reach.place(conn, row, h, actor_id=actor_id)
+        # The holder's own words where the office wrote them (2026-10-08),
+        # otherwise what was written for all of them, or the standard words.
+        own = await unseal_value("rights_request_holder", "instruction", h.get("instruction"))
+        text = str(own).strip() if own and str(own).strip() else shared
+        # A confined request says so on every ticket, whatever the DPO wrote:
+        # the holder acts on the data under that consent and nothing else.
+        if confinement and confinement not in text:
+            text = f"{text}\n\n{confinement}"
+        if row["request_type"] == Kind.ERASURE and h.get("processor_id"):
+            # Items found before this holder was are its own once it is asked.
+            await repo.link_items_to_holder(
+                conn, int(row["request_id"]), int(h["holder_id"]), int(h["processor_id"])
+            )
         # What the platform already knows, written for this holder, before it
         # is asked for anything. Kept on the holder as it stood on the day.
         brief: dict[str, Any] | None = None
@@ -1171,8 +1237,9 @@ async def return_ticket(
             "accepted": True,
         },
     )
-    if holder.get("channel") == "portal":
-        # A team answering in the console is told their answer was taken for them.
+    if holder.get("channel") == "portal" or reach.external(holder):
+        # A holder who answers in the console or by its link is told their
+        # answer was taken for them.
         await _tell_holder(
             conn,
             row,
@@ -1180,6 +1247,7 @@ async def return_ticket(
             author_id=actor_id,
             body="The Privacy Office has recorded your answer to this ticket for you:\n\n"
             + summary.strip(),
+            event="The Privacy Office has recorded your answer to this ticket for you.",
         )
     await _settle(conn, row, actor_id=actor_id)
     # An accepted return is the evidence the holder's copy is gone.
@@ -1221,13 +1289,15 @@ async def accept_ticket(
         entity_id=int(holder["holder_id"]),
         detail={"label": holder["label"], "outcome": holder.get("return_outcome")},
     )
-    if holder.get("channel") == "portal":
+    if holder.get("channel") == "portal" or reach.external(holder):
         await _tell_holder(
             conn,
             row,
             holder,
             author_id=actor_id,
             body="The Privacy Office has accepted your answer. Nothing more is needed on this "
+            "ticket.",
+            event="The Privacy Office has accepted your answer. Nothing more is needed on this "
             "ticket.",
         )
     await _settle(conn, row, actor_id=actor_id)
@@ -1254,6 +1324,7 @@ async def reopen_ticket(
     await repo.update_holder(
         conn, int(holder["holder_id"]), ticket_status=Ticket.ISSUED.value, due_at=due
     )
+    await _restore_access(conn, row, holder, actor_id=actor_id)
     await repo.add_message(
         conn,
         int(holder["holder_id"]),
@@ -1279,10 +1350,31 @@ async def reopen_ticket(
         fresh,
         author_id=actor_id,
         body=f"This ticket is open again. Please answer by {due_on.isoformat()}.",
+        event="The Privacy Office has opened this ticket again.",
     )
     if Status(row["status"]) is Status.COLLATING:
         await repo.update(conn, int(row["request_id"]), status=Status.AWAITING_HOLDERS.value)
     return fresh
+
+
+async def _restore_access(conn: Conn, row: Row, holder: Row, *, actor_id: int) -> None:
+    """A reopened ticket held on a temporary login gets the login back."""
+    if holder.get("channel") != "portal" or not holder.get("responder_user_id"):
+        return
+    if await breach_ticket_repo.open_holder_grants(conn, int(holder["holder_id"])):
+        return
+    user = await user_repo.by_id(conn, int(holder["responder_user_id"]))
+    if user is None or str(user["role"]) != Role.BREACH_HOLDER.value:
+        return
+    await access.grant_for_holder(
+        conn,
+        holder_id=int(holder["holder_id"]),
+        reference=str(row["reference"]),
+        user=user,
+        created=False,
+        actor_id=actor_id,
+        cause="reopened",
+    )
 
 
 async def remove_holder(
@@ -1344,9 +1436,11 @@ async def escalate_ticket(
         entity_id=int(holder["holder_id"]),
         detail={"label": holder["label"]},
     )
+    holder = await _linked(conn, holder)
     to = await _ticket_address(holder)
     if to:
         due = holder["due_at"] or datetime.now(UTC)
+        where, by_link = _route(holder)
         _dispatch(
             "send_ticket_reminder",
             to,
@@ -1354,10 +1448,9 @@ async def escalate_ticket(
             str(holder["label"]),
             due.date().isoformat(),
             (due.date() - datetime.now(UTC).date()).days,
-            _console_url(f"/tickets?ticket={holder['holder_uuid']}")
-            if holder.get("channel") == "portal"
-            else None,
+            where,
             True,
+            by_link,
         )
     await repo.append_contact(
         conn,
@@ -1459,6 +1552,31 @@ def _contact_entry(
     }
 
 
+def _route(holder: Row) -> tuple[str | None, bool]:
+    """Where the holder answers, and whether that is a link on the portal -
+    in which case an email to them carries the link and nothing else."""
+    if holder.get("channel") == "portal":
+        return _console_url(f"/tickets?ticket={holder['holder_uuid']}"), False
+    if reach.external(holder):
+        return reach.link_url(holder), True
+    return None, False
+
+
+async def _linked(conn: Conn, holder: Row) -> Row:
+    """An external holder whose ticket went before links (0049) is given one
+    the first time anything is sent to it, so it can answer on the portal."""
+    if holder.get("channel") == "portal" or holder.get("link_token_sealed"):
+        return holder
+    if str(holder.get("ticket_status")) not in _OPEN_TICKET:
+        return holder
+    to = await reach.address(holder)
+    if not to or "@" not in to or access.internal(to):
+        return holder
+    await reach.mint_link(conn, int(holder["holder_id"]))
+    fresh = await repo.ticket_by_holder_id(conn, int(holder["holder_id"]))
+    return {**holder, **(fresh or {})}
+
+
 async def _deliver_ticket(
     conn: Conn,
     holder: Row,
@@ -1473,7 +1591,19 @@ async def _deliver_ticket(
     that it was sent. On the portal the ticket is in the team's console the
     moment it is issued; the message is a copy so they hear about it."""
     to = await _ticket_address(holder)
-    if to:
+    where, by_link = _route(holder)
+    if to and by_link:
+        # External: the link, and nothing of the request (2026-10-08).
+        _dispatch(
+            "send_holder_link",
+            to,
+            reference,
+            str(holder["label"]),
+            "The Privacy Office has sent you a ticket to answer.",
+            due.date().isoformat(),
+            where,
+        )
+    elif to:
         _dispatch(
             "send_holder_instruction",
             to,
@@ -1482,6 +1612,7 @@ async def _deliver_ticket(
             text,
             due.date().isoformat(),
             brief_text,
+            where,
         )
     kind = "ticket_on_portal" if holder.get("channel") == "portal" else "mail_sent"
     await repo.append_contact(
@@ -1491,7 +1622,11 @@ async def _deliver_ticket(
             kind,
             to=await _sealed_address(holder) if to else None,
             by=actor_id,
-            note="Instruction sent" if to else "No address on record - nothing was sent",
+            note=(
+                ("Link to the ticket sent" if by_link else "Instruction sent")
+                if to
+                else "No address on record - nothing was sent"
+            ),
         ),
     )
 
@@ -1645,6 +1780,7 @@ async def _tell_holder(
     author_id: int,
     body: str,
     file: tuple[str, str] | None = None,
+    event: str | None = None,
 ) -> None:
     """The office wrote; the holder hears about it the way it is reached.
 
@@ -1657,14 +1793,34 @@ async def _tell_holder(
         if author
         else "The Privacy Office"
     )
+    holder = await _linked(conn, holder)
     to = await _ticket_address(holder)
     if not to:
         return
-    where = (
-        _console_url(f"/tickets?ticket={holder['holder_uuid']}")
-        if holder.get("channel") == "portal"
-        else None
-    )
+    where, by_link = _route(holder)
+    if by_link:
+        # External: told there is something to read, and where - the words
+        # and any file are on the ticket, behind the code (2026-10-08).
+        _dispatch(
+            "send_holder_link",
+            to,
+            str(row["reference"]),
+            str(holder["label"]),
+            event or "The Privacy Office has written to you on your ticket.",
+            holder["due_at"].date().isoformat() if holder.get("due_at") else "",
+            where,
+        )
+        await repo.append_contact(
+            conn,
+            int(holder["holder_id"]),
+            _contact_entry(
+                "mail_sent",
+                to=await _sealed_address(holder),
+                by=author_id,
+                note="Told of a message on the ticket",
+            ),
+        )
+        return
     file_ref: str | None = None
     file_name: str | None = None
     if file:
@@ -1701,9 +1857,11 @@ async def _tell_holder(
         )
 
 
-async def _tell_office(conn: Conn, row: Row, holder: Row, *, author_id: int, body: str) -> None:
+async def _tell_office(
+    conn: Conn, row: Row, holder: Row, *, author_id: int | None, body: str
+) -> None:
     """The holder wrote; every active DPO hears, and the dashboard queues it."""
-    author = await user_repo.by_id(conn, author_id)
+    author = await user_repo.by_id(conn, author_id) if author_id else None
     name = (
         str(await unseal_value("auth_user", "full_name", author["full_name"]))
         if author
@@ -1798,7 +1956,11 @@ async def ticket_detail_for(conn: Conn, user_id: int, holder_uuid: str) -> dict[
         raise NotFound("Ticket")
     await repo.mark_thread_read(conn, int(holder["holder_id"]), side="holder")
     fresh = await repo.ticket_for_user(conn, user_id, holder_uuid)
-    return {"ticket": fresh, "messages": await repo.messages_of(conn, int(holder["holder_id"]))}
+    return {
+        "ticket": fresh,
+        "messages": await repo.messages_of(conn, int(holder["holder_id"])),
+        "items": await repo.items_for_holder(conn, int(holder["holder_id"])),
+    }
 
 
 async def post_holder_message(
@@ -1817,6 +1979,30 @@ async def post_holder_message(
     holder = await repo.ticket_for_user(conn, user_id, holder_uuid)
     if not holder:
         raise NotFound("Ticket")
+    await write_as_holder(
+        conn,
+        holder,
+        author_id=user_id,
+        body=body,
+        evidence_ref=evidence_ref,
+        evidence_hash=evidence_hash,
+        evidence_name=evidence_name,
+    )
+    return await ticket_detail_for(conn, user_id, holder_uuid)
+
+
+async def write_as_holder(
+    conn: Conn,
+    holder: Row,
+    *,
+    author_id: int | None,
+    body: str,
+    evidence_ref: str | None = None,
+    evidence_hash: str | None = None,
+    evidence_name: str | None = None,
+) -> None:
+    """A holder writes on its ticket - in the console, or by its link on the
+    portal (`author_id` None: nobody with an account, 0049)."""
     if holder["ticket_status"] == Ticket.PENDING:
         raise Conflict("This ticket has not been issued", code="ticket_not_open")
     if holder.get("request_status") == Status.CLOSED.value:
@@ -1835,7 +2021,7 @@ async def post_holder_message(
         side="holder",
         kind="message",
         body=text,
-        author_user_id=user_id,
+        author_user_id=author_id,
         evidence_ref=evidence_ref,
         evidence_hash=evidence_hash,
         evidence_name=evidence_name,
@@ -1845,7 +2031,7 @@ async def post_holder_message(
         conn,
         row,
         Event.RIGHTS_TICKET_MESSAGE,
-        actor_user_id=user_id,
+        actor_user_id=author_id,
         entity_type="rights_request_holder",
         entity_id=int(holder["holder_id"]),
         detail={"label": holder["label"], "side": "holder"},
@@ -1854,10 +2040,9 @@ async def post_holder_message(
         conn,
         row,
         holder,
-        author_id=user_id,
+        author_id=author_id,
         body=text + ("\n\n(A file is attached to this message.)" if evidence_hash else ""),
     )
-    return await ticket_detail_for(conn, user_id, holder_uuid)
 
 
 async def message_attachment(
@@ -1910,6 +2095,9 @@ async def withdraw_ticket(
     if not why:
         raise ValidationFailed("Say why the ticket is withdrawn", field="reason")
     await repo.update_holder(conn, int(holder["holder_id"]), ticket_status=Ticket.WITHDRAWN.value)
+    await access.end_for_holder(
+        conn, int(holder["holder_id"]), cause=access.TICKET_WITHDRAWN, actor_id=actor_id
+    )
     await repo.add_message(
         conn,
         int(holder["holder_id"]),
@@ -1938,6 +2126,8 @@ async def withdraw_ticket(
         holder,
         author_id=actor_id,
         body=f"This ticket is withdrawn and needs nothing further from you. Reason: {why}",
+        event="The Privacy Office has withdrawn this ticket; nothing further is needed from "
+        "you. The reason is on the ticket.",
     )
     await _settle(conn, row, actor_id=actor_id)
     fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
@@ -2032,6 +2222,7 @@ async def send_back_ticket(
             f"This ticket has been sent back to you and is open again. {why}\n\n"
             f"Please return it again by {when.date().isoformat()}."
         ),
+        event="The Privacy Office has sent your answer back: what is missing is on the ticket.",
     )
     # A request that moved on because everything was back is waiting again.
     fresh_row = await reload(conn, row)
@@ -2107,21 +2298,37 @@ async def reassign_holder(
         row,
         holder,
         author_id=actor_id,
+        event="The Privacy Office has passed this ticket to someone else. Nothing more is "
+        "needed from you, and its link no longer opens it.",
         body="The Privacy Office has passed this ticket to someone else. Nothing more is "
         "needed from you on it.",
     )
     await repo.update_holder(conn, int(holder["holder_id"]), **cols)
-    fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
-    assert fresh is not None
+    # Whoever had it loses what came with it (0049): a temporary login ends,
+    # and the link they held stops working - the new person gets a new one.
+    await access.end_for_holder(
+        conn, int(holder["holder_id"]), cause=access.REASSIGNED, actor_id=actor_id
+    )
+    if holder.get("link_token_sealed"):
+        await repo.update_holder(
+            conn,
+            int(holder["holder_id"]),
+            link_token=None,
+            link_token_sealed=None,
+            link_issued_at=None,
+        )
+    placed = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    assert placed is not None
+    fresh = await reach.place(conn, row, placed, actor_id=actor_id)
     await repo.add_message(
         conn,
         int(holder["holder_id"]),
         side="office",
         kind="status",
         body=(
-            f"Reassigned to {fresh['responder_name']} "
-            f"({'on the portal' if fresh['channel'] == 'portal' else 'by mail'}); "
-            "the instruction has been sent to them."
+            f"Sent to {fresh['responder_name']} "
+            f"({'in the console' if fresh['channel'] == 'portal' else 'by email'}) "
+            "instead; the ticket has been sent to them."
         ),
         author_user_id=actor_id,
     )
@@ -2171,12 +2378,9 @@ async def _send_reminder(
     on the holder, and audited."""
     due = ticket["due_at"]
     days = (due.date() - today).days
+    ticket = await _linked(conn, ticket)
     to = await _ticket_address(ticket)
-    where = (
-        _console_url(f"/tickets?ticket={ticket['holder_uuid']}")
-        if ticket.get("channel") == "portal"
-        else None
-    )
+    where, by_link = _route(ticket)
     if to:
         _dispatch(
             "send_ticket_reminder",
@@ -2186,6 +2390,8 @@ async def _send_reminder(
             due.date().isoformat(),
             days,
             where,
+            False,
+            by_link,
         )
     stage = (
         f"due in {days} day{'s' if days != 1 else ''}"
@@ -2307,8 +2513,41 @@ async def return_own_ticket(
     holder = await repo.ticket_for_user(conn, user_id, holder_uuid)
     if not holder:
         raise NotFound("Ticket")
+    await answer_as_holder(
+        conn,
+        holder,
+        author_id=user_id,
+        summary=summary,
+        outcome=outcome,
+        evidence_ref=evidence_ref,
+        evidence_hash=evidence_hash,
+        evidence_name=evidence_name,
+    )
+    fresh = await repo.ticket_for_user(conn, user_id, holder_uuid)
+    assert fresh is not None
+    return fresh
+
+
+async def answer_as_holder(
+    conn: Conn,
+    holder: Row,
+    *,
+    author_id: int | None,
+    summary: str,
+    outcome: str,
+    evidence_ref: str | None,
+    evidence_hash: str | None,
+    evidence_name: str | None = None,
+) -> None:
+    """A holder gives its answer - in the console, or by its link on the portal
+    (`author_id` None, 0049). It waits for the office to accept it."""
     if holder["ticket_status"] not in (Ticket.ISSUED, Ticket.ESCALATED):
         raise Conflict("This ticket is not open", code="ticket_not_open")
+    if holder.get("request_status") == Status.CLOSED.value:
+        raise Conflict(
+            "The request is closed; contact the Privacy Office directly", code="request_closed"
+        )
+    by_link = author_id is None
     if not summary.strip():
         raise ValidationFailed("Say what was done", field="summary")
     said = choice(execution.ReturnOutcome, outcome, field="outcome")
@@ -2328,7 +2567,9 @@ async def return_own_ticket(
     await repo.append_contact(
         conn,
         int(holder["holder_id"]),
-        _contact_entry("returned_on_portal", to=None, by=user_id),
+        _contact_entry(
+            "returned_by_link" if by_link else "returned_on_portal", to=None, by=author_id
+        ),
     )
     await repo.add_message(
         conn,
@@ -2336,34 +2577,31 @@ async def return_own_ticket(
         side="holder",
         kind="return",
         body=summary.strip(),
-        author_user_id=user_id,
+        author_user_id=author_id,
         evidence_ref=evidence_ref,
         evidence_hash=evidence_hash,
         evidence_name=evidence_name,
     )
     await repo.mark_thread_read(conn, int(holder["holder_id"]), side="holder")
     await _tell_office(
-        conn, row, holder, author_id=user_id, body=f"Returned ({said.value}): {summary.strip()}"
+        conn, row, holder, author_id=author_id, body=f"Returned ({said.value}): {summary.strip()}"
     )
     await _record(
         conn,
         row,
         Event.RIGHTS_TICKET_RETURNED,
-        actor_user_id=user_id,
+        actor_user_id=author_id,
         entity_type="rights_request_holder",
         entity_id=int(holder["holder_id"]),
         detail={
             "label": holder["label"],
             "evidence_sha256": evidence_hash,
-            "channel": "portal",
+            "channel": "link" if by_link else "portal",
             "outcome": said.value,
         },
     )
-    await _settle(conn, row, actor_id=user_id)
-    await erasure.execute_request(conn, row, actor_id=user_id)
-    fresh = await repo.ticket_for_user(conn, user_id, holder_uuid)
-    assert fresh is not None
-    return fresh
+    await _settle(conn, row, actor_id=author_id)
+    await erasure.execute_request(conn, row, actor_id=author_id)
 
 
 # --------------------------------------------------------------------- scope
@@ -2669,6 +2907,8 @@ async def respond(
         expires = now + timedelta(days=settings.rights_download_ttl_days)
 
     gap = await repo.mark_unreturned(conn, int(row["request_id"]))
+    # Temporary logins for its tickets end with it; they can still read (0049).
+    await access.end_on_request(conn, int(row["request_id"]), actor_id=actor_id)
     await repo.update(
         conn,
         int(row["request_id"]),

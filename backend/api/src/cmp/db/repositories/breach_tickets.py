@@ -292,13 +292,16 @@ async def open_grant(conn: Conn, breach_id: int, user_id: int) -> Row | None:
 
 
 async def open_grants_for_user(conn: Conn, user_id: int) -> list[Row]:
-    """Every grant this person still holds, on any breach, oldest first."""
+    """Every grant this person still holds - on any breach, and since 0049 on
+    any rights ticket - oldest first, each with the reference it is for."""
     return await fetch_all(
         conn,
-        """SELECT a.*, coalesce(rec.reference, b.reference) AS breach_reference
+        """SELECT a.*, coalesce(rec.reference, b.reference, r.reference) AS reference
              FROM breach_temporary_access a
-             JOIN breach b ON b.breach_id = a.breach_id
+             LEFT JOIN breach b ON b.breach_id = a.breach_id
              LEFT JOIN breach_recording rec ON rec.breach_id = b.breach_id
+             LEFT JOIN rights_request_holder h ON h.holder_id = a.holder_id
+             LEFT JOIN rights_request r ON r.request_id = h.request_id
             WHERE a.user_id = %s AND a.ended_at IS NULL ORDER BY a.access_id""",
         (user_id,),
     )
@@ -352,6 +355,48 @@ async def add_grant(
            ON CONFLICT (breach_id, user_id) WHERE ended_at IS NULL DO NOTHING
            RETURNING access_id, access_uuid""",
         (breach_id, user_id, ticket_id, account_created, previous_role, granted_by),
+    )
+
+
+# ------------------------------------------------ rights tickets (0049)
+async def add_holder_grant(
+    conn: Conn,
+    *,
+    holder_id: int,
+    user_id: int,
+    account_created: bool,
+    previous_role: str | None,
+    granted_by: int,
+) -> Row | None:
+    """A temporary login for one rights ticket, or None if one is open already."""
+    return await fetch_one(
+        conn,
+        """INSERT INTO breach_temporary_access
+             (holder_id, user_id, account_created, previous_role, granted_by)
+           VALUES (%s, %s, %s, %s::user_role, %s)
+           ON CONFLICT (holder_id, user_id) WHERE ended_at IS NULL AND holder_id IS NOT NULL
+           DO NOTHING
+           RETURNING access_id, access_uuid""",
+        (holder_id, user_id, account_created, previous_role, granted_by),
+    )
+
+
+async def open_holder_grants(conn: Conn, holder_id: int) -> list[Row]:
+    return await fetch_all(
+        conn,
+        """SELECT * FROM breach_temporary_access
+            WHERE holder_id = %s AND ended_at IS NULL ORDER BY access_id""",
+        (holder_id,),
+    )
+
+
+async def open_grants_on_request(conn: Conn, request_id: int) -> list[Row]:
+    return await fetch_all(
+        conn,
+        """SELECT a.* FROM breach_temporary_access a
+             JOIN rights_request_holder h ON h.holder_id = a.holder_id
+            WHERE h.request_id = %s AND a.ended_at IS NULL ORDER BY a.access_id""",
+        (request_id,),
     )
 
 

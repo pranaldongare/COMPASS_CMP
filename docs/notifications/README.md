@@ -26,7 +26,7 @@ cannot drift: `--check` fails when one is out of date.
 
 ### 1. One path
 
-Every email - all 39 - goes the same way:
+Every email - all 41 - goes the same way:
 
 | # | Step | Where (backend/api/src/cmp/…) |
 |---|---|---|
@@ -73,12 +73,20 @@ set:
 
 | Never copied | Why |
 |---|---|
-| An email carrying a **code or a link** - sign-in, sign-up, password reset, invitation, nomination, temporary access | A copy would hand somebody else the key to the account |
+| An email carrying a **code or a link** - sign-in, sign-up, password reset, invitation, nomination, temporary access, an outside holder's ticket link or its code | A copy would hand somebody else the key to the account, or to the ticket |
 | An email to a **person about her own data** - a consent receipt, a withdrawal, a rights response, a breach notice | A copy would disclose her data to somebody she did not choose |
 
 Copy addresses are sealed (`message_copy`, migration 0046), listed once per
 email, and every change is on the audit trail with the count - never an
 address. An SMS is never copied.
+
+**A holder outside the organisation is sent the link, not the request**
+(0049, 2026-10-08). Every email about a rights ticket to an address outside
+`BREACH_TICKET_EMAIL_DOMAINS` is **Ticket link to an outside holder**: what
+happened, the date, and the link to the ticket on the portal. What is asked,
+about whom, what was written and any file are behind a one-time code sent to
+the same address (**Code to open a ticket**). A holder inside the organisation
+is sent the ticket in full, with a link to it in the console.
 
 ### 4. Attachments: only what the recipient already owns
 

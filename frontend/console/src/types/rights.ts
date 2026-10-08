@@ -175,6 +175,10 @@ export interface RightsHolder {
   sent_back_at: Timestamp | null;
   sent_back_reason: string | null;
   sent_back_count: number;
+  /** An outside holder answers on the portal by a link (0049): when it was sent. */
+  link_issued_at: Timestamp | null;
+  /** A colleague's temporary login for this ticket (0049); null when there is none. */
+  temporary_access: "pending" | "active" | "ended" | null;
   /** When the office accepted the answer; null: not yet, or none (0048). */
   accepted_at: Timestamp | null;
   accepted_by_name: string | null;
@@ -279,6 +283,22 @@ export interface HolderThread {
 export interface TicketDetail {
   ticket: MyTicket;
   messages: TicketMessage[];
+  /** For an erasure: each item this holder is asked to act on (2026-10-08). */
+  items: TicketItem[];
+}
+
+/** One item an erasure ticket asks its holder to act on. */
+export interface TicketItem {
+  item_uuid: Uuid;
+  decision: RightsScopeDecision;
+  retain_until: DateOnly | null;
+  other_subjects: number;
+  state: string;
+  asset_type: string;
+  source_asset_ref: string;
+  source_name: string;
+  project_name: string;
+  collected_on: DateOnly;
 }
 
 export type HolderChannel = "portal" | "email";
@@ -524,6 +544,8 @@ export interface RightsRequestDetail extends RightsRequest {
   response_files: ResponseFile[];
   /** What the requester sent with it. */
   attachments: RequestAttachment[];
+  /** The standard words a ticket asks; each holder's instruction starts here. */
+  default_instruction: string | null;
 }
 
 /** Her own request. Nothing here is ours. */

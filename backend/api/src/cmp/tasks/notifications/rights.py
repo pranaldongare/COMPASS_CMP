@@ -200,6 +200,7 @@ def send_ticket_reminder(
     days: int,
     where: str | None,
     final: bool = False,
+    by_link: bool = False,
 ) -> dict[str, Any]:
     if days > 0:
         timing = f"Due in {_plural(days, 'day')}"
@@ -220,7 +221,9 @@ def send_ticket_reminder(
         timing=timing,
         when=when,
         return_route=(
-            f"Answer it in the console: {where}"
+            f"Open it and answer here: {where}"
+            if where and by_link
+            else f"Answer it in the console: {where}"
             if where
             else "Reply to this message with your answer."
         ),
@@ -258,6 +261,7 @@ def send_holder_instruction(
     instruction: str,
     due_on: str,
     brief_text: str = "",
+    where: str | None = None,
 ) -> dict[str, Any]:
     return deliver(
         Message.HOLDER_INSTRUCTION,
@@ -267,6 +271,38 @@ def send_holder_instruction(
         instruction=instruction,
         due_on=due_on,
         brief=brief_text,
+        return_route=(
+            f"Answer it in the console: {where}"
+            if where
+            else "Reply to this message with your answer."
+        ),
+    )
+
+
+@shared_task(name="cmp.notifications.send_holder_link", **RETRY_KW)
+def send_holder_link(
+    contact: str, reference: str, holder_label: str, event: str, due_on: str, link: str
+) -> dict[str, Any]:
+    """Everything an outside holder is sent: what happened and the link (2026-10-08)."""
+    return deliver(
+        Message.HOLDER_TICKET_LINK,
+        to=contact,
+        reference=reference,
+        holder_label=holder_label,
+        event=event,
+        due_on=due_on,
+        link=link,
+    )
+
+
+@shared_task(name="cmp.notifications.send_holder_ticket_code", **RETRY_KW)
+def send_holder_ticket_code(contact: str, code: str, reference: str) -> dict[str, Any]:
+    return deliver(
+        Message.HOLDER_TICKET_CODE,
+        to=contact,
+        code=code,
+        minutes=settings.otp_ttl_s // 60,
+        reference=reference,
     )
 
 

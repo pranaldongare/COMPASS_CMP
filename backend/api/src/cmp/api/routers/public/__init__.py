@@ -19,6 +19,7 @@ shadowed by another router's path parameter.
 """
 
 from cmp.api.routers.public.consent import router as consent_router
+from cmp.api.routers.public.holder_tickets import router as holder_tickets_router
 from cmp.api.routers.public.rights import router as rights_router
 
-__all__ = ["consent_router", "rights_router"]
+__all__ = ["consent_router", "holder_tickets_router", "rights_router"]

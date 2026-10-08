@@ -84,6 +84,7 @@ celery_app.conf.update(
         "cmp.notifications.send_rights_verification_code": {"queue": "high_priority"},
         "cmp.notifications.send_registration_code": {"queue": "high_priority"},
         "cmp.notifications.send_nomination_code": {"queue": "high_priority"},
+        "cmp.notifications.send_holder_ticket_code": {"queue": "high_priority"},
         "cmp.notifications.*": {"queue": "notifications"},
         "cmp.exports.*": {"queue": "documents"},
         "cmp.imports.*": {"queue": "documents"},

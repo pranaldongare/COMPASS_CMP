@@ -21,9 +21,9 @@ Each cell is **GET / non-GET endpoint counts** for which that role is eligible. 
 | [Notices](modules/notices.md) | 34 | 13 / 21 | 0 / 0 | 9 / 0 | 9 / 0 | 9 / 0 | 11 / 4 | 0 / 0 | 0 / 0 |
 | [Projects](modules/projects.md) | 27 | 13 / 9 | 0 / 0 | 12 / 5 | 12 / 7 | 12 / 5 | 13 / 10 | 0 / 0 | 0 / 0 |
 | [Public Consent](modules/public_consent.md) | 6 | 2 / 3 | 2 / 3 | 2 / 3 | 2 / 3 | 2 / 3 | 2 / 3 | 2 / 4 | 2 / 3 |
-| [Public Information](modules/public_information.md) | 10 | 3 / 7 | 3 / 7 | 3 / 7 | 3 / 7 | 3 / 7 | 3 / 7 | 3 / 7 | 3 / 7 |
+| [Public Information](modules/public_information.md) | 18 | 11 / 7 | 11 / 7 | 11 / 7 | 11 / 7 | 11 / 7 | 11 / 7 | 11 / 7 | 11 / 7 |
 | [Registry](modules/registry.md) | 23 | 10 / 13 | 10 / 9 | 8 / 4 | 8 / 4 | 8 / 4 | 8 / 0 | 1 / 0 | 0 / 0 |
-| [Rights](modules/rights.md) | 48 | 13 / 34 | 13 / 35 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| [Rights](modules/rights.md) | 49 | 13 / 35 | 13 / 36 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
 | [System](modules/system.md) | 8 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 |
 | [Tickets](modules/tickets.md) | 5 | 3 / 2 | 3 / 2 | 3 / 2 | 3 / 2 | 3 / 2 | 3 / 2 | 0 / 0 | 3 / 2 |
 | [Users](modules/users.md) | 13 | 5 / 0 | 5 / 8 | 1 / 0 | 1 / 0 | 1 / 0 | 1 / 0 | 0 / 0 | 0 / 0 |

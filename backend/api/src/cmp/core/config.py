@@ -187,6 +187,9 @@ class Settings(BaseSettings):
     default_page_size: int = 50
     max_page_size: int = 200
     public_link_rate_per_minute: int = 60
+    #: How long an outside holder stays in its ticket after the code (0049).
+    holder_ticket_session_s: int = 60 * 60
+    holder_ticket_cookie: str = "cmp_ticket"
 
     # ------------------------------------------------------------------ rights
     # "D" - the response period we publish for a rights request, in days. Rule

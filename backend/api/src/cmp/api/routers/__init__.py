@@ -23,6 +23,8 @@ ROUTERS: tuple[APIRouter, ...] = (
     # Public before authenticated — see the module docstring.
     public.consent_router,
     public.rights_router,
+    # An outside holder's ticket, by its link (0049).
+    public.holder_tickets_router,
     # Identity and the reference registry.
     v1.users_router,
     v1.me_router,

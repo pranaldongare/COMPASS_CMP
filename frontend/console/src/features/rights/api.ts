@@ -201,6 +201,9 @@ export const acceptTicket = (uuid: Uuid, holderUuid: Uuid) =>
 /** A withdrawn ticket, open again with a new date. */
 export const reopenTicket = (uuid: Uuid, holderUuid: Uuid, dueOn: string) =>
   apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/reopen`), { due_on: dueOn });
+/** This holder's own instruction, before its ticket is sent; null for the standard words. */
+export const setInstruction = (uuid: Uuid, holderUuid: Uuid, instruction: string | null) =>
+  apiPut<RightsHolder>(action(uuid, `holders/${holderUuid}/instruction`), { instruction });
 /** A holder found by mistake, before anything is sent to it. */
 export const removeHolder = (uuid: Uuid, holderUuid: Uuid) =>
   apiDelete<void>(action(uuid, `holders/${holderUuid}`));

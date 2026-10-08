@@ -18,22 +18,9 @@ import pytest
 from cmp.core.errors import Conflict
 from cmp.db.repositories import rights as repo
 from cmp.domain.rights import service
-from cmp.tasks import dispatch as dispatch_mod
 from tests.integration.test_holder_respondents import TestChannels
 
 pytestmark = pytest.mark.integration
-
-
-@pytest.fixture
-def sent(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, tuple[Any, ...]]]:
-    out: list[tuple[str, tuple[Any, ...]]] = []
-
-    def capture(task: Any, *args: Any, **kwargs: Any) -> str:
-        out.append((task.name.rsplit(".", 1)[-1], args))
-        return "queued-in-a-test"
-
-    monkeypatch.setattr(dispatch_mod, "dispatch_optional", capture)
-    return out
 
 
 async def _issued(conn: Any, seeded: dict[str, Any]) -> tuple[dict, dict, dict]:
@@ -137,7 +124,9 @@ async def test_a_withdrawn_ticket_reopens_with_a_new_date(
         actor_id=_dpo(seeded),
     )
     assert reopened["ticket_status"] == "issued" and reopened["due_at"].date() == due
-    assert "send_ticket_message" in [n for n, _ in sent]
+    # An outside holder is told by its link, in words that carry nothing of the request.
+    [(_name, args)] = [(n, a) for n, a in sent if n == "send_holder_link"]
+    assert args[3] == "The Privacy Office has opened this ticket again."
     with pytest.raises(Conflict):
         await service.reopen_ticket(
             conn,
@@ -212,5 +201,5 @@ async def test_moving_a_ticket_tells_whoever_had_it(
         role="dpo",
         actor_id=_dpo(seeded),
     )
-    told = [args for name, args in sent if name == "send_ticket_message"]
-    assert told and "passed this ticket to someone else" in told[0][4]
+    told = [args for name, args in sent if name == "send_holder_link"]
+    assert told and "passed this ticket to someone else" in told[0][3]

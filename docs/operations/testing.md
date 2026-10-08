@@ -5,12 +5,12 @@ Seven suites, each answering a different question. Counts are as of
 
 | Suite | Where | Runs against | Count |
 |---|---|---|---|
-| Backend unit | `backend/api/tests/unit` | nothing; pure functions | 719 |
-| Backend integration | `backend/api/tests/integration` | real PostgreSQL, Redis and key service | 519 |
-| Backend security | `backend/api/tests/security` | the ASGI app with real datastores | 486 |
-| Backend HTTP | `backend/api/tests/http` | the ASGI app over HTTP, real datastores and key service; **commits** | 144 |
+| Backend unit | `backend/api/tests/unit` | nothing; pure functions | 726 |
+| Backend integration | `backend/api/tests/integration` | real PostgreSQL, Redis and key service | 528 |
+| Backend security | `backend/api/tests/security` | the ASGI app with real datastores | 488 |
+| Backend HTTP | `backend/api/tests/http` | the ASGI app over HTTP, real datastores and key service; **commits** | 145 |
 | Key service | `backend/dkms/tests` | the service in-process; nothing else | 58 |
-| Portal unit | `src/**/*.test.ts*` in each portal | vitest with MSW | 381 console, 244 portal |
+| Portal unit | `src/**/*.test.ts*` in each portal | vitest with MSW | 382 console, 247 portal |
 | Browser | `e2e/` in each portal | the running stack in a real browser | 210 console and 78 portal test runs across the Playwright projects (setup included) |
 
 ### Which suites need the key service
@@ -35,6 +35,14 @@ pytest tests/unit                # no datastores needed
 pytest -k rights                 # by name
 pytest --cov                     # with coverage
 ```
+
+**No test queues a real task.** A root fixture (`_no_real_tasks` in
+`tests/conftest.py`) stops every Celery task at `apply_async`: the suites roll
+their rows back, but a queued task would run against the live worker all the
+same. Before it (2026-10-08) one integration run queued around a hundred
+thousand emails - every DPO in the development database told of every test
+request - and their results filled Redis until it refused writes. A test that
+wants to see what was sent captures dispatch above it (`sent`, `queued`).
 
 Plain `pytest` runs `tests/http` too, and that suite **commits** its rows
 into whatever database `.env` names. Run against the development database

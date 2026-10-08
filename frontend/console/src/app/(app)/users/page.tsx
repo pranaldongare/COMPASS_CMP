@@ -266,7 +266,7 @@ function UsersPageView() {
                         u.role === "data_subject"
                           ? undefined
                           : u.role === "breach_holder"
-                            ? "Ends their console login, including reading their breach tickets. An account made for a breach is switched off; one that was a data principal's goes back to being one."
+                            ? "Ends their console login, including reading their tickets. An account made for a ticket is switched off; one that was a data principal's goes back to being one."
                             : "Ends their staff role. They keep their account as a data principal, with their own consents."
                       }
                     >

@@ -47,6 +47,9 @@ K_IDEMPOTENCY: Final = "idem"
 #: The server's own record that a notice was rendered to a person: what
 #: `POST /c/{token}/consent` must find before it will write an artefact.
 K_NOTICE_SERVED: Final = "nsrv"
+#: An outside holder's hour on its ticket after the code (0049): the cookie's
+#: fingerprint -> the holder and the link it came through.
+K_HOLDER_TICKET: Final = "hts"
 
 
 async def open_redis() -> Redis:

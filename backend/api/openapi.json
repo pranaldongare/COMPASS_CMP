@@ -1411,6 +1411,399 @@
         }
       }
     },
+    "/holder-tickets/{token}": {
+      "get": {
+        "tags": [
+          "holder tickets"
+        ],
+        "summary": "What the link opens, before the code",
+        "operationId": "open_link_holder_tickets__token__get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolderLinkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/holder-tickets/{token}/code": {
+      "post": {
+        "tags": [
+          "holder tickets"
+        ],
+        "summary": "Send a code to the ticket's address",
+        "operationId": "send_code_holder_tickets__token__code_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acknowledged"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/holder-tickets/{token}/verify": {
+      "post": {
+        "tags": [
+          "holder tickets"
+        ],
+        "summary": "Enter the code",
+        "operationId": "verify_holder_tickets__token__verify_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acknowledged"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/holder-tickets/{token}/sign-out": {
+      "post": {
+        "tags": [
+          "holder tickets"
+        ],
+        "summary": "Close the ticket here",
+        "operationId": "sign_out_holder_tickets__token__sign_out_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/holder-tickets/{token}/ticket": {
+      "get": {
+        "tags": [
+          "holder tickets"
+        ],
+        "summary": "The ticket, after the code",
+        "description": "What is asked, the items, what the platform holds about the person, and\nthe messages. Reading marks the office's messages read.",
+        "operationId": "read_ticket_holder_tickets__token__ticket_get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/holder-tickets/{token}/messages": {
+      "post": {
+        "tags": [
+          "holder tickets"
+        ],
+        "summary": "Write to the Privacy Office, with a file if it helps",
+        "operationId": "write_holder_tickets__token__messages_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_write_holder_tickets__token__messages_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/holder-tickets/{token}/answer": {
+      "post": {
+        "tags": [
+          "holder tickets"
+        ],
+        "summary": "Give the answer: what was done, what is held, and proof",
+        "description": "It waits for the Privacy Office to accept it, or send it back.",
+        "operationId": "answer_holder_tickets__token__answer_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_answer_holder_tickets__token__answer_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/holder-tickets/{token}/messages/{message_uuid}/evidence": {
+      "get": {
+        "tags": [
+          "holder tickets"
+        ],
+        "summary": "Download a file on the ticket's messages",
+        "operationId": "message_file_holder_tickets__token__messages__message_uuid__evidence_get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          },
+          {
+            "name": "message_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users/staff": {
       "get": {
         "tags": [
@@ -11503,6 +11896,70 @@
         }
       }
     },
+    "/requests/{request_uuid}/holders/{holder_uuid}/instruction": {
+      "put": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "What this holder's ticket will ask, before it is sent",
+        "description": "Each holder its own words (2026-10-08), starting from the standard ones;\nfixed once the ticket is sent.",
+        "operationId": "set_instruction_requests__request_uuid__holders__holder_uuid__instruction_put",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstructionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/requests/{request_uuid}/holders/{holder_uuid}/accept": {
       "post": {
         "tags": [
@@ -17092,6 +17549,40 @@
         ],
         "title": "Body_add_attachment_breaches__breach_uuid__attachments_post"
       },
+      "Body_answer_holder_tickets__token__answer_post": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Summary"
+          },
+          "outcome": {
+            "type": "string",
+            "title": "Outcome",
+            "description": "done, partial or failed"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence",
+            "description": "Optional proof, max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "outcome"
+        ],
+        "title": "Body_answer_holder_tickets__token__answer_post"
+      },
       "Body_attach_document_me_requests__request_uuid__attachments_post": {
         "properties": {
           "file": {
@@ -17530,6 +18021,34 @@
           "document"
         ],
         "title": "Body_validate_notice_document_projects__project_uuid__notices_import_validate_post"
+      },
+      "Body_write_holder_tickets__token__messages_post": {
+        "properties": {
+          "body": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Body"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence",
+            "description": "Optional file, max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "Body_write_holder_tickets__token__messages_post"
       },
       "BreachAffectedIn": {
         "properties": {
@@ -23616,6 +24135,70 @@
         "type": "object",
         "title": "HolderIn"
       },
+      "HolderLinkOut": {
+        "properties": {
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "holder_label": {
+            "type": "string",
+            "title": "Holder Label"
+          },
+          "request_type": {
+            "type": "string",
+            "title": "Request Type"
+          },
+          "code_goes_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code Goes To"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "state_label": {
+            "type": "string",
+            "title": "State Label"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "signed_in": {
+            "type": "boolean",
+            "title": "Signed In"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reference",
+          "holder_label",
+          "request_type",
+          "code_goes_to",
+          "state",
+          "state_label",
+          "due_at",
+          "signed_in"
+        ],
+        "title": "HolderLinkOut",
+        "description": "What the link alone shows: whose ticket, and where the code goes."
+      },
       "HolderOut": {
         "properties": {
           "holder_uuid": {
@@ -23954,6 +24537,29 @@
             "title": "Sent Back Count",
             "default": 0
           },
+          "link_issued_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Issued At"
+          },
+          "temporary_access": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temporary Access"
+          },
           "accepted_at": {
             "anyOf": [
               {
@@ -24138,6 +24744,25 @@
           "imported_by_name"
         ],
         "title": "ImportBatchOut"
+      },
+      "InstructionIn": {
+        "properties": {
+          "instruction": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instruction"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "InstructionIn"
       },
       "IssueTicketsIn": {
         "properties": {
@@ -29834,6 +30459,17 @@
             },
             "type": "array",
             "title": "Attachments"
+          },
+          "default_instruction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Instruction"
           }
         },
         "type": "object",
@@ -32641,6 +33277,13 @@
             },
             "type": "array",
             "title": "Messages"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TicketItemOut"
+            },
+            "type": "array",
+            "title": "Items"
           }
         },
         "type": "object",
@@ -32649,6 +33292,75 @@
           "messages"
         ],
         "title": "TicketDetailOut"
+      },
+      "TicketItemOut": {
+        "properties": {
+          "item_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Item Uuid"
+          },
+          "decision": {
+            "type": "string",
+            "title": "Decision"
+          },
+          "retain_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retain Until"
+          },
+          "other_subjects": {
+            "type": "integer",
+            "title": "Other Subjects"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "asset_type": {
+            "type": "string",
+            "title": "Asset Type"
+          },
+          "source_asset_ref": {
+            "type": "string",
+            "title": "Source Asset Ref"
+          },
+          "source_name": {
+            "type": "string",
+            "title": "Source Name"
+          },
+          "project_name": {
+            "type": "string",
+            "title": "Project Name"
+          },
+          "collected_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Collected On"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_uuid",
+          "decision",
+          "retain_until",
+          "other_subjects",
+          "state",
+          "asset_type",
+          "source_asset_ref",
+          "source_name",
+          "project_name",
+          "collected_on"
+        ],
+        "title": "TicketItemOut",
+        "description": "One item an erasure ticket asks its holder to act on (2026-10-08):\nwhich asset, and what to do with it. The legal basis stays the office's."
       },
       "TicketOut": {
         "properties": {

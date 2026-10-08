@@ -350,7 +350,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-219 of 315 operations accept or return personal data. Each table gives the
+228 of 324 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -445,7 +445,7 @@ selected.
 
 ### Rights requests, the office's side — `/requests/*`
 
-38 operations carry personal data.
+39 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
@@ -464,6 +464,7 @@ selected.
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/confirm` | DPO every row, Admin rows in scope | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/contact` | DPO every row, Admin rows in scope | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/escalate` | DPO every row, Admin rows in scope | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| PUT | `/requests/{request_uuid}/holders/{holder_uuid}/instruction` | DPO every row, Admin rows in scope | `instruction` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/reassign` | DPO every row, Admin rows in scope | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/remind` | DPO every row, Admin rows in scope | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/reopen` | DPO every row, Admin rows in scope | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
@@ -564,8 +565,8 @@ selected.
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
 | GET | `/tickets` | any signed-in session, own record | — | `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
-| GET | `/tickets/{holder_uuid}` | any signed-in session, own record | — | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
-| POST | `/tickets/{holder_uuid}/messages` | any signed-in session, own record | `body`, `evidence` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
+| GET | `/tickets/{holder_uuid}` | any signed-in session, own record | — | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
+| POST | `/tickets/{holder_uuid}/messages` | any signed-in session, own record | `body`, `evidence` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/tickets/{holder_uuid}/return` | any signed-in session, own record | `evidence` | `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 
 ### Consents and links, the office's side
@@ -733,7 +734,22 @@ selected.
 |---|---|---|---|---|
 | POST | `/breach-tickets/{ticket_uuid}/colleagues` | any signed-in session, own record | `email`, `full_name`, `mobile` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
 
-<!-- 219 of 315 operations carry personal data; 20 of them need no session. -->
+### Public_information
+
+8 operations carry personal data.
+
+| Method | Endpoint | Who may call it | Personal data in | Personal data out |
+|---|---|---|---|---|
+| GET | `/holder-tickets/{token}` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | — |
+| POST | `/holder-tickets/{token}/answer` | **public** — the request carries its own credential (password, link token, one-time code) | `evidence`, `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
+| POST | `/holder-tickets/{token}/code` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | — |
+| POST | `/holder-tickets/{token}/messages` | **public** — the request carries its own credential (password, link token, one-time code) | `body`, `evidence`, `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
+| GET | `/holder-tickets/{token}/messages/{message_uuid}/evidence` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | — |
+| POST | `/holder-tickets/{token}/sign-out` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | — |
+| GET | `/holder-tickets/{token}/ticket` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
+| POST | `/holder-tickets/{token}/verify` | **public** — the request carries its own credential (password, link token, one-time code) | `code`, `token` | — |
+
+<!-- 228 of 324 operations carry personal data; 28 of them need no session. -->
 
 ## The public surface
 

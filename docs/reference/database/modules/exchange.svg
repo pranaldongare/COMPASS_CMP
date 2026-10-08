@@ -10,7 +10,7 @@
 <title>Schema</title>
 <polygon fill="#f7fafc" stroke="none" points="-36,36 -36,-1428 2333.66,-1428 2333.66,36 -36,36"/>
 <text xml:space="preserve" text-anchor="start" x="8" y="-1362" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="30.00" fill="#142c44">COMPASS / EXCHANGE</text>
-<text xml:space="preserve" text-anchor="start" x="8" y="-1346.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0048 / full module tables with outgoing references / source 7d0da97</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-1346.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0049 / full module tables with outgoing references / source c59d9da</text>
 <text xml:space="preserve" text-anchor="start" x="8" y="-1320.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">FK arrow: child column to referenced key &#160;&#160;| &#160;&#160;Solid = required FK; dashed = nullable FK; dotted = view dependency</text>
 <text xml:space="preserve" text-anchor="start" x="13.43" y="-1308.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">PK = primary key; FK = foreign key; UQ = member of unique constraint (possibly composite); ? = nullable column</text>
 <g id="clust1" class="cluster">
@@ -19,144 +19,144 @@
 <text xml:space="preserve" text-anchor="middle" x="60.9" y="-978.8" font-family="Helvetica,sans-Serif" font-size="16.00" fill="#174e82">EXCHANGE</text>
 </g>
 <!-- export_log&#45;&gt;auth_user -->
-<g id="FK080" class="edge">
+<g id="FK081" class="edge">
 <title>export_log:e&#45;&gt;auth_user:w</title>
-<g id="a_FK080"><a xlink:title="FK080 / export_log_exported_by_fkey / export_log(exported_by) to auth_user(id) / FOREIGN KEY (exported_by) REFERENCES auth_user(id)">
+<g id="a_FK081"><a xlink:title="FK081 / export_log_exported_by_fkey / export_log(exported_by) to auth_user(id) / FOREIGN KEY (exported_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M1370.8,-627.6C1370.8,-627.6 2018.04,-597.2 2018.04,-597.2 2018.04,-597.2 2108.98,-474.07 2131.01,-444.25"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="2132.75,-445.72 2134.78,-439.14 2129.09,-443.02 2132.75,-445.72"/>
 </a>
 </g>
 </g>
 <!-- export_log&#45;&gt;project -->
-<g id="FK081" class="edge">
+<g id="FK082" class="edge">
 <title>export_log:e&#45;&gt;project:w</title>
-<g id="a_FK081"><a xlink:title="FK081 / export_log_project_id_fkey / export_log(project_id) to project(project_id) / FOREIGN KEY (project_id) REFERENCES project(project_id)">
+<g id="a_FK082"><a xlink:title="FK082 / export_log_project_id_fkey / export_log(project_id) to project(project_id) / FOREIGN KEY (project_id) REFERENCES project(project_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M1370.8,-703.2C1370.8,-703.2 1790.39,-539.5 1851.03,-515.84"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1851.52,-518.09 1856.75,-513.61 1849.87,-513.85 1851.52,-518.09"/>
 </a>
 </g>
 </g>
 <!-- export_log&#45;&gt;project_site -->
-<g id="FK082" class="edge">
+<g id="FK083" class="edge">
 <title>export_log:e&#45;&gt;project_site:w</title>
-<g id="a_FK082"><a xlink:title="FK082 / export_log_site_id_fkey / export_log(site_id) to project_site(site_id) / FOREIGN KEY (site_id) REFERENCES project_site(site_id)">
+<g id="a_FK083"><a xlink:title="FK083 / export_log_site_id_fkey / export_log(site_id) to project_site(site_id) / FOREIGN KEY (site_id) REFERENCES project_site(site_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1370.8,-678C1370.8,-678 1534.79,-327.18 1560.41,-272.36"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1562.36,-273.56 1563.06,-266.71 1558.24,-271.63 1562.36,-273.56"/>
 </a>
 </g>
 </g>
 <!-- export_line&#45;&gt;export_log -->
-<g id="FK079" class="edge">
+<g id="FK080" class="edge">
 <title>export_line:e&#45;&gt;export_log:w</title>
-<g id="a_FK079"><a xlink:title="FK079 / export_line_export_id_fkey / export_line(export_id) to export_log(export_id) / FOREIGN KEY (export_id) REFERENCES export_log(export_id)">
+<g id="a_FK080"><a xlink:title="FK080 / export_line_export_id_fkey / export_line(export_id) to export_log(export_id) / FOREIGN KEY (export_id) REFERENCES export_log(export_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M1109.37,-852.4C1109.37,-852.4 1237.37,-776.08 1268.37,-757.6"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1269.22,-759.74 1273.64,-754.45 1266.89,-755.83 1269.22,-759.74"/>
 </a>
 </g>
 </g>
 <!-- export_line&#45;&gt;auth_user -->
-<g id="FK076" class="edge">
+<g id="FK077" class="edge">
 <title>export_line:e&#45;&gt;auth_user:w</title>
-<g id="a_FK076"><a xlink:title="FK076 / export_line_auth_user_id_fkey / export_line(auth_user_id) to auth_user(id) / FOREIGN KEY (auth_user_id) REFERENCES auth_user(id)">
+<g id="a_FK077"><a xlink:title="FK077 / export_line_auth_user_id_fkey / export_line(auth_user_id) to auth_user(id) / FOREIGN KEY (auth_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M1109.37,-827.2C1109.37,-827.2 1243.04,-860.2 1243.04,-860.2 1243.04,-860.2 1467.23,-860.2 1467.23,-860.2 1467.23,-860.2 1730.63,-797.2 1730.63,-797.2 1730.63,-797.2 2018.04,-684.2 2018.04,-684.2 2018.04,-684.2 2113.07,-485.31 2132.37,-444.91"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="2134.3,-446.15 2135.05,-439.3 2130.2,-444.19 2134.3,-446.15"/>
 </a>
 </g>
 </g>
 <!-- export_line&#45;&gt;consent_artefact -->
-<g id="FK077" class="edge">
+<g id="FK078" class="edge">
 <title>export_line:e&#45;&gt;consent_artefact:w</title>
-<g id="a_FK077"><a xlink:title="FK077 / export_line_consent_id_fkey / export_line(consent_id) to consent_artefact(consent_id) / FOREIGN KEY (consent_id) REFERENCES consent_artefact(consent_id)">
+<g id="a_FK078"><a xlink:title="FK078 / export_line_consent_id_fkey / export_line(consent_id) to consent_artefact(consent_id) / FOREIGN KEY (consent_id) REFERENCES consent_artefact(consent_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M1109.37,-802C1109.37,-802 1247.2,-1141.52 1269.27,-1195.89"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1267.06,-1196.49 1271.61,-1201.66 1271.28,-1194.78 1267.06,-1196.49"/>
 </a>
 </g>
 </g>
 <!-- export_line&#45;&gt;processor -->
-<g id="FK078" class="edge">
+<g id="FK079" class="edge">
 <title>export_line:e&#45;&gt;processor:w</title>
-<g id="a_FK078"><a xlink:title="FK078 / export_line_destination_processor_id_fkey / export_line(destination_processor_id) to processor(processor_id) / FOREIGN KEY (destination_processor_id) REFERENCES processor(processor_id)">
+<g id="a_FK079"><a xlink:title="FK079 / export_line_destination_processor_id_fkey / export_line(destination_processor_id) to processor(processor_id) / FOREIGN KEY (destination_processor_id) REFERENCES processor(processor_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1109.37,-776.8C1109.37,-776.8 1153.04,-722.2 1153.04,-722.2 1153.04,-722.2 1243.04,-473.2 1243.04,-473.2 1243.04,-473.2 1730.63,-349.2 1730.63,-349.2 1730.63,-349.2 1829.85,-283.62 1856.98,-265.68"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1858.21,-267.6 1862.38,-262.12 1855.7,-263.8 1858.21,-267.6"/>
 </a>
 </g>
 </g>
 <!-- import_batch&#45;&gt;auth_user -->
-<g id="FK086" class="edge">
+<g id="FK087" class="edge">
 <title>import_batch:e&#45;&gt;auth_user:w</title>
-<g id="a_FK086"><a xlink:title="FK086 / import_batch_imported_by_fkey / import_batch(imported_by) to auth_user(id) / FOREIGN KEY (imported_by) REFERENCES auth_user(id)">
+<g id="a_FK087"><a xlink:title="FK087 / import_batch_imported_by_fkey / import_batch(imported_by) to auth_user(id) / FOREIGN KEY (imported_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M1073.39,-361.6C1073.39,-361.6 1243.04,-837.2 1243.04,-837.2 1243.04,-837.2 1467.23,-837.2 1467.23,-837.2 1467.23,-837.2 2018.04,-624.2 2018.04,-624.2 2018.04,-624.2 2110.61,-477.64 2131.58,-444.43"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="2133.33,-445.92 2134.88,-439.21 2129.49,-443.49 2133.33,-445.92"/>
 </a>
 </g>
 </g>
 <!-- import_batch&#45;&gt;data_source -->
-<g id="FK088" class="edge">
+<g id="FK089" class="edge">
 <title>import_batch:e&#45;&gt;data_source:w</title>
-<g id="a_FK088"><a xlink:title="FK088 / import_batch_source_id_fkey / import_batch(source_id) to data_source(source_id) / FOREIGN KEY (source_id) REFERENCES data_source(source_id)">
+<g id="a_FK089"><a xlink:title="FK089 / import_batch_source_id_fkey / import_batch(source_id) to data_source(source_id) / FOREIGN KEY (source_id) REFERENCES data_source(source_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M1073.39,-588.4C1073.39,-588.4 1246.14,-205.37 1272.46,-147.02"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1274.52,-147.98 1275.12,-141.12 1270.38,-146.11 1274.52,-147.98"/>
 </a>
 </g>
 </g>
 <!-- import_batch&#45;&gt;project -->
-<g id="FK087" class="edge">
+<g id="FK088" class="edge">
 <title>import_batch:e&#45;&gt;project:w</title>
-<g id="a_FK087"><a xlink:title="FK087 / import_batch_project_id_fkey / import_batch(project_id) to project(project_id) / FOREIGN KEY (project_id) REFERENCES project(project_id)">
+<g id="a_FK088"><a xlink:title="FK088 / import_batch_project_id_fkey / import_batch(project_id) to project(project_id) / FOREIGN KEY (project_id) REFERENCES project(project_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1073.39,-563.2C1073.39,-563.2 1243.04,-473.2 1243.04,-473.2 1243.04,-473.2 1467.23,-473.2 1467.23,-473.2 1467.23,-473.2 1795.37,-506.6 1850.49,-512.2"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1849.95,-514.44 1856.64,-512.83 1850.41,-509.91 1849.95,-514.44"/>
 </a>
 </g>
 </g>
 <!-- collection&#45;&gt;import_batch -->
-<g id="FK053" class="edge">
+<g id="FK054" class="edge">
 <title>collection:e&#45;&gt;import_batch:w</title>
-<g id="a_FK053"><a xlink:title="FK053 / collection_batch_id_fkey / collection(batch_id) to import_batch(batch_id) / FOREIGN KEY (batch_id) REFERENCES import_batch(batch_id)">
+<g id="a_FK054"><a xlink:title="FK054 / collection_batch_id_fkey / collection(batch_id) to import_batch(batch_id) / FOREIGN KEY (batch_id) REFERENCES import_batch(batch_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M784.26,-518.4C784.26,-518.4 937.69,-613.07 972.45,-634.51"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="971.26,-636.45 977.98,-637.93 973.65,-632.58 971.26,-636.45"/>
 </a>
 </g>
 </g>
 <!-- collection&#45;&gt;data_source -->
-<g id="FK056" class="edge">
+<g id="FK057" class="edge">
 <title>collection:e&#45;&gt;data_source:w</title>
-<g id="a_FK056"><a xlink:title="FK056 / collection_source_id_fkey / collection(source_id) to data_source(source_id) / FOREIGN KEY (source_id) REFERENCES data_source(source_id)">
+<g id="a_FK057"><a xlink:title="FK057 / collection_source_id_fkey / collection(source_id) to data_source(source_id) / FOREIGN KEY (source_id) REFERENCES data_source(source_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M784.26,-619.2C784.26,-619.2 942.95,-308.2 942.95,-308.2 942.95,-308.2 1219.87,-167.93 1268.54,-143.28"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1269.55,-145.32 1274.32,-140.35 1267.49,-141.26 1269.55,-145.32"/>
 </a>
 </g>
 </g>
 <!-- collection&#45;&gt;project -->
-<g id="FK054" class="edge">
+<g id="FK055" class="edge">
 <title>collection:e&#45;&gt;project:w</title>
-<g id="a_FK054"><a xlink:title="FK054 / collection_project_id_fkey / collection(project_id) to project(project_id) / FOREIGN KEY (project_id) REFERENCES project(project_id)">
+<g id="a_FK055"><a xlink:title="FK055 / collection_project_id_fkey / collection(project_id) to project(project_id) / FOREIGN KEY (project_id) REFERENCES project(project_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M784.26,-568.8C784.26,-568.8 942.95,-961.2 942.95,-961.2 942.95,-961.2 1153.04,-961.2 1153.04,-961.2 1153.04,-961.2 1467.23,-837.2 1467.23,-837.2 1467.23,-837.2 1730.63,-623.2 1730.63,-623.2 1730.63,-623.2 1826.64,-540.33 1852.14,-518.32"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1853.6,-520.06 1857.04,-514.09 1850.63,-516.61 1853.6,-520.06"/>
 </a>
 </g>
 </g>
 <!-- collection&#45;&gt;project_site -->
-<g id="FK055" class="edge">
+<g id="FK056" class="edge">
 <title>collection:e&#45;&gt;project_site:w</title>
-<g id="a_FK055"><a xlink:title="FK055 / collection_site_id_fkey / collection(site_id) to project_site(site_id) / FOREIGN KEY (site_id) REFERENCES project_site(site_id)">
+<g id="a_FK056"><a xlink:title="FK056 / collection_site_id_fkey / collection(site_id) to project_site(site_id) / FOREIGN KEY (site_id) REFERENCES project_site(site_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M784.26,-543.6C784.26,-543.6 942.95,-308.2 942.95,-308.2 942.95,-308.2 1484.05,-270.72 1555.91,-265.74"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1555.77,-268.03 1562.1,-265.32 1555.46,-263.49 1555.77,-268.03"/>
 </a>
 </g>
 </g>
 <!-- data_asset&#45;&gt;collection -->
-<g id="FK068" class="edge">
+<g id="FK069" class="edge">
 <title>data_asset:e&#45;&gt;collection:w</title>
-<g id="a_FK068"><a xlink:title="FK068 / data_asset_collection_id_fkey / data_asset(collection_id) to collection(collection_id) / FOREIGN KEY (collection_id) REFERENCES collection(collection_id)">
+<g id="a_FK069"><a xlink:title="FK069 / data_asset_collection_id_fkey / data_asset(collection_id) to collection(collection_id) / FOREIGN KEY (collection_id) REFERENCES collection(collection_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M478.44,-669.6C478.44,-669.6 619.46,-669.6 654.71,-669.6"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="654.46,-671.88 660.96,-669.6 654.46,-667.33 654.46,-671.88"/>
 </a>
 </g>
 </g>
 <!-- data_asset&#45;&gt;data_source -->
-<g id="FK069" class="edge">
+<g id="FK070" class="edge">
 <title>data_asset:e&#45;&gt;data_source:w</title>
-<g id="a_FK069"><a xlink:title="FK069 / data_asset_source_id_fkey / data_asset(source_id) to data_source(source_id) / FOREIGN KEY (source_id) REFERENCES data_source(source_id)">
+<g id="a_FK070"><a xlink:title="FK070 / data_asset_source_id_fkey / data_asset(source_id) to data_source(source_id) / FOREIGN KEY (source_id) REFERENCES data_source(source_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M478.44,-720C478.44,-720 637.12,-389.2 637.12,-389.2 637.12,-389.2 1198.47,-169.82 1268.63,-142.4"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1269.03,-144.69 1274.26,-140.21 1267.37,-140.45 1269.03,-144.69"/>
 </a>
@@ -181,108 +181,108 @@
 </g>
 </g>
 <!-- consent_artefact&#45;&gt;auth_user -->
-<g id="FK057" class="edge">
+<g id="FK058" class="edge">
 <title>consent_artefact:e&#45;&gt;auth_user:w</title>
-<g id="a_FK057"><a xlink:title="FK057 / consent_artefact_auth_user_id_fkey / consent_artefact(auth_user_id) to auth_user(id) / FOREIGN KEY (auth_user_id) REFERENCES auth_user(id)">
+<g id="a_FK058"><a xlink:title="FK058 / consent_artefact_auth_user_id_fkey / consent_artefact(auth_user_id) to auth_user(id) / FOREIGN KEY (auth_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M1408.63,-1152.8C1408.63,-1152.8 2018.04,-953.2 2018.04,-953.2 2018.04,-953.2 2119.37,-509.6 2134.01,-445.49"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="2136.17,-446.27 2135.4,-439.42 2131.73,-445.25 2136.17,-446.27"/>
 </a>
 </g>
 </g>
 <!-- consent_artefact&#45;&gt;consent_artefact -->
-<g id="FK061" class="edge">
+<g id="FK062" class="edge">
 <title>consent_artefact:e&#45;&gt;consent_artefact:w</title>
-<g id="a_FK061"><a xlink:title="FK061 / consent_artefact_supersedes_consent_id_fkey / consent_artefact(supersedes_consent_id) to consent_artefact(consent_id) / FOREIGN KEY (supersedes_consent_id) REFERENCES consent_artefact(consent_id)">
+<g id="a_FK062"><a xlink:title="FK062 / consent_artefact_supersedes_consent_id_fkey / consent_artefact(supersedes_consent_id) to consent_artefact(consent_id) / FOREIGN KEY (supersedes_consent_id) REFERENCES consent_artefact(consent_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1407.63,-1052C1479.83,-1100.93 1479.83,-1302 1340.43,-1302 1205.4,-1302 1201.18,-1255.2 1266.68,-1207.79"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1267.85,-1209.75 1271.88,-1204.15 1265.25,-1206.02 1267.85,-1209.75"/>
 </a>
 </g>
 </g>
 <!-- data_source&#45;&gt;auth_user -->
-<g id="FK070" class="edge">
+<g id="FK071" class="edge">
 <title>data_source:e&#45;&gt;auth_user:w</title>
-<g id="a_FK070"><a xlink:title="FK070 / data_source_owner_user_id_fkey / data_source(owner_user_id) to auth_user(id) / FOREIGN KEY (owner_user_id) REFERENCES auth_user(id)">
+<g id="a_FK071"><a xlink:title="FK071 / data_source_owner_user_id_fkey / data_source(owner_user_id) to auth_user(id) / FOREIGN KEY (owner_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1372.84,-13.6C1372.84,-13.6 1730.63,-67.2 1730.63,-67.2 1730.63,-67.2 2018.04,-123.2 2018.04,-123.2 2018.04,-123.2 2115.15,-382.69 2132.98,-430.33"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="2130.78,-430.95 2135.19,-436.24 2135.04,-429.36 2130.78,-430.95"/>
 </a>
 </g>
 </g>
 <!-- data_source&#45;&gt;processor -->
-<g id="FK071" class="edge">
+<g id="FK072" class="edge">
 <title>data_source:e&#45;&gt;processor:w</title>
-<g id="a_FK071"><a xlink:title="FK071 / data_source_processor_id_fkey / data_source(processor_id) to processor(processor_id) / FOREIGN KEY (processor_id) REFERENCES processor(processor_id)">
+<g id="a_FK072"><a xlink:title="FK072 / data_source_processor_id_fkey / data_source(processor_id) to processor(processor_id) / FOREIGN KEY (processor_id) REFERENCES processor(processor_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1372.84,-64C1372.84,-64 1730.63,-85.2 1730.63,-85.2 1730.63,-85.2 1835.31,-223.58 1859.03,-254.94"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1857.03,-256.06 1862.76,-259.87 1860.65,-253.32 1857.03,-256.06"/>
 </a>
 </g>
 </g>
 <!-- data_source&#45;&gt;project_site -->
-<g id="FK084" class="edge">
+<g id="FK085" class="edge">
 <title>data_source:e&#45;&gt;project_site:w</title>
-<g id="a_FK084"><a xlink:title="FK084 / fk_source_site / data_source(site_id) to project_site(site_id) / FOREIGN KEY (site_id) REFERENCES project_site(site_id)">
+<g id="a_FK085"><a xlink:title="FK085 / fk_source_site / data_source(site_id) to project_site(site_id) / FOREIGN KEY (site_id) REFERENCES project_site(site_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1372.84,-38.8C1372.84,-38.8 1528.29,-223.14 1558.65,-259.14"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1556.76,-260.42 1562.69,-263.93 1560.24,-257.49 1556.76,-260.42"/>
 </a>
 </g>
 </g>
 <!-- project&#45;&gt;auth_user -->
-<g id="FK118" class="edge">
+<g id="FK119" class="edge">
 <title>project:e&#45;&gt;auth_user:w</title>
-<g id="a_FK118"><a xlink:title="FK118 / project_created_by_fkey / project(created_by) to auth_user(id) / FOREIGN KEY (created_by) REFERENCES auth_user(id)">
+<g id="a_FK119"><a xlink:title="FK119 / project_created_by_fkey / project(created_by) to auth_user(id) / FOREIGN KEY (created_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M1974.97,-437.4C1974.97,-437.4 2095.89,-437.7 2128.01,-437.78"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="2127.6,-440.05 2134.11,-437.8 2127.61,-435.5 2127.6,-440.05"/>
 </a>
 </g>
 </g>
 <!-- project&#45;&gt;auth_user -->
-<g id="FK119" class="edge">
+<g id="FK120" class="edge">
 <title>project:e&#45;&gt;auth_user:w</title>
-<g id="a_FK119"><a xlink:title="FK119 / project_dco_user_id_fkey / project(dco_user_id) to auth_user(id) / FOREIGN KEY (dco_user_id) REFERENCES auth_user(id)">
+<g id="a_FK120"><a xlink:title="FK120 / project_dco_user_id_fkey / project(dco_user_id) to auth_user(id) / FOREIGN KEY (dco_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1974.97,-412.2C1974.97,-412.2 2095.89,-431.45 2128.01,-436.57"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="2127.35,-438.76 2134.13,-437.54 2128.06,-434.27 2127.35,-438.76"/>
 </a>
 </g>
 </g>
 <!-- project_site&#45;&gt;auth_user -->
-<g id="FK124" class="edge">
+<g id="FK125" class="edge">
 <title>project_site:e&#45;&gt;auth_user:w</title>
-<g id="a_FK124"><a xlink:title="FK124 / project_site_dco_override_by_fkey / project_site(dco_override_by) to auth_user(id) / FOREIGN KEY (dco_override_by) REFERENCES auth_user(id)">
+<g id="a_FK125"><a xlink:title="FK125 / project_site_dco_override_by_fkey / project_site(dco_override_by) to auth_user(id) / FOREIGN KEY (dco_override_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1694.7,-114C1694.7,-114 2018.04,-153.2 2018.04,-153.2 2018.04,-153.2 2114.31,-385.93 2132.74,-430.48"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="2130.55,-431.12 2135.13,-436.26 2134.75,-429.39 2130.55,-431.12"/>
 </a>
 </g>
 </g>
 <!-- project_site&#45;&gt;auth_user -->
-<g id="FK125" class="edge">
+<g id="FK126" class="edge">
 <title>project_site:e&#45;&gt;auth_user:w</title>
-<g id="a_FK125"><a xlink:title="FK125 / project_site_dco_override_user_id_fkey / project_site(dco_override_user_id) to auth_user(id) / FOREIGN KEY (dco_override_user_id) REFERENCES auth_user(id)">
+<g id="a_FK126"><a xlink:title="FK126 / project_site_dco_override_user_id_fkey / project_site(dco_override_user_id) to auth_user(id) / FOREIGN KEY (dco_override_user_id) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1694.7,-139.2C1694.7,-139.2 2018.04,-207.2 2018.04,-207.2 2018.04,-207.2 2112.25,-391.72 2132.12,-430.65"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="2130.03,-431.56 2135.01,-436.32 2134.08,-429.49 2130.03,-431.56"/>
 </a>
 </g>
 </g>
 <!-- project_site&#45;&gt;data_source -->
-<g id="FK128" class="edge">
+<g id="FK129" class="edge">
 <title>project_site:e&#45;&gt;data_source:w</title>
-<g id="a_FK128"><a xlink:title="FK128 / project_site_source_id_fkey / project_site(source_id) to data_source(source_id) / FOREIGN KEY (source_id) REFERENCES data_source(source_id)">
+<g id="a_FK129"><a xlink:title="FK129 / project_site_source_id_fkey / project_site(source_id) to data_source(source_id) / FOREIGN KEY (source_id) REFERENCES data_source(source_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1692.7,-164.4C1692.7,-164.4 1343.08,-143.5 1285.72,-140.07"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1286.09,-137.82 1279.47,-139.7 1285.82,-142.36 1286.09,-137.82"/>
 </a>
 </g>
 </g>
 <!-- project_site&#45;&gt;processor -->
-<g id="FK126" class="edge">
+<g id="FK127" class="edge">
 <title>project_site:e&#45;&gt;processor:w</title>
-<g id="a_FK126"><a xlink:title="FK126 / project_site_processor_id_fkey / project_site(processor_id) to processor(processor_id) / FOREIGN KEY (processor_id) REFERENCES processor(processor_id)">
+<g id="a_FK127"><a xlink:title="FK127 / project_site_processor_id_fkey / project_site(processor_id) to processor(processor_id) / FOREIGN KEY (processor_id) REFERENCES processor(processor_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M1694.7,-189.6C1694.7,-189.6 1824.14,-244.42 1856.5,-258.12"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1855.36,-260.11 1862.23,-260.55 1857.13,-255.92 1855.36,-260.11"/>
 </a>
 </g>
 </g>
 <!-- project_site&#45;&gt;project -->
-<g id="FK127" class="edge">
+<g id="FK128" class="edge">
 <title>project_site:e&#45;&gt;project:w</title>
-<g id="a_FK127"><a xlink:title="FK127 / project_site_project_id_fkey / project_site(project_id) to project(project_id) / FOREIGN KEY (project_id) REFERENCES project(project_id)">
+<g id="a_FK128"><a xlink:title="FK128 / project_site_project_id_fkey / project_site(project_id) to project(project_id) / FOREIGN KEY (project_id) REFERENCES project(project_id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M1694.7,-214.8C1694.7,-214.8 1829.64,-460.77 1854.42,-505.92"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="1852.38,-506.94 1857.5,-511.54 1856.37,-504.75 1852.38,-506.94"/>
 </a>

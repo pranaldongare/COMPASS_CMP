@@ -68,6 +68,8 @@ class Message(StrEnum):
     HOLDER_INSTRUCTION = "holder_instruction"
     TICKET_REMINDER = "ticket_reminder"
     TICKET_MESSAGE = "ticket_message"
+    HOLDER_TICKET_LINK = "holder_ticket_link"
+    HOLDER_TICKET_CODE = "holder_ticket_code"
     # staff
     OFFICE_NOTE = "office_note"
     # breach
@@ -744,6 +746,11 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
                 "What the platform already holds from this holder, or empty.",
                 "Records naming your site: 1 export on 3 September 2026.",
             ),
+            Variable(
+                "return_route",
+                "How to answer, as a sentence.",
+                "Answer it in the console: https://console.example.org/tickets",
+            ),
             ORGANISATION,
         ),
         email_subject="Action required by {due_on}: rights request {reference}",
@@ -751,14 +758,18 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "To {holder_label}:\n\n{brief}\n\n{instruction}\n\n"
             "Please return your confirmation by {due_on}. The Privacy Office answers the "
             "person concerned on a fixed statutory clock, and a return after this date may "
-            "mean our response has to name your part as outstanding.\n\n"
+            "mean our response has to name your part as outstanding.\n\n{return_route}\n\n"
             "Rights request {reference}, {organisation} Privacy Office."
         ),
         sms_body=(
             "{organisation} Privacy Office: rights request {reference} needs your return by "
             "{due_on}. {instruction}"
         ),
-        to="The holder's responder: the processor's named contact for rights tickets.",
+        to=(
+            "The holder's responder inside the organisation: a member of staff, or a "
+            "colleague given a temporary login. Never a holder outside it, who is sent the "
+            "ticket's link instead."
+        ),
     ),
     Junction(
         key=Message.TICKET_REMINDER,
@@ -826,6 +837,66 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
         ),
         to="The other side of the ticket's thread: the holder's responder, or the Privacy Office.",
         attachment="The file the Privacy Office put on the message, to the ticket's holder only.",
+    ),
+    Junction(
+        key=Message.HOLDER_TICKET_LINK,
+        title="Ticket link to an outside holder",
+        description=(
+            "Everything sent to a holder outside the organisation - a vendor, a third-party "
+            "processor - about its ticket: a new ticket, a message on it, the ticket moved "
+            "or opened again. It says what happened, the date to answer by and the link to "
+            "the ticket on the portal, and nothing of the request: what is asked, about whom, "
+            "and anything written is behind a one-time code sent to the same address "
+            "(2026-10-08). Email only; never copied - it carries the link."
+        ),
+        group="Rights",
+        channels=EMAIL_ONLY,
+        variables=(
+            REFERENCE,
+            Variable("holder_label", "The holder the ticket is addressed to.", "Acme Archive"),
+            Variable(
+                "event",
+                "What happened, as a sentence.",
+                "The Privacy Office has sent you a ticket to answer.",
+            ),
+            Variable("due_on", "The date to answer by.", "24 September 2026"),
+            Variable(
+                "link",
+                "The ticket on the portal (PUBLIC_BASE_URL/ticket/...).",
+                "https://portal.example.org/ticket/3q2-example-token",
+            ),
+            ORGANISATION,
+        ),
+        email_subject="Rights request {reference}: a ticket for {holder_label}",
+        email_body=(
+            "To {holder_label}:\n\n{event}\n\nOpen the ticket here:\n{link}\n\n"
+            "A one-time code is sent to this address when you open it. Please answer by "
+            "{due_on}: the {organisation} Privacy Office answers the person concerned on a "
+            "fixed statutory clock.\n\nWhat the ticket asks is on that page only. Please "
+            "answer there rather than by replying to this email." + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to="The responder at a holder outside the organisation, at the address on its ticket.",
+    ),
+    Junction(
+        key=Message.HOLDER_TICKET_CODE,
+        title="Code to open a ticket",
+        description=(
+            "Proves that whoever opened an outside holder's ticket link reads the address the "
+            "ticket was sent to, before the ticket is shown (2026-10-08). Email only."
+        ),
+        group="Rights",
+        channels=EMAIL_ONLY,
+        variables=(CODE, MINUTES, REFERENCE, ORGANISATION),
+        email_subject="{code} is your code to open the ticket on rights request {reference}",
+        email_body=(
+            "Your code is:\n\n    {code}\n\n"
+            "Enter it on the ticket's page to open it. It expires in {minutes} minutes and "
+            "works once. If you did not open the ticket's link, you can ignore this email."
+            + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to="The responder at a holder outside the organisation, at the address on its ticket.",
     ),
     # ------------------------------------------------------------------ staff
     Junction(

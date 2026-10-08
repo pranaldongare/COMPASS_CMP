@@ -104,7 +104,7 @@ const nextConfig: NextConfig = {
         // The consent flow and a subject's own records must never be cached by
         // an intermediary. A shared cache holding one person's consent record
         // and serving it to the next is a breach with a 200 status code.
-        source: "/(c|my-consents)/:path*",
+        source: "/(c|ticket|my-consents)/:path*",
         headers: [
           { key: "Cache-Control", value: "no-store, no-cache, must-revalidate, private" },
         ],

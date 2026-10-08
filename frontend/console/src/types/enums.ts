@@ -21,9 +21,10 @@ export type Role =
   | "rnd_user"
   | "admin"
   | "data_subject"
-  /** A breach-only login (S3-09): somebody with no console account, asked to
-   *  act on a breach. Reaches only the tickets addressed to it, and is never
-   *  given by hand. */
+  /** A temporary login (S3-09; rights tickets since 0049): somebody inside
+   *  the organisation with no console account, asked to act on a breach or
+   *  answer a rights ticket. Reaches only the tickets addressed to it, and is
+   *  never given by hand. */
   | "breach_holder";
 
 /** The roles that can be accountable for a data source.

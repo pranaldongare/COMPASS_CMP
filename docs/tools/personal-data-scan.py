@@ -84,6 +84,8 @@ CREDENTIAL = {
     # Columns rather than fields: none of these appears in any response schema,
     # and the point of listing them is that the document says where they live.
     "password_hash", "token", "token_sealed", "accept_token_hash",
+    # An outside holder's ticket link (0049): its fingerprint and sealed copy.
+    "link_token", "link_token_sealed",
 }
 ACCOUNT_REF = {
     "user_uuid", "subject_uuid", "actor_uuid", "delegate_uuid",

@@ -1,6 +1,6 @@
 # 0023. Breach tickets reach internal staff only, through breach-only temporary logins that end with the breach
 
-**Status:** accepted · 2026-10-05; amended 2026-10-06 (a holder keeps a read-only login - see the end). Amends [ADR 0021](0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md).
+**Status:** accepted · 2026-10-05; amended 2026-10-06 (a holder keeps a read-only login - see the end); extended 2026-10-08 (rights tickets give the same login - see the end). Amends [ADR 0021](0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md).
 Migrations 0040 (S3-08) and 0041 (S3-09).
 
 ## Context
@@ -109,3 +109,15 @@ The questions this decision left open were answered by the team on
   sign-in on the public portal is a data principal's session, which reaches no
   ticket (ADR 0013).
 
+## Extended 2026-10-08: rights tickets give the same login
+
+A rights request's holder inside the organisation with no console login is
+given the same temporary login when its ticket is sent (migration 0049): the
+same role, the same email, the same off switch. The grant is recorded in the
+same table, against the rights holder (`holder_id`, with `breach_id` and
+`ticket_id` empty - exactly one of the two, by CHECK), and ends when the
+request closes, or the ticket is withdrawn or sent to somebody else. One
+table keeps one answer to "who holds a temporary login, and why", and lets
+End temporary access end them all. A holder outside the organisation gets no
+login: it answers on the portal by a link and a one-time code
+([rights-requests.md](../domain/rights-requests.md#how-a-holder-is-reached)).

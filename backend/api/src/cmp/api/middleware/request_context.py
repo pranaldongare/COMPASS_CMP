@@ -32,7 +32,8 @@ Next = Callable[[Request], Awaitable[Response]]
 #: token is a capability: anything that can read the access log could otherwise
 #: impersonate the link. A nomination acceptance link is one too: it opens the
 #: page on which a nominee proves a contact, and the log must not hand it out.
-SENSITIVE_PATH_PREFIXES = ("/c/", "/rights/nominations/")
+#: So is an outside holder's ticket link (0049).
+SENSITIVE_PATH_PREFIXES = ("/c/", "/rights/nominations/", "/holder-tickets/")
 
 
 def safe_path(path: str) -> str:

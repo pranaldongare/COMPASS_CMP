@@ -107,11 +107,40 @@ has been sent to it. Each confirmed holder gets one **ticket**: the
 instruction to return what it holds, addressed to a **respondent** of that
 processor.
 
-- An in-house processor's respondent is an account on the platform. The
-  ticket reaches them on their dashboard and the console's tickets page, and
-  they answer there, with files.
-- A third party's respondent is a name and an address. The ticket travels by
-  email, with a summary of the request, and the DPO records what came back.
+Each holder's ticket asks in its own words: it starts from the standard words
+for the kind of request (and the consent it is confined to), and the DPO may
+change them for that holder until the ticket is sent (`PUT
+.../holders/{holder_uuid}/instruction`). An erasure ticket also lists the
+items that holder holds and what to do with each - erase it, remove the person
+from it, keep it until a date, or set it aside - including items found before
+the holder was, which become its own when it is asked.
+
+### How a holder is reached
+
+Decided with the product owner on 2026-10-08 and settled as the ticket is
+sent (`domain/rights/reach.py`), so the office may name and rename a responder
+freely until then. "Internal" is an address on `BREACH_TICKET_EMAIL_DOMAINS`.
+
+| The responder | Reached | Answers |
+|---|---|---|
+| an account that signs in to the console | the ticket in their **My tasks**; the email in full, with a link to it | in the console, with files |
+| an internal address with no console login | a **temporary login**, as a breach ticket's holder has (0049; [roles-and-access.md](roles-and-access.md)), then as above | in the console |
+| any other address - a vendor, a third-party processor | an email carrying **a link and nothing of the request** | on the **portal**, at `/ticket/{token}`, after a one-time code sent to the address on the ticket |
+
+An outside holder's link (`domain/rights/holder_link.py`) shows only the
+reference, the holder's name and where the code will go. The code goes to the
+address the ticket was sent to, never one typed, and opens the ticket for an
+hour in that browser: an HttpOnly, SameSite=Strict cookie whose fingerprint in
+Redis names the ticket and the link, and every call names the link too. The
+holder then reads what is asked, the items, and the platform's brief of what it
+already holds about the person; writes to the office with files; and gives
+its answer, which waits for review like any other. Every email to it - the
+ticket, a message, a reminder, a ticket sent back, withdrawn, reopened or moved
+- says what happened and gives the link, nothing more. Sent to somebody else,
+the ticket gets a new link and the old stops working. An outside holder whose
+ticket went before links were made is given one the first time anything is
+sent to it. The office can still record an answer for any holder - one sent by
+email, say - and it counts as recorded.
 
 A ticket is a **thread**: it opens with what the office already knows, and
 either side may write on it, attaching files. Unread messages are counted on

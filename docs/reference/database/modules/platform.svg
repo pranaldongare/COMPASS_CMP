@@ -10,7 +10,7 @@
 <title>Schema</title>
 <polygon fill="#f7fafc" stroke="none" points="-36,36 -36,-1293 662.45,-1293 662.45,36 -36,36"/>
 <text xml:space="preserve" text-anchor="start" x="8" y="-1227" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="30.00" fill="#142c44">COMPASS / PLATFORM</text>
-<text xml:space="preserve" text-anchor="start" x="8" y="-1211.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0048 / full module tables with outgoing references / source 7d0da97</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-1211.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0049 / full module tables with outgoing references / source c59d9da</text>
 <text xml:space="preserve" text-anchor="start" x="8" y="-1185.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">FK arrow: child column to referenced key &#160;&#160;| &#160;&#160;Solid = required FK; dashed = nullable FK; dotted = view dependency</text>
 <text xml:space="preserve" text-anchor="start" x="13.43" y="-1173.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">PK = primary key; FK = foreign key; UQ = member of unique constraint (possibly composite); ? = nullable column</text>
 <g id="clust1" class="cluster">
@@ -37,36 +37,36 @@
 </g>
 </g>
 <!-- message_template&#45;&gt;auth_user -->
-<g id="FK094" class="edge">
+<g id="FK095" class="edge">
 <title>message_template:e&#45;&gt;auth_user:w</title>
-<g id="a_FK094"><a xlink:title="FK094 / message_template_updated_by_fkey / message_template(updated_by) to auth_user(id) / FOREIGN KEY (updated_by) REFERENCES auth_user(id)">
+<g id="a_FK095"><a xlink:title="FK095 / message_template_updated_by_fkey / message_template(updated_by) to auth_user(id) / FOREIGN KEY (updated_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M212.01,-385C212.01,-385 364,-489.39 397.25,-512.22"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="395.61,-513.85 402.25,-515.66 398.18,-510.1 395.61,-513.85"/>
 </a>
 </g>
 </g>
 <!-- message_copy&#45;&gt;auth_user -->
-<g id="FK093" class="edge">
+<g id="FK094" class="edge">
 <title>message_copy:e&#45;&gt;auth_user:w</title>
-<g id="a_FK093"><a xlink:title="FK093 / message_copy_added_by_fkey / message_copy(added_by) to auth_user(id) / FOREIGN KEY (added_by) REFERENCES auth_user(id)">
+<g id="a_FK094"><a xlink:title="FK094 / message_copy_added_by_fkey / message_copy(added_by) to auth_user(id) / FOREIGN KEY (added_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M213.84,-648.6C213.84,-648.6 309.89,-595 309.89,-595 309.89,-595 376.62,-539.19 397.47,-521.74"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="398.82,-523.58 402.35,-517.67 395.9,-520.09 398.82,-523.58"/>
 </a>
 </g>
 </g>
 <!-- restricted_country&#45;&gt;auth_user -->
-<g id="FK132" class="edge">
+<g id="FK133" class="edge">
 <title>restricted_country:e&#45;&gt;auth_user:w</title>
-<g id="a_FK132"><a xlink:title="FK132 / restricted_country_lifted_by_fkey / restricted_country(lifted_by) to auth_user(id) / FOREIGN KEY (lifted_by) REFERENCES auth_user(id)">
+<g id="a_FK133"><a xlink:title="FK133 / restricted_country_lifted_by_fkey / restricted_country(lifted_by) to auth_user(id) / FOREIGN KEY (lifted_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-dasharray="5,2" stroke-opacity="0.584314" d="M214.65,-887.4C214.65,-887.4 309.89,-833 309.89,-833 309.89,-833 386.87,-573.14 401.31,-524.42"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="403.49,-525.07 403.15,-518.2 399.12,-523.78 403.49,-525.07"/>
 </a>
 </g>
 </g>
 <!-- restricted_country&#45;&gt;auth_user -->
-<g id="FK133" class="edge">
+<g id="FK134" class="edge">
 <title>restricted_country:e&#45;&gt;auth_user:w</title>
-<g id="a_FK133"><a xlink:title="FK133 / restricted_country_listed_by_fkey / restricted_country(listed_by) to auth_user(id) / FOREIGN KEY (listed_by) REFERENCES auth_user(id)">
+<g id="a_FK134"><a xlink:title="FK134 / restricted_country_listed_by_fkey / restricted_country(listed_by) to auth_user(id) / FOREIGN KEY (listed_by) REFERENCES auth_user(id)">
 <path fill="none" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" d="M214.65,-937.8C214.65,-937.8 309.89,-833 309.89,-833 309.89,-833 386.87,-573.14 401.31,-524.42"/>
 <polygon fill="#174e82" fill-opacity="0.584314" stroke="#174e82" stroke-width="1.1" stroke-opacity="0.584314" points="403.49,-525.07 403.15,-518.2 399.12,-523.78 403.49,-525.07"/>
 </a>

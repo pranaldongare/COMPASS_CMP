@@ -800,6 +800,176 @@ class TestTicketsFromTheHoldersSide:
         assert accepted.json()["state"] == "accepted"
 
 
+class TestAnOutsideHolder:
+    async def test_answers_by_its_link_after_a_code_and_the_office_accepts(
+        self, http: httpx.AsyncClient, world: World, queued: Any, session_for: SessionFactory
+    ) -> None:
+        """A holder outside the organisation (0049): its own instruction, a
+        link carrying nothing of the request, a code to the ticket's address,
+        an answer that waits for the office, accepted."""
+        dpo = world.dpo
+        reference = await _public_request(
+            http, queued, world.principal_email, f"What do you hold? {fresh()}"
+        )
+        listed = await call(http, "GET", "/requests", session=dpo, params={"q": reference})
+        ruuid = next(r for r in listed.json()["items"] if r["reference"] == reference)[
+            "request_uuid"
+        ]
+        await call(
+            http,
+            "POST",
+            f"/requests/{ruuid}/classify",
+            template=RIGHTS + "/classify",
+            session=dpo,
+            json={"request_type": "access", "note": "As stated."},
+        )
+        await call(
+            http,
+            "POST",
+            f"/requests/{ruuid}/transition",
+            template=RIGHTS + "/transition",
+            session=dpo,
+            json={"to": "in_progress"},
+        )
+        added = await call(
+            http,
+            "POST",
+            f"/requests/{ruuid}/holders",
+            template=RIGHTS + "/holders",
+            session=dpo,
+            expect=(200, 201),
+            json={
+                "label": "Vendor archive",
+                "responder_name": "Keeper at the vendor",
+                "responder_contact": fresh_email("vendor"),
+            },
+        )
+        listed_holders = (
+            added.json()
+            if isinstance(added.json(), list)
+            else added.json().get("holders", [added.json()])
+        )
+        huuid = next(h for h in listed_holders if h.get("label") == "Vendor archive")["holder_uuid"]
+        await call(
+            http,
+            "POST",
+            f"/requests/{ruuid}/holders/{huuid}/confirm",
+            template=HOLDER + "/confirm",
+            session=dpo,
+            expect=(200, 204),
+            json={},
+        )
+        own = await call(
+            http,
+            "PUT",
+            f"/requests/{ruuid}/holders/{huuid}/instruction",
+            template=HOLDER + "/instruction",
+            session=dpo,
+            json={"instruction": "Tell us what your archive holds on her, and since when."},
+        )
+        assert own.json()["instruction"].startswith("SE::")
+        queued.clear()
+        await call(
+            http,
+            "POST",
+            f"/requests/{ruuid}/tickets",
+            template=RIGHTS + "/tickets",
+            session=dpo,
+            expect=(200, 201),
+            json={},
+        )
+        [link] = [a[5] for n, a in queued if n.endswith("send_holder_link")]
+        assert not [n for n, _ in queued if n.endswith("send_holder_instruction")]
+        token = str(link).rsplit("/", 1)[-1]
+
+        opened = await call(
+            http, "GET", f"/holder-tickets/{token}", template="/holder-tickets/{token}"
+        )
+        assert opened.json()["signed_in"] is False and opened.json()["reference"] == reference
+        await call(
+            http,
+            "GET",
+            f"/holder-tickets/{token}/ticket",
+            template="/holder-tickets/{token}/ticket",
+            expect=401,
+        )
+        await call(
+            http,
+            "POST",
+            f"/holder-tickets/{token}/code",
+            template="/holder-tickets/{token}/code",
+        )
+        code = last_code(queued, "cmp.notifications.send_holder_ticket_code", position=1)
+        verified = await call(
+            http,
+            "POST",
+            f"/holder-tickets/{token}/verify",
+            template="/holder-tickets/{token}/verify",
+            json={"code": code},
+        )
+        cookie = {"cmp_ticket": verified.cookies["cmp_ticket"]}
+        ticket = await call(
+            http,
+            "GET",
+            f"/holder-tickets/{token}/ticket",
+            template="/holder-tickets/{token}/ticket",
+            cookies=cookie,
+        )
+        assert ticket.json()["ticket"]["instruction"].startswith("SE::")
+        wrote = await call(
+            http,
+            "POST",
+            f"/holder-tickets/{token}/messages",
+            template="/holder-tickets/{token}/messages",
+            cookies=cookie,
+            data={"body": "Do you mean the paper files too? The index is attached."},
+            files={"evidence": ("index.txt", b"box 1\nbox 2\n", "text/plain")},
+        )
+        filed = next(m for m in wrote.json()["messages"] if m["evidence_hash"])
+        got = await call(
+            http,
+            "GET",
+            f"/holder-tickets/{token}/messages/{filed['message_uuid']}/evidence",
+            template="/holder-tickets/{token}/messages/{message_uuid}/evidence",
+            cookies=cookie,
+        )
+        assert got.content == b"box 1\nbox 2\n"
+        answered = await call(
+            http,
+            "POST",
+            f"/holder-tickets/{token}/answer",
+            template="/holder-tickets/{token}/answer",
+            cookies=cookie,
+            data={"summary": "Two boxes of paper, since 2024.", "outcome": "done"},
+        )
+        assert answered.json()["ticket"]["state"] == "review"
+
+        accepted = await call(
+            http,
+            "POST",
+            f"/requests/{ruuid}/holders/{huuid}/accept",
+            template=HOLDER + "/accept",
+            session=dpo,
+        )
+        assert accepted.json()["state"] == "accepted"
+        await call(
+            http,
+            "POST",
+            f"/holder-tickets/{token}/sign-out",
+            template="/holder-tickets/{token}/sign-out",
+            cookies=cookie,
+            expect=204,
+        )
+        await call(
+            http,
+            "GET",
+            f"/holder-tickets/{token}/ticket",
+            template="/holder-tickets/{token}/ticket",
+            cookies=cookie,
+            expect=401,
+        )
+
+
 class TestANominee:
     async def test_named_accepting_and_acting_on_a_death(
         self, http: httpx.AsyncClient, world: World, queued: Any, session_for: SessionFactory

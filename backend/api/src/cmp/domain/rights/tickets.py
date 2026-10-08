@@ -93,6 +93,9 @@ def moves(holder: Row, *, request_status: str, now: datetime | None = None) -> l
         return []
     at = state(holder, now=now)
     console = holder.get("channel") == "portal"
+    # Answers on the portal by its link (0049): it answers itself, as a
+    # holder in the console does; the office may still record it for them.
+    by_link = not console and holder.get("link_issued_at") is not None
     if at == "not_confirmed":
         return [
             _move("confirm", "Confirm who answers", primary=True),
@@ -107,8 +110,8 @@ def moves(holder: Row, *, request_status: str, now: datetime | None = None) -> l
         out.append(
             _move(
                 "record_answer",
-                "Record their answer for them" if console else "Record their answer",
-                primary=at != "overdue" and not console,
+                "Record their answer for them" if console or by_link else "Record their answer",
+                primary=at != "overdue" and not console and not by_link,
             )
         )
         out.append(_move("message", "Write to them", emails=True))

@@ -1,7 +1,7 @@
 # Schema
 
-58 tables, 39 enums, 1 view, 50 triggers, 92 named CHECK constraints and 160
-foreign keys, as of migration 0048. Those counts are read from the PostgreSQL
+58 tables, 39 enums, 1 view, 50 triggers, 94 named CHECK constraints and 161
+foreign keys, as of migration 0049. Those counts are read from the PostgreSQL
 catalogs after replaying every migration, not maintained by hand.
 
 The migrations are the source of truth: 0001 transcribed the original
@@ -144,6 +144,15 @@ is one row per file - its kind (`email`, `proof`, `chat`, `other`, by CHECK),
 the name it came with and an optional note (both sealed), where it is stored,
 its SHA-256 and size - append-only by trigger and grant: a file is never
 replaced or removed.
+
+**Holders outside the console, since 0049.** An outside holder's ticket comes
+as a link to the portal: `rights_request_holder.link_token` is its keyed
+fingerprint (looked up when the link is opened; the token is never stored in
+the clear), `link_token_sealed` the AES-GCM sealed token so a reminder carries
+the same link, `link_issued_at` when it was made - all three or none. A
+holder inside the organisation with no console login gets a temporary login
+recorded in `breach_temporary_access`, which now holds either a breach grant
+(`breach_id`, `ticket_id`) or a rights grant (`holder_id`), never both.
 
 **A rights ticket's answer is reviewed, since 0048.**
 `rights_request_holder.accepted_at` and `accepted_by` record the office

@@ -165,6 +165,20 @@ No request body.
       "evidence_name": "…",
       "created_at": "2026-09-17T12:00:00Z"
     }
+  ],
+  "items": [
+    {
+      "item_uuid": "00000000-0000-4000-8000-000000000000",
+      "decision": "string",
+      "retain_until": "…",
+      "other_subjects": 1,
+      "state": "string",
+      "asset_type": "string",
+      "source_asset_ref": "string",
+      "source_name": "string",
+      "project_name": "string",
+      "collected_on": "2026-09-17"
+    }
   ]
 }
 ```
@@ -277,6 +291,20 @@ Request body required: **yes**.
       "evidence_hash": "…",
       "evidence_name": "…",
       "created_at": "2026-09-17T12:00:00Z"
+    }
+  ],
+  "items": [
+    {
+      "item_uuid": "00000000-0000-4000-8000-000000000000",
+      "decision": "string",
+      "retain_until": "…",
+      "other_subjects": 1,
+      "state": "string",
+      "asset_type": "string",
+      "source_asset_ref": "string",
+      "source_name": "string",
+      "project_name": "string",
+      "collected_on": "2026-09-17"
     }
   ]
 }
@@ -481,6 +509,7 @@ Request body required: **yes**.
 |---|---|---:|---|---|
 | `ticket` | [`TicketOut`](#schema-ticketout) | Yes | — | — |
 | `messages` | array of [`cmp__api__routers__v1__rights__MessageOut`](#schema-cmp_api_routers_v1_rights_messageout) | Yes | — | — |
+| `items` | array of [`TicketItemOut`](#schema-ticketitemout) | No | — | — |
 
 <a id="schema-ticketout"></a>
 #### `TicketOut`
@@ -549,3 +578,22 @@ A ticket as its respondent sees it: what is asked, of whom, by when.
 | `evidence_hash` | `string` or `null` | Yes | — | — |
 | `evidence_name` | `string` or `null` | No | — | — |
 | `created_at` | `string` | Yes | format: `date-time` | — |
+
+<a id="schema-ticketitemout"></a>
+#### `TicketItemOut`
+
+One item an erasure ticket asks its holder to act on (2026-10-08):
+which asset, and what to do with it. The legal basis stays the office's.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `item_uuid` | `string` | Yes | format: `uuid` | — |
+| `decision` | `string` | Yes | — | — |
+| `retain_until` | `string` or `null` | Yes | format: `date` | — |
+| `other_subjects` | `integer` | Yes | — | — |
+| `state` | `string` | Yes | — | — |
+| `asset_type` | `string` | Yes | — | — |
+| `source_asset_ref` | `string` | Yes | — | — |
+| `source_name` | `string` | Yes | — | — |
+| `project_name` | `string` | Yes | — | — |
+| `collected_on` | `string` | Yes | format: `date` | — |

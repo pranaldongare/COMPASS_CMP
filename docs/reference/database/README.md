@@ -1,6 +1,6 @@
 # COMPASS complete database schema
 
-The diagrams, the table reference and the enum reference are generated from the catalogue of a scratch database built by replaying migrations **0001 → 0048**, on 2026-10-08; rebuild them with `python3 docs/tools/generate-schema-docs.py --database <db>`. The notes on this page follow them by hand.
+The diagrams, the table reference and the enum reference are generated from the catalogue of a scratch database built by replaying migrations **0001 → 0049**, on 2026-10-08; rebuild them with `python3 docs/tools/generate-schema-docs.py --database <db>`. The notes on this page follow them by hand.
 
 ## Open the diagrams
 
@@ -80,6 +80,8 @@ Since **0027–0030** the personal columns are `text` rather than `varchar(n)` -
 **0047** adds what is known when an incident is logged: ten optional, sealed free-text columns on `breach` and `cyber_attack` (yes, no, unknown); the status-only trigger now holds every column but the status.
 
 **0048** adds the review step on rights tickets: `rights_request_holder.accepted_at` and `accepted_by`, and a CHECK that only a returned ticket is accepted.
+
+**0049** adds holders outside the console: the portal link on `rights_request_holder` (`link_token`, `link_token_sealed`, `link_issued_at`), and rights tickets' temporary logins in `breach_temporary_access` (`holder_id`; one ticket of one kind per grant, by CHECK).
 
 ## Reading relationships and keys
 

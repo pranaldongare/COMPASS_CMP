@@ -49,7 +49,7 @@ Starlette runs the middleware added **last** first. Measured from
 | 2 | `RequestContextMiddleware` (`api/middleware/request_context.py`) | Adopts a clean `X-Request-ID` or mints one, binds request id, client address and user agent into a context variable every log line and audit row reads, and echoes the id on the response |
 | 3 | `SecurityHeadersMiddleware` | `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, a `default-src 'none'` CSP, COOP/CORP, `Cache-Control: no-store` on `/auth`, `/me`, `/c/` and any request with a cookie, HSTS in production |
 | 4 | `BodyLimitMiddleware` | 413 when `Content-Length` exceeds `MAX_UPLOAD_BYTES` (25 MB), or when the bytes actually read do - a chunked body has no length to check |
-| 5 | `AccessLogMiddleware` | One `request.completed` line, with tokens in `/c/<token>` and `/rights/nominations/<token>` replaced by `[token]` |
+| 5 | `AccessLogMiddleware` | One `request.completed` line, with tokens in `/c/<token>`, `/rights/nominations/<token>` and `/holder-tickets/<token>` replaced by `[token]` |
 | 6 | GZip | Responses over 1 KB |
 | 7 | CORS | Credentials allowed for `CORS_ORIGINS` |
 | 8 | TrustedHost | Only when `TRUSTED_HOSTS` is set to something other than `*` |

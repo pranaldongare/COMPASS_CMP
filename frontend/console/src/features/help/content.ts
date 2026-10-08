@@ -68,7 +68,7 @@ export const SECTIONS: HelpSection[] = [
           {
             term: "Temporary ticket holder",
             meaning:
-              "Somebody without a console login whom the Privacy Office has asked to act on a breach. Signs in like staff and sees only their own breach tickets, which they can still read once their part is over.",
+              "Somebody inside the organisation without a console login whom the Privacy Office has asked to act on a breach, or to answer a rights ticket. Signs in like staff and sees only their own tickets, which they can still read once their part is over.",
           },
         ],
       },
@@ -470,6 +470,8 @@ export const SECTIONS: HelpSection[] = [
           "Classify it in [[A valid … request?]] and click [[Confirm classification]]. For an erasure, confirm [[They mean erasure]] - erasure is not withdrawal. Not a rights request, or one that cannot be met? Click [[Refuse this request]], write the reason and click [[Refuse and close]] - the person is told why, with the grievance route.",
           "Under [[Next step]], click [[In progress]].",
           "Holders and tickets: [[Find who holds the data]], then for each holder [[Confirm who answers]], then [[Send tickets]]. Click a holder to open its ticket: what it was asked, its answer and its messages. The main action is the button on its row; the rest are under [[More]].",
+          "Before sending, open a holder to read or change [[What their ticket will ask]] - the standard words for the request, which you can make that holder's own. For an erasure the ticket also lists each item that holder holds and what to do with it.",
+          "How each holder answers is settled as the ticket goes: a colleague with a console login answers in their [[My tasks]]; one inside the organisation without a login is given a temporary login; anyone outside - a vendor, a processor - is emailed a link, opens it with a code sent to the same address, and answers on the portal. Their row says which.",
           "When an answer comes, the holder shows [[Answered - review]]. [[Accept the answer]] to count it, or [[Send back]] with what is missing. Only an accepted answer counts toward closing the request.",
           "An overdue holder is reminded every day by itself; [[Send a reminder]] sends one now, and [[Send final reminder]] - only once it is overdue - lets the response go out partial, naming the gap. [[Withdraw]] a ticket sent in error, and [[Reopen]] it if needed; [[Remove]] a holder found by mistake before it is sent anything.",
           "Erasure scope: [[Find what is held]]. For each asset choose [[Erase]], [[Redact]], [[Retain]] (a retention floor, with its date) or [[Quarantine]], give the basis and [[Record the decision]], then [[Apply]].",

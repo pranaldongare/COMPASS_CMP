@@ -675,6 +675,149 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/holder-tickets/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the link opens, before the code */
+        get: operations["open_link_holder_tickets__token__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/holder-tickets/{token}/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a code to the ticket's address */
+        post: operations["send_code_holder_tickets__token__code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/holder-tickets/{token}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enter the code */
+        post: operations["verify_holder_tickets__token__verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/holder-tickets/{token}/sign-out": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close the ticket here */
+        post: operations["sign_out_holder_tickets__token__sign_out_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/holder-tickets/{token}/ticket": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The ticket, after the code
+         * @description What is asked, the items, what the platform holds about the person, and
+         *     the messages. Reading marks the office's messages read.
+         */
+        get: operations["read_ticket_holder_tickets__token__ticket_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/holder-tickets/{token}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Write to the Privacy Office, with a file if it helps */
+        post: operations["write_holder_tickets__token__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/holder-tickets/{token}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Give the answer: what was done, what is held, and proof
+         * @description It waits for the Privacy Office to accept it, or send it back.
+         */
+        post: operations["answer_holder_tickets__token__answer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/holder-tickets/{token}/messages/{message_uuid}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a file on the ticket's messages */
+        get: operations["message_file_holder_tickets__token__messages__message_uuid__evidence_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/staff": {
         parameters: {
             query?: never;
@@ -3978,6 +4121,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/requests/{request_uuid}/holders/{holder_uuid}/instruction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * What this holder's ticket will ask, before it is sent
+         * @description Each holder its own words (2026-10-08), starting from the standard ones;
+         *     fixed once the ticket is sent.
+         */
+        put: operations["set_instruction_requests__request_uuid__holders__holder_uuid__instruction_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/requests/{request_uuid}/holders/{holder_uuid}/accept": {
         parameters: {
             query?: never;
@@ -5678,6 +5842,21 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /** Body_answer_holder_tickets__token__answer_post */
+        Body_answer_holder_tickets__token__answer_post: {
+            /** Summary */
+            summary: string;
+            /**
+             * Outcome
+             * @description done, partial or failed
+             */
+            outcome: string;
+            /**
+             * Evidence
+             * @description Optional proof, max 25 MB
+             */
+            evidence?: string | null;
+        };
         /** Body_attach_document_me_requests__request_uuid__attachments_post */
         Body_attach_document_me_requests__request_uuid__attachments_post: {
             /**
@@ -5872,6 +6051,16 @@ export interface components {
              * @description .docx notice template, max 25 MB
              */
             document: string;
+        };
+        /** Body_write_holder_tickets__token__messages_post */
+        Body_write_holder_tickets__token__messages_post: {
+            /** Body */
+            body: string;
+            /**
+             * Evidence
+             * @description Optional file, max 25 MB
+             */
+            evidence?: string | null;
         };
         /** BreachAffectedIn */
         BreachAffectedIn: {
@@ -7974,6 +8163,28 @@ export interface components {
             /** Responder Contact */
             responder_contact?: string | null;
         };
+        /**
+         * HolderLinkOut
+         * @description What the link alone shows: whose ticket, and where the code goes.
+         */
+        HolderLinkOut: {
+            /** Reference */
+            reference: string;
+            /** Holder Label */
+            holder_label: string;
+            /** Request Type */
+            request_type: string;
+            /** Code Goes To */
+            code_goes_to: string | null;
+            /** State */
+            state: string;
+            /** State Label */
+            state_label: string;
+            /** Due At */
+            due_at: string | null;
+            /** Signed In */
+            signed_in: boolean;
+        };
         /** HolderOut */
         HolderOut: {
             /**
@@ -8075,6 +8286,10 @@ export interface components {
              * @default 0
              */
             sent_back_count: number;
+            /** Link Issued At */
+            link_issued_at?: string | null;
+            /** Temporary Access */
+            temporary_access?: string | null;
             /** Accepted At */
             accepted_at?: string | null;
             /** Accepted By Name */
@@ -8145,6 +8360,11 @@ export interface components {
             imported_by_uuid: string;
             /** Imported By Name */
             imported_by_name: string;
+        };
+        /** InstructionIn */
+        InstructionIn: {
+            /** Instruction */
+            instruction?: string | null;
         };
         /** IssueTicketsIn */
         IssueTicketsIn: {
@@ -9963,6 +10183,8 @@ export interface components {
             response_files?: components["schemas"]["ResponseFileOut"][];
             /** Attachments */
             attachments?: components["schemas"]["AttachmentOut"][];
+            /** Default Instruction */
+            default_instruction?: string | null;
         };
         /** RequestOut */
         RequestOut: {
@@ -10868,6 +11090,41 @@ export interface components {
             ticket: components["schemas"]["TicketOut"];
             /** Messages */
             messages: components["schemas"]["cmp__api__routers__v1__rights__MessageOut"][];
+            /** Items */
+            items?: components["schemas"]["TicketItemOut"][];
+        };
+        /**
+         * TicketItemOut
+         * @description One item an erasure ticket asks its holder to act on (2026-10-08):
+         *     which asset, and what to do with it. The legal basis stays the office's.
+         */
+        TicketItemOut: {
+            /**
+             * Item Uuid
+             * Format: uuid
+             */
+            item_uuid: string;
+            /** Decision */
+            decision: string;
+            /** Retain Until */
+            retain_until: string | null;
+            /** Other Subjects */
+            other_subjects: number;
+            /** State */
+            state: string;
+            /** Asset Type */
+            asset_type: string;
+            /** Source Asset Ref */
+            source_asset_ref: string;
+            /** Source Name */
+            source_name: string;
+            /** Project Name */
+            project_name: string;
+            /**
+             * Collected On
+             * Format: date
+             */
+            collected_on: string;
         };
         /**
          * TicketOut
@@ -12362,6 +12619,265 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NomineeRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_link_holder_tickets__token__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderLinkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_code_holder_tickets__token__code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_holder_tickets__token__verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sign_out_holder_tickets__token__sign_out_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_ticket_holder_tickets__token__ticket_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    write_holder_tickets__token__messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_write_holder_tickets__token__messages_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    answer_holder_tickets__token__answer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_answer_holder_tickets__token__answer_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    message_file_holder_tickets__token__messages__message_uuid__evidence_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+                message_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -18533,6 +19049,42 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SendBackIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_instruction_requests__request_uuid__holders__holder_uuid__instruction_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstructionIn"];
             };
         };
         responses: {

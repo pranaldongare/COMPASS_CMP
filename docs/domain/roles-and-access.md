@@ -19,7 +19,7 @@ and the rows each may see are a scope compiled into every query.
 | Research Collection Owner | `rco` | A DCO for in-house collection | The same as a DCO, restricted to the organisation's own sources and sites |
 | R&D User | `rnd_user` | Owns a study | Registers the project, names the collectors, brings the notice as a filled-in document or a copy of an approved one, uploads approval proofs, asks to add a collector after approval |
 | Data principal | `data_subject` | The person the data is about | Reads and withdraws her consents, sees her disclosures, makes and follows rights requests, names a nominee |
-| Temporary ticket holder | `breach_holder` | Somebody inside the organisation, with no console login, asked to act on a breach | Answers the breach tickets addressed to them and brings in colleagues; nothing else. Never given by hand: set when the DPO (or a holder) asks them by email, put back when their last ticket on an open breach ends ([ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)) |
+| Temporary ticket holder | `breach_holder` | Somebody inside the organisation, with no console login, asked to act on a breach or - since 0049 - to answer a rights ticket | Answers the breach and rights tickets addressed to them, and brings colleagues into a breach ticket; nothing else. Never given by hand: set when the DPO (or a holder) asks them by email, or a rights ticket is sent to their internal address; the administrator's End temporary access is the off switch ([ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)) |
 
 ## The matrix
 
@@ -252,7 +252,19 @@ ending the grant then leaves that role alone.
 
 When the breach closes or the DPO withdraws their ticket, their part is over
 but the login stays, so they can still read their ticket; nothing on it can be
-written (decided 2026-10-06). The one off switch is an administrator's **End
+written (decided 2026-10-06).
+
+**Rights tickets give the same login** (0049, 2026-10-08). When a rights
+ticket is sent to a responder whose address is on
+`BREACH_TICKET_EMAIL_DOMAINS` - one list of the organisation's own domains -
+and who has no console login, the same table above applies, for that one
+ticket: the same role, the same email, the grant recorded in the same table
+(`breach_temporary_access.holder_id`). The ticket is then in their My tasks. The
+grant ends when the request closes, the ticket is withdrawn or sent to
+somebody else, and is given back if a withdrawn ticket reopens; End temporary
+access ends rights grants with breach ones. A responder outside those domains
+gets no login at all: their ticket comes as a link to the portal, opened with
+a code ([rights-requests.md](rights-requests.md#how-a-holder-is-reached)). The one off switch is an administrator's **End
 temporary access**: an account made for a breach is switched off, one that was
 a data principal's goes back to `data_subject`, the password is cleared,
 `person_type` is untouched, and every session is revoked.

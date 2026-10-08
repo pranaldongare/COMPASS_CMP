@@ -12,7 +12,7 @@ This folder answers: **which role can call each API, on which records, and under
 - [Implementation notes](implementation_notes.md): places where generic documentation and implemented controls differ.
 - [Machine-readable endpoint inventory](endpoint_permissions.json): guards, roles, conditions and source references.
 
-**Coverage: 21 modules, 315 documented operations over 275 OpenAPI paths, plus 3 registered system operations excluded from OpenAPI (318 total operations).** The breach module (S3-01 onward) is recorded in `endpoint_permissions.json`'s `amended` list; its evidence links point at `HEAD`. No framework-generated Swagger/ReDoc/OpenAPI routes or middleware-generated OPTIONS responses are counted.
+**Coverage: 21 modules, 324 documented operations over 284 OpenAPI paths, plus 3 registered system operations excluded from OpenAPI (327 total operations).** The breach module (S3-01 onward) is recorded in `endpoint_permissions.json`'s `amended` list; its evidence links point at `HEAD`. No framework-generated Swagger/ReDoc/OpenAPI routes or middleware-generated OPTIONS responses are counted.
 
 ## Module details
 
@@ -33,9 +33,9 @@ This folder answers: **which role can call each API, on which records, and under
 | Notices | 34 | [Open module](modules/notices.md) |
 | Projects | 27 | [Open module](modules/projects.md) |
 | Public Consent | 6 | [Open module](modules/public_consent.md) |
-| Public Information | 10 | [Open module](modules/public_information.md) |
+| Public Information | 18 | [Open module](modules/public_information.md) |
 | Registry | 23 | [Open module](modules/registry.md) |
-| Rights | 48 | [Open module](modules/rights.md) |
+| Rights | 49 | [Open module](modules/rights.md) |
 | System | 8 | [Open module](modules/system.md) |
 | Tickets | 5 | [Open module](modules/tickets.md) |
 | Users | 13 | [Open module](modules/users.md) |

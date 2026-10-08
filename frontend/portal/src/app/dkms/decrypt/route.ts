@@ -16,7 +16,8 @@
  *
  * Three things it insists on:
  *
- * 1. **A session.** No cookie, no decryption. The cookie is HttpOnly and this
+ * 1. **A session** - or an outside holder's hour on its ticket. No cookie,
+ *    no decryption. The cookie is HttpOnly and this
  *    is the server, so it can be read here and cannot be read by page script.
  * 2. **A batch.** One call per page render, not one per field. The key service
  *    parallelises across its pool, so a list of two hundred rows costs about
@@ -40,6 +41,9 @@ import type { NextRequest } from "next/server";
  */
 const DKMS_URL = (process.env.DKMS_URL ?? "").replace(/\/+$/, "");
 const SESSION_COOKIE = process.env.NEXT_PUBLIC_SESSION_COOKIE ?? "cmp_session";
+/** An outside holder's hour on its ticket, after the code (0049): the API
+ *  served it that ticket's ciphertext, and this opens only what it sends. */
+const TICKET_COOKIE = process.env.NEXT_PUBLIC_TICKET_COOKIE ?? "cmp_ticket";
 
 /** The host alone, for a diagnostic: never the path, never a value. */
 const HOST = (() => {
@@ -74,7 +78,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  if (!request.cookies.get(SESSION_COOKIE)) {
+  if (!request.cookies.get(SESSION_COOKIE) && !request.cookies.get(TICKET_COOKIE)) {
     // Not an authorisation decision — the API made that when it served the
     // ciphertext. This only refuses to be an open oracle.
     return NextResponse.json({ error: "not signed in" }, { status: 401 });

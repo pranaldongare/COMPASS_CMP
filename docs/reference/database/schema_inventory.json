@@ -1,6 +1,6 @@
 {
-  "commit": "7d0da97b46fbc4ae8ebc2cad2fb55d7041b59f44",
-  "migration_head": "0048",
+  "commit": "c59d9daaf79387c3f2cdee1bf152d75af8f274d7",
+  "migration_head": "0049",
   "migrations": [
     {
       "revision": "0001",
@@ -193,6 +193,10 @@
     {
       "revision": "0048",
       "source": "backend/api/migrations/versions/0048_rights_ticket_review.py"
+    },
+    {
+      "revision": "0049",
+      "source": "backend/api/migrations/versions/0049_rights_holder_links.py"
     }
   ],
   "postgres_version": "16.15",
@@ -290,7 +294,7 @@
     {
       "name": "breach_temporary_access",
       "kind": "r",
-      "comment": "A breach-only login: one grant of the breach_holder role for one breach (S3-09, ADR 0023). Ends once; never deleted"
+      "comment": "A temporary login: one grant of the breach_holder role for one breach (S3-09) or, since 0049, one rights ticket. Ends once; never deleted"
     },
     {
       "name": "breach_ticket",
@@ -2268,7 +2272,7 @@
       "name": "breach_id",
       "position": 3,
       "type": "integer",
-      "not_null": true,
+      "not_null": false,
       "default_value": null,
       "comment": null
     },
@@ -2286,7 +2290,7 @@
       "name": "ticket_id",
       "position": 5,
       "type": "integer",
-      "not_null": true,
+      "not_null": false,
       "default_value": null,
       "comment": null
     },
@@ -2351,7 +2355,16 @@
       "type": "character varying(24)",
       "not_null": false,
       "default_value": null,
-      "comment": "breach_closed, ticket_withdrawn or account_deactivated"
+      "comment": "breach_closed, request_closed, ticket_withdrawn, reassigned or account_deactivated"
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "holder_id",
+      "position": 14,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
     },
     {
       "table_name": "breach_ticket",
@@ -6566,6 +6579,33 @@
       "comment": null
     },
     {
+      "table_name": "rights_request_holder",
+      "name": "link_token",
+      "position": 43,
+      "type": "character varying(64)",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The portal link's keyed fingerprint, for an external holder; the token is never stored"
+    },
+    {
+      "table_name": "rights_request_holder",
+      "name": "link_token_sealed",
+      "position": 44,
+      "type": "bytea",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The link token, AES-GCM sealed, so a reminder carries the same link"
+    },
+    {
+      "table_name": "rights_request_holder",
+      "name": "link_issued_at",
+      "position": 45,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
       "table_name": "rights_request_item",
       "name": "item_id",
       "position": 1,
@@ -8904,7 +8944,7 @@
       "table_name": "breach_temporary_access",
       "name": "breach_temporary_access_cause",
       "kind": "c",
-      "definition": "CHECK (((end_cause IS NULL) OR ((end_cause)::text = ANY ((ARRAY['breach_closed'::character varying, 'ticket_withdrawn'::character varying, 'account_deactivated'::character varying])::text[]))))",
+      "definition": "CHECK (((end_cause IS NULL) OR ((end_cause)::text = ANY ((ARRAY['breach_closed'::character varying, 'ticket_withdrawn'::character varying, 'account_deactivated'::character varying, 'request_closed'::character varying, 'reassigned'::character varying])::text[]))))",
       "columns": [
         "end_cause"
       ],
@@ -8967,6 +9007,23 @@
     },
     {
       "table_name": "breach_temporary_access",
+      "name": "breach_temporary_access_holder_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (holder_id) REFERENCES rights_request_holder(holder_id)",
+      "columns": [
+        "holder_id"
+      ],
+      "referenced_table": "rights_request_holder",
+      "referenced_columns": [
+        "holder_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_temporary_access",
       "name": "breach_temporary_access_pkey",
       "kind": "p",
       "definition": "PRIMARY KEY (access_id)",
@@ -9011,6 +9068,23 @@
       ],
       "delete_action": "a",
       "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_temporary_access",
+      "name": "temporary_access_for_one_ticket",
+      "kind": "c",
+      "definition": "CHECK ((((breach_id IS NOT NULL) AND (ticket_id IS NOT NULL) AND (holder_id IS NULL)) OR ((breach_id IS NULL) AND (ticket_id IS NULL) AND (holder_id IS NOT NULL))))",
+      "columns": [
+        "breach_id",
+        "ticket_id",
+        "holder_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
       "deferrable": false,
       "initially_deferred": false
     },
@@ -12773,6 +12847,23 @@
     },
     {
       "table_name": "rights_request_holder",
+      "name": "holder_link_whole",
+      "kind": "c",
+      "definition": "CHECK ((((link_token IS NULL) = (link_token_sealed IS NULL)) AND ((link_token IS NULL) = (link_issued_at IS NULL))))",
+      "columns": [
+        "link_token",
+        "link_token_sealed",
+        "link_issued_at"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request_holder",
       "name": "holder_portal_has_account",
       "kind": "c",
       "definition": "CHECK ((((channel)::text <> 'portal'::text) OR (responder_user_id IS NOT NULL)))",
@@ -12859,6 +12950,21 @@
       "definition": "UNIQUE (holder_uuid)",
       "columns": [
         "holder_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request_holder",
+      "name": "rights_request_holder_link_token_key",
+      "kind": "u",
+      "definition": "UNIQUE (link_token)",
+      "columns": [
+        "link_token"
       ],
       "referenced_table": null,
       "referenced_columns": [],
@@ -13623,6 +13729,11 @@
       "definition": "CREATE INDEX idx_breach_temporary_access_user ON public.breach_temporary_access USING btree (user_id)"
     },
     {
+      "table_name": "breach_temporary_access",
+      "name": "rights_temporary_access_open",
+      "definition": "CREATE UNIQUE INDEX rights_temporary_access_open ON public.breach_temporary_access USING btree (holder_id, user_id) WHERE ((ended_at IS NULL) AND (holder_id IS NOT NULL))"
+    },
+    {
       "table_name": "breach_ticket",
       "name": "breach_ticket_once",
       "definition": "CREATE UNIQUE INDEX breach_ticket_once ON public.breach_ticket USING btree (breach_id, holder_user_id)"
@@ -14366,6 +14477,11 @@
       "table_name": "rights_request_holder",
       "name": "rights_request_holder_holder_uuid_key",
       "definition": "CREATE UNIQUE INDEX rights_request_holder_holder_uuid_key ON public.rights_request_holder USING btree (holder_uuid)"
+    },
+    {
+      "table_name": "rights_request_holder",
+      "name": "rights_request_holder_link_token_key",
+      "definition": "CREATE UNIQUE INDEX rights_request_holder_link_token_key ON public.rights_request_holder USING btree (link_token)"
     },
     {
       "table_name": "rights_request_holder",
@@ -15328,10 +15444,10 @@
     "application_tables": 58,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 710,
-    "foreign_keys": 160,
+    "table_columns": 714,
+    "foreign_keys": 161,
     "enums": 39,
     "triggers": 50,
-    "checks": 92
+    "checks": 94
   }
 }

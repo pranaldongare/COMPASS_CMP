@@ -184,6 +184,12 @@ class HolderOut(Out):
     sent_back_reason: str | None = None
     sent_back_count: int = 0
     #: When the office accepted the answer (0048); None: not yet, or none.
+    #: An outside holder answers on the portal by a link (0049): when the
+    #: current one was sent. Null for a holder in the console.
+    link_issued_at: datetime | None = None
+    #: A colleague given a temporary login for this ticket (0049): pending
+    #: until they first sign in, then active; ended when the ticket is done.
+    temporary_access: str | None = None
     accepted_at: datetime | None = None
     accepted_by_name: str | None = None
     #: The latest message on the ticket's thread.
@@ -306,9 +312,26 @@ class TicketOut(Out):
     consent_purposes: list[str] | None = None
 
 
+class TicketItemOut(Out):
+    """One item an erasure ticket asks its holder to act on (2026-10-08):
+    which asset, and what to do with it. The legal basis stays the office's."""
+
+    item_uuid: UUID
+    decision: str
+    retain_until: date | None
+    other_subjects: int
+    state: str
+    asset_type: str
+    source_asset_ref: str
+    source_name: str
+    project_name: str
+    collected_on: date
+
+
 class TicketDetailOut(Out):
     ticket: TicketOut
     messages: list[MessageOut]
+    items: list[TicketItemOut] = Field(default_factory=list)
 
 
 class ExecutionOut(Out):
@@ -424,6 +447,10 @@ class RequestDetail(RequestOut):
     linked_from: list[LinkedRefOut]
     response_files: list[ResponseFileOut] = Field(default_factory=list)
     attachments: list[AttachmentOut] = Field(default_factory=list)
+    #: The standard words a ticket on this request asks, which each holder's
+    #: own instruction starts from (2026-10-08). The kind's words and the
+    #: confinement - nothing the request page does not already show.
+    default_instruction: str | None = None
 
 
 class TransitionsOut(Out):
@@ -655,6 +682,7 @@ async def _detail(conn: Any, row: dict[str, Any], principal: Any) -> dict[str, A
         "linked_from": await repo.linked_from(conn, request_id),
         "response_files": await repo.response_files_of(conn, request_id),
         "attachments": await repo.attachments_of(conn, request_id),
+        "default_instruction": service.default_instruction(row),
     }
 
 
@@ -1210,6 +1238,33 @@ async def send_back_ticket(
             holder_uuid=str(holder_uuid),
             reason=body.reason,
             due_at=body.due_at,
+            role=principal.role,
+            actor_id=principal.user_id,
+        )
+
+
+class InstructionIn(Schema):
+    #: Empty or null: the standard words.
+    instruction: Annotated[str, Field(max_length=20_000)] | None = None
+
+
+@router.put(
+    "/{request_uuid}/holders/{holder_uuid}/instruction",
+    response_model=HolderOut,
+    summary="What this holder's ticket will ask, before it is sent",
+)
+async def set_instruction(
+    request_uuid: UUID, holder_uuid: UUID, body: InstructionIn, principal: RightsWriter
+) -> dict[str, Any]:
+    """Each holder its own words (2026-10-08), starting from the standard ones;
+    fixed once the ticket is sent."""
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        return await service.set_instruction(
+            conn,
+            row,
+            holder_uuid=str(holder_uuid),
+            instruction=body.instruction,
             role=principal.role,
             actor_id=principal.user_id,
         )

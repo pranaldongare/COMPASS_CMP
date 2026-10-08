@@ -488,6 +488,12 @@ who also holds a real role keeps it, and their tickets with it.
 **Reopening their ticket** opens a new grant and emails them that a ticket is
 waiting; reopening a closed breach does not reopen anybody's ticket.
 
+**Rights tickets use the same logins** (0049, 2026-10-08): a rights ticket
+sent to an internal address with no console login gives the same temporary
+login, recorded in the same table against the rights holder
+(`breach_temporary_access.holder_id`, `breach_id` then empty). End temporary
+access ends both kinds ([rights-requests.md](rights-requests.md#how-a-holder-is-reached)).
+
 **The off switch is the administrator's.** **End temporary access** on the
 register (never `end_staff_access`) ends every open grant and puts the account
 back as it was before its first grant: switched off if it was made for a

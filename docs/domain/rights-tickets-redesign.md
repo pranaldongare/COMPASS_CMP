@@ -39,6 +39,8 @@ Done on 2026-10-08.
 
 ## Phase 2: external holders on the portal, internal without a login, per-holder instructions
 
+Done on 2026-10-08 (migration 0049; [rights-requests.md](rights-requests.md#how-a-holder-is-reached)).
+
 | # | Change |
 |---|---|
 | 1 | An external holder's email carries **only a link** to the **external portal**. They confirm with a one-time code sent to the address on the ticket, then read what is asked, answer (done, partly done, could not do), attach proof, and message the office - all on one page, no account |

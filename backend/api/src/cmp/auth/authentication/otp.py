@@ -51,6 +51,9 @@ class Scope:
     #: A nominee proving a recorded contact before the link's accept or decline
     #: counts. Keyed on the nomination uuid.
     NOMINATION_ACCEPT = "nomination_accept"
+    #: An outside holder opening its ticket's link, proving the address the
+    #: ticket was sent to (0049). Keyed on the holder uuid.
+    HOLDER_TICKET = "holder_ticket"
 
 
 @dataclass(frozen=True, slots=True)

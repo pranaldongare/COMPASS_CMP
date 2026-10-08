@@ -37,6 +37,29 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key-at-least-32-bytes-long!!")
 os.environ.setdefault("COOKIE_SECURE", "false")
 
 
+@pytest.fixture(autouse=True)
+def _no_real_tasks(monkeypatch: pytest.MonkeyPatch) -> None:
+    """No test queues a real task.
+
+    The suites roll their rows back, but a task queued through Celery is not
+    rolled back with them: it runs against the live worker. Since every DPO is
+    told of each new rights request (2026-10-08), one integration run against
+    a development database holding a few hundred DPOs from earlier runs queued
+    some hundred thousand emails, and their results filled Redis until it
+    refused writes. A test that wants to see what was sent captures dispatch
+    itself (`sent`, `queued`), above this; one that simulates a broker outage
+    patches the broker, which this leaves alone.
+    """
+    from types import SimpleNamespace
+
+    from celery.app.task import Task
+
+    def not_queued(self: Any, *args: Any, **kwargs: Any) -> Any:
+        return SimpleNamespace(id="not-queued-in-tests")
+
+    monkeypatch.setattr(Task, "apply_async", not_queued)
+
+
 @pytest.fixture(scope="session")
 def anyio_backend() -> str:
     return "asyncio"

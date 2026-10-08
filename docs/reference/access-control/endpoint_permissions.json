@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 315,
-  "registered_business_and_system_operations": 318,
+  "documented_operations": 324,
+  "registered_business_and_system_operations": 327,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -12262,6 +12262,387 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
       ]
+    },
+    {
+      "module": "public_information",
+      "method": "GET",
+      "path": "/holder-tickets/{token}",
+      "summary": "What an outside holder's ticket link opens, before the code",
+      "function": "open_link",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "data_subject",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC"
+      },
+      "conditions": [
+        "A valid ticket link: the token's keyed fingerprint names an issued ticket, and the link is that ticket's current one (a ticket sent to somebody else has a new link). Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. Shows the reference, the holder's name, its state and date, and where the code goes - masked. Rate-limited per address (`holder_link_ip`). (0049, 2026-10-08)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/holder_tickets.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/holder_link.py"
+      ]
+    },
+    {
+      "module": "public_information",
+      "method": "POST",
+      "path": "/holder-tickets/{token}/code",
+      "summary": "Send a code to the address on the ticket",
+      "function": "send_code",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "data_subject",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC"
+      },
+      "conditions": [
+        "A valid ticket link: the token's keyed fingerprint names an issued ticket, and the link is that ticket's current one (a ticket sent to somebody else has a new link). Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. The code goes to the address the ticket was sent to, never one typed. Rate-limited per ticket (`holder_ticket_code`, five an hour) and per address (`holder_link_act_ip`). (0049)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/holder_tickets.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/holder_link.py"
+      ]
+    },
+    {
+      "module": "public_information",
+      "method": "POST",
+      "path": "/holder-tickets/{token}/verify",
+      "summary": "Enter the code: an hour on the ticket",
+      "function": "verify",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "data_subject",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC"
+      },
+      "conditions": [
+        "A valid ticket link: the token's keyed fingerprint names an issued ticket, and the link is that ticket's current one (a ticket sent to somebody else has a new link). Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. A right code (scope `holder_ticket`, five attempts) sets `cmp_ticket` for an hour (HOLDER_TICKET_SESSION_S). (0049)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/holder_tickets.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/holder_link.py"
+      ]
+    },
+    {
+      "module": "public_information",
+      "method": "POST",
+      "path": "/holder-tickets/{token}/sign-out",
+      "summary": "Close the ticket on this device",
+      "function": "sign_out",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "data_subject",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC"
+      },
+      "conditions": [
+        "Ends the hour the cookie holds, if any, and clears the cookie. (0049)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/holder_tickets.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/holder_link.py"
+      ]
+    },
+    {
+      "module": "public_information",
+      "method": "GET",
+      "path": "/holder-tickets/{token}/ticket",
+      "summary": "The ticket, after the code",
+      "function": "read_ticket",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "data_subject",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC"
+      },
+      "conditions": [
+        "A valid ticket link: the token's keyed fingerprint names an issued ticket, and the link is that ticket's current one (a ticket sent to somebody else has a new link). Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. And the hour the code opened: the HttpOnly, SameSite=Strict `cmp_ticket` cookie, whose fingerprint in Redis names this ticket and this link (401 `code_needed` otherwise). What is asked, the erasure items, and the messages - the platform's brief of what it holds about the person first; sealed values as stored, opened by the portal. Reading marks the office's messages read. (0049)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/holder_tickets.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/holder_link.py"
+      ]
+    },
+    {
+      "module": "public_information",
+      "method": "POST",
+      "path": "/holder-tickets/{token}/messages",
+      "summary": "An outside holder writes to the Privacy Office",
+      "function": "write",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "data_subject",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC"
+      },
+      "conditions": [
+        "A valid ticket link: the token's keyed fingerprint names an issued ticket, and the link is that ticket's current one (a ticket sent to somebody else has a new link). Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. And the hour the code opened: the HttpOnly, SameSite=Strict `cmp_ticket` cookie, whose fingerprint in Redis names this ticket and this link (401 `code_needed` otherwise). Not on a closed request (409). A file up to 25 MB; every DPO is told. On the trail with no actor, side holder. (0049)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/holder_tickets.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/holder_link.py"
+      ]
+    },
+    {
+      "module": "public_information",
+      "method": "POST",
+      "path": "/holder-tickets/{token}/answer",
+      "summary": "An outside holder gives its answer",
+      "function": "answer",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "data_subject",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC"
+      },
+      "conditions": [
+        "A valid ticket link: the token's keyed fingerprint names an issued ticket, and the link is that ticket's current one (a ticket sent to somebody else has a new link). Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. And the hour the code opened: the HttpOnly, SameSite=Strict `cmp_ticket` cookie, whose fingerprint in Redis names this ticket and this link (401 `code_needed` otherwise). Only an open ticket on an open request (409). What was done (done, partial, failed), what is held, and proof; it waits for the office to accept it or send it back. On the trail with no actor, channel `link`. (0049)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/holder_tickets.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/holder_link.py"
+      ]
+    },
+    {
+      "module": "public_information",
+      "method": "GET",
+      "path": "/holder-tickets/{token}/messages/{message_uuid}/evidence",
+      "summary": "Download a file on the ticket's messages",
+      "function": "message_file",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "data_subject",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC"
+      },
+      "conditions": [
+        "A valid ticket link: the token's keyed fingerprint names an issued ticket, and the link is that ticket's current one (a ticket sent to somebody else has a new link). Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. And the hour the code opened: the HttpOnly, SameSite=Strict `cmp_ticket` cookie, whose fingerprint in Redis names this ticket and this link (401 `code_needed` otherwise). A file on this ticket's thread only; every download is audited. (0049)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/holder_tickets.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/holder_link.py"
+      ]
+    },
+    {
+      "module": "rights",
+      "method": "PUT",
+      "path": "/requests/{request_uuid}/holders/{holder_uuid}/instruction",
+      "summary": "What this holder's ticket will ask, before it is sent",
+      "function": "set_instruction",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RightsWriter",
+      "resolved_gate": "RequireResource(rights_request, write=True)",
+      "route_roles": [
+        "dpo",
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "rights_request",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "SCOPED",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO"
+      },
+      "conditions": [
+        "Only before the ticket is sent (409 `ticket_already_sent`); empty or null goes back to the standard words. Sealed at rest, as every instruction. The trail records `rights.holder_instruction_set` with whether the words are the office's own, never the words. (2026-10-08)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py"
+      ]
     }
   ],
   "amended": [
@@ -12349,6 +12730,11 @@
       "on": "2026-10-08",
       "commit": "rights tickets redesign",
       "note": "The review step and two repairs on a rights request's holders: POST .../holders/{holder_uuid}/accept, POST .../holders/{holder_uuid}/reopen and DELETE .../holders/{holder_uuid}. Gated as every other holder move."
+    },
+    {
+      "on": "2026-10-08",
+      "commit": "rights tickets phase 2",
+      "note": "An outside holder answers its rights ticket on the portal by a link and a one-time code: eight public /holder-tickets/{token} routes. Each holder's own instruction before its ticket is sent: PUT /requests/{request_uuid}/holders/{holder_uuid}/instruction."
     }
   ]
 }

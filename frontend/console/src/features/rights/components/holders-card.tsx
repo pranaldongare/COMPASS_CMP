@@ -20,6 +20,7 @@ import {
   Check,
   ChevronRight,
   ExternalLink,
+  Link2,
   Mail,
   Monitor,
   MoreHorizontal,
@@ -55,6 +56,7 @@ import { useProcessors, useRespondents } from "@/features/registry";
 import { holderMessageAttachmentUrl } from "@/features/rights/api";
 import { ConfinedNote } from "@/features/rights/components/consent-scope";
 import { BriefPanel } from "@/features/rights/components/thread";
+import { TicketItems } from "@/features/rights/components/ticket-items";
 import {
   useAcceptTicket,
   useAddHolder,
@@ -70,6 +72,7 @@ import {
   useReopenTicket,
   useReturnTicket,
   useSendBackTicket,
+  useSetInstruction,
   useWithdrawTicket,
 } from "@/features/rights/mutations";
 import { useHolderThread } from "@/features/rights/queries";
@@ -283,15 +286,7 @@ export function HoldersCard({ request: r }: { request: RightsRequestDetail }) {
                         {h.label}
                       </button>
                       <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-text-muted">
-                        {h.channel === "portal" ? (
-                          <>
-                            <Monitor className="size-3" aria-hidden="true" /> In the console
-                          </>
-                        ) : (
-                          <>
-                            <Mail className="size-3" aria-hidden="true" /> By email
-                          </>
-                        )}
+                        <Reach holder={h} />
                         {h.responder_user_name || h.responder_name ? ` · ${h.responder_user_name ?? h.responder_name}` : ""}
                         <UnreadBadge count={h.unread_for_office} />
                       </span>
@@ -349,11 +344,43 @@ export function HoldersCard({ request: r }: { request: RightsRequestDetail }) {
   );
 }
 
+const TEMPORARY: Record<NonNullable<RightsHolder["temporary_access"]>, string> = {
+  pending: "temporary login · not yet signed in",
+  active: "temporary login",
+  ended: "temporary login · read only",
+};
+
+/** How the holder is reached and answers (0049). */
+function Reach({ holder: h }: { holder: RightsHolder }) {
+  if (h.channel === "portal") {
+    return (
+      <>
+        <Monitor className="size-3" aria-hidden="true" /> In the console
+        {h.temporary_access && ` · ${TEMPORARY[h.temporary_access]}`}
+      </>
+    );
+  }
+  if (h.link_issued_at) {
+    return (
+      <>
+        <Link2 className="size-3" aria-hidden="true" /> Outside · answers by link
+      </>
+    );
+  }
+  return (
+    <>
+      <Mail className="size-3" aria-hidden="true" /> By email
+    </>
+  );
+}
+
 function describe(h: RightsHolder): string {
   const reach =
     h.channel === "portal"
-      ? `They answer in the console${h.responder_user_name ? ` (${h.responder_user_name})` : ""}.`
-      : `They are reached by email${h.responder_contact ? ` at ${h.responder_contact}` : ""}; you record their answer.`;
+      ? `They answer in the console${h.responder_user_name ? ` (${h.responder_user_name})` : ""}${h.temporary_access ? ", on a temporary login" : ""}.`
+      : h.link_issued_at
+        ? `Outside the organisation: emailed a link to the ticket${h.responder_contact ? ` at ${h.responder_contact}` : ""}, they answer on the portal after a code. You can record their answer for them.`
+        : `Reached by email${h.responder_contact ? ` at ${h.responder_contact}` : ""}; an internal colleague gets a console login, anyone else a link, when the ticket is sent.`;
   return `${h.state_label}${h.due_at ? ` · answer by ${formatDate(h.due_at)}` : ""}. ${reach}`;
 }
 
@@ -361,7 +388,6 @@ function SendTickets({ request: r, count }: { request: RightsRequestDetail; coun
   const toast = useToast();
   const issue = useIssueTickets(r.request_uuid);
   const [open, setOpen] = React.useState(false);
-  const [instruction, setInstruction] = React.useState("");
   const [dueOn, setDueOn] = React.useState("");
   return (
     <div className="rounded-md border border-accent-border bg-accent-subtle p-3">
@@ -370,9 +396,10 @@ function SendTickets({ request: r, count }: { request: RightsRequestDetail; coun
       </p>
       {open ? (
         <div className="mt-2 space-y-3">
-          <Field label="What you ask them" hint="Leave empty for the standard words for this kind of request.">
-            {(p) => <Textarea {...p} rows={3} value={instruction} onChange={(e) => setInstruction(e.target.value)} />}
-          </Field>
+          <p className="text-xs text-text-muted">
+            Each ticket asks what its holder&apos;s instruction says - the standard words unless you
+            changed them. Open a holder to read or change theirs before sending.
+          </p>
           <Field
             label="Answer by"
             hint={`Halfway to the response date (${formatDate(r.clock.halfway_at)}) unless you choose a day - early on purpose, so a late answer can still be chased in time.`}
@@ -386,10 +413,7 @@ function SendTickets({ request: r, count }: { request: RightsRequestDetail; coun
               loading={issue.isPending}
               onClick={async () => {
                 try {
-                  await issue.mutateAsync({
-                    instruction: instruction.trim() || null,
-                    due_at: dueOn ? endOfDay(dueOn) : null,
-                  });
+                  await issue.mutateAsync({ instruction: null, due_at: dueOn ? endOfDay(dueOn) : null });
                   toast.success(count === 1 ? "Ticket sent" : `${count} tickets sent`, "You will see each answer here when it comes.");
                   setOpen(false);
                 } catch (err) {
@@ -433,6 +457,8 @@ function TicketPanel({
   const main = h.moves.find((m) => m.primary);
   const rest = h.moves.filter((m) => m !== main && m.move !== "message");
   const actingMove = h.moves.find((m) => m.move === acting) ?? null;
+  const unsent = h.state === "not_confirmed" || h.state === "not_sent";
+  const items = r.items.filter((i) => i.holder_uuid === h.holder_uuid);
 
   return (
     <div className="space-y-5">
@@ -492,7 +518,9 @@ function TicketPanel({
         </section>
       )}
 
-      {(h.instruction || h.brief) && (
+      {unsent && h.moves.length > 0 && <InstructionEditor request={r} holder={h} />}
+
+      {!unsent && (h.instruction || h.brief) && (
         <section className="space-y-2">
           <h3 className="text-xs font-semibold tracking-wide text-text-subtle uppercase">What they were asked</h3>
           {h.instruction && <p className="rounded-md bg-bg-inset p-3 text-sm whitespace-pre-wrap">{h.instruction}</p>}
@@ -505,6 +533,10 @@ function TicketPanel({
             </details>
           )}
         </section>
+      )}
+
+      {r.request_type === "erasure" && (
+        <TicketItems items={items} title={unsent ? "Items their ticket will list" : "Items on their ticket"} />
       )}
 
       {h.issued_at && <ThreadSection request={r} holder={h} />}
@@ -526,6 +558,57 @@ function TicketPanel({
         </details>
       )}
     </div>
+  );
+}
+
+/** This holder's own words, before its ticket is sent; the standard words to start from. */
+function InstructionEditor({ request: r, holder: h }: { request: RightsRequestDetail; holder: RightsHolder }) {
+  const toast = useToast();
+  const save = useSetInstruction(r.request_uuid);
+  const standard = r.default_instruction ?? "";
+  const [text, setText] = React.useState(h.instruction ?? standard);
+  const own = Boolean(h.instruction);
+  const changed = text.trim() !== (h.instruction ?? standard).trim();
+  async function store(value: string | null, done: string) {
+    try {
+      await save.mutateAsync({ holderUuid: h.holder_uuid, instruction: value });
+      toast.success(done);
+    } catch (err) {
+      toast.error("Not saved", messageOf(err, "The server refused."));
+    }
+  }
+  return (
+    <section className="space-y-2">
+      <Field
+        label="What their ticket will ask"
+        hint={own ? "Your words for this holder." : "The standard words for this kind of request. Change them for this holder if you need to."}
+      >
+        {(p) => <Textarea {...p} rows={5} maxLength={20_000} value={text} onChange={(e) => setText(e.target.value)} />}
+      </Field>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={!changed || !text.trim()}
+          loading={save.isPending}
+          onClick={() => store(text.trim() === standard.trim() ? null : text.trim(), "Saved for this holder")}
+        >
+          Save
+        </Button>
+        {own && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={async () => {
+              setText(standard);
+              await store(null, "Back to the standard words");
+            }}
+          >
+            Use the standard words
+          </Button>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -910,6 +993,7 @@ const CONTACT_LABEL: Record<string, string> = {
   note: "Note",
   escalated: "Final reminder sent",
   returned_on_portal: "Answered in the console",
+  returned_by_link: "Answered by link",
   sent_back: "Sent back",
   reminder: "Reminder sent",
   reassigned: "Sent to someone else",

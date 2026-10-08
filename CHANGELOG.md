@@ -8,6 +8,26 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Rights tickets for holders outside the console** (2026-10-08, phase 2 of
+  the redesign). How a holder is reached is settled as its ticket is sent. A
+  colleague with a console login answers in My tasks, as before. A colleague
+  inside the organisation (an address on `BREACH_TICKET_EMAIL_DOMAINS`) with
+  no login is given a **temporary login**, as a breach ticket's holder is -
+  the same role, email and off switch, recorded in the same table - ended
+  when the request closes or the ticket is withdrawn or moved, given back if
+  it reopens. Anyone outside - a vendor, a processor - is emailed **a link
+  and nothing of the request**; on the portal at `/ticket/{token}` they ask
+  for a **one-time code** sent to the address on the ticket, which opens it
+  for an hour, then read what is asked, the items and what the platform holds
+  about the person, write to the office with files, and give their answer,
+  which waits for review. A ticket sent to somebody else gets a new link and
+  the old one stops working. Two new emails: *Ticket link to an outside
+  holder* and *Code to open a ticket*; internal holders' emails now say where
+  to answer. **Each holder its own instruction**: the DPO can change what a
+  holder's ticket asks before it is sent, starting from the standard words;
+  and an erasure ticket lists each item the holder holds and what to do with
+  it - erase it, remove the person, keep it until a date, or set it aside.
+  Migration 0049; nine new endpoints.
 - **Rights tickets, redesigned: a guided path and a review step**
   (2026-10-08). The holders card is a path - find who holds the data, choose
   who answers, send tickets, wait for answers, review answers - over one
@@ -820,6 +840,12 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **Tests no longer queue real tasks** (2026-10-08). The test suites rolled
+  their rows back, but tasks they queued still ran on the live worker: since
+  every DPO is told of each new rights request, one integration run against a
+  development database with a few hundred DPOs queued around a hundred
+  thousand emails, and their results filled Redis until it refused writes.
+  A root fixture now stops every task at `apply_async`.
 - **Log an incident offers every processor and data source, A to Z.** The
   pickers asked for the newest fifty, so an older processor - the seeded SEED
   among them - could not be chosen once the register grew. They now load the

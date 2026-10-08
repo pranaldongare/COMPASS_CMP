@@ -558,6 +558,12 @@ _HOLDER_SELECT = """
   h.return_evidence_name, h.last_reminded_at, h.reminders_sent,
   h.sent_back_at, h.sent_back_reason, h.sent_back_count,
   h.accepted_at, ab.full_name AS accepted_by_name,
+  h.link_token_sealed, h.link_issued_at,
+  (SELECT CASE WHEN a.ended_at IS NOT NULL THEN 'ended'
+               WHEN tu.status = 'active' THEN 'active' ELSE 'pending' END
+     FROM breach_temporary_access a JOIN auth_user tu ON tu.id = a.user_id
+    WHERE a.holder_id = h.holder_id AND a.user_id = h.responder_user_id
+    ORDER BY a.access_id DESC LIMIT 1) AS temporary_access,
   (SELECT rr.status::text FROM rights_request rr WHERE rr.request_id = h.request_id)
     AS request_status,
   (SELECT max(m.created_at) FROM rights_ticket_message m WHERE m.holder_id = h.holder_id)
@@ -651,6 +657,9 @@ _HOLDER_MUTABLE = frozenset(
         "confirmed_by",
         "accepted_at",
         "accepted_by",
+        "link_token",
+        "link_token_sealed",
+        "link_issued_at",
         "ticket_status",
         "instruction",
         "responder_name",
@@ -993,6 +1002,27 @@ _TICKET_SELECT = f"""
 """
 
 
+async def ticket_by_link(conn: Conn, fingerprint: str) -> Row | None:
+    """The ticket an external holder's link opens (0049), by its fingerprint."""
+    return await fetch_one(conn, f"SELECT {_TICKET_SELECT} WHERE h.link_token = %s", (fingerprint,))
+
+
+async def reference_of_holder(conn: Conn, holder_id: int) -> str | None:
+    """The reference of the request a holder belongs to."""
+    row = await fetch_one(
+        conn,
+        """SELECT r.reference FROM rights_request_holder h
+             JOIN rights_request r ON r.request_id = h.request_id
+            WHERE h.holder_id = %s""",
+        (holder_id,),
+    )
+    return str(row["reference"]) if row else None
+
+
+async def ticket_by_holder_id(conn: Conn, holder_id: int) -> Row | None:
+    return await fetch_one(conn, f"SELECT {_TICKET_SELECT} WHERE h.holder_id = %s", (holder_id,))
+
+
 async def tickets_for_user(conn: Conn, user_id: int, *, open_only: bool = False) -> list[Row]:
     """Tickets addressed to this member of staff: the portal channel's inbox.
 
@@ -1076,6 +1106,34 @@ _ITEM_SELECT = """
   LEFT JOIN rights_request_holder h ON h.holder_id = i.holder_id
   LEFT JOIN auth_user db ON db.id = i.decided_by
 """
+
+
+async def link_items_to_holder(
+    conn: Conn, request_id: int, holder_id: int, processor_id: int
+) -> int:
+    """Items of this request held at this processor's sources and not yet
+    anyone's become this holder's: the scope may be found before the holder."""
+    cur = await conn.execute(
+        """UPDATE rights_request_item i SET holder_id = %s
+             FROM asset_consent ac
+             JOIN data_asset da  ON da.asset_id = ac.asset_id
+             JOIN data_source ds ON ds.source_id = da.source_id
+            WHERE i.request_id = %s AND i.holder_id IS NULL
+              AND ac.asset_consent_id = i.asset_consent_id
+              AND ds.processor_id = %s""",
+        (holder_id, request_id, processor_id),
+    )
+    return cur.rowcount
+
+
+async def items_for_holder(conn: Conn, holder_id: int) -> list[Row]:
+    """What one holder is asked to do, item by item: the decided items it holds."""
+    return await fetch_all(
+        conn,
+        f"SELECT {_ITEM_SELECT} WHERE i.holder_id = %s AND i.decision IS NOT NULL "
+        "ORDER BY c.collected_on, i.item_id",
+        (holder_id,),
+    )
 
 
 async def items_of(conn: Conn, request_id: int) -> list[Row]:

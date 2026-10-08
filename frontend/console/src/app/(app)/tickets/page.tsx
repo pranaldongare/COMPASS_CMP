@@ -50,6 +50,7 @@ import { BreachTicketCard } from "@/features/breach/components/my-breach-tickets
 import { useMyBreachTickets } from "@/features/breach/queries";
 import { ReplyBox, Thread, UnreadBadge } from "@/components/data-display/thread";
 import { BriefPanel } from "@/features/rights/components/thread";
+import { TicketItems } from "@/features/rights/components/ticket-items";
 import { useMessageOffice, useReturnMyTicket } from "@/features/rights/mutations";
 import { useMyTicket, useMyTickets } from "@/features/rights/queries";
 import { formatDate, formatDateTime } from "@/lib/format";
@@ -343,6 +344,7 @@ function Respond({ ticket: t, onDone }: { ticket: MyTicket; onDone: () => void }
           </div>
         </details>
       )}
+      {detail.data?.items && <TicketItems items={detail.data.items} />}
       <Thread
         messages={detail.data?.messages ?? []}
         you="holder"

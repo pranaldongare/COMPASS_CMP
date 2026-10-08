@@ -1,5 +1,10 @@
 # ruff: noqa: E501 - the table in the docstring is read as a table; wrapped, it is not.
-"""Breach-only logins: who may hold a ticket, and for how long (S3-09).
+"""Temporary logins: who may hold a ticket, and for how long (S3-09).
+
+Since 0049 a rights ticket gives one too, to a colleague on an internal domain
+with no console login (`grant_for_holder`): the same role, the same
+invitation, the same off switch, recorded in the same table. Its grant ends
+when the request closes, or the ticket is withdrawn or sent to somebody else.
 
 A breach ticket can go to somebody with no console login (BD-04, ADR 0023).
 The DPO - or a holder adding a colleague - gives a name, an email and
@@ -57,6 +62,8 @@ Row = dict[str, Any]
 BREACH_CLOSED = "breach_closed"
 TICKET_WITHDRAWN = "ticket_withdrawn"
 ACCOUNT_DEACTIVATED = "account_deactivated"
+REQUEST_CLOSED = "request_closed"
+REASSIGNED = "reassigned"
 
 #: Roles that already sign in to the console in full: an ordinary ticket.
 _STAFF = frozenset(r.value for r in Role) - {Role.DATA_SUBJECT.value, Role.BREACH_HOLDER.value}
@@ -134,6 +141,76 @@ async def grant(
     sign in if they cannot yet. True if that email went; False if they already
     sign in, and the caller tells them a ticket is waiting instead. The caller
     holds the breach row."""
+
+    async def add(previous: str | None, account_created: bool) -> Row | None:
+        return await repo.add_grant(
+            conn,
+            breach_id=int(breach["breach_id"]),
+            user_id=int(user["id"]),
+            ticket_id=ticket_id,
+            account_created=account_created,
+            previous_role=previous,
+            granted_by=actor_id,
+        )
+
+    return await _grant(
+        conn,
+        user=user,
+        created=created,
+        actor_id=actor_id,
+        cause=cause,
+        reference=str(breach["reference"]),
+        add=add,
+        already="on this breach",
+    )
+
+
+async def grant_for_holder(
+    conn: Conn,
+    *,
+    holder_id: int,
+    reference: str,
+    user: Row,
+    created: bool,
+    actor_id: int,
+    cause: str = "rights_ticket",
+) -> bool:
+    """A temporary login for one rights ticket (0049): as `grant`, for the
+    holder of a ticket on request `reference`. The caller holds the request."""
+
+    async def add(previous: str | None, account_created: bool) -> Row | None:
+        return await repo.add_holder_grant(
+            conn,
+            holder_id=holder_id,
+            user_id=int(user["id"]),
+            account_created=account_created,
+            previous_role=previous,
+            granted_by=actor_id,
+        )
+
+    return await _grant(
+        conn,
+        user=user,
+        created=created,
+        actor_id=actor_id,
+        cause=cause,
+        reference=reference,
+        add=add,
+        already="on this ticket",
+    )
+
+
+async def _grant(
+    conn: Conn,
+    *,
+    user: Row,
+    created: bool,
+    actor_id: int,
+    cause: str,
+    reference: str,
+    add: Any,
+    already: str,
+) -> bool:
     user_id = int(user["id"])
     role = str(user["role"])
     if role == Role.BREACH_HOLDER.value:
@@ -151,17 +228,9 @@ async def grant(
     else:
         previous = None if created else role
         account_created = created
-    made = await repo.add_grant(
-        conn,
-        breach_id=int(breach["breach_id"]),
-        user_id=user_id,
-        ticket_id=ticket_id,
-        account_created=account_created,
-        previous_role=previous,
-        granted_by=actor_id,
-    )
+    made = await add(previous, account_created)
     if made is None:
-        raise Conflict("This person already holds access on this breach", code="access_exists")
+        raise Conflict(f"This person already holds access {already}", code="access_exists")
     if role != Role.BREACH_HOLDER.value:
         await user_repo.set_role(conn, user_id, Role.BREACH_HOLDER.value)
     if account_created and str(user["status"]) == UserStatus.DEACTIVATED.value:
@@ -175,7 +244,7 @@ async def grant(
         entity_id=user_id,
         subject_user_id=user_id,
         actor_user_id=actor_id,
-        detail={"reference": breach["reference"], "cause": cause},
+        detail={"reference": reference, "cause": cause},
     )
     fresh = await user_repo.by_id(conn, user_id)
     assert fresh is not None
@@ -197,14 +266,20 @@ async def end(conn: Conn, grant_row: Row, *, cause: str, actor_id: int | None) -
         entity_id=user_id,
         subject_user_id=user_id,
         actor_user_id=actor_id,
-        detail={"reference": await _reference(conn, int(grant_row["breach_id"])), "cause": cause},
+        detail={"reference": await _reference(conn, grant_row), "cause": cause},
     )
 
 
-async def _reference(conn: Conn, breach_id: int) -> str:
+async def _reference(conn: Conn, grant_row: Row) -> str:
+    if grant_row.get("reference"):
+        return str(grant_row["reference"])
+    if grant_row.get("holder_id"):
+        from cmp.db.repositories import rights as rights_repo
+
+        return await rights_repo.reference_of_holder(conn, int(grant_row["holder_id"])) or ""
     from cmp.db.repositories import breaches as breach_repo
 
-    row = await breach_repo.by_breach_id(conn, breach_id)
+    row = await breach_repo.by_breach_id(conn, int(grant_row["breach_id"]))
     return str(row["reference"]) if row else ""
 
 
@@ -221,6 +296,22 @@ async def end_for_ticket(conn: Conn, breach_id: int, user_id: int, *, actor_id: 
     row = await repo.open_grant(conn, breach_id, user_id)
     if row:
         await end(conn, row, cause=TICKET_WITHDRAWN, actor_id=actor_id)
+
+
+async def end_for_holder(conn: Conn, holder_id: int, *, cause: str, actor_id: int | None) -> int:
+    """A rights ticket's temporary login ends: withdrawn, or sent to somebody else."""
+    rows = await repo.open_holder_grants(conn, holder_id)
+    for row in rows:
+        await end(conn, row, cause=cause, actor_id=actor_id)
+    return len(rows)
+
+
+async def end_on_request(conn: Conn, request_id: int, *, actor_id: int | None) -> int:
+    """The request closed: every rights ticket's temporary login on it ends."""
+    rows = await repo.open_grants_on_request(conn, request_id)
+    for row in rows:
+        await end(conn, row, cause=REQUEST_CLOSED, actor_id=actor_id)
+    return len(rows)
 
 
 async def remove(conn: Conn, user: Row, *, actor_id: int) -> bool:

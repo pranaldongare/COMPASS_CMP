@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict JnrplqniRqYjHVOI8ukXWL3L6cGE40z8bmcRPcMBnYaxJTeECNQ0AMIZMlrwh8C
+\restrict AWgsGfDYRx8weGuHa4XfLhba7TgAldKSL3VCvM2MOxAqHydOOfsRpUVmw08bgaV
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -722,6 +722,7 @@ BEGIN
   IF NEW.access_id IS DISTINCT FROM OLD.access_id
      OR NEW.access_uuid IS DISTINCT FROM OLD.access_uuid
      OR NEW.breach_id IS DISTINCT FROM OLD.breach_id
+     OR NEW.holder_id IS DISTINCT FROM OLD.holder_id
      OR NEW.user_id IS DISTINCT FROM OLD.user_id
      OR NEW.ticket_id IS DISTINCT FROM OLD.ticket_id
      OR NEW.account_created IS DISTINCT FROM OLD.account_created
@@ -2240,9 +2241,9 @@ ALTER SEQUENCE public.breach_status_history_history_id_seq OWNED BY public.breac
 CREATE TABLE public.breach_temporary_access (
     access_id integer NOT NULL,
     access_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
-    breach_id integer NOT NULL,
+    breach_id integer,
     user_id integer NOT NULL,
-    ticket_id integer NOT NULL,
+    ticket_id integer,
     account_created boolean NOT NULL,
     previous_role public.user_role,
     granted_by integer NOT NULL,
@@ -2250,8 +2251,10 @@ CREATE TABLE public.breach_temporary_access (
     ended_at timestamp with time zone,
     ended_by integer,
     end_cause character varying(24),
-    CONSTRAINT breach_temporary_access_cause CHECK (((end_cause IS NULL) OR ((end_cause)::text = ANY ((ARRAY['breach_closed'::character varying, 'ticket_withdrawn'::character varying, 'account_deactivated'::character varying])::text[])))),
-    CONSTRAINT breach_temporary_access_ended CHECK (((ended_at IS NULL) = (end_cause IS NULL)))
+    holder_id integer,
+    CONSTRAINT breach_temporary_access_cause CHECK (((end_cause IS NULL) OR ((end_cause)::text = ANY ((ARRAY['breach_closed'::character varying, 'ticket_withdrawn'::character varying, 'account_deactivated'::character varying, 'request_closed'::character varying, 'reassigned'::character varying])::text[])))),
+    CONSTRAINT breach_temporary_access_ended CHECK (((ended_at IS NULL) = (end_cause IS NULL))),
+    CONSTRAINT temporary_access_for_one_ticket CHECK ((((breach_id IS NOT NULL) AND (ticket_id IS NOT NULL) AND (holder_id IS NULL)) OR ((breach_id IS NULL) AND (ticket_id IS NULL) AND (holder_id IS NOT NULL))))
 );
 
 
@@ -2259,7 +2262,7 @@ CREATE TABLE public.breach_temporary_access (
 -- Name: TABLE breach_temporary_access; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON TABLE public.breach_temporary_access IS 'A breach-only login: one grant of the breach_holder role for one breach (S3-09, ADR 0023). Ends once; never deleted';
+COMMENT ON TABLE public.breach_temporary_access IS 'A temporary login: one grant of the breach_holder role for one breach (S3-09) or, since 0049, one rights ticket. Ends once; never deleted';
 
 
 --
@@ -2273,7 +2276,7 @@ COMMENT ON COLUMN public.breach_temporary_access.previous_role IS 'The role the 
 -- Name: COLUMN breach_temporary_access.end_cause; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.breach_temporary_access.end_cause IS 'breach_closed, ticket_withdrawn or account_deactivated';
+COMMENT ON COLUMN public.breach_temporary_access.end_cause IS 'breach_closed, request_closed, ticket_withdrawn, reassigned or account_deactivated';
 
 
 --
@@ -4149,9 +4152,13 @@ CREATE TABLE public.rights_request_holder (
     return_outcome character varying(8),
     accepted_at timestamp with time zone,
     accepted_by integer,
+    link_token character varying(64),
+    link_token_sealed bytea,
+    link_issued_at timestamp with time zone,
     CONSTRAINT holder_accepted_is_returned CHECK (((accepted_at IS NULL) OR (ticket_status = 'returned'::public.rights_ticket_status))),
     CONSTRAINT holder_channel CHECK (((channel)::text = ANY ((ARRAY['portal'::character varying, 'email'::character varying])::text[]))),
     CONSTRAINT holder_issued_has_date CHECK (((ticket_status = 'pending'::public.rights_ticket_status) OR (issued_at IS NOT NULL))),
+    CONSTRAINT holder_link_whole CHECK ((((link_token IS NULL) = (link_token_sealed IS NULL)) AND ((link_token IS NULL) = (link_issued_at IS NULL)))),
     CONSTRAINT holder_portal_has_account CHECK ((((channel)::text <> 'portal'::text) OR (responder_user_id IS NOT NULL))),
     CONSTRAINT holder_return_outcome CHECK (((return_outcome IS NULL) OR ((return_outcome)::text = ANY ((ARRAY['done'::character varying, 'partial'::character varying, 'failed'::character varying])::text[])))),
     CONSTRAINT holder_returned_has_date CHECK (((ticket_status <> 'returned'::public.rights_ticket_status) OR (returned_at IS NOT NULL)))
@@ -4170,6 +4177,20 @@ COMMENT ON COLUMN public.rights_request_holder.return_outcome IS 'What the holde
 --
 
 COMMENT ON COLUMN public.rights_request_holder.accepted_at IS 'When the office accepted the returned answer; only an accepted answer counts';
+
+
+--
+-- Name: COLUMN rights_request_holder.link_token; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.rights_request_holder.link_token IS 'The portal link''s keyed fingerprint, for an external holder; the token is never stored';
+
+
+--
+-- Name: COLUMN rights_request_holder.link_token_sealed; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.rights_request_holder.link_token_sealed IS 'The link token, AES-GCM sealed, so a reminder carries the same link';
 
 
 --
@@ -5796,6 +5817,14 @@ ALTER TABLE ONLY public.rights_request_holder
 
 
 --
+-- Name: rights_request_holder rights_request_holder_link_token_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rights_request_holder
+    ADD CONSTRAINT rights_request_holder_link_token_key UNIQUE (link_token);
+
+
+--
 -- Name: rights_request_holder rights_request_holder_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6490,6 +6519,13 @@ CREATE INDEX rights_request_consent_idx ON public.rights_request USING btree (co
 --
 
 CREATE INDEX rights_response_file_request_idx ON public.rights_response_file USING btree (request_id);
+
+
+--
+-- Name: rights_temporary_access_open; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX rights_temporary_access_open ON public.breach_temporary_access USING btree (holder_id, user_id) WHERE ((ended_at IS NULL) AND (holder_id IS NOT NULL));
 
 
 --
@@ -7230,6 +7266,14 @@ ALTER TABLE ONLY public.breach_temporary_access
 
 ALTER TABLE ONLY public.breach_temporary_access
     ADD CONSTRAINT breach_temporary_access_granted_by_fkey FOREIGN KEY (granted_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_temporary_access breach_temporary_access_holder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_temporary_access
+    ADD CONSTRAINT breach_temporary_access_holder_id_fkey FOREIGN KEY (holder_id) REFERENCES public.rights_request_holder(holder_id);
 
 
 --
@@ -8196,5 +8240,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict JnrplqniRqYjHVOI8ukXWL3L6cGE40z8bmcRPcMBnYaxJTeECNQ0AMIZMlrwh8C
+\unrestrict AWgsGfDYRx8weGuHa4XfLhba7TgAldKSL3VCvM2MOxAqHydOOfsRpUVmw08bgaV
 

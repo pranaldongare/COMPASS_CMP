@@ -344,6 +344,14 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/rights/nominee/start` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
 | POST | `/rights/requests` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
 | POST | `/rights/requests/verify` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
+| GET | `/holder-tickets/{token}` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
+| POST | `/holder-tickets/{token}/code` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
+| POST | `/holder-tickets/{token}/verify` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
+| POST | `/holder-tickets/{token}/sign-out` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
+| GET | `/holder-tickets/{token}/ticket` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
+| POST | `/holder-tickets/{token}/messages` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
+| POST | `/holder-tickets/{token}/answer` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
+| GET | `/holder-tickets/{token}/messages/{message_uuid}/evidence` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
 
 ## Registry
 
@@ -429,6 +437,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/accept` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/reopen` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 | DELETE | `/requests/{request_uuid}/holders/{holder_uuid}` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| PUT | `/requests/{request_uuid}/holders/{holder_uuid}/instruction` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 ## System
 
