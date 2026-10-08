@@ -27,7 +27,7 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
-from typing import Any
+from typing import Any, Final
 
 from cmp.core.config import settings
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
@@ -125,6 +125,10 @@ async def record_event(
 # ---------------------------------------------------------------- recording
 
 
+#: How Log an incident answers "is it a cyber attack?" (0047).
+CYBER_ATTACK: Final = ("yes", "no", "unknown")
+
+
 async def record(
     conn: Conn,
     *,
@@ -136,10 +140,21 @@ async def record(
     source_uuid: str | None,
     location_detail: str | None,
     actor_id: int,
+    logged: dict[str, str | None] | None = None,
+    cyber_attack: str | None = None,
 ) -> Row:
     """Log an incident. Nothing about it is known yet but that it was noticed,
-    and whether it is a personal data breach is for validation to say."""
+    and whether it is a personal data breach is for validation to say.
+
+    `logged` is what else the office can say at once (0047) - where it
+    started, how it was found, what it touched, how much, whose data, which
+    entities and third parties - every answer optional free text. A cyber
+    attack (`cyber_attack` yes) is reportable to CERT-In from the start: the
+    duty is created here, as Mark reportable to CERT-In would."""
     kind = choice(LocationKind, location_kind, field="location_kind")
+    if cyber_attack not in (None, "", *CYBER_ATTACK):
+        raise ValidationFailed("Say yes, no or not known", field="cyber_attack")
+    told = {c: _text((logged or {}).get(c)) for c in repo.LOGGED_TEXT}
     title = (title or "").strip()
     if not title:
         raise ValidationFailed("Give the incident a short title", field="title")
@@ -186,6 +201,8 @@ async def record(
         location_source_id=source_id,
         location_detail=_text(location_detail),
         recorded_by=actor_id,
+        logged=told,
+        cyber_attack=cyber_attack or None,
     )
     await repo.add_status_history(
         conn,
@@ -218,6 +235,8 @@ async def record(
         actor_id=actor_id,
         detail={"duty": Duty.ORG_BOARD.value, "due_at": due.isoformat() if due else None},
     )
+    if cyber_attack == "yes":
+        return await mark_cert_in(conn, breach_uuid=str(created["breach_uuid"]), actor_id=actor_id)
     return await detail(conn, str(created["breach_uuid"]))
 
 
@@ -851,6 +870,9 @@ async def detail(conn: Conn, breach_uuid: str) -> Row:
         "began_at": (latest["began_at"] if latest and latest["began_at"] else breach["began_at"]),
         "began_at_recorded": breach["began_at"],
         "location": _location(breach),
+        # What else was said when it was logged (0047), as logged.
+        "logged": {c: breach.get(c) for c in repo.LOGGED_TEXT},
+        "cyber_attack": breach.get("cyber_attack"),
         "recorded_at": breach["recorded_at"],
         "recorded_by_name": breach["recorded_by_name"],
         "determination": current["outcome"] if current else Outcome.PENDING.value,

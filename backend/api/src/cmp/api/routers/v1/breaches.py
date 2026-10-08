@@ -21,6 +21,7 @@ from pydantic import AwareDatetime, Field
 from cmp.api import uploads
 from cmp.api.dependencies import BreachReader, BreachWriter
 from cmp.db.pool import connection, transaction
+from cmp.db.repositories.breaches import LOGGED_TEXT
 from cmp.domain.breach import affected, board, lists, notices, service, tickets
 from cmp.schemas.common import Out, Schema
 from cmp.validation.files import BREACH_EVIDENCE, BREACH_LIST, check_upload
@@ -44,6 +45,36 @@ class BreachIn(Schema):
     processor_uuid: UUID | None = None
     source_uuid: UUID | None = None
     location_detail: _Text | None = None
+    # What else is known when it is logged (0047). Every one optional, free
+    # text; sealed; fixed once logged - what is learned later is the
+    # assessment's.
+    origin: _Text | None = None
+    discovery: _Text | None = None
+    affected_systems: _Text | None = None
+    incident_details: _Text | None = None
+    impact_scale: _Text | None = None
+    countries_involved: _Text | None = None
+    data_nature: _Text | None = None
+    subject_types: _Text | None = None
+    entities_involved: _Text | None = None
+    third_parties: _Text | None = None
+    #: yes, no or unknown. Yes makes it reportable to CERT-In at once.
+    cyber_attack: Annotated[str | None, Field(default=None, pattern="^(yes|no|unknown)$")] = None
+
+
+class BreachLoggedOut(Out):
+    """What was said when it was logged (0047). Sealed; the console opens them."""
+
+    origin: str | None = None
+    discovery: str | None = None
+    affected_systems: str | None = None
+    incident_details: str | None = None
+    impact_scale: str | None = None
+    countries_involved: str | None = None
+    data_nature: str | None = None
+    subject_types: str | None = None
+    entities_involved: str | None = None
+    third_parties: str | None = None
 
 
 class BreachDeterminationIn(Schema):
@@ -284,6 +315,9 @@ class BreachOut(Out):
     began_at: datetime | None
     began_at_recorded: datetime | None
     location: BreachLocationOut
+    logged: BreachLoggedOut = Field(default_factory=BreachLoggedOut)
+    #: yes, no or unknown, as logged; None when the question was left.
+    cyber_attack: str | None = None
     recorded_at: datetime
     recorded_by_name: str | None
     #: pending, yes or no: the latest determination.
@@ -332,6 +366,8 @@ async def record_breach(body: BreachIn, principal: BreachWriter) -> dict[str, An
             source_uuid=str(body.source_uuid) if body.source_uuid else None,
             location_detail=body.location_detail,
             actor_id=principal.user_id,
+            logged=body.model_dump(include=set(LOGGED_TEXT)),
+            cyber_attack=body.cyber_attack,
         )
 
 

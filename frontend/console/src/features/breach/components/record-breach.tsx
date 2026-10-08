@@ -16,11 +16,12 @@ import * as React from "react";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui/primitives";
 import { addBreachAttachment, recordBreach } from "@/features/breach/api";
 import { AttachmentRows, type PendingAttachment } from "@/features/breach/components/attachments";
+import { LOGGED_FIELDS, LoggedFields } from "@/features/breach/components/logged-details";
 import { LOCATION_COPY } from "@/features/breach/components/copy";
 import { useAllProcessors, useAllSources } from "@/features/registry/queries";
 import { keys } from "@/lib/query";
 import { useToast } from "@/providers";
-import type { BreachLocationKind } from "@/types";
+import type { BreachCyberAttack, BreachLocationKind, BreachLogged } from "@/types";
 
 /** A `datetime-local` value as an instant, or null when empty. */
 export function instant(local: string): string | null {
@@ -123,6 +124,8 @@ export function RecordBreachForm({ onDone }: { onDone: () => void }) {
   const [target, setTarget] = React.useState("");
   const [detail, setDetail] = React.useState("");
   const [files, setFiles] = React.useState<PendingAttachment[]>([]);
+  const [logged, setLogged] = React.useState<BreachLogged>({});
+  const [cyber, setCyber] = React.useState<BreachCyberAttack | null>(null);
   const record = useMutation({ mutationFn: recordBreach });
 
   const detectedAt = instant(detected);
@@ -144,6 +147,10 @@ export function RecordBreachForm({ onDone }: { onDone: () => void }) {
         processor_uuid: kind === "processor" ? target : null,
         source_uuid: kind === "data_source" ? target : null,
         location_detail: detail.trim() || null,
+        ...Object.fromEntries(
+          LOGGED_FIELDS.map((f) => [f.key, logged[f.key]?.trim() || null]),
+        ),
+        cyber_attack: cyber,
       });
       // The incident first - its clocks run from now - then its files, one by
       // one. A file the server refuses does not undo the incident: it is said,
@@ -219,6 +226,7 @@ export function RecordBreachForm({ onDone }: { onDone: () => void }) {
       >
         {(p) => <Textarea {...p} value={detail} onChange={(e) => setDetail(e.target.value)} />}
       </Field>
+      <LoggedFields value={logged} onChange={setLogged} cyber={cyber} onCyber={setCyber} />
       <AttachmentRows rows={files} onChange={setFiles} />
       <div className="flex justify-end gap-2">
         <Button type="button" variant="ghost" onClick={onDone}>

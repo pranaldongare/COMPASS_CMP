@@ -40,6 +40,7 @@ import {
 import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
 import { listBreachTickets } from "@/features/breach/api";
 import { AffectedCard } from "@/features/breach/components/affected-card";
+import { LoggedDetails } from "@/features/breach/components/logged-details";
 import { AttachmentsCard } from "@/features/breach/components/attachments";
 import {
   AssessmentCard,
@@ -245,6 +246,7 @@ function DetailsCard({ breach: b }: { breach: Breach }) {
             {locationText(b.location)}
             {b.location.detail && <span className="block whitespace-pre-wrap text-sm">{b.location.detail}</span>}
           </DescriptionItem>
+          <LoggedDetails logged={b.logged} cyber={b.cyber_attack} />
           <DescriptionItem term="Logged">
             {formatDateTime(b.recorded_at)} by {b.recorded_by_name ?? "unknown"}
           </DescriptionItem>

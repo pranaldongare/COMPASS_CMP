@@ -1,6 +1,6 @@
 {
-  "commit": "c517f4ead0ddc838ba81c3179687ddaf9ef8c051",
-  "migration_head": "0046",
+  "commit": "0359149e64d024e228fc82ba26b9bfd3b512c0a3",
+  "migration_head": "0047",
   "migrations": [
     {
       "revision": "0001",
@@ -185,6 +185,10 @@
     {
       "revision": "0046",
       "source": "backend/api/migrations/versions/0046_message_copy.py"
+    },
+    {
+      "revision": "0047",
+      "source": "backend/api/migrations/versions/0047_breach_logged_details.py"
     }
   ],
   "postgres_version": "16.15",
@@ -994,6 +998,105 @@
       "not_null": true,
       "default_value": "now()",
       "comment": null
+    },
+    {
+      "table_name": "breach",
+      "name": "origin",
+      "position": 25,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "As logged; optional; sealed (FREE_TEXT)"
+    },
+    {
+      "table_name": "breach",
+      "name": "discovery",
+      "position": 26,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "As logged; optional; sealed (FREE_TEXT)"
+    },
+    {
+      "table_name": "breach",
+      "name": "affected_systems",
+      "position": 27,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "As logged; optional; sealed (FREE_TEXT)"
+    },
+    {
+      "table_name": "breach",
+      "name": "incident_details",
+      "position": 28,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "As logged; optional; sealed (FREE_TEXT)"
+    },
+    {
+      "table_name": "breach",
+      "name": "impact_scale",
+      "position": 29,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "As logged; optional; sealed (FREE_TEXT)"
+    },
+    {
+      "table_name": "breach",
+      "name": "countries_involved",
+      "position": 30,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "As logged; optional; sealed (FREE_TEXT)"
+    },
+    {
+      "table_name": "breach",
+      "name": "data_nature",
+      "position": 31,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "As logged; optional; sealed (FREE_TEXT)"
+    },
+    {
+      "table_name": "breach",
+      "name": "subject_types",
+      "position": 32,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "As logged; optional; sealed (FREE_TEXT)"
+    },
+    {
+      "table_name": "breach",
+      "name": "entities_involved",
+      "position": 33,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "As logged; optional; sealed (FREE_TEXT)"
+    },
+    {
+      "table_name": "breach",
+      "name": "third_parties",
+      "position": 34,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "As logged; optional; sealed (FREE_TEXT)"
+    },
+    {
+      "table_name": "breach",
+      "name": "cyber_attack",
+      "position": 35,
+      "type": "character varying(8)",
+      "not_null": false,
+      "default_value": null,
+      "comment": "As logged: yes, no or unknown. Yes made it reportable to CERT-In"
     },
     {
       "table_name": "breach_affected",
@@ -7227,6 +7330,21 @@
       "definition": "UNIQUE (breach_uuid)",
       "columns": [
         "breach_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach",
+      "name": "breach_cyber_attack",
+      "kind": "c",
+      "definition": "CHECK (((cyber_attack)::text = ANY ((ARRAY['yes'::character varying, 'no'::character varying, 'unknown'::character varying])::text[])))",
+      "columns": [
+        "cyber_attack"
       ],
       "referenced_table": null,
       "referenced_columns": [],
@@ -15155,10 +15273,10 @@
     "application_tables": 58,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 697,
+    "table_columns": 708,
     "foreign_keys": 159,
     "enums": 39,
     "triggers": 50,
-    "checks": 90
+    "checks": 91
   }
 }

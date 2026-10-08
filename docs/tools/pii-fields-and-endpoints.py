@@ -38,7 +38,9 @@ COLUMNS: list[tuple[str, list[str]]] = [
     ("rights_request_attachment", ["file_name", "storage_ref"]),
     ("legal_hold", ["reason", "subject_user_id"]),
     # The breach register (S3-01): every narrative the office writes, sealed.
-    ("breach", ["title", "location_detail"]),
+    ("breach", ["title", "location_detail", "origin", "discovery", "affected_systems",
+                "incident_details", "impact_scale", "countries_involved", "data_nature",
+                "subject_types", "entities_involved", "third_parties"]),
     ("breach_status_history", ["reason"]),
     ("breach_determination", ["reasoning"]),
     ("breach_assessment", ["nature_extent", "likely_impact", "consequences", "circumstances",

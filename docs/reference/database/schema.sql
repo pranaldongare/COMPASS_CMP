@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict ZilclUK6JUyjVm3r2PjCGCIaPOGZIVvIpxRXpTklHks4OcT2hBNHb2435UV7b3o
+\restrict GaH4Elk6bGJ6hrMDLblsL4kffjPf4pv4KGd6xh9fck6Wyy8rGKrH3TWIwAVmJwh
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -700,18 +700,7 @@ BEGIN
   IF TG_OP = 'DELETE' THEN
     RAISE EXCEPTION 'breach rows are never deleted' USING ERRCODE = 'restrict_violation';
   END IF;
-  IF NEW.breach_id IS DISTINCT FROM OLD.breach_id
-     OR NEW.breach_uuid IS DISTINCT FROM OLD.breach_uuid
-     OR NEW.reference IS DISTINCT FROM OLD.reference
-     OR NEW.title IS DISTINCT FROM OLD.title
-     OR NEW.detected_at IS DISTINCT FROM OLD.detected_at
-     OR NEW.began_at IS DISTINCT FROM OLD.began_at
-     OR NEW.location_kind IS DISTINCT FROM OLD.location_kind
-     OR NEW.location_processor_id IS DISTINCT FROM OLD.location_processor_id
-     OR NEW.location_source_id IS DISTINCT FROM OLD.location_source_id
-     OR NEW.location_detail IS DISTINCT FROM OLD.location_detail
-     OR NEW.recorded_by IS DISTINCT FROM OLD.recorded_by
-     OR NEW.recorded_at IS DISTINCT FROM OLD.recorded_at THEN
+  IF (to_jsonb(NEW) - 'status') IS DISTINCT FROM (to_jsonb(OLD) - 'status') THEN
     RAISE EXCEPTION 'only the status of a breach may change' USING ERRCODE = 'restrict_violation';
   END IF;
   RETURN NEW;
@@ -1479,7 +1468,19 @@ CREATE TABLE public.breach (
     status character varying(8) DEFAULT 'open'::character varying NOT NULL,
     recorded_by integer NOT NULL,
     recorded_at timestamp with time zone DEFAULT now() NOT NULL,
+    origin text,
+    discovery text,
+    affected_systems text,
+    incident_details text,
+    impact_scale text,
+    countries_involved text,
+    data_nature text,
+    subject_types text,
+    entities_involved text,
+    third_parties text,
+    cyber_attack character varying(8),
     CONSTRAINT breach_began_before_detected CHECK (((began_at IS NULL) OR (began_at <= detected_at))),
+    CONSTRAINT breach_cyber_attack CHECK (((cyber_attack)::text = ANY ((ARRAY['yes'::character varying, 'no'::character varying, 'unknown'::character varying])::text[]))),
     CONSTRAINT breach_location_kind CHECK (((location_kind)::text = ANY ((ARRAY['platform'::character varying, 'processor'::character varying, 'data_source'::character varying, 'other'::character varying])::text[]))),
     CONSTRAINT breach_location_named CHECK (((((location_kind)::text = 'processor'::text) = (location_processor_id IS NOT NULL)) AND (((location_kind)::text = 'data_source'::text) = (location_source_id IS NOT NULL)))),
     CONSTRAINT breach_status CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'closed'::character varying])::text[])))
@@ -1505,6 +1506,83 @@ COMMENT ON COLUMN public.breach.reference IS 'The incident reference, INC-YYYY-N
 --
 
 COMMENT ON COLUMN public.breach.detected_at IS 'When it was first noticed, as entered by the DPO. Anchors the CERT-In clock';
+
+
+--
+-- Name: COLUMN breach.origin; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach.origin IS 'As logged; optional; sealed (FREE_TEXT)';
+
+
+--
+-- Name: COLUMN breach.discovery; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach.discovery IS 'As logged; optional; sealed (FREE_TEXT)';
+
+
+--
+-- Name: COLUMN breach.affected_systems; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach.affected_systems IS 'As logged; optional; sealed (FREE_TEXT)';
+
+
+--
+-- Name: COLUMN breach.incident_details; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach.incident_details IS 'As logged; optional; sealed (FREE_TEXT)';
+
+
+--
+-- Name: COLUMN breach.impact_scale; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach.impact_scale IS 'As logged; optional; sealed (FREE_TEXT)';
+
+
+--
+-- Name: COLUMN breach.countries_involved; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach.countries_involved IS 'As logged; optional; sealed (FREE_TEXT)';
+
+
+--
+-- Name: COLUMN breach.data_nature; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach.data_nature IS 'As logged; optional; sealed (FREE_TEXT)';
+
+
+--
+-- Name: COLUMN breach.subject_types; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach.subject_types IS 'As logged; optional; sealed (FREE_TEXT)';
+
+
+--
+-- Name: COLUMN breach.entities_involved; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach.entities_involved IS 'As logged; optional; sealed (FREE_TEXT)';
+
+
+--
+-- Name: COLUMN breach.third_parties; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach.third_parties IS 'As logged; optional; sealed (FREE_TEXT)';
+
+
+--
+-- Name: COLUMN breach.cyber_attack; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach.cyber_attack IS 'As logged: yes, no or unknown. Yes made it reportable to CERT-In';
 
 
 --
@@ -8100,5 +8178,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict ZilclUK6JUyjVm3r2PjCGCIaPOGZIVvIpxRXpTklHks4OcT2hBNHb2435UV7b3o
+\unrestrict GaH4Elk6bGJ6hrMDLblsL4kffjPf4pv4KGd6xh9fck6Wyy8rGKrH3TWIwAVmJwh
 

@@ -110,6 +110,7 @@ somebody - whose laptop, which account, who caused it.
 |---|---|---|---|
 | `breach` | `title` | FREE_TEXT | The few words the office knows it by |
 | `breach` | `location_detail` | FREE_TEXT | Where it occurred, in words |
+| `breach` | `origin`, `discovery`, `affected_systems`, `incident_details`, `impact_scale`, `countries_involved`, `data_nature`, `subject_types`, `entities_involved`, `third_parties` | FREE_TEXT | What is known when an incident is logged (0047); any may name a person or a company |
 | `breach_status_history` | `reason` | FREE_TEXT | Why it was reopened |
 | `breach_determination` | `reasoning` | FREE_TEXT | Why it is, or is not, a personal data breach |
 | `breach_assessment` | `nature_extent` | FREE_TEXT | Rule 7(1)(a), 7(2)(a) |

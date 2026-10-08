@@ -104,6 +104,10 @@ FREE_TEXT = {
     "remedial_measures", "contact_point", "location_detail",
     # Whom the organisation's board was told through (S3-07): a person.
     "reported_to",
+    # What else is known when an incident is logged (0047): any may name somebody.
+    "origin", "discovery", "affected_systems", "incident_details", "impact_scale",
+    "countries_involved", "data_nature", "subject_types", "entities_involved",
+    "third_parties",
 }
 FILE = {
     "file_name", "file_uuid", "files", "response_files", "evidence_name",

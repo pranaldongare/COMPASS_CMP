@@ -1,6 +1,6 @@
 # COMPASS complete database schema
 
-The diagrams, the table reference and the enum reference are generated from the catalogue of a scratch database built by replaying migrations **0001 → 0046**, on 2026-10-07; rebuild them with `python3 docs/tools/generate-schema-docs.py --database <db>`. The notes on this page follow them by hand.
+The diagrams, the table reference and the enum reference are generated from the catalogue of a scratch database built by replaying migrations **0001 → 0047**, on 2026-10-07; rebuild them with `python3 docs/tools/generate-schema-docs.py --database <db>`. The notes on this page follow them by hand.
 
 ## Open the diagrams
 
@@ -76,6 +76,8 @@ Since **0027–0030** the personal columns are `text` rather than `varchar(n)` -
 **0045** adds a breach's people from an uploaded list: `breach_upload` (each list taken, its sealed name, hash and counts; the file is not kept) and `breach_contact` (a person with no account, name and contacts sealed); `breach_affected.found_by` gains `upload`, and `breach_notice_delivery` addresses an account or a contact.
 
 **0046** adds `message_copy`: who the office copies each email to, the address sealed with a blind index, at most five per email by the service, never on an email with a code, a link or a person's own record.
+
+**0047** adds what is known when an incident is logged: ten optional, sealed free-text columns on `breach` and `cyber_attack` (yes, no, unknown); the status-only trigger now holds every column but the status.
 
 ## Reading relationships and keys
 

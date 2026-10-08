@@ -78,6 +78,8 @@ const breach = (over: Partial<Breach> = {}): Breach => ({
   became_aware_at: null,
   began_at: null,
   began_at_recorded: null,
+  logged: {},
+  cyber_attack: null,
   recorded_at: "2026-10-06T09:05:00Z",
   recorded_by_name: "Priya Menon",
   determinations: [],

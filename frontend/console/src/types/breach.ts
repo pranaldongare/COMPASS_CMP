@@ -170,6 +170,9 @@ export interface Breach
   became_aware_at: Timestamp | null;
   began_at: Timestamp | null;
   began_at_recorded: Timestamp | null;
+  /** What else was said when it was logged (0047). */
+  logged: BreachLogged;
+  cyber_attack: BreachCyberAttack | null;
   recorded_at: Timestamp;
   recorded_by_name: string | null;
   determinations: BreachDetermination[];
@@ -184,7 +187,25 @@ export interface Breach
   without_delay_target_hours: number | null;
 }
 
-export interface BreachInput {
+/** What else is known when an incident is logged (0047): every one optional
+ *  free text, sealed, fixed once logged. */
+export interface BreachLogged {
+  origin?: string | null;
+  discovery?: string | null;
+  affected_systems?: string | null;
+  incident_details?: string | null;
+  impact_scale?: string | null;
+  countries_involved?: string | null;
+  data_nature?: string | null;
+  subject_types?: string | null;
+  entities_involved?: string | null;
+  third_parties?: string | null;
+}
+
+/** Is it a cyber attack? Yes makes it reportable to CERT-In at once. */
+export type BreachCyberAttack = "yes" | "no" | "unknown";
+
+export interface BreachInput extends BreachLogged {
   title: string;
   detected_at: Timestamp;
   began_at?: Timestamp | null;
@@ -192,6 +213,7 @@ export interface BreachInput {
   processor_uuid?: Uuid | null;
   source_uuid?: Uuid | null;
   location_detail?: string | null;
+  cyber_attack?: BreachCyberAttack | null;
 }
 
 export interface BreachAssessmentInput extends Partial<BreachAssessmentFacts> {

@@ -165,6 +165,18 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
     "breach": {
         "title": DataType.FREE_TEXT,
         "location_detail": DataType.FREE_TEXT,
+        # What is known when it is logged (0047): any may name a person or a
+        # company.
+        "origin": DataType.FREE_TEXT,
+        "discovery": DataType.FREE_TEXT,
+        "affected_systems": DataType.FREE_TEXT,
+        "incident_details": DataType.FREE_TEXT,
+        "impact_scale": DataType.FREE_TEXT,
+        "countries_involved": DataType.FREE_TEXT,
+        "data_nature": DataType.FREE_TEXT,
+        "subject_types": DataType.FREE_TEXT,
+        "entities_involved": DataType.FREE_TEXT,
+        "third_parties": DataType.FREE_TEXT,
     },
     "breach_status_history": {
         "reason": DataType.FREE_TEXT,

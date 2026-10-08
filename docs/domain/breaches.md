@@ -86,6 +86,31 @@ breach. Its title and the words describing where it occurred are sealed like
 every other narrative the office writes. The table and the routes keep the
 name `breach`: an incident is a breach row that has not been recorded as one.
 
+### What is known so far (2026-10-08)
+
+Below those, **What is known so far** asks the Privacy Office's intake
+questions. **Every one is optional** - in the first minutes much is not known,
+and the incident is logged anyway - and all but one are free text:
+
+| Asked as | Column | For |
+|---|---|---|
+| Is it a cyber attack? (Yes - reportable to CERT-In / No / Not known yet) | `cyber_attack` | **Yes creates the CERT-In duty at once** - six hours from first noticed - exactly as *Mark reportable to CERT-In* does. No and Not known add nothing; the button stays for later |
+| Where it started | `origin` | The system, team, vendor or place it began in |
+| How it was found | `discovery` | Who noticed it, where and how |
+| Systems affected | `affected_systems` | Applications, databases, servers, networks, devices |
+| What happened | `incident_details` | As much as is known now |
+| How much is affected | `impact_scale` | Records, people or files - an estimate |
+| Countries involved | `countries_involved` | Where data was held or went, if it crossed a border |
+| Kinds of personal data | `data_nature` | Identifying (names, contacts) or sensitive (health, financial, biometric) |
+| Whose data | `subject_types` | Participants, employees, customers |
+| Our entities involved or affected | `entities_involved` | The organisation's own companies, institutes or offices |
+| Third parties involved | `third_parties` | Vendors, service providers, processors, partners |
+
+The answers are **kept as logged** (migration 0047): sealed like every
+narrative about a breach, shown under the breach's **Details**, and never
+changed afterwards - `cmp_breach_status_only` now holds every column of the
+row but its status. What is learned later belongs in the assessment.
+
 ## Attachments
 
 An incident arrives with what showed it - the email that reported it, a

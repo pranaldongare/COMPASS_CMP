@@ -29,6 +29,9 @@ _BREACH = """
   rec.recorded_at AS breach_recorded_at, rbb.full_name AS breach_recorded_by_name,
   b.title, b.detected_at, b.began_at,
   b.location_kind, b.location_detail, b.status, b.recorded_at,
+  b.origin, b.discovery, b.affected_systems, b.incident_details, b.impact_scale,
+  b.countries_involved, b.data_nature, b.subject_types, b.entities_involved, b.third_parties,
+  b.cyber_attack,
   pr.processor_uuid AS location_processor_uuid, pr.legal_name AS location_processor_name,
   ds.source_uuid AS location_source_uuid, ds.name AS location_source_name,
   rb.full_name AS recorded_by_name
@@ -39,6 +42,21 @@ _BREACH = """
   LEFT JOIN data_source ds       ON ds.source_id = b.location_source_id
   JOIN auth_user rb              ON rb.id = b.recorded_by
 """
+
+#: What the office may say when it logs an incident (0047): free text, optional,
+#: sealed, fixed once logged.
+LOGGED_TEXT = (
+    "origin",
+    "discovery",
+    "affected_systems",
+    "incident_details",
+    "impact_scale",
+    "countries_involved",
+    "data_nature",
+    "subject_types",
+    "entities_involved",
+    "third_parties",
+)
 
 ASSESSMENT_TEXT = (
     "nature_extent",
@@ -64,17 +82,22 @@ async def create(
     location_source_id: int | None,
     location_detail: str | None,
     recorded_by: int,
+    logged: dict[str, str | None] | None = None,
+    cyber_attack: str | None = None,
 ) -> Row:
-    sealed = await seal("breach", {"title": title, "location_detail": location_detail})
+    told = {c: (logged or {}).get(c) for c in LOGGED_TEXT}
+    sealed = await seal("breach", {"title": title, "location_detail": location_detail, **told})
+    columns = ", ".join(LOGGED_TEXT)
+    marks = ", ".join(["%s"] * len(LOGGED_TEXT))
     row = await fetch_one(
         conn,
-        """
+        f"""
         INSERT INTO breach (reference, title, detected_at, began_at, location_kind,
                             location_processor_id, location_source_id, location_detail,
-                            recorded_by)
+                            recorded_by, {columns}, cyber_attack)
         VALUES ('INC-' || to_char(now(), 'YYYY') || '-'
                   || lpad(nextval('breach_incident_ref_seq')::text, 4, '0'),
-                %s, %s, %s, %s, %s, %s, %s, %s)
+                %s, %s, %s, %s, %s, %s, %s, %s, {marks}, %s)
         RETURNING breach_id, breach_uuid
         """,
         (
@@ -86,6 +109,8 @@ async def create(
             location_source_id,
             sealed["location_detail"],
             recorded_by,
+            *(sealed[c] for c in LOGGED_TEXT),
+            cyber_attack,
         ),
     )
     assert row is not None

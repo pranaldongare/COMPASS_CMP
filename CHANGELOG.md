@@ -8,6 +8,15 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Log an incident asks what is known so far** (2026-10-08). Eleven
+  optional questions under the incident's details: is it a cyber attack
+  (Yes - reportable to CERT-In / No / Not known yet; yes creates the CERT-In
+  duty at once), where it started, how it was found, systems affected, what
+  happened, how much is affected, countries involved, kinds of personal data,
+  whose data, our entities involved or affected, and third parties involved -
+  all free text but the first. Kept as logged, sealed, shown under the
+  breach's Details. Migration 0047; the status-only trigger now holds every
+  column but the status.
 - **Emails for every module, with copies and files** (2026-10-08).
   `docs/notifications/` is the notification strategy for email: the rules,
   the plan, and one file per module - users, projects, consent, rights,

@@ -6300,6 +6300,28 @@ export interface components {
             source_uuid?: string | null;
             /** Location Detail */
             location_detail?: string | null;
+            /** Origin */
+            origin?: string | null;
+            /** Discovery */
+            discovery?: string | null;
+            /** Affected Systems */
+            affected_systems?: string | null;
+            /** Incident Details */
+            incident_details?: string | null;
+            /** Impact Scale */
+            impact_scale?: string | null;
+            /** Countries Involved */
+            countries_involved?: string | null;
+            /** Data Nature */
+            data_nature?: string | null;
+            /** Subject Types */
+            subject_types?: string | null;
+            /** Entities Involved */
+            entities_involved?: string | null;
+            /** Third Parties */
+            third_parties?: string | null;
+            /** Cyber Attack */
+            cyber_attack?: string | null;
         };
         /**
          * BreachIntimationOut
@@ -6394,6 +6416,32 @@ export interface components {
             source_name: string | null;
             /** Detail */
             detail: string | null;
+        };
+        /**
+         * BreachLoggedOut
+         * @description What was said when it was logged (0047). Sealed; the console opens them.
+         */
+        BreachLoggedOut: {
+            /** Origin */
+            origin?: string | null;
+            /** Discovery */
+            discovery?: string | null;
+            /** Affected Systems */
+            affected_systems?: string | null;
+            /** Incident Details */
+            incident_details?: string | null;
+            /** Impact Scale */
+            impact_scale?: string | null;
+            /** Countries Involved */
+            countries_involved?: string | null;
+            /** Data Nature */
+            data_nature?: string | null;
+            /** Subject Types */
+            subject_types?: string | null;
+            /** Entities Involved */
+            entities_involved?: string | null;
+            /** Third Parties */
+            third_parties?: string | null;
         };
         /**
          * BreachNoticeAccountOut
@@ -6539,6 +6587,9 @@ export interface components {
             /** Began At Recorded */
             began_at_recorded: string | null;
             location: components["schemas"]["BreachLocationOut"];
+            logged?: components["schemas"]["BreachLoggedOut"];
+            /** Cyber Attack */
+            cyber_attack?: string | null;
             /**
              * Recorded At
              * Format: date-time

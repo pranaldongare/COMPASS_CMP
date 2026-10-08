@@ -18924,6 +18924,138 @@
               }
             ],
             "title": "Location Detail"
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin"
+          },
+          "discovery": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discovery"
+          },
+          "affected_systems": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Affected Systems"
+          },
+          "incident_details": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incident Details"
+          },
+          "impact_scale": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impact Scale"
+          },
+          "countries_involved": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Countries Involved"
+          },
+          "data_nature": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Nature"
+          },
+          "subject_types": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Types"
+          },
+          "entities_involved": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entities Involved"
+          },
+          "third_parties": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Third Parties"
+          },
+          "cyber_attack": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(yes|no|unknown)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cyber Attack"
           }
         },
         "additionalProperties": false,
@@ -19249,6 +19381,123 @@
           "detail"
         ],
         "title": "BreachLocationOut"
+      },
+      "BreachLoggedOut": {
+        "properties": {
+          "origin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin"
+          },
+          "discovery": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discovery"
+          },
+          "affected_systems": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Affected Systems"
+          },
+          "incident_details": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incident Details"
+          },
+          "impact_scale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impact Scale"
+          },
+          "countries_involved": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Countries Involved"
+          },
+          "data_nature": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Nature"
+          },
+          "subject_types": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Types"
+          },
+          "entities_involved": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entities Involved"
+          },
+          "third_parties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Third Parties"
+          }
+        },
+        "type": "object",
+        "title": "BreachLoggedOut",
+        "description": "What was said when it was logged (0047). Sealed; the console opens them."
       },
       "BreachNoticeAccountOut": {
         "properties": {
@@ -19712,6 +19961,20 @@
           },
           "location": {
             "$ref": "#/components/schemas/BreachLocationOut"
+          },
+          "logged": {
+            "$ref": "#/components/schemas/BreachLoggedOut"
+          },
+          "cyber_attack": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cyber Attack"
           },
           "recorded_at": {
             "type": "string",

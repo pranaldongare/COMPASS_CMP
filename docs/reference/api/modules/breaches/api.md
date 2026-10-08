@@ -161,7 +161,18 @@ Request body required: **yes**.
   "location_kind": "string",
   "processor_uuid": "00000000-0000-4000-8000-000000000000",
   "source_uuid": "00000000-0000-4000-8000-000000000000",
-  "location_detail": "string"
+  "location_detail": "string",
+  "origin": "string",
+  "discovery": "string",
+  "affected_systems": "string",
+  "incident_details": "string",
+  "impact_scale": "string",
+  "countries_involved": "string",
+  "data_nature": "string",
+  "subject_types": "string",
+  "entities_involved": "string",
+  "third_parties": "string",
+  "cyber_attack": "string"
 }
 ```
 
@@ -196,6 +207,19 @@ Request body required: **yes**.
     "source_name": "string",
     "detail": "string"
   },
+  "logged": {
+    "origin": "string",
+    "discovery": "string",
+    "affected_systems": "string",
+    "incident_details": "string",
+    "impact_scale": "string",
+    "countries_involved": "string",
+    "data_nature": "string",
+    "subject_types": "string",
+    "entities_involved": "string",
+    "third_parties": "string"
+  },
+  "cyber_attack": "string",
   "recorded_at": "2026-09-17T12:00:00Z",
   "recorded_by_name": "string",
   "determination": "string",
@@ -354,6 +378,19 @@ No request body.
     "source_name": "string",
     "detail": "string"
   },
+  "logged": {
+    "origin": "string",
+    "discovery": "string",
+    "affected_systems": "string",
+    "incident_details": "string",
+    "impact_scale": "string",
+    "countries_involved": "string",
+    "data_nature": "string",
+    "subject_types": "string",
+    "entities_involved": "string",
+    "third_parties": "string"
+  },
+  "cyber_attack": "string",
   "recorded_at": "2026-09-17T12:00:00Z",
   "recorded_by_name": "string",
   "determination": "string",
@@ -523,6 +560,19 @@ Request body required: **yes**.
     "source_name": "string",
     "detail": "string"
   },
+  "logged": {
+    "origin": "string",
+    "discovery": "string",
+    "affected_systems": "string",
+    "incident_details": "string",
+    "impact_scale": "string",
+    "countries_involved": "string",
+    "data_nature": "string",
+    "subject_types": "string",
+    "entities_involved": "string",
+    "third_parties": "string"
+  },
+  "cyber_attack": "string",
   "recorded_at": "2026-09-17T12:00:00Z",
   "recorded_by_name": "string",
   "determination": "string",
@@ -779,6 +829,19 @@ Request body required: **yes**.
     "source_name": "string",
     "detail": "string"
   },
+  "logged": {
+    "origin": "string",
+    "discovery": "string",
+    "affected_systems": "string",
+    "incident_details": "string",
+    "impact_scale": "string",
+    "countries_involved": "string",
+    "data_nature": "string",
+    "subject_types": "string",
+    "entities_involved": "string",
+    "third_parties": "string"
+  },
+  "cyber_attack": "string",
   "recorded_at": "2026-09-17T12:00:00Z",
   "recorded_by_name": "string",
   "determination": "string",
@@ -951,6 +1014,19 @@ Request body required: **yes**.
     "source_name": "string",
     "detail": "string"
   },
+  "logged": {
+    "origin": "string",
+    "discovery": "string",
+    "affected_systems": "string",
+    "incident_details": "string",
+    "impact_scale": "string",
+    "countries_involved": "string",
+    "data_nature": "string",
+    "subject_types": "string",
+    "entities_involved": "string",
+    "third_parties": "string"
+  },
+  "cyber_attack": "string",
   "recorded_at": "2026-09-17T12:00:00Z",
   "recorded_by_name": "string",
   "determination": "string",
@@ -1159,6 +1235,19 @@ No request body.
     "source_name": "string",
     "detail": "string"
   },
+  "logged": {
+    "origin": "string",
+    "discovery": "string",
+    "affected_systems": "string",
+    "incident_details": "string",
+    "impact_scale": "string",
+    "countries_involved": "string",
+    "data_nature": "string",
+    "subject_types": "string",
+    "entities_involved": "string",
+    "third_parties": "string"
+  },
+  "cyber_attack": "string",
   "recorded_at": "2026-09-17T12:00:00Z",
   "recorded_by_name": "string",
   "determination": "string",
@@ -1330,6 +1419,19 @@ Request body required: **yes**.
     "source_name": "string",
     "detail": "string"
   },
+  "logged": {
+    "origin": "string",
+    "discovery": "string",
+    "affected_systems": "string",
+    "incident_details": "string",
+    "impact_scale": "string",
+    "countries_involved": "string",
+    "data_nature": "string",
+    "subject_types": "string",
+    "entities_involved": "string",
+    "third_parties": "string"
+  },
+  "cyber_attack": "string",
   "recorded_at": "2026-09-17T12:00:00Z",
   "recorded_by_name": "string",
   "determination": "string",
@@ -1500,6 +1602,19 @@ Request body required: **yes**.
     "source_name": "string",
     "detail": "string"
   },
+  "logged": {
+    "origin": "string",
+    "discovery": "string",
+    "affected_systems": "string",
+    "incident_details": "string",
+    "impact_scale": "string",
+    "countries_involved": "string",
+    "data_nature": "string",
+    "subject_types": "string",
+    "entities_involved": "string",
+    "third_parties": "string"
+  },
+  "cyber_attack": "string",
   "recorded_at": "2026-09-17T12:00:00Z",
   "recorded_by_name": "string",
   "determination": "string",
@@ -1730,6 +1845,19 @@ Request body required: **yes**.
     "source_name": "string",
     "detail": "string"
   },
+  "logged": {
+    "origin": "string",
+    "discovery": "string",
+    "affected_systems": "string",
+    "incident_details": "string",
+    "impact_scale": "string",
+    "countries_involved": "string",
+    "data_nature": "string",
+    "subject_types": "string",
+    "entities_involved": "string",
+    "third_parties": "string"
+  },
+  "cyber_attack": "string",
   "recorded_at": "2026-09-17T12:00:00Z",
   "recorded_by_name": "string",
   "determination": "string",
@@ -4201,6 +4329,17 @@ Request body required: **yes**.
 | `processor_uuid` | `string` or `null` | No | format: `uuid` | — |
 | `source_uuid` | `string` or `null` | No | format: `uuid` | — |
 | `location_detail` | `string` or `null` | No | max length: `8000` | — |
+| `origin` | `string` or `null` | No | max length: `8000` | — |
+| `discovery` | `string` or `null` | No | max length: `8000` | — |
+| `affected_systems` | `string` or `null` | No | max length: `8000` | — |
+| `incident_details` | `string` or `null` | No | max length: `8000` | — |
+| `impact_scale` | `string` or `null` | No | max length: `8000` | — |
+| `countries_involved` | `string` or `null` | No | max length: `8000` | — |
+| `data_nature` | `string` or `null` | No | max length: `8000` | — |
+| `subject_types` | `string` or `null` | No | max length: `8000` | — |
+| `entities_involved` | `string` or `null` | No | max length: `8000` | — |
+| `third_parties` | `string` or `null` | No | max length: `8000` | — |
+| `cyber_attack` | `string` or `null` | No | pattern: `^(yes|no|unknown)$` | — |
 
 <a id="schema-breachintimationout"></a>
 #### `BreachIntimationOut`
@@ -4293,6 +4432,8 @@ approval may not. Written to be sent to everyone listed: name nobody.
 | `began_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `began_at_recorded` | `string` or `null` | Yes | format: `date-time` | — |
 | `location` | [`BreachLocationOut`](#schema-breachlocationout) | Yes | — | — |
+| `logged` | [`BreachLoggedOut`](#schema-breachloggedout) | No | — | — |
+| `cyber_attack` | `string` or `null` | No | — | — |
 | `recorded_at` | `string` | Yes | format: `date-time` | — |
 | `recorded_by_name` | `string` or `null` | Yes | — | — |
 | `determination` | `string` | Yes | — | — |
@@ -4610,6 +4751,24 @@ Somebody the breach touched with no account. Name and contacts sealed.
 |---|---|---:|---|---|
 | `key` | `string` | Yes | — | — |
 | `label` | `string` | Yes | — | — |
+
+<a id="schema-breachloggedout"></a>
+#### `BreachLoggedOut`
+
+What was said when it was logged (0047). Sealed; the console opens them.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `origin` | `string` or `null` | No | — | — |
+| `discovery` | `string` or `null` | No | — | — |
+| `affected_systems` | `string` or `null` | No | — | — |
+| `incident_details` | `string` or `null` | No | — | — |
+| `impact_scale` | `string` or `null` | No | — | — |
+| `countries_involved` | `string` or `null` | No | — | — |
+| `data_nature` | `string` or `null` | No | — | — |
+| `subject_types` | `string` or `null` | No | — | — |
+| `entities_involved` | `string` or `null` | No | — | — |
+| `third_parties` | `string` or `null` | No | — | — |
 
 <a id="schema-breachdeterminationout"></a>
 #### `BreachDeterminationOut`

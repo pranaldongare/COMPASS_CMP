@@ -515,7 +515,7 @@ export const SECTIONS: HelpSection[] = [
         kind: "steps",
         title: "From incident to close",
         items: [
-          "[[Log an incident]] - from your dashboard or [[Breaches]] - with the time it was [[First noticed]], not now. [[Attach a file]] for the email that reported it, a screenshot or a chat; more can go on the [[Attachments]] tab later. It gets an INC reference, and the [[Organisation's board]] duty starts: thirty minutes from first noticed.",
+          "[[Log an incident]] - from your dashboard or [[Breaches]] - with the time it was [[First noticed]], not now. Under [[What is known so far]] answer what you can: [[Is it a cyber attack?]] (Yes starts the CERT-In duty at once), where it started, how it was found, the systems, how much, countries, kinds of data, whose data, our entities and third parties - all optional. [[Attach a file]] for the email that reported it, a screenshot or a chat; more can go on the [[Attachments]] tab later. It gets an INC reference, and the [[Organisation's board]] duty starts: thirty minutes from first noticed.",
           "Tell the board now: [[Brief for the organisation's board]] drafts what to say and prints. Then [[Record the report]] on the duty, with when and to whom.",
           "If it may be a reportable cyber incident, [[Mark reportable to CERT-In]]: six hours from first noticed.",
           "Record the [[Validation]]: is it a personal data breach under s.2(u)? The first yes records it with a BR reference and starts the Board and principals duties. No sets them aside; the reasoning is kept.",

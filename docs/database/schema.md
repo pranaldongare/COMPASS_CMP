@@ -1,7 +1,7 @@
 # Schema
 
-58 tables, 39 enums, 1 view, 50 triggers, 90 named CHECK constraints and 159
-foreign keys, as of migration 0046. Those counts are read from the PostgreSQL
+58 tables, 39 enums, 1 view, 50 triggers, 91 named CHECK constraints and 159
+foreign keys, as of migration 0047. Those counts are read from the PostgreSQL
 catalogs after replaying every migration, not maintained by hand.
 
 The migrations are the source of truth: 0001 transcribed the original
@@ -144,6 +144,14 @@ is one row per file - its kind (`email`, `proof`, `chat`, `other`, by CHECK),
 the name it came with and an optional note (both sealed), where it is stored,
 its SHA-256 and size - append-only by trigger and grant: a file is never
 replaced or removed.
+
+**What is known when an incident is logged, since 0047.** `breach` gains ten
+optional free-text columns, sealed (FREE_TEXT) - `origin`, `discovery`,
+`affected_systems`, `incident_details`, `impact_scale`, `countries_involved`,
+`data_nature`, `subject_types`, `entities_involved`, `third_parties` - and
+`cyber_attack` (`yes`, `no`, `unknown`, by CHECK). `cmp_breach_status_only`
+now compares the whole row but `status` (`to_jsonb(NEW) - 'status'`), so these
+and any later column are fixed once logged.
 
 **Who an email is copied to, since 0046.** `message_copy` holds the office's
 choice per email - `key`, `address` sealed (EMAIL) with `address_hash`, unique
