@@ -10,11 +10,13 @@ is why the codes have a queue of their own.
 
 from cmp.tasks.maintenance.assets import flag_unmapped_assets
 from cmp.tasks.maintenance.audit import verify_audit_chain
+from cmp.tasks.maintenance.breach import alert_breach_duties
 from cmp.tasks.maintenance.consent_links import expire_consent_links
 from cmp.tasks.maintenance.retention import apply_retention_lapse
 from cmp.tasks.maintenance.rights import sweep_rights_requests
 
 __all__ = [
+    "alert_breach_duties",
     "apply_retention_lapse",
     "expire_consent_links",
     "flag_unmapped_assets",

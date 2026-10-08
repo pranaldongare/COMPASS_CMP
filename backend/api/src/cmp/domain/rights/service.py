@@ -262,6 +262,13 @@ async def create(
     )
     if verified:
         full = await acknowledge(conn, full, actor_id=actor_id)
+    # The office is told a request arrived; administrators, if it is a
+    # grievance about the DPO (2026-10-08).
+    from cmp.domain import alerts
+
+    await alerts.rights_received(conn, full)
+    if full.get("about_dpo"):
+        await alerts.grievance_about_dpo(conn, full)
     return full
 
 
@@ -706,6 +713,9 @@ async def escalate(conn: Conn, row: Row, *, role: Role | str, actor_id: int) -> 
     )
     row = await reload(conn, row)
     await _record(conn, row, Event.RIGHTS_ESCALATED, actor_user_id=actor_id)
+    from cmp.domain import alerts
+
+    await alerts.grievance_about_dpo(conn, row)
     return row
 
 
@@ -1476,8 +1486,20 @@ def _console_url(path: str) -> str:
     return f"{settings.console_base_url.rstrip('/')}{path}"
 
 
-async def _tell_holder(conn: Conn, row: Row, holder: Row, *, author_id: int, body: str) -> None:
-    """The office wrote; the holder hears about it the way it is reached."""
+async def _tell_holder(
+    conn: Conn,
+    row: Row,
+    holder: Row,
+    *,
+    author_id: int,
+    body: str,
+    file: tuple[str, str] | None = None,
+) -> None:
+    """The office wrote; the holder hears about it the way it is reached.
+
+    A file the office put on the message goes with the email (2026-10-08) -
+    it is the holder's, sent to them - its name sealed in the broker like the
+    rest; a holder reached through the portal finds it there too."""
     author = await user_repo.by_id(conn, author_id)
     name = (
         str(await unseal_value("auth_user", "full_name", author["full_name"]))
@@ -1492,8 +1514,28 @@ async def _tell_holder(conn: Conn, row: Row, holder: Row, *, author_id: int, bod
         if holder.get("channel") == "portal"
         else None
     )
+    file_ref: str | None = None
+    file_name: str | None = None
+    if file:
+        file_ref = file[0]
+        file_name = str(
+            (await seal("rights_ticket_message", {"evidence_name": file[1]}))["evidence_name"]
+        )
+        body += (
+            "\n\n(A file is attached to this message on the portal, and to this email.)"
+            if where
+            else "\n\n(The file is attached to this email.)"
+        )
     _dispatch(
-        "send_ticket_message", to, str(row["reference"]), str(holder["label"]), name, body, where
+        "send_ticket_message",
+        to,
+        str(row["reference"]),
+        str(holder["label"]),
+        name,
+        body,
+        where,
+        file_ref,
+        file_name,
     )
     if holder.get("channel") != "portal":
         await repo.append_contact(
@@ -1592,8 +1634,8 @@ async def post_office_message(
         row,
         holder,
         author_id=actor_id,
-        body=text
-        + ("\n\n(A file is attached to this message on the portal.)" if evidence_hash else ""),
+        body=text,
+        file=(evidence_ref, evidence_name or "attachment") if evidence_ref else None,
     )
     return await thread_for_office(conn, row, holder_uuid=holder_uuid, role=role)
 
@@ -3226,6 +3268,10 @@ async def sweep(conn: Conn, *, today: date | None = None) -> dict[str, int]:
             )
         floors += 1
     reminded = await sweep_tickets(conn, today=day)
+    # The office's daily list of what is overdue or close (2026-10-08).
+    from cmp.domain import alerts
+
+    digest = await alerts.rights_due(conn)
     # Erasures still waiting on a store, or that failed: tried again (S2-03).
     executed = await erasure.execute_pending(conn)
     log.info(
@@ -3233,10 +3279,12 @@ async def sweep(conn: Conn, *, today: date | None = None) -> dict[str, int]:
         closed_unverified=closed,
         floors_passed=floors,
         tickets_reminded=reminded,
+        due_listed=digest,
         erasures_attempted=executed["attempted"],
         erasures_finished=executed["finished"],
     )
     return {
+        "due_listed": digest,
         "closed_unverified": closed,
         "floors_passed": floors,
         "tickets_reminded": reminded,

@@ -127,6 +127,7 @@ PLAIN_BY_DESIGN: frozenset[tuple[str, str]] = frozenset(
                 "/messages/{key}",
                 "/messages/{key}/{channel}",
                 "/messages/{key}/{channel}/preview",
+                "/messages/{key}/copies",
             )
             for field in ("body", "subject")
         ),

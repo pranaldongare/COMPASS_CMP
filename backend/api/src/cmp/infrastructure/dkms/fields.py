@@ -144,6 +144,10 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
     "breach_upload": {
         "file_name": DataType.FILE_NAME,
     },
+    # Who the office copies a message to (0046): a team mailbox, or a person's.
+    "message_copy": {
+        "address": DataType.EMAIL,
+    },
     # A document the requester sent with the request (0043): its name may
     # name her, or somebody else.
     "rights_request_attachment": {
@@ -260,6 +264,10 @@ BLIND_INDEXED: dict[str, dict[str, str]] = {
     "breach_contact": {
         "email": "email_hash",
         "mobile": "mobile_hash",
+    },
+    # A copy address, listed once per message (0046).
+    "message_copy": {
+        "address": "address_hash",
     },
 }
 

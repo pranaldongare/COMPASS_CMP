@@ -49,11 +49,23 @@ class ChannelOut(Out):
     updated_by_name: str | None
 
 
+class CopyOut(Out):
+    #: Sealed; the console opens it.
+    email: str
+
+
 class MessageOut(Out):
     key: str
     title: str
     description: str
     group: str
+    #: Whether the office may copy it by email to somebody else, and to whom it
+    #: is copied (0046). Never a message with a code, a link or a person's own
+    #: record.
+    copyable: bool = False
+    #: Whether it may carry files by email - only files its recipient owns.
+    attachable: bool = False
+    copies: list[CopyOut] = Field(default_factory=list)
     variables: list[VariableOut]
     channels: list[ChannelOut]
 
@@ -64,6 +76,12 @@ class TemplateIn(Schema):
 
     subject: Annotated[str | None, Field(default=None, max_length=MAX_SUBJECT_CHARS)] = None
     body: Annotated[str, Field(min_length=1, max_length=MAX_EMAIL_BODY_CHARS)]
+
+
+class CopiesIn(Schema):
+    """Every address the message is now copied to; an empty list copies it to nobody."""
+
+    addresses: Annotated[list[Annotated[str, Field(max_length=255)]], Field(max_length=5)]
 
 
 class PreviewOut(Out):
@@ -93,6 +111,18 @@ async def preview_message(
     key: KeyPath, channel: ChannelPath, body: TemplateIn, principal: MessageReader
 ) -> dict[str, Any]:
     return service.preview(key, channel, body.subject, body.body)
+
+
+@router.put(
+    "/{key}/copies",
+    response_model=MessageOut,
+    summary="Who it is copied to by email: up to five addresses",
+)
+async def save_copies(key: KeyPath, body: CopiesIn, principal: MessageWriter) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await service.set_copies(
+            conn, key=key, addresses=body.addresses, actor_id=principal.user_id
+        )
 
 
 @router.put("/{key}/{channel}", response_model=MessageOut, summary="Replace the words")

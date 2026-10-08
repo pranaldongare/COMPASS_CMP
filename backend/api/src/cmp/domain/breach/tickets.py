@@ -770,4 +770,10 @@ async def return_ticket(
         actor_id=user_id,
         detail={"outcome": said.value, "file": digest is not None},
     )
+    # The DPO hears by email too, not only in the bell (2026-10-08).
+    from cmp.domain import alerts
+
+    await alerts.breach_ticket_returned(
+        conn, breach=row, holder_name=str(row["holder_name"] or ""), outcome=said.value
+    )
     return await my_detail(conn, user_id=user_id, ticket_uuid=ticket_uuid)

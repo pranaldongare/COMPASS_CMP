@@ -328,6 +328,9 @@ class Event:
     # messages
     MESSAGE_TEMPLATE_UPDATED = "message_template.updated"
     MESSAGE_TEMPLATE_RESET = "message_template.reset"
+    #: Who a message is copied to was changed (0046). Detail: the message and
+    #: how many addresses - never an address.
+    MESSAGE_COPIES_UPDATED = "message_template.copies_updated"
 
 
 _INSERT = """

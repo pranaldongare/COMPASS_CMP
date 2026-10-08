@@ -1,6 +1,6 @@
 # COMPASS complete database schema
 
-The diagrams, the table reference and the enum reference are generated from the catalogue of a scratch database built by replaying migrations **0001 → 0045**, on 2026-10-07; rebuild them with `python3 docs/tools/generate-schema-docs.py --database <db>`. The notes on this page follow them by hand.
+The diagrams, the table reference and the enum reference are generated from the catalogue of a scratch database built by replaying migrations **0001 → 0046**, on 2026-10-07; rebuild them with `python3 docs/tools/generate-schema-docs.py --database <db>`. The notes on this page follow them by hand.
 
 ## Open the diagrams
 
@@ -24,7 +24,7 @@ The complete SVG is a large, zoomable vector drawing. Open it in a browser or ve
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` | [Open SVG](modules/exchange.svg) |
 | Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_ticket_message`, `rights_response_file`, `rights_request_attachment`, `rights_item_execution`, `legal_hold`, `nomination` | [Open SVG](modules/rights.svg) |
 | Breach | `breach`, `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event`, `breach_affected_revision`, `breach_affected`, `breach_notice`, `breach_notice_delivery`, `breach_recording`, `breach_ticket`, `breach_ticket_event`, `breach_ticket_message`, `breach_temporary_access`, `breach_attachment`, `breach_upload`, `breach_contact` | [Open SVG](modules/breach.svg) |
-| Platform | `audit_log`, `message_template`, `restricted_country` | [Open SVG](modules/platform.svg) |
+| Platform | `audit_log`, `message_template`, `message_copy`, `restricted_country` | [Open SVG](modules/platform.svg) |
 
 Module diagrams include full local tables and their outgoing foreign keys. Referenced tables outside the module appear as key-only context; incoming relationships from other modules are shown in the complete diagram.
 
@@ -74,6 +74,8 @@ Since **0027–0030** the personal columns are `text` rather than `varchar(n)` -
 **0044** adds notice templates: `notice_template` with its purposes and languages - the DPO's notice before a project exists, never served, retired rather than deleted - and `notice.template_id`, the template a notice was copied from.
 
 **0045** adds a breach's people from an uploaded list: `breach_upload` (each list taken, its sealed name, hash and counts; the file is not kept) and `breach_contact` (a person with no account, name and contacts sealed); `breach_affected.found_by` gains `upload`, and `breach_notice_delivery` addresses an account or a contact.
+
+**0046** adds `message_copy`: who the office copies each email to, the address sealed with a blind index, at most five per email by the service, never on an email with a code, a link or a person's own record.
 
 ## Reading relationships and keys
 

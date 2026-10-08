@@ -24,7 +24,8 @@ from cmp.db.repositories import messages as repo
 from cmp.db.sql import Conn, Row
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
-from cmp.infrastructure.messaging import MIRROR_KEY, common_variables
+from cmp.infrastructure.email.transport import MAX_CC
+from cmp.infrastructure.messaging import COPIES_KEY, MIRROR_KEY, common_variables
 
 log = get_logger("cmp.messaging")
 
@@ -60,12 +61,19 @@ def _channel_view(junction: Junction, ch: Channel, stored: Row | None) -> dict[s
     }
 
 
-def _view(junction: Junction, stored: dict[str, Row]) -> dict[str, Any]:
+def _view(
+    junction: Junction, stored: dict[str, Row], copies: list[Row] | None = None
+) -> dict[str, Any]:
     return {
         "key": junction.key.value,
         "title": junction.title,
         "description": junction.description,
         "group": junction.group,
+        # Who it may be copied to by email, and who it is (0046). Sealed; the
+        # console opens each `email` like any other.
+        "copyable": junction.copyable,
+        "attachable": junction.attachable,
+        "copies": [{"email": c["address"]} for c in (copies or [])] if junction.copyable else [],
         "variables": [
             {"name": v.name, "description": v.description, "sample": v.sample}
             for v in junction.variables
@@ -80,14 +88,18 @@ async def catalogue(conn: Conn) -> list[dict[str, Any]]:
     by_key: dict[str, dict[str, Row]] = {}
     for row in rows:
         by_key.setdefault(str(row["key"]), {})[str(row["channel"])] = row
-    return [_view(j, by_key.get(j.key.value, {})) for j in CATALOGUE]
+    copied: dict[str, list[Row]] = {}
+    for c in await repo.copies(conn):
+        copied.setdefault(str(c["key"]), []).append(c)
+    return [_view(j, by_key.get(j.key.value, {}), copied.get(j.key.value)) for j in CATALOGUE]
 
 
 async def one(conn: Conn, key: str) -> dict[str, Any]:
     junction = _junction(key)
     rows = await repo.list_all(conn)
     stored = {str(r["channel"]): r for r in rows if str(r["key"]) == key}
-    return _view(junction, stored)
+    copied = [c for c in await repo.copies(conn) if str(c["key"]) == key]
+    return _view(junction, stored, copied)
 
 
 def preview(key: str, channel: str, subject: str | None, body: str) -> dict[str, Any]:
@@ -107,7 +119,7 @@ def preview(key: str, channel: str, subject: str | None, body: str) -> dict[str,
 
 async def _forget_mirror() -> None:
     try:
-        await get_redis().delete(MIRROR_KEY)
+        await get_redis().delete(MIRROR_KEY, COPIES_KEY)
     except Exception as exc:  # the worker refreshes within MIRROR_TTL_S anyway
         log.warning("messages.mirror_not_cleared", error=str(exc))
 
@@ -157,6 +169,44 @@ async def reset(conn: Conn, *, key: str, channel: str, actor_id: int) -> dict[st
         )
         await _forget_mirror()
         log.info("messages.template_reset", message=junction.key.value, channel=ch.value)
+    return await one(conn, key)
+
+
+async def set_copies(
+    conn: Conn, *, key: str, addresses: list[str], actor_id: int
+) -> dict[str, Any]:
+    """Who a message is copied to by email: up to five addresses, only on a
+    message the catalogue lets be copied."""
+    junction = _junction(key)
+    if not junction.copyable:
+        raise ValidationFailed(
+            "This message cannot be copied: it carries a code or a link, or a person's own "
+            "record, and a copy would hand it to somebody else",
+            field="addresses",
+        )
+    seen: list[str] = []
+    for raw in addresses:
+        address = raw.strip().lower()
+        if not address:
+            continue
+        local, _, domain = address.partition("@")
+        if not local or "." not in domain or len(address) > 255 or " " in address:
+            raise ValidationFailed(f"Not an email address: {raw[:60]}", field="addresses")
+        if address not in seen:
+            seen.append(address)
+    if len(seen) > MAX_CC:
+        raise ValidationFailed(f"At most {MAX_CC} addresses", field="addresses")
+    await repo.replace_copies(conn, key=junction.key.value, addresses=seen, added_by=actor_id)
+    await audit.record(
+        conn,
+        event=Event.MESSAGE_COPIES_UPDATED,
+        entity_type="message_template",
+        entity_id=0,
+        actor_user_id=actor_id,
+        detail={"message": junction.key.value, "copies": len(seen)},
+    )
+    await _forget_mirror()
+    log.info("messages.copies_saved", message=junction.key.value, copies=len(seen))
     return await one(conn, key)
 
 

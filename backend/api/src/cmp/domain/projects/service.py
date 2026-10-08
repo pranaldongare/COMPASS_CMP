@@ -413,6 +413,16 @@ async def transition(
             "published_notice": str(published_notice["notice_uuid"]) if published_notice else None,
         },
     )
+    # Who is emailed about it, after the commit (2026-10-08).
+    from cmp.domain import alerts
+
+    await alerts.project_moved(
+        conn,
+        project={**project, "created_by": locked["created_by"]},
+        to=permitted.to.value,
+        reason=reason,
+        actor_id=actor_id,
+    )
     log.info(
         "project.transitioned",
         project=project_uuid,
@@ -492,6 +502,10 @@ async def assign_source(
             "owner_changed": before != after,
         },
     )
+    if after and before != after:
+        from cmp.domain import alerts
+
+        await alerts.collector_assigned(conn, project=project, dco_user_id=after)
     return {
         "project_uuid": project_uuid,
         "site_uuid": site_uuid,
@@ -587,6 +601,10 @@ async def assign_site_owner(
             "project_owner_changed": before != after,
         },
     )
+    if after and before != after:
+        from cmp.domain import alerts
+
+        await alerts.collector_assigned(conn, project=project, dco_user_id=after)
     return {
         "project_uuid": project_uuid,
         "site_uuid": site_uuid,
@@ -746,6 +764,7 @@ async def add_site(
                 code="site_exists",
             )
 
+    dco_before = await repo.project_dco_id(conn, project["project_id"])
     site = await repo.add_site(
         conn,
         project_id=project["project_id"],
@@ -774,6 +793,11 @@ async def add_site(
             "material_change": material,
         },
     )
+    dco_after = await repo.project_dco_id(conn, project["project_id"])
+    if dco_after and dco_after != dco_before:
+        from cmp.domain import alerts
+
+        await alerts.collector_assigned(conn, project=project, dco_user_id=dco_after)
     return {
         **site,
         "material_change": material,

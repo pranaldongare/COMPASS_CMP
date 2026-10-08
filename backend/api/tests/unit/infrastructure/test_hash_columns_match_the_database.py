@@ -30,7 +30,10 @@ def test_every_hash_column_is_named_hash() -> None:
 
 #: Tables whose hash columns were created with them, after 0029 renamed the
 #: rest - and the migration that created each.
-BORN_HASHED = {"breach_contact": "0045_breach_contact_upload.py"}
+BORN_HASHED = {
+    "breach_contact": "0045_breach_contact_upload.py",
+    "message_copy": "0046_message_copy.py",
+}
 
 
 def test_the_rename_migration_covers_exactly_these_columns() -> None:

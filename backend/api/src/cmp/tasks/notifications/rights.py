@@ -22,6 +22,7 @@ from celery import shared_task
 from cmp.core.config import settings
 from cmp.core.messages import Message
 from cmp.infrastructure.dkms.client import DkmsUnavailable
+from cmp.infrastructure.email import Attachment
 from cmp.infrastructure.messaging import deliver
 
 RETRY_KW: dict[str, Any] = {
@@ -220,11 +221,19 @@ def send_ticket_reminder(
 
 @shared_task(name="cmp.notifications.send_ticket_message", **RETRY_KW)
 def send_ticket_message(
-    contact: str, reference: str, holder_label: str, author: str, body: str, where: str | None
+    contact: str,
+    reference: str,
+    holder_label: str,
+    author: str,
+    body: str,
+    where: str | None,
+    file_ref: str | None = None,
+    file_name: str | None = None,
 ) -> dict[str, Any]:
     return deliver(
         Message.TICKET_MESSAGE,
         to=contact,
+        attachments=_ticket_file(file_ref, file_name),
         reference=reference,
         holder_label=holder_label,
         author=author,
@@ -251,3 +260,24 @@ def send_holder_instruction(
         due_on=due_on,
         brief=brief_text,
     )
+
+
+def _ticket_file(file_ref: str | None, file_name: str | None) -> list[Attachment]:
+    """The file the office put on a ticket message, read from storage, its
+    sealed name opened (2026-10-08). None when there is none, or it is gone."""
+    if not file_ref:
+        return []
+    import mimetypes
+
+    from cmp.infrastructure.dkms import unseal_values_sync
+    from cmp.infrastructure.storage.service import read_upload
+
+    name = file_name or "attachment"
+    if name.startswith("SE::"):
+        name = unseal_values_sync([name])[0] or "attachment"
+    try:
+        data = read_upload(file_ref)
+    except OSError:
+        return []
+    kind = mimetypes.guess_type(name)[0] or "application/octet-stream"
+    return [Attachment(name, kind, data)]

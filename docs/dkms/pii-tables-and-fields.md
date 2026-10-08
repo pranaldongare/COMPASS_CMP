@@ -134,6 +134,7 @@ somebody - whose laptop, which account, who caused it.
 | `breach_contact` | `email` | EMAIL | Their email; blind index `email_hash` |
 | `breach_contact` | `mobile` | MOBILE | Their mobile; blind index `mobile_hash` |
 | `breach_upload` | `file_name` | FILE_NAME | The name an uploaded list came with |
+| `message_copy` | `address` | EMAIL | Who the office copies an email to - a mailbox, possibly a person's; blind index `address_hash` (2026-10-08) |
 | `breach_affected_revision` | `note` | FREE_TEXT | What a revision of who it touched is based on (S3-02) |
 | `breach_notice` | `what_happened` | FREE_TEXT | Rule 7(1)(a), as told to everyone it touched (S3-03) |
 | `breach_notice` | `consequences` | FREE_TEXT | Rule 7(1)(b) |

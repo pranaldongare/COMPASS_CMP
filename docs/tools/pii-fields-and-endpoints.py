@@ -58,6 +58,7 @@ COLUMNS: list[tuple[str, list[str]]] = [
     ("breach_attachment", ["file_name", "note", "storage_ref"]),
     ("breach_contact", ["full_name", "email", "mobile", "email_hash", "mobile_hash"]),
     ("breach_upload", ["file_name"]),
+    ("message_copy", ["address", "address_hash"]),
     ("consent_artefact", ["ip_address", "auth_user_id"]),
     ("consent_purpose_grant", ["granted"]),
     ("consent_link", ["token", "token_sealed"]),

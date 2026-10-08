@@ -115,6 +115,12 @@ celery_app.conf.update(
             "task": "cmp.maintenance.sweep_rights_requests",
             "schedule": crontab(hour="2", minute="30"),
         },
+        # Breach duties about to fall due, or overdue: every DPO is emailed,
+        # once per duty per stage (2026-10-08).
+        "alert-breach-duties": {
+            "task": "cmp.maintenance.alert_breach_duties",
+            "schedule": crontab(minute="*/5"),
+        },
     },
 )
 

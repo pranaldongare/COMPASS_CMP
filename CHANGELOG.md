@@ -8,6 +8,25 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Emails for every module, with copies and files** (2026-10-08).
+  `docs/notifications/` is the notification strategy for email: the rules,
+  the plan, and one file per module - users, projects, consent, rights,
+  breach - giving each email end to end (when, to, CC, attachment, the
+  default subject and body, the task and where it is queued from), generated
+  from the code. Thirteen new emails: a project submitted (every DPO),
+  approved, sent back or closed (its owner, with the reason), a collector
+  assigned (the DCO); a rights request arriving from outside (every DPO,
+  never her words), a daily list of requests overdue or due within a week,
+  a grievance about the DPO (every administrator); a breach duty about to fall
+  due and again overdue, once each, checked every five minutes, and a breach
+  ticket answered (every DPO); a role changed, console access ended, cover
+  arranged (the people concerned). Every email may now carry copies: the
+  Privacy Office sets up to five per email in Message templates → Copy to,
+  never on one with a code, a link or a person's own record (migration 0046,
+  `message_copy`, sealed). Emails may carry files, only what the recipient
+  owns: her consent record on the consent receipt, the office's file on a
+  rights ticket message to its holder; a rights response stays
+  download-only.
 - **A breach's people from a list sent to us** (2026-10-07). A breach whose
   people were not on the platform could never close: the notice is owed to
   everyone listed, and nobody could be listed. On People & notices, Add

@@ -244,6 +244,8 @@ register is the DPO's alone, hidden from every other role (404).
 **`breach_attachment`** — `file_name`, `note` (sealed), `added_by`; the file itself in storage under `breach/`, by hash (2026-10-06). An email or a chat kept as evidence may name anyone.
 
 **`breach_contact`** (0045) — `full_name`, `email`, `mobile` (sealed), `email_hash`, `mobile_hash` (blind indexes): somebody a breach touched who has no account, named in a list sent to the Privacy Office, and told by email and SMS. **`breach_upload`** — the list's `file_name` (sealed) and hash; the file itself is not kept (2026-10-07).
+
+**`message_copy`** (0046) — `address` (sealed), `address_hash`: a mailbox the office copies an email to. Usually a team's; sealed because it may be a person's.
 **`breach_temporary_access`** — `user_id`, `granted_by`, `ended_by`: whose breach-only login, and who gave and ended it, with the role the account held before (S3-09). No name and no address: a person without an account is made one in `auth_user`, sealed like every other.
 **`breach_ticket_event`** — `summary`, `reason` (sealed), `actor_user_id`.
 **`breach_ticket_message`** — `body`, `evidence_name` (sealed), `author_user_id` (S3-08).
@@ -348,7 +350,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-215 of 311 operations accept or return personal data. Each table gives the
+216 of 312 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -496,7 +498,7 @@ selected.
 
 ### Personal data breaches — `/breaches/*`
 
-30 operations carry personal data.
+31 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
@@ -505,6 +507,7 @@ selected.
 | GET | `/breaches/{breach_uuid}` | DPO every row | — | `added_by_name`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `determined_by_name`, `file_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes` |
 | GET | `/breaches/{breach_uuid}/affected` | DPO every row | — | `confirmed_by_name`, `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
 | POST | `/breaches/{breach_uuid}/affected` | DPO every row | — | `confirmed_by_name`, `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
+| GET | `/breaches/{breach_uuid}/affected/contacts` | DPO every row | — | `added_by_name`, `contact_uuid`, `email`, `file_name`, `full_name`, `mobile` |
 | POST | `/breaches/{breach_uuid}/affected/preview` | DPO every row | — | `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
 | GET | `/breaches/{breach_uuid}/assessments` | DPO every row | — | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures`, `revised_by_name` |
 | POST | `/breaches/{breach_uuid}/assessments` | DPO every row | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures` | `added_by_name`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `determined_by_name`, `file_name`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes` |
@@ -693,10 +696,10 @@ selected.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/messages` | DPO every row, Admin every row | — | `body`, `sample`, `updated_by_name` |
-| GET | `/messages/{key}` | DPO every row, Admin every row | — | `body`, `sample`, `updated_by_name` |
-| DELETE | `/messages/{key}/{channel}` | DPO every row, Admin every row | — | `body`, `sample`, `updated_by_name` |
-| PUT | `/messages/{key}/{channel}` | DPO every row, Admin every row | `body` | `body`, `sample`, `updated_by_name` |
+| GET | `/messages` | DPO every row, Admin every row | — | `body`, `email`, `sample`, `updated_by_name` |
+| GET | `/messages/{key}` | DPO every row, Admin every row | — | `body`, `email`, `sample`, `updated_by_name` |
+| DELETE | `/messages/{key}/{channel}` | DPO every row, Admin every row | — | `body`, `email`, `sample`, `updated_by_name` |
+| PUT | `/messages/{key}/{channel}` | DPO every row, Admin every row | `body` | `body`, `email`, `sample`, `updated_by_name` |
 | POST | `/messages/{key}/{channel}/preview` | DPO every row, Admin every row | `body` | `body` |
 
 ### The audit trail — `/audit/*`
@@ -727,7 +730,7 @@ selected.
 |---|---|---|---|---|
 | POST | `/breach-tickets/{ticket_uuid}/colleagues` | any signed-in session, own record | `email`, `full_name`, `mobile` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
 
-<!-- 215 of 311 operations carry personal data; 20 of them need no session. -->
+<!-- 216 of 312 operations carry personal data; 20 of them need no session. -->
 
 ## The public surface
 

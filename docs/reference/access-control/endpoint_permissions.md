@@ -238,6 +238,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | DELETE | `/messages/{key}/{channel}` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO |
 | PUT | `/messages/{key}/{channel}` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO |
 | POST | `/messages/{key}/{channel}/preview` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO |
+| PUT | `/messages/{key}/copies` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO |
 
 ## Notices
 

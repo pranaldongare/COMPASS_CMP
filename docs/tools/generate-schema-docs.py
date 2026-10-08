@@ -103,7 +103,7 @@ MODULES: dict[str, list[str]] = {
         "breach_upload",
         "breach_contact",
     ],
-    "platform": ["audit_log", "message_template", "restricted_country"],
+    "platform": ["audit_log", "message_template", "message_copy", "restricted_country"],
 }
 MODULE_OF = {table: module for module, tables in MODULES.items() for table in tables}
 

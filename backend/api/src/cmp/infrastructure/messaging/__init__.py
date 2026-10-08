@@ -12,12 +12,19 @@ no request. They come from a Redis mirror of the `message_template` table,
 refreshed from the database when absent and cleared by the API on every
 change; if neither is reachable the defaults are used and the failure is
 logged, because a sign-in code must go out whatever else is wrong.
+
+Copies (2026-10-08) work the same way: who the office copies each message to
+is mirrored from `message_copy`, sealed, and opened here like the recipient.
+Only a message the catalogue marks copyable is ever copied, whatever the
+table holds; only one it marks attachable may carry the files a caller hands
+in (docs/notifications/README.md).
 """
 
 from __future__ import annotations
 
 import json
-from typing import Any, Final
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Final
 
 from cmp.core.config import settings
 from cmp.core.logging import get_logger
@@ -25,12 +32,17 @@ from cmp.core.messages import Channel, Junction, Message, junction, render_text
 from cmp.db.redis import K_CACHE
 from cmp.db.redis import key as rkey
 
+if TYPE_CHECKING:
+    from cmp.infrastructure.email import Attachment
+
 log = get_logger("cmp.messaging")
 
 #: Where the worker reads the office's replacements from, and what the API
 #: clears when one changes.
 MIRROR_KEY: Final = rkey(K_CACHE, "message_templates")
 MIRROR_TTL_S: Final = 300
+#: Who each message is copied to, sealed - the mirror of `message_copy`.
+COPIES_KEY: Final = rkey(K_CACHE, "message_copies")
 
 Overrides = dict[str, dict[str, str | None]]
 
@@ -81,6 +93,37 @@ def load_overrides() -> Overrides:
     return overrides
 
 
+def _read_copies_from_db() -> dict[str, list[str]]:
+    import psycopg
+
+    try:
+        with psycopg.connect(settings.dsn, connect_timeout=3) as conn:
+            rows = conn.execute("SELECT key, address FROM message_copy ORDER BY copy_id").fetchall()
+    except Exception as exc:
+        log.error("messages.copies_unavailable", error=str(exc))
+        return {}
+    out: dict[str, list[str]] = {}
+    for k, address in rows:
+        out.setdefault(str(k), []).append(str(address))
+    return out
+
+
+def load_copies() -> dict[str, list[str]]:
+    """Who the office copies each message to, sealed: from the mirror or the table."""
+    try:
+        raw = _redis().get(COPIES_KEY)
+        if raw is not None:
+            return dict(json.loads(raw))
+    except Exception as exc:
+        log.warning("messages.mirror_unavailable", error=str(exc))
+    copies = _read_copies_from_db()
+    try:
+        _redis().set(COPIES_KEY, json.dumps(copies), ex=MIRROR_TTL_S)
+    except Exception as exc:
+        log.warning("messages.mirror_not_written", error=str(exc))
+    return copies
+
+
 def common_variables() -> dict[str, str]:
     """Available to every template, filled from configuration."""
     return {
@@ -121,12 +164,22 @@ def channel_for(contact: str) -> Channel:
     return Channel.EMAIL if "@" in contact else Channel.SMS
 
 
-def deliver(key: Message, *, to: str, **variables: Any) -> dict[str, Any]:
+def deliver(
+    key: Message,
+    *,
+    to: str,
+    attachments: Sequence[Attachment] = (),
+    **variables: Any,
+) -> dict[str, Any]:
     """Render one junction for one contact and send it. Failure raises.
 
     A transport that swallowed an error and returned quietly would turn a
     retryable outage into silent loss, so nothing is caught here; the task's
     retry policy decides what happens next.
+
+    By email, the copies the office set for this message go with it, if the
+    catalogue lets it be copied; `attachments` go only on a message the
+    catalogue lets carry files. By SMS, neither: a text has no copy and no file.
     """
     # Whatever a caller hands in - a name for the greeting, the contact a ticket
     # is addressed to - may be sealed at rest. It is opened here, once, at the
@@ -172,6 +225,9 @@ def deliver(key: Message, *, to: str, **variables: Any) -> dict[str, Any]:
     if ch not in j.channels:
         raise ValueError(f"'{j.key.value}' is not sent by {ch.value}; contact is {to[:3]}…")
 
+    if attachments and not j.attachable:
+        raise ValueError(f"'{j.key.value}' does not carry files")
+
     subject, body = render(key, ch, variables)
     if ch is Channel.SMS:
         from cmp.infrastructure.sms import build_sms_transport
@@ -181,17 +237,38 @@ def deliver(key: Message, *, to: str, **variables: Any) -> dict[str, Any]:
         from cmp.infrastructure.email import build_email_transport
 
         assert subject is not None
-        result = dict(build_email_transport().send(to=to, subject=subject, body=body))
+        cc: list[str] = []
+        if j.copyable:
+            sealed = load_copies().get(j.key.value, [])
+            if sealed:
+                try:
+                    cc = [c for c in unseal_values_sync(sealed) if c and c != to]
+                except (DkmsUnavailable, SealedValueUnreadable) as exc:
+                    log.error(
+                        "message.not_sent",
+                        message=j.key.value,
+                        reason="the key service could not open a copy address",
+                        retried=isinstance(exc, DkmsUnavailable),
+                        error=str(exc),
+                    )
+                    raise
+        result = dict(
+            build_email_transport().send(
+                to=to, subject=subject, body=body, cc=cc, attachments=attachments
+            )
+        )
     result["message"] = j.key.value
     return result
 
 
 __all__ = [
+    "COPIES_KEY",
     "MIRROR_KEY",
     "Overrides",
     "channel_for",
     "common_variables",
     "deliver",
+    "load_copies",
     "load_overrides",
     "render",
     "resolve",

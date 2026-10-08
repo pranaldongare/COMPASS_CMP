@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 311,
-  "registered_business_and_system_operations": 314,
+  "documented_operations": 312,
+  "registered_business_and_system_operations": 315,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -12106,6 +12106,45 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
       ]
+    },
+    {
+      "module": "messages",
+      "method": "PUT",
+      "path": "/messages/{key}/copies",
+      "summary": "Who it is copied to by email: up to five addresses",
+      "function": "save_copies",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "MessageWriter",
+      "resolved_gate": "RequireResource(message_template, write=True)",
+      "route_roles": [
+        "dpo",
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "message_template",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO"
+      },
+      "conditions": [
+        "As every write of a message's words. Only a message the catalogue marks copyable (`COPYABLE`) takes copies - never one with a code, a link or a person's own record (422 otherwise). At most 5 addresses; the set is replaced; addresses sealed with a blind index. The trail records the count, never an address. (2026-10-08)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/messages.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/messaging/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
     }
   ],
   "amended": [
@@ -12183,6 +12222,11 @@
       "on": "2026-10-07",
       "commit": "breach lists",
       "note": "A breach's people from an uploaded list (0045): template, check, take, and the contacts with no account."
+    },
+    {
+      "on": "2026-10-08",
+      "commit": "message copies",
+      "note": "Who a message is copied to by email (0046): PUT /messages/{key}/copies."
     }
   ]
 }

@@ -237,6 +237,9 @@ async def change_role(
         subject_user_id=user["id"],
         detail={"from": user["role"], "to": role, "reason_given": bool(reason)},
     )
+    from cmp.domain import alerts
+
+    await alerts.role_changed(conn, user=user, old_role=str(user["role"]), new_role=role)
     return user
 
 
@@ -261,6 +264,9 @@ async def deactivate(conn: Conn, user_uuid: str, *, actor_id: int) -> tuple[dict
         return user, await access.remove(conn, user, actor_id=actor_id)
     if user["role"] != Role.DATA_SUBJECT.value:
         await auth_service.end_staff_access(conn, user=user, actor_user_id=actor_id)
+        from cmp.domain import alerts
+
+        await alerts.staff_access_ended(conn, user=user)
         return user, True
     await repo.set_status(conn, user["id"], "deactivated")
     await audit.record(

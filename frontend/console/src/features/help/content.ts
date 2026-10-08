@@ -687,10 +687,11 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "steps",
         items: [
-          "Click [[Message templates]]. They are grouped under Sign-in, Consent, Rights and Staff.",
+          "Click [[Message templates]]. They are grouped by what they are about: Sign-in, Accounts, Projects, Consent, Rights, Breach and Staff.",
           "Edit a message's [[Subject]] and [[Body]]. Click a variable chip, such as {full_name}, to insert it where the cursor is.",
           "Click [[Preview]] to see it with sample values, then [[Save]].",
           "[[Reset to default]] brings back the original words.",
+          "To copy an email to a team mailbox, put up to five addresses in [[Copy to]] and click [[Save copies]]. Emails that carry a code or a link, or a person's own record, can never be copied, and say so.",
         ],
       },
       {

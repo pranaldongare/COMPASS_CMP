@@ -615,6 +615,16 @@ async def capture(
             str(artefact["consent_uuid"]),
             link["project_name"],
             [by_uuid[u]["name"] for u, v in grants.items() if v],
+            # Her record, as the file the receipt carries (2026-10-08): nothing
+            # here names her.
+            {
+                "notice": f"{link['notice_code']} v{link['version']}",
+                "language": language_code,
+                "sha256": language["content_hash"],
+                "at": now.isoformat(),
+                "action": action_type,
+                "refused": [by_uuid[u]["name"] for u, v in grants.items() if not v],
+            },
         )
 
     log.info(

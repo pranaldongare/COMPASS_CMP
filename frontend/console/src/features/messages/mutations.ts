@@ -9,7 +9,12 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { previewMessage, resetMessage, saveMessage } from "@/features/messages/api";
+import {
+  previewMessage,
+  resetMessage,
+  saveMessage,
+  saveMessageCopies,
+} from "@/features/messages/api";
 import { keys, type Result } from "@/lib/query";
 import type {
   MessageChannel,
@@ -33,6 +38,18 @@ export function useSaveMessage(): Result<MessageTemplate, MessageEdit> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ key, channel, input }: MessageEdit) => saveMessage(key, channel, input),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.messages.all }),
+  });
+}
+
+export function useSaveMessageCopies(): Result<
+  MessageTemplate,
+  { key: string; addresses: string[] }
+> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ key, addresses }: { key: string; addresses: string[] }) =>
+      saveMessageCopies(key, addresses),
     onSuccess: () => void qc.invalidateQueries({ queryKey: keys.messages.all }),
   });
 }

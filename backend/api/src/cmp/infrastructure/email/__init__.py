@@ -5,6 +5,7 @@
 """
 
 from cmp.infrastructure.email.transport import (
+    Attachment,
     ConsoleEmailTransport,
     EmailRejected,
     EmailTransport,
@@ -14,6 +15,7 @@ from cmp.infrastructure.email.transport import (
 )
 
 __all__ = [
+    "Attachment",
     "ConsoleEmailTransport",
     "EmailRejected",
     "EmailTransport",

@@ -216,3 +216,39 @@ def test_production_refuses_a_placeholder_sender() -> None:
             COOKIE_SECURE=True,
             CORS_ORIGINS="https://console.corp.example",
         )
+
+
+# ------------------------------------------------- copies and files (2026-10-08)
+
+
+def test_copies_go_in_cc_and_files_after_the_text_and_html() -> None:
+    receipt = t.Attachment("consent-receipt.txt", "text/plain", b"Your consent record\n")
+    transport(port=25).send(
+        to="asha.rao@corp.example",
+        subject="Your consent",
+        body="Here is your record.",
+        cc=["approvals@corp.example", "  "],
+        attachments=[receipt],
+    )
+    [message] = FakeServer.made[0].sent
+    assert message["Cc"] == "approvals@corp.example"
+    assert message.get_content_type() == "multipart/mixed"
+    [file] = list(message.iter_attachments())
+    assert file.get_filename() == "consent-receipt.txt"
+    assert file.get_content() == "Your consent record\n"
+    # The words are still both: text and HTML.
+    assert message.get_body(preferencelist=("html",)) is not None
+    assert message.get_body(preferencelist=("plain",)).get_content().startswith("Here is")
+
+
+def test_too_many_copies_or_too_much_attached_is_refused() -> None:
+    with pytest.raises(ValueError, match="at most 5 copies"):
+        transport(port=25).send(
+            to="a@corp.example", subject="s", body="b", cc=[f"c{i}@corp.example" for i in range(6)]
+        )
+    with pytest.raises(ValueError, match="email address"):
+        transport(port=25).send(to="a@corp.example", subject="s", body="b", cc=["not-an-address"])
+    big = t.Attachment("big.bin", "application/octet-stream", b"x" * (t.MAX_ATTACHMENT_BYTES + 1))
+    with pytest.raises(ValueError, match="MB of files"):
+        transport(port=25).send(to="a@corp.example", subject="s", body="b", attachments=[big])
+    assert FakeServer.made == []

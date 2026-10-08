@@ -16102,6 +16102,59 @@
         }
       }
     },
+    "/messages/{key}/copies": {
+      "put": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Who it is copied to by email: up to five addresses",
+        "operationId": "save_copies_messages__key__copies_put",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z_]{1,64}$",
+              "title": "Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopiesIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/cmp__api__routers__v1__messages__MessageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/messages/{key}/{channel}": {
       "put": {
         "tags": [
@@ -22123,6 +22176,39 @@
           "code"
         ],
         "title": "ContactVerify"
+      },
+      "CopiesIn": {
+        "properties": {
+          "addresses": {
+            "items": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Addresses"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "addresses"
+        ],
+        "title": "CopiesIn",
+        "description": "Every address the message is now copied to; an empty list copies it to nobody."
+      },
+      "CopyOut": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "CopyOut"
       },
       "CopySourceOut": {
         "properties": {
@@ -33135,6 +33221,23 @@
           "group": {
             "type": "string",
             "title": "Group"
+          },
+          "copyable": {
+            "type": "boolean",
+            "title": "Copyable",
+            "default": false
+          },
+          "attachable": {
+            "type": "boolean",
+            "title": "Attachable",
+            "default": false
+          },
+          "copies": {
+            "items": {
+              "$ref": "#/components/schemas/CopyOut"
+            },
+            "type": "array",
+            "title": "Copies"
           },
           "variables": {
             "items": {

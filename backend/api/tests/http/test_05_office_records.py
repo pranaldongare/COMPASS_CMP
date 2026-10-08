@@ -206,6 +206,52 @@ class TestTheMessageWords:
         )
 
 
+class TestWhoAMessageIsCopiedTo:
+    async def test_the_office_sets_copies_and_a_code_takes_none(
+        self, http: httpx.AsyncClient, world: World
+    ) -> None:
+        saved = await call(
+            http,
+            "PUT",
+            "/messages/project_submitted/copies",
+            template="/messages/{key}/copies",
+            session=world.dpo,
+            json={"addresses": ["approvals@example.org"]},
+        )
+        body = saved.json()
+        assert body["copyable"] is True
+        [copy] = body["copies"]
+        assert str(copy["email"]).startswith("SE::")
+        assert plain(copy["email"]) == "approvals@example.org"
+        await call(
+            http,
+            "PUT",
+            "/messages/mfa_code/copies",
+            template="/messages/{key}/copies",
+            session=world.dpo,
+            expect=422,
+            json={"addresses": ["approvals@example.org"]},
+        )
+        cleared = await call(
+            http,
+            "PUT",
+            "/messages/project_submitted/copies",
+            template="/messages/{key}/copies",
+            session=world.admin,
+            json={"addresses": []},
+        )
+        assert cleared.json()["copies"] == []
+        await call(
+            http,
+            "PUT",
+            "/messages/project_submitted/copies",
+            template="/messages/{key}/copies",
+            session=world.rnd,
+            expect=(403, 404),
+            json={"addresses": []},
+        )
+
+
 class TestTheCollectionRegister:
     async def test_the_batch_the_collection_and_its_assets(
         self, http: httpx.AsyncClient, world: World

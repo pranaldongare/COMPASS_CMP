@@ -124,6 +124,18 @@ async def grant(
         },
     )
 
+    # Both people are told, by email (2026-10-08).
+    from cmp.domain import alerts
+
+    await alerts.delegation_arranged(
+        conn,
+        delegator_id=int(delegator["id"]),
+        delegate_id=int(delegate["id"]),
+        role=str(delegator["role"]),
+        starts_at=starts_at,
+        ends_at=ends_at,
+    )
+
     grants_access = Role(delegator["role"]) is not Role.DPO
     return {
         "delegation_uuid": row["delegation_uuid"],

@@ -5296,6 +5296,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/messages/{key}/copies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Who it is copied to by email: up to five addresses */
+        put: operations["save_copies_messages__key__copies_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/messages/{key}/{channel}": {
         parameters: {
             query?: never;
@@ -7472,6 +7489,19 @@ export interface components {
             contact: string;
             /** Code */
             code: string;
+        };
+        /**
+         * CopiesIn
+         * @description Every address the message is now copied to; an empty list copies it to nobody.
+         */
+        CopiesIn: {
+            /** Addresses */
+            addresses: string[];
+        };
+        /** CopyOut */
+        CopyOut: {
+            /** Email */
+            email: string;
         };
         /** CopySourceOut */
         CopySourceOut: {
@@ -11035,6 +11065,18 @@ export interface components {
             description: string;
             /** Group */
             group: string;
+            /**
+             * Copyable
+             * @default false
+             */
+            copyable: boolean;
+            /**
+             * Attachable
+             * @default false
+             */
+            attachable: boolean;
+            /** Copies */
+            copies?: components["schemas"]["CopyOut"][];
             /** Variables */
             variables: components["schemas"]["VariableOut"][];
             /** Channels */
@@ -20954,6 +20996,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_copies_messages__key__copies_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CopiesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["cmp__api__routers__v1__messages__MessageOut"];
                 };
             };
             /** @description Validation Error */

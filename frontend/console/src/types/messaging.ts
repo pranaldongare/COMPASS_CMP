@@ -37,6 +37,13 @@ export interface MessageTemplate {
   title: string;
   description: string;
   group: string;
+  /** Whether the office may copy it by email to somebody else (2026-10-08).
+   *  Never a message with a code, a link or a person's own record. */
+  copyable: boolean;
+  /** Whether it may carry files by email - only files its recipient owns. */
+  attachable: boolean;
+  /** Who it is copied to. Each `email` is sealed, opened by the client. */
+  copies: { email: string }[];
   variables: MessageVariable[];
   channels: MessageChannelTemplate[];
 }

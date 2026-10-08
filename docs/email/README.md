@@ -9,6 +9,7 @@ before anybody waits on a sign-in code.
 |---|---|
 | This page | How email works, the settings, the template, failures and retries, operating it |
 | [messages.md](messages.md) | **Every message the platform sends** - when, to whom, its subject, its variables, and the code that sends it (generated from the code) |
+| [Notification strategy](../notifications/README.md) | **Every module's emails end to end** - to, CC, attachment, subject and body - one file per module, and the rules for copies and files |
 | [domain/messages.md](../domain/messages.md) | The messages as the office sees them, and how their words are edited |
 
 ## The settings: five, and nothing else
@@ -117,11 +118,12 @@ what would be sent.
 |---|---|
 | From | `ORGANISATION_NAME Privacy Office <SENDER_EMAIL>` |
 | To | The one recipient - opened from its sealed form only at this moment |
+| Cc | The addresses the Privacy Office set for this email in **Message templates → Copy to**, at most five - only on an email that may be copied (never one with a code, a link or a person's own record), opened from their sealed form like the recipient |
 | Subject | The message's subject, with its values filled in |
 | Date | When it was sent, in UTC |
 | Message-ID | Unique, on the sender's domain; returned and logged so a delivery can be traced |
 | Auto-Submitted | `auto-generated` (RFC 3834), so an out-of-office reply is not sent back to an address nobody reads |
-| Body | `multipart/alternative`: the plain text, then the laid-out HTML |
+| Body | `multipart/alternative`: the plain text, then the laid-out HTML; with a file, `multipart/mixed` - that, then the file. Only two emails carry one, and only what the recipient owns: the consent record on a consent receipt, the office's file on a rights ticket message to its holder. At most 10 MB |
 
 ## When the server says no
 
@@ -150,7 +152,8 @@ recorded on the breach's notices card as a failed delivery.
 |---|---|
 | The password | Kept as a secret; unwrapped only to log in |
 | The message's body (a code, a response) | Only the subject is logged |
-| The full recipient | Obscured: `as***@corp.example` |
+| The full recipient | Obscured: `as***@corp.example`; copies the same |
+| A file's contents | Only its name and size are logged |
 | A recipient in the database in the clear | Contacts are sealed at rest and opened only inside `deliver()` |
 
 ## Checking a deployment

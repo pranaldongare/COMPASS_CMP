@@ -25,6 +25,12 @@ properties of the *transport*, not of the caller:
 Every email is sent twice over in one message: laid out in HTML with the
 platform's header and footer (`layout.py`), and as plain text for a client
 that shows no HTML.
+
+An email may also carry copies (`cc`) and files (`attachments`) - since
+2026-10-08, and only where the messaging layer allows them
+(docs/notifications/README.md): a copy is the Privacy Office's choice per
+message, never on one that carries a code or a link; a file only where the
+recipient already owns it. Copies are logged obscured, files by name and size.
 """
 
 from __future__ import annotations
@@ -32,11 +38,13 @@ from __future__ import annotations
 import re
 import smtplib
 import ssl
+from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from email.message import EmailMessage
 from email.utils import formataddr, formatdate, make_msgid
 from pathlib import Path
-from typing import Protocol, runtime_checkable
+from typing import Final, Protocol, runtime_checkable
 
 from cmp.core.config import settings
 from cmp.core.logging import get_logger
@@ -44,12 +52,53 @@ from cmp.infrastructure.email import layout
 
 log = get_logger("cmp.infrastructure.email")
 
+#: What one email may carry in files, in all. A mail server commonly refuses
+#: more than 10-25 MB, and the encoding grows a file by a third.
+MAX_ATTACHMENT_BYTES: Final = 10 * 1024 * 1024
+
+#: Copies one email may carry.
+MAX_CC: Final = 5
+
+
+@dataclass(frozen=True, slots=True)
+class Attachment:
+    """A file sent with an email: its name as the recipient sees it, its type,
+    its bytes."""
+
+    filename: str
+    content_type: str
+    data: bytes
+
+
+def _checked(
+    cc: Sequence[str], attachments: Sequence[Attachment]
+) -> tuple[list[str], list[Attachment]]:
+    copies = [c.strip() for c in cc if c and c.strip()]
+    if len(copies) > MAX_CC:
+        raise ValueError(f"An email carries at most {MAX_CC} copies")
+    if any("@" not in c for c in copies):
+        raise ValueError("A copy goes to an email address")
+    files = list(attachments)
+    if sum(len(a.data) for a in files) > MAX_ATTACHMENT_BYTES:
+        raise ValueError(
+            f"An email carries at most {MAX_ATTACHMENT_BYTES // (1024 * 1024)} MB of files"
+        )
+    return copies, files
+
 
 @runtime_checkable
 class EmailTransport(Protocol):
     """The one method anything above this layer may call."""
 
-    def send(self, *, to: str, subject: str, body: str) -> dict[str, object]:
+    def send(
+        self,
+        *,
+        to: str,
+        subject: str,
+        body: str,
+        cc: Sequence[str] = (),
+        attachments: Sequence[Attachment] = (),
+    ) -> dict[str, object]:
         """Deliver, or raise.
 
         The return value is for the task's result backend and the audit log —
@@ -76,15 +125,27 @@ def sender_name() -> str:
     return f"{settings.organisation_name} Privacy Office"
 
 
-def compose(*, sender: str, to: str, subject: str, body: str) -> EmailMessage:
+def compose(
+    *,
+    sender: str,
+    to: str,
+    subject: str,
+    body: str,
+    cc: Sequence[str] = (),
+    attachments: Sequence[Attachment] = (),
+) -> EmailMessage:
     """The message as it goes out: the laid-out HTML and the plain text in one
     message, from the Privacy Office by name, with a date and an id, and marked
-    automatic so an out-of-office reply is not sent back (RFC 3834)."""
+    automatic so an out-of-office reply is not sent back (RFC 3834). Copies go
+    in `Cc`; files make it `multipart/mixed`, the text and HTML first."""
+    copies, files = _checked(cc, attachments)
     organisation = settings.organisation_name
     domain = sender.rpartition("@")[2] or "localhost"
     message = EmailMessage()
     message["From"] = formataddr((sender_name(), sender))
     message["To"] = to
+    if copies:
+        message["Cc"] = ", ".join(copies)
     message["Subject"] = subject
     message["Date"] = formatdate(usegmt=True)
     message["Message-ID"] = make_msgid(domain=domain)
@@ -93,6 +154,14 @@ def compose(*, sender: str, to: str, subject: str, body: str) -> EmailMessage:
     message.add_alternative(
         layout.render_html(subject=subject, body=body, organisation=organisation), subtype="html"
     )
+    for f in files:
+        maintype, _, subtype = (f.content_type or "application/octet-stream").partition("/")
+        message.add_attachment(
+            f.data,
+            maintype=maintype or "application",
+            subtype=subtype or "octet-stream",
+            filename=f.filename,
+        )
     return message
 
 
@@ -115,12 +184,21 @@ class ConsoleEmailTransport:
             Path(outbox_path) if outbox_path else Path(settings.upload_root).parent / "outbox.log"
         )
 
-    def send(self, *, to: str, subject: str, body: str) -> dict[str, object]:
+    def send(
+        self,
+        *,
+        to: str,
+        subject: str,
+        body: str,
+        cc: Sequence[str] = (),
+        attachments: Sequence[Attachment] = (),
+    ) -> dict[str, object]:
         if settings.is_production or settings.environment == "staging":
             # Not "return delivered": a transport that writes nothing and says
             # it did turns a misconfiguration into silent loss.
             raise RuntimeError("The console email transport does not deliver outside local/test")
-        self._write(to=to, subject=subject, body=body)
+        copies, files = _checked(cc, attachments)
+        self._write(to=to, subject=subject, body=body, cc=copies, files=files)
         preview = self._preview(subject=subject, body=body)
         from cmp.infrastructure import devcodes
 
@@ -128,19 +206,40 @@ class ConsoleEmailTransport:
         log.info(
             "email.delivered",
             to=obscure(to),
+            cc=[obscure(c) for c in copies],
+            attachments=[f"{f.filename} ({len(f.data)} bytes)" for f in files],
             subject=subject,
             transport="console",
             preview=preview,
         )
-        return {"channel": "email", "transport": "console", "delivered": True, "preview": preview}
+        return {
+            "channel": "email",
+            "transport": "console",
+            "delivered": True,
+            "preview": preview,
+            "cc": len(copies),
+            "attachments": len(files),
+        }
 
-    def _write(self, *, to: str, subject: str, body: str) -> None:
+    def _write(
+        self,
+        *,
+        to: str,
+        subject: str,
+        body: str,
+        cc: Sequence[str] = (),
+        files: Sequence[Attachment] = (),
+    ) -> None:
         try:
             self._path.parent.mkdir(parents=True, exist_ok=True)
             stamp = datetime.now(UTC).isoformat(timespec="seconds")
+            extra = (f"cc: {', '.join(cc)}\n" if cc else "") + "".join(
+                f"attached: {f.filename} ({f.content_type}, {len(f.data)} bytes)\n" for f in files
+            )
             entry = (
                 f"\n{'=' * 78}\n"
                 f"{stamp}  [email]  to: {to}\n"
+                f"{extra}"
                 f"subject: {subject}\n{'-' * 78}\n{body}\n"
             )
             with self._path.open("a", encoding="utf-8") as handle:
@@ -234,10 +333,21 @@ class SmtpEmailTransport:
                 raise
         return client
 
-    def send(self, *, to: str, subject: str, body: str) -> dict[str, object]:
-        message = compose(sender=self._sender, to=to, subject=subject, body=body)
+    def send(
+        self,
+        *,
+        to: str,
+        subject: str,
+        body: str,
+        cc: Sequence[str] = (),
+        attachments: Sequence[Attachment] = (),
+    ) -> dict[str, object]:
+        message = compose(
+            sender=self._sender, to=to, subject=subject, body=body, cc=cc, attachments=attachments
+        )
         where = {
             "to": obscure(to),
+            "cc": [obscure(c) for c in cc],
             "server": f"{self._host}:{self._port}",
             "connection": self._mode,
         }
@@ -291,6 +401,8 @@ class SmtpEmailTransport:
         log.info(
             "email.delivered",
             to=obscure(to),
+            cc=[obscure(c) for c in cc],
+            attachments=[f"{a.filename} ({len(a.data)} bytes)" for a in attachments],
             subject=subject,
             transport="smtp",
             message_id=message["Message-ID"],
@@ -307,10 +419,21 @@ class NullEmailTransport:
     """Accepts and discards. For tests that assert on behaviour, not delivery."""
 
     def __init__(self) -> None:
-        self.sent: list[dict[str, str]] = []
+        self.sent: list[dict[str, object]] = []
 
-    def send(self, *, to: str, subject: str, body: str) -> dict[str, object]:
-        self.sent.append({"to": to, "subject": subject, "body": body})
+    def send(
+        self,
+        *,
+        to: str,
+        subject: str,
+        body: str,
+        cc: Sequence[str] = (),
+        attachments: Sequence[Attachment] = (),
+    ) -> dict[str, object]:
+        copies, files = _checked(cc, attachments)
+        self.sent.append(
+            {"to": to, "subject": subject, "body": body, "cc": copies, "attachments": files}
+        )
         return {"channel": "email", "transport": "null", "delivered": True}
 
 

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict WalpD8IqChoVTpY6ES04zbTxfaWCePILJ9lyvzywJIVusgT89pfgCmvSNG5pFmt
+\restrict ZilclUK6JUyjVm3r2PjCGCIaPOGZIVvIpxRXpTklHks4OcT2hBNHb2435UV7b3o
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -2939,6 +2939,54 @@ ALTER SEQUENCE public.legal_hold_hold_id_seq OWNED BY public.legal_hold.hold_id;
 
 
 --
+-- Name: message_copy; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.message_copy (
+    copy_id integer NOT NULL,
+    key character varying(64) NOT NULL,
+    address text NOT NULL,
+    address_hash text NOT NULL,
+    added_by integer,
+    added_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: TABLE message_copy; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.message_copy IS 'Who an email is copied to, per message, as the office chose. Never a message with a code, a link or a principal''s own record';
+
+
+--
+-- Name: COLUMN message_copy.address; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.message_copy.address IS 'Sealed (EMAIL); address_hash is its blind index';
+
+
+--
+-- Name: message_copy_copy_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.message_copy_copy_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: message_copy_copy_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.message_copy_copy_id_seq OWNED BY public.message_copy.copy_id;
+
+
+--
 -- Name: message_template; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4471,6 +4519,13 @@ ALTER TABLE ONLY public.legal_hold ALTER COLUMN hold_id SET DEFAULT nextval('pub
 
 
 --
+-- Name: message_copy copy_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_copy ALTER COLUMN copy_id SET DEFAULT nextval('public.message_copy_copy_id_seq'::regclass);
+
+
+--
 -- Name: message_template template_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5277,6 +5332,22 @@ ALTER TABLE ONLY public.legal_hold
 
 
 --
+-- Name: message_copy message_copy_once; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_copy
+    ADD CONSTRAINT message_copy_once UNIQUE (key, address_hash);
+
+
+--
+-- Name: message_copy message_copy_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_copy
+    ADD CONSTRAINT message_copy_pkey PRIMARY KEY (copy_id);
+
+
+--
 -- Name: message_template message_template_one_per_channel; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6065,6 +6136,13 @@ CREATE INDEX idx_link_notice ON public.consent_link USING btree (notice_id);
 --
 
 CREATE INDEX idx_link_site ON public.consent_link USING btree (site_id) WHERE (status = 'active'::public.link_status);
+
+
+--
+-- Name: idx_message_copy_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_copy_key ON public.message_copy USING btree (key);
 
 
 --
@@ -7483,6 +7561,14 @@ ALTER TABLE ONLY public.legal_hold
 
 
 --
+-- Name: message_copy message_copy_added_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_copy
+    ADD CONSTRAINT message_copy_added_by_fkey FOREIGN KEY (added_by) REFERENCES public.auth_user(id);
+
+
+--
 -- Name: message_template message_template_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8014,5 +8100,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict WalpD8IqChoVTpY6ES04zbTxfaWCePILJ9lyvzywJIVusgT89pfgCmvSNG5pFmt
+\unrestrict ZilclUK6JUyjVm3r2PjCGCIaPOGZIVvIpxRXpTklHks4OcT2hBNHb2435UV7b3o
 

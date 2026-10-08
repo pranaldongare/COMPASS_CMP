@@ -22,6 +22,7 @@ import {
   useResetMessage,
   useSaveMessage,
 } from "@/features/messages/mutations";
+import { CopyTo } from "@/features/messages/components/copy-to";
 import { formatDate } from "@/lib/format";
 import { useToast } from "@/providers";
 import type { MessageChannel, MessageChannelTemplate, MessageTemplate } from "@/types";
@@ -57,6 +58,12 @@ export function MessageEditor({ message }: { message: MessageTemplate }) {
             </Button>
           ))}
         </div>
+      )}
+      <CopyTo message={message} />
+      {message.attachable && (
+        <p className="text-xs text-text-muted">
+          By email it can carry a file - only one its recipient owns, attached by the platform.
+        </p>
       )}
       {/* Keyed so a channel switch, or fresh words from the server, start a
           fresh draft rather than carrying one channel's text into another. */}

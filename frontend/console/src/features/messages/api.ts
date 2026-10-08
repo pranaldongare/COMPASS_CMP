@@ -35,6 +35,11 @@ export function resetMessage(
   return apiDelete<MessageTemplate>(`/messages/${key}/${channel}`);
 }
 
+/** Who a message is copied to by email: up to five addresses; none clears it. */
+export function saveMessageCopies(key: string, addresses: string[]): Promise<MessageTemplate> {
+  return apiPut<MessageTemplate>(`/messages/${key}/copies`, { addresses });
+}
+
 export function previewMessage(
   key: string,
   channel: MessageChannel,

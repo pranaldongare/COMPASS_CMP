@@ -64,6 +64,8 @@ CONTACT = {
     "email_verified_at", "mobile_verified_at", "secondary_email_verified_at",
     # Whether a person has a contact to be reached by, not the contact (S3-02).
     "has_email", "has_mobile",
+    # Who the office copies a message to (0046): a mailbox, maybe a person's.
+    "address", "addresses",
 }
 DEMOGRAPHIC = {
     "dob", "is_minor", "person_type", "organization_id", "role", "user_role",
@@ -131,6 +133,7 @@ DERIVED = {
     "organization_id_hash", "full_name_ngrams",
     "submitted_contact_hash", "submitted_name_ngrams",
     "nominee_email_hash", "nominee_mobile_hash", "nominee_name_ngrams",
+    "address_hash",
 }
 
 CATEGORIES = [

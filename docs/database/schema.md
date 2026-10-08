@@ -1,7 +1,7 @@
 # Schema
 
-57 tables, 39 enums, 1 view, 50 triggers, 90 named CHECK constraints and 158
-foreign keys, as of migration 0045. Those counts are read from the PostgreSQL
+58 tables, 39 enums, 1 view, 50 triggers, 90 named CHECK constraints and 159
+foreign keys, as of migration 0046. Those counts are read from the PostgreSQL
 catalogs after replaying every migration, not maintained by hand.
 
 The migrations are the source of truth: 0001 transcribed the original
@@ -144,6 +144,12 @@ is one row per file - its kind (`email`, `proof`, `chat`, `other`, by CHECK),
 the name it came with and an optional note (both sealed), where it is stored,
 its SHA-256 and size - append-only by trigger and grant: a file is never
 replaced or removed.
+
+**Who an email is copied to, since 0046.** `message_copy` holds the office's
+choice per email - `key`, `address` sealed (EMAIL) with `address_hash`, unique
+per key - as configuration: the set is replaced when the office changes it,
+and each change is on the trail. Which emails may be copied at all is the
+catalogue's (`COPYABLE`), not the table's.
 
 **A breach's people from a list, since 0045.** `breach_upload` records each
 list taken - kind (`contacts` or `assets`, by CHECK), sealed file name, hash

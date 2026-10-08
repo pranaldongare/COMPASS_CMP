@@ -1,6 +1,6 @@
 {
-  "commit": "7541f4fbf52b9797b2b691d57775c690d632c297",
-  "migration_head": "0045",
+  "commit": "c517f4ead0ddc838ba81c3179687ddaf9ef8c051",
+  "migration_head": "0046",
   "migrations": [
     {
       "revision": "0001",
@@ -181,6 +181,10 @@
     {
       "revision": "0045",
       "source": "backend/api/migrations/versions/0045_breach_contact_upload.py"
+    },
+    {
+      "revision": "0046",
+      "source": "backend/api/migrations/versions/0046_message_copy.py"
     }
   ],
   "postgres_version": "16.15",
@@ -354,6 +358,11 @@
       "name": "legal_hold",
       "kind": "r",
       "comment": "Stops erasure of an asset, or of everything about a person, until released (S2-03)"
+    },
+    {
+      "name": "message_copy",
+      "kind": "r",
+      "comment": "Who an email is copied to, per message, as the office chose. Never a message with a code, a link or a principal's own record"
     },
     {
       "name": "message_template",
@@ -3675,6 +3684,60 @@
       "type": "timestamp with time zone",
       "not_null": false,
       "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "message_copy",
+      "name": "copy_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('message_copy_copy_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "message_copy",
+      "name": "key",
+      "position": 2,
+      "type": "character varying(64)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "message_copy",
+      "name": "address",
+      "position": 3,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": "Sealed (EMAIL); address_hash is its blind index"
+    },
+    {
+      "table_name": "message_copy",
+      "name": "address_hash",
+      "position": 4,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "message_copy",
+      "name": "added_by",
+      "position": 5,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "message_copy",
+      "name": "added_at",
+      "position": 6,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
       "comment": null
     },
     {
@@ -10366,6 +10429,54 @@
       "initially_deferred": false
     },
     {
+      "table_name": "message_copy",
+      "name": "message_copy_added_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (added_by) REFERENCES auth_user(id)",
+      "columns": [
+        "added_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "message_copy",
+      "name": "message_copy_once",
+      "kind": "u",
+      "definition": "UNIQUE (key, address_hash)",
+      "columns": [
+        "key",
+        "address_hash"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "message_copy",
+      "name": "message_copy_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (copy_id)",
+      "columns": [
+        "copy_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "message_template",
       "name": "message_template_body_present",
       "kind": "c",
@@ -13649,6 +13760,21 @@
       "definition": "CREATE UNIQUE INDEX legal_hold_pkey ON public.legal_hold USING btree (hold_id)"
     },
     {
+      "table_name": "message_copy",
+      "name": "idx_message_copy_key",
+      "definition": "CREATE INDEX idx_message_copy_key ON public.message_copy USING btree (key)"
+    },
+    {
+      "table_name": "message_copy",
+      "name": "message_copy_once",
+      "definition": "CREATE UNIQUE INDEX message_copy_once ON public.message_copy USING btree (key, address_hash)"
+    },
+    {
+      "table_name": "message_copy",
+      "name": "message_copy_pkey",
+      "definition": "CREATE UNIQUE INDEX message_copy_pkey ON public.message_copy USING btree (copy_id)"
+    },
+    {
       "table_name": "message_template",
       "name": "message_template_one_per_channel",
       "definition": "CREATE UNIQUE INDEX message_template_one_per_channel ON public.message_template USING btree (key, channel)"
@@ -14858,6 +14984,9 @@
       "name": "legal_hold_hold_id_seq"
     },
     {
+      "name": "message_copy_copy_id_seq"
+    },
+    {
       "name": "message_template_template_id_seq"
     },
     {
@@ -15023,11 +15152,11 @@
     }
   ],
   "counts": {
-    "application_tables": 57,
+    "application_tables": 58,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 691,
-    "foreign_keys": 158,
+    "table_columns": 697,
+    "foreign_keys": 159,
     "enums": 39,
     "triggers": 50,
     "checks": 90
