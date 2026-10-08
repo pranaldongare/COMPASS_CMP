@@ -77,6 +77,12 @@ _SELECT = """
     WHERE h.request_id = r.request_id AND h.ticket_status = 'issued') AS tickets_unescalated,
   (SELECT count(*) FROM rights_request_holder h
     WHERE h.request_id = r.request_id AND h.ticket_status = 'returned') AS tickets_returned,
+  (SELECT count(*) FROM rights_request_holder h
+    WHERE h.request_id = r.request_id AND h.ticket_status = 'returned'
+      AND h.accepted_at IS NULL) AS tickets_to_review,
+  (SELECT count(*) FROM rights_request_holder h
+    WHERE h.request_id = r.request_id AND h.ticket_status = 'pending'
+      AND h.confirmed_at IS NOT NULL) AS holders_unsent,
   (SELECT count(*) FROM rights_request_item i WHERE i.request_id = r.request_id) AS item_count,
   (SELECT count(*) FROM rights_request_item i
     WHERE i.request_id = r.request_id AND i.decision IS NULL) AS items_undecided,
@@ -551,6 +557,11 @@ _HOLDER_SELECT = """
   h.brief, h.office_read_at, h.holder_read_at, h.holder_read_at AS seen_at,
   h.return_evidence_name, h.last_reminded_at, h.reminders_sent,
   h.sent_back_at, h.sent_back_reason, h.sent_back_count,
+  h.accepted_at, ab.full_name AS accepted_by_name,
+  (SELECT rr.status::text FROM rights_request rr WHERE rr.request_id = h.request_id)
+    AS request_status,
+  (SELECT max(m.created_at) FROM rights_ticket_message m WHERE m.holder_id = h.holder_id)
+    AS last_activity_at,
   (SELECT count(*) FROM rights_ticket_message m WHERE m.holder_id = h.holder_id)
     AS message_count,
   (SELECT count(*) FROM rights_ticket_message m
@@ -566,6 +577,7 @@ _HOLDER_SELECT = """
   LEFT JOIN auth_user cb ON cb.id = h.confirmed_by
   LEFT JOIN processor_respondent rs ON rs.respondent_id = h.respondent_id
   LEFT JOIN auth_user ru ON ru.id = h.responder_user_id
+  LEFT JOIN auth_user ab ON ab.id = h.accepted_by
 """
 
 
@@ -637,6 +649,8 @@ _HOLDER_MUTABLE = frozenset(
     {
         "confirmed_at",
         "confirmed_by",
+        "accepted_at",
+        "accepted_by",
         "ticket_status",
         "instruction",
         "responder_name",
@@ -975,6 +989,7 @@ _TICKET_SELECT = f"""
   LEFT JOIN auth_user cb ON cb.id = h.confirmed_by
   LEFT JOIN processor_respondent rs ON rs.respondent_id = h.respondent_id
   LEFT JOIN auth_user ru ON ru.id = h.responder_user_id
+  LEFT JOIN auth_user ab ON ab.id = h.accepted_by
 """
 
 
@@ -1150,7 +1165,7 @@ async def holder_for_processor(conn: Conn, request_id: int, processor_id: int) -
     return await fetch_one(
         conn,
         """SELECT holder_id, holder_uuid, label, ticket_status, returned_at,
-                  return_outcome, return_evidence_hash
+                  return_outcome, return_evidence_hash, accepted_at
              FROM rights_request_holder
             WHERE request_id = %s AND processor_id = %s
             ORDER BY holder_id LIMIT 1""",
@@ -1162,7 +1177,7 @@ async def holder_by_id(conn: Conn, holder_id: int) -> Row | None:
     return await fetch_one(
         conn,
         """SELECT holder_id, holder_uuid, label, ticket_status, returned_at,
-                  return_outcome, return_evidence_hash
+                  return_outcome, return_evidence_hash, accepted_at
              FROM rights_request_holder WHERE holder_id = %s""",
         (holder_id,),
     )
@@ -1599,3 +1614,18 @@ async def update_nomination(conn: Conn, nomination_id: int, **cols: Any) -> None
         f"UPDATE nomination SET {assignments} WHERE nomination_id = %(nomination_id)s",
         {**cols, "nomination_id": nomination_id},
     )
+
+
+async def remove_holder(conn: Conn, holder_id: int) -> bool:
+    """A holder found by mistake, while nothing has been sent to it and no
+    erasure item names it. False when it may not go."""
+    cur = await conn.execute(
+        """DELETE FROM rights_request_holder h
+            WHERE h.holder_id = %s AND h.ticket_status = 'pending'
+              AND NOT EXISTS (SELECT 1 FROM rights_ticket_message m
+                               WHERE m.holder_id = h.holder_id)
+              AND NOT EXISTS (SELECT 1 FROM rights_request_item i
+                               WHERE i.holder_id = h.holder_id)""",
+        (holder_id,),
+    )
+    return bool(cur.rowcount)

@@ -1,6 +1,6 @@
 {
-  "commit": "0359149e64d024e228fc82ba26b9bfd3b512c0a3",
-  "migration_head": "0047",
+  "commit": "7d0da97b46fbc4ae8ebc2cad2fb55d7041b59f44",
+  "migration_head": "0048",
   "migrations": [
     {
       "revision": "0001",
@@ -189,6 +189,10 @@
     {
       "revision": "0047",
       "source": "backend/api/migrations/versions/0047_breach_logged_details.py"
+    },
+    {
+      "revision": "0048",
+      "source": "backend/api/migrations/versions/0048_rights_ticket_review.py"
     }
   ],
   "postgres_version": "16.15",
@@ -6544,6 +6548,24 @@
       "comment": "What the holder says it did with the ticket: done, partial or failed. NULL is a return from before 0037, read as done"
     },
     {
+      "table_name": "rights_request_holder",
+      "name": "accepted_at",
+      "position": 38,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": "When the office accepted the returned answer; only an accepted answer counts"
+    },
+    {
+      "table_name": "rights_request_holder",
+      "name": "accepted_by",
+      "position": 39,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
       "table_name": "rights_request_item",
       "name": "item_id",
       "position": 1,
@@ -12704,6 +12726,22 @@
     },
     {
       "table_name": "rights_request_holder",
+      "name": "holder_accepted_is_returned",
+      "kind": "c",
+      "definition": "CHECK (((accepted_at IS NULL) OR (ticket_status = 'returned'::rights_ticket_status)))",
+      "columns": [
+        "accepted_at",
+        "ticket_status"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request_holder",
       "name": "holder_channel",
       "kind": "c",
       "definition": "CHECK (((channel)::text = ANY ((ARRAY['portal'::character varying, 'email'::character varying])::text[])))",
@@ -12777,6 +12815,23 @@
       "referenced_columns": [],
       "delete_action": " ",
       "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request_holder",
+      "name": "rights_request_holder_accepted_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (accepted_by) REFERENCES auth_user(id)",
+      "columns": [
+        "accepted_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
       "deferrable": false,
       "initially_deferred": false
     },
@@ -15273,10 +15328,10 @@
     "application_tables": 58,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 708,
-    "foreign_keys": 159,
+    "table_columns": 710,
+    "foreign_keys": 160,
     "enums": 39,
     "triggers": 50,
-    "checks": 91
+    "checks": 92
   }
 }

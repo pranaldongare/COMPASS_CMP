@@ -116,8 +116,8 @@ export function stepsFor(r: AnyRequest, voice: Voice = "staff"): Step[] {
       });
       push({ title: "The CMP answers its own records", detail: "Consents, notices as read, withdrawals and export_line - no ticket needed", done: started });
       push({
-        title: "Holders derived, DPO confirms",
-        detail: "export_line and asset_consent are exact - the DPO adds what they miss",
+        title: "Holders found, DPO confirms",
+        detail: "The records of what was sent where, and collected under which consent, are exact - the DPO adds what they miss",
         done: holdersConfirmed > 0 || collated,
         exit: {
           title: "No records held anywhere",
@@ -125,15 +125,15 @@ export function stepsFor(r: AnyRequest, voice: Voice = "staff"): Step[] {
           taken: r.outcome === "no_records",
         },
       });
-      push({ title: "Tickets issued to each holder", detail: "Structured return form, named responder, internal due date set early", done: ticketsIssued > 0 || (collated && holders === 0) });
+      push({ title: "Tickets sent to each holder", detail: "A named person answers, by an internal date set early; the DPO accepts or sends back each answer", done: ticketsIssued > 0 || (collated && holders === 0) });
       push({
-        title: "All responses returned?",
+        title: "Every answer accepted?",
         detail: "The DPO sees completeness at a glance",
         decision: true,
         done: collated,
         exit: {
           title: "A holder misses its date",
-          detail: "Escalate once, then respond partial and on time. The clock does not pause because a system is busy - the gap is named in the response.",
+          detail: "Reminded daily, then a final reminder; respond partial and on time. The clock does not pause because a system is busy - the gap is named in the response.",
           taken: gap,
         },
       });
@@ -174,16 +174,16 @@ export function stepsFor(r: AnyRequest, voice: Voice = "staff"): Step[] {
           taken: false,
         },
       });
-      push({ title: "Holders derived, DPO confirms", detail: "export_line and asset_consent name them - the DPO adds what they miss", done: holdersConfirmed > 0 || collated });
-      push({ title: "Erasure instructions issued", detail: "One per holder, with a structured confirmation to return", done: ticketsIssued > 0 || (collated && holders === 0) });
+      push({ title: "Holders found, DPO confirms", detail: "The records of what was sent where, and collected under which consent, name them - the DPO adds what they miss", done: holdersConfirmed > 0 || collated });
+      push({ title: "Erasure tickets sent", detail: "One per holder; the DPO accepts or sends back each confirmation", done: ticketsIssued > 0 || (collated && holders === 0) });
       push({
-        title: "All confirmations returned?",
+        title: "Every confirmation accepted?",
         detail: "The DPO sees completeness at a glance",
         decision: true,
         done: collated,
         exit: {
           title: "A holder misses its date",
-          detail: "Escalate once, then respond partial and on time. The clock does not pause because a system is busy.",
+          detail: "Reminded daily, then a final reminder; respond partial and on time. The clock does not pause because a system is busy.",
           taken: gap,
         },
       });

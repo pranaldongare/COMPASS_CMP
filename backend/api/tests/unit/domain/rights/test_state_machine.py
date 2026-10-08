@@ -128,7 +128,7 @@ class TestHoldersAndTheClock:
         )
         [option] = available(S.AWAITING_HOLDERS, Role.DPO, out)
         assert option["allowed"] is False
-        assert "escalate" in str(option["blocked_by"]).lower()
+        assert "final reminder" in str(option["blocked_by"]).lower()
 
         chased = RequestFacts(
             verified=True,

@@ -311,6 +311,15 @@ class TestChannels:
             role="dpo",
             actor_id=dpo,
         )
+        # The team's answer waits for the office's review before it counts (0048).
+        assert (await service.reload(conn, row))["status"] == "awaiting_holders"
+        await service.accept_ticket(
+            conn,
+            await service.reload(conn, row),
+            holder_uuid=str(portal["holder_uuid"]),
+            role="dpo",
+            actor_id=dpo,
+        )
         row = await service.reload(conn, row)
         assert row["status"] == "collating"
         moved = [
@@ -699,10 +708,12 @@ class TestLifecycle:
         await service.sweep_tickets(conn, today=due)
         assert await count() == 2
         await repo.update_holder(conn, int(holder["holder_id"]), last_reminded_at=None)
-        await service.sweep_tickets(conn, today=due + timedelta(days=2))
-        assert await count() == 2
-        await service.sweep_tickets(conn, today=due + timedelta(days=3))
+        # Overdue: every day until it is answered (2026-10-08).
+        await service.sweep_tickets(conn, today=due + timedelta(days=1))
         assert await count() == 3
+        await repo.update_holder(conn, int(holder["holder_id"]), last_reminded_at=None)
+        await service.sweep_tickets(conn, today=due + timedelta(days=2))
+        assert await count() == 4
 
     async def test_a_file_keeps_its_name(
         self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any
@@ -759,6 +770,13 @@ class TestSendBack:
             role="dpo",
             actor_id=dpo,
         )
+        await service.accept_ticket(
+            conn,
+            await service.reload(conn, row),
+            holder_uuid=str(portal["holder_uuid"]),
+            role="dpo",
+            actor_id=dpo,
+        )
         assert (await service.reload(conn, row))["status"] == "collating"
 
         # Not good enough. Back it goes, and the request waits again.
@@ -804,6 +822,14 @@ class TestSendBack:
             evidence_hash=None,
         )
         assert again["ticket_status"] == "returned" and again["sent_back_count"] == 1
+        assert again["accepted_at"] is None
+        await service.accept_ticket(
+            conn,
+            await service.reload(conn, row),
+            holder_uuid=str(portal["holder_uuid"]),
+            role="dpo",
+            actor_id=dpo,
+        )
         assert (await service.reload(conn, row))["status"] == "collating"
 
     async def test_the_feed_tells_each_side_what_the_other_did(

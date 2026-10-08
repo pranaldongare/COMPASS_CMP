@@ -66,17 +66,20 @@ def returned_done(holder: Row) -> bool:
     `holder["return_outcome"]`, not `.get()`: a query that forgot the column
     would otherwise read as NULL - as done - and a "failed" return would pass.
     """
-    return holder.get("ticket_status") == Ticket.RETURNED and holder["return_outcome"] in (
-        None,
-        ReturnOutcome.DONE,
+    # Only an answer the office accepted counts (0048).
+    return (
+        holder.get("ticket_status") == Ticket.RETURNED
+        and holder.get("accepted_at") is not None
+        and holder["return_outcome"] in (None, ReturnOutcome.DONE)
     )
 
 
 def returned_short(holder: Row) -> bool:
     """Returned, saying it did only part of it, or none."""
-    return holder.get("ticket_status") == Ticket.RETURNED and holder["return_outcome"] in (
-        ReturnOutcome.PARTIAL,
-        ReturnOutcome.FAILED,
+    return (
+        holder.get("ticket_status") == Ticket.RETURNED
+        and holder.get("accepted_at") is not None
+        and holder["return_outcome"] in (ReturnOutcome.PARTIAL, ReturnOutcome.FAILED)
     )
 
 

@@ -1,6 +1,6 @@
 # Rights API
 
-Generated from `backend/api/openapi.json`. **45 operations.**
+Generated from `backend/api/openapi.json`. **48 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -33,24 +33,27 @@ For each operation the information is deliberately ordered as **API → Validati
 25. [`GET /requests/{request_uuid}/holders/{holder_uuid}/thread`](#25_get_requests_request_uuid_holders_holder_uuid_thread)
 26. [`POST /requests/{request_uuid}/holders/{holder_uuid}/thread`](#26_post_requests_request_uuid_holders_holder_uuid_thread)
 27. [`POST /requests/{request_uuid}/holders/{holder_uuid}/send-back`](#27_post_requests_request_uuid_holders_holder_uuid_send_back)
-28. [`POST /requests/{request_uuid}/holders/{holder_uuid}/withdraw`](#28_post_requests_request_uuid_holders_holder_uuid_withdraw)
-29. [`POST /requests/{request_uuid}/holders/{holder_uuid}/reassign`](#29_post_requests_request_uuid_holders_holder_uuid_reassign)
-30. [`POST /requests/{request_uuid}/holders/{holder_uuid}/remind`](#30_post_requests_request_uuid_holders_holder_uuid_remind)
-31. [`GET /requests/{request_uuid}/holders/{holder_uuid}/messages/{message_uuid}/evidence`](#31_get_requests_request_uuid_holders_holder_uuid_messages_message_uuid_evidence)
-32. [`POST /requests/{request_uuid}/holders/{holder_uuid}/contact`](#32_post_requests_request_uuid_holders_holder_uuid_contact)
-33. [`POST /requests/{request_uuid}/tickets`](#33_post_requests_request_uuid_tickets)
-34. [`POST /requests/{request_uuid}/holders/{holder_uuid}/return`](#34_post_requests_request_uuid_holders_holder_uuid_return)
-35. [`GET /requests/{request_uuid}/holders/{holder_uuid}/evidence`](#35_get_requests_request_uuid_holders_holder_uuid_evidence)
-36. [`POST /requests/{request_uuid}/holders/{holder_uuid}/escalate`](#36_post_requests_request_uuid_holders_holder_uuid_escalate)
-37. [`POST /requests/{request_uuid}/scope/derive`](#37_post_requests_request_uuid_scope_derive)
-38. [`PUT /requests/{request_uuid}/scope/{item_uuid}`](#38_put_requests_request_uuid_scope_item_uuid)
-39. [`POST /requests/{request_uuid}/scope/{item_uuid}/apply`](#39_post_requests_request_uuid_scope_item_uuid_apply)
-40. [`POST /requests/{request_uuid}/scope/{item_uuid}/execute`](#40_post_requests_request_uuid_scope_item_uuid_execute)
-41. [`POST /requests/{request_uuid}/respond`](#41_post_requests_request_uuid_respond)
-42. [`GET /requests/{request_uuid}/files/{file_uuid}`](#42_get_requests_request_uuid_files_file_uuid)
-43. [`GET /requests/{request_uuid}/attachments/{attachment_uuid}`](#43_get_requests_request_uuid_attachments_attachment_uuid)
-44. [`POST /requests/{request_uuid}/decide`](#44_post_requests_request_uuid_decide)
-45. [`GET /requests/{request_uuid}/download`](#45_get_requests_request_uuid_download)
+28. [`POST /requests/{request_uuid}/holders/{holder_uuid}/accept`](#28_post_requests_request_uuid_holders_holder_uuid_accept)
+29. [`POST /requests/{request_uuid}/holders/{holder_uuid}/reopen`](#29_post_requests_request_uuid_holders_holder_uuid_reopen)
+30. [`DELETE /requests/{request_uuid}/holders/{holder_uuid}`](#30_delete_requests_request_uuid_holders_holder_uuid)
+31. [`POST /requests/{request_uuid}/holders/{holder_uuid}/withdraw`](#31_post_requests_request_uuid_holders_holder_uuid_withdraw)
+32. [`POST /requests/{request_uuid}/holders/{holder_uuid}/reassign`](#32_post_requests_request_uuid_holders_holder_uuid_reassign)
+33. [`POST /requests/{request_uuid}/holders/{holder_uuid}/remind`](#33_post_requests_request_uuid_holders_holder_uuid_remind)
+34. [`GET /requests/{request_uuid}/holders/{holder_uuid}/messages/{message_uuid}/evidence`](#34_get_requests_request_uuid_holders_holder_uuid_messages_message_uuid_evidence)
+35. [`POST /requests/{request_uuid}/holders/{holder_uuid}/contact`](#35_post_requests_request_uuid_holders_holder_uuid_contact)
+36. [`POST /requests/{request_uuid}/tickets`](#36_post_requests_request_uuid_tickets)
+37. [`POST /requests/{request_uuid}/holders/{holder_uuid}/return`](#37_post_requests_request_uuid_holders_holder_uuid_return)
+38. [`GET /requests/{request_uuid}/holders/{holder_uuid}/evidence`](#38_get_requests_request_uuid_holders_holder_uuid_evidence)
+39. [`POST /requests/{request_uuid}/holders/{holder_uuid}/escalate`](#39_post_requests_request_uuid_holders_holder_uuid_escalate)
+40. [`POST /requests/{request_uuid}/scope/derive`](#40_post_requests_request_uuid_scope_derive)
+41. [`PUT /requests/{request_uuid}/scope/{item_uuid}`](#41_put_requests_request_uuid_scope_item_uuid)
+42. [`POST /requests/{request_uuid}/scope/{item_uuid}/apply`](#42_post_requests_request_uuid_scope_item_uuid_apply)
+43. [`POST /requests/{request_uuid}/scope/{item_uuid}/execute`](#43_post_requests_request_uuid_scope_item_uuid_execute)
+44. [`POST /requests/{request_uuid}/respond`](#44_post_requests_request_uuid_respond)
+45. [`GET /requests/{request_uuid}/files/{file_uuid}`](#45_get_requests_request_uuid_files_file_uuid)
+46. [`GET /requests/{request_uuid}/attachments/{attachment_uuid}`](#46_get_requests_request_uuid_attachments_attachment_uuid)
+47. [`POST /requests/{request_uuid}/decide`](#47_post_requests_request_uuid_decide)
+48. [`GET /requests/{request_uuid}/download`](#48_get_requests_request_uuid_download)
 
 <a id="1_get_requests_attention"></a>
 ## 1. `GET /requests/attention` — What the office has not read
@@ -477,7 +480,16 @@ No request body.
       "return_evidence_name": "…",
       "sent_back_at": "…",
       "sent_back_reason": "…",
-      "sent_back_count": 0
+      "sent_back_count": 0,
+      "accepted_at": "…",
+      "accepted_by_name": "…",
+      "last_activity_at": "…",
+      "state": "",
+      "state_label": "",
+      "overdue": false,
+      "moves": [
+        "…"
+      ]
     }
   ],
   "items": [
@@ -2658,7 +2670,16 @@ No request body.
     "return_evidence_name": "string",
     "sent_back_at": "2026-09-17T12:00:00Z",
     "sent_back_reason": "string",
-    "sent_back_count": 0
+    "sent_back_count": 0,
+    "accepted_at": "2026-09-17T12:00:00Z",
+    "accepted_by_name": "string",
+    "last_activity_at": "2026-09-17T12:00:00Z",
+    "state": "",
+    "state_label": "",
+    "overdue": false,
+    "moves": [
+      {}
+    ]
   }
 ]
 ```
@@ -2759,7 +2780,16 @@ Request body required: **yes**.
   "return_evidence_name": "string",
   "sent_back_at": "2026-09-17T12:00:00Z",
   "sent_back_reason": "string",
-  "sent_back_count": 0
+  "sent_back_count": 0,
+  "accepted_at": "2026-09-17T12:00:00Z",
+  "accepted_by_name": "string",
+  "last_activity_at": "2026-09-17T12:00:00Z",
+  "state": "",
+  "state_label": "",
+  "overdue": false,
+  "moves": [
+    {}
+  ]
 }
 ```
 
@@ -2859,7 +2889,16 @@ Request body required: **yes**.
   "return_evidence_name": "string",
   "sent_back_at": "2026-09-17T12:00:00Z",
   "sent_back_reason": "string",
-  "sent_back_count": 0
+  "sent_back_count": 0,
+  "accepted_at": "2026-09-17T12:00:00Z",
+  "accepted_by_name": "string",
+  "last_activity_at": "2026-09-17T12:00:00Z",
+  "state": "",
+  "state_label": "",
+  "overdue": false,
+  "moves": [
+    {}
+  ]
 }
 ```
 
@@ -2949,7 +2988,16 @@ No request body.
     "return_evidence_name": "string",
     "sent_back_at": "2026-09-17T12:00:00Z",
     "sent_back_reason": "string",
-    "sent_back_count": 0
+    "sent_back_count": 0,
+    "accepted_at": "2026-09-17T12:00:00Z",
+    "accepted_by_name": "string",
+    "last_activity_at": "2026-09-17T12:00:00Z",
+    "state": "",
+    "state_label": "",
+    "overdue": false,
+    "moves": [
+      {}
+    ]
   },
   "messages": [
     {
@@ -3065,7 +3113,16 @@ Request body required: **yes**.
     "return_evidence_name": "string",
     "sent_back_at": "2026-09-17T12:00:00Z",
     "sent_back_reason": "string",
-    "sent_back_count": 0
+    "sent_back_count": 0,
+    "accepted_at": "2026-09-17T12:00:00Z",
+    "accepted_by_name": "string",
+    "last_activity_at": "2026-09-17T12:00:00Z",
+    "state": "",
+    "state_label": "",
+    "overdue": false,
+    "moves": [
+      {}
+    ]
   },
   "messages": [
     {
@@ -3180,7 +3237,16 @@ Request body required: **yes**.
   "return_evidence_name": "string",
   "sent_back_at": "2026-09-17T12:00:00Z",
   "sent_back_reason": "string",
-  "sent_back_count": 0
+  "sent_back_count": 0,
+  "accepted_at": "2026-09-17T12:00:00Z",
+  "accepted_by_name": "string",
+  "last_activity_at": "2026-09-17T12:00:00Z",
+  "state": "",
+  "state_label": "",
+  "overdue": false,
+  "moves": [
+    {}
+  ]
 }
 ```
 
@@ -3202,8 +3268,261 @@ Request body required: **yes**.
 }
 ```
 
-<a id="28_post_requests_request_uuid_holders_holder_uuid_withdraw"></a>
-## 28. `POST /requests/{request_uuid}/holders/{holder_uuid}/withdraw` — Withdraw a ticket issued in error
+<a id="28_post_requests_request_uuid_holders_holder_uuid_accept"></a>
+## 28. `POST /requests/{request_uuid}/holders/{holder_uuid}/accept` — Accept a holder's answer: only now does it count
+
+### API
+
+- **Operation ID:** `accept_ticket_requests__request_uuid__holders__holder_uuid__accept_post`
+- **Access:** Role-controlled `rights` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+The office has read the answer and takes it (0048). It now counts
+toward collating the response, and toward an erasure being done; the
+holder is told.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `request_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `holder_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`HolderOut`](#schema-holderout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "holder_uuid": "00000000-0000-4000-8000-000000000000",
+  "label": "string",
+  "derived_from": "string",
+  "evidence": {},
+  "processor_uuid": "00000000-0000-4000-8000-000000000000",
+  "processor_name": "string",
+  "is_in_house": true,
+  "confirmed_at": "2026-09-17T12:00:00Z",
+  "confirmed_by_name": "string",
+  "ticket_status": "string",
+  "instruction": "string",
+  "responder_name": "string",
+  "responder_contact": "string",
+  "issued_at": "2026-09-17T12:00:00Z",
+  "due_at": "2026-09-17T12:00:00Z",
+  "escalated_at": "2026-09-17T12:00:00Z",
+  "returned_at": "2026-09-17T12:00:00Z",
+  "return_summary": "string",
+  "return_outcome": "string",
+  "return_evidence_hash": "string",
+  "created_at": "2026-09-17T12:00:00Z",
+  "channel": "email",
+  "respondent_uuid": "00000000-0000-4000-8000-000000000000",
+  "responder_user_uuid": "00000000-0000-4000-8000-000000000000",
+  "responder_user_name": "string",
+  "contact_log": [
+    {}
+  ],
+  "brief": {},
+  "message_count": 0,
+  "unread_for_office": 0,
+  "seen_at": "2026-09-17T12:00:00Z",
+  "last_reminded_at": "2026-09-17T12:00:00Z",
+  "reminders_sent": 0,
+  "return_evidence_name": "string",
+  "sent_back_at": "2026-09-17T12:00:00Z",
+  "sent_back_reason": "string",
+  "sent_back_count": 0,
+  "accepted_at": "2026-09-17T12:00:00Z",
+  "accepted_by_name": "string",
+  "last_activity_at": "2026-09-17T12:00:00Z",
+  "state": "",
+  "state_label": "",
+  "overdue": false,
+  "moves": [
+    {}
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="29_post_requests_request_uuid_holders_holder_uuid_reopen"></a>
+## 29. `POST /requests/{request_uuid}/holders/{holder_uuid}/reopen` — Reopen a withdrawn ticket, with a new date
+
+### API
+
+- **Operation ID:** `reopen_ticket_requests__request_uuid__holders__holder_uuid__reopen_post`
+- **Access:** Role-controlled `rights` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `request_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `holder_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`ReopenIn`](#schema-reopenin)
+
+```json
+{
+  "due_on": "2026-09-17"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`HolderOut`](#schema-holderout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "holder_uuid": "00000000-0000-4000-8000-000000000000",
+  "label": "string",
+  "derived_from": "string",
+  "evidence": {},
+  "processor_uuid": "00000000-0000-4000-8000-000000000000",
+  "processor_name": "string",
+  "is_in_house": true,
+  "confirmed_at": "2026-09-17T12:00:00Z",
+  "confirmed_by_name": "string",
+  "ticket_status": "string",
+  "instruction": "string",
+  "responder_name": "string",
+  "responder_contact": "string",
+  "issued_at": "2026-09-17T12:00:00Z",
+  "due_at": "2026-09-17T12:00:00Z",
+  "escalated_at": "2026-09-17T12:00:00Z",
+  "returned_at": "2026-09-17T12:00:00Z",
+  "return_summary": "string",
+  "return_outcome": "string",
+  "return_evidence_hash": "string",
+  "created_at": "2026-09-17T12:00:00Z",
+  "channel": "email",
+  "respondent_uuid": "00000000-0000-4000-8000-000000000000",
+  "responder_user_uuid": "00000000-0000-4000-8000-000000000000",
+  "responder_user_name": "string",
+  "contact_log": [
+    {}
+  ],
+  "brief": {},
+  "message_count": 0,
+  "unread_for_office": 0,
+  "seen_at": "2026-09-17T12:00:00Z",
+  "last_reminded_at": "2026-09-17T12:00:00Z",
+  "reminders_sent": 0,
+  "return_evidence_name": "string",
+  "sent_back_at": "2026-09-17T12:00:00Z",
+  "sent_back_reason": "string",
+  "sent_back_count": 0,
+  "accepted_at": "2026-09-17T12:00:00Z",
+  "accepted_by_name": "string",
+  "last_activity_at": "2026-09-17T12:00:00Z",
+  "state": "",
+  "state_label": "",
+  "overdue": false,
+  "moves": [
+    {}
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="30_delete_requests_request_uuid_holders_holder_uuid"></a>
+## 30. `DELETE /requests/{request_uuid}/holders/{holder_uuid}` — Remove a holder found by mistake, before anything is sent to it
+
+### API
+
+- **Operation ID:** `remove_holder_requests__request_uuid__holders__holder_uuid__delete`
+- **Access:** Role-controlled `rights` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `request_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `holder_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `204` | Successful Response | — | — |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="31_post_requests_request_uuid_holders_holder_uuid_withdraw"></a>
+## 31. `POST /requests/{request_uuid}/holders/{holder_uuid}/withdraw` — Withdraw a ticket issued in error
 
 ### API
 
@@ -3278,7 +3597,16 @@ Request body required: **yes**.
   "return_evidence_name": "string",
   "sent_back_at": "2026-09-17T12:00:00Z",
   "sent_back_reason": "string",
-  "sent_back_count": 0
+  "sent_back_count": 0,
+  "accepted_at": "2026-09-17T12:00:00Z",
+  "accepted_by_name": "string",
+  "last_activity_at": "2026-09-17T12:00:00Z",
+  "state": "",
+  "state_label": "",
+  "overdue": false,
+  "moves": [
+    {}
+  ]
 }
 ```
 
@@ -3300,8 +3628,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="29_post_requests_request_uuid_holders_holder_uuid_reassign"></a>
-## 29. `POST /requests/{request_uuid}/holders/{holder_uuid}/reassign` — Send an open ticket to a different respondent
+<a id="32_post_requests_request_uuid_holders_holder_uuid_reassign"></a>
+## 32. `POST /requests/{request_uuid}/holders/{holder_uuid}/reassign` — Send an open ticket to a different respondent
 
 ### API
 
@@ -3378,7 +3706,16 @@ Request body required: **yes**.
   "return_evidence_name": "string",
   "sent_back_at": "2026-09-17T12:00:00Z",
   "sent_back_reason": "string",
-  "sent_back_count": 0
+  "sent_back_count": 0,
+  "accepted_at": "2026-09-17T12:00:00Z",
+  "accepted_by_name": "string",
+  "last_activity_at": "2026-09-17T12:00:00Z",
+  "state": "",
+  "state_label": "",
+  "overdue": false,
+  "moves": [
+    {}
+  ]
 }
 ```
 
@@ -3400,8 +3737,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="30_post_requests_request_uuid_holders_holder_uuid_remind"></a>
-## 30. `POST /requests/{request_uuid}/holders/{holder_uuid}/remind` — Send the respondent a reminder now
+<a id="33_post_requests_request_uuid_holders_holder_uuid_remind"></a>
+## 33. `POST /requests/{request_uuid}/holders/{holder_uuid}/remind` — Send the respondent a reminder now
 
 ### API
 
@@ -3467,7 +3804,16 @@ No request body.
   "return_evidence_name": "string",
   "sent_back_at": "2026-09-17T12:00:00Z",
   "sent_back_reason": "string",
-  "sent_back_count": 0
+  "sent_back_count": 0,
+  "accepted_at": "2026-09-17T12:00:00Z",
+  "accepted_by_name": "string",
+  "last_activity_at": "2026-09-17T12:00:00Z",
+  "state": "",
+  "state_label": "",
+  "overdue": false,
+  "moves": [
+    {}
+  ]
 }
 ```
 
@@ -3489,8 +3835,8 @@ No request body.
 }
 ```
 
-<a id="31_get_requests_request_uuid_holders_holder_uuid_messages_message_uuid_evidence"></a>
-## 31. `GET /requests/{request_uuid}/holders/{holder_uuid}/messages/{message_uuid}/evidence` — Download a file attached to a message on the ticket
+<a id="34_get_requests_request_uuid_holders_holder_uuid_messages_message_uuid_evidence"></a>
+## 34. `GET /requests/{request_uuid}/holders/{holder_uuid}/messages/{message_uuid}/evidence` — Download a file attached to a message on the ticket
 
 ### API
 
@@ -3540,8 +3886,8 @@ No request body.
 }
 ```
 
-<a id="32_post_requests_request_uuid_holders_holder_uuid_contact"></a>
-## 32. `POST /requests/{request_uuid}/holders/{holder_uuid}/contact` — Record a mail sent, a chase, or a reply - and optionally send the mail
+<a id="35_post_requests_request_uuid_holders_holder_uuid_contact"></a>
+## 35. `POST /requests/{request_uuid}/holders/{holder_uuid}/contact` — Record a mail sent, a chase, or a reply - and optionally send the mail
 
 ### API
 
@@ -3621,7 +3967,16 @@ Request body required: **yes**.
   "return_evidence_name": "string",
   "sent_back_at": "2026-09-17T12:00:00Z",
   "sent_back_reason": "string",
-  "sent_back_count": 0
+  "sent_back_count": 0,
+  "accepted_at": "2026-09-17T12:00:00Z",
+  "accepted_by_name": "string",
+  "last_activity_at": "2026-09-17T12:00:00Z",
+  "state": "",
+  "state_label": "",
+  "overdue": false,
+  "moves": [
+    {}
+  ]
 }
 ```
 
@@ -3643,8 +3998,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="33_post_requests_request_uuid_tickets"></a>
-## 33. `POST /requests/{request_uuid}/tickets` — Issue a ticket to every confirmed holder
+<a id="36_post_requests_request_uuid_tickets"></a>
+## 36. `POST /requests/{request_uuid}/tickets` — Issue a ticket to every confirmed holder
 
 ### API
 
@@ -3720,7 +4075,16 @@ Request body required: **yes**.
     "return_evidence_name": "string",
     "sent_back_at": "2026-09-17T12:00:00Z",
     "sent_back_reason": "string",
-    "sent_back_count": 0
+    "sent_back_count": 0,
+    "accepted_at": "2026-09-17T12:00:00Z",
+    "accepted_by_name": "string",
+    "last_activity_at": "2026-09-17T12:00:00Z",
+    "state": "",
+    "state_label": "",
+    "overdue": false,
+    "moves": [
+      {}
+    ]
   }
 ]
 ```
@@ -3743,8 +4107,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="34_post_requests_request_uuid_holders_holder_uuid_return"></a>
-## 34. `POST /requests/{request_uuid}/holders/{holder_uuid}/return` — Record what the holder returned
+<a id="37_post_requests_request_uuid_holders_holder_uuid_return"></a>
+## 37. `POST /requests/{request_uuid}/holders/{holder_uuid}/return` — Record what the holder returned
 
 ### API
 
@@ -3821,7 +4185,16 @@ Request body required: **yes**.
   "return_evidence_name": "string",
   "sent_back_at": "2026-09-17T12:00:00Z",
   "sent_back_reason": "string",
-  "sent_back_count": 0
+  "sent_back_count": 0,
+  "accepted_at": "2026-09-17T12:00:00Z",
+  "accepted_by_name": "string",
+  "last_activity_at": "2026-09-17T12:00:00Z",
+  "state": "",
+  "state_label": "",
+  "overdue": false,
+  "moves": [
+    {}
+  ]
 }
 ```
 
@@ -3843,8 +4216,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="35_get_requests_request_uuid_holders_holder_uuid_evidence"></a>
-## 35. `GET /requests/{request_uuid}/holders/{holder_uuid}/evidence` — Download a holder's return evidence
+<a id="38_get_requests_request_uuid_holders_holder_uuid_evidence"></a>
+## 38. `GET /requests/{request_uuid}/holders/{holder_uuid}/evidence` — Download a holder's return evidence
 
 ### API
 
@@ -3893,8 +4266,8 @@ No request body.
 }
 ```
 
-<a id="36_post_requests_request_uuid_holders_holder_uuid_escalate"></a>
-## 36. `POST /requests/{request_uuid}/holders/{holder_uuid}/escalate` — A holder missed its date - escalate once
+<a id="39_post_requests_request_uuid_holders_holder_uuid_escalate"></a>
+## 39. `POST /requests/{request_uuid}/holders/{holder_uuid}/escalate` — A holder missed its date - escalate once
 
 ### API
 
@@ -3960,7 +4333,16 @@ No request body.
   "return_evidence_name": "string",
   "sent_back_at": "2026-09-17T12:00:00Z",
   "sent_back_reason": "string",
-  "sent_back_count": 0
+  "sent_back_count": 0,
+  "accepted_at": "2026-09-17T12:00:00Z",
+  "accepted_by_name": "string",
+  "last_activity_at": "2026-09-17T12:00:00Z",
+  "state": "",
+  "state_label": "",
+  "overdue": false,
+  "moves": [
+    {}
+  ]
 }
 ```
 
@@ -3982,8 +4364,8 @@ No request body.
 }
 ```
 
-<a id="37_post_requests_request_uuid_scope_derive"></a>
-## 37. `POST /requests/{request_uuid}/scope/derive` — Every appearance of her in a collected asset
+<a id="40_post_requests_request_uuid_scope_derive"></a>
+## 40. `POST /requests/{request_uuid}/scope/derive` — Every appearance of her in a collected asset
 
 ### API
 
@@ -4068,8 +4450,8 @@ No request body.
 }
 ```
 
-<a id="38_put_requests_request_uuid_scope_item_uuid"></a>
-## 38. `PUT /requests/{request_uuid}/scope/{item_uuid}` — What can go, what must stay, and why
+<a id="41_put_requests_request_uuid_scope_item_uuid"></a>
+## 41. `PUT /requests/{request_uuid}/scope/{item_uuid}` — What can go, what must stay, and why
 
 ### API
 
@@ -4165,8 +4547,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="39_post_requests_request_uuid_scope_item_uuid_apply"></a>
-## 39. `POST /requests/{request_uuid}/scope/{item_uuid}/apply` — Quarantine her appearance, then carry the decision out
+<a id="42_post_requests_request_uuid_scope_item_uuid_apply"></a>
+## 42. `POST /requests/{request_uuid}/scope/{item_uuid}/apply` — Quarantine her appearance, then carry the decision out
 
 ### API
 
@@ -4250,8 +4632,8 @@ No request body.
 }
 ```
 
-<a id="40_post_requests_request_uuid_scope_item_uuid_execute"></a>
-## 40. `POST /requests/{request_uuid}/scope/{item_uuid}/execute` — Try an applied item's stores again now
+<a id="43_post_requests_request_uuid_scope_item_uuid_execute"></a>
+## 43. `POST /requests/{request_uuid}/scope/{item_uuid}/execute` — Try an applied item's stores again now
 
 ### API
 
@@ -4339,8 +4721,8 @@ No request body.
 }
 ```
 
-<a id="41_post_requests_request_uuid_respond"></a>
-## 41. `POST /requests/{request_uuid}/respond` — Release and close
+<a id="44_post_requests_request_uuid_respond"></a>
+## 44. `POST /requests/{request_uuid}/respond` — Release and close
 
 ### API
 
@@ -4484,8 +4866,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="42_get_requests_request_uuid_files_file_uuid"></a>
-## 42. `GET /requests/{request_uuid}/files/{file_uuid}` — A file released with the response
+<a id="45_get_requests_request_uuid_files_file_uuid"></a>
+## 45. `GET /requests/{request_uuid}/files/{file_uuid}` — A file released with the response
 
 ### API
 
@@ -4534,8 +4916,8 @@ No request body.
 }
 ```
 
-<a id="43_get_requests_request_uuid_attachments_attachment_uuid"></a>
-## 43. `GET /requests/{request_uuid}/attachments/{attachment_uuid}` — A document the requester sent; every download is audited
+<a id="46_get_requests_request_uuid_attachments_attachment_uuid"></a>
+## 46. `GET /requests/{request_uuid}/attachments/{attachment_uuid}` — A document the requester sent; every download is audited
 
 ### API
 
@@ -4584,8 +4966,8 @@ No request body.
 }
 ```
 
-<a id="44_post_requests_request_uuid_decide"></a>
-## 44. `POST /requests/{request_uuid}/decide` — Decide a grievance
+<a id="47_post_requests_request_uuid_decide"></a>
+## 47. `POST /requests/{request_uuid}/decide` — Decide a grievance
 
 ### API
 
@@ -4645,8 +5027,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="45_get_requests_request_uuid_download"></a>
-## 45. `GET /requests/{request_uuid}/download` — The released response file
+<a id="48_get_requests_request_uuid_download"></a>
+## 48. `GET /requests/{request_uuid}/download` — The released response file
 
 ### API
 
@@ -4850,6 +5232,13 @@ One line on a holder's contact log, optionally sending the mail too.
 | `sent_back_at` | `string` or `null` | No | format: `date-time` | — |
 | `sent_back_reason` | `string` or `null` | No | — | — |
 | `sent_back_count` | `integer` | No | default: `0` | — |
+| `accepted_at` | `string` or `null` | No | format: `date-time` | — |
+| `accepted_by_name` | `string` or `null` | No | — | — |
+| `last_activity_at` | `string` or `null` | No | format: `date-time` | — |
+| `state` | `string` | No | default: `` | — |
+| `state_label` | `string` | No | default: `` | — |
+| `overdue` | `boolean` | No | default: `False` | — |
+| `moves` | array of `object` | No | — | — |
 
 <a id="schema-issueticketsin"></a>
 #### `IssueTicketsIn`
@@ -4944,6 +5333,13 @@ A request that arrived by email, logged by the DPO. Same record as the others.
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
 | `reason` | `string` | Yes | min length: `3`; max length: `5000` | — |
+
+<a id="schema-reopenin"></a>
+#### `ReopenIn`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `due_on` | `string` | Yes | format: `date` | — |
 
 <a id="schema-requestdetail"></a>
 #### `RequestDetail`

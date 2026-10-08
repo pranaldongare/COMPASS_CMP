@@ -10,7 +10,7 @@
 <title>Schema</title>
 <polygon fill="#f7fafc" stroke="none" points="-36,36 -36,-3845 2714.37,-3845 2714.37,36 -36,36"/>
 <text xml:space="preserve" text-anchor="start" x="8" y="-3779" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="30.00" fill="#142c44">COMPASS / RELATIONSHIPS</text>
-<text xml:space="preserve" text-anchor="start" x="8" y="-3763.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0047 / 59 tables and views / source 0359149</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-3763.4" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#526477">Migration 0048 / 59 tables and views / source 7d0da97</text>
 <text xml:space="preserve" text-anchor="start" x="8" y="-3737.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">FK arrow: child column to referenced key &#160;&#160;| &#160;&#160;Solid = required FK; dashed = nullable FK; dotted = view dependency</text>
 <text xml:space="preserve" text-anchor="start" x="13.43" y="-3725.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#334155">PK = primary key; FK = foreign key; UQ = member of unique constraint (possibly composite); ? = nullable column</text>
 <!-- asset_consent&#45;&gt;consent_artefact -->
@@ -1534,7 +1534,7 @@
 <polygon fill="#174e82" stroke="none" points="788.3,-2021.6 788.3,-2054.4 952.12,-2054.4 952.12,-2021.6 788.3,-2021.6"/>
 <text xml:space="preserve" text-anchor="start" x="796.3" y="-2034.8" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="14.00" fill="white">rights_request_holder</text>
 <polygon fill="#f1f5f9" stroke="none" points="788.3,-1993.6 788.3,-2021.6 952.12,-2021.6 952.12,-1993.6 788.3,-1993.6"/>
-<text xml:space="preserve" text-anchor="start" x="796.3" y="-2003.6" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">RIGHTS / 35 columns</text>
+<text xml:space="preserve" text-anchor="start" x="796.3" y="-2003.6" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#526477">RIGHTS / 37 columns</text>
 </a>
 </g>
 </g>

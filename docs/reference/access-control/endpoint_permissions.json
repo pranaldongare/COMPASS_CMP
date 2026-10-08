@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 312,
-  "registered_business_and_system_operations": 315,
+  "documented_operations": 315,
+  "registered_business_and_system_operations": 318,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -12145,6 +12145,123 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
       ]
+    },
+    {
+      "module": "rights",
+      "method": "POST",
+      "path": "/requests/{request_uuid}/holders/{holder_uuid}/accept",
+      "summary": "Accept a holder's answer, so it counts",
+      "function": "accept_ticket",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RightsWriter",
+      "resolved_gate": "RequireResource(rights_request, write=True)",
+      "route_roles": [
+        "dpo",
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "rights_request",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "SCOPED",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO"
+      },
+      "conditions": [
+        "Only an answer waiting for review (409 `nothing_to_review`). Only an accepted answer counts toward collating or an erasure being done. A holder in the console is told; the trail records `rights.ticket_accepted`. An answer the office records itself is accepted as it is recorded. (2026-10-08)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "rights",
+      "method": "POST",
+      "path": "/requests/{request_uuid}/holders/{holder_uuid}/reopen",
+      "summary": "Reopen a withdrawn ticket with a new date",
+      "function": "reopen_ticket",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RightsWriter",
+      "resolved_gate": "RequireResource(rights_request, write=True)",
+      "route_roles": [
+        "dpo",
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "rights_request",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "SCOPED",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO"
+      },
+      "conditions": [
+        "Only a withdrawn ticket (409 `ticket_not_withdrawn`); `due_on` not in the past (422), kept as the end of that day. The holder is told; a collating request goes back to awaiting holders. The trail records `rights.ticket_reopened`. (2026-10-08)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "rights",
+      "method": "DELETE",
+      "path": "/requests/{request_uuid}/holders/{holder_uuid}",
+      "summary": "Remove a holder found by mistake, before it is sent anything",
+      "function": "remove_holder",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RightsWriter",
+      "resolved_gate": "RequireResource(rights_request, write=True)",
+      "route_roles": [
+        "dpo",
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "rights_request",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "SCOPED",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO"
+      },
+      "conditions": [
+        "Only a holder with no ticket sent, no message and no erasure item (409 `holder_in_use`): nothing about it has left the office, so nothing evidential is lost. 204. The trail records `rights.holder_removed`. (2026-10-08)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
     }
   ],
   "amended": [
@@ -12227,6 +12344,11 @@
       "on": "2026-10-08",
       "commit": "message copies",
       "note": "Who a message is copied to by email (0046): PUT /messages/{key}/copies."
+    },
+    {
+      "on": "2026-10-08",
+      "commit": "rights tickets redesign",
+      "note": "The review step and two repairs on a rights request's holders: POST .../holders/{holder_uuid}/accept, POST .../holders/{holder_uuid}/reopen and DELETE .../holders/{holder_uuid}. Gated as every other holder move."
     }
   ]
 }

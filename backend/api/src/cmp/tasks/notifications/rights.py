@@ -193,7 +193,13 @@ def send_nomination_accepted(
 
 @shared_task(name="cmp.notifications.send_ticket_reminder", **RETRY_KW)
 def send_ticket_reminder(
-    contact: str, reference: str, holder_label: str, due_on: str, days: int, where: str | None
+    contact: str,
+    reference: str,
+    holder_label: str,
+    due_on: str,
+    days: int,
+    where: str | None,
+    final: bool = False,
 ) -> dict[str, Any]:
     if days > 0:
         timing = f"Due in {_plural(days, 'day')}"
@@ -204,6 +210,8 @@ def send_ticket_reminder(
     else:
         timing = f"Overdue by {_plural(-days, 'day')}"
         when = f"was due on {due_on} and is {_plural(-days, 'day')} overdue"
+    if final:
+        timing = f"Final reminder - {timing.lower()}"
     return deliver(
         Message.TICKET_REMINDER,
         to=contact,
@@ -212,9 +220,9 @@ def send_ticket_reminder(
         timing=timing,
         when=when,
         return_route=(
-            f"Return it on the portal: {where}"
+            f"Answer it in the console: {where}"
             if where
-            else "Reply to this message with your return."
+            else "Reply to this message with your answer."
         ),
     )
 
@@ -238,7 +246,7 @@ def send_ticket_message(
         holder_label=holder_label,
         author=author,
         message=body,
-        return_route=f"Reply on the portal: {where}" if where else "Reply to this message.",
+        return_route=f"Reply in the console: {where}" if where else "Reply to this message.",
     )
 
 

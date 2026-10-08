@@ -3978,6 +3978,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/requests/{request_uuid}/holders/{holder_uuid}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept a holder's answer: only now does it count
+         * @description The office has read the answer and takes it (0048). It now counts
+         *     toward collating the response, and toward an erasure being done; the
+         *     holder is told.
+         */
+        post: operations["accept_ticket_requests__request_uuid__holders__holder_uuid__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/holders/{holder_uuid}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reopen a withdrawn ticket, with a new date */
+        post: operations["reopen_ticket_requests__request_uuid__holders__holder_uuid__reopen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/holders/{holder_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a holder found by mistake, before anything is sent to it */
+        delete: operations["remove_holder_requests__request_uuid__holders__holder_uuid__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/requests/{request_uuid}/holders/{holder_uuid}/withdraw": {
         parameters: {
             query?: never;
@@ -8019,6 +8075,31 @@ export interface components {
              * @default 0
              */
             sent_back_count: number;
+            /** Accepted At */
+            accepted_at?: string | null;
+            /** Accepted By Name */
+            accepted_by_name?: string | null;
+            /** Last Activity At */
+            last_activity_at?: string | null;
+            /**
+             * State
+             * @default
+             */
+            state: string;
+            /**
+             * State Label
+             * @default
+             */
+            state_label: string;
+            /**
+             * Overdue
+             * @default false
+             */
+            overdue: boolean;
+            /** Moves */
+            moves?: {
+                [key: string]: unknown;
+            }[];
         };
         /** ImportBatchOut */
         ImportBatchOut: {
@@ -9710,6 +9791,14 @@ export interface components {
             /** Email Code */
             email_code?: string | null;
         };
+        /** ReopenIn */
+        ReopenIn: {
+            /**
+             * Due On
+             * Format: date
+             */
+            due_on: string;
+        };
         /** RequestDetail */
         RequestDetail: {
             /**
@@ -10855,6 +10944,23 @@ export interface components {
              * @default 0
              */
             sent_back_count: number;
+            /** Accepted At */
+            accepted_at?: string | null;
+            /**
+             * State
+             * @default
+             */
+            state: string;
+            /**
+             * State Label
+             * @default
+             */
+            state_label: string;
+            /**
+             * Overdue
+             * @default false
+             */
+            overdue: boolean;
             /** Consent Uuid */
             consent_uuid?: string | null;
             /** Consent Project */
@@ -18438,6 +18544,104 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HolderOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_ticket_requests__request_uuid__holders__holder_uuid__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reopen_ticket_requests__request_uuid__holders__holder_uuid__reopen_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReopenIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_holder_requests__request_uuid__holders__holder_uuid__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

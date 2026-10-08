@@ -13,18 +13,26 @@
  * Breach tickets (S3-08) sit above them: the Privacy Office asking for help
  * with a personal data breach, which runs on a clock of its own. They carry
  * the breach reference and nothing else from the register.
+ *
+ * Reworked 2026-10-08 with the review step: an answer goes to the Privacy
+ * Office to accept or send back, so tickets fall in three groups - to do,
+ * waiting on the office, done - read off the state the server sends. Giving
+ * the answer is its own form (what was done, then what, then proof), apart
+ * from writing to the office, which no longer closes the window.
  */
 "use client";
 
-import { AlertTriangle, CheckCircle2, Inbox, MessageSquareReply, ShieldAlert } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Inbox, MessageSquareReply, Send, ShieldAlert } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
+import { FileInput } from "@/components/forms";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyQueue } from "@/components/ui/graphics";
 import {
   Alert,
+  Badge,
   Button,
   Card,
   CardBody,
@@ -32,11 +40,11 @@ import {
   CardTitle,
   EmptyState,
   Field,
-  Select,
   Skeleton,
+  Textarea,
 } from "@/components/ui/primitives";
 import { ConsentScope } from "@/features/rights/components/consent-scope";
-import { RequestTypeBadge, TicketBadge, dueCopy } from "@/features/rights/components/copy";
+import { RequestTypeBadge, dueCopy } from "@/features/rights/components/copy";
 import { myMessageAttachmentUrl } from "@/features/rights/api";
 import { BreachTicketCard } from "@/features/breach/components/my-breach-tickets";
 import { useMyBreachTickets } from "@/features/breach/queries";
@@ -46,7 +54,7 @@ import { useMessageOffice, useReturnMyTicket } from "@/features/rights/mutations
 import { useMyTicket, useMyTickets } from "@/features/rights/queries";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { useToast } from "@/providers";
-import type { MyTicket, ReturnOutcome } from "@/types";
+import type { MyTicket, ReturnOutcome, TicketState } from "@/types";
 import { RETURN_OUTCOME_COPY } from "@/types";
 
 export default function TicketsPage() {
@@ -67,20 +75,26 @@ function TicketsInner() {
   const wantedBreach = params.get("breach_ticket");
   const breachOpen = (breach.data ?? []).filter((t) => t.state === "issued" || t.state === "returned");
   const breachDone = (breach.data ?? []).filter((t) => !breachOpen.includes(t));
-  // Open ones first, the most pressing at the top: overdue, then soonest due.
-  const open = (tickets.data ?? [])
-    .filter((t) => t.ticket_status === "issued" || t.ticket_status === "escalated")
+  const all = tickets.data ?? [];
+  // To do first, the most pressing at the top: overdue, then soonest due.
+  const todo = all
+    .filter((t) => TO_DO.includes(t.state))
     .sort((a, b) => (a.due_at ? new Date(a.due_at).getTime() : Infinity) - (b.due_at ? new Date(b.due_at).getTime() : Infinity));
-  const done = (tickets.data ?? []).filter((t) => !open.includes(t));
-  const { overdue, soon } = urgency(open);
-  const unread = (tickets.data ?? []).reduce((n, t) => n + t.unread_for_holder, 0);
+  const withOffice = all.filter((t) => t.state === "review");
+  const done = all.filter((t) => !todo.includes(t) && !withOffice.includes(t));
+  const overdue = todo.filter((t) => t.overdue).length;
+  const soon = todo.filter((t) => {
+    const d = dueCopy(t.due_at, true);
+    return !t.overdue && d !== null && d.days <= 7;
+  }).length;
+  const unread = all.reduce((n, t) => n + t.unread_for_holder, 0);
 
   return (
     <>
       <PageHeader
-        eyebrow="Rights requests"
+        eyebrow="Your work"
         title="My tasks"
-        description="Respond to what the Privacy Office has asked of you: tickets on rights requests and on personal data breaches. Check each date and record what you found or changed."
+        description="What the Privacy Office has asked of you: tickets on rights requests and on personal data breaches. Answer each by its date; the office reviews your answer."
       />
 
       {breach.data && breach.data.length > 0 && (
@@ -102,63 +116,63 @@ function TicketsInner() {
         </Alert>
       )}
 
-      {tickets.data && tickets.data.length > 0 && (
+      {all.length > 0 && (
         <div className="mb-6 grid gap-3 sm:grid-cols-4" data-testid="ticket-summary">
-          <Stat label="Open" value={open.length} tone="neutral" />
+          <Stat label="To do" value={todo.length} tone="neutral" />
           <Stat label="Overdue" value={overdue} tone={overdue ? "danger" : "neutral"} />
           <Stat label="Due within 7 days" value={soon} tone={soon ? "warning" : "neutral"} />
           <Stat label="Unread from the Privacy Office" value={unread} tone={unread ? "warning" : "neutral"} />
         </div>
       )}
 
-      {tickets.data && tickets.data.length === 0 && (breach.data?.length ?? 0) === 0 && (
+      {tickets.data && all.length === 0 && (breach.data?.length ?? 0) === 0 && (
         <Card>
           <EmptyState
             illustration={<EmptyQueue />}
             title="Nothing addressed to you"
-            description="When the Privacy Office issues a ticket to your team, it appears here with its instruction and its date."
+            description="When the Privacy Office sends your team a ticket, it appears here with what is asked and the date to answer by."
           />
         </Card>
       )}
 
-      {open.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-text-subtle">
-            <Inbox className="size-4" aria-hidden="true" />
-            Open · {open.length}
-          </h2>
-          {open.map((t) => (
-            <TicketCard key={t.holder_uuid} ticket={t} openAtFirst={t.holder_uuid === wanted} />
-          ))}
-        </section>
-      )}
-
-      {done.length > 0 && (
-        <section className="mt-8 space-y-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-text-subtle">
-            <CheckCircle2 className="size-4" aria-hidden="true" />
-            Returned · {done.length}
-          </h2>
-          {done.map((t) => (
-            <TicketCard key={t.holder_uuid} ticket={t} openAtFirst={t.holder_uuid === wanted} />
-          ))}
-        </section>
-      )}
+      <Group icon={<Inbox className="size-4" aria-hidden="true" />} title="To do" tickets={todo} wanted={wanted} />
+      <Group
+        icon={<Clock className="size-4" aria-hidden="true" />}
+        title="Waiting on the Privacy Office"
+        tickets={withOffice}
+        wanted={wanted}
+      />
+      <Group icon={<CheckCircle2 className="size-4" aria-hidden="true" />} title="Done" tickets={done} wanted={wanted} />
     </>
   );
 }
 
-/** How many open tickets are past their date, and how many fall due within a week. */
-function urgency(open: MyTicket[]): { overdue: number; soon: number } {
-  let overdue = 0;
-  let soon = 0;
-  for (const t of open) {
-    const d = dueCopy(t.due_at, true);
-    if (!d) continue;
-    if (d.days < 0) overdue += 1;
-    else if (d.days <= 7) soon += 1;
-  }
-  return { overdue, soon };
+/** States in which the ticket waits on the holder. */
+const TO_DO: TicketState[] = ["waiting", "sent_back", "overdue", "final_reminder"];
+
+const STATE_TONE: Partial<Record<TicketState, "info" | "warning" | "danger" | "success" | "neutral" | "accent">> = {
+  waiting: "info",
+  sent_back: "warning",
+  overdue: "danger",
+  final_reminder: "danger",
+  review: "accent",
+  accepted: "success",
+  no_answer: "danger",
+};
+
+function Group({ icon, title, tickets, wanted }: { icon: React.ReactNode; title: string; tickets: MyTicket[]; wanted: string | null }) {
+  if (tickets.length === 0) return null;
+  return (
+    <section className="mb-8 space-y-3">
+      <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-text-subtle">
+        {icon}
+        {title} · {tickets.length}
+      </h2>
+      {tickets.map((t) => (
+        <TicketCard key={t.holder_uuid} ticket={t} openAtFirst={t.holder_uuid === wanted} />
+      ))}
+    </section>
+  );
 }
 
 function Stat({ label, value, tone }: { label: string; value: number; tone: "neutral" | "warning" | "danger" }) {
@@ -171,11 +185,14 @@ function Stat({ label, value, tone }: { label: string; value: number; tone: "neu
   );
 }
 
+function outcomeTone(o: ReturnOutcome | null): "success" | "warning" | "danger" | "neutral" {
+  return o === "done" ? "success" : o === "failed" ? "danger" : o ? "warning" : "neutral";
+}
+
 function TicketCard({ ticket: t, openAtFirst }: { ticket: MyTicket; openAtFirst?: boolean }) {
   const [responding, setResponding] = React.useState(Boolean(openAtFirst));
-  const isOpen = t.ticket_status === "issued" || t.ticket_status === "escalated";
-  const overdue = isOpen && t.due_at && new Date(t.due_at) < new Date();
-  const due = dueCopy(t.due_at, isOpen);
+  const toDo = TO_DO.includes(t.state);
+  const due = dueCopy(t.due_at, toDo);
 
   return (
     <Card data-testid="ticket">
@@ -184,35 +201,27 @@ function TicketCard({ ticket: t, openAtFirst }: { ticket: MyTicket; openAtFirst?
           <CardTitle className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-sm">{t.reference}</span>
             <RequestTypeBadge type={t.request_type} />
-            <TicketBadge status={t.ticket_status} />
+            <Badge tone={STATE_TONE[t.state] ?? "neutral"} dot={false}>
+              {t.state_label}
+            </Badge>
             <UnreadBadge count={t.unread_for_holder} />
           </CardTitle>
           <p className="mt-1 text-xs text-text-muted">
             For {t.label}
             {t.subject_name && ` · about ${t.subject_name}`}
-            {t.issued_at && ` · issued ${formatDateTime(t.issued_at)}`}
+            {t.issued_at && ` · sent ${formatDateTime(t.issued_at)}`}
           </p>
         </div>
         {due && (
           <p className={due.tone === "danger" ? "flex items-center gap-1 text-sm font-medium text-danger-text" : due.tone === "warning" ? "text-sm font-medium text-warning-text" : "text-sm text-text-muted"}>
-            {overdue && <AlertTriangle className="size-4" aria-hidden="true" />}
+            {t.overdue && <AlertTriangle className="size-4" aria-hidden="true" />}
             <span className="capitalize">{due.text}</span>
             {t.due_at && <span className="font-normal text-text-muted"> · {formatDate(t.due_at)}</span>}
           </p>
         )}
       </CardHeader>
       <CardBody className="space-y-3">
-        {t.ticket_status === "withdrawn" && (
-          <Alert tone="info">
-            <p className="text-sm">Withdrawn by the Privacy Office. Nothing further is needed from you; the reason is on the thread.</p>
-          </Alert>
-        )}
-        {isOpen && t.sent_back_at && (
-          <Alert tone="warning" title={`Sent back to you ${formatDateTime(t.sent_back_at)}`}>
-            <p className="text-sm">{t.sent_back_reason}</p>
-            {t.due_at && <p className="mt-1 text-xs">Return it again by {formatDate(t.due_at)}.</p>}
-          </Alert>
-        )}
+        <StateNote ticket={t} />
         {t.consent_uuid && (
           <div className="text-sm">
             <ConsentScope
@@ -230,25 +239,30 @@ function TicketCard({ ticket: t, openAtFirst }: { ticket: MyTicket; openAtFirst?
           </div>
         )}
         <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-text-subtle">Instruction</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-text-subtle">What you are asked</p>
           <p className="mt-1 whitespace-pre-wrap text-sm">{t.instruction ?? "See the Privacy Office."}</p>
         </div>
         {t.return_summary && (
           <div className="rounded-md bg-bg-inset p-3 text-sm">
-            <span className="font-medium">Returned{t.returned_at && ` ${formatDateTime(t.returned_at)}`}: </span>
-            {t.return_summary}
+            <p className="flex flex-wrap items-center gap-2">
+              <span className="font-medium">Your answer{t.returned_at && ` · ${formatDateTime(t.returned_at)}`}</span>
+              {t.return_outcome && (
+                <Badge tone={outcomeTone(t.return_outcome)} dot={false}>
+                  {RETURN_OUTCOME_COPY[t.return_outcome]}
+                </Badge>
+              )}
+            </p>
+            <p className="mt-1 whitespace-pre-wrap">{t.return_summary}</p>
           </div>
         )}
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant={isOpen ? "primary" : "secondary"} size="sm" onClick={() => setResponding(true)}>
+          <Button variant={toDo ? "primary" : "secondary"} size="sm" onClick={() => setResponding(true)}>
             <MessageSquareReply className="size-4" aria-hidden="true" />
-            {isOpen ? "Respond" : "Open"}
+            {toDo ? "Answer" : "Open"}
             {t.message_count ? ` · ${t.message_count}` : ""}
           </Button>
-          {isOpen && (
-            <span className="text-xs text-text-muted">
-              Ask, send what you have found, or return the ticket - all from one place.
-            </span>
+          {toDo && (
+            <span className="text-xs text-text-muted">Ask a question, or give your answer - both from one place.</span>
           )}
         </div>
       </CardBody>
@@ -256,9 +270,9 @@ function TicketCard({ ticket: t, openAtFirst }: { ticket: MyTicket; openAtFirst?
         <DialogContent
           title={`${t.reference} · ${t.label}`}
           description={
-            isOpen
-              ? "What the platform already knows, everything said so far, and your response. Tick the box to make a response the final return."
-              : "This ticket is returned. Everything said is kept; you can still add a note."
+            toDo
+              ? "What the platform already knows, everything said so far, and your answer."
+              : `${t.state_label}. Everything said is kept; you can still write to the Privacy Office.`
           }
         >
           {responding && <Respond ticket={t} onDone={() => setResponding(false)} />}
@@ -268,18 +282,55 @@ function TicketCard({ ticket: t, openAtFirst }: { ticket: MyTicket; openAtFirst?
   );
 }
 
+/** What the ticket's state means for the holder, where it needs saying. */
+function StateNote({ ticket: t }: { ticket: MyTicket }) {
+  switch (t.state) {
+    case "withdrawn":
+      return (
+        <Alert tone="info">
+          <p className="text-sm">Withdrawn by the Privacy Office. Nothing further is needed from you; the reason is in the messages.</p>
+        </Alert>
+      );
+    case "no_answer":
+      return (
+        <Alert tone="warning">
+          <p className="text-sm">The request was answered without your reply. Nothing further can be sent on this ticket.</p>
+        </Alert>
+      );
+    case "review":
+      return (
+        <Alert tone="info">
+          <p className="text-sm">Your answer is with the Privacy Office. They accept it, or send it back with what is missing.</p>
+        </Alert>
+      );
+    case "accepted":
+      return (
+        <Alert tone="success">
+          <p className="text-sm">
+            The Privacy Office accepted your answer{t.accepted_at ? ` on ${formatDate(t.accepted_at)}` : ""}. Nothing further is needed.
+          </p>
+        </Alert>
+      );
+    default:
+      return t.sent_back_at ? (
+        <Alert tone="warning" title={`Sent back to you ${formatDateTime(t.sent_back_at)}`}>
+          <p className="text-sm">{t.sent_back_reason}</p>
+          {t.due_at && <p className="mt-1 text-xs">Answer again by {formatDate(t.due_at)}.</p>}
+        </Alert>
+      ) : null;
+  }
+}
+
 function Respond({ ticket: t, onDone }: { ticket: MyTicket; onDone: () => void }) {
   const toast = useToast();
   const detail = useMyTicket(t.holder_uuid);
   const send = useMessageOffice();
-  const ret = useReturnMyTicket();
-  // Asked before the return is sent, with no default: a return is the team
-  // saying what it did, and "did all of it" is not assumed (review DPDP-1).
-  const [outcome, setOutcome] = React.useState<ReturnOutcome | "">("");
-  const isOpen = t.ticket_status === "issued" || t.ticket_status === "escalated";
+  const toDo = TO_DO.includes(t.state);
+  const [answering, setAnswering] = React.useState(false);
   if (detail.isLoading) return <Skeleton className="h-40" />;
   if (detail.error) return <Alert tone="danger">{detail.error.userMessage()}</Alert>;
   const brief = detail.data?.ticket.brief ?? t.brief;
+  const closed = t.request_status === "closed";
   return (
     <div className="space-y-4">
       {brief && (
@@ -297,56 +348,92 @@ function Respond({ ticket: t, onDone }: { ticket: MyTicket; onDone: () => void }
         you="holder"
         evidenceHref={(m) => (m.evidence_hash ? myMessageAttachmentUrl(t.holder_uuid, m.message_uuid) : null)}
       />
-      {isOpen && (
-        <Field
-          label="When you return the ticket: what was done?"
-          hint="Only “did all of it” counts as done. If you could not do some or all of it, say so and why in the message."
-        >
-          {(p) => (
-            <Select {...p} value={outcome} onChange={(e) => setOutcome(e.target.value as ReturnOutcome | "")}>
-              <option value="">Choose before returning…</option>
-              {(Object.keys(RETURN_OUTCOME_COPY) as ReturnOutcome[]).map((o) => (
-                <option key={o} value={o}>
-                  {RETURN_OUTCOME_COPY[o]}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-      )}
-      <ReplyBox
-        pending={send.isPending || ret.isPending}
-        placeholder={
-          isOpen
-            ? "Ask the Privacy Office a question, or say what you hold and where."
-            : "Add a note to the returned ticket."
-        }
-        finalOption={
-          isOpen
-            ? {
-                label: "This is my return - close the ticket with it",
-                hint: "What you hold, what was done and how. The Privacy Office collates it into the response. Leave unticked to keep the conversation going.",
-              }
-            : null
-        }
-        onSend={async (body, file, final) => {
-          if (final) {
-            if (!outcome) {
-              const say = "Choose what was done before returning the ticket.";
-              throw Object.assign(new Error(say), { userMessage: () => say });
-            }
-            await ret.mutateAsync({ holderUuid: t.holder_uuid, summary: body, outcome, evidence: file });
-            toast.success("Ticket returned", "The Privacy Office can see it.");
-            onDone();
-          } else {
+      {toDo &&
+        (answering ? (
+          <AnswerForm ticket={t} onCancel={() => setAnswering(false)} onDone={onDone} />
+        ) : (
+          <div className="flex flex-wrap items-center gap-3 rounded-md border border-accent-border bg-accent-subtle p-3">
+            <Button variant="primary" size="sm" onClick={() => setAnswering(true)}>
+              <Send className="size-4" aria-hidden="true" />
+              Submit your answer
+            </Button>
+            <span className="text-xs text-text-muted">When your work is done: what was done, what you hold, and any proof.</span>
+          </div>
+        ))}
+      {!answering && (
+        <ReplyBox
+          pending={send.isPending}
+          placeholder="Write to the Privacy Office: a question, or what you have found so far."
+          disabledReason={closed ? "The request is closed; nothing more can be written." : null}
+          onSend={async (body, file) => {
             await send.mutateAsync({ holderUuid: t.holder_uuid, body, evidence: file });
-            // Sent: the window closes, as a response does. The thread keeps
-            // it, and Respond opens it again.
+            // The window stays open: the message is on the thread above, and
+            // the answer may follow it.
             toast.success("Message sent", "The Privacy Office can see it.");
-            onDone();
-          }
-        }}
-      />
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+function AnswerForm({ ticket: t, onCancel, onDone }: { ticket: MyTicket; onCancel: () => void; onDone: () => void }) {
+  const toast = useToast();
+  const ret = useReturnMyTicket();
+  // No default: "did all of it" is not assumed (review DPDP-1).
+  const [outcome, setOutcome] = React.useState<ReturnOutcome | "">("");
+  const [summary, setSummary] = React.useState("");
+  const [file, setFile] = React.useState<File | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+  return (
+    <form
+      method="post"
+      noValidate
+      className="space-y-4 rounded-md border border-accent-border p-4"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!outcome || !summary.trim()) return;
+        setError(null);
+        try {
+          await ret.mutateAsync({ holderUuid: t.holder_uuid, summary: summary.trim(), outcome, evidence: file });
+          toast.success("Answer sent", "The Privacy Office will review it.");
+          onDone();
+        } catch (err) {
+          setError(err && typeof err === "object" && "userMessage" in err ? (err as { userMessage: () => string }).userMessage() : "Could not send your answer.");
+        }
+      }}
+    >
+      <h3 className="text-sm font-semibold">Submit your answer</h3>
+      {error && <Alert tone="danger">{error}</Alert>}
+      <fieldset className="space-y-1.5">
+        <legend className="text-sm font-medium">1 · What was done?</legend>
+        {(Object.keys(RETURN_OUTCOME_COPY) as ReturnOutcome[]).map((o) => (
+          <label key={o} className="flex items-center gap-2 text-sm">
+            <input type="radio" name="outcome" className="size-4 accent-[var(--accent)]" checked={outcome === o} onChange={() => setOutcome(o)} />
+            {RETURN_OUTCOME_COPY[o]}
+          </label>
+        ))}
+        <p className="text-xs text-text-muted">Only “did all of it” counts as done. If you could not do some or all of it, say why below.</p>
+      </fieldset>
+      <Field label="2 · What you hold, and what you did" required>
+        {(p) => <Textarea {...p} rows={4} value={summary} onChange={(e) => setSummary(e.target.value)} />}
+      </Field>
+      <FileInput
+        label="3 · Proof"
+        hint="Optional. PDF, image, CSV or text, up to 25 MB."
+        accept="application/pdf,image/png,image/jpeg,text/csv,text/plain"
+        maxBytes={25 * 1024 * 1024}
+        file={file}
+        onChange={setFile}
+      />
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" variant="primary" size="sm" loading={ret.isPending} disabled={!outcome || !summary.trim()}>
+          Send your answer
+        </Button>
+      </div>
+    </form>
   );
 }

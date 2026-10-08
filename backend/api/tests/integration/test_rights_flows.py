@@ -322,6 +322,12 @@ class TestAccessRequest:
             conn, row, instruction=None, due_at=None, role=DPO, actor_id=dpo
         )
         row = await service.reload(conn, row)
+        # A final reminder is for a ticket past its date.
+        await conn.execute(
+            "UPDATE rights_request_holder SET due_at = now() - interval '1 day' "
+            "WHERE holder_uuid = %s",
+            (str(holder["holder_uuid"]),),
+        )
 
         escalated = await service.escalate_ticket(
             conn, row, holder_uuid=str(holder["holder_uuid"]), role=DPO, actor_id=dpo

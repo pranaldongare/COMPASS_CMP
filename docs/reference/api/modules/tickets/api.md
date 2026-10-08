@@ -68,6 +68,10 @@ No request body.
     "sent_back_at": "2026-09-17T12:00:00Z",
     "sent_back_reason": "string",
     "sent_back_count": 0,
+    "accepted_at": "2026-09-17T12:00:00Z",
+    "state": "",
+    "state_label": "",
+    "overdue": false,
     "consent_uuid": "00000000-0000-4000-8000-000000000000",
     "consent_project": "string",
     "consent_notice_code": "string",
@@ -137,6 +141,10 @@ No request body.
     "sent_back_at": "2026-09-17T12:00:00Z",
     "sent_back_reason": "string",
     "sent_back_count": 0,
+    "accepted_at": "2026-09-17T12:00:00Z",
+    "state": "",
+    "state_label": "",
+    "overdue": false,
     "consent_uuid": "00000000-0000-4000-8000-000000000000",
     "consent_project": "string",
     "consent_notice_code": "string",
@@ -246,6 +254,10 @@ Request body required: **yes**.
     "sent_back_at": "2026-09-17T12:00:00Z",
     "sent_back_reason": "string",
     "sent_back_count": 0,
+    "accepted_at": "2026-09-17T12:00:00Z",
+    "state": "",
+    "state_label": "",
+    "overdue": false,
     "consent_uuid": "00000000-0000-4000-8000-000000000000",
     "consent_project": "string",
     "consent_notice_code": "string",
@@ -403,6 +415,10 @@ Request body required: **yes**.
   "sent_back_at": "2026-09-17T12:00:00Z",
   "sent_back_reason": "string",
   "sent_back_count": 0,
+  "accepted_at": "2026-09-17T12:00:00Z",
+  "state": "",
+  "state_label": "",
+  "overdue": false,
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
   "consent_notice_code": "string",
@@ -498,6 +514,10 @@ A ticket as its respondent sees it: what is asked, of whom, by when.
 | `sent_back_at` | `string` or `null` | No | format: `date-time` | — |
 | `sent_back_reason` | `string` or `null` | No | — | — |
 | `sent_back_count` | `integer` | No | default: `0` | — |
+| `accepted_at` | `string` or `null` | No | format: `date-time` | — |
+| `state` | `string` | No | default: `` | — |
+| `state_label` | `string` | No | default: `` | — |
+| `overdue` | `boolean` | No | default: `False` | — |
 | `consent_uuid` | `string` or `null` | No | format: `uuid` | — |
 | `consent_project` | `string` or `null` | No | — | — |
 | `consent_notice_code` | `string` or `null` | No | — | — |

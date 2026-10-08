@@ -8,6 +8,31 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Rights tickets, redesigned: a guided path and a review step**
+  (2026-10-08). The holders card is a path - find who holds the data, choose
+  who answers, send tickets, wait for answers, review answers - over one
+  table (holder, state, answer by, last activity, next) and one ticket dialog
+  with what the holder was asked, their answer, the messages and what may be
+  done now: the main action first, the rest under More. The server says each
+  ticket's state in words, whether it is overdue (its date has passed, the
+  end of that day) and its moves; the console holds no copy of the rules. A
+  holder's answer now waits for the DPO to **accept** it or **send it back**,
+  and only an accepted answer counts toward closing the request or an erasure
+  being done (migration 0048). A withdrawn ticket can be **reopened** with a
+  new date, and a holder found by mistake **removed** before it is sent
+  anything. *Escalate* is now **Send final reminder**, offered only once a
+  ticket is overdue; overdue tickets are reminded every day. The summary's
+  Next points at the holders card while a holder needs the office, and
+  *Move to awaiting holders*, which sending tickets does by itself, is no
+  longer a button. *My tasks* groups rights tickets into to do, waiting on
+  the Privacy Office and done; giving the answer is its own form - what was
+  done, what you hold, proof - and writing to the office no longer closes the
+  window. Holders are told when the office records or accepts their answer,
+  and when a ticket moves away from them. Plain words throughout: no table
+  names on screen, *in the console* for *on the portal*. Phase 2 - external
+  holders answering on the portal by a one-time code, temporary logins,
+  per-holder instructions - is planned in
+  `docs/domain/rights-tickets-redesign.md`.
 - **Log an incident asks what is known so far** (2026-10-08). Eleven
   optional questions under the incident's details: is it a cyber attack
   (Yes - reportable to CERT-In / No / Not known yet; yes creates the CERT-In

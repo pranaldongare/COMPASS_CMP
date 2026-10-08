@@ -175,6 +175,52 @@ export interface RightsHolder {
   sent_back_at: Timestamp | null;
   sent_back_reason: string | null;
   sent_back_count: number;
+  /** When the office accepted the answer; null: not yet, or none (0048). */
+  accepted_at: Timestamp | null;
+  accepted_by_name: string | null;
+  /** The latest message on the ticket's thread. */
+  last_activity_at: Timestamp | null;
+  /** The server's word on the ticket (2026-10-08). */
+  state: TicketState;
+  state_label: string;
+  overdue: boolean;
+  /** What may be done next, the main move first. Drawn as given. */
+  moves: TicketMove[];
+}
+
+export type TicketState =
+  | "not_confirmed"
+  | "not_sent"
+  | "waiting"
+  | "sent_back"
+  | "overdue"
+  | "final_reminder"
+  | "review"
+  | "accepted"
+  | "withdrawn"
+  | "no_answer";
+
+export type TicketMoveName =
+  | "confirm"
+  | "remove"
+  | "final_reminder"
+  | "record_answer"
+  | "message"
+  | "remind"
+  | "log_contact"
+  | "reassign"
+  | "withdraw"
+  | "accept"
+  | "send_back"
+  | "reopen";
+
+export interface TicketMove {
+  move: TicketMoveName;
+  label: string;
+  primary: boolean;
+  reason_required: boolean;
+  sends_email: boolean;
+  needs_date: boolean;
 }
 
 /**
@@ -283,6 +329,12 @@ export interface MyTicket {
   consent_notice_version: number | null;
   consent_at: Timestamp | null;
   consent_purposes: string[] | null;
+  /** When the office accepted the answer; until then it is with them for review. */
+  accepted_at: Timestamp | null;
+  /** The ticket's state as the holder reads it, from the server. */
+  state: TicketState;
+  state_label: string;
+  overdue: boolean;
 }
 
 /**

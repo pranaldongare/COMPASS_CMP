@@ -17,7 +17,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, Query, Request, Response, UploadFile, status
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from cmp.api import uploads
 from cmp.api.dependencies import (
@@ -36,7 +36,7 @@ from cmp.db.repositories import audit as audit_repo
 from cmp.db.repositories import entities as entity_repo
 from cmp.db.repositories import rights as repo
 from cmp.db.repositories import users as user_repo
-from cmp.domain.rights import execution, service
+from cmp.domain.rights import execution, service, tickets
 from cmp.infrastructure.storage.service import storage
 from cmp.schemas.common import LongText, OtpCode, Out, Page, Schema, ShortText
 from cmp.validation import Email, Mobile
@@ -183,6 +183,27 @@ class HolderOut(Out):
     sent_back_at: datetime | None = None
     sent_back_reason: str | None = None
     sent_back_count: int = 0
+    #: When the office accepted the answer (0048); None: not yet, or none.
+    accepted_at: datetime | None = None
+    accepted_by_name: str | None = None
+    #: The latest message on the ticket's thread.
+    last_activity_at: datetime | None = None
+    #: The server's word on the ticket (2026-10-08): its state in plain words,
+    #: whether it is overdue, and what may be done with it next - each move with
+    #: its label, whether it is the main one, needs a reason, a date, or sends
+    #: an email. The console draws from these and holds no copy of the rules.
+    state: str = ""
+    state_label: str = ""
+    overdue: bool = False
+    moves: list[dict[str, Any]] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _ticket_view(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "ticket_status" in data:
+            status = str(data.get("request_status") or "in_progress")
+            return {**data, **tickets.view(data, request_status=status)}
+        return data
 
 
 class MessageOut(Out):
@@ -194,6 +215,11 @@ class MessageOut(Out):
     evidence_hash: str | None
     evidence_name: str | None = None
     created_at: datetime
+
+
+class ReopenIn(Schema):
+    #: The new date to answer by.
+    due_on: date
 
 
 class SendBackIn(Schema):
@@ -258,6 +284,19 @@ class TicketOut(Out):
     sent_back_at: datetime | None = None
     sent_back_reason: str | None = None
     sent_back_count: int = 0
+    accepted_at: datetime | None = None
+    #: Its state as the holder reads it (2026-10-08), and whether it is overdue.
+    state: str = ""
+    state_label: str = ""
+    overdue: bool = False
+
+    @model_validator(mode="before")
+    @classmethod
+    def _holder_view(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "ticket_status" in data:
+            return {**data, **tickets.holder_view(data)}
+        return data
+
     #: The consent the request is confined to, when it is.
     consent_uuid: UUID | None = None
     consent_project: str | None = None
@@ -1173,6 +1212,57 @@ async def send_back_ticket(
             due_at=body.due_at,
             role=principal.role,
             actor_id=principal.user_id,
+        )
+
+
+@router.post(
+    "/{request_uuid}/holders/{holder_uuid}/accept",
+    response_model=HolderOut,
+    summary="Accept a holder's answer: only now does it count",
+)
+async def accept_ticket(
+    request_uuid: UUID, holder_uuid: UUID, principal: RightsWriter
+) -> dict[str, Any]:
+    """The office has read the answer and takes it (0048). It now counts
+    toward collating the response, and toward an erasure being done; the
+    holder is told."""
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        return await service.accept_ticket(
+            conn, row, holder_uuid=str(holder_uuid), role=principal.role, actor_id=principal.user_id
+        )
+
+
+@router.post(
+    "/{request_uuid}/holders/{holder_uuid}/reopen",
+    response_model=HolderOut,
+    summary="Reopen a withdrawn ticket, with a new date",
+)
+async def reopen_ticket(
+    request_uuid: UUID, holder_uuid: UUID, body: ReopenIn, principal: RightsWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        return await service.reopen_ticket(
+            conn,
+            row,
+            holder_uuid=str(holder_uuid),
+            due_on=body.due_on,
+            role=principal.role,
+            actor_id=principal.user_id,
+        )
+
+
+@router.delete(
+    "/{request_uuid}/holders/{holder_uuid}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Remove a holder found by mistake, before anything is sent to it",
+)
+async def remove_holder(request_uuid: UUID, holder_uuid: UUID, principal: RightsWriter) -> None:
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        await service.remove_holder(
+            conn, row, holder_uuid=str(holder_uuid), role=principal.role, actor_id=principal.user_id
         )
 
 

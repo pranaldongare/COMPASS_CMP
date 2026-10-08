@@ -11503,6 +11503,169 @@
         }
       }
     },
+    "/requests/{request_uuid}/holders/{holder_uuid}/accept": {
+      "post": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "Accept a holder's answer: only now does it count",
+        "description": "The office has read the answer and takes it (0048). It now counts\ntoward collating the response, and toward an erasure being done; the\nholder is told.",
+        "operationId": "accept_ticket_requests__request_uuid__holders__holder_uuid__accept_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/holders/{holder_uuid}/reopen": {
+      "post": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "Reopen a withdrawn ticket, with a new date",
+        "operationId": "reopen_ticket_requests__request_uuid__holders__holder_uuid__reopen_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReopenIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/holders/{holder_uuid}": {
+      "delete": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "Remove a holder found by mistake, before anything is sent to it",
+        "operationId": "remove_holder_requests__request_uuid__holders__holder_uuid__delete",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/requests/{request_uuid}/holders/{holder_uuid}/withdraw": {
       "post": {
         "tags": [
@@ -23790,6 +23953,64 @@
             "type": "integer",
             "title": "Sent Back Count",
             "default": 0
+          },
+          "accepted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted At"
+          },
+          "accepted_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted By Name"
+          },
+          "last_activity_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Activity At"
+          },
+          "state": {
+            "type": "string",
+            "title": "State",
+            "default": ""
+          },
+          "state_label": {
+            "type": "string",
+            "title": "State Label",
+            "default": ""
+          },
+          "overdue": {
+            "type": "boolean",
+            "title": "Overdue",
+            "default": false
+          },
+          "moves": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Moves"
           }
         },
         "type": "object",
@@ -28959,6 +29180,21 @@
         ],
         "title": "RegisterVerifyBody"
       },
+      "ReopenIn": {
+        "properties": {
+          "due_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Due On"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "due_on"
+        ],
+        "title": "ReopenIn"
+      },
       "RequestDetail": {
         "properties": {
           "request_uuid": {
@@ -32626,6 +32862,33 @@
             "type": "integer",
             "title": "Sent Back Count",
             "default": 0
+          },
+          "accepted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted At"
+          },
+          "state": {
+            "type": "string",
+            "title": "State",
+            "default": ""
+          },
+          "state_label": {
+            "type": "string",
+            "title": "State Label",
+            "default": ""
+          },
+          "overdue": {
+            "type": "boolean",
+            "title": "Overdue",
+            "default": false
           },
           "consent_uuid": {
             "anyOf": [

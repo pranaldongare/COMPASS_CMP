@@ -74,6 +74,10 @@ class RequestFacts:
     tickets_outstanding: int = 0
     #: Outstanding and never escalated. Zero means every gap has been chased.
     tickets_unescalated: int = 0
+    #: Answers back from holders that the office has not accepted yet (0048).
+    tickets_to_review: int = 0
+    #: Holders confirmed but never sent a ticket (2026-10-08).
+    holders_unsent: int = 0
     #: Erasure only: scope items with no decision recorded.
     items_undecided: int = 0
 
@@ -184,8 +188,18 @@ def _transitions(status: Status, f: RequestFacts) -> list[Transition]:
                     actors=actors_for(f),
                     requirements=(
                         Requirement(
+                            f.holders_unsent == 0,
+                            "A confirmed holder has not been sent its ticket - send the "
+                            "tickets, or remove the holder",
+                        ),
+                        Requirement(
                             f.tickets_outstanding == 0,
-                            "Tickets are outstanding - wait for them, or escalate and proceed",
+                            "Tickets are outstanding - wait for the answers, or send a final "
+                            "reminder and proceed",
+                        ),
+                        Requirement(
+                            f.tickets_to_review == 0,
+                            "An answer is waiting for review - accept it or send it back",
                         ),
                     ),
                 ),
@@ -199,8 +213,17 @@ def _transitions(status: Status, f: RequestFacts) -> list[Transition]:
                     requirements=(
                         Requirement(
                             f.tickets_unescalated == 0,
-                            "A holder has not returned its ticket - escalate once before "
-                            "responding partial",
+                            "A holder has not answered - wait, or send them a final reminder "
+                            "once it is overdue, then respond partial",
+                        ),
+                        Requirement(
+                            f.tickets_to_review == 0,
+                            "An answer is waiting for review - accept it or send it back",
+                        ),
+                        Requirement(
+                            f.holders_unsent == 0,
+                            "A confirmed holder has not been sent its ticket - send the "
+                            "tickets, or remove the holder",
                         ),
                     ),
                 ),

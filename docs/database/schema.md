@@ -1,7 +1,7 @@
 # Schema
 
-58 tables, 39 enums, 1 view, 50 triggers, 91 named CHECK constraints and 159
-foreign keys, as of migration 0047. Those counts are read from the PostgreSQL
+58 tables, 39 enums, 1 view, 50 triggers, 92 named CHECK constraints and 160
+foreign keys, as of migration 0048. Those counts are read from the PostgreSQL
 catalogs after replaying every migration, not maintained by hand.
 
 The migrations are the source of truth: 0001 transcribed the original
@@ -144,6 +144,13 @@ is one row per file - its kind (`email`, `proof`, `chat`, `other`, by CHECK),
 the name it came with and an optional note (both sealed), where it is stored,
 its SHA-256 and size - append-only by trigger and grant: a file is never
 replaced or removed.
+
+**A rights ticket's answer is reviewed, since 0048.**
+`rights_request_holder.accepted_at` and `accepted_by` record the office
+accepting a holder's answer; only an accepted answer counts toward collating or
+an erasure being done. CHECK `holder_accepted_is_returned` allows acceptance
+only on a returned ticket; sending one back clears it. Tickets returned before
+0048 were backfilled accepted at their return.
 
 **What is known when an incident is logged, since 0047.** `breach` gains ten
 optional free-text columns, sealed (FREE_TEXT) - `origin`, `discovery`,

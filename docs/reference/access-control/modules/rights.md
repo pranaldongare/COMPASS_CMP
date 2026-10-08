@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-45 operations; 45 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+48 operations; 48 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
@@ -51,6 +51,9 @@
 | POST | `/requests/{request_uuid}/verification/manual` | `dpo`, `admin` | Full session; anonymous NO |
 | POST | `/requests/{request_uuid}/withdrawal` | `dpo`, `admin` | Full session; anonymous NO |
 | GET | `/requests/{request_uuid}/attachments/{attachment_uuid}` | `dpo`, `admin` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/accept` | `dpo`, `admin` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/reopen` | `dpo`, `admin` | Full session; anonymous NO |
+| DELETE | `/requests/{request_uuid}/holders/{holder_uuid}` | `dpo`, `admin` | Full session; anonymous NO |
 
 ## GET /requests
 
@@ -685,4 +688,46 @@ A document the requester sent; every download is audited.
 - **Route guard:** `RightsReader`.
 - **Resolved gate:** `RequireResource(rights_request, write=False)`.
 - **Rules:** As every read of a request: the DPO all, the admin those about the DPO. A document of this request only (404 otherwise). The response carries `X-Recorded-SHA256` (as kept) and `X-Content-SHA256` (as read); every read is `rights.attachment_read` on the trail. (2026-10-07)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /requests/{request_uuid}/holders/{holder_uuid}/accept
+
+Accept a holder's answer, so it counts.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; `admin` on a request about the DPO.
+- **Route guard:** `RightsWriter`.
+- **Resolved gate:** `RequireResource(rights_request, write=True)`.
+- **Rules:** Only an answer waiting for review (409 `nothing_to_review`). Only an accepted answer counts toward collating or an erasure being done. A holder in the console is told; the trail records `rights.ticket_accepted`. An answer the office records itself is accepted as it is recorded. (2026-10-08)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /requests/{request_uuid}/holders/{holder_uuid}/reopen
+
+Reopen a withdrawn ticket with a new date.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; `admin` on a request about the DPO.
+- **Route guard:** `RightsWriter`.
+- **Resolved gate:** `RequireResource(rights_request, write=True)`.
+- **Rules:** Only a withdrawn ticket (409 `ticket_not_withdrawn`); `due_on` not in the past (422), kept as the end of that day. The holder is told; a collating request goes back to awaiting holders. The trail records `rights.ticket_reopened`. (2026-10-08)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## DELETE /requests/{request_uuid}/holders/{holder_uuid}
+
+Remove a holder found by mistake, before it is sent anything.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `dpo`; `admin` on a request about the DPO.
+- **Route guard:** `RightsWriter`.
+- **Resolved gate:** `RequireResource(rights_request, write=True)`.
+- **Rules:** Only a holder with no ticket sent, no message and no erasure item (409 `holder_in_use`): nothing about it has left the office, so nothing evidential is lost. 204. The trail records `rights.holder_removed`. (2026-10-08)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).

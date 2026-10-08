@@ -181,6 +181,9 @@ async def _holder_copy(conn: Conn, request: Row, item: Row) -> tuple[str, Row]:
     status = str(holder["ticket_status"])
     # Read strictly: a holder row without the column would pass as done.
     outcome = holder["return_outcome"]
+    if status == Ticket.RETURNED and holder["accepted_at"] is None:
+        # Back, but not yet read and accepted by the office (0048).
+        return "waiting", {"holder": str(holder["holder_uuid"]), "reason": "answer_to_review"}
     if status == Ticket.RETURNED and outcome in ("partial", "failed"):
         # Back, and saying it could not erase all of it, or any. Not done:
         # sending the ticket back is how the holder is asked again (DPDP-1).

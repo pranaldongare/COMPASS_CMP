@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict GaH4Elk6bGJ6hrMDLblsL4kffjPf4pv4KGd6xh9fck6Wyy8rGKrH3TWIwAVmJwh
+\restrict JnrplqniRqYjHVOI8ukXWL3L6cGE40z8bmcRPcMBnYaxJTeECNQ0AMIZMlrwh8C
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -4147,6 +4147,9 @@ CREATE TABLE public.rights_request_holder (
     sent_back_reason text,
     sent_back_count integer DEFAULT 0 NOT NULL,
     return_outcome character varying(8),
+    accepted_at timestamp with time zone,
+    accepted_by integer,
+    CONSTRAINT holder_accepted_is_returned CHECK (((accepted_at IS NULL) OR (ticket_status = 'returned'::public.rights_ticket_status))),
     CONSTRAINT holder_channel CHECK (((channel)::text = ANY ((ARRAY['portal'::character varying, 'email'::character varying])::text[]))),
     CONSTRAINT holder_issued_has_date CHECK (((ticket_status = 'pending'::public.rights_ticket_status) OR (issued_at IS NOT NULL))),
     CONSTRAINT holder_portal_has_account CHECK ((((channel)::text <> 'portal'::text) OR (responder_user_id IS NOT NULL))),
@@ -4160,6 +4163,13 @@ CREATE TABLE public.rights_request_holder (
 --
 
 COMMENT ON COLUMN public.rights_request_holder.return_outcome IS 'What the holder says it did with the ticket: done, partial or failed. NULL is a return from before 0037, read as done';
+
+
+--
+-- Name: COLUMN rights_request_holder.accepted_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.rights_request_holder.accepted_at IS 'When the office accepted the returned answer; only an accepted answer counts';
 
 
 --
@@ -8023,6 +8033,14 @@ ALTER TABLE ONLY public.rights_request
 
 
 --
+-- Name: rights_request_holder rights_request_holder_accepted_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rights_request_holder
+    ADD CONSTRAINT rights_request_holder_accepted_by_fkey FOREIGN KEY (accepted_by) REFERENCES public.auth_user(id);
+
+
+--
 -- Name: rights_request_holder rights_request_holder_confirmed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8178,5 +8196,5 @@ ALTER TABLE ONLY public.rights_ticket_message
 -- PostgreSQL database dump complete
 --
 
-\unrestrict GaH4Elk6bGJ6hrMDLblsL4kffjPf4pv4KGd6xh9fck6Wyy8rGKrH3TWIwAVmJwh
+\unrestrict JnrplqniRqYjHVOI8ukXWL3L6cGE40z8bmcRPcMBnYaxJTeECNQ0AMIZMlrwh8C
 

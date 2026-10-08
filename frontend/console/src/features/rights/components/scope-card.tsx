@@ -126,14 +126,14 @@ export function ScopeCard({ request: r }: { request: RightsRequestDetail }) {
             onClick={async () => {
               try {
                 const items = await derive.mutateAsync();
-                toast.success("Scope derived", `${items.length} appearance${items.length === 1 ? "" : "s"} of the requester in collected assets.`);
+                toast.success("Found", `${items.length} appearance${items.length === 1 ? "" : "s"} of the requester in collected assets.`);
               } catch (err) {
-                toast.error("Not derived", messageOf(err, "The server refused."));
+                toast.error("Not found", messageOf(err, "The server refused."));
               }
             }}
           >
             <Wand2 className="size-4" />
-            Derive from asset_consent
+            Find what is held
           </Button>
         )}
       </CardHeader>

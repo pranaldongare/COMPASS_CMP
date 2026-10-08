@@ -53,6 +53,8 @@ IDENTITY = {
     "approved_by_name",
     # Breach tickets (S3-08): the holder, who assigned it, who added them.
     "holder_name", "assigned_by_name", "added_by_name",
+    # Rights tickets (2026-10-08): who accepted a holder's answer.
+    "accepted_by_name",
     "username",
 }
 CONTACT = {

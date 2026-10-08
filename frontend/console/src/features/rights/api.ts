@@ -8,7 +8,7 @@
  * the answer back.
  */
 
-import { BACKGROUND, apiDownload, apiGet, apiPost, apiPut, queryString } from "@/lib/api";
+import { BACKGROUND, apiDelete, apiDownload, apiGet, apiPost, apiPut, queryString } from "@/lib/api";
 import { config } from "@/lib/config";
 import type { ListFilters } from "@/lib/query";
 import type {
@@ -195,6 +195,15 @@ export function returnTicket(
 }
 export const escalateTicket = (uuid: Uuid, holderUuid: Uuid) =>
   apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/escalate`), {});
+/** The office takes a holder's answer: only now does it count (0048). */
+export const acceptTicket = (uuid: Uuid, holderUuid: Uuid) =>
+  apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/accept`), {});
+/** A withdrawn ticket, open again with a new date. */
+export const reopenTicket = (uuid: Uuid, holderUuid: Uuid, dueOn: string) =>
+  apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/reopen`), { due_on: dueOn });
+/** A holder found by mistake, before anything is sent to it. */
+export const removeHolder = (uuid: Uuid, holderUuid: Uuid) =>
+  apiDelete<void>(action(uuid, `holders/${holderUuid}`));
 
 export const deriveScope = (uuid: Uuid) =>
   apiPost<RightsScopeItem[]>(action(uuid, "scope/derive"), {});

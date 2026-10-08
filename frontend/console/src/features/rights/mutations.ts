@@ -142,6 +142,14 @@ export const useReturnTicket = (uuid: Uuid) =>
   );
 export const useEscalateTicket = (uuid: Uuid) =>
   useRequestAction<RightsHolder, Uuid>(uuid, (holderUuid) => api.escalateTicket(uuid, holderUuid));
+export const useAcceptTicket = (uuid: Uuid) =>
+  useRequestAction<RightsHolder, Uuid>(uuid, (holderUuid) => api.acceptTicket(uuid, holderUuid));
+export const useReopenTicket = (uuid: Uuid) =>
+  useRequestAction<RightsHolder, { holderUuid: Uuid; dueOn: string }>(uuid, ({ holderUuid, dueOn }) =>
+    api.reopenTicket(uuid, holderUuid, dueOn),
+  );
+export const useRemoveHolder = (uuid: Uuid) =>
+  useRequestAction<void, Uuid>(uuid, (holderUuid) => api.removeHolder(uuid, holderUuid));
 
 export const useDeriveScope = (uuid: Uuid) =>
   useRequestAction<RightsScopeItem[], void>(uuid, () => api.deriveScope(uuid));

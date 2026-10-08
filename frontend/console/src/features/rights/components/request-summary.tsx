@@ -20,13 +20,40 @@ import { stepsFor } from "@/features/rights/components/path";
 import { cn, formatDate, formatDateTime } from "@/lib/format";
 import type { RightsRequestDetail } from "@/types";
 
-/** The next move the server offers, or the first thing blocking one. */
+/** What the office does next on the holders card, if anything. */
+function holdersMove(r: RightsRequestDetail): string | null {
+  if (!["in_progress", "awaiting_holders", "collating"].includes(r.status)) return null;
+  const n = (state: string) => r.holders.filter((h) => h.state === state).length;
+  // Holders are confirmed and sent tickets only before collating.
+  const sending = r.status !== "collating";
+  const steps: [number, string, string][] = [
+    [sending ? n("not_confirmed") : 0, "Confirm who answers", "Confirm who answers for {n} holders"],
+    [sending ? n("not_sent") : 0, "Send the ticket", "Send {n} tickets"],
+    [n("review"), "Review an answer", "Review {n} answers"],
+    [n("overdue"), "Chase an overdue holder", "Chase {n} overdue holders"],
+  ];
+  const step = steps.find(([k]) => k > 0);
+  if (!step) return null;
+  const [k, one, many] = step;
+  return k === 1 ? one : many.replace("{n}", String(k));
+}
+
+/** Moves the server makes by itself, so never offered as a button. */
+export const AUTOMATIC: readonly string[] = ["awaiting_holders"];
+
+/**
+ * The next move: a holder needing the office first, then the move the server
+ * offers, or the first thing blocking one.
+ */
 export function nextMove(r: RightsRequestDetail): {
   label: string;
   blocked?: string;
+  href?: string;
 } | null {
   if (r.status === "closed") return null;
-  const open = r.transitions.find((t) => t.allowed);
+  const holders = holdersMove(r);
+  if (holders) return { label: holders, href: "#holders" };
+  const open = r.transitions.find((t) => t.allowed && !AUTOMATIC.includes(t.to));
   if (open) {
     return {
       label:
@@ -35,7 +62,7 @@ export function nextMove(r: RightsRequestDetail): {
           : `Move to ${STATUS_COPY[open.to].label.toLowerCase()}`,
     };
   }
-  const blocked = r.transitions.find((t) => t.blocked_by);
+  const blocked = r.transitions.find((t) => t.blocked_by && !AUTOMATIC.includes(t.to));
   if (blocked?.blocked_by) {
     return {
       label:
@@ -145,7 +172,7 @@ export function RequestSummary({
               {move ? (
                 <>
                   <a
-                    href={actionsHref}
+                    href={move.href ?? actionsHref}
                     className="inline-flex items-center gap-1 text-sm font-semibold text-accent-text hover:underline"
                   >
                     {move.label}

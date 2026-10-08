@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import { RequestSummary } from "@/features/rights/components/request-summary";
 import { makeClock, makeRequestDetail } from "@/test/fixtures";
+import type { RightsHolder } from "@/types";
 import { render, screen } from "@/test/render";
 
 describe("RequestSummary", () => {
@@ -99,5 +100,35 @@ describe("RequestSummary", () => {
     expect(screen.getAllByText("Closed").length).toBeGreaterThan(0);
     expect(screen.getByText("Complete")).toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
+  });
+
+  it("points at the holders when a holder needs the office, before any status move", () => {
+    const review = { holder_uuid: "h1", state: "review" } as RightsHolder;
+    render(
+      <RequestSummary
+        request={makeRequestDetail({
+          status: "awaiting_holders",
+          holders: [review, { ...review, holder_uuid: "h2" }],
+          transitions: [{ to: "collating", allowed: false, via: "transition", blocked_by: "An answer is waiting for review" }],
+        })}
+        actionsHref="#actions"
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: /review 2 answers/i })).toHaveAttribute("href", "#holders");
+  });
+
+  it("never offers the move the server makes by itself", () => {
+    render(
+      <RequestSummary
+        request={makeRequestDetail({
+          status: "in_progress",
+          transitions: [{ to: "awaiting_holders", allowed: true, via: "transition" }],
+        })}
+        actionsHref="#actions"
+      />,
+    );
+
+    expect(screen.queryByRole("link", { name: /awaiting holders/i })).not.toBeInTheDocument();
   });
 });

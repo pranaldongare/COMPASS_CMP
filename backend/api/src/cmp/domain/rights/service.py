@@ -80,6 +80,8 @@ def facts_of(row: Row) -> RequestFacts:
         tickets_issued=int(row["tickets_issued"] or 0),
         tickets_outstanding=int(row["tickets_outstanding"] or 0),
         tickets_unescalated=int(row["tickets_unescalated"] or 0),
+        tickets_to_review=int(row.get("tickets_to_review") or 0),
+        holders_unsent=int(row.get("holders_unsent") or 0),
         items_undecided=int(row["items_undecided"] or 0),
     )
 
@@ -1083,6 +1085,9 @@ async def _settle(conn: Conn, row: Row, *, actor_id: int | None) -> None:
         return
     if int(fresh["tickets_outstanding"] or 0) > 0:
         return
+    # An answer counts once the office accepts it (0048).
+    if int(fresh.get("tickets_to_review") or 0) > 0:
+        return
     await repo.update(conn, int(fresh["request_id"]), status=Status.COLLATING.value)
     fresh = await reload(conn, fresh)
     await _record(
@@ -1093,7 +1098,7 @@ async def _settle(conn: Conn, row: Row, *, actor_id: int | None) -> None:
         detail={
             "from": Status.AWAITING_HOLDERS.value,
             "to": Status.COLLATING.value,
-            "cause": "Every ticket has been returned or withdrawn",
+            "cause": "Every answer has been accepted, or its ticket withdrawn",
             "automatic": True,
         },
     )
@@ -1137,6 +1142,9 @@ async def return_ticket(
         return_evidence_ref=evidence_ref,
         return_evidence_hash=evidence_hash,
         return_evidence_name=evidence_name,
+        # The office wrote it, so it is reviewed as it is recorded (0048).
+        accepted_at=datetime.now(UTC),
+        accepted_by=actor_id,
     )
     await repo.add_message(
         conn,
@@ -1160,14 +1168,145 @@ async def return_ticket(
             "label": holder["label"],
             "evidence_sha256": evidence_hash,
             "outcome": said.value,
+            "accepted": True,
         },
     )
+    if holder.get("channel") == "portal":
+        # A team answering in the console is told their answer was taken for them.
+        await _tell_holder(
+            conn,
+            row,
+            holder,
+            author_id=actor_id,
+            body="The Privacy Office has recorded your answer to this ticket for you:\n\n"
+            + summary.strip(),
+        )
     await _settle(conn, row, actor_id=actor_id)
-    # A returned ticket is the evidence the holder's copy is gone.
+    # An accepted return is the evidence the holder's copy is gone.
     await erasure.execute_request(conn, row, actor_id=actor_id)
     fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
     assert fresh is not None
     return fresh
+
+
+async def accept_ticket(
+    conn: Conn, row: Row, *, holder_uuid: str, role: Role | str, actor_id: int
+) -> Row:
+    """The office has read the answer and takes it (0048): only now does it
+    count - toward collating, and toward an erasure being done. The holder is
+    told."""
+    _may_act(row, role)
+    _open(row)
+    holder = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    if not holder:
+        raise NotFound("Holder")
+    if holder["ticket_status"] != Ticket.RETURNED or holder.get("accepted_at"):
+        raise Conflict("There is no answer waiting for review", code="nothing_to_review")
+    await repo.update_holder(
+        conn, int(holder["holder_id"]), accepted_at=datetime.now(UTC), accepted_by=actor_id
+    )
+    await repo.add_message(
+        conn,
+        int(holder["holder_id"]),
+        side="system",
+        kind="status",
+        body="The Privacy Office accepted this answer.",
+    )
+    await _record(
+        conn,
+        row,
+        Event.RIGHTS_TICKET_ACCEPTED,
+        actor_user_id=actor_id,
+        entity_type="rights_request_holder",
+        entity_id=int(holder["holder_id"]),
+        detail={"label": holder["label"], "outcome": holder.get("return_outcome")},
+    )
+    if holder.get("channel") == "portal":
+        await _tell_holder(
+            conn,
+            row,
+            holder,
+            author_id=actor_id,
+            body="The Privacy Office has accepted your answer. Nothing more is needed on this "
+            "ticket.",
+        )
+    await _settle(conn, row, actor_id=actor_id)
+    await erasure.execute_request(conn, row, actor_id=actor_id)
+    fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    assert fresh is not None
+    return fresh
+
+
+async def reopen_ticket(
+    conn: Conn, row: Row, *, holder_uuid: str, due_on: date, role: Role | str, actor_id: int
+) -> Row:
+    """A ticket withdrawn in error goes back to its holder, with a new date."""
+    _may_act(row, role)
+    _open(row)
+    holder = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    if not holder:
+        raise NotFound("Holder")
+    if holder["ticket_status"] != Ticket.WITHDRAWN:
+        raise Conflict("Only a withdrawn ticket can be reopened", code="ticket_not_withdrawn")
+    if due_on < datetime.now(UTC).date():
+        raise ValidationFailed("The new date cannot be in the past", field="due_on")
+    due = datetime.combine(due_on, datetime.max.time(), tzinfo=UTC).replace(microsecond=0)
+    await repo.update_holder(
+        conn, int(holder["holder_id"]), ticket_status=Ticket.ISSUED.value, due_at=due
+    )
+    await repo.add_message(
+        conn,
+        int(holder["holder_id"]),
+        side="office",
+        kind="status",
+        body=f"This ticket is open again. Please answer by {due_on.isoformat()}.",
+        author_user_id=actor_id,
+    )
+    await _record(
+        conn,
+        row,
+        Event.RIGHTS_TICKET_REOPENED,
+        actor_user_id=actor_id,
+        entity_type="rights_request_holder",
+        entity_id=int(holder["holder_id"]),
+        detail={"label": holder["label"], "due_on": due_on.isoformat()},
+    )
+    fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    assert fresh is not None
+    await _tell_holder(
+        conn,
+        row,
+        fresh,
+        author_id=actor_id,
+        body=f"This ticket is open again. Please answer by {due_on.isoformat()}.",
+    )
+    if Status(row["status"]) is Status.COLLATING:
+        await repo.update(conn, int(row["request_id"]), status=Status.AWAITING_HOLDERS.value)
+    return fresh
+
+
+async def remove_holder(
+    conn: Conn, row: Row, *, holder_uuid: str, role: Role | str, actor_id: int
+) -> None:
+    """A holder found by mistake, while nothing has been sent to it."""
+    _may_act(row, role)
+    _open(row)
+    holder = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    if not holder:
+        raise NotFound("Holder")
+    if not await repo.remove_holder(conn, int(holder["holder_id"])):
+        raise Conflict(
+            "This holder has been sent a ticket, or the erasure scope names it - withdraw "
+            "its ticket instead",
+            code="holder_in_use",
+        )
+    await _record(
+        conn,
+        row,
+        Event.RIGHTS_HOLDER_REMOVED,
+        actor_user_id=actor_id,
+        detail={"label": holder["label"], "derived_from": holder.get("derived_from")},
+    )
 
 
 async def escalate_ticket(
@@ -1181,7 +1320,14 @@ async def escalate_ticket(
         raise NotFound("Holder")
     if holder["ticket_status"] != Ticket.ISSUED:
         raise Conflict(
-            "Only an issued ticket can be escalated, and only once", code="ticket_not_open"
+            "A final reminder goes once, to a ticket still waiting", code="ticket_not_open"
+        )
+    from cmp.domain.rights import tickets as ticket_view
+
+    if not ticket_view.overdue(holder):
+        raise Conflict(
+            "A final reminder is for a ticket past its date; send an ordinary reminder",
+            code="ticket_not_overdue",
         )
     await repo.update_holder(
         conn,
@@ -1200,13 +1346,18 @@ async def escalate_ticket(
     )
     to = await _ticket_address(holder)
     if to:
+        due = holder["due_at"] or datetime.now(UTC)
         _dispatch(
-            "send_holder_instruction",
+            "send_ticket_reminder",
             to,
             row["reference"],
             str(holder["label"]),
-            "ESCALATION - the date for this ticket has passed. " + str(holder["instruction"] or ""),
-            (holder["due_at"] or datetime.now(UTC)).date().isoformat(),
+            due.date().isoformat(),
+            (due.date() - datetime.now(UTC).date()).days,
+            _console_url(f"/tickets?ticket={holder['holder_uuid']}")
+            if holder.get("channel") == "portal"
+            else None,
+            True,
         )
     await repo.append_contact(
         conn,
@@ -1223,7 +1374,7 @@ async def escalate_ticket(
         int(holder["holder_id"]),
         side="office",
         kind="escalation",
-        body="The date for this ticket has passed. Please return it now.",
+        body="Final reminder: the date for this ticket has passed. Please answer it now.",
         author_user_id=actor_id,
     )
     fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
@@ -1668,6 +1819,11 @@ async def post_holder_message(
         raise NotFound("Ticket")
     if holder["ticket_status"] == Ticket.PENDING:
         raise Conflict("This ticket has not been issued", code="ticket_not_open")
+    if holder.get("request_status") == Status.CLOSED.value:
+        # Nobody would read it: the office's queues skip closed requests.
+        raise Conflict(
+            "The request is closed; contact the Privacy Office directly", code="request_closed"
+        )
     text = body.strip()
     if not text:
         raise ValidationFailed("Write something", field="body")
@@ -1837,6 +1993,8 @@ async def send_back_ticket(
         return_evidence_ref=None,
         return_evidence_hash=None,
         return_evidence_name=None,
+        accepted_at=None,
+        accepted_by=None,
         sent_back_at=now,
         sent_back_reason=why,
         sent_back_count=int(holder.get("sent_back_count") or 0) + 1,
@@ -1943,6 +2101,15 @@ async def reassign_holder(
             "channel": "email",
         }
     cols["holder_read_at"] = None
+    # Whoever had it is told it has moved, before it does (2026-10-08).
+    await _tell_holder(
+        conn,
+        row,
+        holder,
+        author_id=actor_id,
+        body="The Privacy Office has passed this ticket to someone else. Nothing more is "
+        "needed from you on it.",
+    )
     await repo.update_holder(conn, int(holder["holder_id"]), **cols)
     fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
     assert fresh is not None
@@ -2086,9 +2253,10 @@ async def remind_holder(
 
 
 #: When the platform reminds of its own accord: three days before the date,
-#: on the date, and every third day after it while the ticket stays open.
+#: on the date, and every day after it while the ticket stays open.
 REMIND_BEFORE_DAYS = 3
-REMIND_EVERY_DAYS_OVERDUE = 3
+#: Every day while overdue and unanswered (decided 2026-10-08).
+REMIND_EVERY_DAYS_OVERDUE = 1
 
 
 def _due_for_reminder(days: int) -> bool:

@@ -12,6 +12,7 @@ the endpoint recorded.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -713,6 +714,50 @@ class TestTicketsFromTheHoldersSide:
             expect=(200, 204),
             json={"reason": "Added in error."},
         )
+        # Opened again with a new date, then withdrawn for good.
+        await call(
+            http,
+            "POST",
+            f"/requests/{ruuid}/holders/{gone}/reopen",
+            template=HOLDER + "/reopen",
+            session=dpo,
+            expect=(200,),
+            json={"due_on": (datetime.now(UTC).date() + timedelta(days=5)).isoformat()},
+        )
+        await call(
+            http,
+            "POST",
+            f"/requests/{ruuid}/holders/{gone}/withdraw",
+            template=HOLDER + "/withdraw",
+            session=dpo,
+            expect=(200, 204),
+            json={"reason": "Added in error after all."},
+        )
+
+        # A third, found by mistake and removed before it is sent anything.
+        third = await call(
+            http,
+            "POST",
+            f"/requests/{ruuid}/holders",
+            template=RIGHTS + "/holders",
+            session=dpo,
+            expect=(200, 201),
+            json={"label": "Never asked"},
+        )
+        listed = (
+            third.json()
+            if isinstance(third.json(), list)
+            else third.json().get("holders", [third.json()])
+        )
+        never = next(h for h in listed if h.get("label") == "Never asked")["holder_uuid"]
+        await call(
+            http,
+            "DELETE",
+            f"/requests/{ruuid}/holders/{never}",
+            template=HOLDER,
+            session=dpo,
+            expect=(204,),
+        )
 
         # Their side.
         mine = await call(http, "GET", "/tickets", session=team)
@@ -740,6 +785,19 @@ class TestTicketsFromTheHoldersSide:
             data={"summary": "Two files, both from March.", "outcome": "done"},
             files={"evidence": ("list.txt", b"a.mp4\nb.mp4\n", "text/plain")},
         )
+        # Their answer waits for the office, which accepts it.
+        answered = await call(http, "GET", f"/requests/{ruuid}", template=RIGHTS, session=dpo)
+        held = next(h for h in answered.json()["holders"] if h["holder_uuid"] == huuid)
+        assert held["state"] == "review"
+        accepted = await call(
+            http,
+            "POST",
+            f"/requests/{ruuid}/holders/{huuid}/accept",
+            template=HOLDER + "/accept",
+            session=dpo,
+            expect=(200,),
+        )
+        assert accepted.json()["state"] == "accepted"
 
 
 class TestANominee:

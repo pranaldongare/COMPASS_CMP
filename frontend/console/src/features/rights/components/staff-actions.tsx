@@ -43,6 +43,7 @@ import {
   useTreatAsWithdrawal,
   useVerifyManually,
 } from "@/features/rights/mutations";
+import { AUTOMATIC } from "@/features/rights/components/request-summary";
 import { useUsers } from "@/features/users";
 import { formatDateTime } from "@/lib/format";
 import { useAuth, useToast } from "@/providers";
@@ -425,7 +426,8 @@ export function ClassificationCard({ request: r }: { request: RightsRequestDetai
 export function RequestTransitions({ request: r }: { request: RightsRequestDetail }) {
   const toast = useToast();
   const move = useTransitionRequest(r.request_uuid);
-  const generic = r.transitions.filter((t) => t.via === "transition");
+  // Sending tickets moves a request to awaiting holders by itself.
+  const generic = r.transitions.filter((t) => t.via === "transition" && !AUTOMATIC.includes(t.to));
 
   if (r.status === "closed") {
     return (

@@ -5,12 +5,12 @@ Seven suites, each answering a different question. Counts are as of
 
 | Suite | Where | Runs against | Count |
 |---|---|---|---|
-| Backend unit | `backend/api/tests/unit` | nothing; pure functions | 714 |
-| Backend integration | `backend/api/tests/integration` | real PostgreSQL, Redis and key service | 509 |
+| Backend unit | `backend/api/tests/unit` | nothing; pure functions | 719 |
+| Backend integration | `backend/api/tests/integration` | real PostgreSQL, Redis and key service | 519 |
 | Backend security | `backend/api/tests/security` | the ASGI app with real datastores | 486 |
 | Backend HTTP | `backend/api/tests/http` | the ASGI app over HTTP, real datastores and key service; **commits** | 144 |
 | Key service | `backend/dkms/tests` | the service in-process; nothing else | 58 |
-| Portal unit | `src/**/*.test.ts*` in each portal | vitest with MSW | 372 console, 244 portal |
+| Portal unit | `src/**/*.test.ts*` in each portal | vitest with MSW | 381 console, 244 portal |
 | Browser | `e2e/` in each portal | the running stack in a real browser | 210 console and 78 portal test runs across the Playwright projects (setup included) |
 
 ### Which suites need the key service

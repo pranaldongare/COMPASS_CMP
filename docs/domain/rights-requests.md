@@ -82,7 +82,7 @@ stateDiagram-v2
   received --> in_progress: verified and classified
   in_progress --> awaiting_holders: a ticket issued
   in_progress --> collating: nothing to ask anyone
-  awaiting_holders --> collating: every ticket back, or escalated once
+  awaiting_holders --> collating: every answer accepted, or a final reminder sent
   collating --> closed: respond
   received --> closed: not verified, or reclassified as a withdrawal
 ```
@@ -100,9 +100,10 @@ shows it beside a disabled button.
 
 ## Holders and tickets
 
-A **holder** is a party that holds her data, derived from the disclosure
+A **holder** is a party that holds her data, found from the disclosure
 records and the assets (`export_line`, `asset_consent`) and confirmed by the
-DPO, who may add one by hand. Each confirmed holder gets one **ticket**: the
+DPO, who may add one by hand, and remove one found by mistake while nothing
+has been sent to it. Each confirmed holder gets one **ticket**: the
 instruction to return what it holds, addressed to a **respondent** of that
 processor.
 
@@ -122,9 +123,30 @@ respondent's when the office does.
 | `pending` | holder confirmed, ticket not yet sent |
 | `issued` | sent, awaiting the holder |
 | `returned` | the holder has answered |
-| `unreturned` | the due date passed with no answer |
-| `escalated` | reminded formally, once |
+| `unreturned` | still open when the response went out: the gap the response names |
+| `escalated` | sent a final reminder, once, after its date |
 | `withdrawn` | the office no longer needs it |
+
+The console does not show these. The server says, for each holder, its
+**state** in words - *Not confirmed, Not sent, Waiting, Sent back, Overdue,
+Final reminder sent, Answered - review, Accepted, Withdrawn, No answer* -
+whether it is **overdue** (its date has passed: the console sends the end of
+the chosen day), and its **moves**: what may be done now, the main one first,
+each with its label and whether it sends an email
+(`domain/rights/tickets.py`). The holders card is a guided path - find who
+holds the data, choose who answers, send tickets, wait for answers, review
+answers - with one table and one ticket dialog drawn from that; the holder
+sees the same states in their own words in *My tasks*: to do, waiting on the
+Privacy Office, done. The design and its decisions:
+[rights-tickets-redesign.md](rights-tickets-redesign.md).
+
+**An answer counts once the office accepts it** (since 0048). A holder's
+answer arrives as *Answered - review*; the DPO **accepts** it
+(`accepted_at`, `accepted_by`) or **sends it back**. Only an accepted answer
+moves the request to collating or makes an erasure's holder copy done. An
+answer the office records itself, for a holder reached by email, is accepted
+as it is recorded. The holder is told when the office records or accepts their
+answer.
 
 **A return says what was done.** Whoever records it - the office for a third
 party, the team itself on the console - says whether the holder did **all of
@@ -138,9 +160,11 @@ return recorded before then has no outcome and is read as done, as it was then.
 
 A returned ticket can be **sent back** with a reason when the answer is not
 enough - sending it back clears what the holder said, and is how a holder who
-fell short is asked again; a ticket can be **reassigned** to another respondent, **reminded**,
-or **withdrawn**. The last ticket to come back moves the request off
-`awaiting_holders`.
+fell short is asked again; a ticket can be **reassigned** to another respondent (whoever had
+it is told), **reminded**, **withdrawn**, and **reopened** with a new date. A **final
+reminder** is sent only once a ticket is overdue; after it the response may go out partial,
+naming the gap. The last answer accepted moves the request off `awaiting_holders`. A holder
+cannot write on a closed request.
 
 **Breach tickets follow this model** ([breaches.md](breaches.md#breach-tickets),
 ADR 0023): an instruction, a thread with files, a return saying done, partial or
@@ -259,9 +283,9 @@ escalations.
 
 ## What runs on its own
 
-- The nightly **sweep** (02:30) closes unverified requests past seven days,
-  marks tickets unreturned at their due date, and sends the reminders the
-  checkpoints call for.
+- The nightly **sweep** (02:30) closes unverified requests past seven days
+  and sends the reminders the checkpoints call for. A ticket is reminded three days before its date, on
+  the day, and then every day while it is overdue and unanswered.
 - **Notifications** go out through the Celery `notifications` queue and, in
   development, land in the outbox file.
 - The **dashboard** shows the office the requests past a checkpoint, the

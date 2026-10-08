@@ -87,12 +87,12 @@ export function RespondentsPanel({ processor }: { processor: Processor }) {
                   {rs.user_uuid ? (
                     <Badge tone="info" dot={false}>
                       <Monitor className="mr-1 size-3" aria-hidden="true" />
-                      on the portal{rs.user_role ? ` · ${humanise(rs.user_role)}` : ""}
+                      in the console{rs.user_role ? ` · ${humanise(rs.user_role)}` : ""}
                     </Badge>
                   ) : (
                     <Badge tone="neutral" dot={false}>
                       <Building2 className="mr-1 size-3" aria-hidden="true" />
-                      by mail
+                      by email
                     </Badge>
                   )}
                 </p>
@@ -128,11 +128,11 @@ export function RespondentsPanel({ processor }: { processor: Processor }) {
               <div className="flex flex-wrap gap-4 text-sm">
                 <label className="flex items-center gap-2">
                   <input type="radio" name="respondent-shape" checked={!asAccount} onChange={() => setAsAccount(false)} />
-                  Somebody at the third party, by mail
+                  Somebody at the third party, by email
                 </label>
                 <label className="flex items-center gap-2">
                   <input type="radio" name="respondent-shape" checked={asAccount} onChange={() => setAsAccount(true)} />
-                  One of our own accounts, on the portal
+                  One of our own accounts, in the console
                 </label>
               </div>
             </fieldset>

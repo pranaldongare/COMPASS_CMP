@@ -426,6 +426,9 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/requests/{request_uuid}/verification/manual` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 | POST | `/requests/{request_uuid}/withdrawal` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 | GET | `/requests/{request_uuid}/attachments/{attachment_uuid}` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/accept` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/reopen` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DELETE | `/requests/{request_uuid}/holders/{holder_uuid}` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO |
 
 ## System
 

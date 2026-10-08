@@ -247,6 +247,11 @@ class Event:
     RIGHTS_TICKET_REASSIGNED = "rights.ticket_reassigned"
     RIGHTS_TICKET_REMINDED = "rights.ticket_reminded"
     RIGHTS_TICKET_SENT_BACK = "rights.ticket_sent_back"
+    #: The office read a holder's answer and took it (0048); a withdrawn
+    #: ticket reopened; a holder found by mistake removed before it was sent.
+    RIGHTS_TICKET_ACCEPTED = "rights.ticket_accepted"
+    RIGHTS_TICKET_REOPENED = "rights.ticket_reopened"
+    RIGHTS_HOLDER_REMOVED = "rights.holder_removed"
     PROCESSOR_RESPONDENT_ADDED = "registry.respondent_added"
     PROCESSOR_RESPONDENT_REMOVED = "registry.respondent_removed"
     RIGHTS_SCOPE_DERIVED = "rights.scope_derived"

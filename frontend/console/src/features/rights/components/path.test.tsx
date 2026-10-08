@@ -45,7 +45,7 @@ describe("stepsFor", () => {
 
   it("shows the holder gap when a response went out partial", () => {
     const steps = stepsFor(makeRequestDetail({ status: "closed", outcome: "partial", responded_at: "2026-09-03T10:00:00Z", tickets_issued: 2, tickets_outstanding: 0 }));
-    const returned = steps.find((s) => s.title === "All responses returned?");
+    const returned = steps.find((s) => s.title === "Every answer accepted?");
     expect(returned?.exit?.taken).toBe(true);
     expect(steps.at(-1)?.state).toBe("done");
   });
@@ -58,7 +58,7 @@ describe("stepsFor", () => {
 
   it("renders the principal's view from their own, thinner shape", () => {
     const steps = stepsFor(makeMyRequest({ status: "in_progress" }));
-    expect(steps.find((s) => s.state === "current")?.title).toBe("Holders derived, DPO confirms");
+    expect(steps.find((s) => s.state === "current")?.title).toBe("Holders found, DPO confirms");
   });
 
   it("escalates a grievance about the DPO on the diagram", () => {
