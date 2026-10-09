@@ -21,7 +21,7 @@ import {
   useCursorStack,
   useFilterParam,
 } from "@/components/data-display/resource-list";
-import { AgentForm } from "@/features/projects/components";
+import { AgentForm, ProjectFilter } from "@/features/projects/components";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyLink } from "@/components/ui/graphics";
 import { Alert, Button, Td, Tr } from "@/components/ui/primitives";
@@ -37,6 +37,7 @@ function LinksPageView() {
   const stack = useCursorStack();
   const toast = useToast();
   const [status, setStatus] = useFilterParam("status");
+  const [project, setProject] = useFilterParam("project");
   const [replacing, setReplacing] = React.useState<LinkListRow | null>(null);
   const [reissue, setReissue] = React.useState<
     { siteUuid: string; siteLabel: string } | null
@@ -46,6 +47,7 @@ function LinksPageView() {
   const { data: enums } = useEnums();
   const query = useAllLinks({
     status: status || undefined,
+    project: project || undefined,
     cursor: stack.cursor,
     limit: 25,
   });
@@ -90,6 +92,13 @@ function LinksPageView() {
       </Alert>
 
       <FilterBar>
+        <ProjectFilter
+          value={project}
+          onChange={(v) => {
+            setProject(v);
+            stack.reset();
+          }}
+        />
         <FilterSelect
           label="Status"
           value={status}

@@ -346,6 +346,10 @@ export const SECTIONS: HelpSection[] = [
         ],
       },
       {
+        kind: "p",
+        text: "[[Approval documents]] lists the approvals of every project you can see; [[Project]] narrows it to one.",
+      },
+      {
         kind: "warning",
         text: "A published notice can never be edited. A correction is a new version of the notice, which supersedes the old one. Adding a site after publication adds a recipient, which also needs a new version. A project has one notice in force: publishing another supersedes it, and its consent links then show the new notice - consents already given keep the notice they were given under.",
       },
@@ -378,6 +382,7 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "list",
         items: [
+          "[[Collection sites]] and [[Consent links]] list every project's at once; [[Project]] narrows either to one.",
           "[[Replace link]] issues a new link; the old one stops working at once.",
           "A revoked, expired or used-up link shows people [[This link is not valid]] and nothing else.",
         ],
@@ -397,6 +402,7 @@ export const SECTIONS: HelpSection[] = [
           "Withdrawn means a withdrawal left nothing agreed. Someone who withdrew one purpose of several is [[Partial]], and the rest still stands.",
           "Narrow the list with [[Project]], [[Site]] (once a project is chosen), [[Status]] - [[Full - every purpose]] or [[Partial - some purposes]], declined or withdrawn - and [[Given from]] and [[Given to]], the days the consent was given. [[Clear filters]] shows everything again; the address bar keeps the filters, so a view can be bookmarked.",
           "Open a person for the record: the purposes agreed and refused, the exact notice text served, and the assets they appear in. [[Audit trail]] opens the trail filtered to that record.",
+          "One project's consents are also on the project: its [[Consent]] tab lists them under [[Consents]], by site and status, each opening its record. A consent figure under [[At a glance]] opens that list narrowed to what it counts; [[Open in Consents]] brings the project's consents here.",
         ],
       },
       {
@@ -706,7 +712,7 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "steps",
         items: [
-          "Click [[Message templates]]. They are grouped by what they are about: Sign-in, Accounts, Projects, Consent, Rights, Breach and Staff.",
+          "Click [[Message templates]]. They are grouped by what they are about: Sign-in, Accounts, Projects, Consent, Rights, Breach and Staff. Click a category at the top to see only its messages, or type in [[Find a message]] - a name, what it is for, or its key. [[Sent by]] keeps email or SMS messages; [[Words]] keeps those changed from the default, or not. On a wide screen the list beside the messages jumps to any one of them.",
           "Edit a message's [[Subject]] and [[Body]]. Click a variable chip, such as {full_name}, to insert it where the cursor is.",
           "Click [[Preview]] to see it with sample values, then [[Save]].",
           "[[Reset to default]] brings back the original words.",

@@ -174,4 +174,75 @@ describe("the project workspace", () => {
     expect(screen.getByText("No exports yet")).toBeVisible();
     expect(screen.getByRole("button", { name: /generate export/i })).toBeVisible();
   });
+
+  it("lists the project's consents, opened from a glance figure narrowed to it", async () => {
+    me = makeMe({ ...dpo(), nav: [...dpo().nav, "consents"] });
+    serveProject();
+    const asked: URLSearchParams[] = [];
+    server.use(
+      http.get(`${API}/projects/${PROJECT}/summary`, () =>
+        HttpResponse.json({
+          project_uuid: PROJECT,
+          project_name: "Retail footfall study",
+          project_status: "approved",
+          counts: { notices: 1, sites: 1, approvals: 1, purposes: 2, active_links: 0, exports: 0, collections: 0 },
+          consents: { total: 3, consented: 2, partial: 1, declined: 0, withdrawn: 0 },
+          readiness: { notice_published: true, rule3_complete: true, approvals_with_proof: 1 },
+        }),
+      ),
+      http.get(`${API}/projects/${PROJECT}/consents`, ({ request }) => {
+        asked.push(new URL(request.url).searchParams);
+        return HttpResponse.json({
+          items: [
+            {
+              consent_uuid: "44444444-4444-4444-8444-444444444444",
+              subject_uuid: "55555555-5555-4555-8555-555555555555",
+              subject_name: "Asha Rao",
+              subject_email: "asha@example.com",
+              subject_mobile: null,
+              site_uuid: "33333333-3333-4333-8333-333333333333",
+              site_label: "Pune campus",
+              served_at: "2026-10-01T10:00:00Z",
+              affirmative_action_at: "2026-10-01T10:01:00Z",
+              action_type: "click",
+              is_withdrawal: false,
+              consent_status: "partial",
+              granted_count: 1,
+              refused_count: 1,
+            },
+          ],
+          next_cursor: null,
+          total: 1,
+        });
+      }),
+    );
+    const { user } = render(<ProjectDetailPage />);
+
+    const partial = await screen.findByRole("link", { name: /^Partial\s*1$/ });
+    expect(partial).toHaveAttribute("href", "#consents");
+    await user.click(partial);
+    await act(async () => {});
+
+    expect(screen.getByRole("tab", { name: /Consent/ })).toHaveAttribute("aria-selected", "true");
+    const row = await screen.findByRole("link", { name: "Asha Rao" });
+    expect(row).toHaveAttribute("href", "/consents/44444444-4444-4444-8444-444444444444");
+    expect(screen.getByText("1 of 2")).toBeInTheDocument();
+    expect(screen.getByLabelText("Status")).toHaveValue("partial");
+    await vi.waitFor(() => expect(asked.at(-1)!.get("status")).toBe("partial"));
+    expect(screen.getByRole("link", { name: /Open in Consents/ })).toHaveAttribute(
+      "href",
+      `/consents?project=${PROJECT}`,
+    );
+  });
+
+  it("shows no consent list to a role that does not read consents", async () => {
+    me = makeMe({ role: "rnd_user", writes: ["project"], nav: ["dashboard", "projects"] });
+    window.history.replaceState(null, "", `/projects/${PROJECT}#consent`);
+    serveProject();
+    render(<ProjectDetailPage />);
+
+    expect(await screen.findByText("Pune campus")).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Consents" })).toBeNull();
+    expect(screen.queryByRole("link", { name: /^Total\s*0$/ })).toBeNull();
+  });
 });

@@ -76,7 +76,7 @@ import {
 import { ProjectProgress, StatusBadge } from "@/components/ui/status";
 import { useLinks } from "@/features/consent";
 import { useNotices } from "@/features/notices";
-import { CopyLinkButton, ReplaceLinkDialog } from "@/features/consent/components";
+import { CopyLinkButton, ProjectConsents, ReplaceLinkDialog } from "@/features/consent/components";
 import {
   downloadApprovalProof,
   useApprovals,
@@ -113,6 +113,7 @@ const SECTIONS: Record<string, ProjectTab> = {
   approvals: "setup",
   sites: "consent",
   links: "consent",
+  consents: "consent",
   collections: "exchanges",
   exports: "exchanges",
   history: "activity",
@@ -151,6 +152,9 @@ export default function ProjectDetailPage() {
   // ours, for a card they cannot see. `writes` comes from the server, so this
   // is not a second copy of the permission matrix.
   const canReadLinks = me?.writes.includes("link") ?? false;
+  // The project's consents, listed on its Consent tab, for whoever reads them.
+  const canReadConsents = me?.nav.includes("consents") ?? false;
+  const [consentStatus, setConsentStatus] = React.useState("");
   const links = useLinks(canReadLinks ? uuid : undefined);
 
   /** The live link for a site, if it has one. At most one by design. */
@@ -435,12 +439,27 @@ export default function ProjectDetailPage() {
                     Consent
                   </p>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                    {Object.entries(summary.data.consents).map(([key, value]) => (
-                      <div key={key}>
-                        <p className="text-xs text-text-subtle">{humanise(key)}</p>
-                        <p className="tabular text-lg font-semibold">{value}</p>
-                      </div>
-                    ))}
+                    {Object.entries(summary.data.consents).map(([key, value]) => {
+                      const figure = (
+                        <>
+                          <p className="text-xs text-text-subtle">{humanise(key)}</p>
+                          <p className="tabular text-lg font-semibold">{value}</p>
+                        </>
+                      );
+                      // Each figure opens the list below, narrowed to what it counted.
+                      return canReadConsents ? (
+                        <a
+                          key={key}
+                          href="#consents"
+                          onClick={() => setConsentStatus(key === "total" ? "" : key)}
+                          className="-m-1.5 rounded-lg p-1.5 hover:bg-surface-hover"
+                        >
+                          {figure}
+                        </a>
+                      ) : (
+                        <div key={key}>{figure}</div>
+                      );
+                    })}
                   </div>
                 </div>
               </CardBody>
@@ -720,6 +739,15 @@ export default function ProjectDetailPage() {
                 </ul>
               )}
             </Card>
+          )}
+
+          {canReadConsents && (
+            <ProjectConsents
+              projectUuid={uuid}
+              sites={sites.data ?? []}
+              status={consentStatus}
+              onStatus={setConsentStatus}
+            />
           )}
         </TabPanel>
 

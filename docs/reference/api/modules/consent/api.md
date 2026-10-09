@@ -38,6 +38,7 @@ before consenting, who leaves no artefact to trace.
 | Parameter | Location | Required | Type | Constraints | Description |
 |---|---|---:|---|---|---|
 | `status` | query | No | `string` or `null` | — | — |
+| `project` | query | No | `string` or `null` | format: `uuid` | — |
 | `limit` | query | No | `integer` or `null` | minimum: `1`; maximum: `200` | — |
 | `cursor` | query | No | `string` or `null` | max length: `512` | — |
 | `sort` | query | No | `string` or `null` | max length: `64` | — |

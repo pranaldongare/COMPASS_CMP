@@ -25,16 +25,19 @@ import { Alert, Td, Tr } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { useEnums } from "@/features/meta";
 import { useAllSites } from "@/features/projects";
+import { ProjectFilter } from "@/features/projects/components";
 import type { SiteListRow } from "@/types";
 import { formatDate } from "@/lib/format";
 
 export default function SitesPage() {
   const stack = useCursorStack();
   const [status, setStatus] = useFilterParam("status");
+  const [project, setProject] = useFilterParam("project");
 
   const { data: enums } = useEnums();
   const query = useAllSites({
     status: status || undefined,
+    project: project || undefined,
     cursor: stack.cursor,
     limit: 25,
   });
@@ -53,6 +56,13 @@ export default function SitesPage() {
       </Alert>
 
       <FilterBar>
+        <ProjectFilter
+          value={project}
+          onChange={(v) => {
+            setProject(v);
+            stack.reset();
+          }}
+        />
         <FilterSelect
           label="Status"
           value={status}

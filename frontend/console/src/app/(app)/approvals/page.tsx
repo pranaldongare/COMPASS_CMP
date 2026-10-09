@@ -14,21 +14,41 @@ import Link from "next/link";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
-import { ResourceList, useCursorStack } from "@/components/data-display/resource-list";
+import {
+  FilterBar,
+  ResourceList,
+  useCursorStack,
+  useFilterParam,
+} from "@/components/data-display/resource-list";
 import { EmptyQueue } from "@/components/ui/graphics";
 import { Badge, Button, Mono, Td, Tr } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { downloadApprovalProof, useAllApprovals } from "@/features/projects";
+import { ProjectFilter } from "@/features/projects/components";
 import type { ApprovalListRow } from "@/types";
 import { formatDate, formatDateTime, humanise, saveBlob, shortHash } from "@/lib/format";
 import { useToast } from "@/providers";
 
+/**
+ * `useFilterParam` reads the query string, which forces client rendering, so
+ * Next requires a suspense boundary around it.
+ */
 export default function ApprovalsPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <ApprovalsPageView />
+    </React.Suspense>
+  );
+}
+
+function ApprovalsPageView() {
   const stack = useCursorStack();
   const toast = useToast();
   const [busy, setBusy] = React.useState<string | null>(null);
+  // One project's approvals (2026-10-09).
+  const [project, setProject] = useFilterParam("project");
 
-  const query = useAllApprovals({ cursor: stack.cursor, limit: 25 });
+  const query = useAllApprovals({ project: project || undefined, cursor: stack.cursor, limit: 25 });
 
   async function downloadProof(uuid: string, reference: string, recorded: string) {
     setBusy(uuid);
@@ -64,6 +84,16 @@ export default function ApprovalsPage() {
         description="Security and legal sign-off, each with the proof document that makes it real. A project cannot reach pending approval without one."
       />
 
+      <FilterBar>
+        <ProjectFilter
+          value={project}
+          onChange={(v) => {
+            setProject(v);
+            stack.reset();
+          }}
+        />
+      </FilterBar>
+
       <ResourceList<ApprovalListRow>
         query={query}
         stack={stack}
@@ -80,7 +110,7 @@ export default function ApprovalsPage() {
         keyOf={(a) => a.approval_uuid}
         empty={{
           illustration: <EmptyQueue />,
-          title: "No approvals yet",
+          title: project ? "No approvals for this project" : "No approvals yet",
           description:
             "A security approval and its proof are uploaded from the project itself, and are what let it leave draft for review.",
         }}

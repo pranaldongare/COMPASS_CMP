@@ -1147,8 +1147,10 @@ async def list_all_sites(
     role: Role | str,
     user_id: int,
     status: str | None = None,
+    project_uuid: str | None = None,
 ) -> tuple[list[Row], str | None, int]:
-    """Every collection site this caller may see, across projects."""
+    """Every collection site this caller may see, across projects - or one
+    project's (2026-10-09)."""
     pred, sparams = scope_predicate(role, user_id)
     where = [pred]
     params: list[Any] = [*sparams]
@@ -1156,6 +1158,9 @@ async def list_all_sites(
     if status:
         where.append("st.status = %s::record_status")
         params.append(status)
+    if project_uuid:
+        where.append("p.project_uuid = %s")
+        params.append(project_uuid)
 
     clause = " AND ".join(where)
     keyset, kparams = keyset_clause(req, alias="st", id_column="site_id")
@@ -1181,14 +1186,23 @@ async def list_all_sites(
 
 
 async def list_all_approvals(
-    conn: Conn, req: PageRequest, *, role: Role | str, user_id: int
+    conn: Conn,
+    req: PageRequest,
+    *,
+    role: Role | str,
+    user_id: int,
+    project_uuid: str | None = None,
 ) -> tuple[list[Row], str | None, int]:
-    """Every approval this caller may see, across projects.
+    """Every approval this caller may see, across projects - or one project's
+    (2026-10-09).
 
     INV-8: an approval without a proof file does not unlock the transition, so
     the proof hash travels with the row rather than requiring a second call.
     """
     pred, sparams = scope_predicate(role, user_id)
+    if project_uuid:
+        pred = f"({pred}) AND p.project_uuid = %s"
+        sparams = [*sparams, project_uuid]
     keyset, kparams = keyset_clause(req, alias="a", id_column="approval_id")
     base = """
         FROM project_approval a

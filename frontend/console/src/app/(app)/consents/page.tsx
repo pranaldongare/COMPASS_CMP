@@ -23,7 +23,8 @@ import { EmptyConsent } from "@/components/ui/graphics";
 import { Button, Field, Input, Td, Tr } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { useAllConsents } from "@/features/consent";
-import { useProjects, useSites } from "@/features/projects";
+import { useSites } from "@/features/projects";
+import { ProjectFilter } from "@/features/projects/components";
 import type { ConsentListRow } from "@/types";
 import { formatDateTime } from "@/lib/format";
 
@@ -43,7 +44,6 @@ function ConsentsPageView() {
   const [site, setSite] = useFilterParam("site");
   const [from, setFrom] = useFilterParam("from");
   const [to, setTo] = useFilterParam("to");
-  const projects = useProjects({ limit: 200 });
   const sites = useSites(project || undefined);
   const filtered = Boolean(status || project || site || from || to);
 
@@ -71,8 +71,7 @@ function ConsentsPageView() {
       />
 
       <FilterBar>
-        <FilterSelect
-          label="Project"
+        <ProjectFilter
           value={project}
           onChange={(v) =>
             set(() => {
@@ -80,8 +79,6 @@ function ConsentsPageView() {
               setSite("");
             })
           }
-          options={(projects.data?.items ?? []).map((p) => ({ value: p.project_uuid, label: p.project_name }))}
-          allLabel="All projects"
         />
         <FilterSelect
           label="Site"

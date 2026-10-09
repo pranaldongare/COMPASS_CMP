@@ -8,6 +8,19 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **A project's consents on the project** (2026-10-09). The Consent tab
+  lists the project's consents - who, at which site, full or partial, how many
+  purposes, when - filtered by site and status, each opening its record, with
+  *Open in Consents* for the register filtered to the project. The consent
+  figures under *At a glance* open that list narrowed to what they count.
+- **Filter by project** (2026-10-09) on Approval documents, Consent links and
+  Collection sites (`GET /approvals`, `/links` and `/sites` take `project`),
+  and Consents now uses the same project picker. Kept in the address bar.
+- **Message templates you can find** (2026-10-09). Categories across the top
+  with their counts (Sign-in, Accounts, Consent, Rights, Breach, Projects,
+  Staff), each with a line on what it holds; a search over name, purpose and
+  key; *Sent by* email or SMS; *Words* changed from the default or not; and,
+  on a wide screen, an index beside the list that jumps to any message.
 - **Registers you can read without editing** (2026-10-09). Users, Processors
   and Data Sources each have a page for one record - the account with how its
   person type changed; the processor with the sources it operates and who

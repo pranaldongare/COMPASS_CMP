@@ -52,6 +52,7 @@ answer to "where does our data actually go".
 | Parameter | Location | Required | Type | Constraints | Description |
 |---|---|---:|---|---|---|
 | `status` | query | No | `string` or `null` | — | — |
+| `project` | query | No | `string` or `null` | format: `uuid` | — |
 | `limit` | query | No | `integer` or `null` | minimum: `1`; maximum: `200` | — |
 | `cursor` | query | No | `string` or `null` | max length: `512` | — |
 | `sort` | query | No | `string` or `null` | max length: `64` | — |
@@ -117,12 +118,14 @@ No request body.
 - **Operation ID:** `list_all_approvals_approvals_get`
 - **Access:** Role-controlled `projects` operation. See [`../../roles/README.md`](../../roles/README.md).
 
-Every approval in scope, with the hash of its proof file (INV-8).
+Every approval in scope, with the hash of its proof file (INV-8); or
+one project's (2026-10-09).
 
 ### Validation
 
 | Parameter | Location | Required | Type | Constraints | Description |
 |---|---|---:|---|---|---|
+| `project` | query | No | `string` or `null` | format: `uuid` | — |
 | `limit` | query | No | `integer` or `null` | minimum: `1`; maximum: `200` | — |
 | `cursor` | query | No | `string` or `null` | max length: `512` | — |
 | `sort` | query | No | `string` or `null` | max length: `64` | — |

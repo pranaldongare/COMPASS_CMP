@@ -2035,7 +2035,8 @@ export interface paths {
         };
         /**
          * All approvals in scope
-         * @description Every approval in scope, with the hash of its proof file (INV-8).
+         * @description Every approval in scope, with the hash of its proof file (INV-8); or
+         *     one project's (2026-10-09).
          */
         get: operations["list_all_approvals_approvals_get"];
         put?: never;
@@ -15087,6 +15088,7 @@ export interface operations {
         parameters: {
             query?: {
                 status?: string | null;
+                project?: string | null;
                 limit?: number | null;
                 cursor?: string | null;
                 sort?: string | null;
@@ -15120,6 +15122,7 @@ export interface operations {
     list_all_approvals_approvals_get: {
         parameters: {
             query?: {
+                project?: string | null;
                 limit?: number | null;
                 cursor?: string | null;
                 sort?: string | null;
@@ -17139,6 +17142,7 @@ export interface operations {
         parameters: {
             query?: {
                 status?: string | null;
+                project?: string | null;
                 limit?: number | null;
                 cursor?: string | null;
                 sort?: string | null;

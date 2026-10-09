@@ -250,6 +250,13 @@ class TestTheOfficeReadsConsents:
             session=world.dco,
         )
         await call(http, "GET", "/links", session=world.dco)
+        # One project's links, sites and approvals (2026-10-09).
+        one = {"project": world.project_uuid}
+        links = await call(http, "GET", "/links", session=world.dpo, params=one)
+        assert {r["project_uuid"] for r in links.json()["items"]} <= {world.project_uuid}
+        sites = await call(http, "GET", "/sites", session=world.dpo, params=one)
+        assert sites.json()["items"]
+        assert {r["project_uuid"] for r in sites.json()["items"]} == {world.project_uuid}
         await call(
             http,
             "GET",
@@ -308,6 +315,11 @@ class TestProjectsNoticesRegistry:
             json={"requesting_team": "Vision, renamed"},
         )
         await call(http, "GET", "/approvals", session=world.dpo)
+        approvals = await call(
+            http, "GET", "/approvals", session=world.dpo, params={"project": world.project_uuid}
+        )
+        assert approvals.json()["items"]
+        assert {r["project_uuid"] for r in approvals.json()["items"]} == {world.project_uuid}
         # A second collector asked for after approval, and the office's decision with its reason.
         second = await call(
             http,

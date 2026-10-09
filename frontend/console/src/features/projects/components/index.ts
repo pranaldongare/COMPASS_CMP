@@ -20,3 +20,4 @@ export {
   OverrideBadge,
   AssignSiteDcoDialog,
 } from "@/features/projects/components/site-dco";
+export * from "@/features/projects/components/project-filter";

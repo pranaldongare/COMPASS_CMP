@@ -205,29 +205,43 @@ async def list_all_sites(
     principal: ProjectReader,
     page: Annotated[PageRequest, Depends(site_paging)],
     site_status: Annotated[str | None, Query(alias="status")] = None,
+    project: Annotated[UUID | None, Query()] = None,
 ) -> dict[str, Any]:
     """Every collection site in scope.
 
     A site is a recipient named in a published notice, so this doubles as the
     answer to "where does our data actually go".
     """
-    reject_unknown_filters(request, {"status"})
+    reject_unknown_filters(request, {"status", "project"})
     async with connection() as conn:
         items, cursor, total = await repo.list_all_sites(
-            conn, page, role=principal.role, user_id=principal.user_id, status=site_status
+            conn,
+            page,
+            role=principal.role,
+            user_id=principal.user_id,
+            status=site_status,
+            project_uuid=str(project) if project else None,
         )
     return {"items": items, "next_cursor": cursor, "total": total}
 
 
 @router.get("/approvals", response_model=Page[ApprovalListRow], summary="All approvals in scope")
 async def list_all_approvals(
+    request: Request,
     principal: ProjectReader,
     page: Annotated[PageRequest, Depends(approval_paging)],
+    project: Annotated[UUID | None, Query()] = None,
 ) -> dict[str, Any]:
-    """Every approval in scope, with the hash of its proof file (INV-8)."""
+    """Every approval in scope, with the hash of its proof file (INV-8); or
+    one project's (2026-10-09)."""
+    reject_unknown_filters(request, {"project"})
     async with connection() as conn:
         items, cursor, total = await repo.list_all_approvals(
-            conn, page, role=principal.role, user_id=principal.user_id
+            conn,
+            page,
+            role=principal.role,
+            user_id=principal.user_id,
+            project_uuid=str(project) if project else None,
         )
     return {"items": items, "next_cursor": cursor, "total": total}
 

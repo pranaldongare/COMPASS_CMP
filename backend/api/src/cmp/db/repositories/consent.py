@@ -592,8 +592,10 @@ async def list_all_links(
     role: Role | str,
     user_id: int,
     status: str | None = None,
+    project_uuid: str | None = None,
 ) -> tuple[list[Row], str | None, int]:
-    """Every consent link this caller may see, across projects."""
+    """Every consent link this caller may see, across projects - or one
+    project's (2026-10-09)."""
     pred, sparams = _project_scope(role, user_id)
     where = [pred]
     params: list[Any] = [*sparams]
@@ -601,6 +603,9 @@ async def list_all_links(
     if status:
         where.append("cl.status = %s::link_status")
         params.append(status)
+    if project_uuid:
+        where.append("p.project_uuid = %s")
+        params.append(project_uuid)
 
     clause = " AND ".join(where)
     keyset, kparams = keyset_clause(req, alias="cl", id_column="link_id")

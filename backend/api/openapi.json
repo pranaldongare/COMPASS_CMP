@@ -5245,6 +5245,23 @@
             }
           },
           {
+            "name": "project",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project"
+            }
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -5327,9 +5344,26 @@
           "projects"
         ],
         "summary": "All approvals in scope",
-        "description": "Every approval in scope, with the hash of its proof file (INV-8).",
+        "description": "Every approval in scope, with the hash of its proof file (INV-8); or\none project's (2026-10-09).",
         "operationId": "list_all_approvals_approvals_get",
         "parameters": [
+          {
+            "name": "project",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project"
+            }
+          },
           {
             "name": "limit",
             "in": "query",
@@ -8534,6 +8568,23 @@
                 }
               ],
               "title": "Status"
+            }
+          },
+          {
+            "name": "project",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project"
             }
           },
           {

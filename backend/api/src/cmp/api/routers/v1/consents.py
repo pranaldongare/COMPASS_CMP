@@ -180,6 +180,7 @@ async def list_all_links(
     principal: LinkReader,
     page: Annotated[PageRequest, Depends(link_paging)],
     link_status: Annotated[str | None, Query(alias="status")] = None,
+    project: Annotated[UUID | None, Query()] = None,
 ) -> dict[str, Any]:
     """Every consent link in scope, with its registration count.
 
@@ -187,10 +188,15 @@ async def list_all_links(
     who came through the link, including anyone who registered and abandoned
     before consenting, who leaves no artefact to trace.
     """
-    reject_unknown_filters(request, {"status"})
+    reject_unknown_filters(request, {"status", "project"})
     async with connection() as conn:
         items, cursor, total = await repo.list_all_links(
-            conn, page, role=principal.role, user_id=principal.user_id, status=link_status
+            conn,
+            page,
+            role=principal.role,
+            user_id=principal.user_id,
+            status=link_status,
+            project_uuid=str(project) if project else None,
         )
     return {"items": [with_url(i) for i in items], "next_cursor": cursor, "total": total}
 
