@@ -15,7 +15,7 @@ from datetime import datetime
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from pydantic import Field
 
 from cmp.api.dependencies import CurrentUser, RequireDPOorAdmin, RequireStaff
@@ -87,15 +87,25 @@ class CoverCandidateOut(Out):
     response_model=list[CoverCandidateOut],
     summary="Who I can hand my work to: the active accounts in my role",
 )
-async def candidates(principal: RequireStaff) -> list[dict[str, Any]]:
+async def candidates(
+    principal: RequireStaff,
+    for_user: Annotated[UUID | None, Query()] = None,
+) -> list[dict[str, Any]]:
     """The cover form's one question, answered for whoever may arrange cover.
 
     It used to read the users register, which only the DPO and the
     administrator may - so everyone else was told there was nobody to delegate
-    to. Same role, active, not the caller: the rules `grant` enforces.
+    to. Same role, active, not the person whose work it is: the rules `grant`
+    enforces. `for_user` (2026-10-09) is the administrator arranging cover for
+    somebody else; nobody else may ask it.
     """
     async with connection() as conn:
-        return await repo.cover_candidates(conn, role=principal.role, user_id=principal.user_id)
+        return await service.cover_candidates(
+            conn,
+            role=principal.role,
+            user_id=principal.user_id,
+            for_user=str(for_user) if for_user else None,
+        )
 
 
 @router.post("", response_model=DelegationGranted, status_code=201, summary="Arrange cover")

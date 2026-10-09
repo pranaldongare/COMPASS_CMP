@@ -25,11 +25,15 @@ The cover form's one question, answered for whoever may arrange cover.
 
 It used to read the users register, which only the DPO and the
 administrator may - so everyone else was told there was nobody to delegate
-to. Same role, active, not the caller: the rules `grant` enforces.
+to. Same role, active, not the person whose work it is: the rules `grant`
+enforces. `for_user` (2026-10-09) is the administrator arranging cover for
+somebody else; nobody else may ask it.
 
 ### Validation
 
-No path, query, header, or cookie parameters are declared for this operation.
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `for_user` | query | No | `string` or `null` | format: `uuid` | — |
 
 ### Payload
 
@@ -40,6 +44,7 @@ No request body.
 | Status | Description | Content type | Schema |
 |---:|---|---|---|
 | `200` | Successful Response | `application/json` | array of [`CoverCandidateOut`](#schema-covercandidateout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
 
 **Example `200` `application/json` response:**
 
@@ -51,6 +56,24 @@ No request body.
     "email": "string"
   }
 ]
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
 ```
 
 <a id="2_get_delegations"></a>

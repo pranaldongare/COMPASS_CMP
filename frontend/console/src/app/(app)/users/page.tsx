@@ -12,15 +12,8 @@
  */
 "use client";
 
-import {
-  KeyRound,
-  Pencil,
-  Plus,
-  Send,
-  ShieldEllipsis,
-  UserCheck,
-  UserX,
-} from "lucide-react";
+import { Eye, KeyRound, Pencil, Plus, Send, ShieldEllipsis, UserCheck, UserX } from "lucide-react";
+import Link from "next/link";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
@@ -204,7 +197,9 @@ function UsersPageView() {
         row={(u) => (
           <Tr>
             <Td>
-              <span className="font-medium">{u.full_name}</span>
+              <Link href={`/users/${u.uuid}`} className="font-medium text-accent-text hover:underline">
+                {u.full_name}
+              </Link>
               <p className="mt-0.5 text-xs text-text-subtle">{u.email}</p>
             </Td>
             <Td>
@@ -220,8 +215,22 @@ function UsersPageView() {
               {formatDate(u.created_at)}
             </Td>
             <Td>
+              {!isAdmin && (
+                <Button asChild variant="ghost" size="sm">
+                  <Link href={`/users/${u.uuid}`}>
+                    <Eye className="size-4" />
+                    View
+                  </Link>
+                </Button>
+              )}
               {isAdmin && (
                 <div className="flex flex-wrap gap-1">
+                  <Button asChild variant="ghost" size="sm">
+                    <Link href={`/users/${u.uuid}`}>
+                      <Eye className="size-4" />
+                      View
+                    </Link>
+                  </Button>
                   <Button variant="ghost" size="sm" onClick={() => setEditing(u)}>
                     <Pencil className="size-4" />
                     Edit

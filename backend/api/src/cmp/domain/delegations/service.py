@@ -23,7 +23,15 @@ from cmp.domain.audit.service import Event
 #: cover that: the rows are defined by authorship, and a delegate acting on them
 #: would be acting on somebody else's submission. A data subject's rows are
 #: their own person. Neither is a gap; both are the scope working as intended.
-DELEGABLE = frozenset({Role.DPO, Role.DCO})
+#:
+#: Since 2026-10-09 every other staff role may arrange cover: an RCO's rows are
+#: assigned like a DCO's, and the DPO, the DCO Admin and the administrator -
+#: whose reach is not per assignment - record who is covering their function.
+DELEGABLE = frozenset({Role.DPO, Role.DCO, Role.RCO, Role.DCO_ADMIN, Role.ADMIN})
+
+#: Roles whose cover is a record and grants nothing: their reach is not made of
+#: assigned rows, so a colleague in the same role already has it.
+RECORD_ONLY = frozenset({Role.DPO, Role.DCO_ADMIN, Role.ADMIN})
 
 
 async def grant(
@@ -136,7 +144,7 @@ async def grant(
         ends_at=ends_at,
     )
 
-    grants_access = Role(delegator["role"]) is not Role.DPO
+    grants_access = Role(delegator["role"]) not in RECORD_ONLY
     return {
         "delegation_uuid": row["delegation_uuid"],
         "grants_access": grants_access,
@@ -145,11 +153,28 @@ async def grant(
             if grants_access
             else (
                 f"Recorded: {delegate['full_name']} is covering for "
-                f"{delegator['full_name']}. A DPO already reads every record, so this "
-                "grants no additional access — it is the record of who was covering."
+                f"{delegator['full_name']}. Both already reach the same records in this "
+                "role, so this grants no additional access — it is the record of who "
+                "was covering."
             )
         ),
     }
+
+
+async def cover_candidates(
+    conn: Conn, *, role: Role | str, user_id: int, for_user: str | None = None
+) -> list[dict[str, Any]]:
+    """Who may cover: the active accounts in the same role, bar the person
+    whose work it is. That person is the caller, or - for an administrator
+    arranging cover for somebody else (2026-10-09) - `for_user`."""
+    if for_user is None:
+        return await repo.cover_candidates(conn, role=str(role), user_id=user_id)
+    if Role(role) is not Role.ADMIN:
+        raise Forbidden("Only an administrator arranges cover for somebody else")
+    whose = await user_repo.by_uuid(conn, for_user)
+    if not whose:
+        raise NotFound("User")
+    return await repo.cover_candidates(conn, role=str(whose["role"]), user_id=int(whose["id"]))
 
 
 async def revoke(

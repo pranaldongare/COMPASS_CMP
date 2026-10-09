@@ -3597,19 +3597,48 @@
           "delegations"
         ],
         "summary": "Who I can hand my work to: the active accounts in my role",
-        "description": "The cover form's one question, answered for whoever may arrange cover.\n\nIt used to read the users register, which only the DPO and the\nadministrator may - so everyone else was told there was nobody to delegate\nto. Same role, active, not the caller: the rules `grant` enforces.",
+        "description": "The cover form's one question, answered for whoever may arrange cover.\n\nIt used to read the users register, which only the DPO and the\nadministrator may - so everyone else was told there was nobody to delegate\nto. Same role, active, not the person whose work it is: the rules `grant`\nenforces. `for_user` (2026-10-09) is the administrator arranging cover for\nsomebody else; nobody else may ask it.",
         "operationId": "candidates_delegations_candidates_get",
+        "parameters": [
+          {
+            "name": "for_user",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "For User"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/CoverCandidateOut"
                   },
-                  "type": "array",
                   "title": "Response Candidates Delegations Candidates Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }

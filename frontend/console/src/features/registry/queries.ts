@@ -6,6 +6,8 @@
 import { useQuery } from "@tanstack/react-query";
 
 import {
+  getProcessor,
+  getSource,
   listRespondents,
   getPurpose,
   getPurposeUsage,
@@ -94,5 +96,23 @@ export function useRespondents(processorUuid: Uuid | undefined) {
     queryKey: keys.registry.respondents(processorUuid ?? ""),
     queryFn: () => listRespondents(processorUuid!),
     enabled: Boolean(processorUuid),
+  });
+}
+
+/** One processor, for its own page (2026-10-09). */
+export function useProcessor(uuid: Uuid | undefined) {
+  return useQuery<Processor, ApiError>({
+    queryKey: keys.registry.processor(uuid ?? ""),
+    queryFn: () => getProcessor(uuid!),
+    enabled: Boolean(uuid),
+  });
+}
+
+/** One data source, for its own page (2026-10-09). */
+export function useSource(uuid: Uuid | undefined) {
+  return useQuery<DataSource, ApiError>({
+    queryKey: keys.registry.source(uuid ?? ""),
+    queryFn: () => getSource(uuid!),
+    enabled: Boolean(uuid),
   });
 }

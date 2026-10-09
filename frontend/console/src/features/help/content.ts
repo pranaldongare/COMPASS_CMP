@@ -671,7 +671,7 @@ export const SECTIONS: HelpSection[] = [
     id: "delegation",
     title: "Cover while you are away",
     summary: "Hand your work to a colleague in the same role for a period.",
-    roles: ["dpo", "dco", "admin"],
+    roles: ["dpo", "dco", "dco_admin", "rco", "admin"],
     blocks: [
       {
         kind: "steps",
@@ -684,7 +684,16 @@ export const SECTIONS: HelpSection[] = [
       },
       {
         kind: "note",
-        text: "Cover applies to the DPO and DCO roles. The Administrator sees every arrangement and can arrange one on someone's behalf.",
+        text: "Every staff role but the R&D User can arrange cover: the DPO, DCO, DCO Admin, RCO and Administrator. For a DCO or an RCO it lets the colleague act on their projects; for a DPO, a DCO Admin or an Administrator - who already reach the same records - it is the record of who was covering.",
+      },
+      {
+        kind: "steps",
+        title: "Arranging cover for somebody away (Administrator)",
+        items: [
+          "Click [[Delegations]], then [[Arrange cover for someone]].",
+          "Choose [[Whose work]], then [[Who takes over]] - a colleague in their role - set [[Until]] and say [[Why]].",
+          "Click [[Delegate]]. Both are emailed; the audit trail records that you arranged it.",
+        ],
       },
     ],
   },

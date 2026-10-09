@@ -83,3 +83,30 @@ def test_generated_code_always_satisfies_the_hand_typed_rule(project_name: str) 
     code = f"NTC-{_slug(project_name)}-2026"
     assert CODE_RULE.match(code), code
     assert len(code) <= 80
+
+
+async def test_a_crowded_base_falls_back_to_a_random_suffix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Different projects whose names start alike share a base; once its
+    twenty-six numbered codes are taken, a short random suffix (2026-10-09)."""
+    from cmp.domain.notices import service as notices
+
+    base = "NTC-TPL-STUDY-2026"
+    taken = {base, *(f"{base}-{n}" for n in range(2, 27))}
+
+    async def max_version(_conn: object, code: str) -> int:
+        return 1 if code in taken else 0
+
+    class FixedNow:
+        @staticmethod
+        def now(tz: object) -> object:
+            from datetime import UTC, datetime
+
+            return datetime(2026, 10, 9, tzinfo=UTC)
+
+    monkeypatch.setattr(notices.repo, "max_version", max_version)
+    monkeypatch.setattr(notices, "datetime", FixedNow)
+    code = await notices.generate_code(None, project_name="Tpl Study")  # type: ignore[arg-type]
+    assert code.startswith(f"{base}-") and code not in taken
+    assert CODE_RULE.match(code)

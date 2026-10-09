@@ -52,7 +52,9 @@ import type { Delegation } from "@/types";
 
 export default function CoverPage() {
   const { me } = useAuth();
-  const [arranging, setArranging] = React.useState(false);
+  // "mine" for my own work; "someone" for an administrator arranging cover
+  // for somebody unreachable (2026-10-09).
+  const [arranging, setArranging] = React.useState<"mine" | "someone" | null>(null);
 
   const mine = useMyDelegations();
   const held = useHeldDelegations();
@@ -62,11 +64,13 @@ export default function CoverPage() {
   // Delegation applies to roles whose access is defined by *assignment* — every
   // collection owner, not only the DCO. An R&D User's rows are the ones they
   // created, and nobody can be delegated authorship.
+  const isAdmin = me?.role === "admin";
   const canArrange =
     me?.role === "dpo" ||
     me?.role === "dco" ||
     me?.role === "rco" ||
-    me?.role === "dco_admin";
+    me?.role === "dco_admin" ||
+    isAdmin;
 
   return (
     <>
@@ -75,10 +79,18 @@ export default function CoverPage() {
         description="Choose who can cover your work and for how long. A delegation grants access for a period and transfers nothing — it ends on its own."
         actions={
           canArrange ? (
-            <Button variant="primary" onClick={() => setArranging(true)}>
-              <Plus className="size-4" />
-              Delegate my work
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              {isAdmin && (
+                <Button variant="primary" onClick={() => setArranging("someone")}>
+                  <UserRoundCheck className="size-4" />
+                  Arrange cover for someone
+                </Button>
+              )}
+              <Button variant={isAdmin ? "secondary" : "primary"} onClick={() => setArranging("mine")}>
+                <Plus className="size-4" />
+                Delegate my work
+              </Button>
+            </div>
           ) : null
         }
       />
@@ -122,12 +134,18 @@ export default function CoverPage() {
         )}
       </div>
 
-      <Dialog open={arranging} onOpenChange={(open) => !open && setArranging(false)}>
+      <Dialog open={arranging !== null} onOpenChange={(open) => !open && setArranging(null)}>
         <DialogContent
-          title="Delegate my work"
-          description="They will reach your projects for as long as the arrangement lasts, and nothing changes hands."
+          title={arranging === "someone" ? "Arrange cover for someone" : "Delegate my work"}
+          description={
+            arranging === "someone"
+              ? "For somebody away or unreachable: a colleague in the same role covers their work for the period. The audit trail records that you arranged it."
+              : "They will reach your projects for as long as the arrangement lasts, and nothing changes hands."
+          }
         >
-          <GrantCoverForm onDone={() => setArranging(false)} />
+          {arranging && (
+            <GrantCoverForm forSomeone={arranging === "someone"} onDone={() => setArranging(null)} />
+          )}
         </DialogContent>
       </Dialog>
     </>

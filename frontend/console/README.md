@@ -73,7 +73,9 @@ src/
                           pages), tickets (My tasks: a holder's own rights and
                           breach tickets - to do, waiting on the Privacy Office,
                           done), users, messages, audit, delegate (cover),
-                          notifications, account
+                          notifications, account. A record of the users,
+                          processors and sources registers opens its own page
+                          (users/[uuid], processors/[uuid], sources/[uuid])
     help/                 the manual, open without signing in
     not-found.tsx         an unknown address, with a way back
     sign-in/              staff password + MFA step-up, reset; each page

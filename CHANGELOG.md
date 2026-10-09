@@ -8,6 +8,19 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Registers you can read without editing** (2026-10-09). Users, Processors
+  and Data Sources each have a page for one record - the account with how its
+  person type changed; the processor with the sources it operates and who
+  answers its rights tickets; the source with its processor, who is
+  accountable and what it is authoritative for. Names in each register open
+  them, beside a **View** button for every reader; **Edit** is on the page for
+  those who may. Data Sources filters by **Processor**.
+- **Delegation for every staff role but the R&D User** (2026-10-09). The
+  administrator can **Delegate my work** and **Arrange cover for someone** -
+  whose work, then a colleague in their role. RCO and DCO Admin, offered the
+  button before but refused by the server, can now arrange cover too. Cover
+  extends access for a DCO or an RCO; for a DPO, a DCO Admin or an
+  administrator it records who was covering.
 - **Rights requests: a holder's email, and going back from collating**
   (2026-10-08). Every holder now needs an email address - whoever answers is
   emailed the ticket - so a holder is not added or confirmed without one (or
@@ -881,6 +894,12 @@ as a release yet.
   22-migration chain, Node 22, the two portals and the rights module.
 
 ### Fixed
+- **A notice code is always found** (2026-10-09). The generated code starts
+  from the project name's first words, so projects whose names start alike
+  share one base; once its 26 numbered codes were taken, making a notice
+  failed with "Could not generate a unique notice code". It now falls back to
+  a short random suffix. (Found as an intermittent HTTP-suite failure: every
+  run's test project shared one base.)
 - **Two labels** (2026-10-08). The audit trail's Area filter listed
   "Incidents and breaches" twice; breach notice deliveries are now
   "Breach notices". The Rights requests page no longer lists correction among

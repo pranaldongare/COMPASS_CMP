@@ -21,7 +21,12 @@ import { DialogFooter } from "@/components/ui/dialog";
 import { Alert, Button, Field, Input, Select, Textarea } from "@/components/ui/primitives";
 import { useGrantDelegation } from "@/features/delegations/mutations";
 import { useCoverCandidates } from "@/features/delegations/queries";
-import { useToast } from "@/providers";
+import { useStaff } from "@/features/users";
+import { humanise } from "@/lib/format";
+import { useAuth, useToast } from "@/providers";
+
+/** Roles whose cover can be arranged (the API's DELEGABLE). */
+const DELEGABLE = ["dpo", "dco", "rco", "dco_admin", "admin"];
 
 /**
  * The earliest end date worth offering: tomorrow.
@@ -34,9 +39,20 @@ function tomorrow(): string {
   return new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
 }
 
-export function GrantCoverForm({ onDone }: { onDone: () => void }) {
+export function GrantCoverForm({
+  onDone,
+  forSomeone = false,
+}: {
+  onDone: () => void;
+  /** An administrator arranging cover for somebody unreachable (2026-10-09). */
+  forSomeone?: boolean;
+}) {
   const toast = useToast();
+  const { me } = useAuth();
   const grant = useGrantDelegation();
+  const [whose, setWhose] = React.useState("");
+  const staff = useStaff(forSomeone);
+  const people = (staff.data ?? []).filter((u) => DELEGABLE.includes(u.role) && u.uuid !== me?.uuid);
 
   const [delegate, setDelegate] = React.useState("");
   const [endsAt, setEndsAt] = React.useState("");
@@ -47,7 +63,7 @@ export function GrantCoverForm({ onDone }: { onDone: () => void }) {
   // Same role, active, and not the caller - the server's own list, asked of
   // the delegations API. The users register it used to read is the DPO's and
   // the administrator's alone, so everyone else was offered nobody.
-  const users = useCoverCandidates();
+  const users = useCoverCandidates(forSomeone ? whose || undefined : undefined, !forSomeone || Boolean(whose));
   const candidates = users.data ?? [];
 
   async function submit(event: React.FormEvent) {
@@ -55,6 +71,7 @@ export function GrantCoverForm({ onDone }: { onDone: () => void }) {
     setError(null);
     try {
       const result = await grant.mutateAsync({
+        ...(forSomeone ? { delegator_user_uuid: whose } : {}),
         delegate_user_uuid: delegate,
         ends_at: endsAt ? new Date(endsAt).toISOString() : null,
         reason: reason.trim() || null,
@@ -78,7 +95,28 @@ export function GrantCoverForm({ onDone }: { onDone: () => void }) {
       <FormError message={error} />
 
       <div className="space-y-4">
-        {candidates.length === 0 && !users.isLoading && (
+        {forSomeone && (
+          <Field label="Whose work" hint="Somebody who is away or unreachable. Their cover is recorded as arranged by you." required>
+            {(p) => (
+              <Select
+                {...p}
+                value={whose}
+                onChange={(e) => {
+                  setWhose(e.target.value);
+                  setDelegate("");
+                }}
+              >
+                <option value="">Choose a person…</option>
+                {people.map((u) => (
+                  <option key={u.uuid} value={u.uuid}>
+                    {u.full_name} · {humanise(u.role)}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+        )}
+        {(!forSomeone || whose) && candidates.length === 0 && !users.isLoading && (
           <Alert tone="info">
             <span className="flex items-start gap-2">
               <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
@@ -91,7 +129,11 @@ export function GrantCoverForm({ onDone }: { onDone: () => void }) {
 
         <Field
           label="Who takes over"
-          hint="Somebody in your own role. They reach your projects; nothing changes hands."
+          hint={
+            forSomeone
+              ? "Somebody in the same role as the person away. Nothing changes hands."
+              : "Somebody in your own role. They reach your projects; nothing changes hands."
+          }
           required
         >
           {(p) => (

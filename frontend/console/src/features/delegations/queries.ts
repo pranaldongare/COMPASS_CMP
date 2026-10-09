@@ -14,7 +14,7 @@ import {
 } from "@/features/delegations/api";
 import type { ApiError } from "@/lib/errors";
 import { keys } from "@/lib/query";
-import type { Delegation } from "@/types";
+import type { Delegation, Uuid } from "@/types";
 
 export function useMyDelegations() {
   return useQuery<Delegation[], ApiError>({
@@ -42,9 +42,10 @@ export function useAllDelegations(enabled = true) {
 
 /** The colleagues the cover form may offer. Asked of the delegations API, not
  *  the users register, which only the DPO and the administrator may read. */
-export function useCoverCandidates() {
+export function useCoverCandidates(forUser?: Uuid, enabled = true) {
   return useQuery<CoverCandidate[], ApiError>({
-    queryKey: keys.delegations.candidates,
-    queryFn: listCoverCandidates,
+    queryKey: forUser ? keys.delegations.candidatesFor(forUser) : keys.delegations.candidates,
+    queryFn: () => listCoverCandidates(forUser),
+    enabled,
   });
 }

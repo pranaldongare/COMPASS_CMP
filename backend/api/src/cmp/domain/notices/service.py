@@ -15,6 +15,7 @@ words she never saw.
 from __future__ import annotations
 
 import re
+import secrets
 from datetime import UTC, datetime
 from typing import Any
 
@@ -84,10 +85,16 @@ async def generate_code(conn: Conn, *, project_name: str) -> str:
     if await repo.max_version(conn, base) == 0:
         return base
 
-    # Bounded rather than a while-true. Twenty-six notices for one project in one
-    # year is already well past the point where the name is the real problem.
+    # Bounded rather than a while-true. The base is the project name's first
+    # words, so different projects whose names start alike share it - which is
+    # how one base came to hold twenty-six codes (2026-10-09). Past the numbers,
+    # a short random suffix, checked like the rest.
     for suffix in range(2, 27):
         candidate = f"{base}-{suffix}"
+        if await repo.max_version(conn, candidate) == 0:
+            return candidate
+    for _ in range(5):
+        candidate = f"{base}-{secrets.token_hex(2).upper()}"
         if await repo.max_version(conn, candidate) == 0:
             return candidate
 

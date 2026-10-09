@@ -10,7 +10,8 @@
  */
 "use client";
 
-import { Ban, Pencil, Plus, UsersRound } from "lucide-react";
+import { Ban, Eye, Pencil, Plus, UsersRound } from "lucide-react";
+import Link from "next/link";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
@@ -127,7 +128,11 @@ export default function ProcessorsPage() {
         }}
         row={(p) => (
           <Tr>
-            <Td className="font-medium">{p.legal_name}</Td>
+            <Td>
+              <Link href={`/processors/${p.processor_uuid}`} className="font-medium text-accent-text hover:underline">
+                {p.legal_name}
+              </Link>
+            </Td>
             <Td className="text-text-muted">{humanise(p.type)}</Td>
             <Td>
               {p.location_country ? (
@@ -150,6 +155,12 @@ export default function ProcessorsPage() {
             </Td>
             <Td>
               <div className="flex flex-wrap gap-1">
+                <Button asChild variant="ghost" size="sm">
+                  <Link href={`/processors/${p.processor_uuid}`}>
+                    <Eye className="size-4" />
+                    View
+                  </Link>
+                </Button>
                 <Button variant="ghost" size="sm" onClick={() => setRespondentsFor(p)}>
                   <UsersRound className="size-4" />
                   Respondents

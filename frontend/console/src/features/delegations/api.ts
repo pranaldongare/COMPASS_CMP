@@ -54,8 +54,12 @@ export interface CoverCandidate {
   email: string | null;
 }
 
-export function listCoverCandidates(): Promise<CoverCandidate[]> {
-  return apiGet<CoverCandidate[]>("/delegations/candidates");
+/** Who may cover: my colleagues in my role, or - for an administrator
+ *  arranging cover for somebody else - theirs (2026-10-09). */
+export function listCoverCandidates(forUser?: Uuid): Promise<CoverCandidate[]> {
+  return apiGet<CoverCandidate[]>(
+    `/delegations/candidates${forUser ? `?for_user=${encodeURIComponent(forUser)}` : ""}`,
+  );
 }
 
 export function listAllDelegations(): Promise<Delegation[]> {

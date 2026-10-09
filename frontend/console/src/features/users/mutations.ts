@@ -24,7 +24,7 @@ export function useDeactivateUser() {
   const qc = useQueryClient();
   return useMutation<Acknowledged, ApiError, Uuid>({
     mutationFn: deactivateUser,
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.users.list() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.users.all }),
   });
 }
 
@@ -32,7 +32,7 @@ export function useReactivateUser() {
   const qc = useQueryClient();
   return useMutation<Acknowledged, ApiError, Uuid>({
     mutationFn: reactivateUser,
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.users.list() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.users.all }),
   });
 }
 
@@ -40,7 +40,7 @@ export function useCreateUser(): Result<User, UserInput> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: createUser,
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.users.list() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.users.all }),
   });
 }
 
@@ -48,7 +48,7 @@ export function useUpdateUser(uuid: Uuid): Result<User, Partial<UserInput>> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Partial<UserInput>) => updateUser(uuid, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.users.list() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.users.all }),
   });
 }
 
@@ -58,7 +58,7 @@ export function useChangeRole(
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: { role: string; reason?: string }) => changeUserRole(uuid, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.users.list() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.users.all }),
   });
 }
 

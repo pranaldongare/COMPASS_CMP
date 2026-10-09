@@ -49,7 +49,9 @@ async def _project(http: httpx.AsyncClient, world: World) -> str:
         session=world.rnd,
         expect=201,
         json={
-            "project_name": f"Template Study {fresh('T')}",
+            # Short enough that the unique part survives into the notice
+            # code (20 characters), so runs do not share one base.
+            "project_name": f"Tpl {fresh('T')}",
             "description": "Gait video collection.",
             "processor_uuids": [world.processor_uuid],
             "requesting_team": "Computer Vision",

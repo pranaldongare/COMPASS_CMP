@@ -396,8 +396,14 @@ account's role, a temporary login's included. See
 The console calls it **Delegate**. A member of staff arranges cover for a period: a delegate who then sees and
 acts on the delegator's rows for that period only, in their own name, with
 every action audited as theirs. Cover ends at the end of the period or when
-either party ends it. The administrator can arrange it for anyone; nobody can
-arrange cover that widens what the delegator themselves could do. The form
+either party ends it. The administrator can arrange it for anyone - **Arrange
+cover for someone**, choosing whose work and then a colleague in their role
+(`GET /delegations/candidates?for_user=`) - and, like every staff role but the
+R&D User, delegate their own (2026-10-09). Cover lets a DCO's or an RCO's
+colleague act on their assigned projects; for a DPO, a DCO Admin or an
+administrator, who already reach the same records, it is the record of who
+was covering (`grants_access: false`). Nobody can arrange cover that widens
+what the delegator themselves could do. The form
 offers the colleagues `GET /delegations/candidates` names - the active
 accounts in the caller's role - because the users register it once read is
 the DPO's and the administrator's alone, and everyone else was offered nobody.

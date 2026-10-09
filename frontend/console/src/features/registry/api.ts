@@ -62,6 +62,14 @@ export function listProcessors(filters: Record<string, unknown> = {}): Promise<P
   return apiGet<Page<Processor>>(`/processors${queryString(filters)}`);
 }
 
+export function getProcessor(uuid: Uuid): Promise<Processor> {
+  return apiGet<Processor>(`/processors/${uuid}`);
+}
+
+export function getSource(uuid: Uuid): Promise<DataSource> {
+  return apiGet<DataSource>(`/sources/${uuid}`);
+}
+
 export function listSources(filters: Record<string, unknown> = {}): Promise<Page<DataSource>> {
   return apiGet<Page<DataSource>>(`/sources${queryString(filters)}`);
 }

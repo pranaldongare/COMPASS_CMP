@@ -42,7 +42,7 @@ Evidence: [feed, as of daca825](https://github.com/pranaldongare/COMPASS_CMP/blo
 
 ## Delegation creation has a narrower successful role set
 
-RequireStaff is only the outer gate. The service permits delegable roles DPO/DCO, requires same-role cover, and requires self-arrangement unless the actor is Admin. DCO Admin, RCO and R&D cannot create cover under these rules. Revocation instead checks Admin or named participant.
+RequireStaff is only the outer gate. The service permits delegable roles DPO, DCO, RCO, DCO Admin and Admin (since 2026-10-09; R&D and data principals cannot), requires same-role cover, and requires self-arrangement unless the actor is Admin. Cover grants access only for DCO and RCO (assigned rows); for DPO, DCO Admin and Admin it is a record (`grants_access: false`). `GET /delegations/candidates?for_user=` - Admin only - names the colleagues who may cover somebody else. Revocation instead checks Admin or named participant.
 
 Evidence: [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/delegations.py#L79), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/delegations/service.py#L26).
 

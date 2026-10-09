@@ -96,6 +96,9 @@ export const keys = {
     processors: (params?: Params) => ["processors", params ?? {}] as const,
     respondents: (uuid: Uuid) => ["processor", uuid, "respondents"] as const,
     sources: (params?: Params) => ["sources", params ?? {}] as const,
+    /** One record, under the list's prefix so a list's invalidation reaches it. */
+    processor: (uuid: Uuid) => ["processors", "detail", uuid] as const,
+    source: (uuid: Uuid) => ["sources", "detail", uuid] as const,
   },
 
   /** Tickets addressed to the signed-in member of staff - the portal channel. */
@@ -152,6 +155,7 @@ export const keys = {
     held: ["delegations", "held"] as const,
     all: ["delegations", "all"] as const,
     candidates: ["delegations", "candidates"] as const,
+    candidatesFor: (uuid: Uuid) => ["delegations", "candidates", uuid] as const,
   },
 
   /** The words of every message the platform sends. One list; every edit
@@ -195,10 +199,14 @@ export const keys = {
   },
 
   users: {
+    /** Every users key: what an account change invalidates. */
+    all: ["users"] as const,
     list: (params?: Params) => ["users", params ?? {}] as const,
     staff: ["users", "staff"] as const,
     sessions: ["users", "sessions"] as const,
     collectionOwners: ["users", "collection-owners"] as const,
+    detail: (uuid: Uuid) => ["users", "detail", uuid] as const,
+    personTypeHistory: (uuid: Uuid) => ["users", "detail", uuid, "person-type"] as const,
   },
 
   /** The data principal's own records, which are a different endpoint set from

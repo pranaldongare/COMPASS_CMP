@@ -9,7 +9,7 @@
 
 import { apiGet, apiPatch, apiPost, http, queryString } from "@/lib/api";
 import { inNameOrder } from "@/lib/format";
-import type { StaffMember, Acknowledged, Page, User, Uuid } from "@/types";
+import type { StaffMember, Acknowledged, Page, PersonTypeHistoryEntry, User, Uuid } from "@/types";
 
 export function listUsers(filters: Record<string, unknown> = {}): Promise<Page<User>> {
   return apiGet<Page<User>>(`/users${queryString(filters)}`);
@@ -27,6 +27,14 @@ export interface UserInput {
    *  creating them. Only meaningful for a DCO or an RCO — the server refuses it
    *  for any other role rather than ignoring it. */
   source_uuids?: string[];
+}
+
+export function getUser(uuid: Uuid): Promise<User> {
+  return apiGet<User>(`/users/${uuid}`);
+}
+
+export function listPersonTypeHistory(uuid: Uuid): Promise<PersonTypeHistoryEntry[]> {
+  return apiGet<PersonTypeHistoryEntry[]>(`/users/${uuid}/person-type-history`);
 }
 
 export function createUser(body: UserInput): Promise<User> {

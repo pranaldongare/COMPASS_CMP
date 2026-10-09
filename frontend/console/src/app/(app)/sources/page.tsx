@@ -8,7 +8,8 @@
  */
 "use client";
 
-import { Ban, Building2, Pencil, Plus, UserRoundCog } from "lucide-react";
+import { Ban, Building2, Eye, Pencil, Plus, UserRoundCog } from "lucide-react";
+import Link from "next/link";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
@@ -30,7 +31,7 @@ import { EmptyRecords } from "@/components/ui/graphics";
 import { Badge, Button, Td, Tr } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { useEnums } from "@/features/meta";
-import { useSources, useSuspendSource } from "@/features/registry";
+import { useAllProcessors, useSources, useSuspendSource } from "@/features/registry";
 import type { DataSource } from "@/types";
 import { humanise } from "@/lib/format";
 import { useAuth, useToast } from "@/providers";
@@ -46,6 +47,9 @@ export default function SourcesPage() {
   // only on the page was lost on reload or on Back from a source (UX-5).
   const [status, setStatus] = useFilterParam("status");
   const [q, setQ] = useFilterParam("q");
+  // Narrowed to one processor's sources (2026-10-09).
+  const [processor, setProcessor] = useFilterParam("processor");
+  const processors = useAllProcessors();
   const [unmappedFlag, setUnmappedFlag] = useFilterParam("unmapped");
   const [unownedFlag, setUnownedFlag] = useFilterParam("unowned");
   const unmapped = unmappedFlag === "1";
@@ -63,6 +67,7 @@ export default function SourcesPage() {
   const query = useSources({
     status: status || undefined,
     q: q || undefined,
+    processor: processor || undefined,
     unmapped: unmapped || undefined,
     unowned: unowned || undefined,
     cursor: stack.cursor,
@@ -116,6 +121,16 @@ export default function SourcesPage() {
             setQ(term);
             stack.reset();
           }}
+        />
+        <FilterSelect
+          label="Processor"
+          value={processor}
+          onChange={(v) => {
+            setProcessor(v);
+            stack.reset();
+          }}
+          options={(processors.data ?? []).map((p) => ({ value: p.processor_uuid, label: p.legal_name }))}
+          allLabel="All processors"
         />
         <FilterSelect
           label="Status"
@@ -184,13 +199,15 @@ export default function SourcesPage() {
         keyOf={(s) => s.source_uuid}
         empty={{
           illustration: <EmptyRecords />,
-          title: status || q ? "No sources match" : "No data sources registered",
+          title: status || q || processor ? "No sources match" : "No data sources registered",
           description: "An import must name the source the manifest came from.",
         }}
         row={(s) => (
           <Tr>
             <Td>
-              <span className="font-medium">{s.name}</span>
+              <Link href={`/sources/${s.source_uuid}`} className="font-medium text-accent-text hover:underline">
+                {s.name}
+              </Link>
               <p className="mt-0.5 font-mono text-xs text-text-subtle">{s.source_code}</p>
             </Td>
             {/* Who operates this source. Optional by design: a source the
@@ -199,8 +216,10 @@ export default function SourcesPage() {
                 absent one is worth *seeing* - a third-party source with no
                 named operator is an s.8(2) contract nobody can point to. */}
             <Td>
-              {s.processor_name ? (
-                <span className="text-text-muted">{s.processor_name}</span>
+              {s.processor_name && s.processor_uuid ? (
+                <Link href={`/processors/${s.processor_uuid}`} className="text-text-muted hover:text-text hover:underline">
+                  {s.processor_name}
+                </Link>
               ) : (
                 <span className="inline-flex items-center gap-1.5 text-xs text-text-subtle">
                   <Building2 className="size-3.5" aria-hidden="true" />
@@ -231,6 +250,12 @@ export default function SourcesPage() {
             </Td>
             <Td>
               <div className="flex gap-1">
+                <Button asChild variant="ghost" size="sm">
+                  <Link href={`/sources/${s.source_uuid}`}>
+                    <Eye className="size-4" />
+                    View
+                  </Link>
+                </Button>
                 {canAssignOwner && s.status === "active" && (
                   <Button variant="ghost" size="sm" onClick={() => setAssigning(s)}>
                     <UserRoundCog className="size-4" />

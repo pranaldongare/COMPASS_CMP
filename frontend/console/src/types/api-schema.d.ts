@@ -1569,7 +1569,9 @@ export interface paths {
          *
          *     It used to read the users register, which only the DPO and the
          *     administrator may - so everyone else was told there was nobody to delegate
-         *     to. Same role, active, not the caller: the rules `grant` enforces.
+         *     to. Same role, active, not the person whose work it is: the rules `grant`
+         *     enforces. `for_user` (2026-10-09) is the administrator arranging cover for
+         *     somebody else; nobody else may ask it.
          */
         get: operations["candidates_delegations_candidates_get"];
         put?: never;
@@ -14160,7 +14162,9 @@ export interface operations {
     };
     candidates_delegations_candidates_get: {
         parameters: {
-            query?: never;
+            query?: {
+                for_user?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -14174,6 +14178,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CoverCandidateOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
