@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 325,
-  "registered_business_and_system_operations": 328,
+  "documented_operations": 326,
+  "registered_business_and_system_operations": 329,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -6025,7 +6025,8 @@
         "breach_holder": "NO"
       },
       "conditions": [
-        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
+        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
+        "`mine=true`: for a DCO or an RCO, only the processors they collect for (and those of anyone they cover for); ignored for other roles. (0050, 2026-10-09)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L352"
@@ -6609,15 +6610,16 @@
       "access": {
         "dpo": "ALL",
         "admin": "ALL",
-        "dco": "ALL",
+        "dco": "SCOPED",
         "dco_admin": "ALL",
-        "rco": "ALL",
+        "rco": "SCOPED",
         "rnd_user": "ALL",
         "data_subject": "NO",
         "breach_holder": "NO"
       },
       "conditions": [
-        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
+        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
+        "A DCO or an RCO is answered for the sources of the processors they collect for (assigned by the administrator, PUT /users/{user_uuid}/processors) and of anyone they cover for; any other source is 404 to them. (0050, 2026-10-09)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L616"
@@ -6648,16 +6650,18 @@
       "access": {
         "dpo": "ALL",
         "admin": "ALL",
-        "dco": "ALL",
+        "dco": "SCOPED",
         "dco_admin": "ALL",
-        "rco": "ALL",
+        "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
-        "DCO must choose a third-party processor; RCO must choose an in-house processor. DPO/Admin/DCO Admin are not constrained by that actor-type helper. R&D is denied by the write grant."
+        "DCO must choose a third-party processor; RCO must choose an in-house processor. DPO/Admin/DCO Admin are not constrained by that actor-type helper. R&D is denied by the write grant.",
+        "A DCO or an RCO is answered for the sources of the processors they collect for (assigned by the administrator, PUT /users/{user_uuid}/processors) and of anyone they cover for; any other source is 404 to them. (0050, 2026-10-09)",
+        "A DCO or an RCO registers only under a processor they collect for (422 on `processor_uuid` otherwise). (0050, 2026-10-09)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L664"
@@ -6689,15 +6693,16 @@
       "access": {
         "dpo": "ALL",
         "admin": "ALL",
-        "dco": "ALL",
+        "dco": "SCOPED",
         "dco_admin": "ALL",
-        "rco": "ALL",
+        "rco": "SCOPED",
         "rnd_user": "ALL",
         "data_subject": "NO",
         "breach_holder": "NO"
       },
       "conditions": [
-        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
+        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
+        "A DCO or an RCO is answered for the sources of the processors they collect for (assigned by the administrator, PUT /users/{user_uuid}/processors) and of anyone they cover for; any other source is 404 to them. (0050, 2026-10-09)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L746"
@@ -6728,16 +6733,17 @@
       "access": {
         "dpo": "ALL",
         "admin": "ALL",
-        "dco": "ALL",
+        "dco": "SCOPED",
         "dco_admin": "ALL",
-        "rco": "ALL",
+        "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
-        "Current handler resolves a source by UUID without caller ownership filtering. All data_source writers can act on any source. Owner assignment validates the target owner’s role, not the actor’s source ownership."
+        "Current handler resolves a source by UUID without caller ownership filtering. All data_source writers can act on any source. Owner assignment validates the target owner’s role, not the actor’s source ownership.",
+        "A DCO or an RCO is answered for the sources of the processors they collect for (assigned by the administrator, PUT /users/{user_uuid}/processors) and of anyone they cover for; any other source is 404 to them. (0050, 2026-10-09)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L758"
@@ -6779,7 +6785,8 @@
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
-        "All full-session roles pass the route. Project-linked batches follow import scope: DPO all; DCO/DCO Admin/RCO scoped; R&D own projects; Admin/principal none. However, b.project_id IS NULL is allowed for EVERY signed-in role, including Admin and data_subject; list, detail and error-report lookups share this exception."
+        "All full-session roles pass the route. Project-linked batches follow import scope: DPO all; DCO/DCO Admin/RCO scoped; R&D own projects; Admin/principal none. However, b.project_id IS NULL is allowed for EVERY signed-in role, including Admin and data_subject; list, detail and error-report lookups share this exception.",
+        "A DCO or an RCO is answered for the sources of the processors they collect for (assigned by the administrator, PUT /users/{user_uuid}/processors) and of anyone they cover for; any other source is 404 to them. (0050, 2026-10-09)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L904",
@@ -6812,16 +6819,18 @@
       "access": {
         "dpo": "ALL",
         "admin": "ALL",
-        "dco": "ALL",
+        "dco": "SCOPED",
         "dco_admin": "ALL",
-        "rco": "ALL",
+        "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
-        "Current handler resolves a source by UUID without caller ownership filtering. All data_source writers can act on any source. Owner assignment validates the target owner’s role, not the actor’s source ownership."
+        "Current handler resolves a source by UUID without caller ownership filtering. All data_source writers can act on any source. Owner assignment validates the target owner’s role, not the actor’s source ownership.",
+        "A DCO or an RCO is answered for the sources of the processors they collect for (assigned by the administrator, PUT /users/{user_uuid}/processors) and of anyone they cover for; any other source is 404 to them. (0050, 2026-10-09)",
+        "The new owner must collect for the source's processor (422 on `owner_user_uuid`). (0050, 2026-10-09)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L816",
@@ -6853,16 +6862,17 @@
       "access": {
         "dpo": "ALL",
         "admin": "ALL",
-        "dco": "ALL",
+        "dco": "SCOPED",
         "dco_admin": "ALL",
-        "rco": "ALL",
+        "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
-        "Current handler resolves a source by UUID without caller ownership filtering. All data_source writers can act on any source. Owner assignment validates the target owner’s role, not the actor’s source ownership."
+        "Current handler resolves a source by UUID without caller ownership filtering. All data_source writers can act on any source. Owner assignment validates the target owner’s role, not the actor’s source ownership.",
+        "A DCO or an RCO is answered for the sources of the processors they collect for (assigned by the administrator, PUT /users/{user_uuid}/processors) and of anyone they cover for; any other source is 404 to them. (0050, 2026-10-09)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L885",
@@ -9096,7 +9106,8 @@
       },
       "conditions": [
         "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff.",
-        "All staff may read the limited lookup of active DCO/RCO owners; this does not expose the full account register."
+        "All staff may read the limited lookup of active DCO/RCO owners; this does not expose the full account register.",
+        "`processor`: only those who collect for that processor - the people one of its sources can be handed to. (0050, 2026-10-09)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/users.py#L148"
@@ -12680,6 +12691,42 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py"
       ]
+    },
+    {
+      "module": "users",
+      "method": "PUT",
+      "path": "/users/{user_uuid}/processors",
+      "summary": "Set the processors a DCO or an RCO collects for",
+      "function": "set_processors",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireAdmin",
+      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.ADMIN))]",
+      "route_roles": [
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "NO",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO"
+      },
+      "conditions": [
+        "The whole set: what is not named is taken away. Only for a DCO (third-party processors) or an RCO (in-house), 422 otherwise; a processor whose sources they are still accountable for is not taken away (409 `processor_still_held`). The trail records `user.processors_set` with the processor uuids before and after. (2026-10-09)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/users.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/users/service.py"
+      ]
     }
   ],
   "amended": [
@@ -12777,6 +12824,11 @@
       "on": "2026-10-08",
       "commit": "holder email",
       "note": "A mistyped holder address is corrected and the ticket sent again: POST /requests/{request_uuid}/holders/{holder_uuid}/correct-contact. GET /consents gains site, from and to filters."
+    },
+    {
+      "on": "2026-10-09",
+      "commit": "collector processors",
+      "note": "A DCO or an RCO collects for named processors (0050): PUT /users/{user_uuid}/processors (admin) sets them; the data-source routes answer a DCO or an RCO for those processors' sources only (others 404), POST /sources only under them; GET /processors?mine and GET /users/collection-owners?processor narrow to them."
     }
   ]
 }

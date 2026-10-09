@@ -859,6 +859,9 @@ export interface paths {
          *     Scoped to exactly what the choice needs - active DCOs and RCOs, four fields -
          *     so it is not a way around the register's own restrictions. Declared before
          *     `/users/{uuid}` so the literal path is matched first.
+         *
+         *     `processor` keeps those who collect for it (0050): the people one of its
+         *     sources can be handed to.
          */
         get: operations["collection_owners_users_collection_owners_get"];
         put?: never;
@@ -936,6 +939,29 @@ export interface paths {
          * @description Name, mobile, organisation id. A changed mobile is sent a code.
          */
         patch: operations["update_user_users__user_uuid__patch"];
+        trace?: never;
+    };
+    "/users/{user_uuid}/processors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set the processors a DCO or an RCO collects for
+         * @description The whole set (0050). A DCO or an RCO sees the data sources of these
+         *     processors and no others, and registers new ones only under them. A
+         *     processor whose sources they are still accountable for is not taken away:
+         *     hand the sources on first, on each source.
+         */
+        put: operations["set_processors_users__user_uuid__processors_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/users/{user_uuid}/role": {
@@ -1798,7 +1824,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Processors */
+        /**
+         * List Processors
+         * @description `mine` is a DCO's or an RCO's own processors (0050) - and those of
+         *     whoever they cover for: the ones whose data sources they see and may add
+         *     to. For any other role it changes nothing.
+         */
         get: operations["list_processors_processors_get"];
         put?: never;
         /** Create Processor */
@@ -1909,6 +1940,9 @@ export interface paths {
          *     `unowned` is the DCO Admin's and the R&D owner's working list: sources nobody
          *     is accountable for yet. `in_house` splits the registry the way routing does -
          *     what we collect ourselves from what somebody else collects for us.
+         *
+         *     **A DCO or an RCO sees only the sources of their own processors** (0050) -
+         *     those the administrator assigned them, and those of anybody they cover for.
          */
         get: operations["list_sources_sources_get"];
         put?: never;
@@ -7479,6 +7513,23 @@ export interface components {
             /** Role */
             role: string;
         };
+        /**
+         * CollectorProcessor
+         * @description A processor a DCO or an RCO collects for (0050).
+         */
+        CollectorProcessor: {
+            /**
+             * Processor Uuid
+             * Format: uuid
+             */
+            processor_uuid: string;
+            /** Legal Name */
+            legal_name: string;
+            /** Is In House */
+            is_in_house: boolean;
+            /** Status */
+            status: string;
+        };
         /** ConfirmHolderIn */
         ConfirmHolderIn: {
             /** Respondent Uuid */
@@ -7905,6 +7956,8 @@ export interface components {
             person_type?: string | null;
             /** Source Uuids */
             source_uuids?: string[];
+            /** Processor Uuids */
+            processor_uuids?: string[];
         };
         /** Dashboard */
         Dashboard: {
@@ -10598,6 +10651,11 @@ export interface components {
              */
             current: boolean;
         };
+        /** SetProcessors */
+        SetProcessors: {
+            /** Processor Uuids */
+            processor_uuids?: string[];
+        };
         /**
          * SiteIn
          * @description A collection site is the deployment of one data source on one project.
@@ -11357,6 +11415,8 @@ export interface components {
             updated_at: unknown;
             /** Sources */
             sources?: string[] | null;
+            /** Processors */
+            processors?: components["schemas"]["CollectorProcessor"][] | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -12962,7 +13022,9 @@ export interface operations {
     };
     collection_owners_users_collection_owners_get: {
         parameters: {
-            query?: never;
+            query?: {
+                processor?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -12976,6 +13038,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CollectionOwner"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -13135,6 +13206,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_processors_users__user_uuid__processors_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetProcessors"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectorProcessor"][];
                 };
             };
             /** @description Validation Error */
@@ -14582,6 +14688,7 @@ export interface operations {
             query?: {
                 status?: string | null;
                 q?: string | null;
+                mine?: boolean;
                 limit?: number | null;
                 cursor?: string | null;
                 sort?: string | null;

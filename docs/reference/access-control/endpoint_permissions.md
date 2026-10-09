@@ -375,13 +375,13 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/purposes/{purpose_uuid}/retire` | NO | ALL | NO | NO | NO | NO | NO | NO | NO |
 | GET | `/purposes/{purpose_uuid}/usage` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO |
 | GET | `/purposes/{purpose_uuid}/versions` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO |
-| GET | `/sources` | NO | ALL | ALL | ALL | ALL | ALL | ALL | NO | NO |
-| POST | `/sources` | NO | ALL | ALL | ALL | ALL | ALL | NO | NO | NO |
-| GET | `/sources/{source_uuid}` | NO | ALL | ALL | ALL | ALL | ALL | ALL | NO | NO |
-| PUT | `/sources/{source_uuid}` | NO | ALL | ALL | ALL | ALL | ALL | NO | NO | NO |
+| GET | `/sources` | NO | ALL | ALL | SCOPED | ALL | SCOPED | ALL | NO | NO |
+| POST | `/sources` | NO | ALL | ALL | SCOPED | ALL | SCOPED | NO | NO | NO |
+| GET | `/sources/{source_uuid}` | NO | ALL | ALL | SCOPED | ALL | SCOPED | ALL | NO | NO |
+| PUT | `/sources/{source_uuid}` | NO | ALL | ALL | SCOPED | ALL | SCOPED | NO | NO | NO |
 | GET | `/sources/{source_uuid}/batches` | NO | COND | COND | COND | COND | COND | COND | COND | NO |
-| PUT | `/sources/{source_uuid}/owner` | NO | ALL | ALL | ALL | ALL | ALL | NO | NO | NO |
-| POST | `/sources/{source_uuid}/suspend` | NO | ALL | ALL | ALL | ALL | ALL | NO | NO | NO |
+| PUT | `/sources/{source_uuid}/owner` | NO | ALL | ALL | SCOPED | ALL | SCOPED | NO | NO | NO |
+| POST | `/sources/{source_uuid}/suspend` | NO | ALL | ALL | SCOPED | ALL | SCOPED | NO | NO | NO |
 
 ## Rights
 
@@ -486,3 +486,4 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/users/{user_uuid}/reactivate` | NO | NO | ALL | NO | NO | NO | NO | NO | NO |
 | POST | `/users/{user_uuid}/role` | NO | NO | ALL | NO | NO | NO | NO | NO | NO |
 | DELETE | `/users/{user_uuid}/sessions` | NO | NO | ALL | NO | NO | NO | NO | NO | NO |
+| PUT | `/users/{user_uuid}/processors` | NO | NO | ALL | NO | NO | NO | NO | NO | NO |

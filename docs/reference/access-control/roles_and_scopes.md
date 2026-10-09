@@ -26,7 +26,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | user | R / ALL | RW / ALL | NO | NO | NO | NO | NO | NO |
 | purpose | RW / ALL | R / ALL | R / ALL | R / ALL | R / ALL | R / ALL | NO | NO |
 | processor | RW / ALL | RW / ALL | R / ALL | R / ALL | R / ALL | R / ALL | NO | NO |
-| data_source | RW / ALL | RW / ALL | RW / ALL | RW / ALL | RW / ALL | R / ALL | NO | NO |
+| data_source | RW / ALL | RW / ALL | RW / SCOPED | RW / ALL | RW / SCOPED | R / ALL | NO | NO |
 | project | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | RW / OWN | NO | NO |
 | approval | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | RW / OWN | NO | NO |
 | site | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | R / OWN | NO | NO |
@@ -53,6 +53,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 - **Admin:** account management, registry, messages and audit. No project resource grant. Rights reads are limited to `about_dpo = true`, not automatically to the assigned reviewer.
 - **DCO/RCO projects:** read the primary-owner project or a project with a site they run; write-scoped project operations require primary ownership. Active cover can extend ownership predicates.
 - **DCO/RCO sites and consents:** site owner override, otherwise source owner; active cover counts. This is narrower than every site of a visible project.
+- **DCO/RCO data sources (0050, 2026-10-09):** the sources of the processors the administrator assigned them (`collection_owner_processor`), and of anyone they cover for; any other is 404. They register only under those processors, and a source is handed only to somebody who collects for its processor. The matrix in `core/permissions.py` still says ALL; the narrowing is in the query and the service ([ADR 0030](../../decisions/0030-a-collection-owner-collects-for-named-processors.md)).
 - **DCO Admin:** third-party projects and non-in-house sites. This is a role-defined queue, not just rows personally assigned to that account.
 - **R&D:** own-created projects and related records; some endpoint behavior is broader than the static matrix comments imply.
 - **Data principal:** own consents, requests, disclosures and nominations through a session acting as `data_subject`. Shared profile/contact endpoints accept staff too; person-type change is an explicit exception.

@@ -243,10 +243,14 @@ export const SECTIONS: HelpSection[] = [
         kind: "steps",
         items: [
           "Click [[Data sources]] under Registry, then [[Register source]].",
-          "Enter [[Code]], [[Name]], [[Role]], [[Exchange mode]], [[Identifier scheme]], choose [[Operated by]] and tick what it is [[Authoritative for]]. A DCO may choose only a third party; an RCO only an in-house team.",
+          "Enter [[Code]], [[Name]], [[Role]], [[Exchange mode]], [[Identifier scheme]], choose [[Operated by]] and tick what it is [[Authoritative for]]. A DCO or an RCO chooses only among the processors they collect for; with one, it is chosen for them.",
           "Click [[Register source]]. Tick the filter [[Nobody accountable]] to find sources without an owner.",
           "Click [[Assign]] and choose who is accountable: a DCO for a third party's source, an RCO for an in-house one.",
         ],
+      },
+      {
+        kind: "note",
+        text: "A DCO or an RCO sees only the data sources of the processors they collect for, which the administrator sets on their account; the page names them. With none assigned the page says so, and nothing can be registered until the administrator adds one. A source is assigned only to somebody who collects for its processor.",
       },
       {
         kind: "note",
@@ -658,7 +662,7 @@ export const SECTIONS: HelpSection[] = [
         title: "Provision an account (Administrator)",
         items: [
           "Click [[Users]], then [[Provision account]].",
-          "Enter [[Full name]] and [[Email]], choose the [[Role]] and [[Person type]]; for a DCO or RCO you may tick the [[Data sources]] they own.",
+          "Enter [[Full name]] and [[Email]], choose the [[Role]] and [[Person type]]. For a DCO or an RCO, add the processors they collect for under [[Collects for]] - third parties for a DCO, in-house teams for an RCO - and you may tick the [[Data sources]] they own.",
           "Click [[Create account]]. No password is set here: an email invites the person to choose one, and the account is [[Pending]] until they do.",
         ],
       },
@@ -666,6 +670,7 @@ export const SECTIONS: HelpSection[] = [
         kind: "list",
         items: [
           "[[Resend invitation]] sends a fresh code to a pending account.",
+          "Open a DCO's or an RCO's account and click [[Change processors]] to change whom they collect for. They see those processors' data sources and no others. A processor is not taken away while they are accountable for one of its sources: reassign the source first.",
           "[[Role]] changes a role and signs the person out; [[Reset MFA]] clears their second factor.",
           "[[End staff access]] keeps the person as a data principal but removes every staff power.",
           "The DPO can read the register but not change it.",

@@ -109,6 +109,17 @@ export interface User {
   status: UserStatus;
   created_at: Timestamp;
   updated_at: Timestamp;
+  /** A DCO's or an RCO's processors (0050), on one account's page only. */
+  processors?: CollectorProcessor[] | null;
+}
+
+/** A processor a DCO or an RCO collects for: they see its data sources, and
+ *  register new ones only under it. */
+export interface CollectorProcessor {
+  processor_uuid: Uuid;
+  legal_name: string;
+  is_in_house: boolean;
+  status: string;
 }
 
 export interface PersonTypeHistoryEntry {

@@ -13,12 +13,13 @@ import {
   reactivateUser,
   resendInvitation,
   resetMfa,
+  setUserProcessors,
   updateUser,
   type UserInput,
 } from "@/features/users/api";
 import type { ApiError } from "@/lib/errors";
 import { keys, type Result } from "@/lib/query";
-import type { Acknowledged, User, Uuid } from "@/types";
+import type { Acknowledged, CollectorProcessor, User, Uuid } from "@/types";
 
 export function useDeactivateUser() {
   const qc = useQueryClient();
@@ -49,6 +50,20 @@ export function useUpdateUser(uuid: Uuid): Result<User, Partial<UserInput>> {
   return useMutation({
     mutationFn: (body: Partial<UserInput>) => updateUser(uuid, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.users.all }),
+  });
+}
+
+/** A DCO's or an RCO's processors. What they see in Data Sources follows. */
+export function useSetUserProcessors(uuid: Uuid): Result<CollectorProcessor[], string[]> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (processorUuids: string[]) => setUserProcessors(uuid, processorUuids),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: keys.users.all });
+      void qc.invalidateQueries({ queryKey: ["processors"] });
+      void qc.invalidateQueries({ queryKey: ["sources"] });
+      void qc.invalidateQueries({ queryKey: keys.users.collectionOwners });
+    },
   });
 }
 

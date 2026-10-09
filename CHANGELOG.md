@@ -8,6 +8,18 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **A DCO's or an RCO's own processors** (2026-10-09, migration 0050,
+  [ADR 0030](docs/decisions/0030-a-collection-owner-collects-for-named-processors.md)).
+  The administrator says which processors each DCO (third parties) and RCO
+  (in-house teams) collects for - one or more - when creating the account or
+  on its page (*Collects for* › *Change processors*;
+  `PUT /users/{user_uuid}/processors`). Data Sources then shows a DCO or an
+  RCO those processors' sources only, names them, and registers new sources
+  only under them (chosen for them when there is one); any other source is
+  not found to them. A source is assigned only to somebody who collects for
+  its processor, and the owner picker offers only them. Cover lends the
+  delegator's processors. Existing accounts were filled in from the sources
+  they already own.
 - **A project's consents on the project** (2026-10-09). The Consent tab
   lists the project's consents - who, at which site, full or partial, how many
   purposes, when - filtered by site and status, each opening its record, with

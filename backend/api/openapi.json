@@ -1836,19 +1836,48 @@
           "users"
         ],
         "summary": "Active DCOs and RCOs, for source ownership",
-        "description": "The ownership lookup.\n\nMaking somebody accountable for a data source means picking a person, and\nthe people who do it - a DCO Admin routing a project, an R&D owner naming an\nRCO - cannot read the account register. Without this the operation is\nunsatisfiable: the form has nothing to offer.\n\nScoped to exactly what the choice needs - active DCOs and RCOs, four fields -\nso it is not a way around the register's own restrictions. Declared before\n`/users/{uuid}` so the literal path is matched first.",
+        "description": "The ownership lookup.\n\nMaking somebody accountable for a data source means picking a person, and\nthe people who do it - a DCO Admin routing a project, an R&D owner naming an\nRCO - cannot read the account register. Without this the operation is\nunsatisfiable: the form has nothing to offer.\n\nScoped to exactly what the choice needs - active DCOs and RCOs, four fields -\nso it is not a way around the register's own restrictions. Declared before\n`/users/{uuid}` so the literal path is matched first.\n\n`processor` keeps those who collect for it (0050): the people one of its\nsources can be handed to.",
         "operationId": "collection_owners_users_collection_owners_get",
+        "parameters": [
+          {
+            "name": "processor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Processor"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/CollectionOwner"
                   },
-                  "type": "array",
                   "title": "Response Collection Owners Users Collection Owners Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -2186,6 +2215,64 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{user_uuid}/processors": {
+      "put": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Set the processors a DCO or an RCO collects for",
+        "description": "The whole set (0050). A DCO or an RCO sees the data sources of these\nprocessors and no others, and registers new ones only under them. A\nprocessor whose sources they are still accountable for is not taken away:\nhand the sources on first, on each source.",
+        "operationId": "set_processors_users__user_uuid__processors_put",
+        "parameters": [
+          {
+            "name": "user_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetProcessors"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollectorProcessor"
+                  },
+                  "title": "Response Set Processors Users  User Uuid  Processors Put"
                 }
               }
             }
@@ -4261,6 +4348,7 @@
           "registry"
         ],
         "summary": "List Processors",
+        "description": "`mine` is a DCO's or an RCO's own processors (0050) - and those of\nwhoever they cover for: the ones whose data sources they see and may add\nto. For any other role it changes nothing.",
         "operationId": "list_processors_processors_get",
         "parameters": [
           {
@@ -4294,6 +4382,16 @@
                 }
               ],
               "title": "Q"
+            }
+          },
+          {
+            "name": "mine",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Mine"
             }
           },
           {
@@ -4707,7 +4805,7 @@
           "registry"
         ],
         "summary": "List Sources",
-        "description": "`processor` narrows the list to the sources one processor operates.\n\nThat filter is what makes the collection-site form a cascade rather than two\nunrelated dropdowns: pick who operates the site, then pick from what they\nactually run, instead of scrolling a registry-wide list and hoping.\n\n`unmapped` is the opposite question: which sources has nobody said who\noperates. A source the organisation runs itself legitimately has no\nprocessor - requiring one would mean inventing a processor record for your\nown organisation - so this is a gap to review rather than an error to\nprevent, and a filter is how a reviewable gap is surfaced.\n\n`unowned` is the DCO Admin's and the R&D owner's working list: sources nobody\nis accountable for yet. `in_house` splits the registry the way routing does -\nwhat we collect ourselves from what somebody else collects for us.",
+        "description": "`processor` narrows the list to the sources one processor operates.\n\nThat filter is what makes the collection-site form a cascade rather than two\nunrelated dropdowns: pick who operates the site, then pick from what they\nactually run, instead of scrolling a registry-wide list and hoping.\n\n`unmapped` is the opposite question: which sources has nobody said who\noperates. A source the organisation runs itself legitimately has no\nprocessor - requiring one would mean inventing a processor record for your\nown organisation - so this is a gap to review rather than an error to\nprevent, and a filter is how a reviewable gap is surfaced.\n\n`unowned` is the DCO Admin's and the R&D owner's working list: sources nobody\nis accountable for yet. `in_house` splits the registry the way routing does -\nwhat we collect ourselves from what somebody else collects for us.\n\n**A DCO or an RCO sees only the sources of their own processors** (0050) -\nthose the administrator assigned them, and those of anybody they cover for.",
         "operationId": "list_sources_sources_get",
         "parameters": [
           {
@@ -22611,6 +22709,36 @@
         "title": "CollectionOwner",
         "description": "Somebody who can be accountable for a data source.\n\nFour fields, and the role is one of them because it constrains the choice\nrather than merely describing it: an RCO owns in-house collection and a DCO\na third party's, so the two are not interchangeable."
       },
+      "CollectorProcessor": {
+        "properties": {
+          "processor_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Processor Uuid"
+          },
+          "legal_name": {
+            "type": "string",
+            "title": "Legal Name"
+          },
+          "is_in_house": {
+            "type": "boolean",
+            "title": "Is In House"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "processor_uuid",
+          "legal_name",
+          "is_in_house",
+          "status"
+        ],
+        "title": "CollectorProcessor",
+        "description": "A processor a DCO or an RCO collects for (0050)."
+      },
       "ConfirmHolderIn": {
         "properties": {
           "respondent_uuid": {
@@ -23570,6 +23698,14 @@
             },
             "type": "array",
             "title": "Source Uuids"
+          },
+          "processor_uuids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Processor Uuids"
           }
         },
         "additionalProperties": false,
@@ -32020,6 +32156,22 @@
         ],
         "title": "SessionInfo"
       },
+      "SetProcessors": {
+        "properties": {
+          "processor_uuids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Processor Uuids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "SetProcessors"
+      },
       "SiteIn": {
         "properties": {
           "source_uuid": {
@@ -34222,6 +34374,20 @@
               }
             ],
             "title": "Sources"
+          },
+          "processors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CollectorProcessor"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processors"
           }
         },
         "type": "object",

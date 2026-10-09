@@ -204,6 +204,15 @@ async def build(http: httpx.AsyncClient, session_for: SessionFactory, queued: li
     )
 
     # ---- routing: a source under the processor, a site on it, the link (DCO)
+    # The DCO collects for the processor - the administrator says so (0050).
+    await call(
+        http,
+        "PUT",
+        f"/users/{w.dco.uuid}/processors",
+        template="/users/{user_uuid}/processors",
+        session=w.admin,
+        json={"processor_uuids": [w.processor_uuid]},
+    )
     source = await call(
         http,
         "POST",

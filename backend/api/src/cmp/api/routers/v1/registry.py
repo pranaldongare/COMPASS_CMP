@@ -297,10 +297,17 @@ async def list_processors(
     page: Annotated[PageRequest, Depends(processor_paging)],
     processor_status: Annotated[str | None, Query(alias="status")] = None,
     q: Annotated[str | None, Query(max_length=100)] = None,
+    mine: Annotated[bool, Query()] = False,
 ) -> dict[str, Any]:
-    reject_unknown_filters(request, {"status", "q"})
+    """`mine` is a DCO's or an RCO's own processors (0050) - and those of
+    whoever they cover for: the ones whose data sources they see and may add
+    to. For any other role it changes nothing."""
+    reject_unknown_filters(request, {"status", "q", "mine"})
+    collector = principal.user_id if mine and registry.is_collector(principal.role) else None
     async with connection() as conn:
-        items, cursor, total = await repo.list_processors(conn, page, status=processor_status, q=q)
+        items, cursor, total = await repo.list_processors(
+            conn, page, status=processor_status, q=q, collector_user_id=collector
+        )
     return {"items": items, "next_cursor": cursor, "total": total}
 
 
@@ -470,6 +477,14 @@ class SourceUpdate(Schema):
     is_authoritative_for: list[str] | None = None
 
 
+async def _in_reach(conn: Any, source_uuid: UUID, principal: Any) -> None:
+    """A source outside a DCO's or an RCO's processors is not found (0050)."""
+    source = await repo.source_by_uuid(conn, str(source_uuid))
+    if not source:
+        raise NotFound("Data source")
+    await registry.require_in_reach(conn, source, role=principal.role, user_id=principal.user_id)
+
+
 @router.get("/sources", response_model=Page[SourceOut])
 async def list_sources(
     request: Request,
@@ -498,6 +513,9 @@ async def list_sources(
     `unowned` is the DCO Admin's and the R&D owner's working list: sources nobody
     is accountable for yet. `in_house` splits the registry the way routing does -
     what we collect ourselves from what somebody else collects for us.
+
+    **A DCO or an RCO sees only the sources of their own processors** (0050) -
+    those the administrator assigned them, and those of anybody they cover for.
     """
     reject_unknown_filters(
         request,
@@ -514,6 +532,9 @@ async def list_sources(
             unowned=unowned,
             in_house=in_house,
             q=q,
+            collector_user_id=(
+                principal.user_id if registry.is_collector(principal.role) else None
+            ),
         )
     return {"items": items, "next_cursor": cursor, "total": total}
 
@@ -554,6 +575,9 @@ async def get_source(
         source = await repo.source_by_uuid(conn, str(source_uuid))
         if not source:
             raise NotFound("Data source")
+        await registry.require_in_reach(
+            conn, source, role=principal.role, user_id=principal.user_id
+        )
         return source
 
 
@@ -564,6 +588,7 @@ async def update_source(
     principal: Annotated[Any, Depends(RequireResource("data_source", write=True))],
 ) -> dict[str, Any]:
     async with transaction() as conn:
+        await _in_reach(conn, source_uuid, principal)
         return await registry.update_source(
             conn,
             str(source_uuid),
@@ -597,6 +622,7 @@ async def assign_source_owner(
     owner comes with it. `projects_moved` says how many projects followed.
     """
     async with transaction() as conn:
+        await _in_reach(conn, source_uuid, principal)
         return await registry.assign_source_owner(
             conn,
             str(source_uuid),
@@ -610,6 +636,7 @@ async def suspend_source(
     principal: Annotated[Any, Depends(RequireResource("data_source", write=True))],
 ) -> dict[str, Any]:
     async with transaction() as conn:
+        await _in_reach(conn, source_uuid, principal)
         await registry.suspend_source(conn, str(source_uuid))
     return {"ok": True, "message": "Source suspended. Imports from it are refused."}
 
@@ -626,6 +653,9 @@ async def source_batches(
         source = await repo.source_by_uuid(conn, str(source_uuid))
         if not source:
             raise NotFound("Data source")
+        await registry.require_in_reach(
+            conn, source, role=principal.role, user_id=principal.user_id
+        )
         items, cursor, total = await exchange_repo.list_batches(
             conn,
             page,

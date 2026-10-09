@@ -553,7 +553,7 @@ async def count_by_status(conn: Conn) -> dict[str, int]:
     return {r["status"]: int(r["n"]) for r in rows}
 
 
-async def collection_owners(conn: Conn) -> list[Row]:
+async def collection_owners(conn: Conn, *, processor_uuid: str | None = None) -> list[Row]:
     """Active people who can be accountable for a data source.
 
     Deliberately its own query rather than a filter on the register. A DCO Admin
@@ -567,14 +567,23 @@ async def collection_owners(conn: Conn) -> list[Row]:
     describing it: an RCO is accountable for collection the R&D team does itself
     and a DCO for a third party's, so the caller filters by which the source is.
     """
+    # `processor_uuid`: only those who collect for it (0050) - the people a
+    # source of that processor can be handed to.
+    where, params = "", []
+    if processor_uuid:
+        where = """AND u.id IN (SELECT cop.user_id FROM collection_owner_processor cop
+                                  JOIN processor p ON p.processor_id = cop.processor_id
+                                 WHERE p.processor_uuid = %s)"""
+        params = [processor_uuid]
     return await fetch_all(
         conn,
-        """SELECT u.uuid, u.full_name, u.email, u.role
+        f"""SELECT u.uuid, u.full_name, u.email, u.role
            FROM auth_user u
-           WHERE u.role IN ('dco', 'rco') AND u.status = 'active'
+           WHERE u.role IN ('dco', 'rco') AND u.status = 'active' {where}
            -- Not by name: it is sealed, and would sort the ciphertext. The
            -- console puts the opened names in order.
            ORDER BY u.role, u.id""",
+        params,
     )
 
 

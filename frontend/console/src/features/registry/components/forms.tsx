@@ -169,7 +169,12 @@ export function SourceForm({ source, onDone }: { source?: DataSource; onDone: ()
   const { data: enums } = useEnums();
   const { data: categories } = useDataCategories();
   const { me } = useAuth();
-  const { data: processors } = useProcessors({ status: "active", limit: 100 });
+  // A DCO or an RCO registers only under the processors they collect for
+  // (0050), which the administrator assigns: `mine` is that list.
+  const collector = me?.role === "dco" || me?.role === "rco";
+  const { data: processors } = useProcessors(
+    collector ? { status: "active", mine: true, limit: 100 } : { status: "active", limit: 100 },
+  );
 
   // A collection owner registers under their own kind of processor: a DCO is
   // accountable for what a third party collects, an RCO for what the R&D team
@@ -198,6 +203,15 @@ export function SourceForm({ source, onDone }: { source?: DataSource; onDone: ()
     processor_uuid: source?.processor_uuid ?? "",
     is_authoritative_for: source?.is_authoritative_for ?? [],
   });
+
+  // One processor of their own: it is the answer, so it is chosen for them.
+  const onlyOne = collector && !source && availableProcessors.length === 1;
+  const onlyUuid = onlyOne ? availableProcessors[0].processor_uuid : "";
+  React.useEffect(() => {
+    if (onlyUuid && !form.getValues("processor_uuid")) {
+      form.setValue("processor_uuid", onlyUuid);
+    }
+  }, [onlyUuid, form]);
 
   const authoritative = form.watch("is_authoritative_for");
   const busy = create.isPending || update.isPending;
@@ -293,9 +307,11 @@ export function SourceForm({ source, onDone }: { source?: DataSource; onDone: ()
           <Field
             label="Operated by"
             hint={
-              mustChooseProcessor
-                ? "The processor this source belongs to. A source with none can never be deployed on a project."
-                : "Leave blank if internal."
+              collector
+                ? "One of the processors you collect for. The administrator assigns them."
+                : mustChooseProcessor
+                  ? "The processor this source belongs to. A source with none can never be deployed on a project."
+                  : "Leave blank if internal."
             }
             error={form.formState.errors.processor_uuid?.message}
             required={mustChooseProcessor}

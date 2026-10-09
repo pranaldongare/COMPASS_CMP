@@ -77,7 +77,9 @@ function AssignSourceOwnerBody({
   onClose: () => void;
 }) {
   const toast = useToast();
-  const owners = useCollectionOwners();
+  // Only those who collect for the source's processor (0050): a source is
+  // handed to somebody who can see it.
+  const owners = useCollectionOwners(source.processor_uuid);
   const assign = useAssignSourceOwner();
   const [selected, setSelected] = React.useState<string>(source.owner_user_uuid ?? "");
 
@@ -119,9 +121,12 @@ function AssignSourceOwnerBody({
           <Field
             label={source.is_in_house ? "R&D Collection Owner" : "Data Collection Owner"}
             hint={
-              source.is_in_house
+              (source.is_in_house
                 ? "Collection from this source is in-house, so an RCO is accountable for it."
-                : "Collection from this source is by a third party, so a DCO is accountable for it."
+                : "Collection from this source is by a third party, so a DCO is accountable for it.") +
+              (source.processor_name
+                ? ` Only those who collect for ${source.processor_name} are offered; the administrator assigns that on their account.`
+                : "")
             }
           >
             {(props) => (

@@ -7,9 +7,17 @@
  * console.
  */
 
-import { apiGet, apiPatch, apiPost, http, queryString } from "@/lib/api";
+import { apiGet, apiPatch, apiPost, apiPut, http, queryString } from "@/lib/api";
 import { inNameOrder } from "@/lib/format";
-import type { StaffMember, Acknowledged, Page, PersonTypeHistoryEntry, User, Uuid } from "@/types";
+import type {
+  StaffMember,
+  Acknowledged,
+  CollectorProcessor,
+  Page,
+  PersonTypeHistoryEntry,
+  User,
+  Uuid,
+} from "@/types";
 
 export function listUsers(filters: Record<string, unknown> = {}): Promise<Page<User>> {
   return apiGet<Page<User>>(`/users${queryString(filters)}`);
@@ -27,6 +35,13 @@ export interface UserInput {
    *  creating them. Only meaningful for a DCO or an RCO — the server refuses it
    *  for any other role rather than ignoring it. */
   source_uuids?: string[];
+  /** The processors a DCO or an RCO collects for (0050). */
+  processor_uuids?: string[];
+}
+
+/** The whole set of a DCO's or an RCO's processors; what is left out is taken away. */
+export function setUserProcessors(uuid: Uuid, processorUuids: string[]): Promise<CollectorProcessor[]> {
+  return apiPut<CollectorProcessor[]>(`/users/${uuid}/processors`, { processor_uuids: processorUuids });
 }
 
 export function getUser(uuid: Uuid): Promise<User> {

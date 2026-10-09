@@ -1,6 +1,6 @@
 {
-  "commit": "c59d9daaf79387c3f2cdee1bf152d75af8f274d7",
-  "migration_head": "0049",
+  "commit": "02cd603d03f4224bb7f13ec77fb219904692deeb",
+  "migration_head": "0050",
   "migrations": [
     {
       "revision": "0001",
@@ -197,6 +197,10 @@
     {
       "revision": "0049",
       "source": "backend/api/migrations/versions/0049_rights_holder_links.py"
+    },
+    {
+      "revision": "0050",
+      "source": "backend/api/migrations/versions/0050_collection_owner_processors.py"
     }
   ],
   "postgres_version": "16.15",
@@ -320,6 +324,11 @@
       "name": "collection",
       "kind": "r",
       "comment": null
+    },
+    {
+      "name": "collection_owner_processor",
+      "kind": "r",
+      "comment": "The processors a DCO or an RCO collects for; they see and register data sources under these only (0050)"
     },
     {
       "name": "consent_artefact",
@@ -2865,6 +2874,42 @@
       "table_name": "collection",
       "name": "created_at",
       "position": 11,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "collection_owner_processor",
+      "name": "user_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "collection_owner_processor",
+      "name": "processor_id",
+      "position": 2,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "collection_owner_processor",
+      "name": "assigned_by",
+      "position": 3,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The administrator who assigned it; NULL when derived from source ownership by 0050"
+    },
+    {
+      "table_name": "collection_owner_processor",
+      "name": "assigned_at",
+      "position": 4,
       "type": "timestamp with time zone",
       "not_null": true,
       "default_value": "now()",
@@ -9637,6 +9682,73 @@
       "initially_deferred": false
     },
     {
+      "table_name": "collection_owner_processor",
+      "name": "collection_owner_processor_assigned_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (assigned_by) REFERENCES auth_user(id)",
+      "columns": [
+        "assigned_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "collection_owner_processor",
+      "name": "collection_owner_processor_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (user_id, processor_id)",
+      "columns": [
+        "user_id",
+        "processor_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "collection_owner_processor",
+      "name": "collection_owner_processor_processor_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (processor_id) REFERENCES processor(processor_id)",
+      "columns": [
+        "processor_id"
+      ],
+      "referenced_table": "processor",
+      "referenced_columns": [
+        "processor_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "collection_owner_processor",
+      "name": "collection_owner_processor_user_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth_user(id)",
+      "columns": [
+        "user_id"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "consent_artefact",
       "name": "consent_artefact_auth_user_id_fkey",
       "kind": "f",
@@ -13824,6 +13936,16 @@
       "definition": "CREATE INDEX idx_collection_project ON public.collection USING btree (project_id, collected_on DESC)"
     },
     {
+      "table_name": "collection_owner_processor",
+      "name": "collection_owner_processor_pkey",
+      "definition": "CREATE UNIQUE INDEX collection_owner_processor_pkey ON public.collection_owner_processor USING btree (user_id, processor_id)"
+    },
+    {
+      "table_name": "collection_owner_processor",
+      "name": "idx_collection_owner_processor_processor",
+      "definition": "CREATE INDEX idx_collection_owner_processor_processor ON public.collection_owner_processor USING btree (processor_id)"
+    },
+    {
       "table_name": "consent_artefact",
       "name": "consent_artefact_consent_uuid_key",
       "definition": "CREATE UNIQUE INDEX consent_artefact_consent_uuid_key ON public.consent_artefact USING btree (consent_uuid)"
@@ -15441,11 +15563,11 @@
     }
   ],
   "counts": {
-    "application_tables": 58,
+    "application_tables": 59,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 714,
-    "foreign_keys": 161,
+    "table_columns": 718,
+    "foreign_keys": 164,
     "enums": 39,
     "triggers": 50,
     "checks": 94

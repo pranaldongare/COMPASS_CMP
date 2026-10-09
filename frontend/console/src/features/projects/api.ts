@@ -118,10 +118,13 @@ export function listApprovals(filters: ListFilters = {}): Promise<Page<ApprovalL
  * DCO and has no permission to read `/users`, so this endpoint exists to make
  * the requirement satisfiable without opening the register to them.
  */
-export async function listCollectionOwners(): Promise<CollectionOwner[]> {
+export async function listCollectionOwners(processor?: Uuid | null): Promise<CollectionOwner[]> {
   // Grouped by role, then by name - sorted here because the names arrive
-  // sealed and the API cannot sort them.
-  const owners = await apiGet<CollectionOwner[]>("/users/collection-owners");
+  // sealed and the API cannot sort them. `processor`: only those who collect
+  // for it (0050), the people one of its sources can be handed to.
+  const owners = await apiGet<CollectionOwner[]>(
+    `/users/collection-owners${queryString({ processor: processor ?? undefined })}`,
+  );
   return inNameOrder(owners, (o) => o.role);
 }
 

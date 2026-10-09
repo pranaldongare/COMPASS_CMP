@@ -29,6 +29,7 @@ import { useSources } from "@/features/registry";
 import type { User } from "@/types";
 import { useToast } from "@/providers";
 import { roleSchema, userSchema } from "@/features/users/schemas";
+import { ProcessorPicker, type PickedProcessor } from "@/features/users/components/processors";
 
 /* ============================================================ create / edit */
 
@@ -59,7 +60,15 @@ export function UserForm({ user, onDone }: { user?: User; onDone: () => void }) 
   const { data: sources } = useSources(
     ownsSources ? { status: "active", in_house: role === "rco", limit: 100 } : { limit: 1 },
   );
-  const eligible = ownsSources ? (sources?.items ?? []) : [];
+  // The processors they collect for (0050). Sources are offered from these
+  // once any is chosen; a source picked with none chosen brings its processor.
+  const [processors, setProcessors] = React.useState<PickedProcessor[]>([]);
+  const chosen = new Set(processors.map((p) => p.processor_uuid));
+  const eligible = ownsSources
+    ? (sources?.items ?? []).filter(
+        (s) => !chosen.size || (s.processor_uuid && chosen.has(s.processor_uuid)),
+      )
+    : [];
 
   // A role change clears the selection rather than carrying it: the sources a
   // DCO could own are exactly the ones an RCO could not.
@@ -68,6 +77,12 @@ export function UserForm({ user, onDone }: { user?: User; onDone: () => void }) 
       form.setValue("source_uuids", [], { shouldDirty: true });
     }
   }, [ownsSources, sourceUuids.length, form]);
+  // Third parties for a DCO, in-house teams for an RCO: a role change empties it.
+  const [pickedFor, setPickedFor] = React.useState(role);
+  if (pickedFor !== role) {
+    setPickedFor(role);
+    setProcessors([]);
+  }
 
   const busy = create.isPending || update.isPending;
 
@@ -79,6 +94,7 @@ export function UserForm({ user, onDone }: { user?: User; onDone: () => void }) 
       organization_id: values.organization_id || null,
       person_type: values.person_type || null,
       source_uuids: values.source_uuids ?? [],
+      processor_uuids: ownsSources ? processors.map((p) => p.processor_uuid) : [],
     };
 
     // A number typed on somebody else's behalf is a claim about their phone, so
@@ -205,6 +221,11 @@ export function UserForm({ user, onDone }: { user?: User; onDone: () => void }) 
             {(p) => <Input {...p} {...form.register("organization_id")} />}
           </Field>
         </div>
+
+        {/* Creation here; afterwards on the account's page, under Collects for. */}
+        {!user && ownsSources && (
+          <ProcessorPicker role={role === "rco" ? "rco" : "dco"} value={processors} onChange={setProcessors} />
+        )}
 
         {/* Creation only. Moving a source between people afterwards belongs on
             the source, where the consequence is visible: it moves every project

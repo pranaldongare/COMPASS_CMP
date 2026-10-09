@@ -47,6 +47,86 @@ def _not_by_hand(role: str) -> None:
         )
 
 
+async def _collector_processors(
+    conn: Conn, role: str, processor_uuids: list[str]
+) -> list[dict[str, Any]]:
+    """The processors named for a DCO or an RCO, each the right kind for the role.
+
+    A DCO collects for third parties and an RCO for the R&D team itself, so the
+    other kind is refused rather than stored: it would be a processor whose
+    sources they could never be made accountable for.
+    """
+    if processor_uuids and role not in SOURCE_OWNING_ROLES:
+        raise ValidationFailed(
+            "Only a Data Collection Owner or an R&D Collection Owner collects for a processor",
+            field="processor_uuids",
+        )
+    found: list[dict[str, Any]] = []
+    for processor_uuid in dict.fromkeys(processor_uuids):
+        processor = await registry_repo.processor_by_uuid(conn, processor_uuid)
+        if not processor:
+            raise NotFound("Processor")
+        in_house = bool(processor["is_in_house"])
+        if in_house is not (role == Role.RCO.value):
+            raise ValidationFailed(
+                f"{processor['legal_name']} is "
+                + (
+                    "in-house, so an R&D Collection Owner collects for it"
+                    if in_house
+                    else "a third party, so a Data Collection Owner collects for it"
+                ),
+                field="processor_uuids",
+            )
+        found.append(processor)
+    return found
+
+
+async def set_processors(
+    conn: Conn, user_uuid: str, *, processor_uuids: list[str], actor_id: int
+) -> list[dict[str, Any]]:
+    """Make a DCO's or an RCO's processors exactly these (0050).
+
+    They then see the data sources of these processors and no others, and
+    register new ones only under them. Taking a processor away leaves the
+    sources they are accountable for where they are - who is accountable is
+    moved on the source - but out of their sight, so it is refused while they
+    still hold one of its sources.
+    """
+    user = await repo.require_by_uuid(conn, user_uuid)
+    if user["role"] not in SOURCE_OWNING_ROLES:
+        raise ValidationFailed(
+            "Only a Data Collection Owner or an R&D Collection Owner collects for a processor",
+            field="processor_uuids",
+        )
+    wanted = await _collector_processors(conn, str(user["role"]), processor_uuids)
+    before = await registry_repo.processors_of_collector(conn, user["id"])
+    keep = {p["processor_id"] for p in wanted}
+    dropped = [p for p in before if p["processor_id"] not in keep]
+    for p in dropped:
+        held = await registry_repo.sources_held(conn, user["id"], p["processor_id"])
+        if held:
+            raise Conflict(
+                f"They are accountable for {held} data source(s) of {p['legal_name']}. "
+                "Hand those to somebody else on the source first.",
+                code="processor_still_held",
+            )
+    await registry_repo.set_collector_processors(
+        conn, user["id"], [p["processor_id"] for p in wanted], assigned_by=actor_id
+    )
+    await audit.record(
+        conn,
+        event=Event.USER_PROCESSORS_SET,
+        entity_type="auth_user",
+        entity_id=user["id"],
+        subject_user_id=user["id"],
+        detail={
+            "from": [str(p["processor_uuid"]) for p in before],
+            "to": [str(p["processor_uuid"]) for p in wanted],
+        },
+    )
+    return await registry_repo.processors_of_collector(conn, user["id"])
+
+
 async def create_staff(
     conn: Conn,
     *,
@@ -58,10 +138,15 @@ async def create_staff(
     organization_id: str | None,
     person_type: str | None,
     source_uuids: list[str],
+    processor_uuids: list[str] | None = None,
+    actor_id: int | None = None,
 ) -> tuple[dict[str, Any], list[str]]:
-    """Provision a staff account, with the sources it is accountable for.
+    """Provision a staff account, with the processors it collects for and the
+    sources it is accountable for.
 
-    Returns the account and the codes of the sources assigned to it.
+    Returns the account and the codes of the sources assigned to it. The
+    processor of each source is one of the account's, whether or not it was
+    named: being accountable for a source is collecting for its processor.
 
     A provisioned account starts with a random unusable password and is
     activated through the reset flow. Emailing an initial password puts a live
@@ -79,6 +164,7 @@ async def create_staff(
             "accountable for a data source",
             field="source_uuids",
         )
+    processors = await _collector_processors(conn, role, processor_uuids or [])
 
     try:
         user = await repo.create(
@@ -120,6 +206,15 @@ async def create_staff(
             )
         await registry_repo.set_source_owner(conn, source["source_id"], user["id"])
         assigned.append(source["source_code"])
+        if source.get("processor_id") is not None and all(
+            p["processor_id"] != source["processor_id"] for p in processors
+        ):
+            processors.append({"processor_id": source["processor_id"]})
+
+    if processors:
+        await registry_repo.set_collector_processors(
+            conn, user["id"], [p["processor_id"] for p in processors], assigned_by=actor_id
+        )
 
     await audit.record(
         conn,
@@ -127,7 +222,7 @@ async def create_staff(
         entity_type="auth_user",
         entity_id=user["id"],
         subject_user_id=user["id"],
-        detail={"role": role, "sources": assigned},
+        detail={"role": role, "sources": assigned, "processors": len(processors)},
     )
 
     # An account nobody has been told about is an account nobody can use, so
@@ -229,13 +324,21 @@ async def change_role(
         raise Conflict("You cannot change your own role", code="self_role_change")
 
     await repo.set_role(conn, user["id"], role)
+    # The processors were a DCO's third parties or an RCO's own teams; in any
+    # other role, or the other of the two, they are the wrong kind or no kind.
+    cleared = await registry_repo.clear_collector_processors(conn, user["id"])
     await audit.record(
         conn,
         event=Event.USER_ROLE_CHANGED,
         entity_type="auth_user",
         entity_id=user["id"],
         subject_user_id=user["id"],
-        detail={"from": user["role"], "to": role, "reason_given": bool(reason)},
+        detail={
+            "from": user["role"],
+            "to": role,
+            "reason_given": bool(reason),
+            "processors_cleared": cleared,
+        },
     )
     from cmp.domain import alerts
 
@@ -263,6 +366,7 @@ async def deactivate(conn: Conn, user_uuid: str, *, actor_id: int) -> tuple[dict
 
         return user, await access.remove(conn, user, actor_id=actor_id)
     if user["role"] != Role.DATA_SUBJECT.value:
+        await registry_repo.clear_collector_processors(conn, user["id"])
         await auth_service.end_staff_access(conn, user=user, actor_user_id=actor_id)
         from cmp.domain import alerts
 

@@ -395,13 +395,27 @@ class TestProjectsNoticesRegistry:
     async def test_the_registry(
         self, http: httpx.AsyncClient, world: World, session_for: SessionFactory
     ) -> None:
-        await call(http, "GET", "/sources", session=world.dco)
+        # A DCO sees the sources of the processors they collect for, and
+        # no others (0050).
+        mine = await call(http, "GET", "/sources", session=world.dco)
+        assert {i["processor_uuid"] for i in mine.json()["items"]} == {world.processor_uuid}
+        own = await call(http, "GET", "/processors", session=world.dco, params={"mine": "true"})
+        assert [p["processor_uuid"] for p in own.json()["items"]] == [world.processor_uuid]
         await call(
             http,
             "GET",
             f"/sources/{world.source_uuid}",
             template="/sources/{source_uuid}",
             session=world.dco,
+        )
+        stranger = await session_for("dco")
+        await call(
+            http,
+            "GET",
+            f"/sources/{world.source_uuid}",
+            template="/sources/{source_uuid}",
+            session=stranger,
+            expect=404,
         )
         await call(
             http,

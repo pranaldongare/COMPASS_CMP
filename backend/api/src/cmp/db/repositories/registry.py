@@ -89,9 +89,18 @@ async def suspend_processor(conn: Conn, processor_id: int) -> None:
 
 
 async def list_processors(
-    conn: Conn, req: PageRequest, *, status: str | None = None, q: str | None = None
+    conn: Conn,
+    req: PageRequest,
+    *,
+    status: str | None = None,
+    q: str | None = None,
+    collector_user_id: int | None = None,
 ) -> tuple[list[Row], str | None, int]:
-    where, params = ["1 = 1"], []
+    where: list[str] = ["1 = 1"]
+    params: list[Any] = []
+    if collector_user_id is not None:
+        where.append(f"p.processor_id IN ({COLLECTOR_PROCESSORS})")
+        params.extend([collector_user_id, collector_user_id])
     if status:
         where.append("p.status = %s::record_status")
         params.append(status)
@@ -111,6 +120,73 @@ async def list_processors(
     total = await fetch_one(conn, f"SELECT count(*) AS n FROM processor p WHERE {clause}", params)
     items, cursor = build_page(rows, req)
     return items, cursor, int((total or {}).get("n", 0))
+
+
+# ------------------------------------------------- a collector's processors
+#: The processors a DCO or an RCO collects for (0050), and those of anybody
+#: they are covering for: cover lends the delegator's reach, here as on
+#: projects. Two parameters, both the caller's user id.
+COLLECTOR_PROCESSORS = """SELECT cop.processor_id FROM collection_owner_processor cop
+   WHERE cop.user_id = %s
+      OR cop.user_id IN (SELECT delegator_user_id FROM cmp_delegators_of(%s))"""
+
+
+async def processors_of_collector(conn: Conn, user_id: int) -> list[Row]:
+    """The processors assigned to this DCO or RCO themselves, by name."""
+    return await fetch_all(
+        conn,
+        """SELECT p.processor_id, p.processor_uuid, p.legal_name, p.is_in_house, p.status
+             FROM collection_owner_processor cop
+             JOIN processor p ON p.processor_id = cop.processor_id
+            WHERE cop.user_id = %s
+            ORDER BY p.legal_name""",
+        (user_id,),
+    )
+
+
+async def collector_reaches(conn: Conn, user_id: int, processor_id: int | None) -> bool:
+    """Whether this processor is one the collector - or whoever they cover - works for."""
+    if processor_id is None:
+        return False
+    row = await fetch_one(
+        conn,
+        f"SELECT 1 AS ok WHERE %s IN ({COLLECTOR_PROCESSORS})",
+        (processor_id, user_id, user_id),
+    )
+    return row is not None
+
+
+async def set_collector_processors(
+    conn: Conn, user_id: int, processor_ids: list[int], *, assigned_by: int | None
+) -> None:
+    """Make the collector's processors exactly these. Rows kept keep their date."""
+    await conn.execute(
+        "DELETE FROM collection_owner_processor WHERE user_id = %s AND NOT processor_id = ANY(%s)",
+        (user_id, processor_ids),
+    )
+    for processor_id in processor_ids:
+        await conn.execute(
+            """INSERT INTO collection_owner_processor (user_id, processor_id, assigned_by)
+               VALUES (%s, %s, %s) ON CONFLICT DO NOTHING""",
+            (user_id, processor_id, assigned_by),
+        )
+
+
+async def sources_held(conn: Conn, user_id: int, processor_id: int) -> int:
+    """How many of this processor's sources the person is accountable for."""
+    row = await fetch_one(
+        conn,
+        "SELECT count(*) AS n FROM data_source WHERE owner_user_id = %s AND processor_id = %s",
+        (user_id, processor_id),
+    )
+    return int((row or {}).get("n", 0))
+
+
+async def clear_collector_processors(conn: Conn, user_id: int) -> int:
+    cur = await conn.execute(
+        "DELETE FROM collection_owner_processor WHERE user_id = %s", (user_id,)
+    )
+    return cur.rowcount or 0
 
 
 # ---------------------------------------------------------------- data_source
@@ -274,9 +350,14 @@ async def list_sources(
     owner_user_id: int | None = None,
     in_house: bool | None = None,
     q: str | None = None,
+    collector_user_id: int | None = None,
 ) -> tuple[list[Row], str | None, int]:
     where: list[str] = ["1 = 1"]
     params: list[Any] = []
+    if collector_user_id is not None:
+        # A DCO or an RCO: the sources of their own processors, nothing else.
+        where.append(f"s.processor_id IN ({COLLECTOR_PROCESSORS})")
+        params.extend([collector_user_id, collector_user_id])
     if status:
         where.append("s.status = %s::record_status")
         params.append(status)

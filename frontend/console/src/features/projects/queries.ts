@@ -139,9 +139,9 @@ export function useAllApprovals(filters: ListFilters = {}) {
   });
 }
 
-export function useCollectionOwners() {
+export function useCollectionOwners(processor?: Uuid | null) {
   return useQuery<CollectionOwner[], ApiError>({
-    queryKey: keys.users.collectionOwners,
-    queryFn: listCollectionOwners,
+    queryKey: [...keys.users.collectionOwners, processor ?? "any"],
+    queryFn: () => listCollectionOwners(processor),
   });
 }

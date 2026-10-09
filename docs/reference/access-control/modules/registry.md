@@ -42,6 +42,7 @@ List Processors.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('processor'))]`.
 - **Resolved gate:** `RequireResource(processor, write=False)`.
 - **Rules:** Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.
+- `mine=true`: for a DCO or an RCO, only the processors they collect for (and those of anyone they cover for); ignored for other roles. (0050, 2026-10-09)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L352).
 
 ## POST /processors
@@ -258,12 +259,13 @@ List Sources.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | ALL | NO | NO |
+| ALL | ALL | SCOPED | ALL | SCOPED | ALL | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('data_source'))]`.
 - **Resolved gate:** `RequireResource(data_source, write=False)`.
 - **Rules:** Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.
+- A DCO or an RCO is answered for the sources of the processors they collect for (assigned by the administrator, `PUT /users/{user_uuid}/processors`) and of anyone they cover for; any other source is 404 to them. (0050, 2026-10-09)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L616).
 
 ## POST /sources
@@ -272,13 +274,15 @@ Create Source.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | NO | NO | NO |
+| ALL | ALL | SCOPED | ALL | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('data_source', write=True))]`.
 - **Resolved gate:** `RequireResource(data_source, write=True)`.
 - **Rules:** Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.
 - DCO must choose a third-party processor; RCO must choose an in-house processor. DPO/Admin/DCO Admin are not constrained by that actor-type helper. R&D is denied by the write grant.
+- A DCO or an RCO is answered for the sources of the processors they collect for (assigned by the administrator, `PUT /users/{user_uuid}/processors`) and of anyone they cover for; any other source is 404 to them. (0050, 2026-10-09)
+- A DCO or an RCO registers only under a processor they collect for (422 on `processor_uuid` otherwise). (0050, 2026-10-09)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L664).
 
 ## GET /sources/{source_uuid}
@@ -287,12 +291,13 @@ Get Source.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | ALL | NO | NO |
+| ALL | ALL | SCOPED | ALL | SCOPED | ALL | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('data_source'))]`.
 - **Resolved gate:** `RequireResource(data_source, write=False)`.
 - **Rules:** Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.
+- A DCO or an RCO is answered for the sources of the processors they collect for (assigned by the administrator, `PUT /users/{user_uuid}/processors`) and of anyone they cover for; any other source is 404 to them. (0050, 2026-10-09)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L746).
 
 ## PUT /sources/{source_uuid}
@@ -301,13 +306,14 @@ Update Source.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | NO | NO | NO |
+| ALL | ALL | SCOPED | ALL | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('data_source', write=True))]`.
 - **Resolved gate:** `RequireResource(data_source, write=True)`.
 - **Rules:** Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.
 - Current handler resolves a source by UUID without caller ownership filtering. All data_source writers can act on any source. Owner assignment validates the target owner’s role, not the actor’s source ownership.
+- A DCO or an RCO is answered for the sources of the processors they collect for (assigned by the administrator, `PUT /users/{user_uuid}/processors`) and of anyone they cover for; any other source is 404 to them. (0050, 2026-10-09)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L758).
 
 ## GET /sources/{source_uuid}/batches
@@ -322,6 +328,7 @@ Source Batches.
 - **Route guard:** `CurrentUser`.
 - **Rules:** Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.
 - All full-session roles pass the route. Project-linked batches follow import scope: DPO all; DCO/DCO Admin/RCO scoped; R&D own projects; Admin/principal none. However, b.project_id IS NULL is allowed for EVERY signed-in role, including Admin and data_subject; list, detail and error-report lookups share this exception.
+- The source itself is checked first: a DCO or an RCO outside its processor is answered 404. (0050, 2026-10-09)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L904), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/exchange.py#L380), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/exchange.py#L405).
 
 ## PUT /sources/{source_uuid}/owner
@@ -330,13 +337,15 @@ Assign the person accountable for a source.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | NO | NO | NO |
+| ALL | ALL | SCOPED | ALL | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('data_source', write=True))]`.
 - **Resolved gate:** `RequireResource(data_source, write=True)`.
 - **Rules:** Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.
 - Current handler resolves a source by UUID without caller ownership filtering. All data_source writers can act on any source. Owner assignment validates the target owner’s role, not the actor’s source ownership.
+- A DCO or an RCO is answered for the sources of the processors they collect for (assigned by the administrator, `PUT /users/{user_uuid}/processors`) and of anyone they cover for; any other source is 404 to them. (0050, 2026-10-09)
+- The new owner must collect for the source's processor (422 on `owner_user_uuid`). (0050, 2026-10-09)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L816), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L758).
 
 ## POST /sources/{source_uuid}/suspend
@@ -345,11 +354,12 @@ Suspend Source.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | NO | NO | NO |
+| ALL | ALL | SCOPED | ALL | SCOPED | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`.
 - **Route guard:** `Annotated[Any, Depends(RequireResource('data_source', write=True))]`.
 - **Resolved gate:** `RequireResource(data_source, write=True)`.
 - **Rules:** Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.
 - Current handler resolves a source by UUID without caller ownership filtering. All data_source writers can act on any source. Owner assignment validates the target owner’s role, not the actor’s source ownership.
+- A DCO or an RCO is answered for the sources of the processors they collect for (assigned by the administrator, `PUT /users/{user_uuid}/processors`) and of anyone they cover for; any other source is 404 to them. (0050, 2026-10-09)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L885), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L758).

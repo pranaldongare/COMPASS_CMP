@@ -826,9 +826,10 @@ async def invite_staff(api: Api, admin: Actor) -> dict[str, Actor]:
 
 
 async def register(
-    api: Api, staff: dict[str, Actor]
+    api: Api, staff: dict[str, Actor], admin: Actor
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, str]]:
-    """Purposes (DPO), processors (DPO), and a source under each (its runner)."""
+    """Purposes (DPO), processors (DPO), and a source under each (its runner,
+    once the administrator has said the runner collects for that processor)."""
     dpo = staff["dpo1"]
     purposes: dict[str, str] = {}
     for p in PURPOSES:
@@ -860,6 +861,7 @@ async def register(
 
     processors: dict[str, Any] = {}
     sources: dict[str, str] = {}
+    collects_for: dict[str, list[str]] = {}
     for p in PROCESSORS:
         r = await api.call(
             "POST",
@@ -880,6 +882,20 @@ async def register(
 
         s = p["source"]
         runner = staff[s["owner"]]
+        # A collection owner registers sources only under a processor they
+        # collect for, and the administrator says which those are (0050).
+        await api.call(
+            "PUT",
+            f"/users/{runner.uuid}/processors",
+            actor=admin,
+            json={
+                "processor_uuids": [
+                    *collects_for.get(runner.uuid, []),
+                    processors[p["key"]]["uuid"],
+                ]
+            },
+        )
+        collects_for.setdefault(runner.uuid, []).append(processors[p["key"]]["uuid"])
         r = await api.call(
             "POST",
             "/sources",
@@ -1285,7 +1301,7 @@ async def seed_demo() -> None:
             await refuse_if_seeded(api, admin)
 
             staff = await invite_staff(api, admin)
-            purposes, processors, sources = await register(api, staff)
+            purposes, processors, sources = await register(api, staff, admin)
             projects = await build_projects(api, staff, purposes, processors, sources)
             people = await principals_arrive(api, redis, purposes, projects)
             await withdrawals(api, people)

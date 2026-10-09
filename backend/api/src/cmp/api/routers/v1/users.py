@@ -25,6 +25,7 @@ from cmp.auth.sessions import service as sessions
 from cmp.core.pagination import PageRequest
 from cmp.core.permissions import Role
 from cmp.db.pool import connection, transaction
+from cmp.db.repositories import registry as registry_repo
 from cmp.db.repositories import users as repo
 from cmp.domain.users import service as users
 from cmp.schemas.common import Acknowledged, Mobile, Out, Page, Schema, ShortText
@@ -33,6 +34,15 @@ from cmp.validation import Email
 router = APIRouter(prefix="/users", tags=["users"])
 
 user_paging = Paging(repo.LIST_SORTS, "-created_at")
+
+
+class CollectorProcessor(Out):
+    """A processor a DCO or an RCO collects for (0050)."""
+
+    processor_uuid: UUID
+    legal_name: str
+    is_in_house: bool
+    status: str
 
 
 class UserOut(Out):
@@ -53,6 +63,10 @@ class UserOut(Out):
     #: request. The full list lives at `/sources?owner=…`, which stays right as
     #: sources change hands.
     sources: list[str] | None = None
+    #: The processors a DCO or an RCO collects for: they see those processors'
+    #: data sources and no others (0050). On one account's page only; `None`
+    #: on the register and for every other role.
+    processors: list[CollectorProcessor] | None = None
 
 
 class CreateUser(Schema):
@@ -75,6 +89,15 @@ class CreateUser(Schema):
     #: Only for the roles that can hold one. A DPO or an administrator owning a
     #: rig would be a category error, and is refused rather than ignored.
     source_uuids: list[UUID] = Field(default_factory=list)
+    #: The processors this DCO or RCO collects for (0050) - third parties for a
+    #: DCO, in-house teams for an RCO. The processor of every source above is
+    #: added whether or not it is named here.
+    processor_uuids: list[UUID] = Field(default_factory=list)
+
+
+class SetProcessors(Schema):
+    #: The whole set, not a change to it: what is not named is taken away.
+    processor_uuids: list[UUID] = Field(default_factory=list, max_length=50)
 
 
 class UpdateUser(Schema):
@@ -132,7 +155,9 @@ async def staff_directory(
     response_model=list[CollectionOwner],
     summary="Active DCOs and RCOs, for source ownership",
 )
-async def collection_owners(principal: RequireStaff) -> list[dict[str, Any]]:
+async def collection_owners(
+    principal: RequireStaff, processor: Annotated[UUID | None, Query()] = None
+) -> list[dict[str, Any]]:
     """The ownership lookup.
 
     Making somebody accountable for a data source means picking a person, and
@@ -143,9 +168,14 @@ async def collection_owners(principal: RequireStaff) -> list[dict[str, Any]]:
     Scoped to exactly what the choice needs - active DCOs and RCOs, four fields -
     so it is not a way around the register's own restrictions. Declared before
     `/users/{uuid}` so the literal path is matched first.
+
+    `processor` keeps those who collect for it (0050): the people one of its
+    sources can be handed to.
     """
     async with connection() as conn:
-        return await repo.collection_owners(conn)
+        return await repo.collection_owners(
+            conn, processor_uuid=str(processor) if processor else None
+        )
 
 
 @router.get("", response_model=Page[UserOut], summary="The staff and subject register")
@@ -188,6 +218,8 @@ async def create_user(body: CreateUser, principal: RequireAdmin) -> dict[str, An
             organization_id=body.organization_id,
             person_type=body.person_type,
             source_uuids=[str(u) for u in body.source_uuids],
+            processor_uuids=[str(u) for u in body.processor_uuids],
+            actor_id=principal.user_id,
         )
     return {**user, "sources": assigned}
 
@@ -212,7 +244,34 @@ async def resend_invitation(user_uuid: UUID, principal: RequireAdmin) -> dict[st
 @router.get("/{user_uuid}", response_model=UserOut)
 async def get_user(user_uuid: UUID, principal: RequireDPOorAdmin) -> dict[str, Any]:
     async with connection() as conn:
-        return await repo.require_by_uuid(conn, str(user_uuid))
+        user = await repo.require_by_uuid(conn, str(user_uuid))
+        if user["role"] in users.SOURCE_OWNING_ROLES:
+            user = {
+                **user,
+                "processors": await registry_repo.processors_of_collector(conn, user["id"]),
+            }
+        return user
+
+
+@router.put(
+    "/{user_uuid}/processors",
+    response_model=list[CollectorProcessor],
+    summary="Set the processors a DCO or an RCO collects for",
+)
+async def set_processors(
+    user_uuid: UUID, body: SetProcessors, principal: RequireAdmin
+) -> list[dict[str, Any]]:
+    """The whole set (0050). A DCO or an RCO sees the data sources of these
+    processors and no others, and registers new ones only under them. A
+    processor whose sources they are still accountable for is not taken away:
+    hand the sources on first, on each source."""
+    async with transaction() as conn:
+        return await users.set_processors(
+            conn,
+            str(user_uuid),
+            processor_uuids=[str(u) for u in body.processor_uuids],
+            actor_id=principal.user_id,
+        )
 
 
 @router.patch("/{user_uuid}", response_model=UserOut)

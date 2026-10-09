@@ -1,6 +1,6 @@
 # Users API
 
-Generated from `backend/api/openapi.json`. **13 operations.**
+Generated from `backend/api/openapi.json`. **14 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -13,12 +13,13 @@ For each operation the information is deliberately ordered as **API → Validati
 5. [`POST /users/{user_uuid}/invite`](#5_post_users_user_uuid_invite)
 6. [`GET /users/{user_uuid}`](#6_get_users_user_uuid)
 7. [`PATCH /users/{user_uuid}`](#7_patch_users_user_uuid)
-8. [`POST /users/{user_uuid}/role`](#8_post_users_user_uuid_role)
-9. [`POST /users/{user_uuid}/deactivate`](#9_post_users_user_uuid_deactivate)
-10. [`POST /users/{user_uuid}/reactivate`](#10_post_users_user_uuid_reactivate)
-11. [`DELETE /users/{user_uuid}/sessions`](#11_delete_users_user_uuid_sessions)
-12. [`POST /users/{user_uuid}/mfa/reset`](#12_post_users_user_uuid_mfa_reset)
-13. [`GET /users/{user_uuid}/person-type-history`](#13_get_users_user_uuid_person_type_history)
+8. [`PUT /users/{user_uuid}/processors`](#8_put_users_user_uuid_processors)
+9. [`POST /users/{user_uuid}/role`](#9_post_users_user_uuid_role)
+10. [`POST /users/{user_uuid}/deactivate`](#10_post_users_user_uuid_deactivate)
+11. [`POST /users/{user_uuid}/reactivate`](#11_post_users_user_uuid_reactivate)
+12. [`DELETE /users/{user_uuid}/sessions`](#12_delete_users_user_uuid_sessions)
+13. [`POST /users/{user_uuid}/mfa/reset`](#13_post_users_user_uuid_mfa_reset)
+14. [`GET /users/{user_uuid}/person-type-history`](#14_get_users_user_uuid_person_type_history)
 
 <a id="1_get_users_staff"></a>
 ## 1. `GET /users/staff` — Active staff, for naming a processor's respondent
@@ -78,9 +79,14 @@ Scoped to exactly what the choice needs - active DCOs and RCOs, four fields -
 so it is not a way around the register's own restrictions. Declared before
 `/users/{uuid}` so the literal path is matched first.
 
+`processor` keeps those who collect for it (0050): the people one of its
+sources can be handed to.
+
 ### Validation
 
-No path, query, header, or cookie parameters are declared for this operation.
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `processor` | query | No | `string` or `null` | format: `uuid` | — |
 
 ### Payload
 
@@ -91,6 +97,7 @@ No request body.
 | Status | Description | Content type | Schema |
 |---:|---|---|---|
 | `200` | Successful Response | `application/json` | array of [`CollectionOwner`](#schema-collectionowner) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
 
 **Example `200` `application/json` response:**
 
@@ -103,6 +110,24 @@ No request body.
     "role": "string"
   }
 ]
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
 ```
 
 <a id="3_get_users"></a>
@@ -156,7 +181,8 @@ No request body.
       "status": "string",
       "created_at": "string",
       "updated_at": "string",
-      "sources": "…"
+      "sources": "…",
+      "processors": "…"
     }
   ],
   "next_cursor": "string",
@@ -214,6 +240,9 @@ Request body required: **yes**.
   "person_type": "string",
   "source_uuids": [
     "00000000-0000-4000-8000-000000000000"
+  ],
+  "processor_uuids": [
+    "00000000-0000-4000-8000-000000000000"
   ]
 }
 ```
@@ -242,6 +271,14 @@ Request body required: **yes**.
   "updated_at": "string",
   "sources": [
     "string"
+  ],
+  "processors": [
+    {
+      "processor_uuid": "…",
+      "legal_name": "…",
+      "is_in_house": "…",
+      "status": "…"
+    }
   ]
 }
 ```
@@ -364,6 +401,14 @@ No request body.
   "updated_at": "string",
   "sources": [
     "string"
+  ],
+  "processors": [
+    {
+      "processor_uuid": "…",
+      "legal_name": "…",
+      "is_in_house": "…",
+      "status": "…"
+    }
   ]
 }
 ```
@@ -441,6 +486,14 @@ Request body required: **yes**.
   "updated_at": "string",
   "sources": [
     "string"
+  ],
+  "processors": [
+    {
+      "processor_uuid": "…",
+      "legal_name": "…",
+      "is_in_house": "…",
+      "status": "…"
+    }
   ]
 }
 ```
@@ -463,8 +516,80 @@ Request body required: **yes**.
 }
 ```
 
-<a id="8_post_users_user_uuid_role"></a>
-## 8. `POST /users/{user_uuid}/role` — Change a role
+<a id="8_put_users_user_uuid_processors"></a>
+## 8. `PUT /users/{user_uuid}/processors` — Set the processors a DCO or an RCO collects for
+
+### API
+
+- **Operation ID:** `set_processors_users__user_uuid__processors_put`
+- **Access:** Role-controlled `users` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+The whole set (0050). A DCO or an RCO sees the data sources of these
+processors and no others, and registers new ones only under them. A
+processor whose sources they are still accountable for is not taken away:
+hand the sources on first, on each source.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `user_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`SetProcessors`](#schema-setprocessors)
+
+```json
+{
+  "processor_uuids": [
+    "00000000-0000-4000-8000-000000000000"
+  ]
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | array of [`CollectorProcessor`](#schema-collectorprocessor) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+[
+  {
+    "processor_uuid": "00000000-0000-4000-8000-000000000000",
+    "legal_name": "string",
+    "is_in_house": true,
+    "status": "string"
+  }
+]
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="9_post_users_user_uuid_role"></a>
+## 9. `POST /users/{user_uuid}/role` — Change a role
 
 ### API
 
@@ -525,8 +650,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="9_post_users_user_uuid_deactivate"></a>
-## 9. `POST /users/{user_uuid}/deactivate` — Deactivate
+<a id="10_post_users_user_uuid_deactivate"></a>
+## 10. `POST /users/{user_uuid}/deactivate` — Deactivate
 
 ### API
 
@@ -582,8 +707,8 @@ No request body.
 }
 ```
 
-<a id="10_post_users_user_uuid_reactivate"></a>
-## 10. `POST /users/{user_uuid}/reactivate` — Reactivate
+<a id="11_post_users_user_uuid_reactivate"></a>
+## 11. `POST /users/{user_uuid}/reactivate` — Reactivate
 
 ### API
 
@@ -634,8 +759,8 @@ No request body.
 }
 ```
 
-<a id="11_delete_users_user_uuid_sessions"></a>
-## 11. `DELETE /users/{user_uuid}/sessions` — Force logout
+<a id="12_delete_users_user_uuid_sessions"></a>
+## 12. `DELETE /users/{user_uuid}/sessions` — Force logout
 
 ### API
 
@@ -686,8 +811,8 @@ No request body.
 }
 ```
 
-<a id="12_post_users_user_uuid_mfa_reset"></a>
-## 12. `POST /users/{user_uuid}/mfa/reset` — Reset Mfa
+<a id="13_post_users_user_uuid_mfa_reset"></a>
+## 13. `POST /users/{user_uuid}/mfa/reset` — Reset Mfa
 
 ### API
 
@@ -738,8 +863,8 @@ No request body.
 }
 ```
 
-<a id="13_get_users_user_uuid_person_type_history"></a>
-## 13. `GET /users/{user_uuid}/person-type-history` — Person Type History
+<a id="14_get_users_user_uuid_person_type_history"></a>
+## 14. `GET /users/{user_uuid}/person-type-history` — Person Type History
 
 ### API
 
@@ -827,6 +952,7 @@ For state changes whose only interesting output is that they happened.
 | `organization_id` | `string` or `null` | No | max length: `60` | — |
 | `person_type` | `string` or `null` | No | — | — |
 | `source_uuids` | array of `string` | No | — | — |
+| `processor_uuids` | array of `string` | No | — | — |
 
 <a id="schema-httpvalidationerror"></a>
 #### `HTTPValidationError`
@@ -851,6 +977,13 @@ For state changes whose only interesting output is that they happened.
 |---|---|---:|---|---|
 | `role` | `string` | Yes | — | — |
 | `reason` | `string` or `null` | No | max length: `500` | — |
+
+<a id="schema-setprocessors"></a>
+#### `SetProcessors`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `processor_uuids` | array of `string` | No | — | — |
 
 <a id="schema-updateuser"></a>
 #### `UpdateUser`
@@ -878,6 +1011,7 @@ For state changes whose only interesting output is that they happened.
 | `created_at` | `object` | Yes | — | — |
 | `updated_at` | `object` | Yes | — | — |
 | `sources` | array of `string` or `null` | No | — | — |
+| `processors` | array of [`CollectorProcessor`](#schema-collectorprocessor) or `null` | No | — | — |
 
 <a id="schema-validationerror"></a>
 #### `ValidationError`
@@ -889,3 +1023,15 @@ For state changes whose only interesting output is that they happened.
 | `type` | `string` | Yes | — | — |
 | `input` | `object` | No | — | — |
 | `ctx` | `object` | No | — | — |
+
+<a id="schema-collectorprocessor"></a>
+#### `CollectorProcessor`
+
+A processor a DCO or an RCO collects for (0050).
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `processor_uuid` | `string` | Yes | format: `uuid` | — |
+| `legal_name` | `string` | Yes | — | — |
+| `is_in_house` | `boolean` | Yes | — | — |
+| `status` | `string` | Yes | — | — |

@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { UserForm } from "@/features/users/components/forms";
+import { ProcessorsForm } from "@/features/users/components/processors";
 import { usePersonTypeHistory, useUser } from "@/features/users";
 import { formatDateTime, humanise } from "@/lib/format";
 import { useAuth } from "@/providers";
@@ -43,6 +44,7 @@ export default function UserDetailPage() {
   const user = useUser(uuid);
   const history = usePersonTypeHistory(uuid);
   const [editing, setEditing] = React.useState(false);
+  const [settingProcessors, setSettingProcessors] = React.useState(false);
   const isAdmin = me?.role === "admin";
 
   if (user.error) {
@@ -114,6 +116,47 @@ export default function UserDetailPage() {
           </CardBody>
         </Card>
 
+        {(u.role === "dco" || u.role === "rco") && (
+          <Card>
+            <CardHeader className="flex items-center justify-between gap-2">
+              <CardTitle>Collects for</CardTitle>
+              {isAdmin && (
+                <Button variant="secondary" size="sm" onClick={() => setSettingProcessors(true)}>
+                  <Pencil className="size-4" />
+                  Change processors
+                </Button>
+              )}
+            </CardHeader>
+            <CardBody>
+              {!u.processors?.length ? (
+                <p className="text-sm text-warning-text">
+                  No processor yet, so they see no data sources and cannot add one.
+                  {isAdmin ? " Click Change processors to say whom they collect for." : ""}
+                </p>
+              ) : (
+                <>
+                  <ul className="flex flex-wrap gap-1.5">
+                    {u.processors.map((p) => (
+                      <li key={p.processor_uuid}>
+                        <Link
+                          href={`/processors/${p.processor_uuid}`}
+                          className="inline-flex rounded-full border border-border px-2.5 py-0.5 text-sm text-accent-text hover:bg-surface-hover"
+                        >
+                          {p.legal_name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-3 text-xs text-text-muted">
+                    They see these processors&apos; data sources and no others, and add new ones only
+                    under them.
+                  </p>
+                </>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle>Person type, over time</CardTitle>
@@ -149,6 +192,12 @@ export default function UserDetailPage() {
           </CardBody>
         </Card>
       </div>
+
+      <Dialog open={settingProcessors} onOpenChange={(o) => !o && setSettingProcessors(false)}>
+        <DialogContent title="Processors they collect for" size="lg">
+          {settingProcessors && <ProcessorsForm user={u} onDone={() => setSettingProcessors(false)} />}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={editing} onOpenChange={(o) => !o && setEditing(false)}>
         <DialogContent title="Edit account" size="lg">

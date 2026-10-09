@@ -608,12 +608,17 @@ No request body.
 - **Operation ID:** `list_processors_processors_get`
 - **Access:** Role-controlled `registry` operation. See [`../../roles/README.md`](../../roles/README.md).
 
+`mine` is a DCO's or an RCO's own processors (0050) - and those of
+whoever they cover for: the ones whose data sources they see and may add
+to. For any other role it changes nothing.
+
 ### Validation
 
 | Parameter | Location | Required | Type | Constraints | Description |
 |---|---|---:|---|---|---|
 | `status` | query | No | `string` or `null` | — | — |
 | `q` | query | No | `string` or `null` | max length: `100` | — |
+| `mine` | query | No | `boolean` | default: `False` | — |
 | `limit` | query | No | `integer` or `null` | minimum: `1`; maximum: `200` | — |
 | `cursor` | query | No | `string` or `null` | max length: `512` | — |
 | `sort` | query | No | `string` or `null` | max length: `64` | — |
@@ -1128,6 +1133,9 @@ prevent, and a filter is how a reviewable gap is surfaced.
 `unowned` is the DCO Admin's and the R&D owner's working list: sources nobody
 is accountable for yet. `in_house` splits the registry the way routing does -
 what we collect ourselves from what somebody else collects for us.
+
+**A DCO or an RCO sees only the sources of their own processors** (0050) -
+those the administrator assigned them, and those of anybody they cover for.
 
 ### Validation
 

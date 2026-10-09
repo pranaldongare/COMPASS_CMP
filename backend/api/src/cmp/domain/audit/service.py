@@ -113,6 +113,9 @@ class Event:
     USER_TEMPORARY_ACCESS_GRANTED = "user.temporary_access_granted"
     USER_TEMPORARY_ACCESS_ENDED = "user.temporary_access_ended"
     USER_CONTACT_CHANGED = "user.contact_changed"
+    #: The processors a DCO or an RCO collects for, set by the administrator
+    #: (0050). Detail: the processor uuids before and after.
+    USER_PROCESSORS_SET = "user.processors_set"
 
     # authentication
     LOGIN_SUCCEEDED = "auth.login_succeeded"

@@ -26,7 +26,7 @@ Each cell is **GET / non-GET endpoint counts** for which that role is eligible. 
 | [Rights](modules/rights.md) | 50 | 13 / 36 | 13 / 37 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
 | [System](modules/system.md) | 8 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 |
 | [Tickets](modules/tickets.md) | 5 | 3 / 2 | 3 / 2 | 3 / 2 | 3 / 2 | 3 / 2 | 3 / 2 | 0 / 0 | 3 / 2 |
-| [Users](modules/users.md) | 13 | 5 / 0 | 5 / 8 | 1 / 0 | 1 / 0 | 1 / 0 | 1 / 0 | 0 / 0 | 0 / 0 |
+| [Users](modules/users.md) | 14 | 5 / 0 | 6 / 8 | 1 / 0 | 1 / 0 | 1 / 0 | 1 / 0 | 0 / 0 | 0 / 0 |
 
 
 System includes three registered routes omitted from OpenAPI. Read the endpoint conditions for imports, delegations, public flows and rights requests before treating any count as broad access.

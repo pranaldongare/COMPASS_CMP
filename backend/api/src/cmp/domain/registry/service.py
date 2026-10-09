@@ -274,6 +274,26 @@ async def _source(conn: Conn, source_uuid: str) -> dict[str, Any]:
     return source
 
 
+#: The collection owners (0050): each works for the processors the
+#: administrator assigned, and the data sources they see and register are
+#: those processors' alone.
+COLLECTORS = frozenset({Role.DCO.value, Role.RCO.value})
+
+
+def is_collector(role: Any) -> bool:
+    return str(getattr(role, "value", role)) in COLLECTORS
+
+
+async def require_in_reach(conn: Conn, source: dict[str, Any], *, role: Any, user_id: int) -> None:
+    """A DCO or an RCO reaches the sources of their own processors; to them
+    any other is not there at all - not found, rather than forbidden, so the
+    answer says nothing about what exists."""
+    if is_collector(role) and not await repo.collector_reaches(
+        conn, user_id, source.get("processor_id")
+    ):
+        raise NotFound("Data source")
+
+
 def refuse_foreign_processor(role: Any, processor: dict[str, Any]) -> None:
     """A collection owner registers under their own kind of processor, or not at all.
 
@@ -325,6 +345,15 @@ async def create_source(
                 field="processor_uuid",
             )
         refuse_foreign_processor(role, processor)
+        if is_collector(role) and not await repo.collector_reaches(
+            conn, user_id, processor["processor_id"]
+        ):
+            raise ValidationFailed(
+                f"You register data sources only under the processors you collect for, "
+                f"and {processor['legal_name']} is not one of them. The administrator "
+                "assigns them.",
+                field="processor_uuid",
+            )
         processor_id = processor["processor_id"]
 
     # A collection owner has to say which processor it belongs to. Without
@@ -426,6 +455,17 @@ async def assign_source_owner(
                     else "Collection from this source is by a third party, so a Data "
                     "Collection Owner is accountable for it"
                 ),
+                field="owner_user_uuid",
+            )
+        # Accountable only for what they can see: a DCO or an RCO works with
+        # the sources of the processors they were assigned (0050).
+        if source.get("processor_id") is not None and not any(
+            p["processor_id"] == source["processor_id"]
+            for p in await repo.processors_of_collector(conn, owner["id"])
+        ):
+            raise ValidationFailed(
+                f"That person does not collect for {source.get('processor_name')}. "
+                "The administrator assigns a collection owner's processors on their account.",
                 field="owner_user_uuid",
             )
         owner_id = owner["id"]

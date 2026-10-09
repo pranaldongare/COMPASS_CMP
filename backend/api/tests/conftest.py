@@ -214,6 +214,14 @@ async def seeded(conn: Any, request_context: Any) -> dict[str, Any]:
             (legal_name, in_house),
         )
 
+    # Each collection owner collects for the processor of their kind (0050):
+    # the DCO for the third party, the RCO for the in-house team.
+    for role, key in (("dco", "external"), ("rco", "in_house")):
+        await conn.execute(
+            "INSERT INTO collection_owner_processor (user_id, processor_id) VALUES (%s, %s)",
+            (ids[role]["id"], processors[key]["processor_id"]),
+        )
+
     await conn.execute(
         """INSERT INTO project_processor (project_id, processor_id, added_by)
            VALUES (%s, %s, %s)""",

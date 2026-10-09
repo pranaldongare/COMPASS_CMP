@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-13 operations; 13 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+14 operations; 14 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
@@ -19,6 +19,7 @@
 | POST | `/users/{user_uuid}/reactivate` | `admin` | Full session; anonymous NO |
 | POST | `/users/{user_uuid}/role` | `admin` | Full session; anonymous NO |
 | DELETE | `/users/{user_uuid}/sessions` | `admin` | Full session; anonymous NO |
+| PUT | `/users/{user_uuid}/processors` | `admin` | Full session; anonymous NO |
 
 ## GET /users
 
@@ -62,6 +63,7 @@ Active DCOs and RCOs, for source ownership.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(*STAFF_ROLES))]`.
 - **Rules:** Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff.
 - All staff may read the limited lookup of active DCO/RCO owners; this does not expose the full account register.
+- `processor`: only those who collect for that processor - the people one of its sources can be handed to. (0050, 2026-10-09)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/users.py#L148).
 
 ## GET /users/staff
@@ -205,3 +207,17 @@ Force logout.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.ADMIN))]`.
 - **Rules:** Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/users.py#L432).
+
+## PUT /users/{user_uuid}/processors
+
+Set the processors a DCO or an RCO collects for.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `admin`; everyone else 403.
+- **Route guard:** `RequireAdmin`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.ADMIN))]`.
+- **Rules:** The whole set: what is not named is taken away. Only for a DCO (third-party processors) or an RCO (in-house), 422 otherwise; a processor whose sources they are still accountable for is not taken away (409 `processor_still_held`). The trail records `user.processors_set` with the processor uuids before and after. (2026-10-09)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/users.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/users/service.py).

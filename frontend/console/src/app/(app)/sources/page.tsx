@@ -28,10 +28,15 @@ import {
 } from "@/features/registry/components/source-owner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyRecords } from "@/components/ui/graphics";
-import { Badge, Button, Td, Tr } from "@/components/ui/primitives";
+import { Alert, Badge, Button, Td, Tr } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { useEnums } from "@/features/meta";
-import { useAllProcessors, useSources, useSuspendSource } from "@/features/registry";
+import {
+  useAllProcessors,
+  useProcessors,
+  useSources,
+  useSuspendSource,
+} from "@/features/registry";
 import type { DataSource } from "@/types";
 import { humanise } from "@/lib/format";
 import { useAuth, useToast } from "@/providers";
@@ -49,7 +54,13 @@ export default function SourcesPage() {
   const [q, setQ] = useFilterParam("q");
   // Narrowed to one processor's sources (2026-10-09).
   const [processor, setProcessor] = useFilterParam("processor");
-  const processors = useAllProcessors();
+  // A DCO or an RCO sees the sources of the processors they collect for and
+  // no others (0050); the server applies it, and the page says so.
+  const collector = me?.role === "dco" || me?.role === "rco";
+  const allProcessors = useAllProcessors();
+  const mine = useProcessors(collector ? { mine: true, limit: 100 } : { limit: 1 });
+  const processorOptions = collector ? (mine.data?.items ?? []) : (allProcessors.data ?? []);
+  const collectsForNone = collector && mine.isSuccess && mine.data.items.length === 0;
   const [unmappedFlag, setUnmappedFlag] = useFilterParam("unmapped");
   const [unownedFlag, setUnownedFlag] = useFilterParam("unowned");
   const unmapped = unmappedFlag === "1";
@@ -83,7 +94,7 @@ export default function SourcesPage() {
   // Which processor they may register under is the constraint, and the form
   // applies it — not whether they may at all.
   const canCreate =
-    canSuspend || me?.role === "dco_admin" || me?.role === "dco" || me?.role === "rco";
+    canSuspend || me?.role === "dco_admin" || (collector && !collectsForNone);
 
   async function onSuspend(uuid: string, name: string) {
     try {
@@ -113,6 +124,20 @@ export default function SourcesPage() {
         }
       />
 
+      {collector &&
+        (collectsForNone ? (
+          <Alert tone="warning" className="mb-4" title="You collect for no processor yet">
+            You see the data sources of the processors you collect for, and none is assigned to
+            you. Ask the administrator to add them on your account.
+          </Alert>
+        ) : mine.data?.items.length ? (
+          <p className="mb-4 text-sm text-text-muted">
+            The data sources of the processors you collect for:{" "}
+            {mine.data.items.map((p) => p.legal_name).join(", ")}. New sources are registered
+            under these.
+          </p>
+        ) : null)}
+
       <FilterBar>
         <SearchBox
           value={q}
@@ -129,7 +154,7 @@ export default function SourcesPage() {
             setProcessor(v);
             stack.reset();
           }}
-          options={(processors.data ?? []).map((p) => ({ value: p.processor_uuid, label: p.legal_name }))}
+          options={processorOptions.map((p) => ({ value: p.processor_uuid, label: p.legal_name }))}
           allLabel="All processors"
         />
         <FilterSelect
@@ -148,6 +173,8 @@ export default function SourcesPage() {
             organisation runs itself, and an error for one a third party
             operates - and only a person can tell those apart. So the system
             makes the set reviewable instead of guessing. */}
+        {/* Never theirs to see: a source with no processor is no processor's. */}
+        {!collector && (
         <div className="flex items-end">
           <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm transition-colors hover:bg-surface-hover has-[:checked]:border-accent-border has-[:checked]:bg-accent-subtle">
             <input
@@ -162,6 +189,7 @@ export default function SourcesPage() {
             <span className="whitespace-nowrap">No processor named</span>
           </label>
         </div>
+        )}
 
         {/* The routing queue, as a filter. A source nobody is accountable for
             cannot route a project, so this is the list somebody works through
