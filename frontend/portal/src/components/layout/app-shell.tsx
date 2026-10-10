@@ -111,7 +111,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* The page on one white rounded panel over the grey canvas, as in
             the console (2026-10-10). */}
         <main id="main" inert={mobileOpen} className="min-w-0 flex-1 px-3 py-4 lg:px-5">
-          <div className="min-h-[calc(100dvh-6rem)] rounded-2xl border border-border bg-surface px-4 py-6 shadow-[var(--shadow-card)] sm:px-6 lg:px-8">
+          <div className="min-h-[calc(100dvh-6rem)] rounded-2xl border border-border bg-[var(--content-bg)] px-4 py-6 sm:px-6 lg:px-8">
             {children}
           </div>
         </main>
@@ -151,10 +151,10 @@ function Header({
           aria-label={config.productName}
           className="group flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]"
         >
-          <BrandMark className="size-7 text-[var(--sidebar-badge)]" />
+          <BrandMark className="size-7 text-[var(--frame-accent)]" />
           <span className="leading-none">
             <span className="block text-lg font-bold tracking-tight">
-              <span className="text-[var(--sidebar-badge)]">{config.productName.slice(0, 3)}</span>
+              <span className="text-[var(--frame-accent)]">{config.productName.slice(0, 3)}</span>
               <span className="text-text">{config.productName.slice(3)}</span>
             </span>
           </span>
@@ -207,8 +207,8 @@ function Sidebar({
         id="sidebar-nav"
         aria-label="Main"
         className={cn(
-          // The indigo frame down the left (2026-10-10), the same in both themes.
-          "frame-side frame-scope no-print z-20 flex w-64 shrink-0 flex-col text-[var(--sidebar-text)]",
+          // White down the left (2026-10-10), with a hairline against the page.
+          "no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
           "lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)]",
           mobileOpen
             ? "fixed top-16 bottom-0 left-0 flex overflow-y-auto shadow-[var(--shadow-pop)]"
@@ -246,9 +246,9 @@ function Sidebar({
                           "group relative flex items-center gap-3 rounded-lg py-2 pl-3 pr-2 text-sm",
                           "transition-[background-color,color,box-shadow] duration-150",
                           "outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-badge)]",
-                          // Active: a white pill on the indigo.
+                          // Active: a grey pill, bold text and a blue icon.
                           active
-                            ? "bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)] shadow-[0_6px_18px_rgb(8_10_40/0.35)]"
+                            ? "bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)]"
                             : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",
                         )}
                       >

@@ -20,15 +20,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
 
-/* A thin scrollbar on the navy sidebar, so a long menu scrolls without a
-   bright track (2026-10-10). */
+/* A thin scrollbar on the sidebar, so a long menu scrolls without a heavy
+   track (2026-10-10). */
 .sidebar-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgb(255 255 255 / 0.18) transparent;
+  scrollbar-color: var(--border-strong) transparent;
 }
 
 
-/* The coloured frame (2026-10-10). Inside `.frame-scope` the colour tokens are
+/* The coloured top bar (2026-10-10). Inside `.frame-scope` the colour tokens are
    the frame's, so the logo, search, buttons and user menu inside it read as on
    a dark surface without each one knowing it. Menus and tooltips open in a
    portal, outside the scope, and keep the page's colours. */
@@ -40,9 +40,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   --surface-hover: #2a338f;
   --surface-raised: #232b80;
   --text: #ffffff;
-  --text-muted: var(--sidebar-text);
-  --text-subtle: var(--sidebar-label);
-  --border: var(--sidebar-border);
+  --text-muted: var(--frame-text);
+  --text-subtle: var(--frame-label);
+  --border: var(--frame-border);
   --border-strong: rgb(255 255 255 / 0.28);
   --accent-text: #c7d2fe;
   --accent-subtle: rgb(255 255 255 / 0.14);
@@ -57,30 +57,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     radial-gradient(28rem 7rem at 8% 0%, rgb(139 92 246 / 0.28), transparent 70%),
     radial-gradient(22rem 6rem at 92% 100%, rgb(56 189 248 / 0.2), transparent 70%),
     var(--frame-top);
-  background-color: var(--sidebar-bg);
+  background-color: var(--frame-bg);
   box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.1), 0 4px 18px rgb(17 20 66 / 0.22);
-}
-
-/* The sidebar: the same frame top to bottom, a violet glow at the top, a cyan
-   one at the foot, and a faint dot grid that fades out down the panel. No
-   `position` here: this sheet is unlayered and would beat the shell's sticky
-   and fixed utilities, and either of those already anchors the dot grid. */
-.frame-side {
-  isolation: isolate;
-  background:
-    radial-gradient(20rem 16rem at 0% 0%, rgb(139 92 246 / 0.26), transparent 70%),
-    radial-gradient(18rem 14rem at 100% 100%, rgb(56 189 248 / 0.22), transparent 70%),
-    var(--frame-side);
-  background-color: var(--sidebar-bg);
-}
-.frame-side::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image: radial-gradient(rgb(255 255 255 / 0.09) 1px, transparent 1px);
-  background-size: 18px 18px;
-  -webkit-mask-image: linear-gradient(180deg, #000, transparent 55%);
-  mask-image: linear-gradient(180deg, #000, transparent 55%);
 }

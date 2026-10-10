@@ -392,8 +392,10 @@ export function Th({ className, ...props }: React.ThHTMLAttributes<HTMLTableCell
     <th
       scope="col"
       className={cn(
-        "px-4 py-2.5 text-left text-2xs font-semibold uppercase tracking-wider",
-        "text-text-subtle border-b border-border bg-bg-subtle whitespace-nowrap",
+        // The sidebar's type (2026-10-10): Inter at 13px, medium, sentence
+        // case - not the tiny capitals - on a grey band.
+        "px-4 py-2.5 text-left text-[0.8125rem] font-medium",
+        "text-text-muted border-b border-border bg-bg-inset whitespace-nowrap",
         "first:rounded-tl-lg last:rounded-tr-lg",
         className,
       )}
@@ -412,7 +414,8 @@ export function Tr({ className, ...props }: React.HTMLAttributes<HTMLTableRowEle
   return (
     <tr
       className={cn(
-        "transition-colors hover:bg-surface-hover",
+        // Every other row a step of grey, so the eye keeps its line.
+        "transition-colors even:bg-bg-subtle hover:bg-bg-inset",
         // The last row's own border would double the container's.
         "last:[&>td]:border-b-0",
         className,

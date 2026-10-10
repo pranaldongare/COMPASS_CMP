@@ -53,21 +53,31 @@
   --grad-to: #1d5291;
   --brand-deep: #0e3a6b;
 
-  /* The sidebar and top bar (2026-10-10, third pass): an indigo frame that
-     deepens into COMPASS blue, the same in both themes - the product's frame,
-     not the page's. Text and labels hold 4.5:1 or better against the lightest
-     end; the current page is a white pill in it. */
-  --sidebar-bg: #1c2063;
-  --sidebar-text: #dfe3fb;
-  --sidebar-text-strong: #ffffff;
-  --sidebar-label: #b4bdf0;
-  --sidebar-hover: rgb(255 255 255 / 0.1);
-  --sidebar-border: rgb(255 255 255 / 0.12);
-  --sidebar-active: #ffffff;
-  --sidebar-active-text: #1c2063;
-  --sidebar-badge: #7dd3fc;
-  --frame-side: linear-gradient(180deg, #181b55 0%, #20287a 52%, #1f3d8e 100%);
+  /* The sidebar (2026-10-10, fourth pass): white - the theme's surface with a
+     hairline - and the current page a grey pill. It follows the theme through
+     these references. */
+  --sidebar-bg: var(--surface);
+  --sidebar-text: var(--text-muted);
+  --sidebar-text-strong: var(--text);
+  --sidebar-label: var(--text-subtle);
+  --sidebar-hover: var(--bg-subtle);
+  --sidebar-border: var(--border);
+  --sidebar-active: var(--bg-inset);
+  --sidebar-active-text: var(--text);
+  --sidebar-badge: var(--accent);
+
+  /* The top bar keeps the indigo frame, the same in both themes. Text and
+     labels hold 4.5:1 or better against its lightest end. */
+  --frame-bg: #1c2063;
+  --frame-text: #dfe3fb;
+  --frame-label: #b4bdf0;
+  --frame-border: rgb(255 255 255 / 0.12);
+  --frame-accent: #7dd3fc;
   --frame-top: linear-gradient(90deg, #181b55 0%, #232c82 48%, #24479a 100%);
+
+  /* The grey the page sits on inside the frame; cards and tables are white
+     on it. */
+  --content-bg: oklch(95.6% 0.006 255);
 
   /* Semantic. Never decorative — each means exactly one thing. */
   --success: oklch(58% 0.145 155);
@@ -114,6 +124,7 @@
   --bg-subtle: oklch(19.5% 0.013 262);
   --bg-inset: oklch(23.5% 0.015 262);
   --surface: oklch(21% 0.014 262);
+  --content-bg: oklch(18.5% 0.012 262);
   --surface-hover: oklch(25% 0.016 262);
   --surface-raised: oklch(24% 0.016 262);
 

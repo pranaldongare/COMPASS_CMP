@@ -8,6 +8,13 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **White sidebar, grey page** (2026-10-10): the sidebar is white with a
+  hairline and a grey pill for the current page; the top bar keeps the
+  indigo. The page panel is grey with white cards and tables on it; table
+  headers are a grey band and rows alternate white and grey. Table headers
+  and dashboard figure labels use the sidebar's type - Inter, 13px, medium,
+  sentence case - instead of small capitals. Supersedes the indigo sidebar
+  below.
 - **Indigo frame** (2026-10-10): the top bar and sidebar are an indigo
   gradient that deepens into COMPASS blue, with a soft violet and cyan light
   and a faint dot grid on the sidebar; the current page is a white pill. The

@@ -78,7 +78,7 @@ export function StatTile({
       />
 
       <div className="flex items-start justify-between gap-3">
-        <p className="text-2xs font-semibold uppercase tracking-wider text-text-subtle">
+        <p className="text-[0.8125rem] font-medium text-text-muted">
           {label}
         </p>
         {icon && (
