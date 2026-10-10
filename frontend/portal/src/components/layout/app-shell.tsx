@@ -110,8 +110,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Inert under the open drawer: not reachable by Tab, not read out. */}
         {/* The page on one white rounded panel over the grey canvas, as in
             the console (2026-10-10). */}
-        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 px-3 pb-4 sm:px-4 lg:pr-6 lg:pl-4">
-          <div className="min-h-[calc(100dvh-5rem)] rounded-2xl border border-border bg-surface px-4 py-6 shadow-[var(--shadow-card)] sm:px-6 lg:px-8">
+        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 px-3 pb-3 lg:pr-3 lg:pl-4">
+          <div className="min-h-[calc(100dvh-5.75rem)] rounded-2xl border border-border bg-surface px-4 py-6 shadow-[var(--shadow-card)] sm:px-6 lg:px-8">
             {children}
           </div>
         </main>
@@ -128,8 +128,11 @@ function Header({
   mobileOpen: boolean;
 }) {
   return (
-    <header className="no-print sticky top-0 z-30 bg-bg/95 backdrop-blur-sm">
-      <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-3 px-4 sm:px-6 lg:px-8">
+    // A navy bar floating over the canvas, like the sidebar (2026-10-10):
+    // inside `.navy-scope` the colour tokens are the navy's, so the logo,
+    // search, buttons and user menu read as on a dark surface.
+    <header className="no-print sticky top-0 z-30 bg-bg px-3 pt-3 pb-3">
+      <div className="navy-scope mx-auto flex h-14 w-full max-w-[1600px] items-center gap-3 rounded-2xl bg-[var(--sidebar-bg)] px-3 shadow-[var(--shadow-raised)] sm:px-4">
         <Button
           variant="ghost"
           size="icon"
@@ -209,9 +212,9 @@ function Sidebar({
         className={cn(
           // A navy panel floating on the canvas, as in the console (2026-10-10).
           "no-print z-20 flex w-64 shrink-0 flex-col bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
-          "lg:sticky lg:top-16 lg:ml-3 lg:h-[calc(100dvh-5rem)] lg:rounded-2xl lg:shadow-[var(--shadow-raised)]",
+          "lg:sticky lg:top-20 lg:ml-3 lg:h-[calc(100dvh-5.75rem)] lg:rounded-2xl lg:shadow-[var(--shadow-raised)]",
           mobileOpen
-            ? "fixed inset-y-16 left-0 flex overflow-y-auto rounded-r-2xl shadow-[var(--shadow-pop)]"
+            ? "fixed top-20 bottom-3 left-3 flex overflow-y-auto rounded-2xl shadow-[var(--shadow-pop)]"
             : "hidden lg:flex",
         )}
       >

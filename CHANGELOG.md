@@ -8,6 +8,10 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Navy top bar** (2026-10-10), console and portal: a dark rounded bar
+  floating over the canvas, lined up with the sidebar; inside it the colour
+  tokens are the navy's (`.navy-scope`), so logo, search, buttons and the
+  user menu read as on a dark surface.
 - **Navy sidebar** (2026-10-10), console and portal: the menu is a dark
   rounded panel floating on the canvas, the current page a bright COMPASS-blue
   pill; collapsed (console), it is an icon rail whose names show in a chip on
