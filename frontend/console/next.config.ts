@@ -23,6 +23,10 @@ const nextConfig: NextConfig = {
   // Never advertise the framework version to a scanner.
   poweredByHeader: false,
 
+  // No floating "N" button in development (2026-10-10): it sat over the
+  // sidebar's foot. Compile and runtime errors still surface in the overlay.
+  devIndicators: false,
+
   // Fail the build on a type error rather than shipping it. (Next 16 removed the
   // `eslint` key; linting is its own step - `npm run lint` - and its own CI job.)
   typescript: { ignoreBuildErrors: false },

@@ -50,12 +50,14 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={client}>
       {children}
-      {!config.isProduction && <Devtools />}
+      {/* Off unless asked for (2026-10-10): its floating button sat over the
+          page. NEXT_PUBLIC_QUERY_DEVTOOLS=1 brings it back while developing. */}
+      {!config.isProduction && process.env.NEXT_PUBLIC_QUERY_DEVTOOLS === "1" && <Devtools />}
     </QueryClientProvider>
   );
 }
 
-/** Devtools are dev-only and lazily loaded, so they never reach a production bundle. */
+/** Devtools are dev-only, opt-in and lazily loaded, so they never reach a production bundle. */
 function Devtools() {
   const [Panel, setPanel] = React.useState<React.ComponentType | null>(null);
 

@@ -8,6 +8,11 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **No floating dev buttons** (2026-10-10): the Next.js dev indicator ("N",
+  bottom-left) is off in both apps (`devIndicators: false`; errors still
+  show), and the TanStack Query devtools button is opt-in through
+  `NEXT_PUBLIC_QUERY_DEVTOOLS=1`. Development only - neither was ever in a
+  production build.
 - **Blue pill sidebar** (2026-10-10, chosen from three mock-ups): every link's
   icon sits on a small tile tinted by its section (blue, violet, teal,
   amber); the current page is a blue gradient pill with white text; a faint
