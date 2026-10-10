@@ -126,8 +126,8 @@ export function Card({
   return (
     <div
       className={cn(
-        // Grey on the white page (2026-10-10); fields inside stay white.
-        "rounded-lg border border-border bg-bg-subtle shadow-[var(--shadow-card)]",
+        // White on the grey page (2026-10-10).
+        "rounded-lg border border-border bg-surface shadow-[var(--shadow-card)]",
         className,
       )}
       {...props}
@@ -382,7 +382,7 @@ export function EmptyState({
 /* ===================================================================== Table */
 export function Table({ className, ...props }: React.TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="scroll-x rounded-lg border border-border bg-bg-subtle shadow-[var(--shadow-card)] [--scroll-bg:var(--bg-subtle)]">
+    <div className="scroll-x rounded-lg border border-border bg-surface shadow-[var(--shadow-card)]">
       <table className={cn("w-full text-sm", className)} {...props} />
     </div>
   );
@@ -396,7 +396,7 @@ export function Th({ className, ...props }: React.ThHTMLAttributes<HTMLTableCell
         // The sidebar's type (2026-10-10): Inter at 13px, medium, sentence
         // case - not the tiny capitals - on a grey band.
         "px-4 py-2.5 text-left text-[0.8125rem] font-medium",
-        "text-text-muted border-b border-border bg-bg-inset whitespace-nowrap",
+        "text-text-muted border-b border-border bg-bg-subtle whitespace-nowrap",
         "first:rounded-tl-lg last:rounded-tr-lg",
         className,
       )}
@@ -415,8 +415,7 @@ export function Tr({ className, ...props }: React.HTMLAttributes<HTMLTableRowEle
   return (
     <tr
       className={cn(
-        // Every other row a step of grey, so the eye keeps its line.
-        "transition-colors even:bg-bg-inset/45 hover:bg-bg-inset",
+        "transition-colors hover:bg-surface-hover",
         // The last row's own border would double the container's.
         "last:[&>td]:border-b-0",
         className,

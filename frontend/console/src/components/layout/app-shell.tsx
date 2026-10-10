@@ -148,12 +148,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         />
 
         {/* Inert under the open drawer: not reachable by Tab, not read out. */}
-        {/* The page sits on one white rounded panel (2026-10-10); its cards
-            and tables are grey on it. */}
-        {/* The gutter round the panel is white like the frame (2026-10-10),
-            so the only grey is in the cards and tables. */}
-        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 bg-surface px-3 py-4 lg:px-5">
-          <div className="min-h-[calc(100dvh-6rem)] rounded-2xl border border-border bg-surface px-4 py-6 shadow-[var(--shadow-card)] sm:px-6 lg:px-8">
+        {/* The page straight on the grey (2026-10-10): no panel, border or
+            rounding round it; its cards and tables are white. */}
+        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 bg-[var(--page-bg)]">
+          <div className="min-h-[calc(100dvh-4rem)] px-4 py-6 sm:px-6 lg:px-8">
             {children}
           </div>
         </main>

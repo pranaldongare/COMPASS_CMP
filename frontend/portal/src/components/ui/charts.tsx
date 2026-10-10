@@ -53,7 +53,7 @@ export function StatTile({
   // so a component variable typed as `Link | "div"` cannot accept an optional
   // one without casting the type away.
   const classes = cn(
-    "lift group relative block overflow-hidden rounded-lg border bg-bg-subtle p-4",
+    "lift group relative block overflow-hidden rounded-lg border bg-surface p-4",
     "shadow-[var(--shadow-card)]",
     tone === "attention" ? "border-warning-border" : "border-border",
     href &&

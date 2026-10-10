@@ -8,6 +8,11 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Grey page, white cards** (2026-10-10): the top bar and sidebar stay
+  white (in dark mode too); the page sits straight on a grey background
+  (--page-bg) with no panel, border or rounding round it; the cards, figure
+  tiles and tables on it are white again, with a light grey table header
+  band and no row striping. Supersedes the grey containers below.
 - **White frame, grey containers** (2026-10-10): the top bar and sidebar
   are both white with a hairline (current page a grey pill); the page panel
   is white again, and the cards, figure tiles and tables on it are grey,
