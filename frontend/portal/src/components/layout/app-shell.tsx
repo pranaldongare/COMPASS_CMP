@@ -128,10 +128,9 @@ function Header({
   mobileOpen: boolean;
 }) {
   return (
-    // The COMPASS deep-blue bar across the top, like the sidebar (2026-10-10):
-    // inside `.navy-scope` the colour tokens are the bar's, so the logo,
-    // search, buttons and user menu read as on a dark surface.
-    <header className="navy-scope no-print sticky top-0 z-30 bg-[var(--sidebar-bg)] shadow-[var(--shadow-sm)]">
+    // A plain bar across the top, like the sidebar (2026-10-10): the page's
+    // surface and a hairline, no colour of its own.
+    <header className="no-print sticky top-0 z-30 border-b border-border bg-surface">
       <div className="flex h-16 w-full items-center gap-3 px-4 sm:px-6">
         <Button
           variant="ghost"
@@ -211,7 +210,7 @@ function Sidebar({
         aria-label="Main"
         className={cn(
           // A navy panel floating on the canvas, as in the console (2026-10-10).
-          "no-print z-20 flex w-64 shrink-0 flex-col bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
+          "no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
           "lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)]",
           mobileOpen
             ? "fixed top-16 bottom-0 left-0 flex overflow-y-auto shadow-[var(--shadow-pop)]"
@@ -251,7 +250,7 @@ function Sidebar({
                           "outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-badge)]",
                           // Active: a bright COMPASS-blue pill on the navy.
                           active
-                            ? "bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)] shadow-[0_2px_8px_rgb(0_0_0/0.18)]"
+                            ? "bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)]"
                             : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",
                         )}
                       >
@@ -259,7 +258,7 @@ function Sidebar({
                           className={cn(
                             "size-[1.125rem] shrink-0 transition-colors",
                             active
-                              ? "text-[var(--sidebar-active-text)]"
+                              ? "text-accent"
                               : "text-[var(--sidebar-label)] group-hover:text-[var(--sidebar-text-strong)]",
                           )}
                           aria-hidden="true"

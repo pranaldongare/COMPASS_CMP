@@ -183,10 +183,9 @@ function Header({
   const apple = useIsApple();
 
   return (
-    // The COMPASS deep-blue bar across the top, like the sidebar (2026-10-10):
-    // inside `.navy-scope` the colour tokens are the bar's, so the logo,
-    // search, buttons and user menu read as on a dark surface.
-    <header className="navy-scope no-print sticky top-0 z-30 bg-[var(--sidebar-bg)] shadow-[var(--shadow-sm)]">
+    // A plain bar across the top, like the sidebar (2026-10-10): the page's
+    // surface and a hairline, no colour of its own.
+    <header className="no-print sticky top-0 z-30 border-b border-border bg-surface">
       <div className="flex h-16 w-full items-center gap-3 px-4 sm:px-6">
         <Button
           variant="ghost"
@@ -365,7 +364,7 @@ function Sidebar({
         className={cn(
           // A navy panel floating on the canvas (2026-10-10): rounded, set in
           // from the edge, the same in both themes.
-          "no-print z-20 flex w-64 shrink-0 flex-col bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
+          "no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
           "lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:transition-[width] lg:duration-200",
           folded && "lg:w-[4.5rem]",
           mobileOpen
@@ -421,7 +420,7 @@ function Sidebar({
                         folded && "lg:size-11 lg:justify-center lg:p-0",
                         // Active: a bright COMPASS-blue pill on the navy.
                         active
-                          ? "bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)] shadow-[0_2px_8px_rgb(0_0_0/0.18)]"
+                          ? "bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)]"
                           : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",
                       )}
                     >
@@ -429,7 +428,7 @@ function Sidebar({
                         className={cn(
                           "size-[1.125rem] shrink-0 transition-colors",
                           active
-                            ? "text-[var(--sidebar-active-text)]"
+                            ? "text-accent"
                             : "text-[var(--sidebar-label)] group-hover:text-[var(--sidebar-text-strong)]",
                         )}
                         aria-hidden="true"

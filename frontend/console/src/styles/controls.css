@@ -27,24 +27,3 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   scrollbar-color: rgb(255 255 255 / 0.18) transparent;
 }
 
-/* The navy chrome (2026-10-10): the top bar, like the sidebar. Inside it the
-   colour tokens are the navy's, so every component placed there - logo,
-   search, icon buttons, the user menu - reads as on a dark surface without
-   knowing it. */
-.navy-scope {
-  --bg: var(--sidebar-bg);
-  --bg-subtle: #11406f;
-  --bg-inset: #134676;
-  --surface: #154a7c;
-  --surface-hover: #1a5389;
-  --surface-raised: #154a7c;
-  --text: #ffffff;
-  --text-muted: var(--sidebar-text);
-  --text-subtle: var(--sidebar-label);
-  --border: var(--sidebar-border);
-  --border-strong: rgb(255 255 255 / 0.24);
-  --accent-text: #c3e1ff;
-  --accent-subtle: #1b5289;
-  --accent-border: #3d74ab;
-  color: var(--text);
-}

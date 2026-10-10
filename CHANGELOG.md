@@ -8,6 +8,10 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Plain frame** (2026-10-10): the top bar and sidebar have no colour of
+  their own - white (the theme's surface) with a hairline border, square and
+  flush; the current page is a soft grey pill with bold text and a blue icon.
+  Supersedes the deep-blue and navy versions below.
 - **Deep-blue frame, square** (2026-10-10): the top bar and sidebar are
   COMPASS deep blue (the sign-in panel's #0e3a6b) instead of navy, flush to
   the edges with no rounded corners; the current page is a white pill with
