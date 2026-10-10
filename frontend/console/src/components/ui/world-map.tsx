@@ -35,10 +35,6 @@ function project(lon: number, lat: number): [number, number] {
 /** Where the arcs meet: Bengaluru, Karnataka, where the product is run from. */
 const HUB = project(77.6, 13);
 
-/** Where the Bengaluru pin sits, as a share of the picture - for the label
- *  the sign-in panel lays over it. */
-export const HUB_AT = { left: (HUB[0] / WIDTH) * 100, top: (HUB[1] / HEIGHT) * 100 };
-
 /* India and, inside it, Karnataka - outlines in degrees, simplified to the
    scale of a 3-degree cell. Their cells are drawn in their own colours. */
 const INDIA: [number, number][] = [
@@ -60,17 +56,36 @@ function inside([x, y]: [number, number], poly: [number, number][]): boolean {
   }
   return hit;
 }
-/** The places the arcs reach. Only a picture of reach, not a list of sites. */
+/** The places the arcs reach: Samsung's sites around the world - its head
+ *  office and R&D centres, and the regional offices - at city precision, for
+ *  the picture only. */
 const NODES = [
-  [-74, 41],
-  [-46, -23],
-  [0, 51],
-  [8.7, 50],
-  [55, 25],
-  [28, -26],
-  [104, 1.3],
-  [139.7, 35.7],
-  [151, -34],
+  [127.0, 37.3], // Suwon, head office
+  [77.4, 28.5], // Noida
+  [90.4, 23.8], // Dhaka
+  [116.4, 39.9], // Beijing
+  [118.8, 32.1], // Nanjing
+  [139.6, 35.5], // Tokyo
+  [105.8, 21.0], // Hanoi
+  [106.8, -6.2], // Jakarta
+  [151.2, -33.9], // Sydney
+  [55.3, 25.2], // Dubai
+  [34.8, 32.1], // Tel Aviv
+  [31.2, 30.0], // Cairo
+  [28.0, -26.2], // Johannesburg
+  [37.6, 55.8], // Moscow
+  [30.5, 50.5], // Kyiv
+  [21.0, 52.2], // Warsaw
+  [8.6, 50.1], // Frankfurt
+  [2.35, 48.9], // Paris
+  [-0.5, 51.4], // Staines, UK
+  [-73.6, 45.5], // Montreal
+  [-79.4, 43.7], // Toronto
+  [-74.0, 40.7], // New York
+  [-96.7, 33.0], // Plano
+  [-122.1, 37.4], // Mountain View
+  [-99.1, 19.4], // Mexico City
+  [-47.1, -22.9], // Campinas
 ].map(([lon, lat]) => project(lon, lat));
 
 /** A cell's shade: mostly dim, brighter towards the lit places; India and
@@ -83,9 +98,9 @@ function tier(x: number, y: number, row: number, col: number): 0 | 1 | 2 | 3 | 4
   if (inside(lonLat, KARNATAKA)) return 4;
   if (inside(lonLat, INDIA)) return 3;
   const near = Math.min(...[HUB, ...NODES].map(([nx, ny]) => Math.hypot(nx - x, ny - y)));
-  if (near < 22) return 2;
+  if (near < 16) return 2;
   const noise = ((row * 73856093) ^ (col * 19349663)) >>> 0;
-  if (near < 60 || noise % 7 === 0) return 1;
+  if (near < 40 || noise % 7 === 0) return 1;
   return 0;
 }
 
@@ -142,18 +157,19 @@ export function WorldHoneycomb({ className }: { className?: string }) {
           key={d}
           d={d}
           className="wm-arc"
-          style={{ animationDelay: `${i * -0.35}s` }}
+          style={{ animationDelay: `${(i % 7) * -0.3}s` }}
           fill="none"
           stroke={`url(#${id}-arc)`}
-          strokeWidth="1.6"
+          strokeWidth="1.2"
+          strokeOpacity="0.85"
           strokeLinecap="round"
         />
       ))}
 
       {NODES.map(([x, y], i) => (
         <g key={`${x}-${y}`}>
-          <circle className="wm-pulse" style={{ animationDelay: `${i * 0.3}s` }} cx={x} cy={y} r="6" fill="none" stroke="#8fd0ff" strokeWidth="1.2" />
-          <circle cx={x} cy={y} r="3.2" fill="#ffffff" />
+          <circle className="wm-pulse" style={{ animationDelay: `${(i % 9) * 0.3}s` }} cx={x} cy={y} r="5" fill="none" stroke="#8fd0ff" strokeWidth="1.2" />
+          <circle cx={x} cy={y} r="2.8" fill="#ffffff" />
         </g>
       ))}
 

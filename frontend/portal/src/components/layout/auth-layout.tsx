@@ -10,8 +10,8 @@
  * logo heads the form: a person opening a consent link on a phone at a
  * collection site should see the form without scrolling past decoration.
  *
- * The panel's picture (2026-10-10) is the world as a honeycomb, the places
- * consent is collected joined by arcs to one hub, over a faint honeycomb, with
+ * The panel's picture (2026-10-10) is the world as a honeycomb, Samsung's
+ * sites round the world joined by arcs to Bengaluru, over a faint honeycomb, with
  * three glass chips naming what the product keeps: decorative, and still for
  * anyone who asks for reduced motion.
  *
@@ -21,12 +21,12 @@
  */
 "use client";
 
-import { CircleHelp, LockKeyhole, MapPin, Scale, ShieldCheck } from "lucide-react";
+import { CircleHelp, LockKeyhole, Scale, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
 import { BrandMark } from "@/components/ui/graphics";
-import { HUB_AT, HoneycombBackdrop, WorldHoneycomb } from "@/components/ui/world-map";
+import { HoneycombBackdrop, WorldHoneycomb } from "@/components/ui/world-map";
 import { config } from "@/lib/config";
 
 export function AuthLayout({
@@ -69,16 +69,6 @@ export function AuthLayout({
             <WorldHoneycomb className="w-full drop-shadow-[0_8px_30px_rgb(10_30_70/0.45)]" />
             <AuthChip className="top-[4%] left-[2%]" icon={ShieldCheck} label="Consent recorded" />
             <AuthChip className="top-[0%] right-[2%] [animation-delay:-2s]" icon={LockKeyhole} label="Data sealed" />
-            {/* Bengaluru, Karnataka: where the arcs meet. */}
-            <span
-              aria-hidden="true"
-              className="absolute flex -translate-x-1/2 translate-y-3 items-center gap-1.5 rounded-lg border border-[#ffc96b]/50 bg-[#0a2547]/80 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white shadow-[0_6px_18px_rgb(5_20_50/0.45)] backdrop-blur-sm"
-              style={{ left: `${HUB_AT.left}%`, top: `${HUB_AT.top}%` }}
-            >
-              <MapPin className="size-3.5 text-[#ffc96b]" />
-              Bengaluru, Karnataka
-              <span className="font-medium text-white/70">India</span>
-            </span>
             <AuthChip className="bottom-[2%] left-[14%] [animation-delay:-4s]" icon={Scale} label="Rights honoured" />
           </div>
           <p className="mt-6 max-w-md text-center text-lg leading-relaxed font-semibold text-white">
