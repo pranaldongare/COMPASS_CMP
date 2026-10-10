@@ -33,18 +33,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
    knowing it. */
 .navy-scope {
   --bg: var(--sidebar-bg);
-  --bg-subtle: #142236;
-  --bg-inset: #1a2a42;
-  --surface: #16253b;
-  --surface-hover: #1d2e48;
-  --surface-raised: #1a2a42;
+  --bg-subtle: #11406f;
+  --bg-inset: #134676;
+  --surface: #154a7c;
+  --surface-hover: #1a5389;
+  --surface-raised: #154a7c;
   --text: #ffffff;
   --text-muted: var(--sidebar-text);
   --text-subtle: var(--sidebar-label);
   --border: var(--sidebar-border);
-  --border-strong: rgb(255 255 255 / 0.18);
-  --accent-text: #93c0f0;
-  --accent-subtle: #17304f;
-  --accent-border: #2f5683;
+  --border-strong: rgb(255 255 255 / 0.24);
+  --accent-text: #c3e1ff;
+  --accent-subtle: #1b5289;
+  --accent-border: #3d74ab;
   color: var(--text);
 }

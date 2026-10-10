@@ -8,6 +8,10 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Deep-blue frame, square** (2026-10-10): the top bar and sidebar are
+  COMPASS deep blue (the sign-in panel's #0e3a6b) instead of navy, flush to
+  the edges with no rounded corners; the current page is a white pill with
+  blue text.
 - **Navy top bar** (2026-10-10), console and portal: a dark rounded bar
   floating over the canvas, lined up with the sidebar; inside it the colour
   tokens are the navy's (`.navy-scope`), so logo, search, buttons and the

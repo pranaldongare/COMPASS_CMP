@@ -53,16 +53,18 @@
   --grad-to: #1d5291;
   --brand-deep: #0e3a6b;
 
-  /* The sidebar (2026-10-10): a navy panel floating on the canvas, the same
-     in both themes - the product's frame, not the page's. */
-  --sidebar-bg: #0f1b2d;
-  --sidebar-text: #a9b6c9;
+  /* The sidebar and top bar (2026-10-10): the COMPASS deep blue of the
+     sign-in panel, the same in both themes - the product's frame, not the
+     page's. The current page is a white pill in it. */
+  --sidebar-bg: #0e3a6b;
+  --sidebar-text: #d3e0ef;
   --sidebar-text-strong: #ffffff;
-  --sidebar-label: #8796ad;
-  --sidebar-hover: rgb(255 255 255 / 0.07);
-  --sidebar-border: rgb(255 255 255 / 0.09);
-  --sidebar-active: #2f72bb;
-  --sidebar-badge: #5cc3ff;
+  --sidebar-label: #a3bfdf;
+  --sidebar-hover: rgb(255 255 255 / 0.1);
+  --sidebar-border: rgb(255 255 255 / 0.14);
+  --sidebar-active: #ffffff;
+  --sidebar-active-text: #0e3a6b;
+  --sidebar-badge: #7dd3fc;
 
   /* Semantic. Never decorative — each means exactly one thing. */
   --success: oklch(58% 0.145 155);
@@ -134,14 +136,15 @@
   --grad-to: #245a98;
   --brand-deep: #0b2a4d;
 
-  --sidebar-bg: #0c1626;
-  --sidebar-text: #a3b0c3;
+  --sidebar-bg: #0b2f57;
+  --sidebar-text: #cfdcec;
   --sidebar-text-strong: #ffffff;
-  --sidebar-label: #8392a9;
-  --sidebar-hover: rgb(255 255 255 / 0.06);
-  --sidebar-border: rgb(255 255 255 / 0.08);
-  --sidebar-active: #2f72bb;
-  --sidebar-badge: #5cc3ff;
+  --sidebar-label: #9fbadb;
+  --sidebar-hover: rgb(255 255 255 / 0.09);
+  --sidebar-border: rgb(255 255 255 / 0.12);
+  --sidebar-active: #ffffff;
+  --sidebar-active-text: #0b2f57;
+  --sidebar-badge: #7dd3fc;
 
   --success: oklch(72% 0.140 155);
   --success-subtle: oklch(27.5% 0.048 155);

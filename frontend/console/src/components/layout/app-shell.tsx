@@ -140,7 +140,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         pathname={pathname}
       />
 
-      <div className="mx-auto flex w-full max-w-[1600px]">
+      <div className="flex w-full">
         <Sidebar
           sections={sidebarFor(me)}
           pathname={pathname}
@@ -154,8 +154,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Inert under the open drawer: not reachable by Tab, not read out. */}
         {/* The page sits on one white rounded panel over the grey canvas
             (2026-10-10), the sidebar and header around it. */}
-        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 px-3 pb-3 lg:pr-3 lg:pl-4">
-          <div className="min-h-[calc(100dvh-5.75rem)] rounded-2xl border border-border bg-surface px-4 py-6 shadow-[var(--shadow-card)] sm:px-6 lg:px-8">
+        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 px-3 py-4 lg:px-5">
+          <div className="min-h-[calc(100dvh-6rem)] rounded-2xl border border-border bg-surface px-4 py-6 shadow-[var(--shadow-card)] sm:px-6 lg:px-8">
             {children}
           </div>
         </main>
@@ -183,11 +183,11 @@ function Header({
   const apple = useIsApple();
 
   return (
-    // A navy bar floating over the canvas, like the sidebar (2026-10-10):
-    // inside `.navy-scope` the colour tokens are the navy's, so the logo,
+    // The COMPASS deep-blue bar across the top, like the sidebar (2026-10-10):
+    // inside `.navy-scope` the colour tokens are the bar's, so the logo,
     // search, buttons and user menu read as on a dark surface.
-    <header className="no-print sticky top-0 z-30 bg-bg px-3 pt-3 pb-3">
-      <div className="navy-scope mx-auto flex h-14 w-full max-w-[1600px] items-center gap-3 rounded-2xl bg-[var(--sidebar-bg)] px-3 shadow-[var(--shadow-raised)] sm:px-4">
+    <header className="navy-scope no-print sticky top-0 z-30 bg-[var(--sidebar-bg)] shadow-[var(--shadow-sm)]">
+      <div className="flex h-16 w-full items-center gap-3 px-4 sm:px-6">
         <Button
           variant="ghost"
           size="icon"
@@ -366,10 +366,10 @@ function Sidebar({
           // A navy panel floating on the canvas (2026-10-10): rounded, set in
           // from the edge, the same in both themes.
           "no-print z-20 flex w-64 shrink-0 flex-col bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
-          "lg:sticky lg:top-20 lg:ml-3 lg:h-[calc(100dvh-5.75rem)] lg:rounded-2xl lg:shadow-[var(--shadow-raised)] lg:transition-[width] lg:duration-200",
+          "lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:transition-[width] lg:duration-200",
           folded && "lg:w-[4.5rem]",
           mobileOpen
-            ? "fixed top-20 bottom-3 left-3 flex overflow-y-auto rounded-2xl shadow-[var(--shadow-pop)]"
+            ? "fixed top-16 bottom-0 left-0 flex overflow-y-auto shadow-[var(--shadow-pop)]"
             : "hidden lg:flex",
         )}
       >
@@ -421,7 +421,7 @@ function Sidebar({
                         folded && "lg:size-11 lg:justify-center lg:p-0",
                         // Active: a bright COMPASS-blue pill on the navy.
                         active
-                          ? "bg-[var(--sidebar-active)] font-medium text-[var(--sidebar-text-strong)] shadow-[0_4px_14px_rgb(47_114_187/0.45)]"
+                          ? "bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)] shadow-[0_2px_8px_rgb(0_0_0/0.18)]"
                           : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",
                       )}
                     >
@@ -429,7 +429,7 @@ function Sidebar({
                         className={cn(
                           "size-[1.125rem] shrink-0 transition-colors",
                           active
-                            ? "text-[var(--sidebar-text-strong)]"
+                            ? "text-[var(--sidebar-active-text)]"
                             : "text-[var(--sidebar-label)] group-hover:text-[var(--sidebar-text-strong)]",
                         )}
                         aria-hidden="true"
