@@ -128,9 +128,10 @@ function Header({
   mobileOpen: boolean;
 }) {
   return (
-    // A plain bar across the top, like the sidebar (2026-10-10): the page's
-    // surface and a hairline, no colour of its own.
-    <header className="no-print sticky top-0 z-30 border-b border-border bg-surface">
+    // The indigo frame across the top, like the sidebar (2026-10-10): inside
+    // `.frame-scope` the colour tokens are the frame's, so the logo, search,
+    // buttons and user menu read as on a dark surface.
+    <header className="frame-top frame-scope no-print sticky top-0 z-30">
       <div className="flex h-16 w-full items-center gap-3 px-4 sm:px-6">
         <Button
           variant="ghost"
@@ -147,17 +148,14 @@ function Header({
         {/* The COMPASS lockup, as on the sign-in screen and the console. */}
         <Link
           href="/my-consents"
-          aria-label={`${config.productName} - ${config.appName}`}
+          aria-label={config.productName}
           className="group flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]"
         >
-          <BrandMark className="size-7 text-accent-text" />
+          <BrandMark className="size-7 text-[var(--sidebar-badge)]" />
           <span className="leading-none">
             <span className="block text-lg font-bold tracking-tight">
-              <span className="text-accent-text">{config.productName.slice(0, 3)}</span>
-              <span className="text-text-muted">{config.productName.slice(3)}</span>
-            </span>
-            <span className="mt-0.5 hidden text-2xs font-medium tracking-wide text-text-subtle sm:block">
-              {config.appName}
+              <span className="text-[var(--sidebar-badge)]">{config.productName.slice(0, 3)}</span>
+              <span className="text-text">{config.productName.slice(3)}</span>
             </span>
           </span>
         </Link>
@@ -209,8 +207,8 @@ function Sidebar({
         id="sidebar-nav"
         aria-label="Main"
         className={cn(
-          // A navy panel floating on the canvas, as in the console (2026-10-10).
-          "no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
+          // The indigo frame down the left (2026-10-10), the same in both themes.
+          "frame-side frame-scope no-print z-20 flex w-64 shrink-0 flex-col text-[var(--sidebar-text)]",
           "lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)]",
           mobileOpen
             ? "fixed top-16 bottom-0 left-0 flex overflow-y-auto shadow-[var(--shadow-pop)]"
@@ -248,9 +246,9 @@ function Sidebar({
                           "group relative flex items-center gap-3 rounded-lg py-2 pl-3 pr-2 text-sm",
                           "transition-[background-color,color,box-shadow] duration-150",
                           "outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-badge)]",
-                          // Active: a bright COMPASS-blue pill on the navy.
+                          // Active: a white pill on the indigo.
                           active
-                            ? "bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)]"
+                            ? "bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)] shadow-[0_6px_18px_rgb(8_10_40/0.35)]"
                             : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",
                         )}
                       >

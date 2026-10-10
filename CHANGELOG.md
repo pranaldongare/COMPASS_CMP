@@ -8,6 +8,12 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Indigo frame** (2026-10-10): the top bar and sidebar are an indigo
+  gradient that deepens into COMPASS blue, with a soft violet and cyan light
+  and a faint dot grid on the sidebar; the current page is a white pill. The
+  top bar shows only COMPASS (no "Consent Management" line) and the account
+  menu is just the initials circle. Same in both themes; console and portal.
+  Supersedes the plain frame below.
 - **Plain frame** (2026-10-10): the top bar and sidebar have no colour of
   their own - white (the theme's surface) with a hairline border, square and
   flush; the current page is a soft grey pill with bold text and a blue icon.

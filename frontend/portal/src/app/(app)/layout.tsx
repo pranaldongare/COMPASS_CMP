@@ -49,9 +49,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 function ShellSkeleton() {
   return (
     <div className="min-h-dvh bg-bg">
-      <div className="h-16 border-b border-border bg-surface" />
+      <div className="frame-top h-16" />
       <div className="mx-auto flex w-full max-w-[1600px]">
-        <div className="hidden w-60 shrink-0 border-r border-border p-3 lg:block">
+        <div className="frame-side frame-scope relative hidden w-64 shrink-0 p-3 lg:block">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="mb-1.5 h-9 w-full" />
           ))}
