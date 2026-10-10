@@ -73,3 +73,83 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .sidebar-glow {
   background-image: radial-gradient(120% 22% at 50% 104%, rgb(47 114 187 / 0.1), transparent 70%);
 }
+
+/* Form fields with icon tiles (2026-10-10, "Outlined with icon tiles", chosen
+   from three): an email, phone, date, password or name field carries a small
+   tinted tile at its start, drawn in CSS so no form changes shape. Red when
+   the field is in error. The sign-in screens keep their own icons. */
+input.control[type='email']:not(.auth-form input),
+input.control[autocomplete='email']:not(.auth-form input),
+input.control[type='tel']:not(.auth-form input),
+input.control[autocomplete='tel']:not(.auth-form input),
+input.control[type='date']:not(.auth-form input),
+input.control[type='datetime-local']:not(.auth-form input),
+input.control[type='password']:not(.auth-form input),
+input.control[autocomplete='name']:not(.auth-form input),
+input.control[autocomplete='given-name']:not(.auth-form input),
+input.control[autocomplete='family-name']:not(.auth-form input) {
+  background-repeat: no-repeat;
+  background-position: 6px center;
+  background-size: 28px 28px;
+  padding-left: 2.75rem;
+}
+input.control[type='email']:not(.auth-form input),
+input.control[autocomplete='email']:not(.auth-form input) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='8' fill='%23eef4fb'/><g transform='translate(6 6) scale(0.6667)' fill='none' stroke='%232f72bb' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='5' width='18' height='14' rx='2'/><path d='m3 7 9 6 9-6'/></g></svg>");
+}
+.dark input.control[type='email']:not(.auth-form input),
+.dark input.control[autocomplete='email']:not(.auth-form input) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='8' fill='%2315283f'/><g transform='translate(6 6) scale(0.6667)' fill='none' stroke='%2393c0f0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='5' width='18' height='14' rx='2'/><path d='m3 7 9 6 9-6'/></g></svg>");
+}
+input.control[type='email'][aria-invalid="true"]:not(.auth-form input),
+input.control[autocomplete='email'][aria-invalid="true"]:not(.auth-form input) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='8' fill='%23fdecec'/><g transform='translate(6 6) scale(0.6667)' fill='none' stroke='%23c0262d' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='5' width='18' height='14' rx='2'/><path d='m3 7 9 6 9-6'/></g></svg>");
+}
+input.control[type='tel']:not(.auth-form input),
+input.control[autocomplete='tel']:not(.auth-form input) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='8' fill='%23eef4fb'/><g transform='translate(6 6) scale(0.6667)' fill='none' stroke='%232f72bb' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2'/></g></svg>");
+}
+.dark input.control[type='tel']:not(.auth-form input),
+.dark input.control[autocomplete='tel']:not(.auth-form input) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='8' fill='%2315283f'/><g transform='translate(6 6) scale(0.6667)' fill='none' stroke='%2393c0f0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2'/></g></svg>");
+}
+input.control[type='tel'][aria-invalid="true"]:not(.auth-form input),
+input.control[autocomplete='tel'][aria-invalid="true"]:not(.auth-form input) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='8' fill='%23fdecec'/><g transform='translate(6 6) scale(0.6667)' fill='none' stroke='%23c0262d' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2'/></g></svg>");
+}
+input.control[type='date']:not(.auth-form input),
+input.control[type='datetime-local']:not(.auth-form input) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='8' fill='%23eef4fb'/><g transform='translate(6 6) scale(0.6667)' fill='none' stroke='%232f72bb' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='18' rx='2'/><path d='M16 2v4M8 2v4M3 10h18'/></g></svg>");
+}
+.dark input.control[type='date']:not(.auth-form input),
+.dark input.control[type='datetime-local']:not(.auth-form input) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='8' fill='%2315283f'/><g transform='translate(6 6) scale(0.6667)' fill='none' stroke='%2393c0f0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='18' rx='2'/><path d='M16 2v4M8 2v4M3 10h18'/></g></svg>");
+}
+input.control[type='date'][aria-invalid="true"]:not(.auth-form input),
+input.control[type='datetime-local'][aria-invalid="true"]:not(.auth-form input) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='8' fill='%23fdecec'/><g transform='translate(6 6) scale(0.6667)' fill='none' stroke='%23c0262d' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='18' rx='2'/><path d='M16 2v4M8 2v4M3 10h18'/></g></svg>");
+}
+input.control[type='password']:not(.auth-form input) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='8' fill='%23eef4fb'/><g transform='translate(6 6) scale(0.6667)' fill='none' stroke='%232f72bb' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></g></svg>");
+}
+.dark input.control[type='password']:not(.auth-form input) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='8' fill='%2315283f'/><g transform='translate(6 6) scale(0.6667)' fill='none' stroke='%2393c0f0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></g></svg>");
+}
+input.control[type='password'][aria-invalid="true"]:not(.auth-form input) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='8' fill='%23fdecec'/><g transform='translate(6 6) scale(0.6667)' fill='none' stroke='%23c0262d' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></g></svg>");
+}
+input.control[autocomplete='name']:not(.auth-form input),
+input.control[autocomplete='given-name']:not(.auth-form input),
+input.control[autocomplete='family-name']:not(.auth-form input) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='8' fill='%23eef4fb'/><g transform='translate(6 6) scale(0.6667)' fill='none' stroke='%232f72bb' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='8' r='4'/><path d='M4 21a8 8 0 0 1 16 0'/></g></svg>");
+}
+.dark input.control[autocomplete='name']:not(.auth-form input),
+.dark input.control[autocomplete='given-name']:not(.auth-form input),
+.dark input.control[autocomplete='family-name']:not(.auth-form input) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='8' fill='%2315283f'/><g transform='translate(6 6) scale(0.6667)' fill='none' stroke='%2393c0f0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='8' r='4'/><path d='M4 21a8 8 0 0 1 16 0'/></g></svg>");
+}
+input.control[autocomplete='name'][aria-invalid="true"]:not(.auth-form input),
+input.control[autocomplete='given-name'][aria-invalid="true"]:not(.auth-form input),
+input.control[autocomplete='family-name'][aria-invalid="true"]:not(.auth-form input) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='8' fill='%23fdecec'/><g transform='translate(6 6) scale(0.6667)' fill='none' stroke='%23c0262d' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='8' r='4'/><path d='M4 21a8 8 0 0 1 16 0'/></g></svg>");
+}

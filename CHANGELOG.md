@@ -8,6 +8,13 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Outlined fields with icon tiles** (2026-10-10, chosen from three form
+  styles): every input, select and text area in both apps is a crisp white
+  field with a hairline, rounder corners and 40px height, a blue ring on
+  focus, a red ring on error, a soft grey when disabled. Email, phone,
+  date, password and name fields carry a small blue icon tile at their
+  start (red when in error), drawn in CSS so no form changed shape; the
+  sign-in screens keep their own icons.
 - **Pages open on the trail** (2026-10-10): the icon tile and the
   description line under page titles are gone in both apps, and where a page
   has a breadcrumb its title is for screen readers only - the trail names

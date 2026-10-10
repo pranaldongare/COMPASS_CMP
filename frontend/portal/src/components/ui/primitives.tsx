@@ -238,22 +238,26 @@ export function Field({ label, hint, error, required, children }: FieldProps) {
   );
 }
 
+// Outlined with icon tiles (2026-10-10, chosen from three form styles): a
+// crisp white field with a hairline, rounder corners, a blue ring on focus and
+// a red one on error. `control` is the hook for the icon tiles in
+// styles/controls.css.
 const controlBase = cn(
-  "w-full rounded-md border bg-surface px-3 text-sm text-text",
+  "control w-full rounded-[0.625rem] border bg-surface px-3 text-sm text-text",
   "placeholder:text-text-subtle",
-  // The inset hairline is what makes a field read as a well rather than a card.
+  // The hairline is what makes a field read as a well rather than a card.
   "border-border-strong shadow-[var(--shadow-xs)]",
   // A ring on focus, not a colour swap: it survives any background and, unlike a
   // border-width change, moves nothing on the page.
   "focus:border-accent focus:ring-3 focus:ring-[var(--accent-border)]/45 focus:outline-none",
-  "disabled:cursor-not-allowed disabled:bg-bg-inset disabled:opacity-60",
-  "aria-[invalid=true]:border-danger aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-[var(--danger-subtle)]",
+  "disabled:cursor-not-allowed disabled:bg-bg-subtle disabled:text-text-subtle",
+  "aria-[invalid=true]:border-danger aria-[invalid=true]:ring-3 aria-[invalid=true]:ring-[var(--danger-subtle)]",
   "transition-[border-color,box-shadow] duration-150",
 );
 
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
   ({ className, ...props }, ref) => (
-    <input ref={ref} className={cn(controlBase, "h-9", className)} {...props} />
+    <input ref={ref} className={cn(controlBase, "h-10", className)} {...props} />
   ),
 );
 Input.displayName = "Input";
@@ -275,7 +279,7 @@ export const Select = React.forwardRef<
   // the product's chevron (`.select-chevron`, styles/controls.css).
   <select
     ref={ref}
-    className={cn(controlBase, "select-chevron h-9 cursor-pointer appearance-none pr-9", className)}
+    className={cn(controlBase, "select-chevron h-10 cursor-pointer appearance-none pr-9", className)}
     {...props}
   />
 ));
