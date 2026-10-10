@@ -56,11 +56,11 @@ export function UserMenu({
           </span>
           {placement === "sidebar" && (
             <>
-              <span aria-hidden="true" className={cn("min-w-0 flex-1", folded && "lg:hidden")}>
-                <span className="block font-semibold text-[var(--sidebar-text-strong)]">Settings</span>
-                <span className="block truncate text-xs text-[var(--sidebar-label)]">
-                  Profile, theme, sign out
-                </span>
+              <span
+                aria-hidden="true"
+                className={cn("flex-1 font-semibold text-[var(--sidebar-text-strong)]", folded && "lg:hidden")}
+              >
+                Settings
               </span>
               <ChevronsUpDown
                 aria-hidden="true"

@@ -11,8 +11,8 @@ as a release yet.
 - **Blue pill sidebar** (2026-10-10, chosen from three mock-ups): every link's
   icon sits on a small tile tinted by its section (blue, violet, teal,
   amber); the current page is a blue gradient pill with white text; a faint
-  blue glow at the foot; the Settings menu is a card ("Profile, theme, sign
-  out"). "Jump to page" is no longer a box in the sidebar or the phone bar -
+  blue glow at the foot; the Settings menu is a card (the circle and
+  "Settings"). "Jump to page" is no longer a box in the sidebar or the phone bar -
   Ctrl/Cmd K still opens it. The blue rails are gone.
 - **One COMPASS on sign-in** (2026-10-10): the map panel no longer repeats
   the product name - the logo over the form says it once, on every screen
