@@ -179,9 +179,9 @@ function Header({
   const apple = useIsApple();
 
   return (
-    // White across the top, like the sidebar (2026-10-10): a hairline, and
-    // `.frame-light` keeps it white in dark mode too.
-    <header className="frame-light no-print sticky top-0 z-30 border-b border-border bg-surface">
+    // Ocean (2026-10-10): the sidebar's blue across the top, the same in both
+    // themes; `.ocean-scope` makes what sits in it read as on blue.
+    <header className="topbar-ocean ocean-scope no-print sticky top-0 z-30 border-b border-border">
       <div className="flex h-16 w-full items-center gap-3 px-4 sm:px-6">
         <Button
           variant="ghost"

@@ -46,7 +46,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 function ShellSkeleton() {
   return (
     <div className="min-h-dvh bg-[var(--page-bg)]">
-      <div className="frame-light h-16 border-b border-border bg-surface" />
+      <div className="topbar-ocean h-16" />
       <div className="mx-auto flex w-full max-w-[1600px]">
         <div className="sidebar-ocean hidden w-64 shrink-0 p-3 lg:block [&_.shimmer]:opacity-15">
           {Array.from({ length: 8 }).map((_, i) => (

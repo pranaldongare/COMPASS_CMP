@@ -10,7 +10,8 @@ as a release yet.
 ### Added
 - **Ocean look** (2026-10-10, chosen from four mock-ups): deep-blue gradient
   sidebar with a soft sky glow and a white current-page pill (same in both
-  themes); white top bar; cool blue-grey page; the dashboard opens on a blue
+  themes); the top bar in the same blue, left to right, its controls light
+  on blue (.ocean-scope); cool blue-grey page; the dashboard opens on a blue
   banner (PageHeader `hero`) with white primary action; figure cards carry a
   coloured gradient icon tile each (blue, amber, teal, violet - StatTile
   `tint`); tables white with a tinted header band and faint alternating rows.
