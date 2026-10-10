@@ -39,6 +39,7 @@ import { useDrawer } from "@/components/layout/use-drawer";
 import { UserMenu } from "@/components/layout/user-menu";
 import { useCollapsed } from "@/components/ui/collapsible";
 import { BrandMark } from "@/components/ui/graphics";
+import { Tooltip } from "@/components/ui/overlay";
 import { Button } from "@/components/ui/primitives";
 import { config } from "@/lib/config";
 import { cn } from "@/lib/format";
@@ -153,7 +154,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Inert under the open drawer: not reachable by Tab, not read out. */}
         {/* The page sits on one white rounded panel over the grey canvas
             (2026-10-10), the sidebar and header around it. */}
-        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 px-3 pb-4 sm:px-4 lg:pr-6 lg:pl-1">
+        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 px-3 pb-4 sm:px-4 lg:pr-6 lg:pl-4">
           <div className="min-h-[calc(100dvh-5rem)] rounded-2xl border border-border bg-surface px-4 py-6 shadow-[var(--shadow-card)] sm:px-6 lg:px-8">
             {children}
           </div>
@@ -361,25 +362,31 @@ function Sidebar({
         aria-label="Main"
         data-collapsed={folded || undefined}
         className={cn(
-          "no-print z-20 flex w-64 shrink-0 flex-col bg-bg",
-          "lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:transition-[width] lg:duration-200",
-          folded && "lg:w-[4.25rem]",
+          // A navy panel floating on the canvas (2026-10-10): rounded, set in
+          // from the edge, the same in both themes.
+          "no-print z-20 flex w-64 shrink-0 flex-col bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
+          "lg:sticky lg:top-16 lg:ml-3 lg:h-[calc(100dvh-5rem)] lg:rounded-2xl lg:shadow-[var(--shadow-raised)] lg:transition-[width] lg:duration-200",
+          folded && "lg:w-[4.5rem]",
           mobileOpen
-            ? "fixed inset-y-16 left-0 flex overflow-y-auto bg-surface shadow-[var(--shadow-pop)]"
+            ? "fixed inset-y-16 left-0 flex overflow-y-auto rounded-r-2xl shadow-[var(--shadow-pop)]"
             : "hidden lg:flex",
         )}
       >
         {mobileOpen && (
-          <div className="flex justify-end border-b border-border px-3 py-2 lg:hidden">
-            <Button variant="ghost" onClick={onClose}>
+          <div className="flex justify-end border-b border-[var(--sidebar-border)] px-3 py-2 lg:hidden">
+            <Button
+              variant="ghost"
+              className="text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]"
+              onClick={onClose}
+            >
               Close menu
             </Button>
           </div>
         )}
         <div
           className={cn(
-            "flex-1 overflow-x-hidden overflow-y-auto py-4",
-            folded ? "lg:px-2.5" : "px-3",
+            "sidebar-scroll flex-1 overflow-x-hidden overflow-y-auto py-4",
+            folded ? "lg:px-3" : "px-3",
           )}
         >
           {sections.map((section, i) => (
@@ -399,40 +406,30 @@ function Sidebar({
                 const label = labelFor(item, me?.role);
                 return (
                   <li key={`${section.title}:${item.href}`}>
+                    {/* Folded, the word is visually hidden but still the
+                        link's name; the chip beside the icon is for sighted
+                        users, on hover and on keyboard focus. */}
+                    <Tooltip content={folded ? label : null} side="right">
                     <Link
                       href={item.href}
                       aria-current={active ? "page" : undefined}
-                      // Folded, the word is visually hidden but still the
-                      // link's name; the tooltip is for sighted mouse users.
-                      title={folded ? label : undefined}
                       className={cn(
-                        "group relative flex items-center gap-2.5 rounded-md py-2 pr-2 pl-3 text-sm",
-                        "transition-[background-color,color] duration-150",
-                        folded && "lg:justify-center lg:px-0",
-                        // Active: a white pill lifted off the canvas.
+                        "group relative flex items-center gap-3 rounded-lg py-2 pr-2 pl-3 text-sm",
+                        "transition-[background-color,color,box-shadow] duration-150",
+                        "outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-badge)]",
+                        folded && "lg:size-11 lg:justify-center lg:p-0",
+                        // Active: a bright COMPASS-blue pill on the navy.
                         active
-                          ? "bg-surface font-medium text-text shadow-[var(--shadow-xs)] ring-1 ring-border"
-                          : "text-text-muted hover:bg-surface/70 hover:text-text",
+                          ? "bg-[var(--sidebar-active)] font-medium text-[var(--sidebar-text-strong)] shadow-[0_4px_14px_rgb(47_114_187/0.45)]"
+                          : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",
                       )}
                     >
-                      {/* The rail. Position is the primary signal here -
-                            colour alone would not survive greyscale, and
-                            aria-current carries it for screen readers. */}
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          "absolute inset-y-1.5 left-0 w-0.5 rounded-full transition-opacity",
-                          active
-                            ? "bg-accent opacity-100"
-                            : "bg-border-strong opacity-0 group-hover:opacity-100",
-                        )}
-                      />
                       <Icon
                         className={cn(
-                          "size-4 shrink-0 transition-colors",
+                          "size-[1.125rem] shrink-0 transition-colors",
                           active
-                            ? "text-accent"
-                            : "text-text-subtle group-hover:text-text-muted",
+                            ? "text-[var(--sidebar-text-strong)]"
+                            : "text-[var(--sidebar-label)] group-hover:text-[var(--sidebar-text-strong)]",
                         )}
                         aria-hidden="true"
                       />
@@ -442,6 +439,7 @@ function Sidebar({
                       {item.key === "tickets" && <TicketsBadge folded={folded} />}
                       {item.key === "requests" && <RequestsBadge folded={folded} />}
                     </Link>
+                    </Tooltip>
                   </li>
                 );
               })}
@@ -453,20 +451,20 @@ function Sidebar({
           className={cn(
             // Solid: the footer is a block of its own, never a veil over the
             // last links.
-            "shrink-0 space-y-0.5 border-t border-border bg-bg",
-            folded ? "lg:p-2.5" : "p-3",
+            "shrink-0 space-y-0.5 border-t border-[var(--sidebar-border)]",
+            folded ? "lg:p-3" : "p-3",
           )}
         >
+          <Tooltip content={folded ? "Expand sidebar" : null} side="right">
           <Button
             variant="ghost"
             className={cn(
-              "hidden w-full justify-start px-3 text-text-muted lg:flex",
-              folded && "lg:justify-center lg:px-0",
+              "hidden w-full justify-start rounded-lg px-3 text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)] lg:flex",
+              folded && "lg:size-11 lg:justify-center lg:px-0",
             )}
             onClick={onToggleCollapsed}
             aria-expanded={!folded}
             aria-controls="sidebar-nav"
-            title={folded ? "Expand sidebar" : undefined}
           >
             {folded ? (
               <PanelLeftOpen className="size-4" aria-hidden="true" />
@@ -477,18 +475,20 @@ function Sidebar({
               {folded ? "Expand sidebar" : "Collapse sidebar"}
             </span>
           </Button>
+          </Tooltip>
+          <Tooltip content={folded ? "Sign out" : null} side="right">
           <Button
             variant="ghost"
             className={cn(
-              "w-full justify-start px-3 text-text-muted",
-              folded && "lg:justify-center lg:px-0",
+              "w-full justify-start rounded-lg px-3 text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",
+              folded && "lg:size-11 lg:justify-center lg:px-0",
             )}
             onClick={onSignOut}
-            title={folded ? "Sign out" : undefined}
           >
             <LogOut className="size-4" aria-hidden="true" />
             <span className={cn(folded && "lg:sr-only")}>Sign out</span>
           </Button>
+          </Tooltip>
         </div>
       </nav>
     </>
@@ -526,8 +526,8 @@ function NavGroup({
         onClick={() => setOpen(!open)}
         title={current ? "Holds the page you are on" : undefined}
         className={cn(
-          "group mb-1.5 flex w-full items-center justify-between rounded-md px-3 py-0.5 text-2xs font-semibold tracking-wider text-text-subtle uppercase",
-          "transition-colors outline-none hover:text-text-muted focus-visible:ring-2 focus-visible:ring-[var(--accent-subtle)]",
+          "group mb-1.5 flex w-full items-center justify-between rounded-md px-3 py-0.5 text-2xs font-semibold tracking-wider text-[var(--sidebar-label)] uppercase",
+          "transition-colors outline-none hover:text-[var(--sidebar-text)] focus-visible:ring-2 focus-visible:ring-[var(--sidebar-badge)]",
           folded && "lg:sr-only",
         )}
       >
@@ -543,7 +543,7 @@ function NavGroup({
       {/* Folded, a hairline stands in for the heading so the groups
           still read as groups. */}
       {folded && !first && (
-        <div aria-hidden="true" className="mx-2 mb-2 hidden h-px bg-border lg:block" />
+        <div aria-hidden="true" className="mx-2 mb-2 hidden h-px bg-[var(--sidebar-border)] lg:block" />
       )}
       <ul id={listId} hidden={!shown} className="space-y-0.5">
         {children}
@@ -667,7 +667,7 @@ function NavCount({
   return (
     <span
       className={cn(
-        "ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-2xs font-semibold text-white",
+        "ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--sidebar-badge)] px-1.5 text-2xs font-semibold text-[var(--sidebar-bg)]",
         // Folded, the count sits on the icon's corner, like a badge on an app.
         folded &&
           "lg:absolute lg:top-0.5 lg:right-1 lg:ml-0 lg:min-w-4 lg:px-1 lg:text-[0.625rem] lg:leading-4",

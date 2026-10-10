@@ -8,6 +8,10 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Navy sidebar** (2026-10-10), console and portal: the menu is a dark
+  rounded panel floating on the canvas, the current page a bright COMPASS-blue
+  pill; collapsed (console), it is an icon rail whose names show in a chip on
+  hover or focus. Same colours in light and dark themes (`--sidebar-*`).
 - **Reference look across both apps** (2026-10-10,
   [design references](docs/frontend/design-references.md)). Pages sit on one
   white rounded panel over a grey canvas, the header and menu around it; the

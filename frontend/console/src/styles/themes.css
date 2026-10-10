@@ -53,6 +53,17 @@
   --grad-to: #1d5291;
   --brand-deep: #0e3a6b;
 
+  /* The sidebar (2026-10-10): a navy panel floating on the canvas, the same
+     in both themes - the product's frame, not the page's. */
+  --sidebar-bg: #0f1b2d;
+  --sidebar-text: #a9b6c9;
+  --sidebar-text-strong: #ffffff;
+  --sidebar-label: #8796ad;
+  --sidebar-hover: rgb(255 255 255 / 0.07);
+  --sidebar-border: rgb(255 255 255 / 0.09);
+  --sidebar-active: #2f72bb;
+  --sidebar-badge: #5cc3ff;
+
   /* Semantic. Never decorative — each means exactly one thing. */
   --success: oklch(58% 0.145 155);
   --success-subtle: oklch(96.5% 0.032 155);
@@ -122,6 +133,15 @@
   --grad-via: #3576bd;
   --grad-to: #245a98;
   --brand-deep: #0b2a4d;
+
+  --sidebar-bg: #0c1626;
+  --sidebar-text: #a3b0c3;
+  --sidebar-text-strong: #ffffff;
+  --sidebar-label: #8392a9;
+  --sidebar-hover: rgb(255 255 255 / 0.06);
+  --sidebar-border: rgb(255 255 255 / 0.08);
+  --sidebar-active: #2f72bb;
+  --sidebar-badge: #5cc3ff;
 
   --success: oklch(72% 0.140 155);
   --success-subtle: oklch(27.5% 0.048 155);

@@ -110,7 +110,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Inert under the open drawer: not reachable by Tab, not read out. */}
         {/* The page on one white rounded panel over the grey canvas, as in
             the console (2026-10-10). */}
-        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 px-3 pb-4 sm:px-4 lg:pr-6 lg:pl-1">
+        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 px-3 pb-4 sm:px-4 lg:pr-6 lg:pl-4">
           <div className="min-h-[calc(100dvh-5rem)] rounded-2xl border border-border bg-surface px-4 py-6 shadow-[var(--shadow-card)] sm:px-6 lg:px-8">
             {children}
           </div>
@@ -207,24 +207,29 @@ function Sidebar({
         id="sidebar-nav"
         aria-label="Main"
         className={cn(
-          "no-print z-20 flex w-64 shrink-0 flex-col bg-bg",
-          "lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)]",
+          // A navy panel floating on the canvas, as in the console (2026-10-10).
+          "no-print z-20 flex w-64 shrink-0 flex-col bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
+          "lg:sticky lg:top-16 lg:ml-3 lg:h-[calc(100dvh-5rem)] lg:rounded-2xl lg:shadow-[var(--shadow-raised)]",
           mobileOpen
-            ? "fixed inset-y-16 left-0 flex overflow-y-auto bg-surface shadow-[var(--shadow-pop)]"
+            ? "fixed inset-y-16 left-0 flex overflow-y-auto rounded-r-2xl shadow-[var(--shadow-pop)]"
             : "hidden lg:flex",
         )}
       >
         {mobileOpen && (
-          <div className="flex justify-end border-b border-border px-3 py-2 lg:hidden">
-            <Button variant="ghost" onClick={onClose}>
+          <div className="flex justify-end border-b border-[var(--sidebar-border)] px-3 py-2 lg:hidden">
+            <Button
+              variant="ghost"
+              className="text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]"
+              onClick={onClose}
+            >
               Close menu
             </Button>
           </div>
         )}
-        <div className="flex-1 overflow-y-auto px-3 py-4">
+        <div className="sidebar-scroll flex-1 overflow-y-auto px-3 py-4">
           {sections.map((section) => (
             <div key={section.title} className="mb-5 last:mb-0">
-              <p className="mb-1.5 px-3 text-2xs font-semibold uppercase tracking-wider text-text-subtle">
+              <p className="mb-1.5 px-3 text-2xs font-semibold uppercase tracking-wider text-[var(--sidebar-label)]">
                 {section.title}
               </p>
               <ul className="space-y-0.5">
@@ -238,29 +243,21 @@ function Sidebar({
                         href={item.href}
                         aria-current={active ? "page" : undefined}
                         className={cn(
-                          "group relative flex items-center gap-2.5 rounded-md py-2 pl-3 pr-2 text-sm",
-                          "transition-[background-color,color] duration-150",
+                          "group relative flex items-center gap-3 rounded-lg py-2 pl-3 pr-2 text-sm",
+                          "transition-[background-color,color,box-shadow] duration-150",
+                          "outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-badge)]",
+                          // Active: a bright COMPASS-blue pill on the navy.
                           active
-                            ? "bg-surface font-medium text-text shadow-[var(--shadow-xs)] ring-1 ring-border"
-                            : "text-text-muted hover:bg-surface/70 hover:text-text",
+                            ? "bg-[var(--sidebar-active)] font-medium text-[var(--sidebar-text-strong)] shadow-[0_4px_14px_rgb(47_114_187/0.45)]"
+                            : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",
                         )}
                       >
-                        {/* The rail. Position is the primary signal here -
-                            colour alone would not survive greyscale, and
-                            aria-current carries it for screen readers. */}
-                        <span
-                          aria-hidden="true"
-                          className={cn(
-                            "absolute inset-y-1.5 left-0 w-0.5 rounded-full transition-opacity",
-                            active
-                              ? "bg-accent opacity-100"
-                              : "bg-border-strong opacity-0 group-hover:opacity-100",
-                          )}
-                        />
                         <Icon
                           className={cn(
-                            "size-4 shrink-0 transition-colors",
-                            active ? "text-accent" : "text-text-subtle group-hover:text-text-muted",
+                            "size-[1.125rem] shrink-0 transition-colors",
+                            active
+                              ? "text-[var(--sidebar-text-strong)]"
+                              : "text-[var(--sidebar-label)] group-hover:text-[var(--sidebar-text-strong)]",
                           )}
                           aria-hidden="true"
                         />
@@ -274,10 +271,10 @@ function Sidebar({
           ))}
         </div>
 
-        <div className="shrink-0 border-t border-border bg-bg p-3">
+        <div className="shrink-0 border-t border-[var(--sidebar-border)] p-3">
           <Button
             variant="ghost"
-            className="w-full justify-start px-3 text-text-muted"
+            className="w-full justify-start rounded-lg px-3 text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]"
             onClick={onSignOut}
           >
             <LogOut className="size-4" aria-hidden="true" />
