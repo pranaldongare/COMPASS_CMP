@@ -2,12 +2,14 @@
  * One rights request, as the DPO works it (2026-10-07).
  *
  * What is pinned: the next step - In progress, and the rest the server offers
- * - comes straight after step 4, before the holders, so it is not a search;
- * refusing is a button that says what it does; and the documents the
- * requester sent are listed with the request, each one downloadable.
+ * - is the first thing the page opens on, ahead of the request, so it is not
+ * a search; identity, holders and the response are tabs of their own
+ * (2026-10-10), and the old card anchors open them; refusing is a button that
+ * says what it does; and the documents the requester sent are listed with the
+ * request, each one downloadable.
  */
 import { HttpResponse, http } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import RequestPage from "@/app/(app)/requests/[uuid]/page";
 import { makeMe, makeRequestDetail } from "@/test/fixtures";
@@ -53,29 +55,56 @@ const verified: Partial<RightsRequestDetail> = {
   transitions: [{ to: "in_progress", allowed: true, via: "transition" }],
 };
 
+// The tab lives in the address's fragment; each test starts on the overview.
+beforeEach(() => {
+  window.history.replaceState(null, "", `/requests/${UUID}`);
+});
+
 describe("RequestPage", () => {
-  it("puts the next step straight after classification, before the holders", async () => {
+  it("opens on the next step, ahead of the request; identity and holders have tabs", async () => {
     serve(verified);
     render(<RequestPage />);
     const next = await screen.findByRole("heading", { name: "Next step" });
-    const classification = screen.getByRole("heading", { name: "Identity and classification" });
-    const holders = screen.getByRole("heading", { name: "Holders" });
+    const theRequest = screen.getByRole("heading", { name: "The request" });
     const follows = (a: Element, b: Element) =>
       Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(follows(classification, next)).toBe(true);
-    expect(follows(next, holders)).toBe(true);
+    expect(follows(next, theRequest)).toBe(true);
+    expect(screen.getByRole("tab", { name: "Overview" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(
+      screen.getByRole("tab", { name: /Identity & classification/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Holders/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /In progress/ })).toBeEnabled();
     expect(screen.getByRole("link", { name: /Move to in progress/i })).toHaveAttribute(
       "href",
       "#actions",
     );
-    // Nothing to respond with yet, so no empty response heading.
-    expect(screen.queryByRole("heading", { name: "Response and outcome" })).not.toBeInTheDocument();
+  });
+
+  it("says there is nothing to respond with yet, rather than an empty form", async () => {
+    serve(verified);
+    const { user } = render(<RequestPage />);
+    await user.click(await screen.findByRole("tab", { name: /Response/ }));
+    expect(screen.getByText("Nothing to respond with yet")).toBeInTheDocument();
+  });
+
+  it("opens the holders tab from the old holders anchor", async () => {
+    window.history.replaceState(null, "", `/requests/${UUID}#holders`);
+    serve(verified);
+    render(<RequestPage />);
+    expect(await screen.findByRole("tab", { name: /Holders/ })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
   });
 
   it("makes refusing a button that says what it does", async () => {
     serve({ ...verified, classified_at: null });
     const { user } = render(<RequestPage />);
+    await user.click(await screen.findByRole("tab", { name: /Identity & classification/ }));
     const refuse = await screen.findByRole("button", { name: /Refuse this request/ });
     expect(screen.getByText(/Not a rights request, or cannot be met/)).toBeInTheDocument();
     expect(refuse).toHaveAttribute("aria-expanded", "false");
@@ -104,6 +133,8 @@ describe("RequestPage", () => {
     render(<RequestPage />);
     expect(await screen.findByText(/Documents from the requester · 1/)).toBeInTheDocument();
     expect(screen.getByText("id-proof.pdf")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Download id-proof.pdf" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Download id-proof.pdf" }),
+    ).toBeInTheDocument();
   });
 });

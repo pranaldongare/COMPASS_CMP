@@ -438,7 +438,11 @@ export function Tr({ className, ...props }: React.HTMLAttributes<HTMLTableRowEle
 
 /* ====================================================== Definition list ==== */
 export function DescriptionList({ children }: { children: React.ReactNode }) {
-  return <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-[minmax(9rem,auto)_1fr]">{children}</dl>;
+  // The value column may shrink below its longest word (2026-10-10): in a
+  // narrow side card a long URL or address wraps instead of spilling out.
+  return (
+    <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-[minmax(9rem,auto)_minmax(0,1fr)]">{children}</dl>
+  );
 }
 
 export function DescriptionItem({

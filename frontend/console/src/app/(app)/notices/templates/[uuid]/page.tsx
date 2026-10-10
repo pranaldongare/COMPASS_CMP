@@ -2,19 +2,33 @@
  * One notice template (0044), the DPO's.
  *
  * It leads with its ID, because handing that to a study's R&D User is what a
- * template is for. Then what a notice made from it will carry - its details,
- * its purposes, its text in each language - each edited in place, and last the
- * project notices already made from it. Those are copies: nothing here changes
- * them, and the page says so wherever an edit might look as if it would.
+ * template is for: on the summary card, with Copy ID beside it (2026-10-10).
+ * Then what a notice made from it will carry - its details, its purposes, its
+ * text in each language - each edited in place, and last the project notices
+ * already made from it. Those are copies: nothing here changes them, and the
+ * page says so wherever an edit might look as if it would.
  */
 "use client";
 
-import { ArrowLeft, Copy, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Copy,
+  FileStack,
+  FileText,
+  Hash,
+  Languages as LanguagesIcon,
+  ListChecks,
+  Pencil,
+  Plus,
+  ScrollText,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
+import { RecordHeader } from "@/components/layout/record-header";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import {
   Alert,
@@ -33,6 +47,7 @@ import {
   Textarea,
 } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
+import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
 import { useEnums } from "@/features/meta";
 import { TemplateForm } from "@/features/notice-templates/components/template-form";
 import { TemplateStatusBadge } from "@/features/notice-templates/components/templates-panel";
@@ -57,10 +72,27 @@ function messageOf(err: unknown, fallback: string): string {
     : fallback;
 }
 
+const TABS = ["details", "text", "used-by"] as const;
+type TemplateTab = (typeof TABS)[number];
+/** Card anchors inside a tab, so a link can name the card it means. */
+const SECTIONS: Record<string, TemplateTab> = {
+  purposes: "details",
+  languages: "text",
+  notices: "used-by",
+};
+
 export default function NoticeTemplatePage() {
   const params = useParams<{ uuid: string }>();
   const template = useNoticeTemplate(params?.uuid);
   const [editing, setEditing] = React.useState(false);
+  const [tab, setTab, hash] = useHashTab(TABS, "details", SECTIONS);
+  const loaded = Boolean(template.data);
+  // A fragment naming a card, not a tab: the tab is open by now, so bring the
+  // card itself into view - the browser's own jump ran before it existed.
+  React.useEffect(() => {
+    if (!loaded || !Object.hasOwn(SECTIONS, hash)) return;
+    document.getElementById(hash)?.scrollIntoView?.({ block: "start" });
+  }, [hash, loaded]);
 
   if (template.isLoading) return <Skeleton className="h-96" />;
   if (template.error) {
@@ -75,8 +107,12 @@ export default function NoticeTemplatePage() {
 
   return (
     <>
+      {/* The trail, then the template's summary card (2026-10-10, the detail
+          look): its ID to give out sits on the status line with Copy ID, which
+          replaces the card that held it big; the tabs below hold what a notice
+          made from it will carry, and who has used it. */}
       <PageHeader
-        eyebrow="Notice template"
+        heading={false}
         breadcrumb={
           <Link
             href="/notices?tab=templates"
@@ -87,30 +123,99 @@ export default function NoticeTemplatePage() {
           </Link>
         }
         title={t.title}
-        description="A notice written before any project exists. Never shown to anybody until a project uses it."
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
+      />
+      <RecordHeader
+        icon={FileStack}
+        title={t.title}
+        meta={
+          <>
+            <span className="text-2xs font-semibold tracking-wider text-accent-text uppercase">
+              Notice template
+            </span>
             <TemplateStatusBadge status={t.status} />
+            <Mono className="font-semibold text-text">{t.template_code}</Mono>
+            <CopyIdButton template={t} />
+          </>
+        }
+        actions={
+          <>
             <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
               <Pencil className="size-4" />
               Edit details
             </Button>
             <RetireButton template={t} />
-          </div>
+          </>
         }
+        facts={[
+          { label: "Template ID", value: t.template_code, icon: Hash, tint: 0 },
+          {
+            label: "Purposes",
+            value: t.purposes.length,
+            icon: ListChecks,
+            tint: 1,
+            href: "#purposes",
+          },
+          {
+            label: "Languages",
+            value: t.languages.length,
+            icon: LanguagesIcon,
+            tint: 2,
+            href: "#text",
+          },
+          {
+            label: "Used by",
+            value: `${t.notices.length} notice${t.notices.length === 1 ? "" : "s"}`,
+            icon: FileText,
+            tint: 3,
+            href: "#used-by",
+          },
+        ]}
       />
 
-      <div className="space-y-6">
-        <GiveTheId template={t} />
+      <Tabs value={tab} onValueChange={setTab} label="Template sections" layout="underline">
+        <TabList>
+          <Tab value="details" icon={ScrollText}>
+            Details
+          </Tab>
+          <Tab value="text" icon={LanguagesIcon} count={t.languages.length}>
+            Text
+          </Tab>
+          <Tab value="used-by" icon={FileText} count={t.notices.length}>
+            Used by
+          </Tab>
+        </TabList>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Details template={t} />
-          <Purposes template={t} />
-        </div>
-
-        <Languages template={t} />
-        <UsedBy template={t} />
-      </div>
+        <TabPanel value="details" className="space-y-5">
+          {/* What the ID card said, now that the ID sits on the summary card. */}
+          <div className="space-y-1 text-sm text-text-muted">
+            <p>
+              A notice written before any project exists. Never shown to anybody until a
+              project uses it.
+            </p>
+            <p className="max-w-3xl">
+              {t.status === "active"
+                ? "Give its ID to the study's R&D User. On their project they choose Use a notice template and enter it; the project gets its own draft notice from it, to approve and publish."
+                : "Retired: it can no longer be used. Notices already made from it are unaffected. Bring it back to use it again."}
+            </p>
+          </div>
+          <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
+            <Details template={t} />
+            <div id="purposes" className="scroll-mt-20">
+              <Purposes template={t} />
+            </div>
+          </div>
+        </TabPanel>
+        <TabPanel value="text" className="space-y-5">
+          <div id="languages" className="scroll-mt-20">
+            <Languages template={t} />
+          </div>
+        </TabPanel>
+        <TabPanel value="used-by" className="space-y-5">
+          <div id="notices" className="scroll-mt-20">
+            <UsedBy template={t} />
+          </div>
+        </TabPanel>
+      </Tabs>
 
       <Dialog open={editing} onOpenChange={setEditing}>
         <DialogContent title="Edit the template" size="lg">
@@ -121,36 +226,23 @@ export default function NoticeTemplatePage() {
   );
 }
 
-function GiveTheId({ template: t }: { template: NoticeTemplateDetail }) {
+/** Puts the ID on the clipboard - handing it out is what a template is for. */
+function CopyIdButton({ template: t }: { template: NoticeTemplateDetail }) {
   const toast = useToast();
   return (
-    <Card>
-      <CardBody className="flex flex-wrap items-center justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-2xs font-semibold tracking-wide text-text-subtle uppercase">
-            Template ID
-          </p>
-          <p className="mt-1 font-mono text-2xl font-semibold tracking-wide">{t.template_code}</p>
-          <p className="mt-1 max-w-2xl text-sm text-text-muted">
-            {t.status === "active"
-              ? "Give this to the study's R&D User. On their project they choose Use a notice template and enter it; the project gets its own draft notice from it, to approve and publish."
-              : "Retired: it can no longer be used. Notices already made from it are unaffected. Bring it back to use it again."}
-          </p>
-        </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={async () => {
-            const ok = await copyText(t.template_code);
-            if (ok) toast.success(`${t.template_code} copied`);
-            else toast.error("Could not copy", "Select the ID and copy it by hand.");
-          }}
-        >
-          <Copy className="size-4" />
-          Copy ID
-        </Button>
-      </CardBody>
-    </Card>
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-7 px-2"
+      onClick={async () => {
+        const ok = await copyText(t.template_code);
+        if (ok) toast.success(`${t.template_code} copied`);
+        else toast.error("Could not copy", "Select the ID and copy it by hand.");
+      }}
+    >
+      <Copy className="size-3.5" />
+      Copy ID
+    </Button>
   );
 }
 
@@ -193,7 +285,9 @@ function Details({ template: t }: { template: NoticeTemplateDetail }) {
       </CardHeader>
       <CardBody>
         <DescriptionList>
-          <DescriptionItem term="Applies to">{audience ?? "Not decided yet"}</DescriptionItem>
+          <DescriptionItem term="Applies to">
+            {audience ?? "Not decided yet"}
+          </DescriptionItem>
           <DescriptionItem term="DPO contact">{t.dpo_contact}</DescriptionItem>
           <DescriptionItem term="Withdraw consent">
             <span className="break-all">{t.withdraw_url}</span>
@@ -204,7 +298,9 @@ function Details({ template: t }: { template: NoticeTemplateDetail }) {
           <DescriptionItem term="Board complaint">
             <span className="break-all">{t.board_complaint_url}</span>
           </DescriptionItem>
-          {t.note && <DescriptionItem term="Note for the collector">{t.note}</DescriptionItem>}
+          {t.note && (
+            <DescriptionItem term="Note for the collector">{t.note}</DescriptionItem>
+          )}
         </DescriptionList>
       </CardBody>
     </Card>
@@ -248,10 +344,14 @@ function Purposes({ template: t }: { template: NoticeTemplateDetail }) {
         ) : (
           <ul className="divide-y divide-border rounded-md border border-border">
             {t.purposes.map((p) => (
-              <li key={p.purpose_uuid} className="flex flex-wrap items-center gap-2 px-3 py-2">
+              <li
+                key={p.purpose_uuid}
+                className="flex flex-wrap items-center gap-2 px-3 py-2"
+              >
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">
-                    {p.name} <Mono className="text-xs text-text-subtle">{p.purpose_code}</Mono>
+                    {p.name}{" "}
+                    <Mono className="text-xs text-text-subtle">{p.purpose_code}</Mono>
                   </p>
                   <p className="text-xs text-text-muted">
                     {p.is_mandatory ? "Mandatory" : "Optional"}
@@ -267,7 +367,9 @@ function Purposes({ template: t }: { template: NoticeTemplateDetail }) {
                   onClick={() =>
                     detach
                       .mutateAsync(p.purpose_uuid)
-                      .catch((err) => toast.error("Not removed", messageOf(err, "Refused.")))
+                      .catch((err) =>
+                        toast.error("Not removed", messageOf(err, "Refused.")),
+                      )
                   }
                 >
                   <Trash2 className="size-4" />
@@ -337,10 +439,12 @@ function Languages({ template: t }: { template: NoticeTemplateDetail }) {
     <Card>
       <CardHeader className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <CardTitle>Text · {t.languages.length} language{t.languages.length === 1 ? "" : "s"}</CardTitle>
+          <CardTitle>
+            Text · {t.languages.length} language{t.languages.length === 1 ? "" : "s"}
+          </CardTitle>
           <p className="mt-1 text-xs text-text-muted">
-            What a data principal will read once a project uses it. Each language is approved
-            on the project&apos;s notice, not here.
+            What a data principal will read once a project uses it. Each language is
+            approved on the project&apos;s notice, not here.
           </p>
         </div>
         <Button
@@ -379,7 +483,9 @@ function Languages({ template: t }: { template: NoticeTemplateDetail }) {
                     onClick={() =>
                       remove
                         .mutateAsync(l.language_code)
-                        .catch((err) => toast.error("Not removed", messageOf(err, "Refused.")))
+                        .catch((err) =>
+                          toast.error("Not removed", messageOf(err, "Refused.")),
+                        )
                     }
                   >
                     <Trash2 className="size-4" />
@@ -479,7 +585,12 @@ function LanguageEditor({
         <Button type="button" variant="ghost" onClick={onDone}>
           Cancel
         </Button>
-        <Button type="submit" variant="primary" disabled={!text.trim()} loading={save.isPending}>
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={!text.trim()}
+          loading={save.isPending}
+        >
           Save text
         </Button>
       </DialogFooter>
@@ -493,8 +604,8 @@ function UsedBy({ template: t }: { template: NoticeTemplateDetail }) {
       <CardHeader>
         <CardTitle>Used by · {t.notices.length}</CardTitle>
         <p className="mt-1 text-xs text-text-muted">
-          Project notices made from this template. Each is the project&apos;s own copy, approved
-          and published there.
+          Project notices made from this template. Each is the project&apos;s own copy,
+          approved and published there.
         </p>
       </CardHeader>
       <CardBody>
@@ -503,7 +614,10 @@ function UsedBy({ template: t }: { template: NoticeTemplateDetail }) {
         ) : (
           <ul className="divide-y divide-border rounded-md border border-border">
             {t.notices.map((n) => (
-              <li key={n.notice_uuid} className="flex flex-wrap items-center gap-3 px-3 py-2 text-sm">
+              <li
+                key={n.notice_uuid}
+                className="flex flex-wrap items-center gap-3 px-3 py-2 text-sm"
+              >
                 <Link
                   href={`/notices/${n.notice_uuid}`}
                   className="font-medium text-accent-text hover:underline"

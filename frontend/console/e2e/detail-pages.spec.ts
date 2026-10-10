@@ -76,7 +76,9 @@ test.describe("detail pages resolve", () => {
   test("a purpose opens from the register", async ({ page }) => {
     await followFirstRow(page, "/purposes", "/purposes/");
     await expect(page.getByRole("heading", { name: "What was promised" })).toBeVisible();
-    await expect(page.getByText("Lawful basis")).toBeVisible();
+    // The Terms card's entry; the summary card above it now names the lawful
+    // basis too (2026-10-10), so a bare text match would find two.
+    await expect(page.locator("dt", { hasText: "Lawful basis" })).toBeVisible();
   });
 
   test("a collection opens from the register", async ({ page }) => {

@@ -12,13 +12,21 @@
  */
 "use client";
 
-import { AlertTriangle, ArrowLeft } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CheckCircle2,
+  CircleDashed,
+  ListOrdered,
+  Upload,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
-import { StackedBar, StatTile, type Segment } from "@/components/ui/charts";
+import { RecordHeader } from "@/components/layout/record-header";
+import { StackedBar, type Segment } from "@/components/ui/charts";
 import { EmptyQueue } from "@/components/ui/graphics";
 import {
   Alert,
@@ -78,44 +86,64 @@ export default function ImportDetailPage() {
   );
 
   const outcome: Segment[] = [
-    { key: "accepted", label: "Accepted", value: record.accepted_rows, color: "var(--viz-1)" },
-    { key: "rejected", label: "Rejected", value: record.rejected_rows, color: "var(--viz-3)" },
-    { key: "unprocessed", label: "Not processed", value: unprocessed, color: "var(--viz-neutral)" },
+    {
+      key: "accepted",
+      label: "Accepted",
+      value: record.accepted_rows,
+      color: "var(--viz-1)",
+    },
+    {
+      key: "rejected",
+      label: "Rejected",
+      value: record.rejected_rows,
+      color: "var(--viz-3)",
+    },
+    {
+      key: "unprocessed",
+      label: "Not processed",
+      value: unprocessed,
+      color: "var(--viz-neutral)",
+    },
   ];
 
   return (
     <>
-      <PageHeader
-        eyebrow="Import"
+      {/* The trail, then the batch's summary card (2026-10-10, the detail
+          look): the four counts that were a tile strip are its facts. One
+          view, no tabs - the outcome and its rejected rows are the page. */}
+      <PageHeader heading={false} title={record.file_name} breadcrumb={<BackLink />} />
+      <RecordHeader
+        icon={Upload}
         title={record.file_name}
-        description={`${record.source_name} · received ${formatDateTime(record.received_at)}`}
-        breadcrumb={<BackLink />}
-        actions={<StatusBadge kind="batch" value={record.status} />}
+        meta={
+          <>
+            <span className="text-2xs font-semibold tracking-wider text-accent-text uppercase">
+              Import
+            </span>
+            <StatusBadge kind="batch" value={record.status} />
+            <span className="basis-full">
+              {record.source_name} · received {formatDateTime(record.received_at)}
+            </span>
+          </>
+        }
+        facts={[
+          { label: "Declared", value: record.declared_rows, icon: ListOrdered, tint: 0 },
+          { label: "Accepted", value: record.accepted_rows, icon: CheckCircle2, tint: 2 },
+          { label: "Rejected", value: record.rejected_rows, icon: AlertTriangle, tint: 3 },
+          { label: "Not processed", value: unprocessed, icon: CircleDashed, tint: 1 },
+        ]}
       />
 
       {record.status === "partial" && (
-        <Alert tone="warning" title="This batch landed partially" className="mb-4">
-          {record.accepted_rows} of {record.declared_rows} rows were accepted. The
-          rest are listed below with the reason each was refused. Fix them and
-          re-send the file — the import is idempotent, so the rows already
-          accepted will not duplicate.
+        <Alert tone="warning" title="This batch landed partially" className="mb-5">
+          {record.accepted_rows} of {record.declared_rows} rows were accepted. The rest are
+          listed below with the reason each was refused. Fix them and re-send the file — the
+          import is idempotent, so the rows already accepted will not duplicate.
         </Alert>
       )}
 
-      <div className="stagger mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="Declared" value={record.declared_rows} />
-        <StatTile label="Accepted" value={record.accepted_rows} />
-        <StatTile
-          label="Rejected"
-          value={record.rejected_rows}
-          tone={record.rejected_rows > 0 ? "attention" : "neutral"}
-          icon={record.rejected_rows > 0 ? <AlertTriangle /> : undefined}
-        />
-        <StatTile label="Not processed" value={unprocessed} />
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="min-w-0 space-y-4">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+        <div className="min-w-0 space-y-5">
           <Card>
             <CardHeader>
               <CardTitle>Outcome</CardTitle>
@@ -133,7 +161,7 @@ export default function ImportDetailPage() {
             <CardHeader className="flex items-center justify-between">
               <CardTitle>Rejected rows</CardTitle>
               {wantErrors && (
-                <span className="rounded-full bg-warning-subtle px-2.5 py-0.5 text-xs font-medium tabular text-warning-text">
+                <span className="tabular rounded-full bg-warning-subtle px-2.5 py-0.5 text-xs font-medium text-warning-text">
                   {record.rejected_rows}
                 </span>
               )}
@@ -156,8 +184,8 @@ export default function ImportDetailPage() {
             ) : (errors.data?.errors ?? []).length === 0 ? (
               <CardBody>
                 <Alert tone="info">
-                  {record.rejected_rows} rows were refused but the report is no
-                  longer stored. Re-run the validation to see the reasons.
+                  {record.rejected_rows} rows were refused but the report is no longer
+                  stored. Re-run the validation to see the reasons.
                 </Alert>
               </CardBody>
             ) : (
@@ -192,7 +220,7 @@ export default function ImportDetailPage() {
           </Card>
         </div>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-5">
           <Card>
             <CardHeader>
               <CardTitle>The file</CardTitle>
@@ -228,9 +256,8 @@ export default function ImportDetailPage() {
               </DescriptionList>
 
               <p className="rounded-lg bg-bg-subtle p-3 text-xs leading-relaxed text-text-muted">
-                Imports upsert on (source, source reference), so re-sending this
-                file accepts nothing new and reports zero rather than duplicating
-                a collection.
+                Imports upsert on (source, source reference), so re-sending this file
+                accepts nothing new and reports zero rather than duplicating a collection.
               </p>
             </CardBody>
           </Card>

@@ -5,15 +5,27 @@
  * that could change it. This is the record as it stands: who operates it, who
  * is accountable for collecting from it, how it exchanges data, and the fields
  * it is authoritative for. Editing is a button here for those who may.
+ *
+ * Laid out as the other record pages (2026-10-10): a summary card, then the
+ * two cards side by side. No tabs - there is too little here to split.
  */
 "use client";
 
-import { ArrowLeft, Building2, Pencil } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowLeftRight,
+  Building2,
+  Database,
+  ListChecks,
+  Pencil,
+  Tag,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
+import { RecordHeader } from "@/components/layout/record-header";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Alert,
@@ -66,25 +78,57 @@ export default function SourceDetailPage() {
   const s = source.data;
   return (
     <>
-      <PageHeader
-        eyebrow="Data source"
+      <PageHeader heading={false} title={s.name} breadcrumb={<BackLink />} />
+      <RecordHeader
+        icon={Database}
         title={s.name}
-        description={s.source_code}
-        breadcrumb={<BackLink />}
-        actions={
-          <div className="flex items-center gap-2">
+        meta={
+          <>
+            <span className="text-2xs font-semibold tracking-wider text-accent-text uppercase">
+              Data source
+            </span>
             <StatusBadge kind="record" value={s.status} />
-            {canEdit && (
-              <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
-                <Pencil className="size-4" />
-                Edit
-              </Button>
-            )}
-          </div>
+            <span className="font-mono">{s.source_code}</span>
+          </>
         }
+        actions={
+          canEdit && (
+            <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+              <Pencil className="size-4" />
+              Edit
+            </Button>
+          )
+        }
+        facts={[
+          {
+            label: "Processor",
+            value: (s.processor_uuid && s.processor_name) || "First party",
+            icon: Building2,
+            tint: 0,
+            href:
+              s.processor_uuid && s.processor_name
+                ? `/processors/${s.processor_uuid}`
+                : undefined,
+          },
+          { label: "Role", value: humanise(s.source_role), icon: Tag, tint: 1 },
+          {
+            label: "Exchange",
+            value: humanise(s.exchange_mode),
+            icon: ArrowLeftRight,
+            tint: 2,
+          },
+          {
+            label: "Authoritative for",
+            value: `${s.is_authoritative_for.length} ${
+              s.is_authoritative_for.length === 1 ? "identifier" : "identifiers"
+            }`,
+            icon: ListChecks,
+            tint: 3,
+          },
+        ]}
       />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Who runs it</CardTitle>
@@ -93,7 +137,10 @@ export default function SourceDetailPage() {
             <DescriptionList>
               <DescriptionItem term="Processor">
                 {s.processor_uuid && s.processor_name ? (
-                  <Link href={`/processors/${s.processor_uuid}`} className="text-accent-text hover:underline">
+                  <Link
+                    href={`/processors/${s.processor_uuid}`}
+                    className="text-accent-text hover:underline"
+                  >
                     {s.processor_name}
                   </Link>
                 ) : (
@@ -104,7 +151,11 @@ export default function SourceDetailPage() {
                 )}
               </DescriptionItem>
               <DescriptionItem term="Collected by">
-                {s.is_in_house === null ? "Not known" : s.is_in_house ? "In-house" : "A third party"}
+                {s.is_in_house === null
+                  ? "Not known"
+                  : s.is_in_house
+                    ? "In-house"
+                    : "A third party"}
               </DescriptionItem>
               <DescriptionItem term="Accountable">
                 <SourceOwner source={s} />
@@ -121,10 +172,14 @@ export default function SourceDetailPage() {
             <DescriptionList>
               <DescriptionItem term="Role">{humanise(s.source_role)}</DescriptionItem>
               <DescriptionItem term="Exchange">{humanise(s.exchange_mode)}</DescriptionItem>
-              <DescriptionItem term="Identifier scheme">{s.id_scheme ?? "None"}</DescriptionItem>
+              <DescriptionItem term="Identifier scheme">
+                {s.id_scheme ?? "None"}
+              </DescriptionItem>
               <DescriptionItem term="Authoritative for">
                 {s.is_authoritative_for.length === 0 ? (
-                  <span className="text-text-muted">Nothing - it never overwrites our values</span>
+                  <span className="text-text-muted">
+                    Nothing - it never overwrites our values
+                  </span>
                 ) : (
                   <span className="flex flex-wrap gap-1">
                     {s.is_authoritative_for.map((field) => (
@@ -135,7 +190,9 @@ export default function SourceDetailPage() {
                   </span>
                 )}
               </DescriptionItem>
-              <DescriptionItem term="Registered">{formatDateTime(s.created_at)}</DescriptionItem>
+              <DescriptionItem term="Registered">
+                {formatDateTime(s.created_at)}
+              </DescriptionItem>
             </DescriptionList>
           </CardBody>
         </Card>
@@ -152,7 +209,10 @@ export default function SourceDetailPage() {
 
 function BackLink() {
   return (
-    <Link href="/sources" className="inline-flex items-center gap-1 text-sm text-text-muted hover:text-text">
+    <Link
+      href="/sources"
+      className="inline-flex items-center gap-1 text-sm text-text-muted hover:text-text"
+    >
       <ArrowLeft className="size-4" aria-hidden="true" />
       Data sources
     </Link>

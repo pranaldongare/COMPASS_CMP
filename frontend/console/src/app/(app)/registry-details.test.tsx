@@ -86,10 +86,12 @@ describe("Register records, to read", () => {
       http.get(`${API}/sources`, () => HttpResponse.json({ items: [source], next_cursor: null, total: 1 })),
       http.get(`${API}/processors/${UUID}/respondents`, () => HttpResponse.json([])),
     );
-    render(<ProcessorDetailPage />);
+    const { user } = render(<ProcessorDetailPage />);
     expect(await screen.findByRole("heading", { name: "Acme Labs" })).toBeInTheDocument();
-    expect(await screen.findByRole("link", { name: "Gait rig" })).toHaveAttribute("href", `/sources/${UUID}`);
     expect(screen.getByText(/not recorded - an export to this processor is refused/i)).toBeInTheDocument();
+    // The sources are on their own tab (2026-10-10).
+    await user.click(screen.getByRole("tab", { name: /data sources/i }));
+    expect(await screen.findByRole("link", { name: "Gait rig" })).toHaveAttribute("href", `/sources/${UUID}`);
   });
 
   it("shows an account and how its person type changed", async () => {
@@ -123,9 +125,11 @@ describe("Register records, to read", () => {
         ]),
       ),
     );
-    render(<UserDetailPage />);
+    const { user } = render(<UserDetailPage />);
     expect(await screen.findByRole("heading", { name: "Asha Rao" })).toBeInTheDocument();
-    expect(await screen.findByText("Admin One")).toBeInTheDocument();
+    // The history is on its own tab (2026-10-10).
+    await user.click(screen.getByRole("tab", { name: /person type history/i }));
+    expect(await screen.findByRole("cell", { name: "Admin One" })).toBeVisible();
   });
 
   it("filters the source register by processor", async () => {

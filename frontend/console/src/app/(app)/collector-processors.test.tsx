@@ -118,6 +118,8 @@ describe("Collects for, on the account", () => {
     );
     const { user } = render(<UserDetailPage />);
 
+    // Whom they collect for is on its own tab (2026-10-10).
+    await user.click(await screen.findByRole("tab", { name: /collects for/i }));
     expect(await screen.findByRole("link", { name: "Acme Labs" })).toHaveAttribute("href", `/processors/${MINE}`);
     await user.click(screen.getByRole("button", { name: "Change processors" }));
     await user.click(await screen.findByRole("button", { name: "Other Ltd" }));
@@ -147,8 +149,9 @@ describe("Collects for, on the account", () => {
       ),
       http.get(`${API}/users/${UUID}/person-type-history`, () => HttpResponse.json([])),
     );
-    render(<UserDetailPage />);
-    expect(await screen.findByText(/No processor yet/)).toBeInTheDocument();
+    const { user } = render(<UserDetailPage />);
+    await user.click(await screen.findByRole("tab", { name: /collects for/i }));
+    expect(await screen.findByText(/No processor yet/)).toBeVisible();
     expect(screen.queryByRole("button", { name: "Change processors" })).not.toBeInTheDocument();
   });
 });

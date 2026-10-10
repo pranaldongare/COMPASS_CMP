@@ -12,13 +12,21 @@
  */
 "use client";
 
-import { AlertTriangle, ArrowLeft, CheckCircle2 } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CheckCircle2,
+  FileWarning,
+  Layers,
+  ListOrdered,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
-import { Meter, StatTile } from "@/components/ui/charts";
+import { RecordHeader } from "@/components/layout/record-header";
+import { Meter } from "@/components/ui/charts";
 import { EmptyRecords } from "@/components/ui/graphics";
 import {
   Alert,
@@ -84,65 +92,90 @@ export default function CollectionDetailPage() {
 
   return (
     <>
+      {/* The trail, then the collection's summary card (2026-10-10, the
+          detail look): the four counts that were a tile strip are its facts,
+          each keeping what its tile said beside the figure. One view, no tabs. */}
       <PageHeader
-        eyebrow="Collection"
+        heading={false}
         title={record.source_collection_ref}
-        description={`${record.project_name} · collected ${formatDate(record.collected_on)}`}
         breadcrumb={<BackLink />}
-        actions={
-          <Badge tone={!declared ? "neutral" : reconciled ? "success" : "warning"} dot>
-            {!declared
-              ? "Nothing declared"
-              : reconciled
-                ? "Reconciled"
-                : `${record.unaccounted} unaccounted`}
-          </Badge>
+      />
+      <RecordHeader
+        icon={Layers}
+        title={record.source_collection_ref}
+        meta={
+          <>
+            <span className="text-2xs font-semibold tracking-wider text-accent-text uppercase">
+              Collection
+            </span>
+            <Badge tone={!declared ? "neutral" : reconciled ? "success" : "warning"} dot>
+              {!declared
+                ? "Nothing declared"
+                : reconciled
+                  ? "Reconciled"
+                  : `${record.unaccounted} unaccounted`}
+            </Badge>
+            <span className="basis-full">
+              {record.project_name} · collected {formatDate(record.collected_on)}
+            </span>
+          </>
         }
+        facts={[
+          {
+            label: "Declared",
+            value: declared ? record.declared_asset_count : "— · not stated by the source",
+            icon: ListOrdered,
+            tint: 0,
+          },
+          {
+            label: "Mapped",
+            value: record.mapped_asset_count,
+            icon: CheckCircle2,
+            tint: 2,
+          },
+          {
+            label: "Unaccounted",
+            value: !declared
+              ? "— · cannot be computed"
+              : reconciled
+                ? `${record.unaccounted} · fully reconciled`
+                : `${record.unaccounted} · needs attention`,
+            icon: AlertTriangle,
+            tint: 3,
+          },
+          {
+            label: "Assets flagged",
+            value: !exceptions.data
+              ? "—"
+              : exceptions.data.flagged_asset_count > 0
+                ? `${exceptions.data.flagged_asset_count} · no consent`
+                : 0,
+            icon: FileWarning,
+            tint: 1,
+          },
+        ]}
       />
 
       {!declared ? (
-        <Alert tone="info" title="This collection carries no declaration" className="mb-4">
-          The manifest did not state how many assets this collection contains, so
-          there is nothing to reconcile {record.mapped_asset_count} mapped assets
-          against. Ask the source to include a{" "}
-          <code className="font-mono text-xs">declared_asset_count</code> column —
-          without it, an asset that never arrived is indistinguishable from one
-          that was never promised.
+        <Alert tone="info" title="This collection carries no declaration" className="mb-5">
+          The manifest did not state how many assets this collection contains, so there is
+          nothing to reconcile {record.mapped_asset_count} mapped assets against. Ask the
+          source to include a{" "}
+          <code className="font-mono text-xs">declared_asset_count</code> column — without
+          it, an asset that never arrived is indistinguishable from one that was never
+          promised.
         </Alert>
       ) : !reconciled ? (
-        <Alert tone="warning" title="This collection does not reconcile" className="mb-4">
-          {record.declared_asset_count} assets were declared and{" "}
-          {record.mapped_asset_count} are mapped. The{" "}
-          <strong>{record.unaccounted}</strong> in between were collected but have
-          nothing recording who is in them — which is not a state they may stay
-          in. Ask the source for the missing manifest rows.
+        <Alert tone="warning" title="This collection does not reconcile" className="mb-5">
+          {record.declared_asset_count} assets were declared and {record.mapped_asset_count}{" "}
+          are mapped. The <strong>{record.unaccounted}</strong> in between were collected
+          but have nothing recording who is in them — which is not a state they may stay in.
+          Ask the source for the missing manifest rows.
         </Alert>
       ) : null}
 
-      <div className="stagger mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile
-          label="Declared"
-          value={declared ? record.declared_asset_count : "—"}
-          hint={declared ? undefined : "Not stated by the source"}
-        />
-        <StatTile label="Mapped" value={record.mapped_asset_count} />
-        <StatTile
-          label="Unaccounted"
-          value={declared ? record.unaccounted : "—"}
-          tone={!declared ? "neutral" : reconciled ? "neutral" : "attention"}
-          hint={!declared ? "Cannot be computed" : reconciled ? "Fully reconciled" : "Needs attention"}
-          icon={declared ? (reconciled ? <CheckCircle2 /> : <AlertTriangle />) : undefined}
-        />
-        <StatTile
-          label="Assets flagged"
-          value={exceptions.data?.flagged_asset_count ?? 0}
-          tone={(exceptions.data?.flagged_asset_count ?? 0) > 0 ? "attention" : "neutral"}
-          hint="Contain someone with no consent"
-        />
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="min-w-0 space-y-4">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+        <div className="min-w-0 space-y-5">
           <Card>
             <CardHeader>
               <CardTitle>Reconciliation</CardTitle>
@@ -163,13 +196,13 @@ export default function CollectionDetailPage() {
                 // A ratio needs a denominator. Drawing a meter against zero would
                 // invent a limit the source never gave.
                 <p className="text-sm leading-relaxed text-text-muted">
-                  There is no declared count to reconcile against, so this
-                  collection can only be reported as{" "}
+                  There is no declared count to reconcile against, so this collection can
+                  only be reported as{" "}
                   <strong className="text-text">
                     {record.mapped_asset_count} assets mapped
                   </strong>
-                  . Whether that is all of them is not something this system can
-                  currently tell you.
+                  . Whether that is all of them is not something this system can currently
+                  tell you.
                 </p>
               )}
             </CardBody>
@@ -178,7 +211,7 @@ export default function CollectionDetailPage() {
           <Card>
             <CardHeader className="flex items-center justify-between">
               <CardTitle>Assets</CardTitle>
-              <span className="rounded-full bg-bg-inset px-2.5 py-0.5 text-xs font-medium tabular text-text-muted">
+              <span className="tabular rounded-full bg-bg-inset px-2.5 py-0.5 text-xs font-medium text-text-muted">
                 {assets.data?.length ?? 0}
               </span>
             </CardHeader>
@@ -219,8 +252,8 @@ export default function CollectionDetailPage() {
                         <Mono className="text-2xs">{asset.storage_ref}</Mono>
                       </Td>
                       <Td>{humanise(asset.asset_type)}</Td>
-                      <Td className="text-right tabular">{asset.subject_count}</Td>
-                      <Td className="text-right tabular">
+                      <Td className="tabular text-right">{asset.subject_count}</Td>
+                      <Td className="tabular text-right">
                         {asset.bystander_count > 0 ? (
                           <span className="text-warning-text">{asset.bystander_count}</span>
                         ) : (
@@ -246,7 +279,7 @@ export default function CollectionDetailPage() {
           </Card>
         </div>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-5">
           <Card>
             <CardHeader>
               <CardTitle>Provenance</CardTitle>
@@ -265,15 +298,11 @@ export default function CollectionDetailPage() {
                     {record.project_name}
                   </Link>
                 </DescriptionItem>
-                <DescriptionItem term="Site">
-                  {record.site_label ?? "—"}
-                </DescriptionItem>
+                <DescriptionItem term="Site">{record.site_label ?? "—"}</DescriptionItem>
                 <DescriptionItem term="Collected on">
                   {formatDate(record.collected_on)}
                 </DescriptionItem>
-                <DescriptionItem term="Agent">
-                  {record.agent_ref ?? "—"}
-                </DescriptionItem>
+                <DescriptionItem term="Agent">{record.agent_ref ?? "—"}</DescriptionItem>
                 <DescriptionItem term="Import batch">
                   <Link
                     href={`/imports/${record.batch_uuid}`}

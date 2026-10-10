@@ -3,7 +3,7 @@
  * text edited in place, retiring it, and the project notices made from it.
  */
 import { HttpResponse, http } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import TemplatePage from "@/app/(app)/notices/templates/[uuid]/page";
 import { makeMe, makePurpose } from "@/test/fixtures";
@@ -40,6 +40,11 @@ const SPEECH = makePurpose({
   status: "draft",
 });
 
+// The tab lives in the fragment; one test's tab must not open the next's.
+afterEach(() => {
+  window.history.replaceState(null, "", "/");
+});
+
 describe("NoticeTemplatePage", () => {
   it("leads with the ID to give out, and lists what a notice from it carries", async () => {
     server.use(
@@ -65,11 +70,15 @@ describe("NoticeTemplatePage", () => {
         HttpResponse.json({ items: [SPEECH], next_cursor: null, total: 1 }),
       ),
     );
-    render(<TemplatePage />);
-    expect(await screen.findByText("TPL-0007")).toBeInTheDocument();
+    const { user } = render(<TemplatePage />);
+    // On the summary card's status line and again as its first fact.
+    expect((await screen.findAllByText("TPL-0007")).length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: /Copy ID/ })).toBeInTheDocument();
     expect(screen.getByText("Gait model training")).toBeInTheDocument();
-    expect(screen.getByText("We collect your gait video.")).toBeInTheDocument();
+    // The text and the notices made from it each have their own tab.
+    await user.click(screen.getByRole("tab", { name: /Text/ }));
+    expect(screen.getByText("We collect your gait video.")).toBeVisible();
+    await user.click(screen.getByRole("tab", { name: /Used by/ }));
     expect(screen.getByRole("link", { name: "NTC-GAIT-2026 v1" })).toHaveAttribute(
       "href",
       "/notices/81818181-8181-4181-8181-818181818181",

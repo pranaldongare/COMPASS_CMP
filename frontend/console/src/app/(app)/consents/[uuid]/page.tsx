@@ -18,13 +18,23 @@
  */
 "use client";
 
-import { ArrowLeft, Info } from "lucide-react";
+import {
+  ArrowLeft,
+  Database,
+  FileCheck,
+  Info,
+  LayoutGrid,
+  ListChecks,
+  MousePointerClick,
+  ScrollText,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import * as React from "react";
 
 import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { PageHeader } from "@/components/layout/app-shell";
+import { RecordHeader } from "@/components/layout/record-header";
 import { StackedBar, type Segment } from "@/components/ui/charts";
 import { EmptyRecords } from "@/components/ui/graphics";
 import {
@@ -45,6 +55,7 @@ import {
   Tr,
 } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
+import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
 import { useConsent, useConsentAssets, useConsentGrants } from "@/features/consent";
 import type { PurposeGrant } from "@/types";
 import {
@@ -55,12 +66,23 @@ import {
   shortHash,
 } from "@/lib/format";
 
+const TABS = ["overview", "assets"] as const;
+type ConsentTab = (typeof TABS)[number];
+/** Cards addressed by fragment, mapped to the tab that holds them. `#assets`
+ *  is the tab's own name today; listed so the card's id keeps landing if the
+ *  tab is ever renamed. */
+const SECTIONS: Record<string, ConsentTab> = {
+  assets: "assets",
+};
+
 export default function ConsentDetailPage() {
   const { uuid } = useParams<{ uuid: string }>();
 
   const consent = useConsent(uuid);
   const grants = useConsentGrants(uuid);
   const assets = useConsentAssets(uuid);
+  // Above the early returns, so the hooks run in the same order every render.
+  const [tab, setTab] = useHashTab(TABS, "overview", SECTIONS);
 
   if (consent.error) {
     return (
@@ -94,13 +116,14 @@ export default function ConsentDetailPage() {
   // The derived status, computed the same way the register computes it:
   // withdrawn only when a withdrawal left nothing granted. One purpose of
   // several withdrawn is partial - the rest go on.
-  const status = record.is_withdrawal && granted === 0
-    ? "withdrawn"
-    : granted === 0
-      ? "declined"
-      : refused === 0
-        ? "consented"
-        : "partial";
+  const status =
+    record.is_withdrawal && granted === 0
+      ? "withdrawn"
+      : granted === 0
+        ? "declined"
+        : refused === 0
+          ? "consented"
+          : "partial";
 
   const composition: Segment[] = [
     { key: "granted", label: "Agreed", value: granted, color: "var(--viz-1)" },
@@ -109,68 +132,200 @@ export default function ConsentDetailPage() {
 
   return (
     <>
-      <PageHeader
-        eyebrow="Consent"
+      {/* The trail, then the record's summary card (2026-10-10, the detail
+          look the user settled on): who, the derived status and where, over
+          the four figures a reviewer checks first. The per-purpose lines stay
+          on the Overview - the count in the strip does not replace them. */}
+      <PageHeader heading={false} title={record.subject_name} breadcrumb={<BackLink />} />
+      <RecordHeader
+        icon={FileCheck}
         title={record.subject_name}
-        description={`${record.project_name} · ${record.site_label}`}
-        breadcrumb={<BackLink />}
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
+        meta={
+          <>
+            <span className="text-2xs font-semibold tracking-wider text-accent-text uppercase">
+              Consent
+            </span>
             <StatusBadge kind="consent" value={status} />
-            <AuditTrailLink
-              entityType="consent_artefact"
-              uuid={record.consent_uuid}
-              label={`${record.subject_name} — ${record.project_name}`}
-            />
-          </div>
+            <span>{`${record.project_name} · ${record.site_label}`}</span>
+          </>
         }
+        actions={
+          <AuditTrailLink
+            entityType="consent_artefact"
+            uuid={record.consent_uuid}
+            label={`${record.subject_name} — ${record.project_name}`}
+          />
+        }
+        facts={[
+          {
+            label: "Purposes agreed",
+            value: grants.data ? `${granted} of ${granted + refused}` : "—",
+            icon: ListChecks,
+            tint: 0,
+          },
+          {
+            label: "Assets holding them",
+            value: assets.data ? assets.data.length : "—",
+            icon: Database,
+            tint: 2,
+            href: "#assets",
+          },
+          {
+            label: "Notice",
+            value: `${record.notice_code} v${record.version}`,
+            icon: ScrollText,
+            tint: 1,
+          },
+          {
+            label: "Acted",
+            value: formatDate(record.affirmative_action_at),
+            icon: MousePointerClick,
+            tint: 3,
+          },
+        ]}
       />
 
+      {/* Above the tabs: a withdrawal changes how every tab reads. */}
       {record.is_withdrawal && (
-        <Alert tone="warning" title="This record is a withdrawal" className="mb-4">
+        <Alert tone="warning" title="This record is a withdrawal" className="mb-5">
           It supersedes an earlier consent rather than replacing it. The earlier record
           still exists and is still evidence of what was agreed at the time.
         </Alert>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="min-w-0 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Purposes</CardTitle>
-              <p className="mt-1 text-sm text-text-muted">
-                Consent is given purpose by purpose. Each line is a separate decision the person
-                made.
-              </p>
-            </CardHeader>
-            <CardBody>
-              {grants.isLoading ? (
-                <Skeleton className="h-40" />
-              ) : grants.error ? (
-                <Alert tone="danger">{grants.error.userMessage()}</Alert>
-              ) : (grants.data ?? []).length === 0 ? (
-                <EmptyState
-                  illustration={<EmptyRecords />}
-                  title="No purposes recorded"
-                  description="This record carries no purpose grants, which should not happen — raise it with the Privacy Office."
-                />
-              ) : (
-                <>
-                  <StackedBar
-                    segments={composition}
-                    caption={`${granted} of ${granted + refused} purposes agreed.`}
-                  />
-                  <ul className="mt-5 divide-y divide-border">
-                    {(grants.data ?? []).map((grant) => (
-                      <GrantRow key={grant.purpose_uuid} grant={grant} />
-                    ))}
-                  </ul>
-                </>
-              )}
-            </CardBody>
-          </Card>
+      <Tabs value={tab} onValueChange={setTab} label="Consent sections" layout="underline">
+        <TabList>
+          <Tab value="overview" icon={LayoutGrid}>
+            Overview
+          </Tab>
+          <Tab value="assets" icon={Database} count={assets.data?.length}>
+            Assets
+          </Tab>
+        </TabList>
 
-          <Card>
+        <TabPanel value="overview">
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+            <div className="min-w-0 space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Purposes</CardTitle>
+                  <p className="mt-1 text-sm text-text-muted">
+                    Consent is given purpose by purpose. Each line is a separate decision
+                    the person made.
+                  </p>
+                </CardHeader>
+                <CardBody>
+                  {grants.isLoading ? (
+                    <Skeleton className="h-40" />
+                  ) : grants.error ? (
+                    <Alert tone="danger">{grants.error.userMessage()}</Alert>
+                  ) : (grants.data ?? []).length === 0 ? (
+                    <EmptyState
+                      illustration={<EmptyRecords />}
+                      title="No purposes recorded"
+                      description="This record carries no purpose grants, which should not happen — raise it with the Privacy Office."
+                    />
+                  ) : (
+                    <>
+                      <StackedBar
+                        segments={composition}
+                        caption={`${granted} of ${granted + refused} purposes agreed.`}
+                      />
+                      <ul className="mt-5 divide-y divide-border">
+                        {(grants.data ?? []).map((grant) => (
+                          <GrantRow key={grant.purpose_uuid} grant={grant} />
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </CardBody>
+              </Card>
+            </div>
+
+            {/* ------------------------------------------------------ the evidence */}
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Evidence</CardTitle>
+                </CardHeader>
+                <CardBody className="space-y-4">
+                  <DescriptionList>
+                    <DescriptionItem term="Notice">
+                      <Link
+                        href={`/notices/${record.notice_uuid}`}
+                        className="text-accent-text underline underline-offset-2"
+                      >
+                        {record.notice_code}
+                      </Link>{" "}
+                      <span className="text-text-subtle">v{record.version}</span>
+                    </DescriptionItem>
+                    <DescriptionItem term="Language">
+                      {humanise(record.language_code)}
+                    </DescriptionItem>
+                    <DescriptionItem term="Content hash">
+                      <Mono title={record.notice_content_hash}>
+                        {shortHash(record.notice_content_hash)}
+                      </Mono>
+                    </DescriptionItem>
+                    <DescriptionItem term="Served at">
+                      {formatDateTime(record.served_at)}
+                    </DescriptionItem>
+                    <DescriptionItem term="Acted at">
+                      {formatDateTime(record.affirmative_action_at)}
+                    </DescriptionItem>
+                    <DescriptionItem term="Action">
+                      {humanise(record.action_type)}
+                    </DescriptionItem>
+                  </DescriptionList>
+
+                  <p className="flex items-start gap-2 rounded-lg bg-bg-subtle p-3 text-xs leading-relaxed text-text-muted">
+                    <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                    <span>
+                      The gap between <strong>served</strong> and <strong>acted</strong> is
+                      what evidences s.5(1) — that the notice was given before consent was
+                      asked for. Both timestamps come from the server.
+                    </span>
+                  </p>
+                </CardBody>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Data subject</CardTitle>
+                </CardHeader>
+                <CardBody>
+                  <DescriptionList>
+                    <DescriptionItem term="Name">{record.subject_name}</DescriptionItem>
+                    <DescriptionItem term="Email">{record.subject_email}</DescriptionItem>
+                    <DescriptionItem term="Mobile">
+                      {record.subject_mobile ?? "—"}
+                    </DescriptionItem>
+                    <DescriptionItem term="Site">{record.site_label}</DescriptionItem>
+                    <DescriptionItem term="Project">
+                      <Link
+                        href={`/projects/${record.project_uuid}`}
+                        className="text-accent-text underline underline-offset-2"
+                      >
+                        {record.project_name}
+                      </Link>
+                    </DescriptionItem>
+                    <DescriptionItem term="Record">
+                      <Mono title={record.consent_uuid}>
+                        {shortHash(record.consent_uuid)}
+                      </Mono>
+                    </DescriptionItem>
+                    <DescriptionItem term="Recorded">
+                      {formatDateTime(record.created_at)}
+                    </DescriptionItem>
+                  </DescriptionList>
+                </CardBody>
+              </Card>
+            </div>
+          </div>
+        </TabPanel>
+
+        <TabPanel value="assets">
+          <Card id="assets" className="scroll-mt-20">
             <CardHeader>
               <CardTitle>Assets containing this person</CardTitle>
               <p className="mt-1 text-sm text-text-muted">
@@ -242,86 +397,8 @@ export default function ConsentDetailPage() {
               </Table>
             )}
           </Card>
-        </div>
-
-        {/* ------------------------------------------------------ the evidence */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Evidence</CardTitle>
-            </CardHeader>
-            <CardBody className="space-y-4">
-              <DescriptionList>
-                <DescriptionItem term="Notice">
-                  <Link
-                    href={`/notices/${record.notice_uuid}`}
-                    className="text-accent-text underline underline-offset-2"
-                  >
-                    {record.notice_code}
-                  </Link>{" "}
-                  <span className="text-text-subtle">v{record.version}</span>
-                </DescriptionItem>
-                <DescriptionItem term="Language">
-                  {humanise(record.language_code)}
-                </DescriptionItem>
-                <DescriptionItem term="Content hash">
-                  <Mono title={record.notice_content_hash}>
-                    {shortHash(record.notice_content_hash)}
-                  </Mono>
-                </DescriptionItem>
-                <DescriptionItem term="Served at">
-                  {formatDateTime(record.served_at)}
-                </DescriptionItem>
-                <DescriptionItem term="Acted at">
-                  {formatDateTime(record.affirmative_action_at)}
-                </DescriptionItem>
-                <DescriptionItem term="Action">
-                  {humanise(record.action_type)}
-                </DescriptionItem>
-              </DescriptionList>
-
-              <p className="flex items-start gap-2 rounded-lg bg-bg-subtle p-3 text-xs leading-relaxed text-text-muted">
-                <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-                <span>
-                  The gap between <strong>served</strong> and <strong>acted</strong> is what
-                  evidences s.5(1) — that the notice was given before consent was asked for.
-                  Both timestamps come from the server.
-                </span>
-              </p>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Data subject</CardTitle>
-            </CardHeader>
-            <CardBody>
-              <DescriptionList>
-                <DescriptionItem term="Name">{record.subject_name}</DescriptionItem>
-                <DescriptionItem term="Email">{record.subject_email}</DescriptionItem>
-                <DescriptionItem term="Mobile">
-                  {record.subject_mobile ?? "—"}
-                </DescriptionItem>
-                <DescriptionItem term="Site">{record.site_label}</DescriptionItem>
-                <DescriptionItem term="Project">
-                  <Link
-                    href={`/projects/${record.project_uuid}`}
-                    className="text-accent-text underline underline-offset-2"
-                  >
-                    {record.project_name}
-                  </Link>
-                </DescriptionItem>
-                <DescriptionItem term="Record">
-                  <Mono title={record.consent_uuid}>{shortHash(record.consent_uuid)}</Mono>
-                </DescriptionItem>
-                <DescriptionItem term="Recorded">
-                  {formatDateTime(record.created_at)}
-                </DescriptionItem>
-              </DescriptionList>
-            </CardBody>
-          </Card>
-        </div>
-      </div>
+        </TabPanel>
+      </Tabs>
     </>
   );
 }

@@ -24,6 +24,11 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { statePath } from "./support/session";
 
+/** The notice page keeps its cards under tabs (2026-10-10); open one. */
+function openTab(page: Page, name: string) {
+  return page.getByRole("tab", { name: new RegExp(`^${name}`) }).click();
+}
+
 /** A draft notice whose checklist still blocks, or null if every one is clear.
  *
  *  Through the console's own `/api` proxy, so it carries the same session
@@ -56,7 +61,11 @@ test.describe("a draft notice, as the Privacy Office", () => {
     await page.goto(`/notices/${uuid}`);
     await expect(page).toHaveURL(/\/notices\/[0-9a-f-]{36}/, { timeout: 15_000 });
 
-    await expect(page.getByText(/blocking publication/i)).toBeVisible({ timeout: 15_000 });
+    // The checklist's own line: the summary card's figure is labelled
+    // "Blocking publication" too.
+    await expect(page.getByText(/item\(s\) blocking publication/i)).toBeVisible({
+      timeout: 15_000,
+    });
     const lines = page
       .getByRole("listitem")
       .filter({ hasText: /purpose|text|URL|addresses/i });
@@ -70,6 +79,12 @@ test.describe("a draft notice, as the Privacy Office", () => {
     // And the anchors exist, so the link is not a promise to nowhere.
     await expect(page.locator("#notice-purposes")).toBeAttached();
     await expect(page.locator("#notice-languages")).toBeAttached();
+
+    // The cards sit on other tabs now: following the link opens the one that
+    // holds its card.
+    const target = (await fix.getAttribute("href"))!.slice(1);
+    await fix.click();
+    await expect(page.locator(`#${target}`)).toBeVisible();
   });
 
   test("a draft purpose is activated from the notice that carries it", async ({ page }) => {
@@ -81,23 +96,26 @@ test.describe("a draft notice, as the Privacy Office", () => {
 
     await page.goto(`/notices/${uuid}`);
     await expect(page).toHaveURL(/\/notices\/[0-9a-f-]{36}/, { timeout: 15_000 });
-    await expect(page.getByText(/blocking publication/i)).toBeVisible({ timeout: 15_000 });
+    const blocking = page.getByText(/item\(s\) blocking publication/i);
+    await expect(blocking).toBeVisible({ timeout: 15_000 });
+    // Read on Overview, where the checklist is, before the Purposes tab hides it.
+    const said = (await blocking.innerText()).trim();
 
+    await openTab(page, "Purposes");
     const activate = page.getByRole("button", { name: /^activate$/i });
+    await expect(activate.first()).toBeVisible();
     const before = await activate.count();
     expect(
       before,
       "the checklist named one, so the control has to be here",
     ).toBeGreaterThan(0);
 
-    const blocking = page.getByText(/item\(s\) blocking publication/i);
-    const said = (await blocking.innerText()).trim();
-
     await activate.first().click();
 
     // One fewer control, and one fewer line, without a reload: activating a
     // purpose is what clears a checklist line, so both queries are invalidated.
     await expect(activate).toHaveCount(before - 1, { timeout: 15_000 });
+    await openTab(page, "Overview");
     await expect(blocking).not.toHaveText(said, { timeout: 15_000 });
   });
 });

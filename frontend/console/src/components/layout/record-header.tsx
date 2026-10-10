@@ -73,7 +73,11 @@ export function RecordHeader({
                 </span>
                 <div className="min-w-0">
                   <p className="text-xs text-text-subtle">{fact.label}</p>
-                  <p className="tabular truncate text-sm font-semibold text-text">
+                  {/* Cut to one line; the whole value on hover. */}
+                  <p
+                    className="tabular truncate text-sm font-semibold text-text"
+                    title={typeof fact.value === "string" ? fact.value : undefined}
+                  >
                     {fact.value}
                   </p>
                 </div>

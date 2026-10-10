@@ -8,6 +8,15 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Every detail page in the slide-A look** (2026-10-10, from the wireframes
+  the user approved): rights request, consent, processor, data source,
+  purpose, user account, import batch, collection, notice and notice
+  template now open on the breadcrumb, then a summary card (icon, name,
+  kicker and status line, actions) over four key facts, then underline tabs
+  with icons and counts where the page has sections (data source, import
+  and collection stay a single view). Old #anchors still land on the right
+  tab. Import and collection's four stat tiles became the fact strip; the
+  template's ID card became a Copy ID button in its status line.
 - **Detail pages as slide A** (2026-10-10, "Summary card + underline tabs",
   the user's final pick): a project and a breach open on the breadcrumb, then
   a white summary card - gradient icon, name, status line and actions over a
