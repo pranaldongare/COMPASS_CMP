@@ -10,8 +10,8 @@
  * logo heads the form: a person opening a consent link on a phone at a
  * collection site should see the form without scrolling past decoration.
  *
- * The panel's picture (2026-10-10) is the world as a honeycomb, Samsung's
- * sites round the world joined by arcs to Bengaluru, over a faint honeycomb:
+ * The panel's picture (2026-10-10) is the world as blue dots on a white,
+ * dotted field, Samsung's sites round the world joined by arcs to Bengaluru:
  * decorative, and still for anyone who asks for reduced motion.
  *
  * The form's look - taller rounded fields with an icon at their end, a
@@ -25,7 +25,7 @@ import Link from "next/link";
 import * as React from "react";
 
 import { BrandMark } from "@/components/ui/graphics";
-import { HoneycombBackdrop, WorldHoneycomb } from "@/components/ui/world-map";
+import { WorldDots } from "@/components/ui/world-map";
 import { config } from "@/lib/config";
 
 export function AuthLayout({
@@ -55,33 +55,32 @@ export function AuthLayout({
       className="min-h-dvh bg-surface lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]"
     >
       {/* ------------------------------------------------- the brand panel */}
-      <section className="auth-brand relative hidden overflow-hidden lg:flex lg:flex-col lg:items-center lg:justify-between lg:px-6 lg:py-10">
-        <HoneycombBackdrop className="pointer-events-none absolute inset-0 size-full" />
+      <section className="auth-brand relative hidden overflow-hidden border-r border-[#e6ebf2] lg:flex lg:flex-col lg:items-center lg:justify-between lg:px-6 lg:py-10">
 
-        <div className="relative flex items-center gap-3 text-white">
-          <BrandMark className="size-9 text-[#8fd0ff]" />
+        <div className="relative flex items-center gap-3 text-[#1f5c9e]">
+          <BrandMark className="size-9" />
           <p className="text-3xl font-bold tracking-[0.12em]">{config.productName}</p>
         </div>
 
         <div className="relative flex w-full flex-col items-center">
           <div className="relative w-full max-w-[820px]">
-            <WorldHoneycomb className="w-full drop-shadow-[0_8px_30px_rgb(10_30_70/0.45)]" />
+            <WorldDots className="w-full" />
           </div>
-          <p className="mt-6 max-w-md text-center text-lg leading-relaxed font-semibold text-white">
+          <p className="mt-6 max-w-md text-center text-lg leading-relaxed font-semibold text-[#1d2433]">
             {config.pitch.heading}
           </p>
-          <p className="mt-1.5 max-w-md text-center text-sm leading-relaxed text-white/80">
+          <p className="mt-1.5 max-w-md text-center text-sm leading-relaxed text-[#4b5567]">
             {config.pitch.lede}
           </p>
         </div>
 
-        <div className="relative w-full max-w-sm text-center text-white">
+        <div className="relative w-full max-w-sm text-center text-[#1d2433]">
           <p className="text-sm font-semibold">{config.pitch.footerTitle}</p>
-          <hr className="mx-auto my-2 w-full border-white/40" />
-          <p className="text-sm text-white/85">
+          <hr className="mx-auto my-2 w-full border-[#d5dfeb]" />
+          <p className="text-sm text-[#4b5567]">
             {config.pitch.footerTags.map((tag, i) => (
               <React.Fragment key={tag}>
-                {i > 0 && <span className="mx-2.5 text-white/50">|</span>}
+                {i > 0 && <span className="mx-2.5 text-[#a7b3c4]">|</span>}
                 {tag}
               </React.Fragment>
             ))}

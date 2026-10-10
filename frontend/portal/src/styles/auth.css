@@ -68,15 +68,15 @@
   font-weight: 600;
 }
 
-/* The brand panel (2026-10-10): the Ocean blue, deepest at the foot, a sky
-   glow behind the map. The honeycomb over it is an SVG in the panel. The
-   same in light and dark - it is the product's colour, not the theme's. */
+/* The brand panel (2026-10-10, Line): white, a field of fine blue dots, and
+   a faint blue light behind the map. White in light and dark - it is the
+   product's picture, not the theme's. */
 .auth-brand {
-  background-color: #0d2c55;
+  background-color: #ffffff;
   background-image:
-    radial-gradient(ellipse 70% 45% at 50% 45%, rgb(64 150 230 / 0.35), transparent 70%),
-    radial-gradient(ellipse 80% 40% at 20% 0%, rgb(94 196 255 / 0.18), transparent 70%),
-    linear-gradient(170deg, #12407a 0%, #0f3566 45%, #0a2547 100%);
+    radial-gradient(ellipse 60% 40% at 50% 46%, rgb(47 114 187 / 0.08), transparent 70%),
+    radial-gradient(#d5e3f3 1px, transparent 1.2px);
+  background-size: auto, 16px 16px;
 }
 
 /* The map's motion: data running along the arcs, rings opening from the lit

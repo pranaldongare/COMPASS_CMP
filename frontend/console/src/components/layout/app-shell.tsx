@@ -179,9 +179,9 @@ function Header({
   const apple = useIsApple();
 
   return (
-    // Ocean (2026-10-10): the sidebar's blue across the top, the same in both
-    // themes; `.ocean-scope` makes what sits in it read as on blue.
-    <header className="topbar-ocean ocean-scope no-print sticky top-0 z-30 border-b border-border">
+    // Line (2026-10-10): white across the top with a blue rail along its top
+    // edge; `.frame-light` keeps it white in dark mode too.
+    <header className="frame-light no-print sticky top-0 z-30 border-b border-border bg-surface shadow-[inset_0_3px_0_var(--accent-text)]">
       <div className="flex h-16 w-full items-center gap-3 px-4 sm:px-6">
         <Button
           variant="ghost"
@@ -355,9 +355,8 @@ function Sidebar({
         aria-label="Main"
         data-collapsed={folded || undefined}
         className={cn(
-          // Ocean (2026-10-10): the deep-blue gradient down the left, the
-          // same in both themes.
-          "frame-light sidebar-ocean no-print z-20 flex w-64 shrink-0 flex-col text-[var(--sidebar-text)]",
+          // Line (2026-10-10): white down the left, white in both themes.
+          "frame-light no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
           "lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:transition-[width] lg:duration-200",
           folded && "lg:w-[4.5rem]",
           mobileOpen
@@ -411,9 +410,9 @@ function Sidebar({
                         "transition-[background-color,color,box-shadow] duration-150",
                         "outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-badge)]",
                         folded && "lg:size-11 lg:justify-center lg:p-0",
-                        // Active: a white pill on the blue, navy text and icon.
+                        // Active: a pale blue band with a blue rail at its left edge.
                         active
-                          ? "bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)] shadow-[0_6px_16px_rgb(0_0_0/0.22)]"
+                          ? "rounded-l-none bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)] shadow-[inset_3px_0_0_var(--sidebar-active-text)]"
                           : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",
                       )}
                     >
@@ -565,8 +564,8 @@ export function PageHeader({
   /** The tile beside the title. Defaults to the menu item's icon on a
    *  destination's own page (2026-10-10); `null` for none. */
   icon?: React.ComponentType<{ className?: string }> | null;
-  /** The page's opening banner (2026-10-10): the header on a blue panel with
-   *  two discs of light - the dashboard's greeting. */
+  /** The page's opening banner (2026-10-10): the header on a white card with
+   *  a field of blue dots - the dashboard's greeting. */
   hero?: boolean;
 }) {
   const pathname = usePathname();
@@ -575,7 +574,7 @@ export function PageHeader({
     <div
       className={cn(
         "mb-5",
-        hero && "hero-ocean hero-scope mb-6 overflow-hidden rounded-2xl px-6 py-6 shadow-[var(--shadow-card)] sm:px-7",
+        hero && "hero-line mb-6 overflow-hidden rounded-2xl border border-border px-6 py-6 shadow-[var(--shadow-card)] sm:px-7",
       )}
     >
       {breadcrumb && <div className="mb-2 text-sm text-text-muted">{breadcrumb}</div>}
@@ -584,12 +583,7 @@ export function PageHeader({
           {Icon && (
             <span
               aria-hidden="true"
-              className={cn(
-                "grid size-12 shrink-0 place-items-center rounded-xl shadow-[var(--shadow-xs)]",
-                hero
-                  ? "border border-white/25 bg-white/15 text-white"
-                  : "border border-accent-border bg-accent-subtle text-accent-text",
-              )}
+              className="grid size-12 shrink-0 place-items-center rounded-xl border border-accent-border bg-accent-subtle text-accent-text shadow-[var(--shadow-xs)]"
             >
               {React.createElement(Icon, { className: "size-6" })}
             </span>

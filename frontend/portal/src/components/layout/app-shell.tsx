@@ -124,9 +124,9 @@ function Header({
   mobileOpen: boolean;
 }) {
   return (
-    // Ocean (2026-10-10): the sidebar's blue across the top, the same in both
-    // themes; `.ocean-scope` makes what sits in it read as on blue.
-    <header className="topbar-ocean ocean-scope no-print sticky top-0 z-30 border-b border-border">
+    // Line (2026-10-10): white across the top with a blue rail along its top
+    // edge; `.frame-light` keeps it white in dark mode too.
+    <header className="frame-light no-print sticky top-0 z-30 border-b border-border bg-surface shadow-[inset_0_3px_0_var(--accent-text)]">
       <div className="flex h-16 w-full items-center gap-3 px-4 sm:px-6">
         <Button
           variant="ghost"
@@ -202,9 +202,8 @@ function Sidebar({
         id="sidebar-nav"
         aria-label="Main"
         className={cn(
-          // Ocean (2026-10-10): the deep-blue gradient down the left, the
-          // same in both themes.
-          "frame-light sidebar-ocean no-print z-20 flex w-64 shrink-0 flex-col text-[var(--sidebar-text)]",
+          // Line (2026-10-10): white down the left, white in both themes.
+          "frame-light no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
           "lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)]",
           mobileOpen
             ? "fixed top-16 bottom-0 left-0 flex overflow-y-auto shadow-[var(--shadow-pop)]"
@@ -242,9 +241,9 @@ function Sidebar({
                           "group relative flex items-center gap-3 rounded-lg py-2 pl-3 pr-2 text-sm",
                           "transition-[background-color,color,box-shadow] duration-150",
                           "outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-badge)]",
-                          // Active: a white pill on the blue, navy text and icon.
+                          // Active: a pale blue band with a blue rail at its left edge.
                           active
-                            ? "bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)] shadow-[0_6px_16px_rgb(0_0_0/0.22)]"
+                            ? "rounded-l-none bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)] shadow-[inset_3px_0_0_var(--sidebar-active-text)]"
                             : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",
                         )}
                       >

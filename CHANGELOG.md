@@ -8,6 +8,12 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Line look** (2026-10-10, chosen from three white mock-ups): the sidebar
+  and top bar white in both themes, a blue rail on the current page and
+  along the top edge; a near-white page with white cards and tables; the
+  dashboard banner a white card with a field of blue dots; the sign-in
+  panel white with a dotted field and the world as blue dots (India deep
+  blue, arcs to Samsung's sites). Supersedes the Ocean look below.
 - **Honeycomb world sign-in** (2026-10-10): the sign-in, MFA, reset and
   sign-up screens of both apps split 7 / 5 - a brand panel with the world
   drawn as hexagons over a faint honeycomb, arcs from Bengaluru to 26 Samsung

@@ -24,72 +24,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
    track (2026-10-10). */
 .sidebar-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgb(255 255 255 / 0.22) transparent;
+  scrollbar-color: var(--border-strong) transparent;
 }
 
-/* Ocean (2026-10-10). No `position` in these: this sheet is unlayered and
-   would beat the shell's sticky and fixed utilities. */
-
-/* The sidebar: deep blue darkening upward, a soft sky glow at the foot. */
-.sidebar-ocean {
+/* Line (2026-10-10). The dashboard's banner: a white card whose right side
+   is a field of fine blue dots, fading in from the left. */
+.hero-line {
   background:
-    radial-gradient(130% 30% at 50% 106%, rgb(94 196 255 / 0.16), transparent 70%),
-    linear-gradient(180deg, #0d2c55 0%, #12407a 58%, #174f91 100%);
-  background-color: var(--sidebar-bg);
-}
-
-/* The top bar: the sidebar's blue running left to right, so the two read as
-   one frame - its left end is the sidebar's top colour. */
-.topbar-ocean {
-  background: linear-gradient(90deg, #0d2c55 0%, #12407a 55%, #174f91 100%);
-  background-color: var(--sidebar-bg);
-  box-shadow: 0 2px 10px rgb(13 44 85 / 0.18);
-}
-/* Inside the blue top bar the colour tokens are the bar's, so the logo,
-   search, buttons and account circle read as on blue. Menus and tooltips
-   open in a portal, outside it, and keep the page's colours. */
-.ocean-scope {
-  --bg: rgb(255 255 255 / 0.08);
-  --bg-subtle: rgb(255 255 255 / 0.06);
-  --bg-inset: rgb(255 255 255 / 0.12);
-  --surface: #164a8a;
-  --surface-hover: #1b5599;
-  --surface-raised: #164a8a;
-  --text: #ffffff;
-  --text-muted: var(--sidebar-text);
-  --text-subtle: var(--sidebar-label);
-  --border: var(--sidebar-border);
-  --border-strong: rgb(255 255 255 / 0.26);
-  --accent-text: #8fd0ff;
-  --accent-subtle: rgb(255 255 255 / 0.14);
-  --accent-border: rgb(255 255 255 / 0.34);
-  color: var(--text);
-}
-
-/* The dashboard's banner: the same blue in a diagonal, two soft discs of
-   light on the right. White text holds 4.5:1 across it. */
-.hero-ocean {
-  background:
-    radial-gradient(circle at 94% -30%, rgb(255 255 255 / 0.13) 0 130px, transparent 131px),
-    radial-gradient(circle at 78% 140%, rgb(255 255 255 / 0.08) 0 100px, transparent 101px),
-    linear-gradient(120deg, #0f3a70 0%, #1b5aa0 55%, #2770b8 100%);
-  color: #ffffff;
-}
-/* Inside the banner the controls read as on blue: the primary button white
-   with blue text, a secondary one a pane of white light. */
-.hero-scope {
-  --text: #ffffff;
-  --text-muted: #eef5fd;
-  --text-subtle: #dbe8f8;
-  --accent: #ffffff;
-  --accent-hover: #eaf3ff;
-  --accent-active: #dbeafe;
-  --accent-contrast: #12407a;
-  --accent-text: #eef5fd;
-  --surface: rgb(255 255 255 / 0.12);
-  --surface-hover: rgb(255 255 255 / 0.2);
-  --border-strong: rgb(255 255 255 / 0.4);
-  --bg-inset: rgb(255 255 255 / 0.16);
+    linear-gradient(90deg, var(--surface) 40%, transparent 85%),
+    radial-gradient(color-mix(in oklab, var(--accent) 30%, transparent) 1.2px, transparent 1.3px),
+    var(--surface);
+  background-size: auto, 14px 14px, auto;
 }
 
 /* Icon tiles on the figure cards: one colour each, so four figures read as

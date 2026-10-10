@@ -1,7 +1,7 @@
 /**
- * The sign-in panel's picture (2026-10-10): the world drawn as a honeycomb,
- * with the places consent is collected lit up and joined to one hub, and a
- * faint honeycomb behind the whole panel.
+ * The sign-in panel's picture (2026-10-10): the world drawn as blue dots on
+ * the honeycomb grid (Line, the white look), Samsung's sites lit and joined by
+ * arcs to Bengaluru, India picked out in the deepest blue.
  *
  * Decorative throughout - hidden from assistive technology - and still under
  * `prefers-reduced-motion` (the motion is in `styles/auth.css`). The paths are
@@ -11,21 +11,17 @@ import * as React from "react";
 
 import { WORLD_HEX } from "@/components/ui/world-hex-data";
 
-/* Geometry: pointy-top hexagons, one column `W` wide. */
+/* Geometry: the honeycomb grid (rows offset half a cell), one column `W`
+   wide; each land cell is a dot at its centre. */
 const W = 10;
 const R = W / Math.sqrt(3);
 const ROW_H = 1.5 * R;
-const CELL_R = R * 0.84; // drawn a little small, so the cells read as tiles
+const DOT_R = 3.1;
 const WIDTH = WORLD_HEX.cols * W + W / 2;
 const HEIGHT = WORLD_HEX.rows.length * ROW_H + R / 2;
 
-function hexPath(cx: number, cy: number, r: number): string {
-  let d = "";
-  for (let i = 0; i < 6; i++) {
-    const a = (Math.PI / 180) * (60 * i - 90);
-    d += `${i ? "L" : "M"}${(cx + r * Math.cos(a)).toFixed(1)} ${(cy + r * Math.sin(a)).toFixed(1)}`;
-  }
-  return `${d}Z`;
+function dotPath(cx: number, cy: number, r: number): string {
+  return `M${(cx - r).toFixed(1)} ${cy.toFixed(1)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`;
 }
 
 function project(lon: number, lat: number): [number, number] {
@@ -111,7 +107,7 @@ const CELLS: string[] = (() => {
       if (line[col] !== "1") continue;
       const cx = col * W + W / 2 + (row % 2 ? W / 2 : 0);
       const cy = row * ROW_H + R;
-      paths[tier(cx, cy, row, col)] += hexPath(cx, cy, CELL_R);
+      paths[tier(cx, cy, row, col)] += dotPath(cx, cy, DOT_R);
     }
   });
   return paths;
@@ -123,7 +119,7 @@ const ARCS = NODES.map(([x, y]) => {
   return `M${hx.toFixed(1)} ${hy.toFixed(1)} Q${((hx + x) / 2).toFixed(1)} ${(Math.min(hy, y) - lift).toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}`;
 });
 
-export function WorldHoneycomb({ className }: { className?: string }) {
+export function WorldDots({ className }: { className?: string }) {
   const id = React.useId().replace(/:/g, "");
   return (
     <svg
@@ -133,24 +129,20 @@ export function WorldHoneycomb({ className }: { className?: string }) {
       focusable="false"
     >
       <defs>
-        <linearGradient id={`${id}-arc`} x1="0" x2="1">
-          <stop offset="0" stopColor="#8fd0ff" />
-          <stop offset="1" stopColor="#ffffff" />
-        </linearGradient>
         <radialGradient id={`${id}-glow`}>
-          <stop offset="0" stopColor="#5ec4ff" stopOpacity="0.55" />
-          <stop offset="1" stopColor="#5ec4ff" stopOpacity="0" />
+          <stop offset="0" stopColor="#2f72bb" stopOpacity="0.18" />
+          <stop offset="1" stopColor="#2f72bb" stopOpacity="0" />
         </radialGradient>
       </defs>
 
-      <path d={CELLS[0]} fill="#8fb8e6" fillOpacity="0.4" />
-      <path d={CELLS[1]} fill="#9fd2ff" fillOpacity="0.65" />
-      <path d={CELLS[2]} fill="#e2f3ff" fillOpacity="0.95" />
+      <path d={CELLS[0]} fill="#c9daee" />
+      <path d={CELLS[1]} fill="#8db4de" />
+      <path d={CELLS[2]} fill="#4f8fd0" />
 
-      <circle cx={HUB[0]} cy={HUB[1]} r="95" fill={`url(#${id}-glow)`} />
-      {/* India in saffron-gold, Karnataka bright within it. */}
-      <path d={CELLS[3]} fill="#ffc96b" fillOpacity="0.9" />
-      <path d={CELLS[4]} fill="#fff1cf" stroke="#ffb020" strokeWidth="1.2" />
+      <circle cx={HUB[0]} cy={HUB[1]} r="90" fill={`url(#${id}-glow)`} />
+      {/* India in the deepest blue, Karnataka in navy within it. */}
+      <path d={CELLS[3]} fill="#1f5c9e" />
+      <path d={CELLS[4]} fill="#0e3a6b" />
 
       {ARCS.map((d, i) => (
         <path
@@ -159,53 +151,22 @@ export function WorldHoneycomb({ className }: { className?: string }) {
           className="wm-arc"
           style={{ animationDelay: `${(i % 7) * -0.3}s` }}
           fill="none"
-          stroke={`url(#${id}-arc)`}
-          strokeWidth="1.2"
-          strokeOpacity="0.85"
+          stroke="#1f5c9e"
+          strokeWidth="1.1"
+          strokeOpacity="0.5"
           strokeLinecap="round"
         />
       ))}
 
       {NODES.map(([x, y], i) => (
         <g key={`${x}-${y}`}>
-          <circle className="wm-pulse" style={{ animationDelay: `${(i % 9) * 0.3}s` }} cx={x} cy={y} r="5" fill="none" stroke="#8fd0ff" strokeWidth="1.2" />
-          <circle cx={x} cy={y} r="2.8" fill="#ffffff" />
+          <circle className="wm-pulse" style={{ animationDelay: `${(i % 9) * 0.3}s` }} cx={x} cy={y} r="5" fill="none" stroke="#2f72bb" strokeWidth="1.1" />
+          <circle cx={x} cy={y} r="3.2" fill="#ffffff" stroke="#1f5c9e" strokeWidth="1.8" />
         </g>
       ))}
 
-      <circle className="wm-pulse" cx={HUB[0]} cy={HUB[1]} r="9" fill="none" stroke="#ffffff" strokeWidth="1.5" />
-      <circle cx={HUB[0]} cy={HUB[1]} r="5.5" fill="#ffffff" stroke="#5ec4ff" strokeWidth="2.5" />
-    </svg>
-  );
-}
-
-/** A faint honeycomb over the whole panel, fading out from the centre. */
-export function HoneycombBackdrop({ className }: { className?: string }) {
-  const id = React.useId().replace(/:/g, "");
-  const r = 18;
-  const w = r * Math.sqrt(3);
-  const h = r * 3;
-  return (
-    <svg className={className} aria-hidden="true" focusable="false">
-      <defs>
-        <pattern id={`${id}-hex`} width={w} height={h} patternUnits="userSpaceOnUse">
-          <path
-            d={`${hexPath(w / 2, r, r)}${hexPath(0, r * 2.5, r)}${hexPath(w, r * 2.5, r)}`}
-            fill="none"
-            stroke="#ffffff"
-            strokeOpacity="0.07"
-            strokeWidth="1"
-          />
-        </pattern>
-        <radialGradient id={`${id}-fade`} cx="50%" cy="45%" r="65%">
-          <stop offset="0" stopColor="#ffffff" stopOpacity="1" />
-          <stop offset="1" stopColor="#ffffff" stopOpacity="0.15" />
-        </radialGradient>
-        <mask id={`${id}-mask`}>
-          <rect width="100%" height="100%" fill={`url(#${id}-fade)`} />
-        </mask>
-      </defs>
-      <rect width="100%" height="100%" fill={`url(#${id}-hex)`} mask={`url(#${id}-mask)`} />
+      <circle className="wm-pulse" cx={HUB[0]} cy={HUB[1]} r="9" fill="none" stroke="#1f5c9e" strokeWidth="1.4" />
+      <circle cx={HUB[0]} cy={HUB[1]} r="5.5" fill="#1f5c9e" stroke="#ffffff" strokeWidth="2.5" />
     </svg>
   );
 }
