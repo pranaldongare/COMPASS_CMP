@@ -8,6 +8,14 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Honeycomb world sign-in** (2026-10-10): the sign-in, MFA, reset and
+  sign-up screens of both apps split 7 / 5 - a brand panel with the world
+  drawn as hexagons over a faint honeycomb, arcs from Bengaluru to the places
+  consent is collected (data running along them, rings opening from each),
+  India in gold with Karnataka bright inside it and a "Bengaluru, Karnataka,
+  India" pin, and three glass chips; the form on the right. All of it is
+  decorative and still under reduced motion. `world-hex-data.ts` and
+  `world-map.tsx` are shared files.
 - **Ocean look** (2026-10-10, chosen from four mock-ups): deep-blue gradient
   sidebar with a soft sky glow and a white current-page pill (same in both
   themes); the top bar in the same blue, left to right, its controls light

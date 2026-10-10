@@ -32,6 +32,8 @@ src/components/ui/charts.tsx
 src/components/ui/collapsible.tsx
 src/components/ui/dialog.tsx
 src/components/ui/graphics.tsx
+src/components/ui/world-hex-data.ts
+src/components/ui/world-map.tsx
 src/components/ui/menu.tsx
 src/components/ui/primitives.tsx
 src/components/ui/structure.test.tsx
