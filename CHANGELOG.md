@@ -8,6 +8,12 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Pill filters and buttons** (2026-10-10, chosen from three styles):
+  every list filter is a rounded pill with a small icon disc (picked from
+  its label); a filter that is set turns blue and gains an x that clears
+  it; the search is a pill too. Buttons are pills: the primary a COMPASS
+  blue gradient with a soft glow, secondary white, ghost tinting blue on
+  hover, danger a soft red that fills on hover.
 - **Clean-lines tables** (2026-10-10, chosen from three table styles): every
   table in both apps sits open on the page - no card, no fills, no
   alternating rows - with small capital headings over a firm rule, roomy

@@ -18,7 +18,20 @@
  */
 "use client";
 
-import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import {
+  Building2,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  CircleDot,
+  FolderKanban,
+  Search,
+  Shapes,
+  SlidersHorizontal,
+  UserRound,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
 
@@ -120,6 +133,43 @@ export interface FilterOption {
   label: string;
 }
 
+/** A filter's icon, from its label (2026-10-10): the pills read as pictured
+ *  choices without every page naming one. */
+function filterIcon(label: string): LucideIcon {
+  const l = label.toLowerCase();
+  if (/role|owner|person|who|holder|by/.test(l)) return UserRound;
+  if (/status|state|stage|clock|ticket/.test(l)) return CircleDot;
+  if (/date|received|due|registered|from|to|when|month|period/.test(l)) return CalendarDays;
+  if (/project/.test(l)) return FolderKanban;
+  if (/processor|source|site|organisation/.test(l)) return Building2;
+  if (/kind|type|category|purpose/.test(l)) return Shapes;
+  return SlidersHorizontal;
+}
+
+/** The pill shape every filter shares (2026-10-10, the pill-chip style). */
+function pillClass(set: boolean): string {
+  return cn(
+    "flex h-9 max-w-full items-center rounded-full border shadow-[var(--shadow-xs)] transition-colors",
+    "focus-within:ring-3 focus-within:ring-[var(--accent-border)]/45",
+    set ? "border-accent-border bg-accent-subtle" : "border-border bg-surface hover:border-border-strong",
+  );
+}
+
+/** The small disc holding a filter's icon: blue once the filter is set. */
+function IconDisc({ icon, set }: { icon: LucideIcon; set: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "grid size-6 shrink-0 place-items-center rounded-full transition-colors",
+        set ? "bg-accent text-accent-contrast" : "bg-accent-subtle text-accent-text",
+      )}
+    >
+      {React.createElement(icon, { className: "size-3.5" })}
+    </span>
+  );
+}
+
 export function FilterSelect({
   label,
   value,
@@ -137,23 +187,17 @@ export function FilterSelect({
 }) {
   const id = React.useId();
   const set = allLabel === null ? value !== options[0]?.value : Boolean(value);
-  // The label sits inside the control (2026-10-10), so a row of filters reads
-  // "Status  All statuses ▾" at one height; a filter that is set turns blue,
-  // so what narrows the list is visible at a glance.
+  // A pill (2026-10-10): an icon disc, the label, the value. A filter that is
+  // set turns blue and gains an x, so what narrows the list is visible at a
+  // glance and one click undoes it.
+  const clearable = set && allLabel !== null;
   return (
-    <div
-      className={cn(
-        "flex h-9 max-w-full items-center rounded-md border shadow-[var(--shadow-xs)] transition-colors",
-        "focus-within:ring-3 focus-within:ring-[var(--accent-border)]/45",
-        set
-          ? "border-accent-border bg-accent-subtle"
-          : "border-border-strong bg-surface hover:border-text-subtle",
-      )}
-    >
+    <div className={cn(pillClass(set), "pl-1.5")}>
       <label
         htmlFor={id}
-        className="shrink-0 cursor-pointer pr-1 pl-3 text-xs font-medium whitespace-nowrap text-text-subtle"
+        className="flex shrink-0 cursor-pointer items-center gap-2 pr-1 text-xs font-medium whitespace-nowrap text-text-subtle"
       >
+        <IconDisc icon={filterIcon(label)} set={set} />
         {label}
       </label>
       <select
@@ -161,7 +205,8 @@ export function FilterSelect({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          "select-chevron h-full max-w-48 min-w-0 cursor-pointer appearance-none truncate rounded-r-md bg-transparent pr-9 pl-1 text-sm font-medium outline-none",
+          "h-full max-w-48 min-w-0 cursor-pointer appearance-none truncate rounded-r-full bg-transparent pl-1 text-sm font-semibold outline-none",
+          clearable ? "pr-1" : "select-chevron pr-9",
           set ? "text-accent-text" : "text-text",
         )}
       >
@@ -172,6 +217,17 @@ export function FilterSelect({
           </option>
         ))}
       </select>
+      {clearable && (
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          aria-label={`Clear ${label}`}
+          title={`Clear ${label}`}
+          className="mr-1.5 grid size-6 shrink-0 place-items-center rounded-full text-accent-text transition-colors hover:bg-accent/15"
+        >
+          <X className="size-3.5" aria-hidden="true" />
+        </button>
+      )}
     </div>
   );
 }
@@ -258,7 +314,7 @@ export function SearchBox({
         </label>
         <div className="relative">
           <Search
-            className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-text-subtle"
+            className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-text-subtle"
             aria-hidden="true"
           />
           <Input
@@ -275,7 +331,7 @@ export function SearchBox({
               }
             }}
             placeholder={placeholder ?? label}
-            className="pr-8 pl-8 [&::-webkit-search-cancel-button]:hidden"
+            className="rounded-full pr-8 pl-9 [&::-webkit-search-cancel-button]:hidden"
           />
           {term && (
             <button
@@ -287,7 +343,7 @@ export function SearchBox({
                 send("");
                 inputRef.current?.focus();
               }}
-              className="absolute top-1/2 right-1.5 grid size-6 -translate-y-1/2 place-items-center rounded-md text-text-subtle transition-colors hover:bg-bg-inset hover:text-text"
+              className="absolute top-1/2 right-1.5 grid size-6 -translate-y-1/2 place-items-center rounded-full text-text-subtle transition-colors hover:bg-bg-inset hover:text-text"
             >
               <X className="size-3.5" aria-hidden="true" />
             </button>
@@ -313,7 +369,7 @@ export function SearchBox({
  */
 export function FilterBar({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-2" role="group" aria-label="Filters">
+    <div className="mb-4 flex flex-wrap items-center gap-2.5" role="group" aria-label="Filters">
       {children}
     </div>
   );
@@ -339,19 +395,12 @@ export function FilterDate({
 }) {
   const id = React.useId();
   return (
-    <div
-      className={cn(
-        "flex h-9 items-center rounded-md border shadow-[var(--shadow-xs)] transition-colors",
-        "focus-within:ring-3 focus-within:ring-[var(--accent-border)]/45",
-        value
-          ? "border-accent-border bg-accent-subtle"
-          : "border-border-strong bg-surface hover:border-text-subtle",
-      )}
-    >
+    <div className={cn(pillClass(Boolean(value)), "pl-1.5")}>
       <label
         htmlFor={id}
-        className="shrink-0 pr-1 pl-3 text-xs font-medium whitespace-nowrap text-text-subtle"
+        className="flex shrink-0 items-center gap-2 pr-1 text-xs font-medium whitespace-nowrap text-text-subtle"
       >
+        <IconDisc icon={CalendarDays} set={Boolean(value)} />
         {label}
       </label>
       <input
@@ -362,7 +411,7 @@ export function FilterDate({
         max={max}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          "h-full rounded-r-md bg-transparent pr-2 pl-1 text-sm font-medium outline-none",
+          "h-full rounded-r-full bg-transparent pr-3 pl-1 text-sm font-semibold outline-none",
           value ? "text-accent-text" : "text-text-muted",
         )}
       />
@@ -386,11 +435,9 @@ export function FilterToggle({
   return (
     <label
       className={cn(
-        "flex h-9 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm font-medium whitespace-nowrap shadow-[var(--shadow-xs)] transition-colors",
-        "focus-within:ring-3 focus-within:ring-[var(--accent-border)]/45",
-        checked
-          ? "border-accent-border bg-accent-subtle text-accent-text"
-          : "border-border-strong bg-surface text-text hover:border-text-subtle",
+        pillClass(checked),
+        "cursor-pointer gap-2 px-3.5 text-sm font-medium whitespace-nowrap",
+        checked ? "text-accent-text" : "text-text",
       )}
     >
       <input

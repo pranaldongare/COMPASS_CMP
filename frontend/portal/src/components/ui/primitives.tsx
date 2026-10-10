@@ -20,7 +20,7 @@ import { cn } from "@/lib/format";
 /* ==================================================================== Button */
 const buttonVariants = cva(
   cn(
-    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md",
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full",
     "font-medium select-none",
     // Transform is in the transition so the press reads as physical. The active
     // state sinks 1px rather than changing colour: a finger expects the surface
@@ -33,22 +33,24 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Solid COMPASS blue (2026-10-10; it was a gradient). Reserved for the
-        // single primary action on a screen - two of these and neither leads.
+        // Pills (2026-10-10, the pill-chip style). The primary is a COMPASS
+        // blue gradient with a soft glow - reserved for the single primary
+        // action on a screen; two of these and neither leads.
         primary:
-          "bg-accent text-accent-contrast shadow-[var(--shadow-xs)] hover:bg-accent-hover active:bg-accent-active",
+          "bg-linear-135 from-accent to-accent-hover text-accent-contrast shadow-[0_6px_16px_rgb(47_114_187/0.3)] hover:brightness-110 active:brightness-95",
         secondary:
-          "bg-surface text-text border border-border-strong shadow-[var(--shadow-xs)] hover:bg-surface-hover hover:border-text-subtle",
-        ghost: "text-text-muted hover:bg-bg-inset hover:text-text",
-        danger: "bg-danger text-white shadow-[var(--shadow-sm)] hover:brightness-110",
+          "border border-border bg-surface text-text shadow-[var(--shadow-xs)] hover:border-border-strong hover:bg-surface-hover",
+        ghost: "text-text-muted hover:bg-accent-subtle hover:text-accent-text",
+        danger:
+          "border border-danger-border bg-danger-subtle text-danger-text hover:border-danger hover:bg-danger hover:text-white",
         // For the one destructive action on a page: reads as a link until
         // hovered, so it does not compete with the primary action.
         subtle: "text-danger-text hover:bg-danger-subtle",
         link: "text-accent-text underline-offset-4 hover:underline",
       },
       size: {
-        sm: "h-8 px-3 text-xs",
-        md: "h-9 px-3.5 text-sm",
+        sm: "h-8 px-3.5 text-xs",
+        md: "h-9 px-4 text-sm",
         lg: "h-11 px-6 text-base",
         icon: "size-9",
       },
