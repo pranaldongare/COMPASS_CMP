@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 
 const CSS = readFileSync(path.join(__dirname, "themes.css"), "utf8");
 const TEXT = ["--text", "--text-muted", "--text-subtle"];
-const GROUNDS = ["--bg", "--bg-subtle", "--bg-inset", "--surface", "--surface-hover", "--surface-raised", "--page-bg"];
+const GROUNDS = ["--bg", "--bg-subtle", "--bg-inset", "--surface", "--surface-hover", "--surface-raised", "--page-bg", "--card-head", "--table-head", "--row-hover"];
 
 function block(selector: string): Record<string, [number, number, number]> {
   // The light block is also `.dark .frame-light`, so match a selector at

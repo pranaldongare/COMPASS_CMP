@@ -8,6 +8,12 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Professional palette** (2026-10-10): soft blue-white sidebar with the
+  current page a solid COMPASS-blue pill (white text, icon and count); white
+  top bar under a thin brand-gradient stripe; cool blue-grey page; white
+  cards and tables with lightly tinted header bands and a blue-tinted row
+  hover. New tokens --card-head, --table-head, --row-hover, all in the
+  contrast test.
 - **Grey page, white cards** (2026-10-10): the top bar and sidebar stay
   white (in dark mode too); the page sits straight on a grey background
   (--page-bg) with no panel, border or rounding round it; the cards, figure

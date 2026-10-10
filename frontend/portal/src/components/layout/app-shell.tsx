@@ -127,6 +127,8 @@ function Header({
     // White across the top, like the sidebar (2026-10-10): a hairline, and
     // `.frame-light` keeps it white in dark mode too.
     <header className="frame-light no-print sticky top-0 z-30 border-b border-border bg-surface">
+      {/* A thin brand stripe along the top edge (2026-10-10). */}
+      <span aria-hidden="true" className="brand-gradient absolute inset-x-0 top-0 h-[3px]" />
       <div className="flex h-16 w-full items-center gap-3 px-4 sm:px-6">
         <Button
           variant="ghost"
@@ -242,9 +244,9 @@ function Sidebar({
                           "group relative flex items-center gap-3 rounded-lg py-2 pl-3 pr-2 text-sm",
                           "transition-[background-color,color,box-shadow] duration-150",
                           "outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-badge)]",
-                          // Active: a pale blue pill, bold blue text and icon.
+                          // Active: a solid COMPASS-blue pill, white text and icon.
                           active
-                            ? "bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)]"
+                            ? "bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)] shadow-[0_4px_12px_rgb(47_114_187/0.28)]"
                             : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",
                         )}
                       >
@@ -252,7 +254,7 @@ function Sidebar({
                           className={cn(
                             "size-[1.125rem] shrink-0 transition-colors",
                             active
-                              ? "text-accent"
+                              ? "text-[var(--sidebar-active-text)]"
                               : "text-[var(--sidebar-label)] group-hover:text-[var(--sidebar-text-strong)]",
                           )}
                           aria-hidden="true"

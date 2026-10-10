@@ -57,23 +57,25 @@
   --grad-to: #1d5291;
   --brand-deep: #0e3a6b;
 
-  /* The sidebar and top bar (2026-10-10, fourth pass): white - the theme's
-     surface with a hairline - and the current page a pale blue pill, so
-     nothing grey sits in the frame. It follows the theme through
-     these references. */
-  --sidebar-bg: var(--surface);
+  /* The frame and the page (2026-10-10, fifth pass). The sidebar is a soft
+     blue-white with the current page a solid COMPASS-blue pill; the top bar
+     is white under a thin brand stripe. The page is a cool blue-grey, and the
+     cards and tables on it are white with lightly tinted header bands. The
+     frame keeps these in dark mode too (`.frame-light`). */
+  --sidebar-bg: oklch(98.3% 0.006 250);
   --sidebar-text: var(--text-muted);
   --sidebar-text-strong: var(--text);
   --sidebar-label: var(--text-subtle);
-  --sidebar-hover: var(--bg-subtle);
+  --sidebar-hover: oklch(95.6% 0.016 250);
   --sidebar-border: var(--border);
-  --sidebar-active: var(--accent-subtle);
-  --sidebar-active-text: var(--accent-text);
+  --sidebar-active: var(--accent);
+  --sidebar-active-text: #ffffff;
   --sidebar-badge: var(--accent);
 
-  /* The grey the page sits on between the frame (2026-10-10): no panel of
-     its own; the cards and tables on it are white. */
-  --page-bg: oklch(95.6% 0.006 255);
+  --page-bg: oklch(96.4% 0.011 250);
+  --card-head: oklch(98.6% 0.005 250);
+  --table-head: oklch(97% 0.01 250);
+  --row-hover: oklch(97.6% 0.012 250);
 
 
   /* Semantic. Never decorative — each means exactly one thing. */
@@ -124,6 +126,9 @@
 .dark {
   --bg: oklch(16.5% 0.011 262);
   --page-bg: oklch(16.5% 0.011 262);
+  --card-head: oklch(23% 0.015 262);
+  --table-head: oklch(24% 0.016 262);
+  --row-hover: oklch(25% 0.016 262);
   --bg-subtle: oklch(19.5% 0.013 262);
   --bg-inset: oklch(23.5% 0.015 262);
   --surface: oklch(21% 0.014 262);

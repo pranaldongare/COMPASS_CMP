@@ -51,7 +51,7 @@ function ShellSkeleton() {
     <div className="min-h-dvh bg-[var(--page-bg)]">
       <div className="frame-light h-16 border-b border-border bg-surface" />
       <div className="mx-auto flex w-full max-w-[1600px]">
-        <div className="frame-light hidden w-64 shrink-0 border-r border-border bg-surface p-3 lg:block">
+        <div className="frame-light hidden w-64 shrink-0 border-r border-border bg-[var(--sidebar-bg)] p-3 lg:block">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="mb-1.5 h-9 w-full" />
           ))}

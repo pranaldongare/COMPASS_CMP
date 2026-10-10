@@ -136,7 +136,8 @@ export function Card({
 }
 
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("px-5 py-3.5 border-b border-border", className)} {...props} />;
+  // A lightly tinted band over the white body (2026-10-10).
+  return <div className={cn("px-5 py-3.5 border-b border-border bg-[var(--card-head)] rounded-t-[inherit]", className)} {...props} />;
 }
 
 export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
@@ -396,7 +397,7 @@ export function Th({ className, ...props }: React.ThHTMLAttributes<HTMLTableCell
         // The sidebar's type (2026-10-10): Inter at 13px, medium, sentence
         // case - not the tiny capitals - on a grey band.
         "px-4 py-2.5 text-left text-[0.8125rem] font-medium",
-        "text-text-muted border-b border-border bg-bg-subtle whitespace-nowrap",
+        "text-text-muted border-b border-border bg-[var(--table-head)] whitespace-nowrap",
         "first:rounded-tl-lg last:rounded-tr-lg",
         className,
       )}
@@ -415,7 +416,7 @@ export function Tr({ className, ...props }: React.HTMLAttributes<HTMLTableRowEle
   return (
     <tr
       className={cn(
-        "transition-colors hover:bg-surface-hover",
+        "transition-colors hover:bg-[var(--row-hover)]",
         // The last row's own border would double the container's.
         "last:[&>td]:border-b-0",
         className,
