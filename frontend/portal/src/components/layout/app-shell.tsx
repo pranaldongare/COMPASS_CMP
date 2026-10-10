@@ -289,8 +289,11 @@ export function PageHeader({
   return (
     <div className="mb-5">
       {breadcrumb && <div className="mb-2 text-sm text-text-muted">{breadcrumb}</div>}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-4">
+      {/* On a desk the actions keep their place at the right (2026-10-10):
+          the heading gives way - its line clamps - rather than pushing them
+          down under it. */}
+      <div className="flex flex-wrap items-start justify-between gap-3 lg:flex-nowrap">
+        <div className="flex min-w-0 items-start gap-4 lg:flex-1">
           {Icon && (
             <span
               aria-hidden="true"
@@ -311,7 +314,7 @@ export function PageHeader({
             )}
           </div>
         </div>
-        {actions && <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">{actions}</div>}
+        {actions && <div className="flex max-w-full min-w-0 flex-wrap items-center gap-2 lg:shrink-0 lg:flex-nowrap">{actions}</div>}
       </div>
     </div>
   );
