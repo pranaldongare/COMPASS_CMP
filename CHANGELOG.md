@@ -13,7 +13,7 @@ as a release yet.
   drawn as hexagons over a faint honeycomb, arcs from Bengaluru to 26 Samsung
   sites worldwide (head office, R&D centres, regional offices; data running
   along them, rings opening from each), India in gold with Karnataka bright
-  inside it, and three glass chips; the form on the right. All of it is
+  inside it; the form on the right. All of it is
   decorative and still under reduced motion. `world-hex-data.ts` and
   `world-map.tsx` are shared files.
 - **Ocean look** (2026-10-10, chosen from four mock-ups): deep-blue gradient

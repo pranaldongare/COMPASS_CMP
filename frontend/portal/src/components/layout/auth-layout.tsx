@@ -11,9 +11,8 @@
  * collection site should see the form without scrolling past decoration.
  *
  * The panel's picture (2026-10-10) is the world as a honeycomb, Samsung's
- * sites round the world joined by arcs to Bengaluru, over a faint honeycomb, with
- * three glass chips naming what the product keeps: decorative, and still for
- * anyone who asks for reduced motion.
+ * sites round the world joined by arcs to Bengaluru, over a faint honeycomb:
+ * decorative, and still for anyone who asks for reduced motion.
  *
  * The form's look - taller rounded fields with an icon at their end, a
  * centred submit button - is `styles/auth.css`, scoped to `.auth-form`, so
@@ -21,7 +20,7 @@
  */
 "use client";
 
-import { CircleHelp, LockKeyhole, Scale, ShieldCheck } from "lucide-react";
+import { CircleHelp } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
@@ -67,9 +66,6 @@ export function AuthLayout({
         <div className="relative flex w-full flex-col items-center">
           <div className="relative w-full max-w-[820px]">
             <WorldHoneycomb className="w-full drop-shadow-[0_8px_30px_rgb(10_30_70/0.45)]" />
-            <AuthChip className="top-[4%] left-[2%]" icon={ShieldCheck} label="Consent recorded" />
-            <AuthChip className="top-[0%] right-[2%] [animation-delay:-2s]" icon={LockKeyhole} label="Data sealed" />
-            <AuthChip className="bottom-[2%] left-[14%] [animation-delay:-4s]" icon={Scale} label="Rights honoured" />
           </div>
           <p className="mt-6 max-w-md text-center text-lg leading-relaxed font-semibold text-white">
             {config.pitch.heading}
@@ -126,29 +122,6 @@ export function AuthLayout({
         </div>
       </section>
     </main>
-  );
-}
-
-/** A pane of glass floating over the map, naming one thing the product keeps. */
-function AuthChip({
-  icon: Icon,
-  label,
-  className,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  className?: string;
-}) {
-  return (
-    <span
-      aria-hidden="true"
-      className={`auth-chip absolute flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_rgb(5_20_50/0.35)] backdrop-blur-md ${className ?? ""}`}
-    >
-      <span className="grid size-6 place-items-center rounded-lg bg-[#5ec4ff]/25 text-[#bfe6ff]">
-        {React.createElement(Icon, { className: "size-3.5" })}
-      </span>
-      {label}
-    </span>
   );
 }
 

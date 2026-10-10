@@ -80,7 +80,7 @@
 }
 
 /* The map's motion: data running along the arcs, rings opening from the lit
-   places, the chips drifting. None of it for reduced motion. */
+   places. None of it for reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .wm-arc {
     stroke-dasharray: 5 8;
@@ -91,9 +91,6 @@
     transform-origin: center;
     animation: wm-pulse 2.8s ease-out infinite;
   }
-  .auth-chip {
-    animation: auth-drift 6s ease-in-out infinite;
-  }
 }
 @keyframes wm-flow {
   to { stroke-dashoffset: -26; }
@@ -101,10 +98,6 @@
 @keyframes wm-pulse {
   from { transform: scale(0.5); opacity: 0.9; }
   to { transform: scale(2.8); opacity: 0; }
-}
-@keyframes auth-drift {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
 }
 
 /* The product's blue on the logo and the submit button - the theme's accent
