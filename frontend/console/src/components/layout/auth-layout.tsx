@@ -56,22 +56,17 @@ export function AuthLayout({
     >
       {/* ------------------------------------------------- the brand panel */}
       <section className="auth-brand relative hidden overflow-hidden lg:flex lg:flex-col lg:items-center lg:justify-between lg:px-6 lg:py-10">
-
-        <div className="relative flex items-center gap-3 text-[#1f5c9e]">
-          <BrandMark className="size-9" />
-          <p className="text-3xl font-bold tracking-[0.12em]">{config.productName}</p>
-        </div>
-
-        <div className="relative flex w-full flex-col items-center">
-          <div className="relative w-full max-w-[820px]">
-            <WorldDots className="w-full" />
-          </div>
-          <p className="mt-6 max-w-md text-center text-lg leading-relaxed font-semibold text-[#1d2433]">
+        {/* The panel says what the product is for; the name is the logo's
+            job, over the form, so it is said once (2026-10-10). */}
+        <div className="relative max-w-xl text-center">
+          <p className="text-[1.75rem] leading-tight font-bold tracking-tight text-[#1d2433]">
             {config.pitch.heading}
           </p>
-          <p className="mt-1.5 max-w-md text-center text-sm leading-relaxed text-[#4b5567]">
-            {config.pitch.lede}
-          </p>
+          <p className="mt-2 text-sm leading-relaxed text-[#4b5567]">{config.pitch.lede}</p>
+        </div>
+
+        <div className="relative w-full max-w-[820px]">
+          <WorldDots className="w-full" />
         </div>
 
         <div className="relative w-full max-w-sm text-center text-[#1d2433]">

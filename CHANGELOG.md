@@ -8,6 +8,10 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **One COMPASS on sign-in** (2026-10-10): the map panel no longer repeats
+  the product name - the logo over the form says it once, on every screen
+  size. The panel opens with what the product is for (the pitch heading and
+  line), then the map, then the tags.
 - **Sidebar only** (2026-10-10): no top bar on a desk in either app. The
   sidebar runs full height and carries the logo (with the blue rail) at its
   head, "Jump to page" under it, and at its foot Notifications, Collapse and
