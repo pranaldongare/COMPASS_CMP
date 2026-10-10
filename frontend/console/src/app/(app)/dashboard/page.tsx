@@ -75,6 +75,7 @@ export default function DashboardPage() {
   return (
     <>
       <PageHeader
+        hero
         eyebrow={me ? humanise(me.role) : undefined}
         title={me ? `Good day, ${me.full_name.split(" ")[0]}` : "Dashboard"}
         description={roleBlurb(me?.role)}

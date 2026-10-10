@@ -182,8 +182,6 @@ function Header({
     // White across the top, like the sidebar (2026-10-10): a hairline, and
     // `.frame-light` keeps it white in dark mode too.
     <header className="frame-light no-print sticky top-0 z-30 border-b border-border bg-surface">
-      {/* A thin brand stripe along the top edge (2026-10-10). */}
-      <span aria-hidden="true" className="brand-gradient absolute inset-x-0 top-0 h-[3px]" />
       <div className="flex h-16 w-full items-center gap-3 px-4 sm:px-6">
         <Button
           variant="ghost"
@@ -357,9 +355,9 @@ function Sidebar({
         aria-label="Main"
         data-collapsed={folded || undefined}
         className={cn(
-          // White down the left (2026-10-10), with a hairline against the page;
-          // `.frame-light` keeps it white in dark mode too.
-          "frame-light no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
+          // Ocean (2026-10-10): the deep-blue gradient down the left, the
+          // same in both themes.
+          "frame-light sidebar-ocean no-print z-20 flex w-64 shrink-0 flex-col text-[var(--sidebar-text)]",
           "lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:transition-[width] lg:duration-200",
           folded && "lg:w-[4.5rem]",
           mobileOpen
@@ -413,9 +411,9 @@ function Sidebar({
                         "transition-[background-color,color,box-shadow] duration-150",
                         "outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-badge)]",
                         folded && "lg:size-11 lg:justify-center lg:p-0",
-                        // Active: a solid COMPASS-blue pill, white text and icon.
+                        // Active: a white pill on the blue, navy text and icon.
                         active
-                          ? "bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)] shadow-[0_4px_12px_rgb(47_114_187/0.28)]"
+                          ? "bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)] shadow-[0_6px_16px_rgb(0_0_0/0.22)]"
                           : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",
                       )}
                     >
@@ -556,6 +554,7 @@ export function PageHeader({
   breadcrumb,
   eyebrow,
   icon,
+  hero = false,
 }: {
   title: string;
   description?: string;
@@ -566,18 +565,31 @@ export function PageHeader({
   /** The tile beside the title. Defaults to the menu item's icon on a
    *  destination's own page (2026-10-10); `null` for none. */
   icon?: React.ComponentType<{ className?: string }> | null;
+  /** The page's opening banner (2026-10-10): the header on a blue panel with
+   *  two discs of light - the dashboard's greeting. */
+  hero?: boolean;
 }) {
   const pathname = usePathname();
   const Icon = icon === null ? undefined : (icon ?? iconForPage(pathname ?? ""));
   return (
-    <div className="mb-5">
+    <div
+      className={cn(
+        "mb-5",
+        hero && "hero-ocean hero-scope mb-6 overflow-hidden rounded-2xl px-6 py-6 shadow-[var(--shadow-card)] sm:px-7",
+      )}
+    >
       {breadcrumb && <div className="mb-2 text-sm text-text-muted">{breadcrumb}</div>}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-4">
           {Icon && (
             <span
               aria-hidden="true"
-              className="grid size-12 shrink-0 place-items-center rounded-xl border border-accent-border bg-accent-subtle text-accent-text shadow-[var(--shadow-xs)]"
+              className={cn(
+                "grid size-12 shrink-0 place-items-center rounded-xl shadow-[var(--shadow-xs)]",
+                hero
+                  ? "border border-white/25 bg-white/15 text-white"
+                  : "border border-accent-border bg-accent-subtle text-accent-text",
+              )}
             >
               {React.createElement(Icon, { className: "size-6" })}
             </span>
@@ -662,9 +674,9 @@ function NavCount({
   return (
     <span
       className={cn(
-        "ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--sidebar-badge)] px-1.5 text-2xs font-semibold text-white",
-        // On the blue current-page pill the count turns white with blue text.
-        "group-aria-[current=page]:bg-white group-aria-[current=page]:text-accent-text",
+        "ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--sidebar-badge)] px-1.5 text-2xs font-semibold text-[var(--sidebar-badge-text)]",
+        // On the white current-page pill the count turns navy with white text.
+        "group-aria-[current=page]:bg-[var(--sidebar-active-text)] group-aria-[current=page]:text-white",
         // Folded, the count sits on the icon's corner, like a badge on an app.
         folded &&
           "lg:absolute lg:top-0.5 lg:right-1 lg:ml-0 lg:min-w-4 lg:px-1 lg:text-[0.625rem] lg:leading-4",

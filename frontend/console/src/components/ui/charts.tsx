@@ -33,6 +33,7 @@ export function StatTile({
   hint,
   tone = "neutral",
   icon,
+  tint,
   href,
   className,
 }: {
@@ -42,6 +43,8 @@ export function StatTile({
   /** `attention` is for a count that is a problem when non-zero. */
   tone?: "neutral" | "accent" | "attention";
   icon?: React.ReactNode;
+  /** A coloured tile for the icon (2026-10-10), one per figure in a row. */
+  tint?: "blue" | "amber" | "teal" | "violet";
   /** Where the rows behind this figure live. A number somebody wants to act on
    *  and cannot click is a dead end — the tile becomes a link when given one. */
   href?: string;
@@ -77,11 +80,22 @@ export function StatTile({
         )}
       />
 
+      {icon && tint && (
+        <span
+          aria-hidden="true"
+          className={cn(
+            "mb-3 grid size-9 place-items-center rounded-xl text-white shadow-[var(--shadow-xs)] [&_svg]:size-[1.125rem]",
+            `tile-${tint}`,
+          )}
+        >
+          {icon}
+        </span>
+      )}
       <div className="flex items-start justify-between gap-3">
         <p className="text-[0.8125rem] font-medium text-text-muted">
           {label}
         </p>
-        {icon && (
+        {icon && !tint && (
           <span
             aria-hidden="true"
             className={cn(

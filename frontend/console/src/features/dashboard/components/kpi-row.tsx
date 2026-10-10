@@ -37,6 +37,8 @@ interface Figure {
   alarm?: (counts: Record<string, number>) => boolean;
 }
 
+const TINTS = ["blue", "amber", "teal", "violet"] as const;
+
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 const FIGURES: Record<string, Figure[]> = {
@@ -140,7 +142,7 @@ export function KpiRow({
   if (figures.length === 0) return null;
   return (
     <section aria-label="At a glance" className="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {figures.map((f) => {
+      {figures.map((f, i) => {
         const Icon = f.icon;
         return (
           <StatTile
@@ -150,6 +152,7 @@ export function KpiRow({
             hint={f.hint?.(counts)}
             tone={f.alarm?.(counts) ? "attention" : "accent"}
             icon={<Icon />}
+            tint={TINTS[i % TINTS.length]}
             href={f.href ?? COUNT_LINKS[f.key]}
           />
         );

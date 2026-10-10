@@ -24,5 +24,49 @@ input[type="date"]::-webkit-calendar-picker-indicator {
    track (2026-10-10). */
 .sidebar-scroll {
   scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) transparent;
+  scrollbar-color: rgb(255 255 255 / 0.22) transparent;
 }
+
+/* Ocean (2026-10-10). No `position` in these: this sheet is unlayered and
+   would beat the shell's sticky and fixed utilities. */
+
+/* The sidebar: deep blue darkening upward, a soft sky glow at the foot. */
+.sidebar-ocean {
+  background:
+    radial-gradient(130% 30% at 50% 106%, rgb(94 196 255 / 0.16), transparent 70%),
+    linear-gradient(180deg, #0d2c55 0%, #12407a 58%, #174f91 100%);
+  background-color: var(--sidebar-bg);
+}
+
+/* The dashboard's banner: the same blue in a diagonal, two soft discs of
+   light on the right. White text holds 4.5:1 across it. */
+.hero-ocean {
+  background:
+    radial-gradient(circle at 94% -30%, rgb(255 255 255 / 0.13) 0 130px, transparent 131px),
+    radial-gradient(circle at 78% 140%, rgb(255 255 255 / 0.08) 0 100px, transparent 101px),
+    linear-gradient(120deg, #0f3a70 0%, #1b5aa0 55%, #2770b8 100%);
+  color: #ffffff;
+}
+/* Inside the banner the controls read as on blue: the primary button white
+   with blue text, a secondary one a pane of white light. */
+.hero-scope {
+  --text: #ffffff;
+  --text-muted: #eef5fd;
+  --text-subtle: #dbe8f8;
+  --accent: #ffffff;
+  --accent-hover: #eaf3ff;
+  --accent-active: #dbeafe;
+  --accent-contrast: #12407a;
+  --accent-text: #eef5fd;
+  --surface: rgb(255 255 255 / 0.12);
+  --surface-hover: rgb(255 255 255 / 0.2);
+  --border-strong: rgb(255 255 255 / 0.4);
+  --bg-inset: rgb(255 255 255 / 0.16);
+}
+
+/* Icon tiles on the figure cards: one colour each, so four figures read as
+   four things at a glance. */
+.tile-blue   { background: linear-gradient(135deg, #2f72bb, #3f8fd6); }
+.tile-amber  { background: linear-gradient(135deg, #d97706, #f59e0b); }
+.tile-teal   { background: linear-gradient(135deg, #0f8f8b, #14b8a6); }
+.tile-violet { background: linear-gradient(135deg, #6d5bd0, #8b7cf6); }

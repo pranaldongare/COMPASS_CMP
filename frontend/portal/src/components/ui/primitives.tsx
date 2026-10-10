@@ -416,7 +416,7 @@ export function Tr({ className, ...props }: React.HTMLAttributes<HTMLTableRowEle
   return (
     <tr
       className={cn(
-        "transition-colors hover:bg-[var(--row-hover)]",
+        "transition-colors even:bg-[var(--row-alt)] hover:bg-[var(--row-hover)]",
         // The last row's own border would double the container's.
         "last:[&>td]:border-b-0",
         className,

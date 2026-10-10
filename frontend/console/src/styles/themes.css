@@ -57,25 +57,26 @@
   --grad-to: #1d5291;
   --brand-deep: #0e3a6b;
 
-  /* The frame and the page (2026-10-10, fifth pass). The sidebar is a soft
-     blue-white with the current page a solid COMPASS-blue pill; the top bar
-     is white under a thin brand stripe. The page is a cool blue-grey, and the
-     cards and tables on it are white with lightly tinted header bands. The
-     frame keeps these in dark mode too (`.frame-light`). */
-  --sidebar-bg: oklch(98.3% 0.006 250);
-  --sidebar-text: var(--text-muted);
-  --sidebar-text-strong: var(--text);
-  --sidebar-label: var(--text-subtle);
-  --sidebar-hover: oklch(95.6% 0.016 250);
-  --sidebar-border: var(--border);
-  --sidebar-active: var(--accent);
-  --sidebar-active-text: #ffffff;
-  --sidebar-badge: var(--accent);
+  /* Ocean (2026-10-10, chosen from four options): a deep-blue gradient
+     sidebar with a soft glow and the current page a white pill; a white top
+     bar; a cool blue-grey page with white cards and tables on it. The sidebar
+     is the same in both themes. */
+  --sidebar-bg: #12407a;
+  --sidebar-text: #d9e6f6;
+  --sidebar-text-strong: #ffffff;
+  --sidebar-label: #b7cfec;
+  --sidebar-hover: rgb(255 255 255 / 0.1);
+  --sidebar-border: rgb(255 255 255 / 0.12);
+  --sidebar-active: #ffffff;
+  --sidebar-active-text: #0d2c55;
+  --sidebar-badge: #5ec4ff;
+  --sidebar-badge-text: #0d2c55;
 
-  --page-bg: oklch(96.4% 0.011 250);
+  --page-bg: oklch(97.2% 0.008 250);
   --card-head: oklch(98.6% 0.005 250);
-  --table-head: oklch(97% 0.01 250);
-  --row-hover: oklch(97.6% 0.012 250);
+  --table-head: oklch(96.6% 0.012 250);
+  --row-hover: oklch(97.4% 0.014 250);
+  --row-alt: oklch(99.1% 0.003 250);
 
 
   /* Semantic. Never decorative — each means exactly one thing. */
@@ -129,6 +130,7 @@
   --card-head: oklch(23% 0.015 262);
   --table-head: oklch(24% 0.016 262);
   --row-hover: oklch(25% 0.016 262);
+  --row-alt: oklch(22% 0.014 262);
   --bg-subtle: oklch(19.5% 0.013 262);
   --bg-inset: oklch(23.5% 0.015 262);
   --surface: oklch(21% 0.014 262);

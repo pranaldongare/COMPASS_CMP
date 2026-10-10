@@ -8,6 +8,12 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Ocean look** (2026-10-10, chosen from four mock-ups): deep-blue gradient
+  sidebar with a soft sky glow and a white current-page pill (same in both
+  themes); white top bar; cool blue-grey page; the dashboard opens on a blue
+  banner (PageHeader `hero`) with white primary action; figure cards carry a
+  coloured gradient icon tile each (blue, amber, teal, violet - StatTile
+  `tint`); tables white with a tinted header band and faint alternating rows.
 - **Professional palette** (2026-10-10): soft blue-white sidebar with the
   current page a solid COMPASS-blue pill (white text, icon and count); white
   top bar under a thin brand-gradient stripe; cool blue-grey page; white
