@@ -8,6 +8,11 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Pages open on the trail** (2026-10-10): the icon tile and the
+  description line under page titles are gone in both apps, and where a page
+  has a breadcrumb its title is for screen readers only - the trail names
+  the page and the page's actions share its row. The dashboard keeps its
+  greeting card; a page with no trail keeps its title.
 - **Pill breadcrumbs** (2026-10-10, chosen from three): every page under
   the dashboard (console) or My consents (portal) opens with a trail of
   small white pills with icons - home, the menu destination, the record -

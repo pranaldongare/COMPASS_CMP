@@ -283,26 +283,43 @@ function trailFor(pathname: string, title: string): Crumb[] {
  *  the vertical rhythm is identical throughout. */
 export function PageHeader({
   title,
-  description,
   actions,
   breadcrumb,
   eyebrow,
-  icon,
 }: {
   title: string;
+  /** Not shown (2026-10-10): pages open on the trail and the title alone;
+   *  the sentence that was here is in the help. Kept so callers need not change. */
   description?: string;
   actions?: React.ReactNode;
   breadcrumb?: React.ReactNode;
   /** A short kicker above the title - the section this page belongs to. */
   eyebrow?: string;
-  /** The tile beside the title. Defaults to the menu item's icon on a
-   *  destination's own page (2026-10-10); `null` for none. */
+  /** Not shown (2026-10-10): the icon tile beside the title was removed. */
   icon?: React.ComponentType<{ className?: string }> | null;
 }) {
   const pathname = usePathname() ?? "";
-  const fromMenu = SECTIONS.flatMap((s) => s.items).find((item) => item.href === pathname)?.icon;
-  const Icon = icon === null ? undefined : (icon ?? fromMenu);
   const crumbs = trailFor(pathname, title);
+  // The trail names the page (2026-10-10): where there is one, the title is
+  // for screen readers only and the page's actions share the trail's row.
+  if (crumbs.length > 0) {
+    return (
+      <div className="mb-5">
+        <h1 className="sr-only">{title}</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <PillTrail crumbs={crumbs} extra={breadcrumb} className="mb-0 min-w-0 flex-1" />
+          {actions && (
+            <div
+              className="flex max-w-full min-w-0 flex-wrap items-center gap-2 lg:shrink-0 lg:flex-nowrap"
+              data-testid="page-actions"
+            >
+              {actions}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="mb-5">
       {/* The pill trail (2026-10-10); a page's own back link at its end. */}
@@ -312,14 +329,6 @@ export function PageHeader({
           down under it. */}
       <div className="flex flex-wrap items-start justify-between gap-3 lg:flex-nowrap">
         <div className="flex min-w-0 items-start gap-4 lg:flex-1">
-          {Icon && (
-            <span
-              aria-hidden="true"
-              className="grid size-12 shrink-0 place-items-center rounded-xl border border-accent-border bg-accent-subtle text-accent-text shadow-[var(--shadow-xs)]"
-            >
-              <Icon className="size-6" />
-            </span>
-          )}
           <div className="min-w-0">
             {eyebrow && (
               <p className="mb-1 text-2xs font-semibold uppercase tracking-wider text-accent-text">
@@ -327,9 +336,6 @@ export function PageHeader({
               </p>
             )}
             <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-            {description && (
-              <p className="mt-1 max-w-3xl text-sm text-text-muted">{description}</p>
-            )}
           </div>
         </div>
         {actions && <div className="flex max-w-full min-w-0 flex-wrap items-center gap-2 lg:shrink-0 lg:flex-nowrap">{actions}</div>}

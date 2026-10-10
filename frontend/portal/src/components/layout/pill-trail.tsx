@@ -21,10 +21,18 @@ export interface Crumb {
 const pill =
   "inline-flex h-7 max-w-64 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium whitespace-nowrap";
 
-export function PillTrail({ crumbs, extra }: { crumbs: Crumb[]; extra?: React.ReactNode }) {
+export function PillTrail({
+  crumbs,
+  extra,
+  className,
+}: {
+  crumbs: Crumb[];
+  extra?: React.ReactNode;
+  className?: string;
+}) {
   if (crumbs.length === 0 && !extra) return null;
   return (
-    <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+    <div className={cn("mb-3 flex flex-wrap items-center gap-x-3 gap-y-2", className)}>
       {crumbs.length > 0 && (
         <nav aria-label="Breadcrumb" className="min-w-0">
           <ol className="flex flex-wrap items-center gap-1.5">
