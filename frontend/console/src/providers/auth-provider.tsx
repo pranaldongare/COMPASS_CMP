@@ -39,6 +39,12 @@ interface AuthContextValue {
 
 const AuthContext = React.createContext<AuthContextValue | null>(null);
 
+/** The session when there is one, `null` outside the provider - for chrome
+ *  that renders in tests without it (the page header's breadcrumb). */
+export function useOptionalAuth(): AuthContextValue | null {
+  return React.useContext(AuthContext);
+}
+
 export function useAuth(): AuthContextValue {
   const ctx = React.useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");

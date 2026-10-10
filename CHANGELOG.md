@@ -8,6 +8,11 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Pill breadcrumbs** (2026-10-10, chosen from three): every page under
+  the dashboard (console) or My consents (portal) opens with a trail of
+  small white pills with icons - home, the menu destination, the record -
+  chevrons between, the current page a blue pill. Built from the menu, so
+  no page sets it; a page's own back link sits at the row's right end.
 - **Pill filters and buttons** (2026-10-10, chosen from three styles):
   every list filter is a rounded pill with a small icon disc (picked from
   its label); a filter that is set turns blue and gains an x that clears

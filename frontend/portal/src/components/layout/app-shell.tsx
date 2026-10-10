@@ -15,6 +15,7 @@
 import {
   Bell,
   FileText,
+  House,
   Menu,
   Scale,
   UserRound,
@@ -24,6 +25,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
 
+import { PillTrail, type Crumb } from "@/components/layout/pill-trail";
 import { useDrawer } from "@/components/layout/use-drawer";
 import { UserMenu } from "@/components/layout/user-menu";
 import { BrandMark } from "@/components/ui/graphics";
@@ -263,6 +265,20 @@ function Sidebar({
   );
 }
 
+/** The steps to this page from My consents, the portal's home: the menu
+ *  destination it sits under, then the page itself when it is a record under
+ *  it. None on the home page. */
+function trailFor(pathname: string, title: string): Crumb[] {
+  if (pathname === "/my-consents" || pathname === "/") return [];
+  const home: Crumb = { label: "My consents", href: "/my-consents", icon: House };
+  const dest = SECTIONS.flatMap((s) => s.items)
+    .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
+    .sort((a, b) => b.href.length - a.href.length)[0];
+  if (!dest) return [home, { label: title }];
+  if (dest.href === pathname) return [home, { label: dest.label, icon: dest.icon }];
+  return [home, { label: dest.label, href: dest.href, icon: dest.icon }, { label: title }];
+}
+
 /** Page heading with optional description and actions. Used on every page so
  *  the vertical rhythm is identical throughout. */
 export function PageHeader({
@@ -283,12 +299,14 @@ export function PageHeader({
    *  destination's own page (2026-10-10); `null` for none. */
   icon?: React.ComponentType<{ className?: string }> | null;
 }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const fromMenu = SECTIONS.flatMap((s) => s.items).find((item) => item.href === pathname)?.icon;
   const Icon = icon === null ? undefined : (icon ?? fromMenu);
+  const crumbs = trailFor(pathname, title);
   return (
     <div className="mb-5">
-      {breadcrumb && <div className="mb-2 text-sm text-text-muted">{breadcrumb}</div>}
+      {/* The pill trail (2026-10-10); a page's own back link at its end. */}
+      <PillTrail crumbs={crumbs} extra={breadcrumb} />
       {/* On a desk the actions keep their place at the right (2026-10-10):
           the heading gives way - its line clamps - rather than pushing them
           down under it. */}

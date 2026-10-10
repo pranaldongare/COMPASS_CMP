@@ -184,7 +184,7 @@ export default function NoticeDetailPage() {
         // was filtered. The two are different places (UX review).
         breadcrumb={
           <nav
-            aria-label="Breadcrumb"
+            aria-label="Where this notice sits"
             className="flex flex-wrap items-center gap-x-1.5 gap-y-1"
           >
             {fromRegister && (

@@ -285,6 +285,24 @@ export function locate(
   return null;
 }
 
+/** The menu destination a page sits under, whoever is signed in - the
+ *  longest href that is the path or a parent of it (2026-10-10, for the
+ *  breadcrumb). */
+export function destinationOf(pathname: string): NavItem | null {
+  let found: NavItem | null = null;
+  for (const section of SECTIONS) {
+    for (const item of section.items) {
+      if (
+        (pathname === item.href || pathname.startsWith(`${item.href}/`)) &&
+        item.href.length > (found?.href.length ?? 0)
+      ) {
+        found = item;
+      }
+    }
+  }
+  return found;
+}
+
 /** The menu icon of a destination's own page, whoever is signed in - for the
  *  tile beside a page's title (2026-10-10). Only an exact match: a record
  *  under a destination is not that destination's page. */

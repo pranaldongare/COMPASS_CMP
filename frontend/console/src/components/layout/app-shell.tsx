@@ -15,6 +15,7 @@
 import {
   Bell,
   ChevronDown,
+  House,
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
@@ -29,7 +30,16 @@ import {
   rememberVisit,
   useCommandPaletteShortcut,
 } from "@/components/layout/command-palette";
-import { iconForPage, labelFor, locate, sectionsFor, sidebarFor, type NavSection } from "@/components/layout/nav";
+import {
+  destinationOf,
+  iconForPage,
+  labelFor,
+  locate,
+  sectionsFor,
+  sidebarFor,
+  type NavSection,
+} from "@/components/layout/nav";
+import { PillTrail, type Crumb } from "@/components/layout/pill-trail";
 import { useDrawer } from "@/components/layout/use-drawer";
 import { UserMenu } from "@/components/layout/user-menu";
 import { useCollapsed } from "@/components/ui/collapsible";
@@ -40,6 +50,9 @@ import { config } from "@/lib/config";
 import { cn } from "@/lib/format";
 import { useMyTickets, useRequestsAttention } from "@/features/rights/queries";
 import { useAuth } from "@/providers";
+// Straight from the module: page tests stand in for "@/providers" and the
+// header must render without a session there.
+import { useOptionalAuth } from "@/providers/auth-provider";
 
 /* The desktop sidebar can fold to a rail of icons. The choice is this
    browser's convenience, so it lives in localStorage - which can be missing or
@@ -433,6 +446,19 @@ function NavGroup({
   );
 }
 
+/** The steps to this page from the dashboard: the menu destination it sits
+ *  under, then the page itself when it is a record under that destination.
+ *  None on the dashboard. */
+function trailFor(pathname: string, title: string, role: string | undefined): Crumb[] {
+  if (pathname === "/dashboard" || pathname === "/") return [];
+  const home: Crumb = { label: "Dashboard", href: "/dashboard", icon: House };
+  const dest = destinationOf(pathname);
+  if (!dest) return [home, { label: title }];
+  const label = labelFor(dest, role);
+  if (dest.href === pathname) return [home, { label, icon: dest.icon }];
+  return [home, { label, href: dest.href, icon: dest.icon }, { label: title }];
+}
+
 /** Page heading with optional description and actions. Used on every page so
  *  the vertical rhythm is identical throughout. */
 export function PageHeader({
@@ -457,8 +483,10 @@ export function PageHeader({
    *  a field of blue dots - the dashboard's greeting. */
   hero?: boolean;
 }) {
-  const pathname = usePathname();
-  const Icon = icon === null ? undefined : (icon ?? iconForPage(pathname ?? ""));
+  const pathname = usePathname() ?? "";
+  const role = useOptionalAuth()?.me?.role;
+  const Icon = icon === null ? undefined : (icon ?? iconForPage(pathname));
+  const crumbs = trailFor(pathname, title, role);
   return (
     <div
       className={cn(
@@ -466,7 +494,12 @@ export function PageHeader({
         hero && "hero-line mb-6 overflow-hidden rounded-2xl border border-border px-6 py-6 shadow-[var(--shadow-card)] sm:px-7",
       )}
     >
-      {breadcrumb && <div className="mb-2 text-sm text-text-muted">{breadcrumb}</div>}
+      {/* The pill trail (2026-10-10); a page's own back link at its end. */}
+      {hero ? (
+        breadcrumb && <div className="mb-2 text-sm text-text-muted">{breadcrumb}</div>
+      ) : (
+        <PillTrail crumbs={crumbs} extra={breadcrumb} />
+      )}
       {/* On a desk the actions keep their place at the right (2026-10-10):
           the heading gives way - its line clamps - rather than pushing them
           down under it. */}
