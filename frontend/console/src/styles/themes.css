@@ -54,7 +54,8 @@
   --brand-deep: #0e3a6b;
 
   /* The sidebar and top bar (2026-10-10, fourth pass): white - the theme's
-     surface with a hairline - and the current page a grey pill. It follows the theme through
+     surface with a hairline - and the current page a pale blue pill, so
+     nothing grey sits in the frame. It follows the theme through
      these references. */
   --sidebar-bg: var(--surface);
   --sidebar-text: var(--text-muted);
@@ -62,8 +63,8 @@
   --sidebar-label: var(--text-subtle);
   --sidebar-hover: var(--bg-subtle);
   --sidebar-border: var(--border);
-  --sidebar-active: var(--bg-inset);
-  --sidebar-active-text: var(--text);
+  --sidebar-active: var(--accent-subtle);
+  --sidebar-active-text: var(--accent-text);
   --sidebar-badge: var(--accent);
 
 

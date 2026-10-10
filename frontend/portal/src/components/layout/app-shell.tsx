@@ -92,10 +92,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     // page colour, and a second opaque layer here would sit on top of the wash
     // below and hide it.
     <div className="relative min-h-dvh">
-      {/* One soft wash behind the whole shell. Fixed rather than scrolling, so
-          it behaves like light in the room instead of a background image. */}
-      <div aria-hidden="true" className="aurora pointer-events-none fixed inset-0 -z-10" />
-
       <Header onMenuClick={() => setMobileOpen(!mobileOpen)} mobileOpen={mobileOpen} />
 
       <div className="flex w-full">
@@ -110,7 +106,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Inert under the open drawer: not reachable by Tab, not read out. */}
         {/* The page on one white rounded panel over the grey canvas, as in
             the console (2026-10-10). */}
-        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 px-3 py-4 lg:px-5">
+        {/* The gutter round the panel is white like the frame (2026-10-10),
+            so the only grey is in the cards and tables. */}
+        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 bg-surface px-3 py-4 lg:px-5">
           <div className="min-h-[calc(100dvh-6rem)] rounded-2xl border border-border bg-surface px-4 py-6 shadow-[var(--shadow-card)] sm:px-6 lg:px-8">
             {children}
           </div>
@@ -245,7 +243,7 @@ function Sidebar({
                           "group relative flex items-center gap-3 rounded-lg py-2 pl-3 pr-2 text-sm",
                           "transition-[background-color,color,box-shadow] duration-150",
                           "outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-badge)]",
-                          // Active: a grey pill, bold text and a blue icon.
+                          // Active: a pale blue pill, bold blue text and icon.
                           active
                             ? "bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)]"
                             : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",

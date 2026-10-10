@@ -12,7 +12,9 @@ as a release yet.
   are both white with a hairline (current page a grey pill); the page panel
   is white again, and the cards, figure tiles and tables on it are grey,
   with a darker grey header band and alternating rows. Inputs inside them
-  stay white. Supersedes the two entries below.
+  stay white. Supersedes the two entries below. The current page in the
+  sidebar is a pale blue pill, and the gutter round the page panel is white
+  (the tinted background wash is gone), so nothing grey touches the frame.
 - **White sidebar, grey page** (2026-10-10): the sidebar is white with a
   hairline and a grey pill for the current page; the top bar keeps the
   indigo. The page panel is grey with white cards and tables on it; table
