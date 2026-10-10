@@ -8,7 +8,7 @@
  */
 "use client";
 
-import { BookOpen, ChevronDown, LogOut, Moon, Sun, UserRound } from "lucide-react";
+import { BookOpen, LogOut, Moon, Sun, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { helpHref } from "@/components/layout/help-link";
@@ -27,24 +27,17 @@ export function UserMenu() {
   return (
     <Menu
       label={`Account menu for ${me.full_name}`}
-      triggerClassName="group flex items-center gap-2.5 py-1 pr-1 pl-2 hover:bg-bg-inset"
+      // Just the initials in the bar (2026-10-10): the name and role are in
+      // the menu it opens, and the button's name says whose it is.
+      triggerClassName="group rounded-full p-0.5 hover:bg-bg-inset"
       trigger={
-        <>
-          <span className="hidden text-right sm:block">
-            <span className="block text-sm leading-tight font-medium">{me.full_name}</span>
-            <StatusBadge kind="role" value={me.role} dot={false} className="mt-0.5" />
-          </span>
-          <span
-            aria-hidden="true"
-            className="grid size-9 place-items-center rounded-full bg-accent-subtle text-xs font-semibold text-accent-text ring-1 ring-accent-border/60"
-          >
-            {initials(me.full_name)}
-          </span>
-          <ChevronDown
-            aria-hidden="true"
-            className="size-4 text-text-subtle transition-transform group-aria-expanded:rotate-180"
-          />
-        </>
+        <span
+          aria-hidden="true"
+          title={me.full_name}
+          className="grid size-9 place-items-center rounded-full bg-accent-subtle text-xs font-semibold text-accent-text ring-1 ring-accent-border/60 transition-shadow group-hover:ring-accent-border group-aria-expanded:ring-2"
+        >
+          {initials(me.full_name)}
+        </span>
       }
     >
       <MenuLabel>
