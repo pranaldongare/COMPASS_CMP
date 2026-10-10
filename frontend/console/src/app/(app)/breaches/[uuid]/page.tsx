@@ -19,7 +19,17 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, FileText, History as HistoryIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  FileText,
+  History as HistoryIcon,
+  Inbox,
+  ListChecks,
+  Paperclip,
+  Scale,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import * as React from "react";
@@ -155,33 +165,37 @@ export default function BreachPage() {
         </Alert>
       )}
 
-      <Tabs value={tab} onValueChange={setTab} label="Breach sections">
+      <Tabs value={tab} onValueChange={setTab} label="Breach sections" layout="side">
         <TabList>
           <Tab
             value="duties"
+            icon={ListChecks}
             count={outstanding.length}
             alert={late ? `${late} late` : undefined}
           >
             Duties
           </Tab>
-          <Tab value="validation" count={b.determinations.length}>
+          <Tab value="validation" icon={ShieldCheck} count={b.determinations.length}>
             Validation
           </Tab>
-          <Tab value="people">People &amp; notices</Tab>
+          <Tab value="people" icon={Users}>
+            People &amp; notices
+          </Tab>
           <Tab
             value="tickets"
+            icon={Inbox}
             count={tickets.data ? openTickets.length : undefined}
             alert={ticketsLate ? `${ticketsLate} past their answer-by` : undefined}
           >
             Tickets
           </Tab>
-          <Tab value="assessment" count={b.assessment_revisions}>
+          <Tab value="assessment" icon={Scale} count={b.assessment_revisions}>
             Assessment
           </Tab>
-          <Tab value="attachments" count={b.attachments.length}>
+          <Tab value="attachments" icon={Paperclip} count={b.attachments.length}>
             Attachments
           </Tab>
-          <Tab value="activity" count={b.status_history.length}>
+          <Tab value="activity" icon={HistoryIcon} count={b.status_history.length}>
             Activity
           </Tab>
         </TabList>

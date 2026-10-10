@@ -27,6 +27,9 @@ interface TabsContextValue {
   onValueChange: (value: string) => void;
   id: string;
   label: string;
+  /** `side` (2026-10-10, "Side tabs", chosen from three detail-page looks):
+   *  on a desk the tabs are a menu down the left of the panel. */
+  side: boolean;
 }
 
 const TabsContext = React.createContext<TabsContextValue | null>(null);
@@ -43,6 +46,7 @@ export function Tabs({
   value,
   onValueChange,
   label,
+  layout = "row",
   children,
   className,
 }: {
@@ -50,17 +54,28 @@ export function Tabs({
   onValueChange: (value: string) => void;
   /** Names the tab list for assistive technology. */
   label: string;
+  /** `row`: tabs in a tray above the panel. `side`: from `lg` up, a menu down
+   *  the left with the panel beside it - for a record's detail page. */
+  layout?: "row" | "side";
   children: React.ReactNode;
   className?: string;
 }) {
   const id = React.useId();
+  const side = layout === "side";
   const ctx = React.useMemo(
-    () => ({ value, onValueChange, id, label }),
-    [value, onValueChange, id, label],
+    () => ({ value, onValueChange, id, label, side }),
+    [value, onValueChange, id, label, side],
   );
   return (
     <TabsContext.Provider value={ctx}>
-      <div className={className}>{children}</div>
+      <div
+        className={cn(
+          side && "lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start lg:gap-6",
+          className,
+        )}
+      >
+        {children}
+      </div>
     </TabsContext.Provider>
   );
 }
@@ -72,7 +87,7 @@ export function TabList({
   children: React.ReactNode;
   className?: string;
 }) {
-  const { label } = useTabs();
+  const { label, side } = useTabs();
   const ref = React.useRef<HTMLDivElement>(null);
 
   function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
@@ -82,10 +97,12 @@ export function TabList({
     );
     const at = tabs.findIndex((t) => t === document.activeElement);
     if (at < 0) return;
+    const next = side ? ["ArrowRight", "ArrowDown"] : ["ArrowRight"];
+    const prev = side ? ["ArrowLeft", "ArrowUp"] : ["ArrowLeft"];
     const to =
-      event.key === "ArrowRight"
+      next.includes(event.key)
         ? (at + 1) % tabs.length
-        : event.key === "ArrowLeft"
+        : prev.includes(event.key)
           ? (at - 1 + tabs.length) % tabs.length
           : event.key === "Home"
             ? 0
@@ -103,6 +120,7 @@ export function TabList({
       ref={ref}
       role="tablist"
       aria-label={label}
+      aria-orientation={side ? "vertical" : undefined}
       onKeyDown={onKeyDown}
       className={cn(
         // Pill tabs in a soft tray (2026-10-10; they were underlined).
@@ -110,6 +128,9 @@ export function TabList({
         // The row scrolls sideways on a phone rather than wrapping into a
         // second line of tabs that reads as a second level.
         "[&::-webkit-scrollbar]:hidden",
+        // Side tabs: a white menu down the left, sticky while the panel scrolls.
+        side &&
+          "lg:sticky lg:top-6 lg:mb-0 lg:w-full lg:flex-col lg:gap-0.5 lg:rounded-2xl lg:bg-surface lg:p-2 lg:shadow-[var(--shadow-xs)] lg:[--scroll-bg:var(--surface)]",
         className,
       )}
     >
@@ -136,7 +157,7 @@ export function Tab({
   icon?: React.ComponentType<{ className?: string }>;
   disabled?: boolean;
 }) {
-  const { value: selected, onValueChange, id } = useTabs();
+  const { value: selected, onValueChange, id, side } = useTabs();
   const active = selected === value;
   const ref = React.useRef<HTMLButtonElement>(null);
   // On a phone the row scrolls sideways; the selected tab - one opened from a
@@ -166,21 +187,37 @@ export function Tab({
         "relative inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-1.5 text-sm whitespace-nowrap",
         "transition-[background-color,color,box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]",
         "disabled:cursor-not-allowed disabled:opacity-50",
-        active
-          ? "bg-surface font-medium text-text shadow-[var(--shadow-xs)] ring-1 ring-border"
-          : "text-text-muted hover:bg-surface/60 hover:text-text",
+        side
+          ? cn(
+              "lg:w-full lg:justify-start lg:gap-3 lg:rounded-xl lg:py-1.5 lg:pr-2 lg:pl-1.5",
+              // The current tab is the sidebar's blue pill (.nav-current).
+              active ? "nav-current font-semibold" : "text-text-muted hover:bg-bg-subtle hover:text-text",
+            )
+          : active
+            ? "bg-surface font-medium text-text shadow-[var(--shadow-xs)] ring-1 ring-border"
+            : "text-text-muted hover:bg-surface/60 hover:text-text",
       )}
     >
-      {Icon && <Icon className="size-4" aria-hidden="true" />}
+      {Icon &&
+        (side ? (
+          <span aria-hidden="true" className="nav-tile bg-bg-subtle text-text-muted">
+            <Icon className="size-4" />
+          </span>
+        ) : (
+          <Icon className="size-4" aria-hidden="true" />
+        ))}
       {children}
       {count !== undefined && (
         <span
           className={cn(
             "tabular min-w-5 rounded-full px-1.5 text-center text-2xs font-semibold",
+            side && "lg:ml-auto",
             alert
               ? "bg-danger-subtle text-danger-text"
               : active
-                ? "bg-accent-subtle text-accent-text"
+                ? side
+                  ? "bg-white text-[#1f5c9e]"
+                  : "bg-accent-subtle text-accent-text"
                 : "bg-bg-inset text-text-subtle",
           )}
         >
@@ -201,7 +238,7 @@ export function TabPanel({
   children: React.ReactNode;
   className?: string;
 }) {
-  const { value: selected, id } = useTabs();
+  const { value: selected, id, side } = useTabs();
   return (
     <div
       role="tabpanel"
@@ -211,7 +248,7 @@ export function TabPanel({
       // Focusable so a screen-reader user can move from the tab straight into
       // a panel that has no focusable content of its own.
       tabIndex={0}
-      className={cn("outline-none", className)}
+      className={cn("outline-none", side && "lg:col-start-2 lg:min-w-0", className)}
     >
       {children}
     </div>

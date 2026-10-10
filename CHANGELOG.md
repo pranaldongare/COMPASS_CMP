@@ -8,6 +8,12 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Side tabs on detail pages** (2026-10-10, chosen from three detail-page
+  looks): a project, a breach and My profile (both apps) show their tabs as
+  a white menu down the left - an icon tile per tab, counts at the right,
+  the current tab the sidebar's blue pill - with the panel beside it; on a
+  phone they stay a scrolling row. Arrow up/down move between them. On the
+  breadcrumb row the trail keeps one line and the actions wrap under it.
 - **Outlined fields with icon tiles** (2026-10-10, chosen from three form
   styles): every input, select and text area in both apps is a crisp white
   field with a hairline, rounder corners and 40px height, a blue ring on

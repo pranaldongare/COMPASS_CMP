@@ -72,7 +72,7 @@ export default function AccountPage() {
             so one long unbroken string - a user-agent on a single line - makes the
             column wider than its track and the whole page scroll sideways. */}
         <div className="min-w-0 lg:col-span-2">
-          <Tabs value={tab} onValueChange={setTab} label="My profile">
+          <Tabs value={tab} onValueChange={setTab} label="My profile" layout="side">
             <TabList>
               <Tab value="contacts" icon={Mail}>
                 Contacts

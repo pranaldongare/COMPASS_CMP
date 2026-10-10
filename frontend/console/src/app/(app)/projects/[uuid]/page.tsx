@@ -26,6 +26,9 @@ import {
   Upload,
   Database,
   UserCog,
+  ArrowLeftRight,
+  LayoutGrid,
+  Settings2,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -385,15 +388,21 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      <Tabs value={tab} onValueChange={setTab} label="Project sections">
+      <Tabs value={tab} onValueChange={setTab} label="Project sections" layout="side">
         <TabList>
-          <Tab value="overview">Overview</Tab>
-          <Tab value="setup">Setup</Tab>
-          <Tab value="consent" count={sites.data?.length}>
+          <Tab value="overview" icon={LayoutGrid}>
+            Overview
+          </Tab>
+          <Tab value="setup" icon={Settings2}>
+            Setup
+          </Tab>
+          <Tab value="consent" icon={FileCheck} count={sites.data?.length}>
             Consent
           </Tab>
-          <Tab value="exchanges">Collections &amp; exchanges</Tab>
-          <Tab value="activity" count={history.data?.length}>
+          <Tab value="exchanges" icon={ArrowLeftRight}>
+            Collections &amp; exchanges
+          </Tab>
+          <Tab value="activity" icon={HistoryIcon} count={history.data?.length}>
             Activity
           </Tab>
         </TabList>

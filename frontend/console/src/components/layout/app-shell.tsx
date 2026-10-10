@@ -491,10 +491,12 @@ export function PageHeader({
       <div className="mb-5">
         <h1 className="sr-only">{title}</h1>
         <div className="flex flex-wrap items-center gap-3">
-          <PillTrail crumbs={crumbs} extra={breadcrumb} className="mb-0 min-w-0 flex-1" />
+          <PillTrail crumbs={crumbs} extra={breadcrumb} className="mb-0 max-w-full min-w-0 flex-auto" />
           {actions && (
+            // When they do not fit beside the trail, the actions take the next
+            // line, at the right, rather than squeezing the trail onto two.
             <div
-              className="flex max-w-full min-w-0 flex-wrap items-center gap-2 lg:shrink-0 lg:flex-nowrap"
+              className="ml-auto flex max-w-full min-w-0 flex-wrap items-center justify-end gap-2"
               data-testid="page-actions"
             >
               {actions}
