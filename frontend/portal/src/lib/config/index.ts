@@ -35,10 +35,17 @@ export const config = {
   csrfHeader: process.env.NEXT_PUBLIC_CSRF_HEADER ?? "X-CSRF-Token",
   csrfCookie: process.env.NEXT_PUBLIC_CSRF_COOKIE ?? "cmp_csrf",
 
+  /** The product's name, on the sign-in screens' brand panel and logo. The
+   *  app's own name (`appName`) is the line under it. */
+  productName: process.env.NEXT_PUBLIC_PRODUCT_NAME ?? "COMPASS",
+
   /** The sign-in panel: what a person can do here, not how the system works. */
   pitch: {
     heading: "Manage how your data is used.",
     lede: "Review your choices, withdraw consent, or make a request.",
+    /** The foot of the brand panel: a title over a rule, and short tags. */
+    footerTitle: "Your data, your choice",
+    footerTags: ["Consent", "Rights", "Privacy"],
     assurances: [
       "See exactly what you agreed to, and when",
       "Withdraw at any time, as easily as you agreed",

@@ -1,18 +1,26 @@
 /**
- * The frame around every unauthenticated screen: sign-in, MFA, and the public
- * consent flow.
+ * The frame around every unauthenticated screen: sign-in, MFA, reset and
+ * sign-up.
  *
- * A split panel. The left side carries the brand and says what this system is
- * for; the right side carries the one job the visitor came to do. Below `lg`
- * the left panel collapses to a compact header rather than stacking — a data
- * subject opening a consent link on a phone at a collection site should see the
- * form without scrolling past decoration.
+ * A split panel (restyled 2026-10-10). The left is the product's: its name,
+ * a picture of what it does, and a few words at the foot. The right is white
+ * and carries the logo, then the one job the visitor came to do - the title
+ * with, beside it, the way to the other door ("New here? Create an account"),
+ * the form, and a Need help? button. Below `lg` the blue panel goes and the
+ * logo heads the form: a person opening a consent link on a phone at a
+ * collection site should see the form without scrolling past decoration.
+ *
+ * The form's look - taller rounded fields with an icon at their end, a
+ * centred submit button - is `styles/auth.css`, scoped to `.auth-form`, so
+ * each page's form is unchanged.
  */
 "use client";
 
+import { CircleHelp } from "lucide-react";
+import Link from "next/link";
 import * as React from "react";
 
-import { BrandMark, SignalField } from "@/components/ui/graphics";
+import { AuthIllustration, BrandMark } from "@/components/ui/graphics";
 import { config } from "@/lib/config";
 
 export function AuthLayout({
@@ -20,102 +28,104 @@ export function AuthLayout({
   subtitle,
   children,
   footer,
-  /** Three short lines shown on the brand panel. Reassurance, not marketing.
-   *  Each portal says its own (`config.pitch`): a participant reads what they
-   *  can do, staff what the console is for (UX review 2026-10-05). */
-  assurances = [...config.pitch.assurances],
+  aside,
+  help = true,
+  /** Kept for the pages that pass it; the restyled panel shows a picture and
+   *  the product's tags instead of a list. */
+  assurances: _assurances,
 }: {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  /** Beside the title, at the right: the way to the other door. */
+  aside?: React.ReactNode;
+  /** The Need help? button under the form. */
+  help?: boolean;
   assurances?: string[];
 }) {
   return (
     <main
       id="main"
-      className="min-h-dvh lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)]"
+      className="min-h-dvh bg-surface lg:grid lg:grid-cols-[minmax(0,46fr)_minmax(0,54fr)]"
     >
       {/* ------------------------------------------------- the brand panel */}
-      <section className="brand-gradient relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-12">
-        <SignalField className="absolute top-1/2 -right-24 h-[130%] w-auto -translate-y-1/2 text-white/40" />
-
-        <div className="relative flex items-center gap-3 text-white">
-          <span className="grid size-10 place-items-center rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
-            <BrandMark className="size-6 text-white" />
-          </span>
-          <span className="text-lg font-semibold tracking-tight">{config.appName}</span>
-        </div>
-
-        <div className="relative max-w-lg text-white">
-          {/* `text-white` is repeated on the heading deliberately: the base
-              layer sets a colour on h1-h4, and that beats inheritance from the
-              wrapper. */}
-          <h2 className="text-3xl leading-tight font-semibold tracking-tight text-balance text-white">
-            {config.pitch.heading}
-          </h2>
-          <p className="mt-4 text-sm leading-relaxed text-white/80">{config.pitch.lede}</p>
-
-          <ul className="stagger mt-8 space-y-3">
-            {assurances.map((line) => (
-              <li key={line} className="flex items-start gap-3 text-sm text-white/85">
-                <span
-                  aria-hidden="true"
-                  className="mt-1 grid size-4 shrink-0 place-items-center rounded-full bg-white/20"
-                >
-                  <svg
-                    viewBox="0 0 12 12"
-                    className="size-2.5"
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="m2.5 6.2 2.2 2.2L9.5 3.6"
-                      stroke="white"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
-                {line}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <p className="relative text-xs text-white/60">
-          Operated by the Privacy Office. Records are retained under the project&rsquo;s
-          stated retention policy.
+      <section className="auth-brand relative hidden overflow-hidden lg:flex lg:flex-col lg:items-center lg:justify-between lg:px-12 lg:py-10">
+        <p className="relative text-3xl font-bold tracking-[0.12em] text-white">
+          {config.productName}
         </p>
+
+        <div className="relative flex w-full flex-col items-center">
+          <AuthIllustration className="w-full max-w-[460px]" />
+          <p className="mt-4 max-w-sm text-center text-sm leading-relaxed text-white/80">
+            {config.pitch.heading}
+          </p>
+        </div>
+
+        <div className="relative w-full max-w-sm text-center text-white">
+          <p className="text-sm font-semibold">{config.pitch.footerTitle}</p>
+          <hr className="mx-auto my-2 w-full border-white/40" />
+          <p className="text-sm text-white/85">
+            {config.pitch.footerTags.map((tag, i) => (
+              <React.Fragment key={tag}>
+                {i > 0 && <span className="mx-2.5 text-white/50">|</span>}
+                {tag}
+              </React.Fragment>
+            ))}
+          </p>
+        </div>
       </section>
 
       {/* -------------------------------------------------- the form panel */}
-      <section className="relative flex min-h-dvh flex-col justify-center bg-bg px-4 py-10 sm:px-8 lg:min-h-0 lg:px-12">
-        <div
-          aria-hidden="true"
-          className="aurora pointer-events-none absolute inset-0 lg:hidden"
-        />
+      <section className="relative flex min-h-dvh flex-col items-center bg-surface px-4 py-10 sm:px-8 lg:min-h-0 lg:px-16">
+        <div className="animate-in relative flex w-full max-w-md flex-1 flex-col">
+          <Logo />
 
-        <div className="animate-in relative mx-auto w-full max-w-md">
-          {/* The compact brand lockup, for the collapsed layout only. */}
-          <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <span className="brand-gradient grid size-9 place-items-center rounded-xl shadow-[var(--shadow-sm)]">
-              <BrandMark className="size-5 text-white" />
-            </span>
-            <span className="font-semibold tracking-tight">{config.appName}</span>
+          <div className="my-auto pt-10">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <h1 className="text-[1.65rem] font-bold tracking-tight">{title}</h1>
+              {aside && <div className="text-sm text-text-muted">{aside}</div>}
+            </div>
+            {subtitle && (
+              <p className="mt-2 text-sm leading-relaxed text-text-muted">{subtitle}</p>
+            )}
+
+            <div className="auth-form mt-7">{children}</div>
+
+            {footer && <div className="mt-8">{footer}</div>}
+
+            {help && (
+              <div className="mt-8 flex justify-center">
+                <Link
+                  href="/help"
+                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-bg px-4 py-2.5 text-sm font-semibold text-text shadow-[var(--shadow-sm)] transition-colors hover:bg-surface-hover"
+                >
+                  <CircleHelp className="size-5 text-text-muted" aria-hidden="true" />
+                  Need Help?
+                </Link>
+              </div>
+            )}
           </div>
-
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-          {subtitle && (
-            <p className="mt-2 text-sm leading-relaxed text-text-muted">{subtitle}</p>
-          )}
-
-          <div className="mt-7">{children}</div>
-
-          {footer && <div className="mt-8">{footer}</div>}
         </div>
       </section>
     </main>
+  );
+}
+
+/** The product's lockup: the shield, the name, and the app's own line under it. */
+function Logo() {
+  return (
+    <div className="flex flex-col items-center text-center">
+      <div className="flex items-center gap-2">
+        <span className="text-[2.1rem] leading-none font-semibold tracking-tight">
+          <span className="auth-logo-strong">{config.productName.slice(0, 3)}</span>
+          <span className="auth-logo-soft">{config.productName.slice(3)}</span>
+        </span>
+        <BrandMark className="auth-logo-strong size-9" />
+      </div>
+      <p className="mt-1 border-t border-border pt-0.5 text-xs tracking-wide text-text-muted">
+        {config.appName}
+      </p>
+    </div>
   );
 }

@@ -49,27 +49,22 @@ export default function SignInPage() {
       title="Sign in"
       subtitle="Enter the mobile number or email address you registered with and we will
         send you a one-time code."
+      aside={
+        <>
+          New user?{" "}
+          <Link href="/sign-up" className="font-medium text-accent-text underline underline-offset-2">
+            Register
+          </Link>
+        </>
+      }
       footer={
         <div className="space-y-3">
-          <p className="text-center text-sm text-text-muted">
-            Never registered with us?{" "}
-            <Link href="/sign-up" className="font-medium text-accent-text hover:underline">
-              Create an account
-            </Link>
-          </p>
           <p className="text-center text-xs text-text-subtle">
             <Link
               href="/rights"
               className="underline underline-offset-2 hover:text-text-muted"
             >
               Your rights and how to exercise them
-            </Link>
-            {" · "}
-            <Link
-              href="/help"
-              className="underline underline-offset-2 hover:text-text-muted"
-            >
-              Help manual
             </Link>
           </p>
           <p className="text-center text-xs text-text-subtle">

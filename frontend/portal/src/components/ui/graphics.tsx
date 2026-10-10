@@ -263,3 +263,138 @@ export function EmptyProjects() {
   );
 }
 
+
+/**
+ * The sign-in panel's picture (2026-10-10): records flowing along circuit
+ * traces into the COMPASS rose, held inside rings, with a locked shield on the
+ * far side - what comes in is recorded, and what goes out is guarded. Drawn in
+ * white on the blue panel; purely decorative.
+ */
+export function AuthIllustration({ className }: { className?: string }) {
+  const docs = [
+    { x: 28, y: 112 },
+    { x: 8, y: 186 },
+    { x: 28, y: 260 },
+  ];
+  return (
+    <svg viewBox="0 0 480 400" fill="none" className={className} aria-hidden="true">
+      {/* Rings */}
+      <circle cx="250" cy="200" r="178" stroke="white" strokeOpacity="0.14" />
+      <circle
+        cx="250"
+        cy="200"
+        r="150"
+        stroke="white"
+        strokeOpacity="0.22"
+        strokeDasharray="2 7"
+        strokeLinecap="round"
+      />
+      <circle cx="250" cy="200" r="112" stroke="white" strokeOpacity="0.12" />
+
+      {/* Traces from the records to the rose */}
+      {[
+        "M76 132 H120 L138 150 H168",
+        "M56 206 H168",
+        "M76 280 H120 L138 262 H168",
+        "M96 112 V86 H150 L172 108",
+        "M96 300 V318 H150 L172 296",
+      ].map((d) => (
+        <path key={d} d={d} stroke="white" strokeOpacity="0.55" strokeWidth="1.5" />
+      ))}
+      {[
+        [168, 150],
+        [168, 206],
+        [168, 262],
+        [172, 108],
+        [172, 296],
+        [120, 132],
+        [120, 280],
+      ].map(([cx, cy]) => (
+        <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="3.5" fill="#9AD8FF" />
+      ))}
+
+      {/* The records */}
+      {docs.map(({ x, y }) => (
+        <g key={`${x}-${y}`} transform={`translate(${x} ${y})`}>
+          <path
+            d="M0 4a4 4 0 0 1 4-4h22l12 12v28a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V4Z"
+            fill="white"
+            fillOpacity="0.1"
+            stroke="white"
+            strokeOpacity="0.85"
+            strokeWidth="1.6"
+          />
+          <path d="M26 0v12h12" stroke="white" strokeOpacity="0.85" strokeWidth="1.6" />
+          <path
+            d="M8 20h18M8 27h22M8 34h14"
+            stroke="white"
+            strokeOpacity="0.7"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+        </g>
+      ))}
+
+      {/* The rose */}
+      <circle cx="250" cy="200" r="78" fill="white" fillOpacity="0.07" />
+      <circle cx="250" cy="200" r="78" stroke="white" strokeOpacity="0.7" strokeWidth="2" />
+      <circle cx="250" cy="200" r="62" stroke="white" strokeOpacity="0.3" strokeDasharray="1 5" />
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => (
+        <path
+          key={a}
+          d="M250 122 v10"
+          stroke="white"
+          strokeOpacity={a % 90 === 0 ? 0.85 : 0.4}
+          strokeWidth="2"
+          strokeLinecap="round"
+          transform={`rotate(${a} 250 200)`}
+        />
+      ))}
+      <path d="M250 146 L262 200 L250 254 L238 200 Z" fill="white" fillOpacity="0.92" />
+      <path d="M196 200 L250 189 L304 200 L250 211 Z" fill="white" fillOpacity="0.45" />
+      <path d="M250 146 L262 200 L238 200 Z" fill="#9AD8FF" />
+      <circle cx="250" cy="200" r="7" fill="#0B3768" stroke="white" strokeWidth="2" />
+      <text
+        x="250"
+        y="140"
+        textAnchor="middle"
+        fill="white"
+        fillOpacity="0.85"
+        fontSize="11"
+        fontWeight="700"
+        letterSpacing="2"
+      >
+        N
+      </text>
+
+      {/* Out to the guarded side */}
+      <path d="M328 200 H372" stroke="white" strokeOpacity="0.55" strokeWidth="1.5" />
+      <circle cx="328" cy="200" r="3.5" fill="#9AD8FF" />
+      <g transform="translate(374 166)">
+        <path
+          d="M34 0 6 10v22c0 17 12 31 28 36 16-5 28-19 28-36V10L34 0Z"
+          fill="white"
+          fillOpacity="0.1"
+          stroke="white"
+          strokeOpacity="0.85"
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+        />
+        <rect x="24" y="30" width="20" height="16" rx="3" stroke="white" strokeWidth="1.8" />
+        <path d="M28 30v-5a6 6 0 0 1 12 0v5" stroke="white" strokeWidth="1.8" />
+        <circle cx="34" cy="38" r="2" fill="white" />
+      </g>
+
+      {/* Sparks */}
+      {[
+        [330, 70, 2],
+        [380, 110, 1.5],
+        [150, 360, 1.5],
+        [420, 300, 2],
+        [210, 40, 1.5],
+      ].map(([cx, cy, r]) => (
+        <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={r} fill="white" fillOpacity="0.6" />
+      ))}
+    </svg>
+  );
+}

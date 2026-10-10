@@ -48,15 +48,6 @@ export default function SignInPage() {
       footer={
         <div className="space-y-2">
           <p className="text-center text-xs text-text-subtle">
-            New here, or stuck?{" "}
-            <Link
-              href="/help"
-              className="underline underline-offset-2 hover:text-text-muted"
-            >
-              Read the help manual
-            </Link>
-          </p>
-          <p className="text-center text-xs text-text-subtle">
             Consented to a project, or want to exercise your rights?{" "}
             <a
               href={config.subjectPortalUrl}
@@ -205,10 +196,10 @@ function StaffForm() {
         Sign in
       </Button>
 
-      <p className="text-center text-xs text-text-subtle">
+      <p className="text-center text-sm">
         <Link
           href="/sign-in/reset"
-          className="underline underline-offset-2 hover:text-text-muted"
+          className="text-accent-text underline underline-offset-2 hover:text-accent"
         >
           Forgotten your password?
         </Link>

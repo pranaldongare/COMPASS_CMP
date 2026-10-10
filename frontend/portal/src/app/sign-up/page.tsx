@@ -109,13 +109,13 @@ function SignUpFlow() {
     <AuthLayout
       title="Create your account"
       subtitle="For people whose data is being collected. Staff accounts are issued by your administrator."
-      footer={
-        <p className="text-center text-sm text-text-muted">
-          Already registered?{" "}
-          <Link href="/sign-in" className="font-medium text-accent-text hover:underline">
+      aside={
+        <>
+          Already have an account?{" "}
+          <Link href="/sign-in" className="font-medium text-accent-text underline underline-offset-2">
             Sign in
           </Link>
-        </p>
+        </>
       }
     >
       <form method="post" onSubmit={onSubmit} noValidate className="space-y-4">
@@ -141,6 +141,8 @@ function SignUpFlow() {
           {(p) => <Input {...p} {...form.register("full_name")} autoComplete="name" />}
         </Field>
 
+        {/* Side by side from a tablet up, as the sign-up screens pair them. */}
+        <div className="grid gap-4 sm:grid-cols-2">
         <Field
           label="Mobile number"
           hint="Your sign-in codes come here. We will send one now to confirm it."
@@ -167,6 +169,7 @@ function SignUpFlow() {
             <Input {...p} {...form.register("email")} type="email" autoComplete="email" />
           )}
         </Field>
+        </div>
 
         <Field
           label="Date of birth"

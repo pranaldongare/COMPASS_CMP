@@ -41,7 +41,7 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "steps",
         items: [
-          "On the [[Sign in]] page click [[Create an account]].",
+          "On the [[Sign in]] page click [[Register]], beside the title.",
           "Fill in [[Full name]], [[Mobile number]], [[Email address]] (optional) and [[Date of birth]], then click [[Create account]].",
           "On [[Confirm your contacts]], type the code sent to your mobile and, if you gave one, the code sent to your email.",
           "Click [[Confirm and sign in]]. You land on [[My consents]].",

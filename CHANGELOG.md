@@ -8,6 +8,14 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Sign-in screens restyled** (2026-10-10), console and portal alike: a
+  deep-blue brand panel with the product name (COMPASS, or
+  `NEXT_PUBLIC_PRODUCT_NAME`), a picture of records flowing into the COMPASS
+  rose and out through a locked shield, and the app's tags at its foot; a
+  white form side under the COMPASS logo, with taller rounded fields carrying
+  an icon, a centred blue button, the way to the other door beside the title
+  (*New user? Register* / *Already have an account? Sign in* on the portal),
+  and a *Need Help?* button. Mobile and email sit side by side on sign-up.
 - **A DCO's or an RCO's own processors** (2026-10-09, migration 0050,
   [ADR 0030](docs/decisions/0030-a-collection-owner-collects-for-named-processors.md)).
   The administrator says which processors each DCO (third parties) and RCO

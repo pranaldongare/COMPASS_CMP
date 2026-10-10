@@ -35,10 +35,17 @@ export const config = {
   csrfHeader: process.env.NEXT_PUBLIC_CSRF_HEADER ?? "X-CSRF-Token",
   csrfCookie: process.env.NEXT_PUBLIC_CSRF_COOKIE ?? "cmp_csrf",
 
+  /** The product's name, on the sign-in screens' brand panel and logo. The
+   *  app's own name (`appName`) is the line under it. */
+  productName: process.env.NEXT_PUBLIC_PRODUCT_NAME ?? "COMPASS",
+
   /** The sign-in panel: what this console is for, in a line or two. */
   pitch: {
     heading: "Consent and privacy work, in one place.",
     lede: "Projects, notices, consent records and rights requests - for the Privacy Office and the teams that collect.",
+    /** The foot of the brand panel: a title over a rule, and short tags. */
+    footerTitle: "Consent Management",
+    footerTags: ["Consent & Rights", "Privacy & Compliance"],
     assurances: [
       "Every consent is recorded with its notice version",
       "Withdrawal is as easy as giving consent",
