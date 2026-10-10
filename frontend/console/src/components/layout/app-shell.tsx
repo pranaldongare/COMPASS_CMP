@@ -467,6 +467,7 @@ export function PageHeader({
   breadcrumb,
   eyebrow,
   hero = false,
+  heading = true,
 }: {
   title: string;
   /** Shown only on a record's own page (2026-10-10), where it is the
@@ -482,6 +483,8 @@ export function PageHeader({
   /** The page's opening banner (2026-10-10): the header on a white card with
    *  a field of blue dots - the dashboard's greeting. */
   hero?: boolean;
+  /** `false` when the page draws its own h1 - a record's summary card. */
+  heading?: boolean;
 }) {
   const pathname = usePathname() ?? "";
   const role = useOptionalAuth()?.me?.role;
@@ -491,7 +494,7 @@ export function PageHeader({
   if (!hero && crumbs.length > 0) {
     return (
       <div className="mb-5">
-        <h1 className="sr-only">{title}</h1>
+        {heading && <h1 className="sr-only">{title}</h1>}
         <div className="flex flex-wrap items-center gap-3">
           <PillTrail crumbs={crumbs} extra={breadcrumb} className="mb-0 max-w-full min-w-0 flex-auto" />
           {/* The kicker still says what kind of record this is - an incident

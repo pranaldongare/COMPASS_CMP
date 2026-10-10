@@ -65,7 +65,7 @@ export default function AccountPage() {
             panned the whole page. Only with a minimum of zero can `truncate`
             below actually truncate. */}
         <div className="min-w-0 lg:col-span-2">
-          <Tabs value={tab} onValueChange={setTab} label="My profile" layout="side">
+          <Tabs value={tab} onValueChange={setTab} label="My profile" layout="underline">
             <TabList>
               <Tab value="contacts" icon={Mail}>
                 Contacts

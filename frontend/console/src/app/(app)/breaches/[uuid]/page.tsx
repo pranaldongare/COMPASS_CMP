@@ -27,6 +27,7 @@ import {
   ListChecks,
   Paperclip,
   Scale,
+  ShieldAlert,
   ShieldCheck,
   Users,
 } from "lucide-react";
@@ -34,6 +35,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import * as React from "react";
 
+import { RecordHeader } from "@/components/layout/record-header";
 import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { PageHeader } from "@/components/layout/app-shell";
 import {
@@ -58,7 +60,11 @@ import {
   DeterminationCard,
   DutiesCard,
 } from "@/features/breach/components/cards";
-import { BreachStatusBadge, OutcomeBadge, locationText } from "@/features/breach/components/copy";
+import {
+  BreachStatusBadge,
+  OutcomeBadge,
+  locationText,
+} from "@/features/breach/components/copy";
 import { NoticesCard } from "@/features/breach/components/notices-card";
 import { TicketsCard } from "@/features/breach/components/tickets-card";
 import { useBreach } from "@/features/breach/queries";
@@ -66,7 +72,15 @@ import { formatDateTime } from "@/lib/format";
 import { keys } from "@/lib/query";
 import type { Breach } from "@/types";
 
-const TABS = ["duties", "validation", "people", "tickets", "assessment", "attachments", "activity"] as const;
+const TABS = [
+  "duties",
+  "validation",
+  "people",
+  "tickets",
+  "assessment",
+  "attachments",
+  "activity",
+] as const;
 type BreachTab = (typeof TABS)[number];
 /** Card anchors inside a tab, written before the tabs or naming one card. */
 const SECTIONS: Record<string, BreachTab> = {
@@ -106,13 +120,18 @@ export default function BreachPage() {
 
   const outstanding = b.obligations.filter((d) => d.state === "outstanding");
   const late = outstanding.filter((d) => d.clock.overdue || d.clock.past_target).length;
-  const openTickets = (tickets.data ?? []).filter((t) => t.state === "issued" || t.state === "returned");
+  const openTickets = (tickets.data ?? []).filter(
+    (t) => t.state === "issued" || t.state === "returned",
+  );
   const ticketsLate = openTickets.filter((t) => t.overdue).length;
 
   return (
     <>
+      {/* The trail, then the breach's summary card (2026-10-10, the detail
+          look the user settled on): what it is, its state and documents, over
+          the four figures that say where the work stands. */}
       <PageHeader
-        eyebrow={b.breach_reference ? "Personal data breach" : "Incident, being validated"}
+        heading={false}
         breadcrumb={
           <Link href="/breaches" className="inline-flex items-center gap-1 hover:underline">
             <ArrowLeft className="size-3.5" aria-hidden="true" />
@@ -120,11 +139,22 @@ export default function BreachPage() {
           </Link>
         }
         title={b.reference}
-        description={b.title}
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
+      />
+      <RecordHeader
+        icon={ShieldAlert}
+        title={b.reference}
+        meta={
+          <>
+            <span className="text-2xs font-semibold tracking-wider text-accent-text uppercase">
+              {b.breach_reference ? "Personal data breach" : "Incident, being validated"}
+            </span>
             <OutcomeBadge outcome={b.determination} />
             <BreachStatusBadge status={b.status} />
+            <span className="basis-full">{b.title}</span>
+          </>
+        }
+        actions={
+          <>
             <Button variant="secondary" size="sm" asChild>
               <Link href={`/breaches/${b.breach_uuid}/org-board`}>
                 <FileText className="size-4" />
@@ -138,8 +168,38 @@ export default function BreachPage() {
               </Link>
             </Button>
             <AuditTrailLink entityType="breach" uuid={b.breach_uuid} label={b.reference} />
-          </div>
+          </>
         }
+        facts={[
+          {
+            label: "Duties outstanding",
+            value: late ? `${outstanding.length} · ${late} late` : outstanding.length,
+            icon: ListChecks,
+            tint: 3,
+            href: "#duties",
+          },
+          {
+            label: "Validations",
+            value: b.determinations.length,
+            icon: ShieldCheck,
+            tint: 2,
+            href: "#validation",
+          },
+          {
+            label: "Open tickets",
+            value: tickets.data ? openTickets.length : "—",
+            icon: Inbox,
+            tint: 0,
+            href: "#tickets",
+          },
+          {
+            label: "Attachments",
+            value: b.attachments.length,
+            icon: Paperclip,
+            tint: 1,
+            href: "#attachments",
+          },
+        ]}
       />
 
       {/* Where it stands before anything else: closing it, or exactly what
@@ -158,14 +218,15 @@ export default function BreachPage() {
       {/* The step that starts the statutory clocks, wherever the reader is. */}
       {b.status === "open" && b.determination === "pending" && tab !== "validation" && (
         <Alert tone="info" title="Not validated yet" className="mb-6">
-          Is it a personal data breach under s.2(u)? A yes records it and starts the DPDP duties.{" "}
+          Is it a personal data breach under s.2(u)? A yes records it and starts the DPDP
+          duties.{" "}
           <a href="#validation" className="font-medium text-accent-text hover:underline">
             Record the validation
           </a>
         </Alert>
       )}
 
-      <Tabs value={tab} onValueChange={setTab} label="Breach sections" layout="side">
+      <Tabs value={tab} onValueChange={setTab} label="Breach sections" layout="underline">
         <TabList>
           <Tab
             value="duties"
@@ -251,14 +312,22 @@ function DetailsCard({ breach: b }: { breach: Breach }) {
               ? `${formatDateTime(b.breach_recorded_at)} by ${b.breach_recorded_by_name ?? "unknown"}`
               : "Not yet: a validation of yes records it"}
           </DescriptionItem>
-          <DescriptionItem term="First noticed">{formatDateTime(b.detected_at)}</DescriptionItem>
-          <DescriptionItem term="Became aware">
-            {b.became_aware_at ? formatDateTime(b.became_aware_at) : "Set with a validation of yes"}
+          <DescriptionItem term="First noticed">
+            {formatDateTime(b.detected_at)}
           </DescriptionItem>
-          <DescriptionItem term="Began">{b.began_at ? formatDateTime(b.began_at) : "Not known"}</DescriptionItem>
+          <DescriptionItem term="Became aware">
+            {b.became_aware_at
+              ? formatDateTime(b.became_aware_at)
+              : "Set with a validation of yes"}
+          </DescriptionItem>
+          <DescriptionItem term="Began">
+            {b.began_at ? formatDateTime(b.began_at) : "Not known"}
+          </DescriptionItem>
           <DescriptionItem term="Where">
             {locationText(b.location)}
-            {b.location.detail && <span className="block whitespace-pre-wrap text-sm">{b.location.detail}</span>}
+            {b.location.detail && (
+              <span className="block text-sm whitespace-pre-wrap">{b.location.detail}</span>
+            )}
           </DescriptionItem>
           <LoggedDetails logged={b.logged} cyber={b.cyber_attack} />
           <DescriptionItem term="Logged">
@@ -278,8 +347,8 @@ function HistoryCard({ breach: b }: { breach: Breach }) {
         <div>
           <CardTitle>History</CardTitle>
           <p className="mt-0.5 text-xs text-text-muted">
-            Append-only. Every close and reopening, who made it, and why. Everything else done to it is in the audit
-            trail.
+            Append-only. Every close and reopening, who made it, and why. Everything else
+            done to it is in the audit trail.
           </p>
         </div>
         <HistoryIcon className="size-4 text-text-subtle" aria-hidden="true" />
@@ -309,7 +378,9 @@ function HistoryCard({ breach: b }: { breach: Breach }) {
                 {entry.changed_by_name ?? "Unknown"} · {formatDateTime(entry.changed_at)}
               </p>
               {entry.reason && (
-                <p className="mt-1 rounded bg-bg-inset px-2 py-1 text-xs text-text">“{entry.reason}”</p>
+                <p className="mt-1 rounded bg-bg-inset px-2 py-1 text-xs text-text">
+                  “{entry.reason}”
+                </p>
               )}
             </li>
           ))}

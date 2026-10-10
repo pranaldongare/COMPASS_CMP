@@ -27,6 +27,7 @@ import {
   Database,
   UserCog,
   ArrowLeftRight,
+  FolderKanban,
   LayoutGrid,
   Settings2,
 } from "lucide-react";
@@ -37,6 +38,7 @@ import * as React from "react";
 import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { useReturnTo, withFrom } from "@/lib/navigation/return-to";
 import { PageHeader } from "@/components/layout/app-shell";
+import { RecordHeader } from "@/components/layout/record-header";
 import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
 import { TransitionControls } from "@/features/projects/components/transition-controls";
 import {
@@ -70,16 +72,18 @@ import {
   CardBody,
   CardHeader,
   CardTitle,
-  DescriptionItem,
-  DescriptionList,
   EmptyState,
   Mono,
   Skeleton,
 } from "@/components/ui/primitives";
-import { ProjectProgress, StatusBadge } from "@/components/ui/status";
+import { StatusBadge } from "@/components/ui/status";
 import { useLinks } from "@/features/consent";
 import { useNotices } from "@/features/notices";
-import { CopyLinkButton, ProjectConsents, ReplaceLinkDialog } from "@/features/consent/components";
+import {
+  CopyLinkButton,
+  ProjectConsents,
+  ReplaceLinkDialog,
+} from "@/features/consent/components";
 import {
   downloadApprovalProof,
   useApprovals,
@@ -109,6 +113,9 @@ type Sheet =
  * written before the tabs - the dashboard's rows, a notice's way back -
  * landing on the card they meant.
  */
+/** The counts the summary card shows; "At a glance" leaves them out. */
+const SUMMARY_COUNTS = new Set(["notices", "sites", "active_links"]);
+
 const TABS = ["overview", "setup", "consent", "exchanges", "activity"] as const;
 type ProjectTab = (typeof TABS)[number];
 const SECTIONS: Record<string, ProjectTab> = {
@@ -254,7 +261,6 @@ export default function ProjectDetailPage() {
   // different things to choose between (UX review 2026-10-05).
   const projectActions = (
     <div className="flex flex-wrap items-center gap-2">
-      <StatusBadge kind="project" value={p.project_status} />
       <AuditTrailLink entityType="project" uuid={p.project_uuid} label={p.project_name} />
       {/* Editing is permitted only while the project is in draft. */}
       {isOwner && p.project_status === "in_draft" && (
@@ -327,7 +333,11 @@ export default function ProjectDetailPage() {
 
   return (
     <>
+      {/* The trail, then the project's summary card (2026-10-10, the detail
+          look the user settled on): its name, status and controls over four
+          key figures, each opening the records it counts. */}
       <PageHeader
+        heading={false}
         breadcrumb={
           <Link
             href={allProjects}
@@ -338,57 +348,52 @@ export default function ProjectDetailPage() {
           </Link>
         }
         title={p.project_name}
-        description={p.description ?? undefined}
+      />
+      <RecordHeader
+        icon={FolderKanban}
+        title={p.project_name}
+        meta={
+          <>
+            <StatusBadge kind="project" value={p.project_status} />
+            <span>
+              {[p.internal_project_name, p.requesting_team].filter(Boolean).join(" · ")}
+            </span>
+          </>
+        }
         actions={projectActions}
+        facts={[
+          {
+            label: "Consents",
+            value: summary.data?.consents.total ?? "—",
+            icon: FileCheck,
+            tint: 0,
+            href: canReadConsents ? "#consents" : undefined,
+          },
+          {
+            label: "Notices",
+            value: summary.data?.counts.notices ?? "—",
+            icon: ScrollText,
+            tint: 3,
+            href: "#notices",
+          },
+          {
+            label: "Active links",
+            value: summary.data?.counts.active_links ?? "—",
+            icon: Link2,
+            tint: 2,
+            href: canReadLinks ? "#links" : undefined,
+          },
+          {
+            label: "Sites",
+            value: summary.data?.counts.sites ?? "—",
+            icon: MapPin,
+            tint: 1,
+            href: "#sites",
+          },
+        ]}
       />
 
-      <div className="mb-6">
-        <ProjectProgress status={p.project_status} />
-      </div>
-
-      {/* Where it stands before anything else: the move this person can make
-          next, or exactly what blocks it, beside who is accountable. Everything
-          under the tabs is the detail behind it. */}
-      <div className="mb-6 grid gap-6 lg:grid-cols-3">
-        <div className="min-w-0 lg:col-span-2">
-          <TransitionControls
-            projectUuid={uuid}
-            currentStatus={p.project_status}
-            noticeUuid={p.current_notice_uuid ?? notices.data?.[0]?.notice_uuid}
-          />
-        </div>
-        <div className="min-w-0">
-          <Card>
-            <CardHeader>
-              <CardTitle>Details</CardTitle>
-            </CardHeader>
-            <CardBody>
-              <DescriptionList>
-                <DescriptionItem term="Internal name">
-                  {p.internal_project_name ?? "—"}
-                </DescriptionItem>
-                <DescriptionItem term="Requesting team">
-                  {p.requesting_team ?? "—"}
-                </DescriptionItem>
-                <DescriptionItem term="Data Collection Owner">
-                  {p.dco_name ?? "Not assigned"}
-                </DescriptionItem>
-                <DescriptionItem term="Created by">
-                  {p.created_by_name ?? "—"}
-                </DescriptionItem>
-                <DescriptionItem term="Created">
-                  {formatDateTime(p.created_at)}
-                </DescriptionItem>
-                <DescriptionItem term="Reference">
-                  <Mono>{p.project_uuid}</Mono>
-                </DescriptionItem>
-              </DescriptionList>
-            </CardBody>
-          </Card>
-        </div>
-      </div>
-
-      <Tabs value={tab} onValueChange={setTab} label="Project sections" layout="side">
+      <Tabs value={tab} onValueChange={setTab} label="Project sections" layout="underline">
         <TabList>
           <Tab value="overview" icon={LayoutGrid}>
             Overview
@@ -407,73 +412,165 @@ export default function ProjectDetailPage() {
           </Tab>
         </TabList>
 
-        <TabPanel value="overview" className="space-y-6">
-          {summary.isLoading ? (
-            <Skeleton className="h-40" />
-          ) : summary.data ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>At a glance</CardTitle>
-              </CardHeader>
-              <CardBody className="space-y-4">
-                {/* Each figure opens the records it counts (UX review
+        <TabPanel value="overview">
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+            <div className="min-w-0 space-y-5">
+              {/* The move this person can make next, or exactly what blocks it. */}
+              <TransitionControls
+                projectUuid={uuid}
+                currentStatus={p.project_status}
+                noticeUuid={p.current_notice_uuid ?? notices.data?.[0]?.notice_uuid}
+              />
+              <Card>
+                <CardHeader className="flex items-center gap-2">
+                  <Info className="size-4 text-text-subtle" aria-hidden="true" />
+                  <CardTitle>Project details</CardTitle>
+                </CardHeader>
+                <dl className="grid gap-x-5 gap-y-4 p-5 sm:grid-cols-2 xl:grid-cols-3">
+                  {(
+                    [
+                      ["Internal name", p.internal_project_name ?? "—"],
+                      ["Requesting team", p.requesting_team ?? "—"],
+                      ["Data Collection Owner", p.dco_name ?? "Not assigned"],
+                      ["Created by", p.created_by_name ?? "—"],
+                      ["Created", formatDateTime(p.created_at)],
+                      ["Reference", <Mono key="ref">{p.project_uuid}</Mono>],
+                    ] as const
+                  ).map(([term, value]) => (
+                    <div key={term} className="min-w-0">
+                      <dt className="mb-1 text-2xs font-semibold tracking-wider text-text-subtle uppercase">
+                        {term}
+                      </dt>
+                      <dd className="text-sm break-words">{value}</dd>
+                    </div>
+                  ))}
+                  {p.description && (
+                    <div className="sm:col-span-2 xl:col-span-3">
+                      <dt className="mb-1 text-2xs font-semibold tracking-wider text-text-subtle uppercase">
+                        Description
+                      </dt>
+                      <dd className="text-sm text-text-muted">{p.description}</dd>
+                    </div>
+                  )}
+                </dl>
+              </Card>
+              {summary.isLoading ? (
+                <Skeleton className="h-40" />
+              ) : summary.data ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>At a glance</CardTitle>
+                  </CardHeader>
+                  <CardBody className="space-y-4">
+                    {/* Each figure opens the records it counts (UX review
                     2026-10-05); a number that goes nowhere invites a search. */}
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {Object.entries(summary.data.counts).map(([key, value]) => {
-                    const section = COUNT_SECTION[key];
-                    const figure = (
-                      <>
-                        <span className="block text-xs text-text-subtle">
-                          {humanise(key)}
-                        </span>
-                        <span className="tabular block text-lg font-semibold">{value}</span>
-                      </>
-                    );
-                    return section && reachable.has(section) ? (
-                      <a
-                        key={key}
-                        href={`#${section}`}
-                        className="-m-1.5 rounded-lg p-1.5 hover:bg-surface-hover"
-                      >
-                        {figure}
-                      </a>
-                    ) : (
-                      <div key={key}>{figure}</div>
-                    );
-                  })}
-                </div>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      {Object.entries(summary.data.counts)
+                        // Notices, sites and active links are in the summary
+                        // card's strip; they are not counted twice.
+                        .filter(([key]) => !SUMMARY_COUNTS.has(key))
+                        .map(([key, value]) => {
+                          const section = COUNT_SECTION[key];
+                          const figure = (
+                            <>
+                              <span className="block text-xs text-text-subtle">
+                                {humanise(key)}
+                              </span>
+                              <span className="tabular block text-lg font-semibold">
+                                {value}
+                              </span>
+                            </>
+                          );
+                          return section && reachable.has(section) ? (
+                            <a
+                              key={key}
+                              href={`#${section}`}
+                              className="-m-1.5 rounded-lg p-1.5 hover:bg-surface-hover"
+                            >
+                              {figure}
+                            </a>
+                          ) : (
+                            <div key={key}>{figure}</div>
+                          );
+                        })}
+                    </div>
 
-                <div className="border-t border-border pt-3">
-                  <p className="mb-2 text-xs font-medium tracking-wide text-text-subtle uppercase">
-                    Consent
-                  </p>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                    {Object.entries(summary.data.consents).map(([key, value]) => {
-                      const figure = (
-                        <>
-                          <p className="text-xs text-text-subtle">{humanise(key)}</p>
-                          <p className="tabular text-lg font-semibold">{value}</p>
-                        </>
-                      );
-                      // Each figure opens the list below, narrowed to what it counted.
-                      return canReadConsents ? (
-                        <a
-                          key={key}
-                          href="#consents"
-                          onClick={() => setConsentStatus(key === "total" ? "" : key)}
-                          className="-m-1.5 rounded-lg p-1.5 hover:bg-surface-hover"
-                        >
-                          {figure}
-                        </a>
-                      ) : (
-                        <div key={key}>{figure}</div>
-                      );
-                    })}
-                  </div>
+                    <div className="border-t border-border pt-3">
+                      <p className="mb-2 text-xs font-medium tracking-wide text-text-subtle uppercase">
+                        Consent
+                      </p>
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                        {Object.entries(summary.data.consents).map(([key, value]) => {
+                          const figure = (
+                            <>
+                              <p className="text-xs text-text-subtle">{humanise(key)}</p>
+                              <p className="tabular text-lg font-semibold">{value}</p>
+                            </>
+                          );
+                          // Each figure opens the list below, narrowed to what it counted.
+                          return canReadConsents ? (
+                            <a
+                              key={key}
+                              href="#consents"
+                              onClick={() => setConsentStatus(key === "total" ? "" : key)}
+                              className="-m-1.5 rounded-lg p-1.5 hover:bg-surface-hover"
+                            >
+                              {figure}
+                            </a>
+                          ) : (
+                            <div key={key}>{figure}</div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              ) : null}
+            </div>
+
+            {/* The latest of the project's history, beside the details. */}
+            <Card>
+              <CardHeader className="flex items-center gap-2">
+                <HistoryIcon className="size-4 text-text-subtle" aria-hidden="true" />
+                <CardTitle>Activity</CardTitle>
+              </CardHeader>
+              {history.isLoading ? (
+                <CardBody>
+                  <Skeleton className="h-24" />
+                </CardBody>
+              ) : history.data && history.data.length > 0 ? (
+                <ol className="space-y-3.5 px-5 py-4">
+                  {history.data.slice(0, 5).map((entry) => (
+                    <li key={entry.history_uuid} className="flex gap-3">
+                      <span
+                        aria-hidden="true"
+                        className="mt-1.5 size-2 shrink-0 rounded-full bg-accent ring-4 ring-accent-subtle"
+                      />
+                      <div className="min-w-0 text-sm">
+                        <p>
+                          {entry.from_status
+                            ? `${humanise(entry.from_status)} → ${humanise(entry.to_status)}`
+                            : `Created as ${humanise(entry.to_status)}`}
+                        </p>
+                        <p className="text-xs text-text-subtle">
+                          {formatDateTime(entry.occurred_at)} · {entry.actor_name}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <CardBody className="text-sm text-text-muted">Nothing yet.</CardBody>
+              )}
+              {(history.data?.length ?? 0) > 5 && (
+                <div className="border-t border-border px-5 py-2.5">
+                  <Button variant="ghost" size="sm" onClick={() => setTab("activity")}>
+                    See all {history.data?.length}
+                  </Button>
                 </div>
-              </CardBody>
+              )}
             </Card>
-          ) : null}
+          </div>
         </TabPanel>
 
         <TabPanel value="setup" className="space-y-6">

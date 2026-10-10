@@ -27,9 +27,11 @@ interface TabsContextValue {
   onValueChange: (value: string) => void;
   id: string;
   label: string;
-  /** `side` (2026-10-10, "Side tabs", chosen from three detail-page looks):
-   *  on a desk the tabs are a menu down the left of the panel. */
+  /** `side` (2026-10-10): on a desk the tabs are a menu down the left. */
   side: boolean;
+  /** `underline` (2026-10-10, the detail-page look the user settled on):
+   *  icon, label and count along a rule, the current tab underlined blue. */
+  underline: boolean;
 }
 
 const TabsContext = React.createContext<TabsContextValue | null>(null);
@@ -56,15 +58,16 @@ export function Tabs({
   label: string;
   /** `row`: tabs in a tray above the panel. `side`: from `lg` up, a menu down
    *  the left with the panel beside it - for a record's detail page. */
-  layout?: "row" | "side";
+  layout?: "row" | "side" | "underline";
   children: React.ReactNode;
   className?: string;
 }) {
   const id = React.useId();
   const side = layout === "side";
+  const underline = layout === "underline";
   const ctx = React.useMemo(
-    () => ({ value, onValueChange, id, label, side }),
-    [value, onValueChange, id, label, side],
+    () => ({ value, onValueChange, id, label, side, underline }),
+    [value, onValueChange, id, label, side, underline],
   );
   return (
     <TabsContext.Provider value={ctx}>
@@ -87,7 +90,7 @@ export function TabList({
   children: React.ReactNode;
   className?: string;
 }) {
-  const { label, side } = useTabs();
+  const { label, side, underline } = useTabs();
   const ref = React.useRef<HTMLDivElement>(null);
 
   function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
@@ -123,8 +126,11 @@ export function TabList({
       aria-orientation={side ? "vertical" : undefined}
       onKeyDown={onKeyDown}
       className={cn(
-        // Pill tabs in a soft tray (2026-10-10; they were underlined).
-        "scroll-x mb-6 flex w-fit max-w-full gap-1 rounded-lg border border-border bg-bg-subtle p-1 [--scroll-bg:var(--bg-subtle)]",
+        underline
+          ? // Along a rule (2026-10-10): the row runs the page's width.
+            "scroll-x mb-5 flex max-w-full gap-1 border-b border-border [--scroll-bg:var(--page-bg)]"
+          : // Pill tabs in a soft tray (2026-10-10; they were underlined).
+            "scroll-x mb-6 flex w-fit max-w-full gap-1 rounded-lg border border-border bg-bg-subtle p-1 [--scroll-bg:var(--bg-subtle)]",
         // The row scrolls sideways on a phone rather than wrapping into a
         // second line of tabs that reads as a second level.
         "[&::-webkit-scrollbar]:hidden",
@@ -157,7 +163,7 @@ export function Tab({
   icon?: React.ComponentType<{ className?: string }>;
   disabled?: boolean;
 }) {
-  const { value: selected, onValueChange, id, side } = useTabs();
+  const { value: selected, onValueChange, id, side, underline } = useTabs();
   const active = selected === value;
   const ref = React.useRef<HTMLButtonElement>(null);
   // On a phone the row scrolls sideways; the selected tab - one opened from a
@@ -184,10 +190,17 @@ export function Tab({
       disabled={disabled}
       onClick={() => onValueChange(value)}
       className={cn(
-        "relative inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-1.5 text-sm whitespace-nowrap",
+        "relative inline-flex shrink-0 items-center gap-2 text-sm whitespace-nowrap",
+        underline
+          ? "-mb-px border-b-[2.5px] px-3.5 py-2.5"
+          : "rounded-md px-3 py-1.5",
         "transition-[background-color,color,box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]",
         "disabled:cursor-not-allowed disabled:opacity-50",
-        side
+        underline
+          ? active
+            ? "border-accent font-semibold text-accent-text"
+            : "border-transparent font-medium text-text-muted hover:text-text"
+          : side
           ? cn(
               "lg:w-full lg:justify-start lg:gap-3 lg:rounded-xl lg:py-1.5 lg:pr-2 lg:pl-1.5",
               // The current tab is the sidebar's blue pill (.nav-current).
@@ -215,9 +228,11 @@ export function Tab({
             alert
               ? "bg-danger-subtle text-danger-text"
               : active
-                ? side
-                  ? "bg-white text-[#1f5c9e]"
-                  : "bg-accent-subtle text-accent-text"
+                ? underline
+                  ? "bg-accent text-accent-contrast"
+                  : side
+                    ? "bg-white text-[#1f5c9e]"
+                    : "bg-accent-subtle text-accent-text"
                 : "bg-bg-inset text-text-subtle",
           )}
         >

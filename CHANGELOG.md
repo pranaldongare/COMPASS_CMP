@@ -8,6 +8,15 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Detail pages as slide A** (2026-10-10, "Summary card + underline tabs",
+  the user's final pick): a project and a breach open on the breadcrumb, then
+  a white summary card - gradient icon, name, status line and actions over a
+  strip of four key facts with tinted tiles, each opening the records it
+  counts - then underline tabs with icons and counts. A project's Overview
+  tab has the next step and Project details on the left and the latest
+  Activity on the right; "At a glance" no longer repeats the strip's
+  figures. My profile (both apps) uses the underline tabs too. Replaces the
+  side tabs.
 - **Side tabs on detail pages** (2026-10-10, chosen from three detail-page
   looks): a project, a breach and My profile (both apps) show their tabs as
   a white menu down the left - an icon tile per tab, counts at the right,
