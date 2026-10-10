@@ -35,14 +35,17 @@ function Bars({
       {rows.length === 0 ? (
         <p className="text-sm text-text-subtle">Nothing yet.</p>
       ) : (
-        <table className="w-full text-sm">
+        // Fixed layout so a long event name is cut rather than pushing its
+        // bar into the next column (2026-10-10).
+        <table className="w-full table-fixed text-sm">
           <caption className="sr-only">{title}</caption>
           <tbody>
             {rows.map((r) => (
               <tr key={r.key}>
                 <th
                   scope="row"
-                  className="w-1/2 truncate py-0.5 pr-2 text-left font-normal text-text"
+                  className="w-3/5 truncate py-0.5 pr-2 text-left font-normal text-text"
+                  title={labelOf(r.key)}
                 >
                   {labelOf(r.key)}
                 </th>

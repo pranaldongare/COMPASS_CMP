@@ -13,7 +13,7 @@
  */
 "use client";
 
-import { CheckCircle2, Pencil, Plus, XCircle } from "lucide-react";
+import { CheckCircle2, Eye, Pencil, Plus, XCircle } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
@@ -29,6 +29,7 @@ import {
 import { PurposeForm } from "@/features/registry/components/purpose-form";
 import { ConfirmDialog, Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyRecords } from "@/components/ui/graphics";
+import { RowActions, Truncate } from "@/components/ui/overlay";
 import { Badge, Button, Td, Tr } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { useEnums } from "@/features/meta";
@@ -118,7 +119,7 @@ function PurposesPageView() {
           "Lawful basis",
           "Data collected",
           "Retention",
-          ...(isDpo ? ["Actions"] : []),
+          ...(isDpo ? [""] : []),
         ]}
         keyOf={(p) => p.purpose_uuid}
         empty={{
@@ -133,7 +134,7 @@ function PurposesPageView() {
             <Td>
               <Link
                 href={`/purposes/${p.purpose_uuid}`}
-                className="font-medium text-accent-text hover:underline"
+                className="font-medium text-text hover:text-accent-text hover:underline"
               >
                 {p.name}
               </Link>
@@ -151,55 +152,58 @@ function PurposesPageView() {
               )}
             </Td>
             <Td className="max-w-xs">
-              {/* Rule 3(b)(i): itemised, never a vague category. */}
-              <span className="text-xs text-text-muted">
+              {/* Rule 3(b)(i): itemised, never a vague category - all of it in
+                  the tooltip when the line is cut. */}
+              <Truncate className="text-xs text-text-muted">
                 {p.data_categories.map(humanise).join(", ")}
-              </span>
+              </Truncate>
             </Td>
             <Td className="whitespace-nowrap text-text-muted">
               {formatDuration(p.retention_period)}
             </Td>
+            {/* Editing is permitted only while the purpose is a draft: once
+                it is active a notice may already reference it. */}
             {isDpo && (
-              <Td>
-                <div className="flex gap-1">
-                  {/* Editing is permitted only while the purpose is a draft:
-                      once it is active a notice may already reference it. */}
-                  {p.status === "draft" && (
-                    <>
-                      <Button variant="ghost" size="sm" onClick={() => setEditing(p)}>
-                        <Pencil className="size-4" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        loading={activate.isPending}
-                        onClick={async () => {
-                          try {
-                            await activate.mutateAsync(p.purpose_uuid);
-                            toast.success("Purpose activated", "Notices can now use it.");
-                          } catch (err) {
-                            toast.error(
-                              "Could not activate",
-                              err && typeof err === "object" && "userMessage" in err
-                                ? (err as { userMessage: () => string }).userMessage()
-                                : "Please try again.",
-                            );
-                          }
-                        }}
-                      >
-                        <CheckCircle2 className="size-4" />
-                        Activate
-                      </Button>
-                    </>
-                  )}
-                  {p.status === "active" && (
-                    <Button variant="subtle" size="sm" onClick={() => setRetiring(p)}>
-                      <XCircle className="size-4" />
-                      Retire
-                    </Button>
-                  )}
-                </div>
+              <Td className="w-12 text-right">
+                <RowActions
+                  label={`Actions for ${p.name}`}
+                  actions={[
+                    { label: "View", icon: Eye, href: `/purposes/${p.purpose_uuid}` },
+                    ...(p.status === "draft"
+                      ? [
+                          { label: "Edit", icon: Pencil, onSelect: () => setEditing(p) },
+                          {
+                            label: "Activate",
+                            icon: CheckCircle2,
+                            disabled: activate.isPending,
+                            onSelect: async () => {
+                              try {
+                                await activate.mutateAsync(p.purpose_uuid);
+                                toast.success("Purpose activated", "Notices can now use it.");
+                              } catch (err) {
+                                toast.error(
+                                  "Could not activate",
+                                  err && typeof err === "object" && "userMessage" in err
+                                    ? (err as { userMessage: () => string }).userMessage()
+                                    : "Please try again.",
+                                );
+                              }
+                            },
+                          },
+                        ]
+                      : []),
+                    ...(p.status === "active"
+                      ? [
+                          {
+                            label: "Retire",
+                            icon: XCircle,
+                            destructive: true,
+                            onSelect: () => setRetiring(p),
+                          },
+                        ]
+                      : []),
+                  ]}
+                />
               </Td>
             )}
           </Tr>

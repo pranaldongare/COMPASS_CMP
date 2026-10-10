@@ -97,8 +97,8 @@
     inset: -40% -20% auto -20%;
     height: 70%;
     background:
-      radial-gradient(40% 60% at 25% 40%, oklch(60% 0.16 278 / 0.20), transparent 70%),
-      radial-gradient(45% 55% at 75% 30%, oklch(58% 0.15 200 / 0.16), transparent 70%);
+      radial-gradient(40% 60% at 25% 40%, rgb(61 130 201 / 0.12), transparent 70%),
+      radial-gradient(45% 55% at 75% 30%, rgb(56 170 200 / 0.08), transparent 70%);
     filter: blur(28px);
     pointer-events: none;
   }
@@ -205,8 +205,10 @@
   .scroll-x {
     overflow-x: auto;
     background:
-      linear-gradient(to right, var(--surface) 30%, transparent),
-      linear-gradient(to right, transparent, var(--surface) 70%) 100% 0,
+      /* The covers match what the strip sits on: the surface by default,
+         the page behind a tab bar (`--scroll-bg`, 2026-10-10). */
+      linear-gradient(to right, var(--scroll-bg, var(--surface)) 30%, transparent),
+      linear-gradient(to right, transparent, var(--scroll-bg, var(--surface)) 70%) 100% 0,
       radial-gradient(farthest-side at 0 50%, oklch(0% 0 0 / 0.09), transparent),
       radial-gradient(farthest-side at 100% 50%, oklch(0% 0 0 / 0.09), transparent) 100% 0;
     background-repeat: no-repeat;

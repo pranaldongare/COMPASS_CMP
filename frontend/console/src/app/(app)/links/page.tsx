@@ -23,8 +23,9 @@ import {
 } from "@/components/data-display/resource-list";
 import { AgentForm, ProjectFilter } from "@/features/projects/components";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { RowActions } from "@/components/ui/overlay";
 import { EmptyLink } from "@/components/ui/graphics";
-import { Alert, Button, Td, Tr } from "@/components/ui/primitives";
+import { Alert, Td, Tr } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { useAllLinks, useRevokeLink } from "@/features/consent";
 import { useEnums } from "@/features/meta";
@@ -115,7 +116,7 @@ function LinksPageView() {
         query={query}
         stack={stack}
         caption="Consent links across all projects in scope"
-        columns={["Site", "Project", "Status", "Uses", "Registrations", "Expires", "Actions"]}
+        columns={["Site", "Project", "Status", "Uses", "Registrations", "Expires", ""]}
         keyOf={(l) => l.link_uuid}
         empty={{
           illustration: <EmptyLink />,
@@ -157,38 +158,33 @@ function LinksPageView() {
                     the links that predate that, and for rotating one that has
                     circulated further than intended. */}
                 <CopyLinkButton link={l} onReplace={() => setReplacing(l)} />
-                {l.status === "active" ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setReplacing(l)}
-                    title="The URL is not stored. Replacing revokes this link and issues a fresh one you can copy."
-                  >
-                    <RefreshCw className="size-4" />
-                    Replace
-                  </Button>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setReissue({ siteUuid: l.site_uuid, siteLabel: l.site_label })}
-                    title="Mint a new link for this site and show the URL"
-                  >
-                    <RefreshCw className="size-4" />
-                    New link
-                  </Button>
-                )}
-                {l.status === "active" && (
-                  <Button
-                    variant="subtle"
-                    size="sm"
-                    loading={revoke.isPending}
-                    onClick={() => onRevoke(l.link_uuid, l.site_label)}
-                  >
-                    <Ban className="size-4" />
-                    Revoke
-                  </Button>
-                )}
+                {/* The rest in one menu (2026-10-10). Replace, not "New link",
+                    for a live link: a second link for the same site leaves two
+                    working URLs and only one of them tracked. */}
+                <RowActions
+                  label={`Actions for the link at ${l.site_label}`}
+                  actions={
+                    l.status === "active"
+                      ? [
+                          { label: "Replace", icon: RefreshCw, onSelect: () => setReplacing(l) },
+                          {
+                            label: "Revoke",
+                            icon: Ban,
+                            destructive: true,
+                            disabled: revoke.isPending,
+                            onSelect: () => onRevoke(l.link_uuid, l.site_label),
+                          },
+                        ]
+                      : [
+                          {
+                            label: "New link",
+                            icon: RefreshCw,
+                            onSelect: () =>
+                              setReissue({ siteUuid: l.site_uuid, siteLabel: l.site_label }),
+                          },
+                        ]
+                  }
+                />
               </div>
             </Td>
           </Tr>

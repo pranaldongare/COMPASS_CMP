@@ -28,6 +28,7 @@ import { RespondentsPanel } from "@/features/registry/components/respondents";
 import { RestrictedCountries } from "@/features/registry/components/restricted-countries";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyRecords } from "@/components/ui/graphics";
+import { RowActions } from "@/components/ui/overlay";
 import { Button, Td, Tr } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { useEnums } from "@/features/meta";
@@ -117,7 +118,7 @@ export default function ProcessorsPage() {
           "Contract",
           "Security confirmed",
           "Status",
-          "Action",
+          "",
         ]}
         keyOf={(p) => p.processor_uuid}
         empty={{
@@ -129,7 +130,7 @@ export default function ProcessorsPage() {
         row={(p) => (
           <Tr>
             <Td>
-              <Link href={`/processors/${p.processor_uuid}`} className="font-medium text-accent-text hover:underline">
+              <Link href={`/processors/${p.processor_uuid}`} className="font-medium text-text hover:text-accent-text hover:underline">
                 {p.legal_name}
               </Link>
             </Td>
@@ -153,38 +154,28 @@ export default function ProcessorsPage() {
             <Td>
               <StatusBadge kind="record" value={p.status} />
             </Td>
-            <Td>
-              <div className="flex flex-wrap gap-1">
-                <Button asChild variant="ghost" size="sm">
-                  <Link href={`/processors/${p.processor_uuid}`}>
-                    <Eye className="size-4" />
-                    View
-                  </Link>
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => setRespondentsFor(p)}>
-                  <UsersRound className="size-4" />
-                  Respondents
-                </Button>
-                {canSuspend && (
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => setEditing(p)}>
-                      <Pencil className="size-4" />
-                      Edit
-                    </Button>
-                    {p.status === "active" && (
-                      <Button
-                        variant="subtle"
-                        size="sm"
-                        loading={suspend.isPending}
-                        onClick={() => onSuspend(p.processor_uuid, p.legal_name)}
-                      >
-                        <Ban className="size-4" />
-                        Suspend
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
+            <Td className="w-12 text-right">
+              <RowActions
+                label={`Actions for ${p.legal_name}`}
+                actions={[
+                  { label: "View", icon: Eye, href: `/processors/${p.processor_uuid}` },
+                  { label: "Respondents", icon: UsersRound, onSelect: () => setRespondentsFor(p) },
+                  ...(canSuspend
+                    ? [{ label: "Edit", icon: Pencil, onSelect: () => setEditing(p) }]
+                    : []),
+                  ...(canSuspend && p.status === "active"
+                    ? [
+                        {
+                          label: "Suspend",
+                          icon: Ban,
+                          destructive: true,
+                          disabled: suspend.isPending,
+                          onSelect: () => onSuspend(p.processor_uuid, p.legal_name),
+                        },
+                      ]
+                    : []),
+                ]}
+              />
             </Td>
           </Tr>
         )}

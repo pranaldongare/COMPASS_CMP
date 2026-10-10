@@ -150,7 +150,7 @@ function RequestsPageView() {
           <Tr className={cn(r.clock.overdue && "bg-danger-subtle/40")}>
             <Td>
               <span className="inline-flex flex-wrap items-center gap-2">
-                <Link href={`/requests/${r.request_uuid}`} className="font-medium text-accent-text hover:underline">
+                <Link href={`/requests/${r.request_uuid}`} className="font-medium text-text hover:text-accent-text hover:underline">
                   <Mono>{r.reference}</Mono>
                 </Link>
                 <UnreadBadge count={r.threads_unread} />

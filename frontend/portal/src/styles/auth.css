@@ -38,42 +38,21 @@
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7a8f' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3 5 6v5.5c0 4.3 2.9 8.3 7 9.5 4.1-1.2 7-5.2 7-9.5V6l-7-3Z'/><path d='m9 12 2 2 4-4'/></svg>");
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    .auth-form input[type='email'], .auth-form input[autocomplete='email'], .auth-form input[autocomplete='username'] {
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='5' width='18' height='14' rx='2.5'/><path d='m3.5 7 8.5 6 8.5-6'/></svg>");
-    }
-    .auth-form input[type='password'] {
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='4.5' y='10.5' width='15' height='10' rx='2.5'/><path d='M8 10.5V7.5a4 4 0 0 1 8 0v3'/><circle cx='12' cy='15.5' r='1.2'/></svg>");
-    }
-    .auth-form input[type='tel'], .auth-form input[autocomplete='tel'] {
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M5 4h3.5l1.7 4.3-2.2 1.4a11 11 0 0 0 6.3 6.3l1.4-2.2L20 15.5V19a1.5 1.5 0 0 1-1.6 1.5A16.5 16.5 0 0 1 3.5 5.6 1.5 1.5 0 0 1 5 4Z'/></svg>");
-    }
-    .auth-form input[autocomplete='name'], .auth-form input[autocomplete='given-name'], .auth-form input[autocomplete='family-name'] {
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='8' r='4'/><path d='M4.5 20.5a7.5 7.5 0 0 1 15 0'/></svg>");
-    }
-    .auth-form input[autocomplete='one-time-code'] {
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3 5 6v5.5c0 4.3 2.9 8.3 7 9.5 4.1-1.2 7-5.2 7-9.5V6l-7-3Z'/><path d='m9 12 2 2 4-4'/></svg>");
-    }
-  }
+/* The app's dark theme is the `.dark` class on <html> (providers/theme-provider). */
+.dark .auth-form input[type='email'], .dark .auth-form input[autocomplete='email'], .dark .auth-form input[autocomplete='username'] {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='5' width='18' height='14' rx='2.5'/><path d='m3.5 7 8.5 6 8.5-6'/></svg>");
 }
-
-:root[data-theme="dark"] {
-  .auth-form input[type='email'], .auth-form input[autocomplete='email'], .auth-form input[autocomplete='username'] {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='5' width='18' height='14' rx='2.5'/><path d='m3.5 7 8.5 6 8.5-6'/></svg>");
-  }
-  .auth-form input[type='password'] {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='4.5' y='10.5' width='15' height='10' rx='2.5'/><path d='M8 10.5V7.5a4 4 0 0 1 8 0v3'/><circle cx='12' cy='15.5' r='1.2'/></svg>");
-  }
-  .auth-form input[type='tel'], .auth-form input[autocomplete='tel'] {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M5 4h3.5l1.7 4.3-2.2 1.4a11 11 0 0 0 6.3 6.3l1.4-2.2L20 15.5V19a1.5 1.5 0 0 1-1.6 1.5A16.5 16.5 0 0 1 3.5 5.6 1.5 1.5 0 0 1 5 4Z'/></svg>");
-  }
-  .auth-form input[autocomplete='name'], .auth-form input[autocomplete='given-name'], .auth-form input[autocomplete='family-name'] {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='8' r='4'/><path d='M4.5 20.5a7.5 7.5 0 0 1 15 0'/></svg>");
-  }
-  .auth-form input[autocomplete='one-time-code'] {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3 5 6v5.5c0 4.3 2.9 8.3 7 9.5 4.1-1.2 7-5.2 7-9.5V6l-7-3Z'/><path d='m9 12 2 2 4-4'/></svg>");
-  }
+.dark .auth-form input[type='password'] {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='4.5' y='10.5' width='15' height='10' rx='2.5'/><path d='M8 10.5V7.5a4 4 0 0 1 8 0v3'/><circle cx='12' cy='15.5' r='1.2'/></svg>");
+}
+.dark .auth-form input[type='tel'], .dark .auth-form input[autocomplete='tel'] {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M5 4h3.5l1.7 4.3-2.2 1.4a11 11 0 0 0 6.3 6.3l1.4-2.2L20 15.5V19a1.5 1.5 0 0 1-1.6 1.5A16.5 16.5 0 0 1 3.5 5.6 1.5 1.5 0 0 1 5 4Z'/></svg>");
+}
+.dark .auth-form input[autocomplete='name'], .dark .auth-form input[autocomplete='given-name'], .dark .auth-form input[autocomplete='family-name'] {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='8' r='4'/><path d='M4.5 20.5a7.5 7.5 0 0 1 15 0'/></svg>");
+}
+.dark .auth-form input[autocomplete='one-time-code'] {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3 5 6v5.5c0 4.3 2.9 8.3 7 9.5 4.1-1.2 7-5.2 7-9.5V6l-7-3Z'/><path d='m9 12 2 2 4-4'/></svg>");
 }
 
 /* The submit button: centred, wide enough to read, not the full row. */
@@ -102,34 +81,19 @@
   background-size: auto, auto, 28px 28px, 28px 28px, auto;
 }
 
-/* The product's blue, on the logo and the submit button, so the white side
-   answers the panel rather than the theme's accent. */
+/* The product's blue on the logo and the submit button - the theme's accent
+   since the whole product turned COMPASS blue (2026-10-10). */
 .auth-logo-strong {
-  color: #2a68ad;
+  color: var(--accent-text);
 }
 .auth-logo-soft {
-  color: #5b6b80;
+  color: var(--text-muted);
 }
 .auth-form button[type="submit"] {
-  background: #2f72bb;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-contrast);
   box-shadow: 0 1px 2px rgb(15 50 95 / 0.25);
 }
 .auth-form button[type="submit"]:hover:not(:disabled) {
-  background: #255f9f;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .auth-logo-strong {
-    color: #7fb3e8;
-  }
-  :root:not([data-theme="light"]) .auth-logo-soft {
-    color: #a7b4c6;
-  }
-}
-:root[data-theme="dark"] .auth-logo-strong {
-  color: #7fb3e8;
-}
-:root[data-theme="dark"] .auth-logo-soft {
-  color: #a7b4c6;
+  background: var(--accent-hover);
 }

@@ -105,7 +105,7 @@ export function TabList({
       aria-label={label}
       onKeyDown={onKeyDown}
       className={cn(
-        "scroll-x mb-6 flex gap-1 border-b border-border",
+        "scroll-x mb-6 flex gap-1 border-b border-border [--scroll-bg:var(--bg)]",
         // The row scrolls sideways on a phone rather than wrapping into a
         // second line of tabs that reads as a second level.
         "[&::-webkit-scrollbar]:hidden",

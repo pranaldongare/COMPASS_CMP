@@ -178,8 +178,8 @@ function Header({
   const apple = useIsApple();
 
   return (
-    <header className="glass no-print sticky top-0 z-30 border-b border-border">
-      <div className="mx-auto flex h-14 w-full max-w-[1600px] items-center gap-3 px-4 sm:px-6 lg:px-8">
+    <header className="no-print sticky top-0 z-30 border-b border-border bg-surface">
+      <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-3 px-4 sm:px-6 lg:px-8">
         <Button
           variant="ghost"
           size="icon"
@@ -192,20 +192,23 @@ function Header({
           {mobileOpen ? <X /> : <Menu />}
         </Button>
 
+        {/* The COMPASS lockup, as on the sign-in screen (2026-10-10): the
+            shield, the two-tone name, and the app's own name under it. */}
         <Link
           href="/dashboard"
-          className="group flex shrink-0 items-center gap-2.5 rounded-lg font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-subtle)]"
+          aria-label={`${config.productName} - ${config.appName}`}
+          className="group flex shrink-0 items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]"
         >
-          <span className="brand-gradient grid size-8 place-items-center rounded-lg shadow-[var(--shadow-sm)] transition-shadow group-hover:shadow-[var(--shadow-glow)]">
-            <BrandMark className="size-5 text-white" />
-          </span>
-          <span className="hidden leading-tight sm:block">
-            <span className="block text-sm">{config.appName}</span>
-            <span className="block text-2xs font-normal text-text-subtle">
-              DPDP Act 2023
+          <BrandMark className="size-7 text-accent-text" />
+          <span className="leading-none">
+            <span className="block text-lg font-bold tracking-tight">
+              <span className="text-accent-text">{config.productName.slice(0, 3)}</span>
+              <span className="text-text-muted">{config.productName.slice(3)}</span>
+            </span>
+            <span className="mt-0.5 hidden text-2xs font-medium tracking-wide text-text-subtle sm:block">
+              {config.appName}
             </span>
           </span>
-          <span className="text-sm sm:hidden">CMP</span>
         </Link>
 
         {here && <Breadcrumb here={here} pathname={pathname} role={me?.role} />}
@@ -219,9 +222,9 @@ function Header({
           onClick={onSearch}
           aria-keyshortcuts={apple ? "Meta+K" : "Control+K"}
           className={cn(
-            "hidden h-9 w-60 items-center gap-2 rounded-lg border border-border bg-surface/70 px-3 text-sm text-text-subtle md:flex",
-            "shadow-[var(--shadow-sm)] transition-colors hover:border-border-strong hover:text-text-muted",
-            "outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-subtle)]",
+            "hidden h-9 w-64 items-center gap-2 rounded-md border border-border bg-bg px-3 text-sm text-text-subtle md:flex",
+            "transition-colors hover:border-border-strong hover:text-text-muted",
+            "outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]",
           )}
         >
           <Search className="size-4" aria-hidden="true" />
@@ -352,11 +355,11 @@ function Sidebar({
         aria-label="Main"
         data-collapsed={folded || undefined}
         className={cn(
-          "no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-surface/70",
-          "lg:sticky lg:top-14 lg:h-[calc(100dvh-3.5rem)] lg:transition-[width] lg:duration-200",
+          "no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-surface",
+          "lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:transition-[width] lg:duration-200",
           folded && "lg:w-[4.25rem]",
           mobileOpen
-            ? "fixed inset-y-14 left-0 flex overflow-y-auto bg-surface shadow-[var(--shadow-pop)]"
+            ? "fixed inset-y-16 left-0 flex overflow-y-auto bg-surface shadow-[var(--shadow-pop)]"
             : "hidden lg:flex",
         )}
       >
@@ -397,7 +400,7 @@ function Sidebar({
                       // link's name; the tooltip is for sighted mouse users.
                       title={folded ? label : undefined}
                       className={cn(
-                        "group relative flex items-center gap-2.5 rounded-lg py-2 pr-2 pl-3 text-sm",
+                        "group relative flex items-center gap-2.5 rounded-md py-2 pr-2 pl-3 text-sm",
                         "transition-[background-color,color] duration-150",
                         folded && "lg:justify-center lg:px-0",
                         active
@@ -413,7 +416,7 @@ function Sidebar({
                         className={cn(
                           "absolute inset-y-1.5 left-0 w-0.5 rounded-full transition-opacity",
                           active
-                            ? "brand-gradient opacity-100"
+                            ? "bg-accent opacity-100"
                             : "bg-border-strong opacity-0 group-hover:opacity-100",
                         )}
                       />
@@ -441,7 +444,9 @@ function Sidebar({
 
         <div
           className={cn(
-            "rule-fade shrink-0 space-y-0.5 border-t border-border",
+            // Solid: the footer is a block of its own, never a veil over the
+            // last links.
+            "shrink-0 space-y-0.5 border-t border-border bg-surface",
             folded ? "lg:p-2.5" : "p-3",
           )}
         >
@@ -557,7 +562,7 @@ export function PageHeader({
   eyebrow?: string;
 }) {
   return (
-    <div className="mb-6">
+    <div className="mb-5">
       {breadcrumb && <div className="mb-2 text-sm text-text-muted">{breadcrumb}</div>}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
@@ -567,8 +572,15 @@ export function PageHeader({
             </p>
           )}
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          {/* One line on a desk (2026-10-10): a tooltip carries the whole
+              sentence, and the rest is in the help. */}
           {description && (
-            <p className="mt-1.5 max-w-2xl text-sm text-text-muted">{description}</p>
+            <p
+              className="mt-1 max-w-3xl text-sm text-text-muted lg:line-clamp-1"
+              title={description}
+            >
+              {description}
+            </p>
           )}
         </div>
         {actions && (
@@ -580,9 +592,6 @@ export function PageHeader({
           </div>
         )}
       </div>
-      {/* A hairline that fades out to the right: it closes the header without
-          drawing a hard box around every page. */}
-      <div aria-hidden="true" className="rule-fade mt-5 h-px" />
     </div>
   );
 }

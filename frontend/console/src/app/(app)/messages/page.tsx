@@ -301,7 +301,7 @@ function CategoryChip({
       )}
     >
       {label}
-      <span className="tabular text-xs opacity-80">{count}</span>
+      <span className="tabular text-xs">{count}</span>
     </button>
   );
 }

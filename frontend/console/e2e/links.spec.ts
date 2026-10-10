@@ -43,9 +43,11 @@ test.describe("consent links", () => {
   test("replacing a link offers the new URL with a copy button", async ({ page }) => {
     await page.goto("/links?status=active");
 
-    const replace = page.getByRole("button", { name: /^replace$/i }).first();
-    await expect(replace).toBeVisible();
-    await replace.click();
+    // Replace is in the row's menu (2026-10-10).
+    const menu = page.getByRole("button", { name: /^actions for the link at/i }).first();
+    await expect(menu).toBeVisible();
+    await menu.click();
+    await page.getByRole("menuitem", { name: /^replace$/i }).click();
 
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();

@@ -56,7 +56,9 @@ test.describe("DCO Admin", () => {
     // answerable for work they are not doing, and the API refuses it; the form
     // should not present the option in the first place.
     const row = page.getByRole("row").filter({ hasText: "SRC-SEED-CIT" });
-    await row.getByRole("button", { name: /assign|reassign/i }).click();
+    // Assign is in the row's ⋯ menu (2026-10-10).
+    await row.getByRole("button", { name: /^actions for /i }).click();
+    await page.getByRole("menuitem", { name: /^(assign|reassign)$/i }).click();
 
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
@@ -81,7 +83,9 @@ test.describe("DCO Admin", () => {
     await page.getByPlaceholder("Name or code").press("Enter");
 
     const row = page.getByRole("row").filter({ hasText: "SRC-SRIB-SE" });
-    await row.getByRole("button", { name: /assign|reassign/i }).click();
+    // Assign is in the row's ⋯ menu (2026-10-10).
+    await row.getByRole("button", { name: /^actions for /i }).click();
+    await page.getByRole("menuitem", { name: /^(assign|reassign)$/i }).click();
 
     const dialog = page.getByRole("dialog");
     await expect(

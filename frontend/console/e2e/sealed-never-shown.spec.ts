@@ -76,19 +76,21 @@ test.describe("editing an account", () => {
     const watch = watchSealed(page);
     await page.goto("/users");
     await settle(page);
-    const edit = page.getByRole("button", { name: "Edit" }).first();
-    if ((await edit.count()) === 0) test.skip(true, "no accounts listed");
-    await edit.click();
+    // Edit is in the row's menu (2026-10-10).
+    const menu = page.getByRole("button", { name: /^actions for /i }).first();
+    if ((await menu.count()) === 0) test.skip(true, "no accounts listed");
+    await menu.click();
+    await page.getByRole("menuitem", { name: "Edit" }).click();
 
-    const email = page.getByLabel("Email");
+    const email = page.getByLabel(/^Email/);
     await expect(email).toBeVisible();
     expect(watch.sawSealed(), "the API served the accounts sealed").toBe(true);
     // The form is filled once the row's values are opened. A person has an
     // email or a mobile or both; whichever they have is in the clear here.
-    await expect(page.getByLabel("Full name")).not.toHaveValue("");
-    const name = await page.getByLabel("Full name").inputValue();
+    await expect(page.getByLabel(/^Full name/)).not.toHaveValue("");
+    const name = await page.getByLabel(/^Full name/).inputValue();
     const address = await email.inputValue();
-    const mobile = await page.getByLabel("Mobile").inputValue();
+    const mobile = await page.getByLabel(/^Mobile/).inputValue();
     for (const value of [name, address, mobile]) expect(value).not.toContain("SE::");
     expect(
       /[^\s@]+@[^\s@]+\.[^\s@]+/.test(address) || /^\+?\d[\d ]{8,}$/.test(mobile),

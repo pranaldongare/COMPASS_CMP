@@ -4,6 +4,9 @@ import { headers } from "next/headers";
 import { Providers } from "@/providers";
 import { config } from "@/lib/config";
 
+// Inter, served from this site (2026-10-10): no font request leaves it, so the
+// CSP's font-src stays 'self'.
+import "@fontsource-variable/inter";
 import "./globals.css";
 
 export const metadata: Metadata = {

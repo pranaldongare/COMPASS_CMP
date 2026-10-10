@@ -105,7 +105,7 @@ export default function ImportsPage() {
             <Td>
               <Link
                 href={`/imports/${b.batch_uuid}`}
-                className="font-medium text-accent-text hover:underline"
+                className="font-medium text-text hover:text-accent-text hover:underline"
               >
                 {b.file_name}
               </Link>

@@ -16,6 +16,7 @@ import { PageHeader } from "@/components/layout/app-shell";
 import {
   FilterBar,
   FilterSelect,
+  FilterToggle,
   ResourceList,
   SearchBox,
   useCursorStack,
@@ -27,6 +28,7 @@ import {
   SourceOwner,
 } from "@/features/registry/components/source-owner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { RowActions, Tooltip } from "@/components/ui/overlay";
 import { EmptyRecords } from "@/components/ui/graphics";
 import { Alert, Badge, Button, Td, Tr } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
@@ -175,77 +177,71 @@ export default function SourcesPage() {
             makes the set reviewable instead of guessing. */}
         {/* Never theirs to see: a source with no processor is no processor's. */}
         {!collector && (
-        <div className="flex items-end">
-          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm transition-colors hover:bg-surface-hover has-[:checked]:border-accent-border has-[:checked]:bg-accent-subtle">
-            <input
-              type="checkbox"
-              checked={unmapped}
-              onChange={(e) => {
-                setUnmapped(e.target.checked);
-                stack.reset();
-              }}
-              className="size-4 rounded border-border-strong accent-[var(--accent)]"
-            />
-            <span className="whitespace-nowrap">No processor named</span>
-          </label>
-        </div>
+          <FilterToggle
+            label="No processor named"
+            checked={unmapped}
+            onChange={(on) => {
+              setUnmapped(on);
+              stack.reset();
+            }}
+          />
         )}
 
         {/* The routing queue, as a filter. A source nobody is accountable for
             cannot route a project, so this is the list somebody works through
             rather than a fault to fix. */}
-        <div className="flex items-end">
-          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm transition-colors hover:bg-surface-hover has-[:checked]:border-accent-border has-[:checked]:bg-accent-subtle">
-            <input
-              type="checkbox"
-              checked={unowned}
-              onChange={(e) => {
-                setUnowned(e.target.checked);
-                stack.reset();
-              }}
-              className="size-4 rounded border-border-strong accent-[var(--accent)]"
-            />
-            <span className="whitespace-nowrap">Nobody accountable</span>
-          </label>
-        </div>
+        <FilterToggle
+          label="Nobody accountable"
+          checked={unowned}
+          onChange={(on) => {
+            setUnowned(on);
+            stack.reset();
+          }}
+        />
       </FilterBar>
 
       <ResourceList<DataSource>
         query={query}
         stack={stack}
         caption="Registered data sources"
-        columns={[
-          "Source",
-          "Processor",
-          "Accountable",
-          "Role",
-          "Exchange",
-          "Authoritative for",
-          "Status",
-          "Action",
-        ]}
+        columns={["Source", "Processor", "Accountable", "Authoritative for", "Status", ""]}
         keyOf={(s) => s.source_uuid}
         empty={{
           illustration: <EmptyRecords />,
           title: status || q || processor ? "No sources match" : "No data sources registered",
           description: "An import must name the source the manifest came from.",
         }}
+        // Six columns, one line each, one menu (2026-10-10): role and exchange
+        // ride under the name, long names are cut with the whole in a
+        // tooltip, and View / Reassign / Edit / Suspend live in the ⋯ menu.
         row={(s) => (
           <Tr>
-            <Td>
-              <Link href={`/sources/${s.source_uuid}`} className="font-medium text-accent-text hover:underline">
+            <Td className="max-w-72">
+              <Link
+                href={`/sources/${s.source_uuid}`}
+                className="block truncate font-medium text-text hover:text-accent-text hover:underline"
+                title={s.name}
+              >
                 {s.name}
               </Link>
-              <p className="mt-0.5 font-mono text-xs text-text-subtle">{s.source_code}</p>
+              <p className="mt-0.5 truncate text-xs text-text-subtle">
+                <span className="font-mono">{s.source_code}</span>
+                {" · "}
+                {humanise(s.source_role)} · {humanise(s.exchange_mode)}
+              </p>
             </Td>
             {/* Who operates this source. Optional by design: a source the
                 organisation runs itself has no processor, and requiring one
                 would mean inventing a processor record for yourself. But an
                 absent one is worth *seeing* - a third-party source with no
                 named operator is an s.8(2) contract nobody can point to. */}
-            <Td>
+            <Td className="max-w-60">
               {s.processor_name && s.processor_uuid ? (
-                <Link href={`/processors/${s.processor_uuid}`} className="text-text-muted hover:text-text hover:underline">
+                <Link
+                  href={`/processors/${s.processor_uuid}`}
+                  className="block truncate text-text-muted hover:text-text hover:underline"
+                  title={s.processor_name}
+                >
                   {s.processor_name}
                 </Link>
               ) : (
@@ -255,61 +251,60 @@ export default function SourcesPage() {
                 </span>
               )}
             </Td>
-            <Td>
+            <Td className="whitespace-nowrap">
               <SourceOwner source={s} />
             </Td>
-            <Td className="text-text-muted">{humanise(s.source_role)}</Td>
-            <Td className="text-text-muted">{humanise(s.exchange_mode)}</Td>
             <Td>
               {s.is_authoritative_for.length === 0 ? (
                 <span className="text-xs text-text-subtle">nothing</span>
               ) : (
-                <div className="flex flex-wrap gap-1">
-                  {s.is_authoritative_for.map((field) => (
-                    <Badge key={field} tone="neutral" dot={false}>
-                      {humanise(field)}
+                <Tooltip content={s.is_authoritative_for.map(humanise).join(", ")}>
+                  <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                    <Badge tone="neutral" dot={false}>
+                      {humanise(s.is_authoritative_for[0])}
                     </Badge>
-                  ))}
-                </div>
+                    {s.is_authoritative_for.length > 1 && (
+                      <span className="text-xs text-text-subtle">
+                        +{s.is_authoritative_for.length - 1}
+                      </span>
+                    )}
+                  </span>
+                </Tooltip>
               )}
             </Td>
             <Td>
               <StatusBadge kind="record" value={s.status} />
             </Td>
-            <Td>
-              <div className="flex gap-1">
-                <Button asChild variant="ghost" size="sm">
-                  <Link href={`/sources/${s.source_uuid}`}>
-                    <Eye className="size-4" />
-                    View
-                  </Link>
-                </Button>
-                {canAssignOwner && s.status === "active" && (
-                  <Button variant="ghost" size="sm" onClick={() => setAssigning(s)}>
-                    <UserRoundCog className="size-4" />
-                    {s.owner_name ? "Reassign" : "Assign"}
-                  </Button>
-                )}
-                {canSuspend && (
-                  <>
-                    <Button variant="ghost" size="sm" onClick={() => setEditing(s)}>
-                      <Pencil className="size-4" />
-                      Edit
-                    </Button>
-                    {s.status === "active" && (
-                      <Button
-                        variant="subtle"
-                        size="sm"
-                        loading={suspend.isPending}
-                        onClick={() => onSuspend(s.source_uuid, s.name)}
-                      >
-                        <Ban className="size-4" />
-                        Suspend
-                      </Button>
-                    )}
-                  </>
-                )}
-              </div>
+            <Td className="w-12 text-right">
+              <RowActions
+                label={`Actions for ${s.name}`}
+                actions={[
+                  { label: "View", icon: Eye, href: `/sources/${s.source_uuid}` },
+                  ...(canAssignOwner && s.status === "active"
+                    ? [
+                        {
+                          label: s.owner_name ? "Reassign" : "Assign",
+                          icon: UserRoundCog,
+                          onSelect: () => setAssigning(s),
+                        },
+                      ]
+                    : []),
+                  ...(canSuspend
+                    ? [{ label: "Edit", icon: Pencil, onSelect: () => setEditing(s) }]
+                    : []),
+                  ...(canSuspend && s.status === "active"
+                    ? [
+                        {
+                          label: "Suspend",
+                          icon: Ban,
+                          destructive: true,
+                          disabled: suspend.isPending,
+                          onSelect: () => onSuspend(s.source_uuid, s.name),
+                        },
+                      ]
+                    : []),
+                ]}
+              />
             </Td>
           </Tr>
         )}

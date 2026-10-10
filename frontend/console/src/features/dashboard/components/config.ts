@@ -76,6 +76,7 @@ export const COUNT_LINKS: Record<string, string> = {
   draft_purposes: "/purposes?status=draft",
 
   total_consents: "/consents",
+  consents: "/consents",
   withdrawals: "/consents?status=withdrawn",
   active_links: "/links?status=active",
 

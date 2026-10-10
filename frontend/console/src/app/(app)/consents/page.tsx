@@ -14,13 +14,14 @@ import * as React from "react";
 import { PageHeader } from "@/components/layout/app-shell";
 import {
   FilterBar,
+  FilterDate,
   FilterSelect,
   ResourceList,
   useCursorStack,
   useFilterParam,
 } from "@/components/data-display/resource-list";
 import { EmptyConsent } from "@/components/ui/graphics";
-import { Button, Field, Input, Td, Tr } from "@/components/ui/primitives";
+import { Button, Td, Tr } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { useAllConsents } from "@/features/consent";
 import { useSites } from "@/features/projects";
@@ -94,22 +95,20 @@ function ConsentsPageView() {
           options={STATUS_OPTIONS}
           allLabel="All statuses"
         />
-        <div className="w-40">
-          <Field label="Given from">
-            {(p) => (
-              <Input {...p} type="date" value={from} max={to || undefined} onChange={(e) => set(() => setFrom(e.target.value))} />
-            )}
-          </Field>
-        </div>
-        <div className="w-40">
-          <Field label="Given to">
-            {(p) => (
-              <Input {...p} type="date" value={to} min={from || undefined} onChange={(e) => set(() => setTo(e.target.value))} />
-            )}
-          </Field>
-        </div>
+        <FilterDate
+          label="Given from"
+          value={from}
+          max={to || undefined}
+          onChange={(v) => set(() => setFrom(v))}
+        />
+        <FilterDate
+          label="Given to"
+          value={to}
+          min={from || undefined}
+          onChange={(v) => set(() => setTo(v))}
+        />
         {filtered && (
-          <div className="self-end">
+          <div>
             <Button
               variant="ghost"
               size="sm"
@@ -146,7 +145,7 @@ function ConsentsPageView() {
             <Td>
               <Link
                 href={`/consents/${c.consent_uuid}`}
-                className="font-medium text-accent-text hover:underline"
+                className="font-medium text-text hover:text-accent-text hover:underline"
               >
                 {c.subject_name}
               </Link>

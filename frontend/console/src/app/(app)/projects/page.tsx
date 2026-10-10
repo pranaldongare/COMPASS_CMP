@@ -190,7 +190,7 @@ function ProjectsPageView() {
                   <Td>
                     <Link
                       href={withFrom(`/projects/${project.project_uuid}`, here)}
-                      className="font-medium text-accent-text hover:underline"
+                      className="font-medium text-text hover:text-accent-text hover:underline"
                     >
                       {project.project_name}
                     </Link>

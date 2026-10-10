@@ -141,7 +141,7 @@ export function TemplatesPanel() {
                 <Td>
                   <Link
                     href={`/notices/templates/${t.template_uuid}`}
-                    className="font-medium text-accent-text hover:underline"
+                    className="font-medium text-text hover:text-accent-text hover:underline"
                   >
                     <Mono>{t.template_code}</Mono>
                   </Link>

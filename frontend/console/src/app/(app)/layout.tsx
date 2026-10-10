@@ -46,7 +46,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 function ShellSkeleton() {
   return (
     <div className="min-h-dvh bg-bg">
-      <div className="h-14 border-b border-border bg-surface" />
+      <div className="h-16 border-b border-border bg-surface" />
       <div className="mx-auto flex w-full max-w-[1600px]">
         <div className="hidden w-60 shrink-0 border-r border-border p-3 lg:block">
           {Array.from({ length: 8 }).map((_, i) => (

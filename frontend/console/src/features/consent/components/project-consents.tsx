@@ -137,7 +137,7 @@ export function ProjectConsents({
                 {rows.map((c) => (
                   <Tr key={c.consent_uuid}>
                     <Td>
-                      <Link href={`/consents/${c.consent_uuid}`} className="font-medium text-accent-text hover:underline">
+                      <Link href={`/consents/${c.consent_uuid}`} className="font-medium text-text hover:text-accent-text hover:underline">
                         {c.subject_name}
                       </Link>
                       <p className="mt-0.5 text-xs text-text-subtle">{c.subject_email ?? c.subject_mobile}</p>

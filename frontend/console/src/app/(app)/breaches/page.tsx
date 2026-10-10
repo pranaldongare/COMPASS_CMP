@@ -33,7 +33,6 @@ import {
   Card,
   EmptyState,
   Mono,
-  Select,
   Table,
   TableSkeleton,
   Td,
@@ -259,7 +258,7 @@ function BreachesPageView() {
                       <Td>
                         <Link
                           href={`/breaches/${b.breach_uuid}`}
-                          className="font-medium text-accent-text hover:underline"
+                          className="font-medium text-text hover:text-accent-text hover:underline"
                         >
                           <Mono>{b.reference}</Mono>
                         </Link>
@@ -341,18 +340,18 @@ function BreachesPageView() {
 
 /** Open, closed or all: the one filter the API applies. Open by default. */
 function StatusSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const id = React.useId();
   return (
-    <div className="w-40">
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
-        Show
-      </label>
-      <Select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
-        <option value="open">Open</option>
-        <option value="closed">Closed</option>
-        <option value="all">All</option>
-      </Select>
-    </div>
+    <FilterSelect
+      label="Show"
+      value={value}
+      onChange={onChange}
+      options={[
+        { value: "open", label: "Open" },
+        { value: "closed", label: "Closed" },
+        { value: "all", label: "All" },
+      ]}
+      allLabel={null}
+    />
   );
 }
 

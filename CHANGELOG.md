@@ -8,6 +8,19 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Console redesign, first pass** (2026-10-10,
+  [implementation plan](docs/frontend/implementation-plan.md)). One COMPASS
+  blue from sign-in to every page (no indigo gradient), the Inter font served
+  from the site, solid primary buttons and 36 px fields; a white header with
+  the COMPASS lockup and a solid sidebar footer. Filters in one compact row
+  with the label inside each control, blue once set. Registers with fewer
+  columns, one line per cell and one ⋯ menu per row (Data sources, Users,
+  Processors, Purposes, Consent links). Dashboards open with four figures per
+  role and put *Needs attention* beside the consent and project charts.
+  Branded error and loading pages; axe accessibility checks on eight key
+  screens, with the findings fixed (activity rows no longer nest a link in a
+  button; small links meet the 24 px target). Shared parts reach the portal
+  too.
 - **Sign-in screens restyled** (2026-10-10), console and portal alike: a
   deep-blue brand panel with the product name (COMPASS, or
   `NEXT_PUBLIC_PRODUCT_NAME`), a picture of records flowing into the COMPASS

@@ -28,12 +28,12 @@ import {
   Card,
   EmptyState,
   Input,
-  Select,
   Table,
   TableSkeleton,
   Th,
 } from "@/components/ui/primitives";
 import type { ApiError } from "@/lib/errors";
+import { cn } from "@/lib/format";
 import type { Page } from "@/types";
 
 /**
@@ -128,22 +128,47 @@ export function FilterSelect({
   value: string;
   onChange: (value: string) => void;
   options: FilterOption[];
-  allLabel?: string;
+  /** The "everything" choice. `null` for a filter that always has a value -
+   *  it then reads as set once it leaves its first option. */
+  allLabel?: string | null;
 }) {
   const id = React.useId();
+  const set = allLabel === null ? value !== options[0]?.value : Boolean(value);
+  // The label sits inside the control (2026-10-10), so a row of filters reads
+  // "Status  All statuses ▾" at one height; a filter that is set turns blue,
+  // so what narrows the list is visible at a glance.
   return (
-    <div className="w-52">
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
+    <div
+      className={cn(
+        "flex h-9 max-w-full items-center rounded-md border shadow-[var(--shadow-xs)] transition-colors",
+        "focus-within:ring-3 focus-within:ring-[var(--accent-border)]/45",
+        set
+          ? "border-accent-border bg-accent-subtle"
+          : "border-border-strong bg-surface hover:border-text-subtle",
+      )}
+    >
+      <label
+        htmlFor={id}
+        className="shrink-0 cursor-pointer pr-1 pl-3 text-xs font-medium whitespace-nowrap text-text-subtle"
+      >
         {label}
       </label>
-      <Select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
-        <option value="">{allLabel}</option>
+      <select
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          "select-chevron h-full max-w-48 min-w-0 cursor-pointer appearance-none truncate rounded-r-md bg-transparent pr-9 pl-1 text-sm font-medium outline-none",
+          set ? "text-accent-text" : "text-text",
+        )}
+      >
+        {allLabel !== null && <option value="">{allLabel}</option>}
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
           </option>
         ))}
-      </Select>
+      </select>
     </div>
   );
 }
@@ -216,14 +241,16 @@ export function SearchBox({
     <form
       method="post"
       role="search"
-      className="flex items-end gap-2"
+      className="flex items-center gap-2"
       onSubmit={(e) => {
         e.preventDefault();
         send(term.trim());
       }}
     >
-      <div className="w-64">
-        <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
+      <div className="w-64 max-w-full">
+        {/* The magnifier and the placeholder say what it is; the label is for
+            screen readers (2026-10-10). */}
+        <label htmlFor={id} className="sr-only">
           {label}
         </label>
         <div className="relative">
@@ -244,7 +271,7 @@ export function SearchBox({
                 send("");
               }
             }}
-            placeholder={placeholder}
+            placeholder={placeholder ?? label}
             className="pr-8 pl-8 [&::-webkit-search-cancel-button]:hidden"
           />
           {term && (
@@ -277,14 +304,100 @@ export function SearchBox({
 /**
  * The toolbar above a list.
  *
- * A single panel rather than loose controls: it groups the things that change
- * what the table shows, so the table reads as the answer to the toolbar.
+ * One row of compact controls over the table (2026-10-10; it was a boxed
+ * panel with a label over every control, which pushed the data a third of the
+ * way down the page). The table reads as the answer to the row above it.
  */
 export function FilterBar({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-surface/60 p-3 shadow-[var(--shadow-sm)]">
+    <div className="mb-4 flex flex-wrap items-center gap-2" role="group" aria-label="Filters">
       {children}
     </div>
+  );
+}
+
+/**
+ * A date filter in the same shape as `FilterSelect`: the label inside, blue
+ * once set. `value` and `onChange` carry `YYYY-MM-DD`, as the browser's own
+ * date field does.
+ */
+export function FilterDate({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  min?: string;
+  max?: string;
+}) {
+  const id = React.useId();
+  return (
+    <div
+      className={cn(
+        "flex h-9 items-center rounded-md border shadow-[var(--shadow-xs)] transition-colors",
+        "focus-within:ring-3 focus-within:ring-[var(--accent-border)]/45",
+        value
+          ? "border-accent-border bg-accent-subtle"
+          : "border-border-strong bg-surface hover:border-text-subtle",
+      )}
+    >
+      <label
+        htmlFor={id}
+        className="shrink-0 pr-1 pl-3 text-xs font-medium whitespace-nowrap text-text-subtle"
+      >
+        {label}
+      </label>
+      <input
+        id={id}
+        type="date"
+        value={value}
+        min={min}
+        max={max}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          "h-full rounded-r-md bg-transparent pr-2 pl-1 text-sm font-medium outline-none",
+          value ? "text-accent-text" : "text-text-muted",
+        )}
+      />
+    </div>
+  );
+}
+
+/**
+ * An on/off filter as a chip: "Nobody accountable". A real checkbox inside a
+ * label, so it is announced and toggled as one.
+ */
+export function FilterToggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label
+      className={cn(
+        "flex h-9 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm font-medium whitespace-nowrap shadow-[var(--shadow-xs)] transition-colors",
+        "focus-within:ring-3 focus-within:ring-[var(--accent-border)]/45",
+        checked
+          ? "border-accent-border bg-accent-subtle text-accent-text"
+          : "border-border-strong bg-surface text-text hover:border-text-subtle",
+      )}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="size-3.5 rounded border-border-strong accent-[var(--accent)]"
+      />
+      {label}
+    </label>
   );
 }
 
@@ -417,8 +530,12 @@ export function ResourceList<T>({
         <caption className="sr-only">{caption}</caption>
         <thead>
           <tr>
-            {columns.map((c) => (
-              <Th key={c}>{c}</Th>
+            {columns.map((c, i) => (
+              <Th key={c || `col-${i}`}>
+                {/* A blank heading is the row-menu column: named for screen
+                    readers, silent on screen. */}
+                {c || <span className="sr-only">Actions</span>}
+              </Th>
             ))}
           </tr>
         </thead>

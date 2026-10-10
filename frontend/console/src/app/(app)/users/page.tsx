@@ -28,6 +28,7 @@ import {
 import { RoleChangeForm, UserForm } from "@/features/users/components/forms";
 import { ConfirmDialog, Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyRecords } from "@/components/ui/graphics";
+import { RowActions } from "@/components/ui/overlay";
 import { Alert, Button, Td, Tr, Skeleton } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { useEnums } from "@/features/meta";
@@ -186,7 +187,7 @@ function UsersPageView() {
         query={query}
         stack={stack}
         caption="Registered accounts"
-        columns={["Name", "Role", "Person type", "Status", "Registered", "Action"]}
+        columns={["Name", "Role", "Person type", "Status", "Registered", ""]}
         keyOf={(u) => u.uuid}
         empty={{
           illustration: <EmptyRecords />,
@@ -197,7 +198,7 @@ function UsersPageView() {
         row={(u) => (
           <Tr>
             <Td>
-              <Link href={`/users/${u.uuid}`} className="font-medium text-accent-text hover:underline">
+              <Link href={`/users/${u.uuid}`} className="font-medium text-text hover:text-accent-text hover:underline">
                 {u.full_name}
               </Link>
               <p className="mt-0.5 text-xs text-text-subtle">{u.email}</p>
@@ -214,92 +215,73 @@ function UsersPageView() {
             <Td className="whitespace-nowrap text-text-muted">
               {formatDate(u.created_at)}
             </Td>
-            <Td>
-              {!isAdmin && (
-                <Button asChild variant="ghost" size="sm">
-                  <Link href={`/users/${u.uuid}`}>
-                    <Eye className="size-4" />
-                    View
-                  </Link>
-                </Button>
-              )}
-              {isAdmin && (
-                <div className="flex flex-wrap gap-1">
-                  <Button asChild variant="ghost" size="sm">
-                    <Link href={`/users/${u.uuid}`}>
-                      <Eye className="size-4" />
-                      View
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setEditing(u)}>
-                    <Pencil className="size-4" />
-                    Edit
-                  </Button>
-
-                  {/* Acting on your own row is how an organisation ends up with
-                      no administrator, so those controls are absent there. */}
-                  {u.uuid !== me?.uuid && u.role !== "data_subject" && (
-                    <>
-                      <Button variant="ghost" size="sm" onClick={() => setChangingRole(u)}>
-                        <ShieldEllipsis className="size-4" />
-                        Role
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setResettingMfa(u)}>
-                        <KeyRound className="size-4" />
-                        Reset MFA
-                      </Button>
-                    </>
-                  )}
-
-                  {/* Only while it is pending. Once somebody has a password
-                      the way back in is theirs, not an administrator's. */}
-                  {u.status === "pending" && u.role !== "data_subject" && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      loading={resendInvitation.isPending}
-                      onClick={() => invite(u)}
-                    >
-                      <Send className="size-4" />
-                      Resend invitation
-                    </Button>
-                  )}
-
-                  {u.uuid !== me?.uuid && u.status !== "deactivated" && (
-                    <Button
-                      variant="subtle"
-                      size="sm"
-                      loading={deactivate.isPending}
-                      onClick={() => toggle(u)}
-                      title={
-                        u.role === "data_subject"
-                          ? undefined
-                          : u.role === "breach_holder"
-                            ? "Ends their console login, including reading their tickets. An account made for a ticket is switched off; one that was a data principal's goes back to being one."
-                            : "Ends their staff role. They keep their account as a data principal, with their own consents."
-                      }
-                    >
-                      <UserX className="size-4" />
-                      {u.role === "data_subject"
-                        ? "Deactivate"
-                        : u.role === "breach_holder"
-                          ? "End temporary access"
-                          : "End staff access"}
-                    </Button>
-                  )}
-                  {u.status === "deactivated" && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      loading={reactivate.isPending}
-                      onClick={() => toggle(u)}
-                    >
-                      <UserCheck className="size-4" />
-                      Reactivate
-                    </Button>
-                  )}
-                </div>
-              )}
+            {/* Everything a row can do, in one menu (2026-10-10). Acting on
+                your own row is how an organisation ends up with no
+                administrator, so those items are absent there; resending an
+                invitation is only while it is pending - once somebody has a
+                password the way back in is theirs. */}
+            <Td className="w-12 text-right">
+              <RowActions
+                label={`Actions for ${u.full_name}`}
+                actions={[
+                  { label: "View", icon: Eye, href: `/users/${u.uuid}` },
+                  ...(isAdmin
+                    ? [
+                        { label: "Edit", icon: Pencil, onSelect: () => setEditing(u) },
+                        ...(u.uuid !== me?.uuid && u.role !== "data_subject"
+                          ? [
+                              {
+                                label: "Change role",
+                                icon: ShieldEllipsis,
+                                onSelect: () => setChangingRole(u),
+                              },
+                              {
+                                label: "Reset MFA",
+                                icon: KeyRound,
+                                onSelect: () => setResettingMfa(u),
+                              },
+                            ]
+                          : []),
+                        ...(u.status === "pending" && u.role !== "data_subject"
+                          ? [
+                              {
+                                label: "Resend invitation",
+                                icon: Send,
+                                disabled: resendInvitation.isPending,
+                                onSelect: () => invite(u),
+                              },
+                            ]
+                          : []),
+                        ...(u.status === "deactivated"
+                          ? [
+                              {
+                                label: "Reactivate",
+                                icon: UserCheck,
+                                disabled: reactivate.isPending,
+                                onSelect: () => toggle(u),
+                              },
+                            ]
+                          : []),
+                        ...(u.uuid !== me?.uuid && u.status !== "deactivated"
+                          ? [
+                              {
+                                label:
+                                  u.role === "data_subject"
+                                    ? "Deactivate"
+                                    : u.role === "breach_holder"
+                                      ? "End temporary access"
+                                      : "End staff access",
+                                icon: UserX,
+                                destructive: true,
+                                disabled: deactivate.isPending,
+                                onSelect: () => toggle(u),
+                              },
+                            ]
+                          : []),
+                      ]
+                    : []),
+                ]}
+              />
             </Td>
           </Tr>
         )}

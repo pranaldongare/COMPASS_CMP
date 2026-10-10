@@ -53,7 +53,7 @@ export function StatTile({
   // so a component variable typed as `Link | "div"` cannot accept an optional
   // one without casting the type away.
   const classes = cn(
-    "lift group relative block overflow-hidden rounded-xl border bg-surface p-4",
+    "lift group relative block overflow-hidden rounded-lg border bg-surface p-4",
     "shadow-[var(--shadow-card)]",
     tone === "attention" ? "border-warning-border" : "border-border",
     href &&
@@ -245,7 +245,7 @@ export function StackedBar({
       {/* The legend is also the direct labelling. Every segment is named with
           its count, so the contrast WARN on two of the hues is covered and
           nobody has to match a colour to a key. */}
-      <ul className="mt-3 grid gap-x-5 gap-y-1.5 sm:grid-cols-2">
+      <ul className="mt-3 grid gap-x-5 gap-y-1.5 [grid-template-columns:repeat(auto-fill,minmax(12rem,1fr))]">
         {segments.map((s) => (
           <li key={s.key} className="flex items-center gap-2 text-sm">
             <span

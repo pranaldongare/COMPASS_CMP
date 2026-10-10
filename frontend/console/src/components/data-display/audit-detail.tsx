@@ -130,7 +130,9 @@ export function EntityRef({ entry }: { entry: AuditEntry }) {
   return (
     <Link
       href={entry.entity_href}
-      className="group inline-flex max-w-full items-center gap-1.5 text-accent-text hover:underline"
+      // At least 24px tall (WCAG 2.2 target size, 2026-10-10): it sits in a
+      // line of small text inside a clickable row.
+      className="group inline-flex min-h-6 max-w-full items-center gap-1.5 text-accent-text hover:underline"
     >
       {body}
     </Link>

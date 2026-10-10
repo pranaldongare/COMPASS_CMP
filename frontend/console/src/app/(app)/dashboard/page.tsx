@@ -38,6 +38,7 @@ import {
   consentComposition,
   roleBlurb,
 } from "@/features/dashboard/components";
+import { KpiRow } from "@/features/dashboard/components/kpi-row";
 import { QuickAction } from "@/features/dashboard/components/quick-action";
 import { humanise } from "@/lib/format";
 import { useAuth } from "@/providers";
@@ -90,11 +91,49 @@ export default function DashboardPage() {
 
       {data && (
         <div className="space-y-6">
-          {/* First, what needs a decision or an action today, sized by
-              urgency. Then the queues that hold that work. The position -
-              projects by stage, the consent picture - is context, and comes
-              last: it changes slowly and nobody acts on it directly. */}
-          <AttentionList rows={data.attention ?? []} />
+          {/* The summary first (2026-10-10): four figures for this role. Then,
+              side by side on a desk, what needs a decision today and the
+              position it sits in. Then the queues that hold the work. */}
+          <KpiRow role={me?.role} counts={counts} />
+
+          <div className="grid items-start gap-6 xl:grid-cols-3">
+            <div className="xl:col-span-2">
+              <AttentionList rows={data.attention ?? []} />
+            </div>
+
+            {(lifecycle.length > 0 || composition) && (
+              <div className="space-y-6" aria-label="The position">
+                {composition && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Consent position</CardTitle>
+                    </CardHeader>
+                    <CardBody>
+                      <StackedBar
+                        segments={composition.segments}
+                        caption="Every record counted once, at its current state."
+                      />
+                    </CardBody>
+                  </Card>
+                )}
+                {lifecycle.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Projects by stage</CardTitle>
+                    </CardHeader>
+                    <CardBody>
+                      <BarList items={lifecycle} emptyLabel="No projects registered yet." />
+                      <p className="mt-4 text-xs text-text-subtle">
+                        A project moves in one direction through these stages. Only an
+                        approved project may collect consent.
+                      </p>
+                    </CardBody>
+                  </Card>
+                )}
+              </div>
+            )}
+          </div>
+
           <OpenBreaches breaches={data.breaches ?? []} />
 
           {busy.map((queue) => (
@@ -108,39 +147,6 @@ export default function DashboardPage() {
             />
           ))}
           <ClearQueues names={clear} />
-
-          {(lifecycle.length > 0 || composition) && (
-            <div className="grid gap-4 lg:grid-cols-2" aria-label="The position">
-              {lifecycle.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Projects by stage</CardTitle>
-                  </CardHeader>
-                  <CardBody>
-                    <BarList items={lifecycle} emptyLabel="No projects registered yet." />
-                    <p className="mt-4 text-xs text-text-subtle">
-                      A project moves in one direction through these stages. Only an
-                      approved project may collect consent.
-                    </p>
-                  </CardBody>
-                </Card>
-              )}
-
-              {composition && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Consent position</CardTitle>
-                  </CardHeader>
-                  <CardBody>
-                    <StackedBar
-                      segments={composition.segments}
-                      caption="Every record counted once, at its current state."
-                    />
-                  </CardBody>
-                </Card>
-              )}
-            </div>
-          )}
 
           {/* Rendered even when empty: the panel's empty state says activity
               will appear here, which is more use to somebody on their first day

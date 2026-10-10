@@ -1,0 +1,21 @@
+/*
+ * Form controls the utilities cannot draw (2026-10-10). Shared by both apps.
+ */
+
+/* The chevron on a styled native <select>: grey enough for both themes. */
+.select-chevron {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237b8799' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1rem;
+}
+
+/* The browser's date field, drawn like the others: the picker icon in the
+   product's grey, and no extra inner padding. */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.55;
+  cursor: pointer;
+}
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}

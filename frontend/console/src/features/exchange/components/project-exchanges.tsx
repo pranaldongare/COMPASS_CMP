@@ -157,7 +157,7 @@ export function ProjectExportsCard({
           </ul>
           <CardBody className="border-t border-border text-xs text-text-muted">
             Download them from the{" "}
-            <Link href="/exports" className="font-medium text-accent-text hover:underline">
+            <Link href="/exports" className="font-medium text-text hover:text-accent-text hover:underline">
               Exports register
             </Link>
             , which checks each file against its recorded hash.

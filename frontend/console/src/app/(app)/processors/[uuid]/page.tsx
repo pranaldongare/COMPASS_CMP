@@ -143,7 +143,7 @@ export default function ProcessorDetailPage() {
                   {operated.map((s) => (
                     <Tr key={s.source_uuid}>
                       <Td>
-                        <Link href={`/sources/${s.source_uuid}`} className="font-medium text-accent-text hover:underline">
+                        <Link href={`/sources/${s.source_uuid}`} className="font-medium text-text hover:text-accent-text hover:underline">
                           {s.name}
                         </Link>
                         <p className="mt-0.5 font-mono text-xs text-text-subtle">{s.source_code}</p>

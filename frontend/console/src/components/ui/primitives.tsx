@@ -20,7 +20,7 @@ import { cn } from "@/lib/format";
 /* ==================================================================== Button */
 const buttonVariants = cva(
   cn(
-    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg",
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md",
     "font-medium select-none",
     // Transform is in the transition so the press reads as physical. The active
     // state sinks 1px rather than changing colour: a finger expects the surface
@@ -33,12 +33,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // The gradient is the product's one branded surface. Reserved for the
+        // Solid COMPASS blue (2026-10-10; it was a gradient). Reserved for the
         // single primary action on a screen - two of these and neither leads.
         primary:
-          "brand-gradient text-white shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-glow)] hover:brightness-110",
+          "bg-accent text-accent-contrast shadow-[var(--shadow-xs)] hover:bg-accent-hover active:bg-accent-active",
         secondary:
-          "bg-surface text-text border border-border-strong shadow-[var(--shadow-sm)] hover:bg-surface-hover hover:border-text-subtle",
+          "bg-surface text-text border border-border-strong shadow-[var(--shadow-xs)] hover:bg-surface-hover hover:border-text-subtle",
         ghost: "text-text-muted hover:bg-bg-inset hover:text-text",
         danger: "bg-danger text-white shadow-[var(--shadow-sm)] hover:brightness-110",
         // For the one destructive action on a page: reads as a link until
@@ -48,7 +48,7 @@ const buttonVariants = cva(
       },
       size: {
         sm: "h-8 px-3 text-xs",
-        md: "h-9.5 px-4 text-sm",
+        md: "h-9 px-3.5 text-sm",
         lg: "h-11 px-6 text-base",
         icon: "size-9",
       },
@@ -126,7 +126,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-surface shadow-[var(--shadow-card)]",
+        "rounded-lg border border-border bg-surface shadow-[var(--shadow-card)]",
         className,
       )}
       {...props}
@@ -135,7 +135,7 @@ export function Card({
 }
 
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("px-5 py-4 border-b border-border", className)} {...props} />;
+  return <div className={cn("px-5 py-3.5 border-b border-border", className)} {...props} />;
 }
 
 export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
@@ -235,13 +235,13 @@ export function Field({ label, hint, error, required, children }: FieldProps) {
 }
 
 const controlBase = cn(
-  "w-full rounded-lg border bg-surface px-3 text-sm text-text",
+  "w-full rounded-md border bg-surface px-3 text-sm text-text",
   "placeholder:text-text-subtle",
   // The inset hairline is what makes a field read as a well rather than a card.
-  "border-border-strong shadow-[inset_0_1px_2px_rgb(0_0_0/0.03)]",
+  "border-border-strong shadow-[var(--shadow-xs)]",
   // A ring on focus, not a colour swap: it survives any background and, unlike a
   // border-width change, moves nothing on the page.
-  "focus:border-accent focus:ring-2 focus:ring-[var(--accent-subtle)] focus:outline-none",
+  "focus:border-accent focus:ring-3 focus:ring-[var(--accent-border)]/45 focus:outline-none",
   "disabled:cursor-not-allowed disabled:bg-bg-inset disabled:opacity-60",
   "aria-[invalid=true]:border-danger aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-[var(--danger-subtle)]",
   "transition-[border-color,box-shadow] duration-150",
@@ -249,7 +249,7 @@ const controlBase = cn(
 
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
   ({ className, ...props }, ref) => (
-    <input ref={ref} className={cn(controlBase, "h-10", className)} {...props} />
+    <input ref={ref} className={cn(controlBase, "h-9", className)} {...props} />
   ),
 );
 Input.displayName = "Input";
@@ -266,12 +266,19 @@ export const Select = React.forwardRef<
   HTMLSelectElement,
   React.SelectHTMLAttributes<HTMLSelectElement>
 >(({ className, ...props }, ref) => (
-  <select ref={ref} className={cn(controlBase, "h-10 pr-8", className)} {...props} />
+  // Still the browser's own <select> - its keyboard, screen-reader and mobile
+  // pickers are better than any imitation - drawn like the other fields, with
+  // the product's chevron (`.select-chevron`, styles/controls.css).
+  <select
+    ref={ref}
+    className={cn(controlBase, "select-chevron h-9 cursor-pointer appearance-none pr-9", className)}
+    {...props}
+  />
 ));
 Select.displayName = "Select";
 
 /* ===================================================================== Alert */
-const alertVariants = cva("rounded-lg border px-4 py-3 text-sm shadow-[var(--shadow-sm)]", {
+const alertVariants = cva("rounded-md border px-4 py-3 text-sm", {
   variants: {
     tone: {
       info: "bg-info-subtle border-info-border text-info-text",
@@ -374,7 +381,7 @@ export function EmptyState({
 /* ===================================================================== Table */
 export function Table({ className, ...props }: React.TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="scroll-x rounded-xl border border-border bg-surface shadow-[var(--shadow-card)]">
+    <div className="scroll-x rounded-lg border border-border bg-surface shadow-[var(--shadow-card)]">
       <table className={cn("w-full text-sm", className)} {...props} />
     </div>
   );
@@ -385,9 +392,9 @@ export function Th({ className, ...props }: React.ThHTMLAttributes<HTMLTableCell
     <th
       scope="col"
       className={cn(
-        "px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide",
+        "px-4 py-2.5 text-left text-2xs font-semibold uppercase tracking-wider",
         "text-text-subtle border-b border-border bg-bg-subtle whitespace-nowrap",
-        "first:rounded-tl-xl last:rounded-tr-xl",
+        "first:rounded-tl-lg last:rounded-tr-lg",
         className,
       )}
       {...props}

@@ -132,7 +132,7 @@ function ProjectNotices() {
             <Td>
               <Link
                 href={withFrom(`/notices/${n.notice_uuid}`, here)}
-                className="font-medium text-accent-text hover:underline"
+                className="font-medium text-text hover:text-accent-text hover:underline"
               >
                 {n.notice_code}
               </Link>

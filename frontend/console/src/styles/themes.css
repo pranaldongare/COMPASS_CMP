@@ -14,9 +14,10 @@
 :root {
   /* Surfaces step in small, even increments so stacked panels read as layers
      rather than as a set of unrelated greys. A faint blue cast keeps the
-     neutrals from looking dead next to the indigo accent. */
-  --bg: oklch(98.6% 0.003 255);
-  --bg-subtle: oklch(97% 0.005 255);
+     neutrals from looking dead next to the blue accent. The page sits a step
+     below white (2026-10-10) so white cards lift off it. */
+  --bg: oklch(97.4% 0.005 250);
+  --bg-subtle: oklch(96.4% 0.006 250);
   --bg-inset: oklch(94.2% 0.007 255);
   --surface: oklch(100% 0 0);
   --surface-hover: oklch(97.6% 0.004 255);
@@ -33,21 +34,24 @@
   --border: oklch(91% 0.006 258);
   --border-strong: oklch(83% 0.010 258);
 
-  /* Indigo. Institutional rather than commercial, and distinguishable from
-     every semantic colour below at each weight. */
-  --accent: oklch(52% 0.175 265);
-  --accent-hover: oklch(46% 0.180 265);
-  --accent-active: oklch(41% 0.175 265);
-  --accent-subtle: oklch(96.5% 0.022 265);
-  --accent-border: oklch(88% 0.055 265);
-  --accent-text: oklch(42% 0.170 265);
-  --accent-contrast: oklch(100% 0 0);
+  /* COMPASS blue (2026-10-10, replacing indigo): the colour of the sign-in
+     panel, so the product is one colour from the door inwards. Distinguishable
+     from every semantic colour below at each weight. */
+  --accent: #2f72bb;
+  --accent-hover: #255f9f;
+  --accent-active: #1d4e85;
+  --accent-subtle: #edf4fc;
+  --accent-border: #bcd5ef;
+  --accent-text: #1f5c9e;
+  --accent-contrast: #ffffff;
 
-  /* Gradient stops for brand surfaces. Two neighbouring hues, never a rainbow:
-     a violet-to-indigo sweep reads as one material catching light. */
-  --grad-from: oklch(54% 0.185 278);
-  --grad-via: oklch(50% 0.180 265);
-  --grad-to: oklch(46% 0.155 250);
+  /* Gradient stops for brand surfaces - one hue, light to deep, so it reads as
+     one material catching light. Kept for the brand mark and hero panels;
+     buttons are solid. */
+  --grad-from: #3d82c9;
+  --grad-via: #2f6fb5;
+  --grad-to: #1d5291;
+  --brand-deep: #0e3a6b;
 
   /* Semantic. Never decorative — each means exactly one thing. */
   --success: oklch(58% 0.145 155);
@@ -70,7 +74,7 @@
   --info-border: oklch(87% 0.060 235);
   --info-text: oklch(44% 0.120 235);
 
-  --focus: oklch(58% 0.190 265);
+  --focus: #3b82c4;
 
   /* --- Data-visualisation slots.
      Validated with the dataviz palette validator: all checks pass in both
@@ -106,17 +110,18 @@
   --border: oklch(30% 0.015 262);
   --border-strong: oklch(41% 0.019 262);
 
-  --accent: oklch(70% 0.150 265);
-  --accent-hover: oklch(77% 0.150 265);
-  --accent-active: oklch(82% 0.140 265);
-  --accent-subtle: oklch(29% 0.055 265);
-  --accent-border: oklch(39% 0.085 265);
-  --accent-text: oklch(81% 0.130 265);
-  --accent-contrast: oklch(17% 0.011 262);
+  --accent: #6aa6e6;
+  --accent-hover: #8bbbef;
+  --accent-active: #a9cdf3;
+  --accent-subtle: #15283f;
+  --accent-border: #2a4b70;
+  --accent-text: #93c0f0;
+  --accent-contrast: #0b1626;
 
-  --grad-from: oklch(62% 0.170 278);
-  --grad-via: oklch(58% 0.165 265);
-  --grad-to: oklch(52% 0.150 250);
+  --grad-from: #4a8bd0;
+  --grad-via: #3576bd;
+  --grad-to: #245a98;
+  --brand-deep: #0b2a4d;
 
   --success: oklch(72% 0.140 155);
   --success-subtle: oklch(27.5% 0.048 155);
@@ -138,7 +143,7 @@
   --info-border: oklch(37% 0.070 235);
   --info-text: oklch(84% 0.105 235);
 
-  --focus: oklch(72% 0.150 265);
+  --focus: #7fb3e8;
 
   /* Dark steps of the same three hues, validated against the dark surface -
      not an automatic flip of the light values. */

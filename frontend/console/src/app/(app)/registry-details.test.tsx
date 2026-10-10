@@ -144,7 +144,7 @@ describe("Register records, to read", () => {
       }),
     );
     const { user } = render(<SourcesPage />);
-    expect(await screen.findByRole("link", { name: /view/i })).toHaveAttribute("href", `/sources/${UUID}`);
+    expect(await screen.findByRole("link", { name: "Gait rig" })).toHaveAttribute("href", `/sources/${UUID}`);
     await user.selectOptions(screen.getByLabelText("Processor"), await screen.findByRole("option", { name: "Acme Labs" }));
     await vi.waitFor(() => expect(asked.at(-1)).toBe(PROC));
   });

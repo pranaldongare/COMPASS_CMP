@@ -92,11 +92,12 @@ export function ActivityFeed({
               />
             )}
 
-            <button
-              type="button"
-              onClick={() => setOpen(entry)}
-              className="group flex w-full items-start gap-3 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-bg-inset focus-visible:bg-bg-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-subtle)]"
-            >
+            {/* The row opens the entry, but is not itself a button: the
+                entity link inside it would then be a control nested in a
+                control, which a screen reader cannot operate (axe,
+                2026-10-10). The title is the button, stretched over the row;
+                the link sits above it. */}
+            <div className="group relative flex w-full items-start gap-3 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-bg-inset has-[button:focus-visible]:bg-bg-inset">
               <span
                 aria-hidden="true"
                 className="relative z-10 mt-1.5 size-[15px] shrink-0 rounded-full border-2 border-bg bg-accent/70 ring-1 ring-border"
@@ -104,9 +105,13 @@ export function ActivityFeed({
 
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                  <span className="text-sm font-medium text-text">
+                  <button
+                    type="button"
+                    onClick={() => setOpen(entry)}
+                    className="text-left text-sm font-medium text-text outline-none after:absolute after:inset-0 after:rounded-lg focus-visible:after:ring-2 focus-visible:after:ring-[var(--accent-border)]"
+                  >
                     {humanise(entry.event_type.replace(/\./g, " "))}
-                  </span>
+                  </button>
                   <time
                     dateTime={entry.occurred_at}
                     title={formatDateTime(entry.occurred_at)}
@@ -135,7 +140,9 @@ export function ActivityFeed({
                   ) : (
                     <span className="text-text-subtle">system</span>
                   )}
-                  <EntityRef entry={entry} />
+                  <span className="relative z-10">
+                    <EntityRef entry={entry} />
+                  </span>
                 </span>
               </span>
 
@@ -143,7 +150,7 @@ export function ActivityFeed({
                 className="mt-1 size-4 shrink-0 text-text-subtle opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
                 aria-hidden="true"
               />
-            </button>
+            </div>
           </li>
         ))}
       </ol>

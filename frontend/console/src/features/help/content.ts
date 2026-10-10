@@ -188,7 +188,7 @@ export const SECTIONS: HelpSection[] = [
           "Fill in [[Code]], [[Name]], [[Description]], [[What this allows]], tick the [[Data collected]], and choose the [[Lawful basis]], [[Retention (days)]], [[Retention basis]] and [[Erasure trigger]].",
           "Tick [[Transfer outside India is permitted for this purpose]] only if it is; exports abroad are refused otherwise. Leave [[May be used for data of children]] unticked unless it truly applies.",
           "Click [[Create purpose]]. It starts as [[Draft]] and can be edited; the code cannot.",
-          "Click [[Activate]] on its row. Only an active purpose can appear on a notice.",
+          "Open the row's [[⋯]] menu and choose [[Activate]]. Only an active purpose can appear on a notice.",
         ],
       },
       {
@@ -217,6 +217,7 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "list",
         items: [
+          "Everything a row can do is in its [[⋯]] menu; click the name to open the processor.",
           "[[Respondents]] names the people at a processor who answer rights tickets.",
           "[[Edit]] changes the details, including the country; [[Suspend]] stops new work with the processor.",
         ],
@@ -245,7 +246,7 @@ export const SECTIONS: HelpSection[] = [
           "Click [[Data sources]] under Registry, then [[Register source]].",
           "Enter [[Code]], [[Name]], [[Role]], [[Exchange mode]], [[Identifier scheme]], choose [[Operated by]] and tick what it is [[Authoritative for]]. A DCO or an RCO chooses only among the processors they collect for; with one, it is chosen for them.",
           "Click [[Register source]]. Tick the filter [[Nobody accountable]] to find sources without an owner.",
-          "Click [[Assign]] and choose who is accountable: a DCO for a third party's source, an RCO for an in-house one.",
+          "Open the row's [[⋯]] menu, choose [[Assign]] and pick who is accountable: a DCO for a third party's source, an RCO for an in-house one.",
         ],
       },
       {
@@ -669,9 +670,10 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "list",
         items: [
+          "Each account's actions are in its row's [[⋯]] menu; click the name to open the account.",
           "[[Resend invitation]] sends a fresh code to a pending account.",
           "Open a DCO's or an RCO's account and click [[Change processors]] to change whom they collect for. They see those processors' data sources and no others. A processor is not taken away while they are accountable for one of its sources: reassign the source first.",
-          "[[Role]] changes a role and signs the person out; [[Reset MFA]] clears their second factor.",
+          "[[Change role]] changes a role and signs the person out; [[Reset MFA]] clears their second factor.",
           "[[End staff access]] keeps the person as a data principal but removes every staff power.",
           "The DPO can read the register but not change it.",
         ],
