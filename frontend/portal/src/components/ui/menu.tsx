@@ -42,6 +42,7 @@ export function Menu({
   trigger,
   triggerClassName,
   align = "end",
+  side = "bottom",
   children,
 }: {
   /** The trigger's accessible name when its content is not text. */
@@ -49,6 +50,8 @@ export function Menu({
   trigger: React.ReactNode;
   triggerClassName?: string;
   align?: "start" | "end";
+  /** Which way it opens: down from a bar, up from the foot of a sidebar. */
+  side?: "bottom" | "top";
   children: React.ReactNode;
 }) {
   const [open, setOpen] = React.useState(false);
@@ -128,8 +131,12 @@ export function Menu({
             aria-label={label}
             onKeyDown={onMenuKeyDown}
             className={cn(
-              "menu-in absolute top-full z-50 mt-2 w-64 overflow-hidden rounded-xl border border-border bg-surface p-1.5 shadow-[var(--shadow-pop)]",
-              align === "end" ? "right-0 origin-top-right" : "left-0 origin-top-left",
+              "menu-in absolute z-50 w-64 overflow-hidden rounded-xl border border-border bg-surface p-1.5 shadow-[var(--shadow-pop)]",
+              side === "top" ? "bottom-full mb-2" : "top-full mt-2",
+              align === "end" ? "right-0" : "left-0",
+              side === "top"
+                ? align === "end" ? "origin-bottom-right" : "origin-bottom-left"
+                : align === "end" ? "origin-top-right" : "origin-top-left",
             )}
           >
             {children}

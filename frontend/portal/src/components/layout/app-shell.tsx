@@ -14,9 +14,7 @@
 
 import {
   Bell,
-  CircleHelp,
   FileText,
-  LogOut,
   Menu,
   Scale,
   UserRound,
@@ -26,7 +24,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
 
-import { HelpLink } from "@/components/layout/help-link";
 import { useDrawer } from "@/components/layout/use-drawer";
 import { UserMenu } from "@/components/layout/user-menu";
 import { BrandMark } from "@/components/ui/graphics";
@@ -68,7 +65,7 @@ const SECTIONS: NavSection[] = [
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { me, signOut } = useAuth();
+  const { me } = useAuth();
   const pathname = usePathname();
   // The drawer is open for one route. Navigating anywhere closes it, which is
   // derived here rather than done in an effect: an effect would render the
@@ -92,7 +89,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     // page colour, and a second opaque layer here would sit on top of the wash
     // below and hide it.
     <div className="relative min-h-dvh">
-      <Header onMenuClick={() => setMobileOpen(!mobileOpen)} mobileOpen={mobileOpen} />
+      {/* No top bar on a desk (2026-10-10): the sidebar carries the logo and
+          the settings menu. A phone keeps a slim bar, since its sidebar is a
+          closed drawer. */}
+      <MobileBar onMenuClick={() => setMobileOpen(!mobileOpen)} mobileOpen={mobileOpen} />
 
       <div className="flex w-full">
         <Sidebar
@@ -100,14 +100,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           pathname={pathname}
           mobileOpen={mobileOpen}
           onClose={() => setMobileOpen(false)}
-          onSignOut={signOut}
         />
 
         {/* Inert under the open drawer: not reachable by Tab, not read out. */}
         {/* The page straight on the grey (2026-10-10): no panel, border or
             rounding round it; its cards and tables are white. */}
         <main id="main" inert={mobileOpen} className="min-w-0 flex-1 bg-[var(--page-bg)]">
-          <div className="min-h-[calc(100dvh-4rem)] px-4 py-6 sm:px-6 lg:px-8">
+          <div className="min-h-[calc(100dvh-4rem)] px-4 py-6 sm:px-6 lg:min-h-dvh lg:px-8">
             {children}
           </div>
         </main>
@@ -116,7 +115,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Header({
+/** The COMPASS lockup, as on the sign-in screen and the console. */
+function Lockup() {
+  return (
+    <Link
+      href="/my-consents"
+      aria-label={config.productName}
+      className="group flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]"
+    >
+      <BrandMark className="size-7 text-accent-text" />
+      <span className="block text-lg leading-none font-bold tracking-tight">
+        <span className="text-accent-text">{config.productName.slice(0, 3)}</span>
+        <span className="text-text-muted">{config.productName.slice(3)}</span>
+      </span>
+    </Link>
+  );
+}
+
+/** A phone's bar: the drawer's button, the logo and the account circle. Gone
+ *  from `lg` up, where the sidebar carries all of it. */
+function MobileBar({
   onMenuClick,
   mobileOpen,
 }: {
@@ -124,14 +142,11 @@ function Header({
   mobileOpen: boolean;
 }) {
   return (
-    // Line (2026-10-10): white across the top with a blue rail along its top
-    // edge; `.frame-light` keeps it white in dark mode too.
-    <header className="frame-light no-print sticky top-0 z-30 border-b border-border bg-surface shadow-[inset_0_3px_0_var(--accent-text)]">
+    <header className="frame-light no-print sticky top-0 z-30 border-b border-border bg-surface shadow-[inset_0_3px_0_var(--accent-text)] lg:hidden">
       <div className="flex h-16 w-full items-center gap-3 px-4 sm:px-6">
         <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden"
           onClick={onMenuClick}
           aria-expanded={mobileOpen}
           aria-controls="sidebar-nav"
@@ -139,33 +154,9 @@ function Header({
         >
           {mobileOpen ? <X /> : <Menu />}
         </Button>
-
-        {/* The COMPASS lockup, as on the sign-in screen and the console. */}
-        <Link
-          href="/my-consents"
-          aria-label={config.productName}
-          className="group flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]"
-        >
-          <BrandMark className="size-7 text-accent-text" />
-          <span className="leading-none">
-            <span className="block text-lg font-bold tracking-tight">
-              <span className="text-accent-text">{config.productName.slice(0, 3)}</span>
-              <span className="text-text-muted">{config.productName.slice(3)}</span>
-            </span>
-          </span>
-        </Link>
-
+        <Lockup />
         <div className="flex-1" />
-
-        <Button variant="ghost" size="icon" asChild>
-          <HelpLink aria-label="Help manual" title="Help manual">
-            <CircleHelp />
-          </HelpLink>
-        </Button>
-
-        <div className="ml-1 border-l border-border pl-2">
-          <UserMenu />
-        </div>
+        <UserMenu />
       </div>
     </header>
   );
@@ -176,13 +167,11 @@ function Sidebar({
   pathname,
   mobileOpen,
   onClose,
-  onSignOut,
 }: {
   sections: NavSection[];
   pathname: string;
   mobileOpen: boolean;
   onClose: () => void;
-  onSignOut: () => void;
 }) {
   const drawer = useDrawer<HTMLElement>(mobileOpen, onClose);
   return (
@@ -204,7 +193,7 @@ function Sidebar({
         className={cn(
           // Line (2026-10-10): white down the left, white in both themes.
           "frame-light no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
-          "lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)]",
+          "lg:sticky lg:top-0 lg:h-dvh",
           mobileOpen
             ? "fixed top-16 bottom-0 left-0 flex overflow-y-auto shadow-[var(--shadow-pop)]"
             : "hidden lg:flex",
@@ -221,6 +210,11 @@ function Sidebar({
             </Button>
           </div>
         )}
+        {/* The head (2026-10-10): the logo with the blue rail above it. The
+            phone bar carries it below lg. */}
+        <div className="hidden h-16 shrink-0 items-center border-b border-[var(--sidebar-border)] px-5 shadow-[inset_0_3px_0_var(--accent-text)] lg:flex">
+          <Lockup />
+        </div>
         <div className="sidebar-scroll flex-1 overflow-y-auto px-3 py-4">
           {sections.map((section) => (
             <div key={section.title} className="mb-5 last:mb-0">
@@ -266,15 +260,10 @@ function Sidebar({
           ))}
         </div>
 
+        {/* The settings menu at the very end: profile, manual, theme and
+            signing out (2026-10-10). */}
         <div className="shrink-0 border-t border-[var(--sidebar-border)] p-3">
-          <Button
-            variant="ghost"
-            className="w-full justify-start rounded-lg px-3 text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]"
-            onClick={onSignOut}
-          >
-            <LogOut className="size-4" aria-hidden="true" />
-            Sign out
-          </Button>
+          <UserMenu placement="sidebar" />
         </div>
       </nav>
     </>

@@ -15,9 +15,6 @@
 import {
   Bell,
   ChevronDown,
-  ChevronRight,
-  CircleHelp,
-  LogOut,
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
@@ -34,7 +31,6 @@ import {
   useCommandPaletteShortcut,
 } from "@/components/layout/command-palette";
 import { iconForPage, labelFor, locate, sectionsFor, sidebarFor, type NavSection } from "@/components/layout/nav";
-import { HelpLink } from "@/components/layout/help-link";
 import { useDrawer } from "@/components/layout/use-drawer";
 import { UserMenu } from "@/components/layout/user-menu";
 import { useCollapsed } from "@/components/ui/collapsible";
@@ -95,7 +91,7 @@ function useIsApple(): boolean {
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { me, signOut } = useAuth();
+  const { me } = useAuth();
   const pathname = usePathname();
   // The drawer is open for one route. Navigating anywhere closes it, which is
   // derived here rather than done in an effect: an effect would render the
@@ -128,12 +124,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     // page colour, and a second opaque layer here would sit on top of the wash
     // below and hide it.
     <div className="relative min-h-dvh">
-      <Header
+      {/* No top bar on a desk (2026-10-10): the sidebar carries the logo,
+          the search, notifications and the settings menu. A phone keeps a
+          slim bar, since its sidebar is a closed drawer. */}
+      <MobileBar
         onMenuClick={() => setMobileOpen(!mobileOpen)}
         mobileOpen={mobileOpen}
         onSearch={() => setPaletteOpen(true)}
-        here={here}
-        pathname={pathname}
       />
 
       <div className="flex w-full">
@@ -144,14 +141,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed(!collapsed)}
           onClose={() => setMobileOpen(false)}
-          onSignOut={signOut}
+          onSearch={() => setPaletteOpen(true)}
         />
 
         {/* Inert under the open drawer: not reachable by Tab, not read out. */}
         {/* The page straight on the grey (2026-10-10): no panel, border or
             rounding round it; its cards and tables are white. */}
         <main id="main" inert={mobileOpen} className="min-w-0 flex-1 bg-[var(--page-bg)]">
-          <div className="min-h-[calc(100dvh-4rem)] px-4 py-6 sm:px-6 lg:px-8">
+          <div className="min-h-[calc(100dvh-4rem)] px-4 py-6 sm:px-6 lg:min-h-dvh lg:px-8">
             {children}
           </div>
         </main>
@@ -162,31 +159,40 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Header({
+/** The COMPASS lockup: the shield and the two-tone name. */
+function Lockup({ compact = false }: { compact?: boolean }) {
+  return (
+    <Link
+      href="/dashboard"
+      aria-label={config.productName}
+      className="group flex shrink-0 items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]"
+    >
+      <BrandMark className="size-7 shrink-0 text-accent-text" />
+      <span className={cn("block text-lg leading-none font-bold tracking-tight", compact && "lg:hidden")}>
+        <span className="text-accent-text">{config.productName.slice(0, 3)}</span>
+        <span className="text-text-muted">{config.productName.slice(3)}</span>
+      </span>
+    </Link>
+  );
+}
+
+/** A phone's bar: the drawer's button, the logo, search and the account
+ *  circle. Gone from `lg` up, where the sidebar carries all of it. */
+function MobileBar({
   onMenuClick,
   mobileOpen,
   onSearch,
-  here,
-  pathname,
 }: {
   onMenuClick: () => void;
   mobileOpen: boolean;
   onSearch: () => void;
-  here: ReturnType<typeof locate>;
-  pathname: string;
 }) {
-  const { me } = useAuth();
-  const apple = useIsApple();
-
   return (
-    // Line (2026-10-10): white across the top with a blue rail along its top
-    // edge; `.frame-light` keeps it white in dark mode too.
-    <header className="frame-light no-print sticky top-0 z-30 border-b border-border bg-surface shadow-[inset_0_3px_0_var(--accent-text)]">
+    <header className="frame-light no-print sticky top-0 z-30 border-b border-border bg-surface shadow-[inset_0_3px_0_var(--accent-text)] lg:hidden">
       <div className="flex h-16 w-full items-center gap-3 px-4 sm:px-6">
         <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden"
           onClick={onMenuClick}
           aria-expanded={mobileOpen}
           aria-controls="sidebar-nav"
@@ -194,123 +200,14 @@ function Header({
         >
           {mobileOpen ? <X /> : <Menu />}
         </Button>
-
-        {/* The COMPASS lockup (2026-10-10): the shield and the two-tone name,
-            nothing under it - the bar names the product, the page says where. */}
-        <Link
-          href="/dashboard"
-          aria-label={config.productName}
-          className="group flex shrink-0 items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]"
-        >
-          <BrandMark className="size-7 text-accent-text" />
-          <span className="leading-none">
-            <span className="block text-lg font-bold tracking-tight">
-              <span className="text-accent-text">{config.productName.slice(0, 3)}</span>
-              <span className="text-text-muted">{config.productName.slice(3)}</span>
-            </span>
-          </span>
-        </Link>
-
-        {here && <Breadcrumb here={here} pathname={pathname} role={me?.role} />}
-
+        <Lockup />
         <div className="flex-1" />
-
-        {/* The palette's front door. On a phone it is an icon; on a desk it
-            says what it does and how to get there without the mouse. */}
-        <button
-          type="button"
-          onClick={onSearch}
-          aria-keyshortcuts={apple ? "Meta+K" : "Control+K"}
-          className={cn(
-            "hidden h-9 w-64 items-center gap-2 rounded-md border border-border bg-bg px-3 text-sm text-text-subtle md:flex",
-            "transition-colors hover:border-border-strong hover:text-text-muted",
-            "outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]",
-          )}
-        >
-          <Search className="size-4" aria-hidden="true" />
-          {/* It finds pages and actions, not records: the name promised a search
-              of projects and people that it does not do (UX review). */}
-          <span className="flex-1 text-left">Jump to page…</span>
-          <kbd className="rounded-md border border-border bg-bg-inset px-1.5 py-0.5 font-sans text-2xs font-medium">
-            {apple ? "⌘K" : "Ctrl K"}
-          </kbd>
-        </button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          onClick={onSearch}
-          aria-label="Jump to page"
-        >
+        <Button variant="ghost" size="icon" onClick={onSearch} aria-label="Jump to page">
           <Search />
         </Button>
-
-        <Button variant="ghost" size="icon" asChild>
-          <HelpLink aria-label="Help manual" title="Help manual">
-            <CircleHelp />
-          </HelpLink>
-        </Button>
-
-        {me?.nav.includes("notifications") && (
-          <Button variant="ghost" size="icon" asChild>
-            <Link
-              href="/notifications"
-              aria-label="Notifications"
-              title="Notifications"
-              aria-current={pathname === "/notifications" ? "page" : undefined}
-            >
-              <Bell />
-            </Link>
-          </Button>
-        )}
-
-        <div className="ml-1 border-l border-border pl-2">
-          <UserMenu />
-        </div>
+        <UserMenu />
       </div>
     </header>
-  );
-}
-
-/** Where this page sits: its section, then its destination - a link back to
- *  the list when this is a page under it. */
-function Breadcrumb({
-  here,
-  pathname,
-  role,
-}: {
-  here: NonNullable<ReturnType<typeof locate>>;
-  pathname: string;
-  role: string | undefined;
-}) {
-  const atTop = pathname === here.item.href;
-  const label = labelFor(here.item, role);
-  return (
-    <nav
-      aria-label="Breadcrumb"
-      className="hidden min-w-0 border-l border-border pl-3 lg:block"
-    >
-      <ol className="flex min-w-0 items-center gap-1.5 text-sm">
-        <li className="shrink-0 text-text-subtle">{here.section.title}</li>
-        <li aria-hidden="true" className="text-text-subtle">
-          <ChevronRight className="size-3.5" />
-        </li>
-        <li className="min-w-0 truncate">
-          {atTop ? (
-            <span aria-current="page" className="font-medium text-text">
-              {label}
-            </span>
-          ) : (
-            <Link
-              href={here.item.href}
-              className="text-text-muted hover:text-text hover:underline"
-            >
-              {label}
-            </Link>
-          )}
-        </li>
-      </ol>
-    </nav>
   );
 }
 
@@ -321,7 +218,7 @@ function Sidebar({
   collapsed,
   onToggleCollapsed,
   onClose,
-  onSignOut,
+  onSearch,
 }: {
   sections: NavSection[];
   pathname: string;
@@ -330,9 +227,10 @@ function Sidebar({
   collapsed: boolean;
   onToggleCollapsed: () => void;
   onClose: () => void;
-  onSignOut: () => void;
+  onSearch: () => void;
 }) {
   const { me } = useAuth();
+  const apple = useIsApple();
   // Folding applies from the desktop breakpoint up; these are the classes that
   // do it, so the drawer on a phone is untouched.
   const folded = collapsed && !mobileOpen;
@@ -357,7 +255,7 @@ function Sidebar({
         className={cn(
           // Line (2026-10-10): white down the left, white in both themes.
           "frame-light no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
-          "lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:transition-[width] lg:duration-200",
+          "lg:sticky lg:top-0 lg:h-dvh lg:transition-[width] lg:duration-200",
           folded && "lg:w-[4.5rem]",
           mobileOpen
             ? "fixed top-16 bottom-0 left-0 flex overflow-y-auto shadow-[var(--shadow-pop)]"
@@ -375,6 +273,44 @@ function Sidebar({
             </Button>
           </div>
         )}
+        {/* The head (2026-10-10): the logo with the blue rail above it, then
+            the way to any page. The logo is the phone bar's job below lg. */}
+        <div
+          className={cn(
+            "hidden h-16 shrink-0 items-center border-b border-[var(--sidebar-border)] shadow-[inset_0_3px_0_var(--accent-text)] lg:flex",
+            folded ? "justify-center" : "px-5",
+          )}
+        >
+          <Lockup compact={folded} />
+        </div>
+        <div className={cn("shrink-0 pt-3", folded ? "lg:px-3" : "px-3")}>
+          <Tooltip content={folded ? "Jump to page" : null} side="right">
+            <button
+              type="button"
+              onClick={onSearch}
+              aria-keyshortcuts={apple ? "Meta+K" : "Control+K"}
+              aria-label={folded ? "Jump to page" : undefined}
+              className={cn(
+                "flex h-9 w-full items-center gap-2 rounded-lg border border-border bg-bg px-3 text-sm text-text-subtle",
+                "transition-colors hover:border-border-strong hover:text-text-muted",
+                "outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]",
+                folded && "lg:size-11 lg:justify-center lg:px-0",
+              )}
+            >
+              <Search className="size-4 shrink-0" aria-hidden="true" />
+              {/* It finds pages and actions, not records (UX review). */}
+              <span className={cn("flex-1 text-left", folded && "lg:hidden")}>Jump to page…</span>
+              <kbd
+                className={cn(
+                  "rounded-md border border-border bg-bg-inset px-1.5 py-0.5 font-sans text-2xs font-medium",
+                  folded && "lg:hidden",
+                )}
+              >
+                {apple ? "⌘K" : "Ctrl K"}
+              </kbd>
+            </button>
+          </Tooltip>
+        </div>
         <div
           className={cn(
             "sidebar-scroll flex-1 overflow-x-hidden overflow-y-auto py-4",
@@ -447,6 +383,23 @@ function Sidebar({
             folded ? "lg:p-3" : "p-3",
           )}
         >
+          {me?.nav.includes("notifications") && (
+            <Tooltip content={folded ? "Notifications" : null} side="right">
+              <Link
+                href="/notifications"
+                aria-current={pathname === "/notifications" ? "page" : undefined}
+                className={cn(
+                  "flex h-9 w-full items-center gap-2 rounded-lg px-3 text-sm font-medium text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",
+                  "outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-badge)]",
+                  "aria-[current=page]:bg-[var(--sidebar-active)] aria-[current=page]:text-[var(--sidebar-active-text)]",
+                  folded && "lg:size-11 lg:justify-center lg:px-0",
+                )}
+              >
+                <Bell className="size-4 shrink-0" aria-hidden="true" />
+                <span className={cn(folded && "lg:sr-only")}>Notifications</span>
+              </Link>
+            </Tooltip>
+          )}
           <Tooltip content={folded ? "Expand sidebar" : null} side="right">
           <Button
             variant="ghost"
@@ -468,19 +421,9 @@ function Sidebar({
             </span>
           </Button>
           </Tooltip>
-          <Tooltip content={folded ? "Sign out" : null} side="right">
-          <Button
-            variant="ghost"
-            className={cn(
-              "w-full justify-start rounded-lg px-3 text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",
-              folded && "lg:size-11 lg:justify-center lg:px-0",
-            )}
-            onClick={onSignOut}
-          >
-            <LogOut className="size-4" aria-hidden="true" />
-            <span className={cn(folded && "lg:sr-only")}>Sign out</span>
-          </Button>
-          </Tooltip>
+          {/* The settings menu at the very end: profile, manual, theme and
+              signing out (2026-10-10). */}
+          <UserMenu placement="sidebar" folded={folded} />
         </div>
       </nav>
     </>

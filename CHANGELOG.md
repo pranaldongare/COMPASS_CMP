@@ -8,6 +8,12 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Sidebar only** (2026-10-10): no top bar on a desk in either app. The
+  sidebar runs full height and carries the logo (with the blue rail) at its
+  head, "Jump to page" under it, and at its foot Notifications, Collapse and
+  the Settings menu (profile, manual, theme, sign out), which opens upwards.
+  A phone keeps a slim bar - menu button, logo, search, account circle -
+  since its sidebar is a closed drawer. The top-bar breadcrumb is gone.
 - **Line look** (2026-10-10, chosen from three white mock-ups): the sidebar
   and top bar white in both themes, a blue rail on the current page and
   along the top edge; a near-white page with white cards and tables; the
