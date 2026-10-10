@@ -55,7 +55,7 @@ export function AuthLayout({
       className="min-h-dvh bg-surface lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]"
     >
       {/* ------------------------------------------------- the brand panel */}
-      <section className="auth-brand relative hidden overflow-hidden border-r border-[#e6ebf2] lg:flex lg:flex-col lg:items-center lg:justify-between lg:px-6 lg:py-10">
+      <section className="auth-brand relative hidden overflow-hidden lg:flex lg:flex-col lg:items-center lg:justify-between lg:px-6 lg:py-10">
 
         <div className="relative flex items-center gap-3 text-[#1f5c9e]">
           <BrandMark className="size-9" />

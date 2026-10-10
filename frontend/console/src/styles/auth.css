@@ -69,14 +69,22 @@
 }
 
 /* The brand panel (2026-10-10, Line): white, a field of fine blue dots, and
-   a faint blue light behind the map. White in light and dark - it is the
-   product's picture, not the theme's. */
+   a faint blue light behind the map. No rule against the form: the dots fade
+   out towards it, so the page reads as one sheet. White in light and dark -
+   it is the product's picture, not the theme's. */
 .auth-brand {
   background-color: #ffffff;
-  background-image:
-    radial-gradient(ellipse 60% 40% at 50% 46%, rgb(47 114 187 / 0.08), transparent 70%),
-    radial-gradient(#d5e3f3 1px, transparent 1.2px);
-  background-size: auto, 16px 16px;
+  background-image: radial-gradient(ellipse 60% 40% at 50% 46%, rgb(47 114 187 / 0.08), transparent 70%);
+}
+.auth-brand::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(#d5e3f3 1px, transparent 1.2px);
+  background-size: 16px 16px;
+  -webkit-mask-image: linear-gradient(90deg, #000 55%, transparent 100%);
+  mask-image: linear-gradient(90deg, #000 55%, transparent 100%);
 }
 
 /* The map's motion: data running along the arcs, rings opening from the lit
