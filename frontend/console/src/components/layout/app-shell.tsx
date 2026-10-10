@@ -462,14 +462,16 @@ function trailFor(pathname: string, title: string, role: string | undefined): Cr
  *  the vertical rhythm is identical throughout. */
 export function PageHeader({
   title,
+  description,
   actions,
   breadcrumb,
   eyebrow,
   hero = false,
 }: {
   title: string;
-  /** Not shown (2026-10-10): pages open on the trail and the title alone;
-   *  the sentence that was here is in the help. Kept so callers need not change. */
+  /** Shown only on a record's own page (2026-10-10), where it is the
+   *  record's data - an incident's title, a request's kind. A destination's
+   *  explanatory sentence is not shown; it is in the help. */
   description?: string;
   actions?: React.ReactNode;
   breadcrumb?: React.ReactNode;
@@ -492,6 +494,17 @@ export function PageHeader({
         <h1 className="sr-only">{title}</h1>
         <div className="flex flex-wrap items-center gap-3">
           <PillTrail crumbs={crumbs} extra={breadcrumb} className="mb-0 max-w-full min-w-0 flex-auto" />
+          {/* The kicker still says what kind of record this is - an incident
+              being validated, a personal data breach - beside the trail. */}
+          {eyebrow && (
+            <p className="order-first w-full text-2xs font-semibold tracking-wider text-accent-text uppercase">
+              {eyebrow}
+            </p>
+          )}
+          {/* A record's own line - its title, its kind - under the trail. */}
+          {description && crumbs.length > 2 && (
+            <p className="order-last w-full text-sm text-text-muted">{description}</p>
+          )}
           {actions && (
             // When they do not fit beside the trail, the actions take the next
             // line, at the right, rather than squeezing the trail onto two.

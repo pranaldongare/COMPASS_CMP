@@ -194,6 +194,7 @@ export function FilterSelect({
   return (
     <div className={cn(pillClass(set), "pl-1.5")}>
       <label
+        id={`${id}-label`}
         htmlFor={id}
         className="flex shrink-0 cursor-pointer items-center gap-2 pr-1 text-xs font-medium whitespace-nowrap text-text-subtle"
       >
@@ -221,7 +222,10 @@ export function FilterSelect({
         <button
           type="button"
           onClick={() => onChange("")}
-          aria-label={`Clear ${label}`}
+          // Named apart from the field, so "Status" finds the select alone;
+          // which filter it clears is its description.
+          aria-label="Clear filter"
+          aria-describedby={`${id}-label`}
           title={`Clear ${label}`}
           className="mr-1.5 grid size-6 shrink-0 place-items-center rounded-full text-accent-text transition-colors hover:bg-accent/15"
         >
