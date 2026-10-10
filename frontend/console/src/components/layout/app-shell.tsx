@@ -18,7 +18,6 @@ import {
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
-  Search,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -81,15 +80,6 @@ function useSidebarCollapsed(): [boolean, (collapsed: boolean) => void] {
   return [collapsed, writeCollapsed];
 }
 
-/** ⌘ on Apple keyboards, Ctrl elsewhere. The server does not know which. */
-function useIsApple(): boolean {
-  return React.useSyncExternalStore(
-    () => () => {},
-    () => /Mac|iPhone|iPad/.test(navigator.userAgent),
-    () => false,
-  );
-}
-
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { me } = useAuth();
   const pathname = usePathname();
@@ -127,11 +117,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* No top bar on a desk (2026-10-10): the sidebar carries the logo,
           the search, notifications and the settings menu. A phone keeps a
           slim bar, since its sidebar is a closed drawer. */}
-      <MobileBar
-        onMenuClick={() => setMobileOpen(!mobileOpen)}
-        mobileOpen={mobileOpen}
-        onSearch={() => setPaletteOpen(true)}
-      />
+      <MobileBar onMenuClick={() => setMobileOpen(!mobileOpen)} mobileOpen={mobileOpen} />
 
       <div className="flex w-full">
         <Sidebar
@@ -141,7 +127,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed(!collapsed)}
           onClose={() => setMobileOpen(false)}
-          onSearch={() => setPaletteOpen(true)}
         />
 
         {/* Inert under the open drawer: not reachable by Tab, not read out. */}
@@ -176,19 +161,16 @@ function Lockup({ compact = false }: { compact?: boolean }) {
   );
 }
 
-/** A phone's bar: the drawer's button, the logo, search and the account
- *  circle. Gone from `lg` up, where the sidebar carries all of it. */
+/** A phone's bar: the drawer's button, the logo and the account circle. Gone from `lg` up, where the sidebar carries all of it. */
 function MobileBar({
   onMenuClick,
   mobileOpen,
-  onSearch,
 }: {
   onMenuClick: () => void;
   mobileOpen: boolean;
-  onSearch: () => void;
 }) {
   return (
-    <header className="frame-light no-print sticky top-0 z-30 border-b border-border bg-surface shadow-[inset_0_3px_0_var(--accent-text)] lg:hidden">
+    <header className="frame-light no-print sticky top-0 z-30 border-b border-border bg-surface lg:hidden">
       <div className="flex h-16 w-full items-center gap-3 px-4 sm:px-6">
         <Button
           variant="ghost"
@@ -202,9 +184,6 @@ function MobileBar({
         </Button>
         <Lockup />
         <div className="flex-1" />
-        <Button variant="ghost" size="icon" onClick={onSearch} aria-label="Jump to page">
-          <Search />
-        </Button>
         <UserMenu />
       </div>
     </header>
@@ -218,7 +197,6 @@ function Sidebar({
   collapsed,
   onToggleCollapsed,
   onClose,
-  onSearch,
 }: {
   sections: NavSection[];
   pathname: string;
@@ -227,10 +205,8 @@ function Sidebar({
   collapsed: boolean;
   onToggleCollapsed: () => void;
   onClose: () => void;
-  onSearch: () => void;
 }) {
   const { me } = useAuth();
-  const apple = useIsApple();
   // Folding applies from the desktop breakpoint up; these are the classes that
   // do it, so the drawer on a phone is untouched.
   const folded = collapsed && !mobileOpen;
@@ -254,7 +230,7 @@ function Sidebar({
         data-collapsed={folded || undefined}
         className={cn(
           // Line (2026-10-10): white down the left, white in both themes.
-          "frame-light no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
+          "frame-light sidebar-glow no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
           "lg:sticky lg:top-0 lg:h-dvh lg:transition-[width] lg:duration-200",
           folded && "lg:w-[4.5rem]",
           mobileOpen
@@ -273,43 +249,15 @@ function Sidebar({
             </Button>
           </div>
         )}
-        {/* The head (2026-10-10): the logo with the blue rail above it, then
-            the way to any page. The logo is the phone bar's job below lg. */}
+        {/* The head (2026-10-10): the logo; the phone bar's job below lg.
+            Jump to page is the keyboard's (Ctrl/Cmd K), not a box here. */}
         <div
           className={cn(
-            "hidden h-16 shrink-0 items-center border-b border-[var(--sidebar-border)] shadow-[inset_0_3px_0_var(--accent-text)] lg:flex",
+            "hidden h-16 shrink-0 items-center lg:flex",
             folded ? "justify-center" : "px-5",
           )}
         >
           <Lockup compact={folded} />
-        </div>
-        <div className={cn("shrink-0 pt-3", folded ? "lg:px-3" : "px-3")}>
-          <Tooltip content={folded ? "Jump to page" : null} side="right">
-            <button
-              type="button"
-              onClick={onSearch}
-              aria-keyshortcuts={apple ? "Meta+K" : "Control+K"}
-              aria-label={folded ? "Jump to page" : undefined}
-              className={cn(
-                "flex h-9 w-full items-center gap-2 rounded-lg border border-border bg-bg px-3 text-sm text-text-subtle",
-                "transition-colors hover:border-border-strong hover:text-text-muted",
-                "outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]",
-                folded && "lg:size-11 lg:justify-center lg:px-0",
-              )}
-            >
-              <Search className="size-4 shrink-0" aria-hidden="true" />
-              {/* It finds pages and actions, not records (UX review). */}
-              <span className={cn("flex-1 text-left", folded && "lg:hidden")}>Jump to page…</span>
-              <kbd
-                className={cn(
-                  "rounded-md border border-border bg-bg-inset px-1.5 py-0.5 font-sans text-2xs font-medium",
-                  folded && "lg:hidden",
-                )}
-              >
-                {apple ? "⌘K" : "Ctrl K"}
-              </kbd>
-            </button>
-          </Tooltip>
         </div>
         <div
           className={cn(
@@ -342,25 +290,19 @@ function Sidebar({
                       href={item.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "group relative flex items-center gap-3 rounded-lg py-2 pr-2 pl-3 text-sm",
+                        "group relative flex items-center gap-3 rounded-xl py-1.5 pr-2 pl-1.5 text-sm",
                         "transition-[background-color,color,box-shadow] duration-150",
                         "outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-badge)]",
                         folded && "lg:size-11 lg:justify-center lg:p-0",
-                        // Active: a pale blue band with a blue rail at its left edge.
+                        // Active: a blue gradient pill (.nav-current), white text.
                         active
-                          ? "rounded-l-none bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)] shadow-[inset_3px_0_0_var(--sidebar-active-text)]"
+                          ? "nav-current font-semibold"
                           : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",
                       )}
                     >
-                      <Icon
-                        className={cn(
-                          "size-[1.125rem] shrink-0 transition-colors",
-                          active
-                            ? "text-[var(--sidebar-active-text)]"
-                            : "text-[var(--sidebar-label)] group-hover:text-[var(--sidebar-text-strong)]",
-                        )}
-                        aria-hidden="true"
-                      />
+                      <span aria-hidden="true" className={`nav-tile nav-tint-${i % 4}`}>
+                        <Icon className="size-4" />
+                      </span>
                       <span className={cn("truncate", folded && "lg:sr-only")}>
                         {label}
                       </span>
@@ -389,13 +331,17 @@ function Sidebar({
                 href="/notifications"
                 aria-current={pathname === "/notifications" ? "page" : undefined}
                 className={cn(
-                  "flex h-9 w-full items-center gap-2 rounded-lg px-3 text-sm font-medium text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",
+                  "flex w-full items-center gap-3 rounded-xl py-1.5 pr-2 pl-1.5 text-sm text-[var(--sidebar-text)]",
                   "outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-badge)]",
-                  "aria-[current=page]:bg-[var(--sidebar-active)] aria-[current=page]:text-[var(--sidebar-active-text)]",
+                  pathname === "/notifications"
+                    ? "nav-current font-semibold"
+                    : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-strong)]",
                   folded && "lg:size-11 lg:justify-center lg:px-0",
                 )}
               >
-                <Bell className="size-4 shrink-0" aria-hidden="true" />
+                <span aria-hidden="true" className="nav-tile nav-tint-0">
+                  <Bell className="size-4" />
+                </span>
                 <span className={cn(folded && "lg:sr-only")}>Notifications</span>
               </Link>
             </Tooltip>
@@ -612,8 +558,8 @@ function NavCount({
     <span
       className={cn(
         "ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--sidebar-badge)] px-1.5 text-2xs font-semibold text-[var(--sidebar-badge-text)]",
-        // On the white current-page pill the count turns navy with white text.
-        "group-aria-[current=page]:bg-[var(--sidebar-active-text)] group-aria-[current=page]:text-white",
+        // On the blue current-page pill the count turns white with blue text.
+        "group-aria-[current=page]:bg-white group-aria-[current=page]:text-[#1f5c9e]",
         // Folded, the count sits on the icon's corner, like a badge on an app.
         folded &&
           "lg:absolute lg:top-0.5 lg:right-1 lg:ml-0 lg:min-w-4 lg:px-1 lg:text-[0.625rem] lg:leading-4",

@@ -43,3 +43,33 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .tile-amber  { background: linear-gradient(135deg, #d97706, #f59e0b); }
 .tile-teal   { background: linear-gradient(135deg, #0f8f8b, #14b8a6); }
 .tile-violet { background: linear-gradient(135deg, #6d5bd0, #8b7cf6); }
+
+/* Blue pill sidebar (2026-10-10, chosen from three). Each link's icon sits on
+   a small tinted tile, the tint by section; the current page is a blue
+   gradient pill with white text, its tile a pane of white light; a faint blue
+   glow at the sidebar's foot. White text holds 4.5:1 across the pill. */
+.nav-tile {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: none;
+  border-radius: 0.5rem;
+  transition: background-color 150ms, color 150ms;
+}
+.nav-tint-0 { background: #eef4fb; color: #2f72bb; }
+.nav-tint-1 { background: #f2effc; color: #6d5bd0; }
+.nav-tint-2 { background: #e9f7f5; color: #0f8f8b; }
+.nav-tint-3 { background: #fdf3e4; color: #c26a06; }
+.nav-current {
+  background-image: linear-gradient(90deg, #1f5c9e, #2a72c0);
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgb(31 92 158 / 0.28);
+}
+.nav-current .nav-tile {
+  background: rgb(255 255 255 / 0.2);
+  color: #ffffff;
+}
+.sidebar-glow {
+  background-image: radial-gradient(120% 22% at 50% 104%, rgb(47 114 187 / 0.1), transparent 70%);
+}

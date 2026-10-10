@@ -40,8 +40,8 @@ export function UserMenu({
       triggerClassName={
         placement === "sidebar"
           ? cn(
-              "group flex w-full items-center gap-3 rounded-lg p-1.5 text-left text-sm hover:bg-[var(--sidebar-hover)]",
-              folded && "lg:size-11 lg:justify-center lg:p-0",
+              "group flex w-full items-center gap-3 rounded-xl border border-[var(--sidebar-border)] bg-surface p-2 text-left text-sm shadow-[var(--shadow-xs)] hover:bg-[var(--sidebar-hover)]",
+              folded && "lg:size-11 lg:justify-center lg:border-0 lg:p-0 lg:shadow-none",
             )
           : "group rounded-full p-0.5 hover:bg-bg-inset"
       }
@@ -56,11 +56,11 @@ export function UserMenu({
           </span>
           {placement === "sidebar" && (
             <>
-              <span
-                aria-hidden="true"
-                className={cn("flex-1 font-medium text-[var(--sidebar-text-strong)]", folded && "lg:hidden")}
-              >
-                Settings
+              <span aria-hidden="true" className={cn("min-w-0 flex-1", folded && "lg:hidden")}>
+                <span className="block font-semibold text-[var(--sidebar-text-strong)]">Settings</span>
+                <span className="block truncate text-xs text-[var(--sidebar-label)]">
+                  Profile, theme, sign out
+                </span>
               </span>
               <ChevronsUpDown
                 aria-hidden="true"
