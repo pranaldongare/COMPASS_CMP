@@ -8,6 +8,11 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **White frame, grey containers** (2026-10-10): the top bar and sidebar
+  are both white with a hairline (current page a grey pill); the page panel
+  is white again, and the cards, figure tiles and tables on it are grey,
+  with a darker grey header band and alternating rows. Inputs inside them
+  stay white. Supersedes the two entries below.
 - **White sidebar, grey page** (2026-10-10): the sidebar is white with a
   hairline and a grey pill for the current page; the top bar keeps the
   indigo. The page panel is grey with white cards and tables on it; table

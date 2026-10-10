@@ -69,7 +69,7 @@ export function RouteLoading() {
         <Skeleton className="h-9 w-44" />
         <Skeleton className="h-9 w-44" />
       </div>
-      <div className="space-y-px overflow-hidden rounded-lg border border-border bg-surface">
+      <div className="space-y-px overflow-hidden rounded-lg border border-border bg-bg-subtle">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="flex gap-4 px-4 py-4">
             <Skeleton className="h-4 w-1/4" />

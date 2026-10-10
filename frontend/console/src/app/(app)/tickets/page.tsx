@@ -179,7 +179,7 @@ function Group({ icon, title, tickets, wanted }: { icon: React.ReactNode; title:
 function Stat({ label, value, tone }: { label: string; value: number; tone: "neutral" | "warning" | "danger" }) {
   const colour = tone === "danger" ? "text-danger-text" : tone === "warning" ? "text-warning-text" : "text-text";
   return (
-    <div className="rounded-lg border border-border bg-surface px-4 py-3">
+    <div className="rounded-lg border border-border bg-bg-subtle px-4 py-3">
       <p className={`text-2xl font-semibold tabular-nums ${colour}`}>{value}</p>
       <p className="text-xs text-text-muted">{label}</p>
     </div>

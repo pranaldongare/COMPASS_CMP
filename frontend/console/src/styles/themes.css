@@ -53,8 +53,8 @@
   --grad-to: #1d5291;
   --brand-deep: #0e3a6b;
 
-  /* The sidebar (2026-10-10, fourth pass): white - the theme's surface with a
-     hairline - and the current page a grey pill. It follows the theme through
+  /* The sidebar and top bar (2026-10-10, fourth pass): white - the theme's
+     surface with a hairline - and the current page a grey pill. It follows the theme through
      these references. */
   --sidebar-bg: var(--surface);
   --sidebar-text: var(--text-muted);
@@ -66,18 +66,6 @@
   --sidebar-active-text: var(--text);
   --sidebar-badge: var(--accent);
 
-  /* The top bar keeps the indigo frame, the same in both themes. Text and
-     labels hold 4.5:1 or better against its lightest end. */
-  --frame-bg: #1c2063;
-  --frame-text: #dfe3fb;
-  --frame-label: #b4bdf0;
-  --frame-border: rgb(255 255 255 / 0.12);
-  --frame-accent: #7dd3fc;
-  --frame-top: linear-gradient(90deg, #181b55 0%, #232c82 48%, #24479a 100%);
-
-  /* The grey the page sits on inside the frame; cards and tables are white
-     on it. */
-  --content-bg: oklch(95.6% 0.006 255);
 
   /* Semantic. Never decorative — each means exactly one thing. */
   --success: oklch(58% 0.145 155);
@@ -124,7 +112,6 @@
   --bg-subtle: oklch(19.5% 0.013 262);
   --bg-inset: oklch(23.5% 0.015 262);
   --surface: oklch(21% 0.014 262);
-  --content-bg: oklch(18.5% 0.012 262);
   --surface-hover: oklch(25% 0.016 262);
   --surface-raised: oklch(24% 0.016 262);
 

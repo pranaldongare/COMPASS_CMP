@@ -118,7 +118,7 @@ function Strip({ lines }: { lines: Line[] }) {
   const [all, setAll] = React.useState(false);
   const shown = all ? lines : lines.slice(0, SHOWN);
   return (
-    <div className="mb-6 overflow-hidden rounded-xl border border-border bg-surface shadow-[var(--shadow-xs)]">
+    <div className="mb-6 overflow-hidden rounded-xl border border-border bg-bg-subtle shadow-[var(--shadow-xs)]">
     <ul className="divide-y divide-border" data-testid="home-strip">
       {shown.map((l) => (
         <li key={l.key}>

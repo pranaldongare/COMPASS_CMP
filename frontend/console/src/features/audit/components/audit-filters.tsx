@@ -90,7 +90,7 @@ export function AuditFilters({
   );
 
   return (
-    <div className="mb-4 space-y-3 rounded-xl border border-border bg-surface/60 p-3 shadow-[var(--shadow-sm)]">
+    <div className="mb-4 space-y-3 rounded-xl border border-border bg-bg-subtle p-3 shadow-[var(--shadow-sm)]">
       <div className="flex flex-wrap items-end gap-3">
         {/* Keyed on the value in force, so a chip that clears the search also
             clears the box, without an effect writing state. */}

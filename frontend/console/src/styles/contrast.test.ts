@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 
 const CSS = readFileSync(path.join(__dirname, "themes.css"), "utf8");
 const TEXT = ["--text", "--text-muted", "--text-subtle"];
-const GROUNDS = ["--bg", "--bg-subtle", "--bg-inset", "--surface", "--surface-hover", "--surface-raised", "--content-bg"];
+const GROUNDS = ["--bg", "--bg-subtle", "--bg-inset", "--surface", "--surface-hover", "--surface-raised"];
 
 function block(selector: string): Record<string, [number, number, number]> {
   const start = CSS.indexOf(`${selector} {`);

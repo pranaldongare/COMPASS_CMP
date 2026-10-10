@@ -152,10 +152,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         />
 
         {/* Inert under the open drawer: not reachable by Tab, not read out. */}
-        {/* The page sits on one grey rounded panel (2026-10-10); its cards
-            and tables are white on it. */}
+        {/* The page sits on one white rounded panel (2026-10-10); its cards
+            and tables are grey on it. */}
         <main id="main" inert={mobileOpen} className="min-w-0 flex-1 px-3 py-4 lg:px-5">
-          <div className="min-h-[calc(100dvh-6rem)] rounded-2xl border border-border bg-[var(--content-bg)] px-4 py-6 sm:px-6 lg:px-8">
+          <div className="min-h-[calc(100dvh-6rem)] rounded-2xl border border-border bg-surface px-4 py-6 shadow-[var(--shadow-card)] sm:px-6 lg:px-8">
             {children}
           </div>
         </main>
@@ -183,10 +183,9 @@ function Header({
   const apple = useIsApple();
 
   return (
-    // The indigo frame across the top, like the sidebar (2026-10-10): inside
-    // `.frame-scope` the colour tokens are the frame's, so the logo, search,
-    // buttons and user menu read as on a dark surface.
-    <header className="frame-top frame-scope no-print sticky top-0 z-30">
+    // White across the top, like the sidebar (2026-10-10): the page's
+    // surface and a hairline.
+    <header className="no-print sticky top-0 z-30 border-b border-border bg-surface">
       <div className="flex h-16 w-full items-center gap-3 px-4 sm:px-6">
         <Button
           variant="ghost"
@@ -207,11 +206,11 @@ function Header({
           aria-label={config.productName}
           className="group flex shrink-0 items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]"
         >
-          <BrandMark className="size-7 text-[var(--frame-accent)]" />
+          <BrandMark className="size-7 text-accent-text" />
           <span className="leading-none">
             <span className="block text-lg font-bold tracking-tight">
-              <span className="text-[var(--frame-accent)]">{config.productName.slice(0, 3)}</span>
-              <span className="text-text">{config.productName.slice(3)}</span>
+              <span className="text-accent-text">{config.productName.slice(0, 3)}</span>
+              <span className="text-text-muted">{config.productName.slice(3)}</span>
             </span>
           </span>
         </Link>

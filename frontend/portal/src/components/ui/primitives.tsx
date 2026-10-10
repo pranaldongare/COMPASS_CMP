@@ -126,7 +126,8 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-lg border border-border bg-surface shadow-[var(--shadow-card)]",
+        // Grey on the white page (2026-10-10); fields inside stay white.
+        "rounded-lg border border-border bg-bg-subtle shadow-[var(--shadow-card)]",
         className,
       )}
       {...props}
@@ -381,7 +382,7 @@ export function EmptyState({
 /* ===================================================================== Table */
 export function Table({ className, ...props }: React.TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="scroll-x rounded-lg border border-border bg-surface shadow-[var(--shadow-card)]">
+    <div className="scroll-x rounded-lg border border-border bg-bg-subtle shadow-[var(--shadow-card)] [--scroll-bg:var(--bg-subtle)]">
       <table className={cn("w-full text-sm", className)} {...props} />
     </div>
   );
@@ -415,7 +416,7 @@ export function Tr({ className, ...props }: React.HTMLAttributes<HTMLTableRowEle
     <tr
       className={cn(
         // Every other row a step of grey, so the eye keeps its line.
-        "transition-colors even:bg-bg-subtle hover:bg-bg-inset",
+        "transition-colors even:bg-bg-inset/45 hover:bg-bg-inset",
         // The last row's own border would double the container's.
         "last:[&>td]:border-b-0",
         className,
