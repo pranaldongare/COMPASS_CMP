@@ -126,9 +126,9 @@ function Header({
   mobileOpen: boolean;
 }) {
   return (
-    // White across the top, like the sidebar (2026-10-10): the page's
-    // surface and a hairline.
-    <header className="no-print sticky top-0 z-30 border-b border-border bg-surface">
+    // White across the top, like the sidebar (2026-10-10): a hairline, and
+    // `.frame-light` keeps it white in dark mode too.
+    <header className="frame-light no-print sticky top-0 z-30 border-b border-border bg-surface">
       <div className="flex h-16 w-full items-center gap-3 px-4 sm:px-6">
         <Button
           variant="ghost"
@@ -204,8 +204,9 @@ function Sidebar({
         id="sidebar-nav"
         aria-label="Main"
         className={cn(
-          // White down the left (2026-10-10), with a hairline against the page.
-          "no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
+          // White down the left (2026-10-10), with a hairline against the page;
+          // `.frame-light` keeps it white in dark mode too.
+          "frame-light no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-[var(--sidebar-bg)] text-[var(--sidebar-text)]",
           "lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)]",
           mobileOpen
             ? "fixed top-16 bottom-0 left-0 flex overflow-y-auto shadow-[var(--shadow-pop)]"

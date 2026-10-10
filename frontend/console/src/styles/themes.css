@@ -11,7 +11,11 @@
    against its own surface.
    =========================================================================== */
 
-:root {
+/* `.frame-light` (2026-10-10): the top bar and sidebar are white in both
+   themes, so in dark mode they take this light palette - every token, so
+   whatever sits inside them reads as on white. */
+:root,
+.dark .frame-light {
   /* Surfaces step in small, even increments so stacked panels read as layers
      rather than as a set of unrelated greys. A faint blue cast keeps the
      neutrals from looking dead next to the blue accent. The page sits a step
@@ -105,6 +109,11 @@
   --viz-neutral: oklch(72% 0.008 258);
   --viz-track: oklch(93% 0.006 258);
   --viz-grid: oklch(90% 0.006 258);
+}
+
+.dark .frame-light {
+  color: var(--text);
+  color-scheme: light;
 }
 
 /* ----------------------------------------------------------------- dark mode */

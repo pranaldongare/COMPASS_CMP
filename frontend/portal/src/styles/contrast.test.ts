@@ -16,7 +16,10 @@ const TEXT = ["--text", "--text-muted", "--text-subtle"];
 const GROUNDS = ["--bg", "--bg-subtle", "--bg-inset", "--surface", "--surface-hover", "--surface-raised"];
 
 function block(selector: string): Record<string, [number, number, number]> {
-  const start = CSS.indexOf(`${selector} {`);
+  // The light block is also `.dark .frame-light`, so match a selector at
+  // the start of a line followed by its brace or a comma.
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const start = CSS.search(new RegExp(`^${escaped}(?: \\{|,)`, "m"));
   const body = CSS.slice(start, CSS.indexOf("\n}", start));
   const tokens: Record<string, [number, number, number]> = {};
   for (const m of body.matchAll(/(--[\w-]+):\s*oklch\(([\d.]+)%\s+([\d.]+)\s+([\d.]+)\)/g)) {
