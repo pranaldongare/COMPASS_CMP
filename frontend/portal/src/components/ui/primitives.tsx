@@ -381,9 +381,14 @@ export function EmptyState({
 }
 
 /* ===================================================================== Table */
+/*
+ * Clean lines (2026-10-10, chosen from three table styles): no card and no
+ * fills - small capital headings over a firm rule, roomy rows split by
+ * hairlines, and a blue marker on the row under the pointer.
+ */
 export function Table({ className, ...props }: React.TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="scroll-x rounded-lg border border-border bg-surface shadow-[var(--shadow-card)]">
+    <div className="scroll-x">
       <table className={cn("w-full text-sm", className)} {...props} />
     </div>
   );
@@ -394,11 +399,8 @@ export function Th({ className, ...props }: React.ThHTMLAttributes<HTMLTableCell
     <th
       scope="col"
       className={cn(
-        // The sidebar's type (2026-10-10): Inter at 13px, medium, sentence
-        // case - not the tiny capitals - on a grey band.
-        "px-4 py-2.5 text-left text-[0.8125rem] font-medium",
-        "text-text-muted border-b border-border bg-[var(--table-head)] whitespace-nowrap",
-        "first:rounded-tl-lg last:rounded-tr-lg",
+        "px-3.5 py-2.5 text-left text-2xs font-semibold tracking-[0.07em] uppercase",
+        "whitespace-nowrap text-text-subtle border-b-2 border-border",
         className,
       )}
       {...props}
@@ -408,7 +410,10 @@ export function Th({ className, ...props }: React.ThHTMLAttributes<HTMLTableCell
 
 export function Td({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <td className={cn("px-4 py-3 border-b border-border align-middle", className)} {...props} />
+    <td
+      className={cn("px-3.5 py-4 border-b border-border/70 align-middle", className)}
+      {...props}
+    />
   );
 }
 
@@ -416,9 +421,8 @@ export function Tr({ className, ...props }: React.HTMLAttributes<HTMLTableRowEle
   return (
     <tr
       className={cn(
-        "transition-colors even:bg-[var(--row-alt)] hover:bg-[var(--row-hover)]",
-        // The last row's own border would double the container's.
-        "last:[&>td]:border-b-0",
+        "transition-colors hover:bg-[var(--row-hover)]",
+        "hover:[&>td:first-child]:shadow-[inset_3px_0_0_var(--accent)]",
         className,
       )}
       {...props}

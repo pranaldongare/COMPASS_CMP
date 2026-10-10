@@ -8,6 +8,10 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Clean-lines tables** (2026-10-10, chosen from three table styles): every
+  table in both apps sits open on the page - no card, no fills, no
+  alternating rows - with small capital headings over a firm rule, roomy
+  rows split by hairlines, and a blue marker on the row under the pointer.
 - **No floating dev buttons** (2026-10-10): the Next.js dev indicator ("N",
   bottom-left) is off in both apps (`devIndicators: false`; errors still
   show), and the TanStack Query devtools button is opt-in through
