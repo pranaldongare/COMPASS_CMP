@@ -284,3 +284,15 @@ export function locate(
   }
   return null;
 }
+
+/** The menu icon of a destination's own page, whoever is signed in - for the
+ *  tile beside a page's title (2026-10-10). Only an exact match: a record
+ *  under a destination is not that destination's page. */
+export function iconForPage(pathname: string): NavItem["icon"] | undefined {
+  for (const section of SECTIONS) {
+    for (const item of section.items) {
+      if (item.href === pathname) return item.icon;
+    }
+  }
+  return undefined;
+}

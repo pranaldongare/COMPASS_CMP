@@ -170,6 +170,7 @@ function AuditPage() {
       />
 
       <ResourceList<AuditEntry>
+        pageSize={50}
         query={query}
         stack={stack}
         caption="Audit entries, most recent first"

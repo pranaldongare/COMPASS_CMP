@@ -21,7 +21,7 @@ import {
   useFilterParam,
 } from "@/components/data-display/resource-list";
 import { EmptyConsent } from "@/components/ui/graphics";
-import { Button, Td, Tr } from "@/components/ui/primitives";
+import { Button, Td, Tr, PersonCell } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { useAllConsents } from "@/features/consent";
 import { useSites } from "@/features/projects";
@@ -143,13 +143,18 @@ function ConsentsPageView() {
         row={(c) => (
           <Tr>
             <Td>
-              <Link
-                href={`/consents/${c.consent_uuid}`}
-                className="font-medium text-text hover:text-accent-text hover:underline"
-              >
-                {c.subject_name}
-              </Link>
-              <p className="mt-0.5 text-xs text-text-subtle">{c.subject_email}</p>
+              <PersonCell
+                label={c.subject_name}
+                name={
+                  <Link
+                    href={`/consents/${c.consent_uuid}`}
+                    className="font-medium text-text hover:text-accent-text hover:underline"
+                  >
+                    {c.subject_name}
+                  </Link>
+                }
+                secondary={c.subject_email}
+              />
             </Td>
             <Td>
               <Link

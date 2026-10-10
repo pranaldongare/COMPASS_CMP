@@ -69,6 +69,8 @@ function useRerender(): () => void {
 export function useCursorStack(): {
   cursor: string | undefined;
   canGoBack: boolean;
+  /** 1 for the first page: how many pages back the cursor stack goes, plus one. */
+  page: number;
   next: (cursor: string | null) => void;
   back: () => void;
   reset: () => void;
@@ -81,6 +83,7 @@ export function useCursorStack(): {
   return {
     cursor,
     canGoBack: previous.length > 0,
+    page: previous.length + 1,
     next: (c) => {
       writeUrl((p) => {
         p.append(PREVIOUS, p.get(CURSOR) ?? "");
@@ -474,6 +477,7 @@ export function ResourceList<T>({
   empty,
   stack,
   keyOf,
+  pageSize = 25,
 }: {
   query: {
     data?: Page<T>;
@@ -493,6 +497,8 @@ export function ResourceList<T>({
   };
   stack: ReturnType<typeof useCursorStack>;
   keyOf: (item: T) => string;
+  /** The `limit` the page asks for, to number the rows and pages. */
+  pageSize?: number;
 }) {
   const items = query.data?.items ?? [];
   const rowKeys = items.map(keyOf);
@@ -548,8 +554,16 @@ export function ResourceList<T>({
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <p className="tabular text-xs text-text-subtle">
-          Showing {items.length}
-          {query.data?.total != null && ` of ${query.data.total}`}
+          {/* "Showing 26-50 of 312" (2026-10-10): where this page sits. */}
+          Showing{" "}
+          <span className="font-medium text-text-muted">
+            {(stack.page - 1) * pageSize + 1}–{(stack.page - 1) * pageSize + items.length}
+          </span>
+          {query.data?.total != null && (
+            <>
+              {" "}of <span className="font-medium text-text-muted">{query.data.total}</span>
+            </>
+          )}
           {query.isFetching && (
             <span className="ml-2 inline-flex items-center gap-1.5 text-accent-text">
               <span
@@ -560,7 +574,7 @@ export function ResourceList<T>({
             </span>
           )}
         </p>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <Button
             variant="secondary"
             size="sm"
@@ -570,6 +584,14 @@ export function ResourceList<T>({
             <ChevronLeft aria-hidden="true" />
             Previous
           </Button>
+          <span className="grid h-8 min-w-8 place-items-center rounded-md bg-accent px-2.5 text-xs font-semibold text-accent-contrast tabular">
+            {stack.page}
+          </span>
+          {query.data?.total != null && query.data.total > pageSize && (
+            <span className="self-center text-xs text-text-subtle tabular">
+              of {Math.max(1, Math.ceil(query.data.total / pageSize))}
+            </span>
+          )}
           <Button
             variant="secondary"
             size="sm"

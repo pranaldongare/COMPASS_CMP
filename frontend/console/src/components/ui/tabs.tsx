@@ -105,7 +105,8 @@ export function TabList({
       aria-label={label}
       onKeyDown={onKeyDown}
       className={cn(
-        "scroll-x mb-6 flex gap-1 border-b border-border [--scroll-bg:var(--bg)]",
+        // Pill tabs in a soft tray (2026-10-10; they were underlined).
+        "scroll-x mb-6 flex w-fit max-w-full gap-1 rounded-lg border border-border bg-bg-subtle p-1 [--scroll-bg:var(--bg-subtle)]",
         // The row scrolls sideways on a phone rather than wrapping into a
         // second line of tabs that reads as a second level.
         "[&::-webkit-scrollbar]:hidden",
@@ -162,12 +163,12 @@ export function Tab({
       disabled={disabled}
       onClick={() => onValueChange(value)}
       className={cn(
-        "relative -mb-px inline-flex shrink-0 items-center gap-2 border-b-2 px-3.5 py-2.5 text-sm whitespace-nowrap",
-        "transition-colors outline-none focus-visible:rounded-t-lg focus-visible:bg-bg-inset",
+        "relative inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-1.5 text-sm whitespace-nowrap",
+        "transition-[background-color,color,box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]",
         "disabled:cursor-not-allowed disabled:opacity-50",
         active
-          ? "border-accent font-semibold text-accent-text"
-          : "border-transparent text-text-muted hover:border-border-strong hover:text-text",
+          ? "bg-surface font-medium text-text shadow-[var(--shadow-xs)] ring-1 ring-border"
+          : "text-text-muted hover:bg-surface/60 hover:text-text",
       )}
     >
       {Icon && <Icon className="size-4" aria-hidden="true" />}

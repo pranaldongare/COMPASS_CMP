@@ -54,3 +54,9 @@ test-results/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Local copies of third-party design references (Dribbble shots). Other
+# designers' copyrighted work: kept on this machine for study, never committed
+# to this public repository. docs/frontend/design-references.md links to the
+# originals instead.
+docs/frontend/design-references/

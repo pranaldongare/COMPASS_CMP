@@ -442,6 +442,73 @@ export function DescriptionItem({
   );
 }
 
+/* ==================================================================== Avatar */
+/** Soft fills for initials, picked by name so a person keeps one colour. */
+const AVATAR_TONES = [
+  "bg-accent-subtle text-accent-text",
+  "bg-success-subtle text-success-text",
+  "bg-warning-subtle text-warning-text",
+  "bg-info-subtle text-info-text",
+  "bg-danger-subtle text-danger-text",
+  "bg-bg-inset text-text-muted",
+];
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  const first = parts[0][0] ?? "";
+  const last = parts.length > 1 ? (parts[parts.length - 1][0] ?? "") : "";
+  return (first + last).toUpperCase();
+}
+
+/**
+ * A person's initials in a soft circle (2026-10-10), beside their name in a
+ * table or list. Decorative: the name next to it is what is read out.
+ */
+export function Avatar({ name, size = "md", className }: { name: string; size?: "sm" | "md"; className?: string }) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
+  const tone = AVATAR_TONES[Math.abs(hash) % AVATAR_TONES.length];
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "inline-grid shrink-0 place-items-center rounded-full font-semibold",
+        size === "sm" ? "size-6 text-[0.625rem]" : "size-8 text-xs",
+        tone,
+        className,
+      )}
+    >
+      {initials(name)}
+    </span>
+  );
+}
+
+/**
+ * Avatar, name and a muted second line: how a person reads in a register.
+ * `name` is a node so the caller can make it the row's link.
+ */
+export function PersonCell({
+  name,
+  label,
+  secondary,
+}: {
+  name: React.ReactNode;
+  /** The plain name, for the initials. */
+  label: string;
+  secondary?: React.ReactNode;
+}) {
+  return (
+    <span className="flex min-w-0 items-center gap-3">
+      <Avatar name={label} />
+      <span className="min-w-0">
+        <span className="block truncate">{name}</span>
+        {secondary && <span className="block truncate text-xs text-text-subtle">{secondary}</span>}
+      </span>
+    </span>
+  );
+}
+
 /* ================================================================= Monospace */
 /** For hashes, uuids and tokens: things that are compared character by character. */
 export function Mono({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {

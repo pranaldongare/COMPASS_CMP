@@ -8,6 +8,16 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Reference look across both apps** (2026-10-10,
+  [design references](docs/frontend/design-references.md)). Pages sit on one
+  white rounded panel over a grey canvas, the header and menu around it; the
+  current menu item is a white pill. Every destination's title has an icon
+  tile; record tabs are pills in a tray. People in the Users, Consents and
+  Rights requests registers have initials avatars; lists end with "Showing
+  26-50 of 312" and the page number. The portal gets the same shell and the
+  COMPASS lockup, and My consents no longer opens on one line per nominee
+  action: they are one summary line, and the strip shows three lines until
+  asked for more.
 - **Console redesign, first pass** (2026-10-10,
   [implementation plan](docs/frontend/implementation-plan.md)). One COMPASS
   blue from sign-in to every page (no indigo gradient), the Inter font served

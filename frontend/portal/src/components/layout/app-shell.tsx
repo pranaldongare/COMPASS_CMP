@@ -108,8 +108,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         />
 
         {/* Inert under the open drawer: not reachable by Tab, not read out. */}
-        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
-          {children}
+        {/* The page on one white rounded panel over the grey canvas, as in
+            the console (2026-10-10). */}
+        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 px-3 pb-4 sm:px-4 lg:pr-6 lg:pl-1">
+          <div className="min-h-[calc(100dvh-5rem)] rounded-2xl border border-border bg-surface px-4 py-6 shadow-[var(--shadow-card)] sm:px-6 lg:px-8">
+            {children}
+          </div>
         </main>
       </div>
     </div>
@@ -124,8 +128,8 @@ function Header({
   mobileOpen: boolean;
 }) {
   return (
-    <header className="glass no-print sticky top-0 z-30 border-b border-border">
-      <div className="mx-auto flex h-14 w-full max-w-[1600px] items-center gap-3 px-4 sm:px-6 lg:px-8">
+    <header className="no-print sticky top-0 z-30 bg-bg/95 backdrop-blur-sm">
+      <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-3 px-4 sm:px-6 lg:px-8">
         <Button
           variant="ghost"
           size="icon"
@@ -138,20 +142,22 @@ function Header({
           {mobileOpen ? <X /> : <Menu />}
         </Button>
 
+        {/* The COMPASS lockup, as on the sign-in screen and the console. */}
         <Link
           href="/my-consents"
-          className="group flex items-center gap-2.5 rounded-lg font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-subtle)]"
+          aria-label={`${config.productName} - ${config.appName}`}
+          className="group flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]"
         >
-          <span className="brand-gradient grid size-8 place-items-center rounded-lg shadow-[var(--shadow-sm)] transition-shadow group-hover:shadow-[var(--shadow-glow)]">
-            <BrandMark className="size-5 text-white" />
-          </span>
-          <span className="hidden leading-tight sm:block">
-            <span className="block text-sm">{config.appName}</span>
-            <span className="block text-2xs font-normal text-text-subtle">
-              DPDP Act 2023
+          <BrandMark className="size-7 text-accent-text" />
+          <span className="leading-none">
+            <span className="block text-lg font-bold tracking-tight">
+              <span className="text-accent-text">{config.productName.slice(0, 3)}</span>
+              <span className="text-text-muted">{config.productName.slice(3)}</span>
+            </span>
+            <span className="mt-0.5 hidden text-2xs font-medium tracking-wide text-text-subtle sm:block">
+              {config.appName}
             </span>
           </span>
-          <span className="text-sm sm:hidden">CMP</span>
         </Link>
 
         <div className="flex-1" />
@@ -201,10 +207,10 @@ function Sidebar({
         id="sidebar-nav"
         aria-label="Main"
         className={cn(
-          "no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-surface/70",
-          "lg:sticky lg:top-14 lg:h-[calc(100dvh-3.5rem)]",
+          "no-print z-20 flex w-64 shrink-0 flex-col bg-bg",
+          "lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)]",
           mobileOpen
-            ? "fixed inset-y-14 left-0 flex overflow-y-auto bg-surface shadow-[var(--shadow-pop)]"
+            ? "fixed inset-y-16 left-0 flex overflow-y-auto bg-surface shadow-[var(--shadow-pop)]"
             : "hidden lg:flex",
         )}
       >
@@ -232,11 +238,11 @@ function Sidebar({
                         href={item.href}
                         aria-current={active ? "page" : undefined}
                         className={cn(
-                          "group relative flex items-center gap-2.5 rounded-lg py-2 pl-3 pr-2 text-sm",
+                          "group relative flex items-center gap-2.5 rounded-md py-2 pl-3 pr-2 text-sm",
                           "transition-[background-color,color] duration-150",
                           active
-                            ? "bg-accent-subtle font-medium text-accent-text"
-                            : "text-text-muted hover:bg-bg-inset hover:text-text",
+                            ? "bg-surface font-medium text-text shadow-[var(--shadow-xs)] ring-1 ring-border"
+                            : "text-text-muted hover:bg-surface/70 hover:text-text",
                         )}
                       >
                         {/* The rail. Position is the primary signal here -
@@ -247,7 +253,7 @@ function Sidebar({
                           className={cn(
                             "absolute inset-y-1.5 left-0 w-0.5 rounded-full transition-opacity",
                             active
-                              ? "brand-gradient opacity-100"
+                              ? "bg-accent opacity-100"
                               : "bg-border-strong opacity-0 group-hover:opacity-100",
                           )}
                         />
@@ -268,7 +274,7 @@ function Sidebar({
           ))}
         </div>
 
-        <div className="rule-fade shrink-0 border-t border-border p-3">
+        <div className="shrink-0 border-t border-border bg-bg p-3">
           <Button
             variant="ghost"
             className="w-full justify-start px-3 text-text-muted"
@@ -291,6 +297,7 @@ export function PageHeader({
   actions,
   breadcrumb,
   eyebrow,
+  icon,
 }: {
   title: string;
   description?: string;
@@ -298,27 +305,40 @@ export function PageHeader({
   breadcrumb?: React.ReactNode;
   /** A short kicker above the title - the section this page belongs to. */
   eyebrow?: string;
+  /** The tile beside the title. Defaults to the menu item's icon on a
+   *  destination's own page (2026-10-10); `null` for none. */
+  icon?: React.ComponentType<{ className?: string }> | null;
 }) {
+  const pathname = usePathname();
+  const fromMenu = SECTIONS.flatMap((s) => s.items).find((item) => item.href === pathname)?.icon;
+  const Icon = icon === null ? undefined : (icon ?? fromMenu);
   return (
-    <div className="mb-6">
+    <div className="mb-5">
       {breadcrumb && <div className="mb-2 text-sm text-text-muted">{breadcrumb}</div>}
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          {eyebrow && (
-            <p className="mb-1 text-2xs font-semibold uppercase tracking-wider text-accent-text">
-              {eyebrow}
-            </p>
+        <div className="flex min-w-0 items-start gap-4">
+          {Icon && (
+            <span
+              aria-hidden="true"
+              className="grid size-12 shrink-0 place-items-center rounded-xl border border-accent-border bg-accent-subtle text-accent-text shadow-[var(--shadow-xs)]"
+            >
+              <Icon className="size-6" />
+            </span>
           )}
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-          {description && (
-            <p className="mt-1.5 max-w-2xl text-sm text-text-muted">{description}</p>
-          )}
+          <div className="min-w-0">
+            {eyebrow && (
+              <p className="mb-1 text-2xs font-semibold uppercase tracking-wider text-accent-text">
+                {eyebrow}
+              </p>
+            )}
+            <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+            {description && (
+              <p className="mt-1 max-w-3xl text-sm text-text-muted">{description}</p>
+            )}
+          </div>
         </div>
         {actions && <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">{actions}</div>}
       </div>
-      {/* A hairline that fades out to the right: it closes the header without
-          drawing a hard box around every page. */}
-      <div aria-hidden="true" className="rule-fade mt-5 h-px" />
     </div>
   );
 }

@@ -25,7 +25,7 @@ import {
 import { PageHeader } from "@/components/layout/app-shell";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyRecords } from "@/components/ui/graphics";
-import { Button, Mono, Td, Tr } from "@/components/ui/primitives";
+import { Button, Mono, Td, Tr, PersonCell } from "@/components/ui/primitives";
 import { REQUEST_TYPE_COPY, RequestStatusBadge, RequestTypeBadge } from "@/features/rights/components/copy";
 import { UnreadBadge } from "@/components/data-display/thread";
 import { LogRequestForm } from "@/features/rights/components/log-request-form";
@@ -165,8 +165,11 @@ function RequestsPageView() {
               )}
             </Td>
             <Td>
-              <p className="text-sm">{r.subject_name ?? r.submitted_name ?? "Unmatched contact"}</p>
-              <p className="text-xs text-text-subtle">{r.submitted_contact}</p>
+              <PersonCell
+                label={r.subject_name ?? r.submitted_name ?? "?"}
+                name={<span className="text-sm">{r.subject_name ?? r.submitted_name ?? "Unmatched contact"}</span>}
+                secondary={r.submitted_contact}
+              />
             </Td>
             <Td>
               <RequestTypeBadge type={r.request_type} />

@@ -12,6 +12,7 @@
 
 import { ArrowRight, Download, Scale, UserRound } from "lucide-react";
 import Link from "next/link";
+import * as React from "react";
 
 import { useMyNominations, useMyRequests, useNominationsNamingMe } from "@/features/rights/queries";
 import { formatDate } from "@/lib/format";
@@ -69,16 +70,29 @@ export function HomeStrip() {
       tone: "quiet",
     });
   }
-  for (const n of nominations.data ?? []) {
-    if (n.invoked_at) {
-      lines.push({
-        key: `inv-${n.nomination_uuid}`,
-        icon: <UserRound className="size-4" aria-hidden="true" />,
-        text: `${n.nominee_name} acted for you on ${formatDate(n.invoked_at)}, reporting ${n.invoked_event === "death" ? "that you have died" : "that you cannot act"}${n.invoked_reference ? ` (${n.invoked_reference})` : ""}.`,
-        href: "/my-nominations",
-        tone: "attention",
-      });
-    }
+  // A nominee who acted is one line however often (2026-10-10): one per
+  // action buried her consents under a column of near-identical sentences.
+  const acted = (nominations.data ?? [])
+    .filter((n) => n.invoked_at)
+    .sort((a, b) => (b.invoked_at ?? "").localeCompare(a.invoked_at ?? ""));
+  if (acted.length === 1) {
+    const n = acted[0]!;
+    lines.push({
+      key: `inv-${n.nomination_uuid}`,
+      icon: <UserRound className="size-4" aria-hidden="true" />,
+      text: `${n.nominee_name} acted for you on ${formatDate(n.invoked_at)}, reporting ${n.invoked_event === "death" ? "that you have died" : "that you cannot act"}${n.invoked_reference ? ` (${n.invoked_reference})` : ""}.`,
+      href: "/my-nominations",
+      tone: "attention",
+    });
+  } else if (acted.length > 1) {
+    const latest = acted[0]!;
+    lines.push({
+      key: "inv-many",
+      icon: <UserRound className="size-4" aria-hidden="true" />,
+      text: `Your nominees acted for you ${acted.length} times; the latest was ${latest.nominee_name} on ${formatDate(latest.invoked_at)}.`,
+      href: "/my-nominations",
+      tone: "attention",
+    });
   }
   for (const n of naming.data ?? []) {
     if (n.status === "pending") {
@@ -93,9 +107,20 @@ export function HomeStrip() {
   }
 
   if (lines.length === 0) return null;
+  return <Strip lines={lines} />;
+}
+
+/** At most three lines until she asks for the rest: the strip is a summary
+ *  above her consents, not a page of its own. */
+const SHOWN = 3;
+
+function Strip({ lines }: { lines: Line[] }) {
+  const [all, setAll] = React.useState(false);
+  const shown = all ? lines : lines.slice(0, SHOWN);
   return (
-    <ul className="mb-6 divide-y divide-border rounded-xl border border-border bg-surface" data-testid="home-strip">
-      {lines.map((l) => (
+    <div className="mb-6 overflow-hidden rounded-xl border border-border bg-surface shadow-[var(--shadow-xs)]">
+    <ul className="divide-y divide-border" data-testid="home-strip">
+      {shown.map((l) => (
         <li key={l.key}>
           <Link href={l.href} className="group flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-surface-hover">
             <span className={l.tone === "attention" ? "text-accent-text" : "text-text-subtle"}>{l.icon}</span>
@@ -105,5 +130,15 @@ export function HomeStrip() {
         </li>
       ))}
     </ul>
+      {lines.length > SHOWN && (
+        <button
+          type="button"
+          onClick={() => setAll(!all)}
+          className="w-full border-t border-border px-4 py-2 text-left text-sm font-medium text-accent-text hover:bg-surface-hover"
+        >
+          {all ? "Show fewer" : `Show all ${lines.length}`}
+        </button>
+      )}
+    </div>
   );
 }

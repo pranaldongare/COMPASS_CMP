@@ -33,7 +33,7 @@ import {
   rememberVisit,
   useCommandPaletteShortcut,
 } from "@/components/layout/command-palette";
-import { labelFor, locate, sectionsFor, sidebarFor, type NavSection } from "@/components/layout/nav";
+import { iconForPage, labelFor, locate, sectionsFor, sidebarFor, type NavSection } from "@/components/layout/nav";
 import { HelpLink } from "@/components/layout/help-link";
 import { useDrawer } from "@/components/layout/use-drawer";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -151,8 +151,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         />
 
         {/* Inert under the open drawer: not reachable by Tab, not read out. */}
-        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
-          {children}
+        {/* The page sits on one white rounded panel over the grey canvas
+            (2026-10-10), the sidebar and header around it. */}
+        <main id="main" inert={mobileOpen} className="min-w-0 flex-1 px-3 pb-4 sm:px-4 lg:pr-6 lg:pl-1">
+          <div className="min-h-[calc(100dvh-5rem)] rounded-2xl border border-border bg-surface px-4 py-6 shadow-[var(--shadow-card)] sm:px-6 lg:px-8">
+            {children}
+          </div>
         </main>
       </div>
 
@@ -178,7 +182,9 @@ function Header({
   const apple = useIsApple();
 
   return (
-    <header className="no-print sticky top-0 z-30 border-b border-border bg-surface">
+    // On the grey canvas, like the sidebar: the white panel below is the page
+    // (2026-10-10).
+    <header className="no-print sticky top-0 z-30 bg-bg/95 backdrop-blur-sm">
       <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-3 px-4 sm:px-6 lg:px-8">
         <Button
           variant="ghost"
@@ -355,7 +361,7 @@ function Sidebar({
         aria-label="Main"
         data-collapsed={folded || undefined}
         className={cn(
-          "no-print z-20 flex w-64 shrink-0 flex-col border-r border-border bg-surface",
+          "no-print z-20 flex w-64 shrink-0 flex-col bg-bg",
           "lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:transition-[width] lg:duration-200",
           folded && "lg:w-[4.25rem]",
           mobileOpen
@@ -403,9 +409,10 @@ function Sidebar({
                         "group relative flex items-center gap-2.5 rounded-md py-2 pr-2 pl-3 text-sm",
                         "transition-[background-color,color] duration-150",
                         folded && "lg:justify-center lg:px-0",
+                        // Active: a white pill lifted off the canvas.
                         active
-                          ? "bg-accent-subtle font-medium text-accent-text"
-                          : "text-text-muted hover:bg-bg-inset hover:text-text",
+                          ? "bg-surface font-medium text-text shadow-[var(--shadow-xs)] ring-1 ring-border"
+                          : "text-text-muted hover:bg-surface/70 hover:text-text",
                       )}
                     >
                       {/* The rail. Position is the primary signal here -
@@ -446,7 +453,7 @@ function Sidebar({
           className={cn(
             // Solid: the footer is a block of its own, never a veil over the
             // last links.
-            "shrink-0 space-y-0.5 border-t border-border bg-surface",
+            "shrink-0 space-y-0.5 border-t border-border bg-bg",
             folded ? "lg:p-2.5" : "p-3",
           )}
         >
@@ -553,6 +560,7 @@ export function PageHeader({
   actions,
   breadcrumb,
   eyebrow,
+  icon,
 }: {
   title: string;
   description?: string;
@@ -560,12 +568,26 @@ export function PageHeader({
   breadcrumb?: React.ReactNode;
   /** A short kicker above the title - the section this page belongs to. */
   eyebrow?: string;
+  /** The tile beside the title. Defaults to the menu item's icon on a
+   *  destination's own page (2026-10-10); `null` for none. */
+  icon?: React.ComponentType<{ className?: string }> | null;
 }) {
+  const pathname = usePathname();
+  const Icon = icon === null ? undefined : (icon ?? iconForPage(pathname ?? ""));
   return (
     <div className="mb-5">
       {breadcrumb && <div className="mb-2 text-sm text-text-muted">{breadcrumb}</div>}
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-start gap-4">
+          {Icon && (
+            <span
+              aria-hidden="true"
+              className="grid size-12 shrink-0 place-items-center rounded-xl border border-accent-border bg-accent-subtle text-accent-text shadow-[var(--shadow-xs)]"
+            >
+              {React.createElement(Icon, { className: "size-6" })}
+            </span>
+          )}
+          <div className="min-w-0">
           {eyebrow && (
             <p className="mb-1 text-2xs font-semibold tracking-wider text-accent-text uppercase">
               {eyebrow}
@@ -582,6 +604,7 @@ export function PageHeader({
               {description}
             </p>
           )}
+          </div>
         </div>
         {actions && (
           <div

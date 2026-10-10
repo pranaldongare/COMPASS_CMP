@@ -29,7 +29,7 @@ import { RoleChangeForm, UserForm } from "@/features/users/components/forms";
 import { ConfirmDialog, Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyRecords } from "@/components/ui/graphics";
 import { RowActions } from "@/components/ui/overlay";
-import { Alert, Button, Td, Tr, Skeleton } from "@/components/ui/primitives";
+import { Alert, Button, Td, Tr, Skeleton, PersonCell } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { useEnums } from "@/features/meta";
 import { useDeactivateUser, useReactivateUser, useUsers } from "@/features/users";
@@ -198,10 +198,15 @@ function UsersPageView() {
         row={(u) => (
           <Tr>
             <Td>
-              <Link href={`/users/${u.uuid}`} className="font-medium text-text hover:text-accent-text hover:underline">
-                {u.full_name}
-              </Link>
-              <p className="mt-0.5 text-xs text-text-subtle">{u.email}</p>
+              <PersonCell
+                label={u.full_name}
+                name={
+                  <Link href={`/users/${u.uuid}`} className="font-medium text-text hover:text-accent-text hover:underline">
+                    {u.full_name}
+                  </Link>
+                }
+                secondary={u.email ?? u.mobile}
+              />
             </Td>
             <Td>
               <StatusBadge kind="role" value={u.role} dot={false} />
