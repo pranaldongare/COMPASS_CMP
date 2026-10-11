@@ -47,7 +47,13 @@ test.describe("data subject", () => {
 
   test("her own sections still work", async ({ page }) => {
     // The guard must not have locked her out of her own product.
-    for (const path of ["/my-consents", "/my-requests", "/account", "/notifications"]) {
+    for (const path of [
+      "/home",
+      "/my-consents",
+      "/my-requests",
+      "/account",
+      "/notifications",
+    ]) {
       await page.goto(path);
       await expect(page.getByText(/not part of your account/i)).toHaveCount(0);
     }

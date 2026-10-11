@@ -5,7 +5,7 @@
  *
  * - **A data principal already signed in**, from a bookmark or an old
  *   email: she was shown the form and could sign in a second time. She
- *   belongs on the page she was after, or her consents.
+ *   belongs on the page she was after, or her home.
  * - **A member of staff**, whose session is shared with the console when
  *   both run on one host, or who is halfway through the console's second
  *   factor. Nothing here is for them: a full session goes to the console, a
@@ -44,7 +44,7 @@ function Gate({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (state.status === "full") {
       if (state.me.role === "data_subject") {
-        router.replace(next || "/my-consents");
+        router.replace(next || "/home");
       } else {
         // Another origin; the router cannot take them there.
         window.location.replace(new URL("/dashboard", config.staffPortalUrl).toString());

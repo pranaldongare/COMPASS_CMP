@@ -42,7 +42,7 @@ describe("RequireAge", () => {
     expect(screen.queryByText("Your notifications")).not.toBeInTheDocument();
   });
 
-  it.each(["/my-consents", "/my-consents/abc", "/my-requests"])(
+  it.each(["/home", "/my-consents", "/my-consents/abc", "/my-requests"])(
     "leaves %s open, with a reminder",
     (path) => {
       pathname = path;
@@ -54,7 +54,7 @@ describe("RequireAge", () => {
       );
       expect(screen.getByText("The page")).toBeInTheDocument();
       expect(screen.getByText(/we need your date of birth/i)).toBeInTheDocument();
-      // To a page that asks. The home page only redirects to My consents.
+      // To a page that asks. The root only redirects to Home, which does not.
       expect(screen.getByRole("link", { name: /add it now/i })).toHaveAttribute("href", "/account");
     },
   );

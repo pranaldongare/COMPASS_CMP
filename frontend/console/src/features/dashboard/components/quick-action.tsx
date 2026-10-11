@@ -15,7 +15,8 @@
  */
 "use client";
 
-import { Plus, ShieldAlert, UserPlus } from "lucide-react";
+import { Database, Link2, Plus, ShieldAlert, UserPlus } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
@@ -27,7 +28,7 @@ import { ProjectForm } from "@/features/projects/components";
 import { UserForm } from "@/features/users/components/forms";
 import type { Me } from "@/types";
 
-type Action = "incident" | "project" | "account";
+type Action = "incident" | "project" | "account" | "link" | "source";
 
 function actionFor(me: Me | null | undefined): Action | null {
   if (!me) return null;
@@ -36,6 +37,11 @@ function actionFor(me: Me | null | undefined): Action | null {
   if (me.writes.includes("breach")) return "incident";
   if (me.role === "rnd_user") return "project";
   if (me.role === "admin") return "account";
+  // The collection roles' starts (2026-10-10, the role-dashboard design): a
+  // DCO Admin registers a source; a DCO or RCO issues a consent link from the
+  // links register, where a link is minted for a chosen site.
+  if (me.role === "dco_admin" && me.nav.includes("sources")) return "source";
+  if ((me.role === "dco" || me.role === "rco") && me.nav.includes("links")) return "link";
   return null;
 }
 
@@ -49,8 +55,22 @@ export function QuickAction({ me }: { me: Me | null | undefined }) {
     incident: { label: "Log an incident", icon: ShieldAlert },
     project: { label: "Register a project", icon: Plus },
     account: { label: "Provision an account", icon: UserPlus },
+    link: { label: "New consent link", icon: Link2 },
+    source: { label: "Register a data source", icon: Database },
   }[action];
   const Icon = copy.icon;
+
+  // These two start on their own register, which holds the form.
+  if (action === "link" || action === "source") {
+    return (
+      <Button variant="primary" asChild>
+        <Link href={action === "link" ? "/links" : "/sources?new=1"}>
+          <Icon className="size-4" />
+          {copy.label}
+        </Link>
+      </Button>
+    );
+  }
 
   return (
     <>

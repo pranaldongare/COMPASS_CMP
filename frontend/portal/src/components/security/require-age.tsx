@@ -9,7 +9,8 @@
  * the answer - except the ones a person must always be able to reach.
  * Withdrawing a consent is not a consent, and neither is exercising a right, so
  * `/my-consents`, `/my-requests` and `/my-nominations` stay open without it and
- * carry a reminder instead.
+ * carry a reminder instead - and so does `/home`, which only summarises them
+ * and is where she lands after signing in.
  *
  * `is_minor` is the server's answer, derived from `minor_until`: **null means
  * unknown, not adult**. A known child is not held here - the server refuses
@@ -40,7 +41,9 @@ import { EARLIEST_DOB, dateOfBirth, today } from "@/schemas/primitives";
 // My nominations too: the nomination cards lived on My requests until October
 // 2026, and acting for someone, or arranging who acts for you, must not wait
 // on a date of birth any more than a request does.
-const ALWAYS_OPEN = ["/my-consents", "/my-requests", "/my-nominations"] as const;
+// Home too (2026-10-11): it is where sign-in lands, and it shows only what
+// those three pages show.
+const ALWAYS_OPEN = ["/home", "/my-consents", "/my-requests", "/my-nominations"] as const;
 
 function alwaysOpen(pathname: string): boolean {
   return ALWAYS_OPEN.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -60,7 +63,7 @@ export function RequireAge({ children }: { children: React.ReactNode }) {
           You can withdraw a consent or make a request without it, but we need it before you
           give a new consent.{" "}
           {/* The account page is held for the answer, so it asks there. The
-              home page only redirects to My consents, which does not. */}
+              root only redirects to Home, which does not. */}
           <Link href="/account" className="underline underline-offset-2">
             Add it now
           </Link>

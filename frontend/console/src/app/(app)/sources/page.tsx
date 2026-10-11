@@ -69,7 +69,14 @@ export default function SourcesPage() {
   const unowned = unownedFlag === "1";
   const setUnmapped = (on: boolean) => setUnmappedFlag(on ? "1" : "");
   const setUnowned = (on: boolean) => setUnownedFlag(on ? "1" : "");
-  const [creating, setCreating] = React.useState(false);
+  // `?new=1` opens the register form - the DCO Admin's dashboard button
+  // (2026-10-10) lands here.
+  const [newParam, setNewParam] = useFilterParam("new");
+  const [creating, setCreatingState] = React.useState(newParam === "1");
+  const setCreating = (open: boolean) => {
+    setCreatingState(open);
+    if (!open && newParam) setNewParam("");
+  };
   const [editing, setEditing] = React.useState<DataSource | null>(null);
   const [assigning, setAssigning] = React.useState<DataSource | null>(null);
   const suspend = useSuspendSource();

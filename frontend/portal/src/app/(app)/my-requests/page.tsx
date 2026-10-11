@@ -18,7 +18,7 @@
 
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
@@ -43,7 +43,15 @@ export default function MyRequestsPage() {
   // once, as where the page starts; after that the person is in charge.
   const params = useSearchParams();
   const named = params.get("request");
-  const [asking, setAsking] = React.useState(false);
+  const router = useRouter();
+  // `?new=1` opens the form: the home page's "Make a request" lands here.
+  // Read once, like `?request=`; closing the form drops it from the address
+  // so a reload does not open it again.
+  const [asking, setAsking] = React.useState(params.get("new") === "1");
+  function stopAsking() {
+    setAsking(false);
+    if (params.get("new")) router.replace("/my-requests", { scroll: false });
+  }
   const [open, setOpen] = React.useState<string | null>(named);
   const [flash, setFlash] = React.useState<string | null>(named);
   const { byUuid, followers } = relate(requests.data ?? []);
@@ -152,14 +160,14 @@ export default function MyRequestsPage() {
         .
       </p>
 
-      <Dialog open={asking} onOpenChange={(next) => !next && setAsking(false)}>
+      <Dialog open={asking} onOpenChange={(next) => !next && stopAsking()}>
         <DialogContent
           title="Make a request"
           description="You are signed in, so this counts as verified and the clock starts now."
         >
           <MyRequestForm
             onDone={(created) => {
-              setAsking(false);
+              stopAsking();
               setOpen(created.request_uuid);
             }}
           />

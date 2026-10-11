@@ -44,7 +44,7 @@ export const SECTIONS: HelpSection[] = [
           "On the [[Sign in]] page click [[Register]], beside the title.",
           "Fill in [[Full name]], [[Mobile number]], [[Email address]] (optional) and [[Date of birth]], then click [[Create account]].",
           "On [[Confirm your contacts]], type the code sent to your mobile and, if you gave one, the code sent to your email.",
-          "Click [[Confirm and sign in]]. You land on [[My consents]].",
+          "Click [[Confirm and sign in]]. You land on [[Home]].",
         ],
       },
       {
@@ -69,6 +69,7 @@ export const SECTIONS: HelpSection[] = [
           "On the [[Sign in]] page choose [[Mobile]] or [[Email]] under [[Sign in with]].",
           "Type the number or address you registered with and click [[Send me a code]].",
           "Type the six-digit code in [[Six-digit code]] and click [[Verify]].",
+          "You land on [[Home]]: your consents, your requests and your latest updates on one page. Each figure and row opens the record behind it, and [[Make a request]] is at the top.",
         ],
       },
       {

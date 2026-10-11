@@ -46,6 +46,7 @@ import {
 import { ConsentScope } from "@/features/rights/components/consent-scope";
 import { RequestTypeBadge, dueCopy } from "@/features/rights/components/copy";
 import { myMessageAttachmentUrl } from "@/features/rights/api";
+import { BREACH_TICKETS_ANCHOR, HolderHome } from "@/features/breach/components/holder-home";
 import { BreachTicketCard } from "@/features/breach/components/my-breach-tickets";
 import { useMyBreachTickets } from "@/features/breach/queries";
 import { ReplyBox, Thread, UnreadBadge } from "@/components/data-display/thread";
@@ -55,6 +56,7 @@ import { useMessageOffice, useReturnMyTicket } from "@/features/rights/mutations
 import { useMyTicket, useMyTickets } from "@/features/rights/queries";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { useToast } from "@/providers";
+import { useOptionalAuth } from "@/providers/auth-provider";
 import type { MyTicket, ReturnOutcome, TicketState } from "@/types";
 import { RETURN_OUTCOME_COPY } from "@/types";
 
@@ -70,6 +72,11 @@ export default function TicketsPage() {
 function TicketsInner() {
   const tickets = useMyTickets();
   const breach = useMyBreachTickets();
+  const me = useOptionalAuth()?.me;
+  // A breach-only login (S3-09) has no dashboard; this page is its home, so
+  // it opens with a summary of its breach tickets (2026-10-11). The server's
+  // `nav` decides, as on the dashboard that sends it here.
+  const holderHome = Boolean(me && !me.nav.includes("dashboard") && breach.data && breach.data.length > 0);
   // A link from the dashboard queue, the bell or a mail opens the ticket it names.
   const params = useSearchParams();
   const wanted = params.get("ticket");
@@ -98,14 +105,22 @@ function TicketsInner() {
         description="What the Privacy Office has asked of you: tickets on rights requests and on personal data breaches. Answer each by its date; the office reviews your answer."
       />
 
+      {holderHome && me && <HolderHome tickets={breach.data ?? []} name={me.full_name} />}
+
       {breach.data && breach.data.length > 0 && (
-        <section className="mb-8 space-y-3" aria-label="Breach tickets">
+        <section id={BREACH_TICKETS_ANCHOR} className="mb-8 scroll-mt-6 space-y-3" aria-label="Breach tickets">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-text-subtle">
             <ShieldAlert className="size-4" aria-hidden="true" />
             Breach tickets · {breachOpen.length} open
           </h2>
           {[...breachOpen, ...breachDone].map((t) => (
-            <BreachTicketCard key={t.ticket_uuid} ticket={t} openAtFirst={t.ticket_uuid === wantedBreach} />
+            // Keyed on being the one asked for, so a link from the summary
+            // above - the same page, a new address - opens it.
+            <BreachTicketCard
+              key={t.ticket_uuid === wantedBreach ? `${t.ticket_uuid}:wanted` : t.ticket_uuid}
+              ticket={t}
+              openAtFirst={t.ticket_uuid === wantedBreach}
+            />
           ))}
         </section>
       )}

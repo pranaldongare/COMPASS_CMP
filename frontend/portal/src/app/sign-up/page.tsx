@@ -220,9 +220,9 @@ function VerifyStep({ mobile, email }: { mobile: string; email: string | null })
    * them on their consents afterwards would leave them to find that link again
    * - which at a collection site means asking somebody to re-open it. It is
    * attacker-controlled, being whatever was in the URL, so only a same-origin
-   * path survives `safeRedirectPath`; anything else becomes her consents.
+   * path survives `safeRedirectPath`; anything else becomes her home.
    */
-  const next = safeRedirectPath(params.get("next"), "/my-consents");
+  const next = safeRedirectPath(params.get("next"), "/home");
   const router = useRouter();
   const { refresh } = useAuth();
   const [mobileCode, setMobileCode] = React.useState("");

@@ -18,10 +18,10 @@ export default function NotFound() {
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Link
-            href="/my-consents"
+            href="/home"
             className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-contrast hover:bg-accent-hover"
           >
-            Go to My consents
+            Go to Home
           </Link>
           <Link
             href="/rights"

@@ -69,7 +69,7 @@ setup(`sign in as ${SUBJECT.role}`, async ({ page, context, browser }) => {
   await page.getByLabel(/six-digit code/i).fill(await freshCode(SUBJECT.contact, before));
   await page.getByRole("button", { name: /^verify$/i }).click();
 
-  await page.waitForURL(/\/my-consents/, { timeout: 20_000 });
+  await page.waitForURL(/\/home/, { timeout: 20_000 });
 
   fs.mkdirSync(STATE_DIR, { recursive: true });
   await context.storageState({ path: statePath(SUBJECT.role) });

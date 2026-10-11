@@ -31,6 +31,7 @@ export function StatTile({
   label,
   value,
   hint,
+  hintTone = "neutral",
   tone = "neutral",
   icon,
   tint,
@@ -40,6 +41,9 @@ export function StatTile({
   label: string;
   value: number | string;
   hint?: string;
+  /** The hint's chip colour on a tinted tile (2026-10-10): green for good
+   *  news, red for late, amber for due soon, grey otherwise. */
+  hintTone?: "good" | "bad" | "warn" | "neutral";
   /** `attention` is for a count that is a problem when non-zero. */
   tone?: "neutral" | "accent" | "attention";
   icon?: React.ReactNode;
@@ -63,6 +67,62 @@ export function StatTile({
       "cursor-pointer hover:border-accent-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-subtle)]",
     className,
   );
+
+  // The dashboard's figure (2026-10-10, the role-dashboard design): the icon
+  // tile beside the label, a large figure, the hint as a coloured chip, and a
+  // blue - or, when it needs action, amber - edge along the top.
+  if (tint) {
+    const tinted = (
+      <>
+        <div className="flex items-center gap-2.5">
+          <span
+            aria-hidden="true"
+            className={cn(
+              "grid size-9 shrink-0 place-items-center rounded-[11px] text-white [&_svg]:size-[1.125rem]",
+              `tile-${tint}`,
+            )}
+          >
+            {icon}
+          </span>
+          <p className="text-[0.8125rem] leading-tight font-medium text-text-muted">{label}</p>
+        </div>
+        <p className="mt-3 text-[1.875rem] leading-none font-bold tracking-tight tabular text-text">
+          {shown}
+        </p>
+        <p className="mt-2 min-h-5">
+          {hint && (
+            <span
+              className={cn(
+                "inline-flex rounded-full px-2 py-0.5 text-[0.6875rem] font-bold",
+                hintTone === "good" && "bg-success-subtle text-success-text",
+                hintTone === "bad" && "bg-danger-subtle text-danger-text",
+                hintTone === "warn" && "bg-warning-subtle text-warning-text",
+                hintTone === "neutral" && "bg-bg-inset text-text-muted",
+              )}
+            >
+              {hint}
+            </span>
+          )}
+        </p>
+      </>
+    );
+    const tintedClasses = cn(
+      "lift group relative block h-full overflow-hidden rounded-2xl border border-border bg-surface px-[18px] pt-4 pb-3.5",
+      tone === "attention"
+        ? "shadow-[inset_0_3px_0_var(--warning),var(--shadow-xs)]"
+        : "shadow-[inset_0_3px_0_var(--accent),var(--shadow-xs)]",
+      href &&
+        "cursor-pointer hover:border-accent-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-subtle)]",
+      className,
+    );
+    return href ? (
+      <Link href={href} className={tintedClasses}>
+        {tinted}
+      </Link>
+    ) : (
+      <div className={tintedClasses}>{tinted}</div>
+    );
+  }
 
   const body = (
     <>
@@ -284,6 +344,90 @@ export function StackedBar({
   );
 }
 
+/* ==================================================================== donut */
+
+/**
+ * A whole in its parts, as a ring (2026-10-10, the role-dashboard design):
+ * the total in the middle and a legend beside it with each part's count and
+ * share. A part too small to see keeps a sliver so it is still on the ring.
+ */
+export function Donut({
+  segments,
+  centreLabel = "records",
+}: {
+  segments: Array<{ key: string; label: string; value: number; color: string; href?: string }>;
+  centreLabel?: string;
+}) {
+  const total = segments.reduce((sum, s) => sum + s.value, 0);
+  const r = 60;
+  const circumference = 2 * Math.PI * r;
+  const shown = segments.filter((s) => s.value > 0);
+  // Each arc starts where the ones before it end.
+  const arcs = shown.map((s, i) => {
+    const before = shown.slice(0, i).reduce((sum, p) => sum + p.value, 0);
+    return {
+      key: s.key,
+      color: s.color,
+      length: Math.max((s.value / Math.max(total, 1)) * circumference - 2, 1.2),
+      offset: (before / Math.max(total, 1)) * circumference,
+    };
+  });
+  return (
+    <div className="grid items-center gap-6 sm:grid-cols-[9.5rem_minmax(0,1fr)]">
+      <div className="relative mx-auto size-[9.5rem]">
+        <svg viewBox="0 0 150 150" className="size-full" aria-hidden="true">
+          <circle cx="75" cy="75" r={r} fill="none" stroke="var(--viz-track)" strokeWidth="16" />
+          {arcs.map((a) => (
+            <circle
+              key={a.key}
+              cx="75"
+              cy="75"
+              r={r}
+              fill="none"
+              stroke={a.color}
+              strokeWidth="16"
+              strokeDasharray={`${a.length} ${circumference - a.length}`}
+              strokeDashoffset={-a.offset}
+              transform="rotate(-90 75 75)"
+            />
+          ))}
+        </svg>
+        <div className="absolute inset-0 grid place-items-center text-center">
+          <div>
+            <p className="text-2xl font-bold tabular">{total.toLocaleString("en-IN")}</p>
+            <p className="text-xs text-text-subtle">{centreLabel}</p>
+          </div>
+        </div>
+      </div>
+      <ul className="grid gap-2.5 text-[0.8125rem]">
+        {segments.map((s) => {
+          const share = total ? Math.round((s.value / total) * 100) : 0;
+          const row = (
+            <>
+              <span aria-hidden="true" className="size-2.5 rounded-[3px]" style={{ background: s.color }} />
+              <span className="truncate">{s.label}</span>
+              <span className="text-right font-semibold tabular">{s.value.toLocaleString("en-IN")}</span>
+              <span className="text-right text-xs text-text-subtle tabular">{share}%</span>
+            </>
+          );
+          const grid = "grid grid-cols-[0.75rem_minmax(0,1fr)_auto_2.75rem] items-center gap-2";
+          return (
+            <li key={s.key}>
+              {s.href ? (
+                <Link href={s.href} className={cn(grid, "-mx-1.5 rounded-md px-1.5 py-0.5 hover:bg-surface-hover")}>
+                  {row}
+                </Link>
+              ) : (
+                <div className={grid}>{row}</div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 /* ==================================================== ranked magnitude bars */
 
 /**
@@ -309,23 +453,21 @@ export function BarList({
   return (
     <ul className="space-y-2.5">
       {items.map((item) => {
+        // Label, track and figure on one line (2026-10-10), so a column of
+        // bars reads as a table.
         const row = (
-          <>
-            <div className="flex items-baseline justify-between gap-3 text-sm">
-              <span className="truncate text-text-muted group-hover:text-text">
-                {item.label}
-              </span>
-              <span className="font-medium tabular text-text">
-                {item.value.toLocaleString("en-IN")}
-              </span>
-            </div>
-            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--viz-track)]">
+          <div className="grid grid-cols-[7.5rem_minmax(0,1fr)_2.5rem] items-center gap-3 text-[0.8125rem]">
+            <span className="truncate text-text-muted group-hover:text-text">{item.label}</span>
+            <div className="h-2 overflow-hidden rounded-full bg-[var(--viz-track)]">
               <div
-                className="grow-x h-full rounded-full bg-[var(--viz-2)]"
-                style={{ width: `${(item.value / max) * 100}%` }}
+                className="grow-x h-full rounded-full bg-linear-to-r from-accent to-[#4a90d9]"
+                style={{ width: `${Math.max(4, (item.value / max) * 100)}%` }}
               />
             </div>
-          </>
+            <span className="text-right font-semibold tabular text-text">
+              {item.value.toLocaleString("en-IN")}
+            </span>
+          </div>
         );
 
         return (

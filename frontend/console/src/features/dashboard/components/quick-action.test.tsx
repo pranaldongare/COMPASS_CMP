@@ -23,31 +23,59 @@ vi.mock("@/providers", () => ({
 
 describe("QuickAction", () => {
   it("gives the DPO Log an incident, which opens the form there", async () => {
-    const { user } = render(<QuickAction me={makeMe({ role: "dpo", writes: ["breach", "notice"] })} />);
+    const { user } = render(
+      <QuickAction me={makeMe({ role: "dpo", writes: ["breach", "notice"] })} />,
+    );
     await user.click(screen.getByRole("button", { name: "Log an incident" }));
     expect(screen.getByRole("dialog", { name: "Log an incident" })).toBeInTheDocument();
   });
 
   it("gives the DPO a notice template beside it, which opens the template form", async () => {
-    const { user } = render(<QuickAction me={makeMe({ role: "dpo", writes: ["breach", "notice"] })} />);
+    const { user } = render(
+      <QuickAction me={makeMe({ role: "dpo", writes: ["breach", "notice"] })} />,
+    );
     await user.click(screen.getByRole("button", { name: "New notice template" }));
     expect(screen.getByRole("dialog", { name: "New notice template" })).toBeInTheDocument();
   });
 
   it("gives an R&D user Register a project and an administrator Provision an account", () => {
-    const { unmount } = render(<QuickAction me={makeMe({ role: "rnd_user", writes: ["project"] })} />);
+    const { unmount } = render(
+      <QuickAction me={makeMe({ role: "rnd_user", writes: ["project"] })} />,
+    );
     expect(screen.getByRole("button", { name: "Register a project" })).toBeInTheDocument();
     unmount();
     render(<QuickAction me={makeMe({ role: "admin", writes: ["user"] })} />);
-    expect(screen.getByRole("button", { name: "Provision an account" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "New notice template" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Provision an account" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "New notice template" }),
+    ).not.toBeInTheDocument();
   });
 
-  it("gives the collection roles nothing to start without a project or a site", () => {
-    for (const role of ["dco", "dco_admin", "rco"] as const) {
-      const { container, unmount } = render(<QuickAction me={makeMe({ role, writes: ["link", "site"] })} />);
-      expect(container).toBeEmptyDOMElement();
+  // Nothing is created from here without its site or processor (the reason
+  // these roles once had no button): the button opens the register where that
+  // choice is made (2026-10-10, the role-dashboard design).
+  it("sends the collection roles to the register they start from", () => {
+    for (const [role, label, href] of [
+      ["dco", /new consent link/i, "/links"],
+      ["rco", /new consent link/i, "/links"],
+      ["dco_admin", /register a data source/i, "/sources?new=1"],
+    ] as const) {
+      const { unmount } = render(
+        <QuickAction
+          me={makeMe({ role, writes: ["link", "site"], nav: ["dashboard", "links", "sources"] })}
+        />,
+      );
+      expect(screen.getByRole("link", { name: label })).toHaveAttribute("href", href);
       unmount();
     }
+  });
+
+  it("gives a collection role nothing when its register is not open to it", () => {
+    const { container } = render(
+      <QuickAction me={makeMe({ role: "dco", writes: [], nav: ["dashboard"] })} />,
+    );
+    expect(container).toBeEmptyDOMElement();
   });
 });

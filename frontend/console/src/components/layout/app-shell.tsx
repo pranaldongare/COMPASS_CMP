@@ -526,7 +526,7 @@ export function PageHeader({
     <div
       className={cn(
         "mb-5",
-        hero && "hero-line mb-6 overflow-hidden rounded-2xl border border-border px-6 py-6 shadow-[var(--shadow-card)] sm:px-7",
+        hero && "hero-line mb-4 overflow-hidden rounded-[18px] border border-border px-6 py-6 shadow-[var(--shadow-xs)] sm:px-7",
       )}
     >
       {/* The pill trail (2026-10-10); a page's own back link at its end. */}
@@ -538,20 +538,41 @@ export function PageHeader({
       {/* On a desk the actions keep their place at the right (2026-10-10):
           the heading gives way - its line clamps - rather than pushing them
           down under it. */}
-      <div className="flex flex-wrap items-start justify-between gap-3 lg:flex-nowrap">
+      <div
+        className={cn(
+          "flex flex-wrap justify-between gap-3 lg:flex-nowrap",
+          hero ? "items-center" : "items-start",
+        )}
+      >
         <div className="flex min-w-0 items-start gap-4 lg:flex-1">
           <div className="min-w-0">
           {eyebrow && (
-            <p className="mb-1 text-2xs font-semibold tracking-wider text-accent-text uppercase">
+            <p
+              className={cn(
+                "font-semibold text-accent-text uppercase",
+                hero ? "mb-1 text-[0.6875rem] tracking-[0.09em]" : "mb-1 text-2xs tracking-wider",
+              )}
+            >
               {eyebrow}
             </p>
           )}
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          <h1
+            className={cn(
+              "font-semibold tracking-tight",
+              hero ? "text-[1.625rem] leading-tight font-bold" : "text-2xl",
+            )}
+          >
+            {title}
+          </h1>
+          {/* The greeting's one line (2026-10-10, the role-dashboard design). */}
+          {hero && description && (
+            <p className="mt-1 text-[0.8125rem] text-text-muted">{description}</p>
+          )}
           </div>
         </div>
         {actions && (
           <div
-            className="flex max-w-full min-w-0 flex-wrap items-center gap-2 lg:shrink-0 lg:flex-nowrap"
+            className="relative flex max-w-full min-w-0 flex-wrap items-center gap-2.5 lg:shrink-0 lg:flex-nowrap"
             data-testid="page-actions"
           >
             {actions}

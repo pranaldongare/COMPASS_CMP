@@ -303,7 +303,7 @@ test.describe("nominee", () => {
     await page.getByRole("button", { name: /send me a code/i }).click();
     await page.getByLabel(/six-digit code/i).fill(await freshCode(NOMINEE, before));
     await page.getByRole("button", { name: /^verify$/i }).click();
-    await page.waitForURL(/\/my-consents/, { timeout: 20_000 });
+    await page.waitForURL(/\/home/, { timeout: 20_000 });
 
     await page.goto("/my-nominations");
     const card = page.getByTestId("nominee-of");

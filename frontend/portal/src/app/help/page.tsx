@@ -38,7 +38,7 @@ function Help() {
           from
             ? { href: from, label: "Back to where you were" }
             : signedIn
-              ? { href: "/my-consents", label: "Back to your consents" }
+              ? { href: "/home", label: "Back to Home" }
               : { href: "/sign-in", label: "Sign in" }
         }
       />

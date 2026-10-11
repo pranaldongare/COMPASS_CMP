@@ -12,8 +12,11 @@
  * On the charts: a count that a chart already explains is not repeated as a
  * tile. The project lifecycle is a magnitude comparison across named stages, so
  * it is a one-hue bar list; the consent position is part-to-whole, so it is a
- * single direct-labelled stacked bar. Nothing here is a pie, and nothing is a
- * one-bar bar chart pretending a number needs a plot.
+ * ring with a direct-labelled legend (2026-10-10, the role-dashboard design).
+ *
+ * The layout is the approved role-dashboard design: a greeting banner with the
+ * date and the role's start, four figures, then Needs attention beside the
+ * position on a 12-column grid, the queues two to a row, and recent activity.
  */
 "use client";
 
@@ -22,9 +25,11 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
-import { BarList, StackedBar } from "@/components/ui/charts";
+import { CalendarDays, FileCheck, FolderKanban } from "lucide-react";
 
-import { Alert, Card, CardBody, CardHeader, CardTitle } from "@/components/ui/primitives";
+import { BarList, Donut } from "@/components/ui/charts";
+import { PanelHeader } from "@/components/ui/panel";
+import { Alert, Card, CardBody } from "@/components/ui/primitives";
 
 import { useDashboard } from "@/features/dashboard";
 import {
@@ -40,7 +45,7 @@ import {
 } from "@/features/dashboard/components";
 import { KpiRow } from "@/features/dashboard/components/kpi-row";
 import { QuickAction } from "@/features/dashboard/components/quick-action";
-import { humanise } from "@/lib/format";
+import { statusLabel } from "@/components/ui/status";
 import { useAuth } from "@/providers";
 
 export default function DashboardPage() {
@@ -49,7 +54,9 @@ export default function DashboardPage() {
   // An account the server gives no dashboard - a breach-only login (S3-09) -
   // lands on its tickets instead. Every way home leads here, so this is the
   // one place to send it on; the server's `nav` decides, not a role list.
-  const elsewhere = Boolean(me && !me.nav.includes("dashboard") && me.nav.includes("tickets"));
+  const elsewhere = Boolean(
+    me && !me.nav.includes("dashboard") && me.nav.includes("tickets"),
+  );
   React.useEffect(() => {
     if (elsewhere) router.replace("/tickets");
   }, [elsewhere, router]);
@@ -67,19 +74,71 @@ export default function DashboardPage() {
   const busy = queues.filter((q) => q.items.length > 0);
   const clear = queues.filter((q) => q.items.length === 0).map((q) => q.name);
   // Sign-ins are the administrator's business; for everyone else they bury
-  // the events that mean something. Eight is a glance, the trail is the rest.
+  // the events that mean something. Five is a glance, the trail is the rest.
   const recent = (data?.recent ?? [])
     .filter((e) => me?.role === "admin" || !e.event_type.startsWith("auth."))
-    .slice(0, 8);
+    .slice(0, 5);
+
+  // The position card beside Needs attention: the consent ring where the role
+  // has one, the project stages otherwise. A DPO has both; the stages then
+  // join the queues below rather than stacking a second card here.
+  const consentCard = composition && (
+    <Card className="flex h-full flex-col overflow-hidden rounded-2xl">
+      <PanelHeader
+        icon={FileCheck}
+        tint={2}
+        title="Consent position"
+        link={
+          me?.nav.includes("consents") ? { href: "/consents", label: "Open" } : undefined
+        }
+      />
+      <CardBody className="flex flex-1 items-center px-[22px] py-[18px]">
+        <div className="w-full">
+          <Donut segments={composition.segments} centreLabel="records" />
+        </div>
+      </CardBody>
+    </Card>
+  );
+  const stagesCard = lifecycle.length > 0 && (
+    <Card className="flex h-full flex-col overflow-hidden rounded-2xl">
+      <PanelHeader
+        icon={FolderKanban}
+        title="Projects by stage"
+        link={{ href: "/projects", label: "Open" }}
+      />
+      <CardBody className="flex flex-1 flex-col justify-center gap-3 px-[18px]">
+        <BarList items={lifecycle} emptyLabel="No projects registered yet." />
+        <p className="text-xs text-text-subtle">
+          A project moves one way through these stages; only an approved one may collect
+          consent.
+        </p>
+      </CardBody>
+    </Card>
+  );
+  const position = consentCard || stagesCard;
+  const today = new Intl.DateTimeFormat("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date());
 
   return (
     <>
       <PageHeader
         hero
-        eyebrow={me ? humanise(me.role) : undefined}
+        eyebrow={me ? statusLabel("role", me.role) : undefined}
         title={me ? `Good day, ${me.full_name.split(" ")[0]}` : "Dashboard"}
         description={roleBlurb(me?.role)}
-        actions={<QuickAction me={me} />}
+        actions={
+          <>
+            <span className="hidden h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 text-xs whitespace-nowrap text-text-muted md:inline-flex">
+              <CalendarDays className="size-3.5" aria-hidden="true" />
+              {today}
+            </span>
+            <QuickAction me={me} />
+          </>
+        }
       />
 
       {error && (
@@ -91,62 +150,41 @@ export default function DashboardPage() {
       {isLoading && <DashboardSkeleton />}
 
       {data && (
-        <div className="space-y-6">
-          {/* The summary first (2026-10-10): four figures for this role. Then,
-              side by side on a desk, what needs a decision today and the
-              position it sits in. Then the queues that hold the work. */}
+        <div className="space-y-4">
           <KpiRow role={me?.role} counts={counts} />
 
-          <div className="grid items-start gap-6 xl:grid-cols-3">
-            <div className="xl:col-span-2">
+          {/* Needs attention beside the position: seven and five of twelve,
+              the two cards one height. */}
+          <div className="grid items-stretch gap-4 lg:grid-cols-12">
+            <div className={position ? "lg:col-span-7" : "lg:col-span-12"}>
               <AttentionList rows={data.attention ?? []} />
             </div>
-
-            {(lifecycle.length > 0 || composition) && (
-              <div className="space-y-6" aria-label="The position">
-                {composition && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Consent position</CardTitle>
-                    </CardHeader>
-                    <CardBody>
-                      <StackedBar
-                        segments={composition.segments}
-                        caption="Every record counted once, at its current state."
-                      />
-                    </CardBody>
-                  </Card>
-                )}
-                {lifecycle.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Projects by stage</CardTitle>
-                    </CardHeader>
-                    <CardBody>
-                      <BarList items={lifecycle} emptyLabel="No projects registered yet." />
-                      <p className="mt-4 text-xs text-text-subtle">
-                        A project moves in one direction through these stages. Only an
-                        approved project may collect consent.
-                      </p>
-                    </CardBody>
-                  </Card>
-                )}
+            {position && (
+              <div className="lg:col-span-5" aria-label="The position">
+                {position}
               </div>
             )}
           </div>
 
-          <OpenBreaches breaches={data.breaches ?? []} />
-
-          {busy.map((queue) => (
-            <QueueCard
-              key={queue.name}
-              name={queue.name}
-              items={queue.items}
-              slug={queue.slug}
-              href={queue.href}
-              capped={queue.capped}
-            />
-          ))}
+          {/* The queues, two to a row, each card the height of its pair. */}
+          {(busy.length > 0 ||
+            (data.breaches?.length ?? 0) > 0 ||
+            (consentCard && stagesCard)) && (
+            <div className="grid items-stretch gap-4 lg:grid-cols-2">
+              <OpenBreaches breaches={data.breaches ?? []} />
+              {busy.map((queue) => (
+                <QueueCard
+                  key={queue.name}
+                  name={queue.name}
+                  items={queue.items}
+                  slug={queue.slug}
+                  href={queue.href}
+                  capped={queue.capped}
+                />
+              ))}
+              {consentCard && stagesCard}
+            </div>
+          )}
           <ClearQueues names={clear} />
 
           {/* Rendered even when empty: the panel's empty state says activity
@@ -163,4 +201,3 @@ export default function DashboardPage() {
     </>
   );
 }
-

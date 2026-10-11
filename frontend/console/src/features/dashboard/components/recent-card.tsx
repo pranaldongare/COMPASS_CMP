@@ -12,10 +12,11 @@
  */
 "use client";
 
-import Link from "next/link";
+import { Clock } from "lucide-react";
 
 import { ActivityFeed } from "@/components/data-display/activity-feed";
-import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/primitives";
+import { PanelHeader } from "@/components/ui/panel";
+import { Card, CardBody } from "@/components/ui/primitives";
 import type { AuditEntry } from "@/types";
 
 export function RecentCard({
@@ -30,19 +31,13 @@ export function RecentCard({
   seeAllHref?: string;
 }) {
   return (
-    <Card>
-      <CardHeader className="flex items-center justify-between gap-3">
-        <CardTitle>Recent activity</CardTitle>
-        {seeAllHref && (
-          <Link
-            href={seeAllHref}
-            className="text-xs text-accent-text underline-offset-4 hover:underline"
-          >
-            Full audit trail
-          </Link>
-        )}
-      </CardHeader>
-      <CardBody>
+    <Card className="overflow-hidden rounded-2xl">
+      <PanelHeader
+        icon={Clock}
+        title="Recent activity"
+        link={seeAllHref ? { href: seeAllHref, label: "Audit trail" } : undefined}
+      />
+      <CardBody className="px-[18px] py-3">
         <ActivityFeed
           entries={items}
           isLoading={isLoading}

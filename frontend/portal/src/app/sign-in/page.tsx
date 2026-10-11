@@ -243,8 +243,8 @@ function SubjectVerifyForm({ contact, next }: { contact: string; next: string | 
       await verifyOtp({ contact, code });
       await refresh();
       // `next` is attacker-controlled - it is whatever was in the link that
-      // sent them here. Anything not a same-origin path becomes her consents.
-      router.replace(safeRedirectPath(next, "/my-consents"));
+      // sent them here. Anything not a same-origin path becomes her home.
+      router.replace(safeRedirectPath(next, "/home"));
     } catch (err) {
       setError(err instanceof ApiError ? err.userMessage() : "Verification failed.");
     } finally {

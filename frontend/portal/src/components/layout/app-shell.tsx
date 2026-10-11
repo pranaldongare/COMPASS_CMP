@@ -8,7 +8,8 @@
  * each key leads in this deployment.
  *
  * The sidebar groups those destinations into sections. A section renders only
- * when the server has granted at least one item inside it.
+ * when the server has granted at least one item inside it. Home, the summary
+ * of the rest, has no key of its own: every signed-in person has one.
  */
 "use client";
 
@@ -36,8 +37,9 @@ import { useAuth } from "@/providers";
 
 interface NavItem {
   /** Must match a value in `me.nav`, which the server computes from the
-   *  permission matrix. Anything not in that list is not rendered. */
-  key: string;
+   *  permission matrix. Anything not in that list is not rendered. None for
+   *  Home, which summarises the others and is everybody's. */
+  key?: string;
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -52,6 +54,9 @@ const SECTIONS: NavSection[] = [
   {
     title: "Your data",
     items: [
+      // The portal's home (2026-10-11): what she agreed to and what she
+      // asked for, on one page, each figure opening the page below it.
+      { href: "/home", label: "Home", icon: House },
       // The server's "consents" and "requests" keys. On the staff console the
       // same keys lead to the registers; here they lead to her own records.
       { key: "consents", href: "/my-consents", label: "My consents", icon: FileText },
@@ -83,7 +88,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // did not grant.
   const sections = SECTIONS.map((section) => ({
     ...section,
-    items: section.items.filter((item) => me?.nav.includes(item.key)),
+    items: section.items.filter((item) => !item.key || me?.nav.includes(item.key)),
   })).filter((section) => section.items.length > 0);
 
   return (
@@ -121,7 +126,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 function Lockup() {
   return (
     <Link
-      href="/my-consents"
+      href="/home"
       aria-label={config.productName}
       className="group flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]"
     >
@@ -265,12 +270,11 @@ function Sidebar({
   );
 }
 
-/** The steps to this page from My consents, the portal's home: the menu
- *  destination it sits under, then the page itself when it is a record under
- *  it. None on the home page. */
+/** The steps to this page from Home: the menu destination it sits under, then
+ *  the page itself when it is a record under it. None on the home page. */
 function trailFor(pathname: string, title: string): Crumb[] {
-  if (pathname === "/my-consents" || pathname === "/") return [];
-  const home: Crumb = { label: "My consents", href: "/my-consents", icon: House };
+  if (pathname === "/home" || pathname === "/") return [];
+  const home: Crumb = { label: "Home", href: "/home", icon: House };
   const dest = SECTIONS.flatMap((s) => s.items)
     .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
     .sort((a, b) => b.href.length - a.href.length)[0];

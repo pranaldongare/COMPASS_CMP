@@ -97,3 +97,18 @@ describe("a folded request card", () => {
     expect(screen.getByRole("button", { name: /download the file/i })).toBeInTheDocument();
   });
 });
+
+describe("Make a request from Home", () => {
+  it("opens the form when the link asks for it (`?new=1`)", async () => {
+    window.history.replaceState(null, "", "/my-requests?new=1");
+    render(<MyRequestsPage />);
+    expect(await screen.findByRole("dialog", { name: /make a request/i })).toBeInTheDocument();
+  });
+
+  it("does not open it otherwise", async () => {
+    window.history.replaceState(null, "", "/my-requests");
+    render(<MyRequestsPage />);
+    await screen.findByText(NEWER.reference);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+});

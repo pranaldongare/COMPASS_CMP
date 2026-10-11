@@ -35,7 +35,10 @@ describe("QueueCard", () => {
   });
 
   it("does not call a capped queue complete", () => {
-    const items = Array.from({ length: 25 }, (_, i) => ({ project_uuid: `p-${i}`, project_name: `P${i}` }));
+    const items = Array.from({ length: 25 }, (_, i) => ({
+      project_uuid: `p-${i}`,
+      project_name: `P${i}`,
+    }));
     render(<QueueCard name="Pending Approval" items={items} capped href="/projects" />);
     expect(screen.getByText("25+")).toBeInTheDocument();
     expect(screen.queryByText(/All 25/)).not.toBeInTheDocument();

@@ -51,7 +51,7 @@ test("sign-up authenticates every contact given, then signs her in", async ({ pa
   await page.getByLabel(/code sent to your email/i).fill(emailCode);
   await page.getByRole("button", { name: /confirm and sign in/i }).click();
 
-  await expect(page).toHaveURL(/\/my-consents/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/home/, { timeout: 15_000 });
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 });
 

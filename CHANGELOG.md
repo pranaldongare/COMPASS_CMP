@@ -8,6 +8,18 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Role dashboards from the approved design** (2026-10-11): every staff
+  dashboard (DPO, administrator, DCO, RCO, DCO Admin, R&D user) opens on a
+  greeting banner with the date and the role's main button, four figure
+  tiles with coloured hint chips, "Needs attention" (dot, count, Late / Due
+  soon / To do tag) beside the consent ring or project stages on a 12-column
+  grid, the work lists two to a row (reference, person, state pill), and the
+  five latest events. New main buttons: "New consent link" (DCO, RCO) and
+  "Register a data source" (DCO Admin, opens the form via ?new=1). Open
+  breaches became a five-row list. A temporary ticket holder gets the same
+  summary above its tickets; the portal gains a Home page in the same look
+  and lands there after sign-in. Shared: `Donut`, `PanelHeader`, the tinted
+  `StatTile` and a one-line `BarList`. No trend lines: there is no trend data.
 - **Every detail page in the slide-A look** (2026-10-10, from the wireframes
   the user approved): rights request, consent, processor, data source,
   purpose, user account, import batch, collection, notice and notice

@@ -35,7 +35,8 @@ describe("KpiRow", () => {
     const breaches = screen.getByRole("link", { name: /Open breaches/ });
     expect(breaches).toHaveAttribute("href", "/breaches");
     expect(breaches).toHaveTextContent("143 duties late");
-    expect(breaches.className).toContain("border-warning-border");
+    // Late duties: the amber edge (2026-10-10: an inset top edge, not a border).
+    expect(breaches.className).toContain("var(--warning)");
     expect(screen.getByRole("link", { name: /Open rights requests/ })).toHaveTextContent(
       "3 due within 7 days",
     );
@@ -43,7 +44,9 @@ describe("KpiRow", () => {
   });
 
   it("leaves out a figure the server did not send, and a role it does not know", () => {
-    const { unmount } = render(<KpiRow role="dco" counts={{ approved_projects: 1, consents: 2 }} />);
+    const { unmount } = render(
+      <KpiRow role="dco" counts={{ approved_projects: 1, consents: 2 }} />,
+    );
     expect(screen.getAllByRole("link")).toHaveLength(2);
     unmount();
     const { container } = render(<KpiRow role="data_subject" counts={{ x: 1 }} />);

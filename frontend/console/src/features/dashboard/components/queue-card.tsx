@@ -4,18 +4,65 @@
  * The most important element on the screen for a DPO, because a queue that is
  * not surfaced is work nobody knows about. Each row links to the thing itself,
  * not to a filtered list — one click, not two.
+ *
+ * Drawn as the role-dashboard design has it (2026-10-10): a card head with
+ * the queue's icon and count, then rows on one grid - the reference in
+ * monospace, the person or project with an initials disc, and the state as a
+ * pill at the right - so two queues side by side line up row for row.
  */
 
 "use client";
 
-import { ArrowRight } from "lucide-react";
+import {
+  AlertTriangle,
+  Building2,
+  CheckCircle2,
+  Clock,
+  FolderKanban,
+  Inbox,
+  Lock,
+  MapPin,
+  Scale,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
-import { EmptyQueue } from "@/components/ui/graphics";
-import { Card, CardHeader, CardTitle, EmptyState } from "@/components/ui/primitives";
+import * as React from "react";
+
+import { PanelHeader } from "@/components/ui/panel";
+import { Card } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
-import { formatDateTime } from "@/lib/format";
+import { cn, formatDate } from "@/lib/format";
 
 const SHOWN = 5;
+
+/** A queue's icon and tint, from its name - the server names the queues. */
+function queueLook(name: string): { icon: LucideIcon; tint: 0 | 1 | 2 | 3 } {
+  const n = name.toLowerCase();
+  if (/rights request|grievance/.test(n)) return { icon: Scale, tint: 0 };
+  if (/ticket|written/.test(n)) return { icon: Inbox, tint: 3 };
+  if (/approval|review/.test(n)) return { icon: Clock, tint: 1 };
+  if (/exception|reconcile|floor|erasure/.test(n)) return { icon: AlertTriangle, tint: 3 };
+  if (/site/.test(n)) return { icon: MapPin, tint: 3 };
+  if (/processor|source|suspended/.test(n)) return { icon: Building2, tint: 1 };
+  if (/lockout/.test(n)) return { icon: Lock, tint: 3 };
+  if (/ready|approved/.test(n)) return { icon: CheckCircle2, tint: 2 };
+  return { icon: FolderKanban, tint: 0 };
+}
+
+const PILL = {
+  bad: "bg-danger-subtle text-danger-text",
+  warn: "bg-warning-subtle text-warning-text",
+  neutral: "bg-bg-inset text-text-muted",
+} as const;
+
+function initials(text: string): string {
+  return text
+    .split(/[\s·-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+}
 
 /** A clear queue is one line, not a card with an illustration: the page's
  * height should say how much work there is. */
@@ -43,33 +90,33 @@ export function QueueCard({
   const rest = items.length - shown.length;
   // "All 25" claimed a complete list the query had cut short (UX review).
   const count = capped ? `${items.length}+` : String(items.length);
+  const look = queueLook(name);
+  // "Due soon" is measured from when the card first drew, not re-read on
+  // every render.
+  const [now] = React.useState(() => Date.now());
   return (
-    <Card id={slug ? `q-${slug}` : undefined} className="scroll-mt-20">
-      <CardHeader className="flex items-center justify-between gap-3">
-        <CardTitle>{name}</CardTitle>
-        <span className="flex items-center gap-3">
-          {(rest > 0 || capped) && listHref && (
-            <Link
-              href={listHref}
-              className="text-xs text-accent-text underline-offset-4 hover:underline"
-            >
-              See all
-            </Link>
-          )}
-          <span className="tabular rounded-full bg-bg-inset px-2.5 py-0.5 text-xs font-medium text-text-muted">
-            {count}
-          </span>
-        </span>
-      </CardHeader>
+    <Card
+      id={slug ? `q-${slug}` : undefined}
+      className="flex h-full scroll-mt-20 flex-col overflow-hidden rounded-2xl"
+    >
+      <PanelHeader
+        icon={look.icon}
+        tint={look.tint}
+        title={name}
+        count={count}
+        link={
+          (rest > 0 || capped) && listHref
+            ? { href: listHref, label: "See all" }
+            : undefined
+        }
+      />
 
       {items.length === 0 ? (
-        <EmptyState
-          illustration={<EmptyQueue />}
-          title="Nothing waiting"
-          description="This queue is clear."
-        />
+        <p className="px-[18px] py-4 text-sm text-text-muted">
+          Nothing waiting. This queue is clear.
+        </p>
       ) : (
-        <ul className="divide-y divide-border">
+        <ul>
           {shown.map((item, index) => {
             const uuid =
               (item.request_uuid as string) ??
@@ -91,75 +138,95 @@ export function QueueCard({
                         ? `/collections/${item.collection_uuid}`
                         : null;
 
-            // A rights request reads as its reference and the person; the
-            // clock is what makes it urgent, so the due date joins the title.
-            // A breach ticket carries no person: its reference stands alone.
-            const title = item.reference
-              ? [String(item.reference), item.subject_name ? String(item.subject_name) : null]
-                  .filter(Boolean)
-                  .join(" · ")
-              : typeof item.site_label === "string"
+            // The reference column: what the record is called in the register.
+            const reference =
+              (item.reference as string) ??
+              (item.internal_project_name as string) ??
+              (item.source_collection_ref as string) ??
+              (item.source_code as string) ??
+              "";
+            // The name column: who or what it is about. A site reads with its
+            // project beside it; a request with the person.
+            const who =
+              typeof item.site_label === "string"
                 ? `${item.site_label} · ${String(item.project_name ?? "")}`
-                : ((item.project_name as string) ??
-                  (item.source_collection_ref as string) ??
+                : ((item.subject_name as string) ??
+                  (item.project_name as string) ??
                   (item.full_name as string) ??
                   (item.name as string) ??
-                  "Item");
+                  (item.legal_name as string) ??
+                  (reference ? "" : "Item"));
+
+            // The state pill: the clock first - it is what makes a row urgent.
+            let pill: { text: string; tone: keyof typeof PILL } | null = null;
+            if (typeof item.due_at === "string") {
+              const days = Math.ceil((new Date(item.due_at).getTime() - now) / 86_400_000);
+              pill = item.overdue
+                ? { text: `Overdue ${formatDate(item.due_at)}`, tone: "bad" }
+                : {
+                    text: `Due ${formatDate(item.due_at)}`,
+                    tone: days <= 7 ? "warn" : "neutral",
+                  };
+            } else if (typeof item.declared_asset_count === "number") {
+              const missing =
+                Number(item.declared_asset_count) - Number(item.mapped_asset_count ?? 0);
+              pill = { text: `${missing} unaccounted`, tone: "warn" };
+            } else if (typeof item.action === "string") {
+              pill = { text: item.action, tone: "warn" };
+            } else if (typeof item.updated_at === "string") {
+              pill = { text: formatDate(item.updated_at), tone: "neutral" };
+            }
 
             const Row = (
-              <div className="group flex items-center justify-between gap-4 px-5 py-3 transition-colors hover:bg-surface-hover">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{title}</p>
-                  {typeof item.action === "string" && (
-                    <p className="mt-0.5 text-xs text-text-muted">{item.action}</p>
+              <div className="grid h-12 grid-cols-[8.25rem_minmax(0,1fr)_auto] items-center gap-3 px-[18px] text-[0.8125rem] transition-colors hover:bg-[var(--row-hover)]">
+                {/* No reference: the name takes its column too. */}
+                {reference && (
+                  <span className="truncate font-mono text-[0.71875rem] text-text-muted">
+                    {reference}
+                  </span>
+                )}
+                <span
+                  className={cn(
+                    "flex min-w-0 items-center gap-2",
+                    !reference && "col-span-2",
                   )}
-                  {typeof item.due_at === "string" && (
-                    <p
-                      className={
-                        item.overdue
-                          ? "mt-0.5 text-xs font-medium text-danger-text"
-                          : "mt-0.5 text-xs text-text-subtle"
-                      }
+                >
+                  {who && (
+                    <span
+                      aria-hidden="true"
+                      className="grid size-[26px] shrink-0 place-items-center rounded-full bg-accent-subtle text-[0.625rem] font-bold text-accent-text"
                     >
-                      {item.overdue ? "Overdue - due " : "Due "}
-                      {formatDateTime(item.due_at)}
-                    </p>
-                  )}
-                  {typeof item.declared_asset_count === "number" && (
-                    <p className="mt-0.5 text-xs text-warning-text">
-                      {item.declared_asset_count} declared,{" "}
-                      {String(item.mapped_asset_count ?? 0)} mapped —{" "}
-                      {Number(item.declared_asset_count) -
-                        Number(item.mapped_asset_count ?? 0)}{" "}
-                      unaccounted for
-                    </p>
-                  )}
-                </div>
-                <div className="flex shrink-0 items-center gap-3">
-                  {typeof item.project_status === "string" && (
-                    <StatusBadge kind="project" value={item.project_status} />
-                  )}
-                  {typeof item.updated_at === "string" && (
-                    <span className="hidden text-xs text-text-subtle sm:inline">
-                      {formatDateTime(item.updated_at)}
+                      {initials(who)}
                     </span>
                   )}
-                  {href && (
-                    <ArrowRight
-                      className="size-4 text-text-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-accent"
-                      aria-hidden="true"
-                    />
-                  )}
-                </div>
+                  <span className="truncate">{who}</span>
+                </span>
+                <span className="flex justify-end">
+                  {typeof item.project_status === "string" && !pill ? (
+                    <StatusBadge kind="project" value={item.project_status} />
+                  ) : pill ? (
+                    <span
+                      title={pill.text}
+                      className={cn(
+                        "max-w-56 truncate rounded-full px-2.5 py-0.5 text-[0.6875rem] font-semibold",
+                        PILL[pill.tone],
+                      )}
+                    >
+                      {pill.text}
+                    </span>
+                  ) : null}
+                </span>
               </div>
             );
 
             return (
-              <li key={uuid ?? index}>{href ? <Link href={href}>{Row}</Link> : Row}</li>
+              <li key={uuid ?? index} className="border-b border-border/60 last:border-b-0">
+                {href ? <Link href={href}>{Row}</Link> : Row}
+              </li>
             );
           })}
           {(rest > 0 || capped) && (
-            <li className="px-5 py-2.5 text-xs text-text-muted">
+            <li className="px-[18px] py-2.5 text-xs text-text-muted">
               {capped ? "More than these" : `${rest} more`}
               {listHref && (
                 <>
