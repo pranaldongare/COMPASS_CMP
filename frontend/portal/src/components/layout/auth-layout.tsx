@@ -20,7 +20,7 @@
  */
 "use client";
 
-import { CircleHelp } from "lucide-react";
+import { Check, CircleHelp } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
@@ -49,90 +49,111 @@ export function AuthLayout({
   help?: boolean;
   assurances?: string[];
 }) {
+  const headingParts = config.pitch.heading.split(/,\s+(.+)/).filter(Boolean);
   return (
     <main
       id="main"
       className="min-h-dvh bg-surface lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]"
     >
       {/* ------------------------------------------------- the brand panel */}
-      <section className="auth-brand relative hidden overflow-hidden lg:flex lg:flex-col lg:items-center lg:justify-between lg:px-6 lg:py-10">
-        {/* The panel says what the product is for; the name is the logo's
-            job, over the form, so it is said once (2026-10-10). */}
-        <div className="relative max-w-xl text-center">
-          <p className="text-[1.75rem] leading-tight font-bold tracking-tight text-[#1d2433]">
-            {config.pitch.heading}
+      {/* The sign-in design (2026-10-11, "Light split"): the name at the top
+          left, the message, the world, and three cards saying what the product
+          keeps - on one left edge, 64 px in. */}
+      <section className="auth-brand relative hidden overflow-hidden lg:flex lg:flex-col lg:px-16 lg:py-14">
+        <Lockup />
+
+        <div className="relative mt-11">
+          <p className="text-xs font-bold tracking-[0.1em] text-[#1f5c9e] uppercase">
+            {config.appName}
           </p>
-          <p className="mt-2 text-sm leading-relaxed text-[#4b5567]">{config.pitch.lede}</p>
+          {/* Two lines, broken after the first clause where there is one:
+              "Consent and privacy work, / in one place." */}
+          <p className="mt-2.5 max-w-[40rem] text-[2.5rem] leading-[1.12] font-bold tracking-[-0.03em] text-[#16202e]">
+            {headingParts.length === 2 ? (
+              <>
+                {headingParts[0]},<br />
+                {headingParts[1]}
+              </>
+            ) : (
+              config.pitch.heading
+            )}
+          </p>
+          <p className="mt-3 max-w-[35rem] text-base leading-relaxed text-[#566275]">
+            {config.pitch.lede}
+          </p>
         </div>
 
-        <div className="relative w-full max-w-[820px]">
+        <div className="relative my-auto w-full max-w-[52rem] py-6">
           <WorldDots className="w-full" />
         </div>
 
-        <div className="relative w-full max-w-sm text-center text-[#1d2433]">
-          <p className="text-sm font-semibold">{config.pitch.footerTitle}</p>
-          <hr className="mx-auto my-2 w-full border-[#d5dfeb]" />
-          <p className="text-sm text-[#4b5567]">
-            {config.pitch.footerTags.map((tag, i) => (
-              <React.Fragment key={tag}>
-                {i > 0 && <span className="mx-2.5 text-[#a7b3c4]">|</span>}
-                {tag}
-              </React.Fragment>
-            ))}
-          </p>
-        </div>
+        <ul className="relative grid max-w-[40rem] grid-cols-3 gap-3.5">
+          {config.pitch.highlights.map((h) => (
+            <li
+              key={h.title}
+              className="rounded-[14px] border border-[#e3e8ef] bg-white/85 px-4 py-3.5 backdrop-blur-sm"
+            >
+              <p className="text-base font-bold text-[#16202e]">{h.title}</p>
+              <p className="mt-0.5 text-xs leading-snug text-[#566275]">{h.text}</p>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* -------------------------------------------------- the form panel */}
-      <section className="relative flex min-h-dvh flex-col items-center bg-surface px-4 py-10 sm:px-8 lg:min-h-0 lg:px-16">
-        <div className="animate-in relative flex w-full max-w-md flex-1 flex-col">
-          <Logo />
-
-          <div className="my-auto pt-10">
-            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-              <h1 className="text-[1.65rem] font-bold tracking-tight">{title}</h1>
-              {aside && <div className="text-sm text-text-muted">{aside}</div>}
-            </div>
-            {subtitle && (
-              <p className="mt-2 text-sm leading-relaxed text-text-muted">{subtitle}</p>
-            )}
-
-            <div className="auth-form mt-7">{children}</div>
-
-            {footer && <div className="mt-8">{footer}</div>}
-
-            {help && (
-              <div className="mt-8 flex justify-center">
-                <Link
-                  href="/help"
-                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-bg px-4 py-2.5 text-sm font-semibold text-text shadow-[var(--shadow-sm)] transition-colors hover:bg-surface-hover"
-                >
-                  <CircleHelp className="size-5 text-text-muted" aria-hidden="true" />
-                  Need Help?
-                </Link>
-              </div>
-            )}
-          </div>
+      {/* The form on a floating card, centred in a soft panel. On a phone the
+          brand panel goes and the name heads the card. */}
+      <section className="auth-panel relative flex min-h-dvh flex-col items-center justify-center px-4 py-10 sm:px-8 lg:min-h-0 lg:border-l lg:border-[#eef1f5]">
+        <div className="mb-8 lg:hidden">
+          <Lockup />
         </div>
+        <div className="animate-in w-full max-w-[30rem] rounded-[22px] border border-border bg-surface px-6 py-9 shadow-[0_24px_60px_rgb(16_30_60/0.10)] sm:px-10">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <h1 className="text-[1.75rem] font-bold tracking-[-0.02em]">{title}</h1>
+            {aside && <div className="text-sm text-text-muted">{aside}</div>}
+          </div>
+          {subtitle && (
+            <p className="mt-1.5 text-sm leading-relaxed text-text-muted">{subtitle}</p>
+          )}
+
+          <div className="auth-form mt-6">{children}</div>
+
+          {footer && <div className="mt-6 text-center text-[0.8125rem]">{footer}</div>}
+
+          {/* What is true of this app, quietly, under a rule. */}
+          <ul className="mt-6 flex flex-wrap justify-center gap-x-3.5 gap-y-1 border-t border-border pt-5 text-[0.71875rem] whitespace-nowrap text-text-subtle">
+            {config.pitch.trust.map((t) => (
+              <li key={t} className="inline-flex items-center gap-1.5">
+                <Check className="size-3.5 text-[#13a89e]" aria-hidden="true" />
+                {t}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {help && (
+          <Link
+            href="/help"
+            className="mt-5 inline-flex items-center gap-1.5 text-[0.8125rem] font-medium text-text-muted hover:text-text"
+          >
+            <CircleHelp className="size-4" aria-hidden="true" />
+            Need help?
+          </Link>
+        )}
       </section>
     </main>
   );
 }
 
-/** The product's lockup: the shield, the name, and the app's own line under it. */
-function Logo() {
+/** The product's lockup: the shield and the two-tone name. */
+function Lockup() {
   return (
-    <div className="flex flex-col items-center text-center">
-      <div className="flex items-center gap-2">
-        <span className="text-[2.1rem] leading-none font-semibold tracking-tight">
-          <span className="auth-logo-strong">{config.productName.slice(0, 3)}</span>
-          <span className="auth-logo-soft">{config.productName.slice(3)}</span>
-        </span>
-        <BrandMark className="auth-logo-strong size-9" />
-      </div>
-      <p className="mt-1 border-t border-border pt-0.5 text-xs tracking-wide text-text-muted">
-        {config.appName}
-      </p>
+    <div className="relative flex items-center gap-2.5">
+      <BrandMark className="size-8 text-[#1f5c9e]" />
+      <span className="text-[1.75rem] leading-none font-extrabold tracking-tight">
+        <span className="text-[#1f5c9e]">{config.productName.slice(0, 3)}</span>
+        <span className="text-[#5d6a7d]">{config.productName.slice(3)}</span>
+      </span>
     </div>
   );
 }

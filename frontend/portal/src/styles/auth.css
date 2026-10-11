@@ -9,63 +9,62 @@
 
 .auth-form input:not([type="radio"]):not([type="checkbox"]),
 .auth-form select {
-  height: 3rem;
+  height: 2.875rem;
   border-radius: 0.75rem;
   padding-left: 1rem;
 }
 
-/* An icon at the end of the field, by what the field takes. */
+/* The sign-in design (2026-10-11): a tinted tile at the start of the field,
+   saying what goes in it, the text after it. */
 .auth-form input:not([type="radio"]):not([type="checkbox"]):not([type="date"]) {
   background-repeat: no-repeat;
-  background-position: right 0.95rem center;
-  background-size: 1.15rem;
-  padding-right: 2.9rem;
+  background-position: 6px center;
+  background-size: 34px 34px;
+  padding-left: 3.25rem;
 }
 
 .auth-form input[type='email'], .auth-form input[autocomplete='email'], .auth-form input[autocomplete='username'] {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7a8f' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='5' width='18' height='14' rx='2.5'/><path d='m3.5 7 8.5 6 8.5-6'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'><rect width='34' height='34' rx='9' fill='%23eef4fb'/><g transform='translate(8 8) scale(0.75)' fill='none' stroke='%232f72bb' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='5' width='18' height='14' rx='2'/><path d='m3 7 9 6 9-6'/></g></svg>");
 }
 .auth-form input[type='password'] {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7a8f' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='4.5' y='10.5' width='15' height='10' rx='2.5'/><path d='M8 10.5V7.5a4 4 0 0 1 8 0v3'/><circle cx='12' cy='15.5' r='1.2'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'><rect width='34' height='34' rx='9' fill='%23eef4fb'/><g transform='translate(8 8) scale(0.75)' fill='none' stroke='%232f72bb' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></g></svg>");
 }
 .auth-form input[type='tel'], .auth-form input[autocomplete='tel'] {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7a8f' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M5 4h3.5l1.7 4.3-2.2 1.4a11 11 0 0 0 6.3 6.3l1.4-2.2L20 15.5V19a1.5 1.5 0 0 1-1.6 1.5A16.5 16.5 0 0 1 3.5 5.6 1.5 1.5 0 0 1 5 4Z'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'><rect width='34' height='34' rx='9' fill='%23eef4fb'/><g transform='translate(8 8) scale(0.75)' fill='none' stroke='%232f72bb' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2'/></g></svg>");
 }
 .auth-form input[autocomplete='name'], .auth-form input[autocomplete='given-name'], .auth-form input[autocomplete='family-name'] {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7a8f' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='8' r='4'/><path d='M4.5 20.5a7.5 7.5 0 0 1 15 0'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'><rect width='34' height='34' rx='9' fill='%23eef4fb'/><g transform='translate(8 8) scale(0.75)' fill='none' stroke='%232f72bb' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='8' r='4'/><path d='M4 21a8 8 0 0 1 16 0'/></g></svg>");
 }
 .auth-form input[autocomplete='one-time-code'] {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7a8f' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3 5 6v5.5c0 4.3 2.9 8.3 7 9.5 4.1-1.2 7-5.2 7-9.5V6l-7-3Z'/><path d='m9 12 2 2 4-4'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'><rect width='34' height='34' rx='9' fill='%23eef4fb'/><g transform='translate(8 8) scale(0.75)' fill='none' stroke='%232f72bb' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z'/><path d='m9 12 2 2 4-4'/></g></svg>");
 }
 
 /* The app's dark theme is the `.dark` class on <html> (providers/theme-provider). */
 .dark .auth-form input[type='email'], .dark .auth-form input[autocomplete='email'], .dark .auth-form input[autocomplete='username'] {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='5' width='18' height='14' rx='2.5'/><path d='m3.5 7 8.5 6 8.5-6'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'><rect width='34' height='34' rx='9' fill='%2315283f'/><g transform='translate(8 8) scale(0.75)' fill='none' stroke='%2393c0f0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='5' width='18' height='14' rx='2'/><path d='m3 7 9 6 9-6'/></g></svg>");
 }
 .dark .auth-form input[type='password'] {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='4.5' y='10.5' width='15' height='10' rx='2.5'/><path d='M8 10.5V7.5a4 4 0 0 1 8 0v3'/><circle cx='12' cy='15.5' r='1.2'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'><rect width='34' height='34' rx='9' fill='%2315283f'/><g transform='translate(8 8) scale(0.75)' fill='none' stroke='%2393c0f0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></g></svg>");
 }
 .dark .auth-form input[type='tel'], .dark .auth-form input[autocomplete='tel'] {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M5 4h3.5l1.7 4.3-2.2 1.4a11 11 0 0 0 6.3 6.3l1.4-2.2L20 15.5V19a1.5 1.5 0 0 1-1.6 1.5A16.5 16.5 0 0 1 3.5 5.6 1.5 1.5 0 0 1 5 4Z'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'><rect width='34' height='34' rx='9' fill='%2315283f'/><g transform='translate(8 8) scale(0.75)' fill='none' stroke='%2393c0f0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2'/></g></svg>");
 }
 .dark .auth-form input[autocomplete='name'], .dark .auth-form input[autocomplete='given-name'], .dark .auth-form input[autocomplete='family-name'] {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='8' r='4'/><path d='M4.5 20.5a7.5 7.5 0 0 1 15 0'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'><rect width='34' height='34' rx='9' fill='%2315283f'/><g transform='translate(8 8) scale(0.75)' fill='none' stroke='%2393c0f0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='8' r='4'/><path d='M4 21a8 8 0 0 1 16 0'/></g></svg>");
 }
 .dark .auth-form input[autocomplete='one-time-code'] {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3 5 6v5.5c0 4.3 2.9 8.3 7 9.5 4.1-1.2 7-5.2 7-9.5V6l-7-3Z'/><path d='m9 12 2 2 4-4'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'><rect width='34' height='34' rx='9' fill='%2315283f'/><g transform='translate(8 8) scale(0.75)' fill='none' stroke='%2393c0f0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z'/><path d='m9 12 2 2 4-4'/></g></svg>");
 }
 
-/* The submit button: centred, wide enough to read, not the full row. */
+/* The submit button: the card's full width, 48 px, the brand's gradient with
+   a soft glow (2026-10-11, the sign-in design). */
 .auth-form button[type="submit"] {
   display: flex;
-  width: auto;
-  min-width: 11rem;
-  height: 2.9rem;
-  margin-inline: auto;
-  padding-inline: 2.25rem;
-  border-radius: 0.65rem;
-  font-size: 0.95rem;
-  font-weight: 600;
+  width: 100%;
+  height: 3rem;
+  border-radius: 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 650;
 }
 
 /* The brand panel (2026-10-10, Line): white, a field of fine blue dots, and
@@ -117,10 +116,18 @@
   color: var(--text-muted);
 }
 .auth-form button[type="submit"] {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-active));
   color: var(--accent-contrast);
-  box-shadow: 0 1px 2px rgb(15 50 95 / 0.25);
+  box-shadow: 0 10px 22px rgb(47 114 187 / 0.32);
 }
 .auth-form button[type="submit"]:hover:not(:disabled) {
   background: var(--accent-hover);
+}
+
+/* The form's side (2026-10-11): a soft blue-white fall behind the card. */
+.auth-panel {
+  background: linear-gradient(180deg, #fbfcfe, #f5f8fc);
+}
+.dark .auth-panel {
+  background: var(--bg);
 }

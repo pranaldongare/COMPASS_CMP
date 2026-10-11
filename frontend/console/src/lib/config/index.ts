@@ -46,6 +46,14 @@ export const config = {
     /** The foot of the brand panel: a title over a rule, and short tags. */
     footerTitle: "Consent Management",
     footerTags: ["Consent & Rights", "Privacy & Compliance"],
+    /** The three cards under the map (2026-10-11, the sign-in design). */
+    highlights: [
+      { title: "Consent", text: "Every record with its notice" },
+      { title: "Rights", text: "Requests on the statutory clock" },
+      { title: "Breaches", text: "Board, CERT-In and DPDP duties" },
+    ],
+    /** The quiet line at the foot of the sign-in card: true of this console. */
+    trust: ["DPDP Act 2023", "Two-step sign-in", "Encrypted at rest"],
     assurances: [
       "Every consent is recorded with its notice version",
       "Withdrawal is as easy as giving consent",

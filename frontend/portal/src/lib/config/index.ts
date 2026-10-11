@@ -46,6 +46,14 @@ export const config = {
     /** The foot of the brand panel: a title over a rule, and short tags. */
     footerTitle: "Your data, your choice",
     footerTags: ["Consent", "Rights", "Privacy"],
+    /** The three cards under the map (2026-10-11, the sign-in design). */
+    highlights: [
+      { title: "Your consents", text: "See what you agreed to, and when" },
+      { title: "Your rights", text: "Access, correct or erase your data" },
+      { title: "Withdraw", text: "As easily as you agreed" },
+    ],
+    /** The quiet line at the foot of the sign-in card: true of this portal. */
+    trust: ["DPDP Act 2023", "One-time code sign-in", "Encrypted at rest"],
     assurances: [
       "See exactly what you agreed to, and when",
       "Withdraw at any time, as easily as you agreed",

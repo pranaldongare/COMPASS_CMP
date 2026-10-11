@@ -8,6 +8,14 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Sign-in as "Light split"** (2026-10-11, chosen from three designs): the
+  left 7/12 has COMPASS at the top left, the app's name as a kicker, the
+  headline on two lines, the line under it, the dotted world map, and three
+  cards saying what the app keeps (config `pitch.highlights`); the right 5/12
+  is a soft panel with the form on a floating white card - fields with an
+  icon tile at the start, a full-width 48 px gradient button, and a quiet
+  line of what is true of the app under a rule (config `pitch.trust`).
+  On a phone the name heads the card. Both apps.
 - **Dashboards closer to the design** (2026-10-11): each figure tile now has
   its trend line - new records per day over the last seven days, from a new
   `trends` field on `GET /dashboard`, scoped like the figures (DPO, admin,
