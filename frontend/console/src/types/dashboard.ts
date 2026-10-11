@@ -30,6 +30,10 @@ export interface DashboardData {
   }>;
   /** Only rows with something to count; empty means nothing needs them today. */
   attention: AttentionRow[];
+  /** New records per day this week, oldest first, keyed like `counts`: the
+   *  line under each figure (2026-10-11). Absent for a figure with no dated
+   *  record behind it. */
+  trends?: Record<string, number[]>;
   /**
    * Recent activity, as audit entries — for every role.
    *

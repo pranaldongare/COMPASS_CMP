@@ -74,13 +74,14 @@ export function QuickAction({ me }: { me: Me | null | undefined }) {
 
   return (
     <>
+      {/* The DPO's second start (2026-10-07): a notice written before the
+          project that will use it exists. Secondary, and before the main
+          button, which closes the row at the right (2026-10-11, the design). */}
+      {me?.role === "dpo" && <NewTemplateButton variant="secondary" size="md" />}
       <Button variant="primary" onClick={() => setOpen(true)}>
         <Icon className="size-4" />
         {copy.label}
       </Button>
-      {/* The DPO's second start (2026-10-07): a notice written before the
-          project that will use it exists. Secondary - the incident leads. */}
-      {me?.role === "dpo" && <NewTemplateButton variant="secondary" size="md" />}
       <Dialog open={open} onOpenChange={setOpen}>
         {action === "incident" && (
           <DialogContent

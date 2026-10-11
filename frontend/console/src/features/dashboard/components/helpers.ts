@@ -64,19 +64,20 @@ export function consentComposition(
 }
 
 export function roleBlurb(role: string | null | undefined): string {
+  // One line under the greeting (2026-10-11, the role-dashboard design).
   switch (role) {
     case "dpo":
-      return "Notices awaiting publication, projects awaiting your review, and the consent position across the platform.";
+      return "Rights requests, breaches and approvals across the platform.";
     case "dco":
-      return "Your approved projects, the links collecting against them, and anything that failed to reconcile on import.";
+      return "Your approved projects, their links, and imports to reconcile.";
     case "dco_admin":
-      return "Projects collected by a third party: which sites are still waiting for a data source, and who picks them up when you attach one.";
+      return "Third-party collection set-up: sites, sources and owners.";
     case "rco":
-      return "The collection your team runs itself — your approved projects, the links collecting against them, and anything that failed to reconcile on import.";
+      return "The collection your team runs: projects, links and imports.";
     case "rnd_user":
-      return "Your projects and what each one needs from you before it can move forward.";
+      return "Your studies, and what each one needs next.";
     case "admin":
-      return "Invitations waiting, access problems, grievances about the DPO, and the processor and source registry.";
+      return "Accounts, access and the registry's health.";
     case "breach_holder":
       return "The tickets the Privacy Office has asked you to answer.";
     default:

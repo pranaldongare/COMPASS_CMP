@@ -51,6 +51,10 @@ class Dashboard(Out):
     #: The DPO's alone: every open breach, each duty's state and clock (S3-04).
     #: Empty for every other role, who cannot know a breach is open.
     breaches: list[BreachSummaryOut] = Field(default_factory=list)
+    #: New records per day this week, oldest first, keyed like ``counts``: the
+    #: line under each figure (2026-10-11). Absent for a figure with no dated
+    #: record behind it.
+    trends: dict[str, list[int]] = Field(default_factory=dict)
 
 
 def _slug(name: str) -> str:
@@ -395,6 +399,8 @@ async def dashboard(principal: CurrentUser) -> dict[str, Any]:
             data["queues"].append({"name": "Tickets addressed to you", "items": items})
         _finish_queues(data["queues"])
         data["attention"] = _attention(data["role"], data["counts"], data["queues"])
+        # New records per day this week, for the line under each figure.
+        data["trends"] = await dashboard_repo.trends(conn, principal.role, principal.user_id)
         return data
 
 

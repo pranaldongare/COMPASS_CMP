@@ -32,6 +32,7 @@ export function StatTile({
   value,
   hint,
   hintTone = "neutral",
+  trend,
   tone = "neutral",
   icon,
   tint,
@@ -44,6 +45,9 @@ export function StatTile({
   /** The hint's chip colour on a tinted tile (2026-10-10): green for good
    *  news, red for late, amber for due soon, grey otherwise. */
   hintTone?: "good" | "bad" | "warn" | "neutral";
+  /** New records per day, oldest first (2026-10-11): drawn as a small line
+   *  at the tile's lower right. */
+  trend?: number[];
   /** `attention` is for a count that is a problem when non-zero. */
   tone?: "neutral" | "accent" | "attention";
   icon?: React.ReactNode;
@@ -84,16 +88,19 @@ export function StatTile({
           >
             {icon}
           </span>
-          <p className="text-[0.8125rem] leading-tight font-medium text-text-muted">{label}</p>
+          <p className="text-[0.8125rem] leading-tight font-medium text-text-muted">
+            {label}
+          </p>
         </div>
-        <p className="mt-3 text-[1.875rem] leading-none font-bold tracking-tight tabular text-text">
+        <p className="tabular mt-3 text-[1.875rem] leading-none font-bold tracking-tight text-text">
           {shown}
         </p>
-        <p className="mt-2 min-h-5">
+        {/* Clear of the trend line at the lower right. */}
+        <p className={cn("mt-2 min-h-5", trend && trend.length > 1 && "pr-24")}>
           {hint && (
             <span
               className={cn(
-                "inline-flex rounded-full px-2 py-0.5 text-[0.6875rem] font-bold",
+                "inline-flex max-w-full truncate rounded-full px-2 py-0.5 text-[0.6875rem] font-bold",
                 hintTone === "good" && "bg-success-subtle text-success-text",
                 hintTone === "bad" && "bg-danger-subtle text-danger-text",
                 hintTone === "warn" && "bg-warning-subtle text-warning-text",
@@ -104,6 +111,14 @@ export function StatTile({
             </span>
           )}
         </p>
+        {trend && trend.length > 1 && (
+          <Sparkline
+            values={trend}
+            color={TINT_COLOR[tint]}
+            className="absolute right-3.5 bottom-4 h-9 w-24"
+            label={`${label}: new each day, last ${trend.length} days`}
+          />
+        )}
       </>
     );
     const tintedClasses = cn(
@@ -152,9 +167,7 @@ export function StatTile({
         </span>
       )}
       <div className="flex items-start justify-between gap-3">
-        <p className="text-[0.8125rem] font-medium text-text-muted">
-          {label}
-        </p>
+        <p className="text-[0.8125rem] font-medium text-text-muted">{label}</p>
         {icon && !tint && (
           <span
             aria-hidden="true"
@@ -173,7 +186,7 @@ export function StatTile({
 
       <p
         className={cn(
-          "mt-1.5 text-2xl font-semibold tabular tracking-tight",
+          "tabular mt-1.5 text-2xl font-semibold tracking-tight",
           tone === "attention" ? "text-warning-text" : "text-text",
         )}
       >
@@ -185,7 +198,7 @@ export function StatTile({
       {href && (
         <span
           aria-hidden="true"
-          className="absolute bottom-3 right-3 text-text-subtle opacity-0 transition-opacity group-hover:opacity-100"
+          className="absolute right-3 bottom-3 text-text-subtle opacity-0 transition-opacity group-hover:opacity-100"
         >
           <ArrowRight className="size-4" />
         </span>
@@ -230,7 +243,7 @@ export function Meter({
     <div>
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-sm text-text-muted">{label}</span>
-        <span className="text-sm font-medium tabular text-text">
+        <span className="tabular text-sm font-medium text-text">
           {value.toLocaleString("en-IN")}
           <span className="text-text-subtle"> / {max.toLocaleString("en-IN")}</span>
         </span>
@@ -245,7 +258,10 @@ export function Meter({
         aria-label={label}
       >
         <div
-          className={cn("grow-x h-full rounded-full", tight ? "bg-warning" : "bg-[var(--viz-2)]")}
+          className={cn(
+            "grow-x h-full rounded-full",
+            tight ? "bg-warning" : "bg-[var(--viz-2)]",
+          )}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -319,7 +335,7 @@ export function StackedBar({
       {/* The legend is also the direct labelling. Every segment is named with
           its count, so the contrast WARN on two of the hues is covered and
           nobody has to match a colour to a key. */}
-      <ul className="mt-3 grid gap-x-5 gap-y-1.5 [grid-template-columns:repeat(auto-fill,minmax(12rem,1fr))]">
+      <ul className="mt-3 grid [grid-template-columns:repeat(auto-fill,minmax(12rem,1fr))] gap-x-5 gap-y-1.5">
         {segments.map((s) => (
           <li key={s.key} className="flex items-center gap-2 text-sm">
             <span
@@ -329,10 +345,10 @@ export function StackedBar({
             />
             {/* Text wears text tokens, never the series colour. */}
             <span className="text-text-muted">{s.label}</span>
-            <span className="ml-auto font-medium tabular text-text">
+            <span className="tabular ml-auto font-medium text-text">
               {s.value.toLocaleString("en-IN")}
             </span>
-            <span className="w-10 text-right text-xs tabular text-text-subtle">
+            <span className="tabular w-10 text-right text-xs text-text-subtle">
               {sum > 0 ? `${Math.round((s.value / sum) * 100)}%` : "—"}
             </span>
           </li>
@@ -341,6 +357,72 @@ export function StackedBar({
 
       {caption && <p className="mt-3 text-xs text-text-subtle">{caption}</p>}
     </div>
+  );
+}
+
+/* ================================================================ sparkline */
+
+const TINT_COLOR = {
+  blue: "#2f72bb",
+  amber: "#e08a0b",
+  teal: "#13a89e",
+  violet: "#7c6cf0",
+} as const;
+
+/**
+ * A small line of a figure's last few days (2026-10-11, the role-dashboard
+ * design): the line and a soft fill under it, scaled to its own range. Named
+ * for screen readers by `label`, with the values in its title.
+ */
+export function Sparkline({
+  values,
+  color,
+  label,
+  className,
+}: {
+  values: number[];
+  color: string;
+  label: string;
+  className?: string;
+}) {
+  const id = React.useId().replace(/:/g, "");
+  const w = 96;
+  const h = 36;
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const span = max - min || 1;
+  const points = values.map((v, i) => [
+    (i * w) / (values.length - 1),
+    h - 4 - ((v - min) / span) * (h - 8),
+  ]);
+  const line = points
+    .map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`)
+    .join("");
+  return (
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      className={className}
+      role="img"
+      aria-label={`${label}: ${values.join(", ")}`}
+      preserveAspectRatio="none"
+    >
+      <defs>
+        <linearGradient id={`${id}-f`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={color} stopOpacity="0.22" />
+          <stop offset="1" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={`${line}L${w} ${h}L0 ${h}Z`} fill={`url(#${id}-f)`} />
+      <path
+        d={line}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
   );
 }
 
@@ -355,7 +437,13 @@ export function Donut({
   segments,
   centreLabel = "records",
 }: {
-  segments: Array<{ key: string; label: string; value: number; color: string; href?: string }>;
+  segments: Array<{
+    key: string;
+    label: string;
+    value: number;
+    color: string;
+    href?: string;
+  }>;
   centreLabel?: string;
 }) {
   const total = segments.reduce((sum, s) => sum + s.value, 0);
@@ -376,7 +464,14 @@ export function Donut({
     <div className="grid items-center gap-6 sm:grid-cols-[9.5rem_minmax(0,1fr)]">
       <div className="relative mx-auto size-[9.5rem]">
         <svg viewBox="0 0 150 150" className="size-full" aria-hidden="true">
-          <circle cx="75" cy="75" r={r} fill="none" stroke="var(--viz-track)" strokeWidth="16" />
+          <circle
+            cx="75"
+            cy="75"
+            r={r}
+            fill="none"
+            stroke="var(--viz-track)"
+            strokeWidth="16"
+          />
           {arcs.map((a) => (
             <circle
               key={a.key}
@@ -394,7 +489,7 @@ export function Donut({
         </svg>
         <div className="absolute inset-0 grid place-items-center text-center">
           <div>
-            <p className="text-2xl font-bold tabular">{total.toLocaleString("en-IN")}</p>
+            <p className="tabular text-2xl font-bold">{total.toLocaleString("en-IN")}</p>
             <p className="text-xs text-text-subtle">{centreLabel}</p>
           </div>
         </div>
@@ -404,17 +499,30 @@ export function Donut({
           const share = total ? Math.round((s.value / total) * 100) : 0;
           const row = (
             <>
-              <span aria-hidden="true" className="size-2.5 rounded-[3px]" style={{ background: s.color }} />
+              <span
+                aria-hidden="true"
+                className="size-2.5 rounded-[3px]"
+                style={{ background: s.color }}
+              />
               <span className="truncate">{s.label}</span>
-              <span className="text-right font-semibold tabular">{s.value.toLocaleString("en-IN")}</span>
-              <span className="text-right text-xs text-text-subtle tabular">{share}%</span>
+              <span className="tabular text-right font-semibold">
+                {s.value.toLocaleString("en-IN")}
+              </span>
+              <span className="tabular text-right text-xs text-text-subtle">{share}%</span>
             </>
           );
-          const grid = "grid grid-cols-[0.75rem_minmax(0,1fr)_auto_2.75rem] items-center gap-2";
+          const grid =
+            "grid grid-cols-[0.75rem_minmax(0,1fr)_auto_2.75rem] items-center gap-2";
           return (
             <li key={s.key}>
               {s.href ? (
-                <Link href={s.href} className={cn(grid, "-mx-1.5 rounded-md px-1.5 py-0.5 hover:bg-surface-hover")}>
+                <Link
+                  href={s.href}
+                  className={cn(
+                    grid,
+                    "-mx-1.5 rounded-md px-1.5 py-0.5 hover:bg-surface-hover",
+                  )}
+                >
                   {row}
                 </Link>
               ) : (
@@ -457,14 +565,16 @@ export function BarList({
         // bars reads as a table.
         const row = (
           <div className="grid grid-cols-[7.5rem_minmax(0,1fr)_2.5rem] items-center gap-3 text-[0.8125rem]">
-            <span className="truncate text-text-muted group-hover:text-text">{item.label}</span>
+            <span className="truncate text-text-muted group-hover:text-text">
+              {item.label}
+            </span>
             <div className="h-2 overflow-hidden rounded-full bg-[var(--viz-track)]">
               <div
                 className="grow-x h-full rounded-full bg-linear-to-r from-accent to-[#4a90d9]"
                 style={{ width: `${Math.max(4, (item.value / max) * 100)}%` }}
               />
             </div>
-            <span className="text-right font-semibold tabular text-text">
+            <span className="tabular text-right font-semibold text-text">
               {item.value.toLocaleString("en-IN")}
             </span>
           </div>
@@ -477,7 +587,7 @@ export function BarList({
             {item.href ? (
               <Link
                 href={item.href}
-                className="group -mx-2 block rounded-lg px-2 py-1 transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-subtle)]"
+                className="group -mx-2 block rounded-lg px-2 py-1 transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-[var(--accent-subtle)] focus-visible:outline-none"
               >
                 {row}
               </Link>
@@ -535,7 +645,8 @@ export function Pipeline({
               aria-current={current ? "step" : undefined}
               className={cn(
                 "relative rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-                current && "brand-gradient border-transparent text-white shadow-[var(--shadow-sm)]",
+                current &&
+                  "brand-gradient border-transparent text-white shadow-[var(--shadow-sm)]",
                 done && "border-success-border bg-success-subtle text-success-text",
                 !current && !done && "border-border bg-bg-inset text-text-subtle",
               )}

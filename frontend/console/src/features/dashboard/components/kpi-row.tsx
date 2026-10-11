@@ -196,9 +196,12 @@ const FIGURES: Record<string, Figure[]> = {
 export function KpiRow({
   role,
   counts,
+  trends = {},
 }: {
   role: string | undefined;
   counts: Record<string, number>;
+  /** New per day this week, by count key: the line under a figure. */
+  trends?: Record<string, number[]>;
 }) {
   const figures = (FIGURES[role ?? ""] ?? []).filter((f) => f.key in counts);
   if (figures.length === 0) return null;
@@ -216,6 +219,7 @@ export function KpiRow({
             value={counts[f.key] ?? 0}
             hint={f.hint?.(counts)}
             hintTone={f.hintTone?.(counts) ?? "neutral"}
+            trend={trends[f.key]}
             tone={f.alarm?.(counts) ? "attention" : "accent"}
             icon={<Icon />}
             tint={TINTS[i % TINTS.length]}

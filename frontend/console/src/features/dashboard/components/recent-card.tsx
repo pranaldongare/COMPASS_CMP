@@ -37,8 +37,9 @@ export function RecentCard({
         title="Recent activity"
         link={seeAllHref ? { href: seeAllHref, label: "Audit trail" } : undefined}
       />
-      <CardBody className="px-[18px] py-3">
+      <CardBody className="px-[18px] py-1.5">
         <ActivityFeed
+          compact
           entries={items}
           isLoading={isLoading}
           emptyTitle="Nothing recorded yet"

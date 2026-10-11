@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from cmp.core.permissions import Role
 from cmp.db.repositories.projects import scope_predicate
-from cmp.db.sql import Conn, Row, fetch_all, fetch_one
+from cmp.db.sql import Conn, Params, Row, fetch_all, fetch_one
 
 
 async def projects_in_scope(conn: Conn, role: Role, user_id: int) -> list[Row]:
@@ -375,3 +375,130 @@ async def ready_to_collect(conn: Conn, role: Role, user_id: int) -> list[Row]:
             ORDER BY p.updated_at DESC LIMIT 25""",
         pred_params,
     )
+
+
+# --------------------------------------------------------------------- trends
+
+#: How many days a dashboard figure's trend line covers, today included.
+TREND_DAYS = 7
+
+
+async def _daily(conn: Conn, events_sql: str, params: Params) -> list[int]:
+    """New items per day over the last ``TREND_DAYS`` days, oldest first.
+
+    ``events_sql`` selects one ``day`` (a date) per item; it is a constant
+    written in this module, never built from input - only ``params`` vary.
+    Days with nothing are zeros, so every series has the same length.
+    """
+    rows = await fetch_all(
+        conn,
+        f"""WITH ev AS ({events_sql})
+            SELECT count(ev.day) AS n
+              FROM generate_series(current_date - {TREND_DAYS - 1}, current_date,
+                                   interval '1 day') AS d
+              LEFT JOIN ev ON ev.day = d::date
+             GROUP BY d ORDER BY d""",
+        params,
+    )
+    return [int(r["n"]) for r in rows]
+
+
+_SINCE = f"current_date - {TREND_DAYS - 1}"
+
+
+async def trends(conn: Conn, role: Role, user_id: int) -> dict[str, list[int]]:
+    """The line under each dashboard figure (2026-10-11): how many new
+    records of that kind arrived each day this week, within what the role
+    sees - its own projects for an R&D User, the projects it collects for for
+    a DCO or RCO. A figure with no dated record behind it gets no line."""
+    p = {"u": user_id}
+    match role:
+        case Role.DPO:
+            return {
+                "requests_open": await _daily(
+                    conn,
+                    f"SELECT received_at::date AS day FROM rights_request"
+                    f" WHERE request_type <> 'grievance' AND received_at >= {_SINCE}",
+                    p,
+                ),
+                "open_breaches": await _daily(
+                    conn,
+                    f"SELECT detected_at::date AS day FROM breach WHERE detected_at >= {_SINCE}",
+                    p,
+                ),
+                "total_consents": await _daily(
+                    conn,
+                    f"SELECT created_at::date AS day FROM v_current_consent"
+                    f" WHERE created_at >= {_SINCE}",
+                    p,
+                ),
+                "pending_approval": await _daily(
+                    conn,
+                    f"SELECT created_at::date AS day FROM project WHERE created_at >= {_SINCE}",
+                    p,
+                ),
+            }
+        case Role.ADMIN:
+            accounts = await _daily(
+                conn,
+                f"SELECT created_at::date AS day FROM auth_user WHERE created_at >= {_SINCE}",
+                p,
+            )
+            return {
+                "users_active": accounts,
+                "users_pending": await _daily(
+                    conn,
+                    f"SELECT created_at::date AS day FROM auth_user"
+                    f" WHERE status = 'pending' AND created_at >= {_SINCE}",
+                    p,
+                ),
+                "grievances_about_dpo": await _daily(
+                    conn,
+                    f"SELECT received_at::date AS day FROM rights_request"
+                    f" WHERE request_type = 'grievance' AND about_dpo"
+                    f" AND received_at >= {_SINCE}",
+                    p,
+                ),
+            }
+        case Role.DCO | Role.RCO:
+            return {
+                "active_links": await _daily(
+                    conn,
+                    f"""SELECT cl.created_at::date AS day FROM consent_link cl
+                          JOIN notice n ON n.notice_id = cl.notice_id
+                          JOIN project pr ON pr.project_id = n.project_id
+                         WHERE pr.dco_user_id = %(u)s AND cl.created_at >= {_SINCE}""",
+                    p,
+                ),
+                "consents": await _daily(
+                    conn,
+                    f"""SELECT vc.created_at::date AS day FROM v_current_consent vc
+                          JOIN notice n ON n.notice_id = vc.notice_id
+                          JOIN project pr ON pr.project_id = n.project_id
+                         WHERE pr.dco_user_id = %(u)s AND vc.created_at >= {_SINCE}""",
+                    p,
+                ),
+            }
+        case Role.DCO_ADMIN:
+            return {
+                "projects": await _daily(
+                    conn,
+                    f"""SELECT p.created_at::date AS day FROM project p
+                         WHERE p.created_at >= {_SINCE} AND EXISTS (
+                           SELECT 1 FROM project_processor pp
+                             JOIN processor pr ON pr.processor_id = pp.processor_id
+                            WHERE pp.project_id = p.project_id AND NOT pr.is_in_house)""",
+                    p,
+                ),
+            }
+        case Role.RND_USER:
+            return {
+                "total": await _daily(
+                    conn,
+                    f"SELECT created_at::date AS day FROM project"
+                    f" WHERE created_by = %(u)s AND created_at >= {_SINCE}",
+                    p,
+                ),
+            }
+        case _:
+            return {}

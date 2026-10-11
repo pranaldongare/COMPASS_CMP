@@ -39,12 +39,17 @@ export function ActivityFeed({
   emptyDescription,
   /** Oldest-first for a trail that reads as a story; newest-first for a feed. */
   order = "newest",
+  compact = false,
 }: {
   entries: AuditEntry[] | undefined;
   isLoading?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
   order?: "newest" | "oldest";
+  /** One line per event (2026-10-11, the dashboard's Recent activity): the
+   *  dot, what happened and by whom, the time at the right. The detail is in
+   *  the dialog the row still opens. */
+  compact?: boolean;
 }) {
   const [open, setOpen] = React.useState<AuditEntry | null>(null);
 
@@ -76,6 +81,46 @@ export function ActivityFeed({
 
   const rows = order === "oldest" ? entries : [...entries];
 
+  if (compact) {
+    return (
+      <>
+        <ol>
+          {rows.map((entry) => (
+            <li key={entry.log_uuid} className="border-b border-border/50 last:border-b-0">
+              <div className="group relative grid h-[2.625rem] grid-cols-[1.25rem_minmax(0,1fr)_auto] items-center gap-2.5 text-[0.8125rem] transition-colors hover:bg-[var(--row-hover)]">
+                <span
+                  aria-hidden="true"
+                  className="size-[9px] justify-self-center rounded-full bg-accent ring-4 ring-accent-subtle"
+                />
+                <span className="truncate">
+                  <button
+                    type="button"
+                    onClick={() => setOpen(entry)}
+                    className="text-left font-medium text-text outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-[var(--accent-border)]"
+                  >
+                    {humanise(entry.event_type.replace(/\./g, " "))}
+                  </button>
+                  <span className="text-text-muted">
+                    {" · "}
+                    {entry.actor_name ?? "system"}
+                  </span>
+                </span>
+                <time
+                  dateTime={entry.occurred_at}
+                  title={formatDateTime(entry.occurred_at)}
+                  className="text-xs whitespace-nowrap text-text-subtle"
+                >
+                  {formatRelative(entry.occurred_at)}
+                </time>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <AuditDetailDialog entry={open} onClose={() => setOpen(null)} />
+      </>
+    );
+  }
+
   return (
     <>
       {/* An ordered list, because the order carries meaning. A screen reader
@@ -88,7 +133,7 @@ export function ActivityFeed({
             {index < rows.length - 1 && (
               <span
                 aria-hidden="true"
-                className="absolute left-[7px] top-6 h-full w-px bg-border"
+                className="absolute top-6 left-[7px] h-full w-px bg-border"
               />
             )}
 

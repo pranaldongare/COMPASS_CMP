@@ -8,6 +8,12 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Dashboards closer to the design** (2026-10-11): each figure tile now has
+  its trend line - new records per day over the last seven days, from a new
+  `trends` field on `GET /dashboard`, scoped like the figures (DPO, admin,
+  DCO/RCO, DCO Admin, R&D user). Recent activity is one line per event (what,
+  who, when) in the compact `ActivityFeed`. The main button closes the
+  banner's row at the right, and the banner's line is one sentence.
 - **Role dashboards from the approved design** (2026-10-11): every staff
   dashboard (DPO, administrator, DCO, RCO, DCO Admin, R&D user) opens on a
   greeting banner with the date and the role's main button, four figure

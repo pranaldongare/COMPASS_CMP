@@ -158,7 +158,7 @@ export default function DashboardPage() {
 
       {data && (
         <div className="space-y-4">
-          <KpiRow role={me?.role} counts={counts} />
+          <KpiRow role={me?.role} counts={counts} trends={data.trends} />
 
           {/* Needs attention beside the position: seven and five of twelve,
               the two cards one height. */}
