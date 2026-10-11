@@ -153,3 +153,18 @@ input.control[autocomplete='given-name'][aria-invalid="true"]:not(.auth-form inp
 input.control[autocomplete='family-name'][aria-invalid="true"]:not(.auth-form input) {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='8' fill='%23fdecec'/><g transform='translate(6 6) scale(0.6667)' fill='none' stroke='%23c0262d' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='8' r='4'/><path d='M4 21a8 8 0 0 1 16 0'/></g></svg>");
 }
+
+/* Row-card tables (2026-10-11). A row's left edge takes the colour of its
+   state badge - green, blue, amber, red, the later winning - and the row
+   lifts a little under the pointer. */
+.row-card > td { box-shadow: 0 1px 2px rgb(16 30 60 / 0.04); }
+.row-card:has([data-state-tone="success"]) > td:first-child { box-shadow: inset 3px 0 0 var(--success), 0 1px 2px rgb(16 30 60 / 0.04); }
+.row-card:has([data-state-tone="accent"]) > td:first-child,
+.row-card:has([data-state-tone="info"]) > td:first-child { box-shadow: inset 3px 0 0 var(--accent), 0 1px 2px rgb(16 30 60 / 0.04); }
+.row-card:has([data-state-tone="warning"]) > td:first-child { box-shadow: inset 3px 0 0 var(--warning), 0 1px 2px rgb(16 30 60 / 0.04); }
+.row-card:has([data-state-tone="danger"]) > td:first-child { box-shadow: inset 3px 0 0 var(--danger), 0 1px 2px rgb(16 30 60 / 0.04); }
+.row-card:hover > td {
+  border-color: var(--accent-border);
+  background: color-mix(in oklab, var(--surface) 92%, var(--accent-subtle));
+}
+.row-card:hover { filter: drop-shadow(0 6px 14px rgb(31 92 158 / 0.10)); }
