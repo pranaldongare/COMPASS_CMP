@@ -48,6 +48,13 @@ import { QuickAction } from "@/features/dashboard/components/quick-action";
 import { statusLabel } from "@/components/ui/status";
 import { useAuth } from "@/providers";
 
+/** The banner's kicker: the role in full (2026-10-11, the design), where the
+ *  badge elsewhere uses the short form ("DPO"). */
+const ROLE_TITLE: Record<string, string> = {
+  dpo: "Data Protection Officer",
+  admin: "Administrator",
+};
+
 export default function DashboardPage() {
   const { me } = useAuth();
   const router = useRouter();
@@ -127,7 +134,7 @@ export default function DashboardPage() {
     <>
       <PageHeader
         hero
-        eyebrow={me ? statusLabel("role", me.role) : undefined}
+        eyebrow={me ? (ROLE_TITLE[me.role] ?? statusLabel("role", me.role)) : undefined}
         title={me ? `Good day, ${me.full_name.split(" ")[0]}` : "Dashboard"}
         description={roleBlurb(me?.role)}
         actions={
