@@ -181,13 +181,7 @@ export interface BadgeProps
 
 export function Badge({ className, tone, dot, children, ...props }: BadgeProps) {
   return (
-    // A state badge (one with a dot) names its tone, so a table row can take
-    // its coloured edge from it (2026-10-11, the row-card tables).
-    <span
-      className={cn(badgeVariants({ tone }), className)}
-      data-state-tone={dot ? (tone ?? "neutral") : undefined}
-      {...props}
-    >
+    <span className={cn(badgeVariants({ tone }), className)} {...props}>
       {dot && <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />}
       {children}
     </span>
@@ -394,18 +388,14 @@ export function EmptyState({
 
 /* ===================================================================== Table */
 /*
- * Row cards (2026-10-11, chosen from three table styles): each row its own
- * white, rounded strip with 8 px between rows, small capitals above, and a
- * coloured left edge taken from the row's state badge (styles/controls.css).
- * A row lifts a little on hover.
+ * Clean lines (2026-10-10, chosen from three table styles): no card and no
+ * fills - small capital headings over a firm rule, roomy rows split by
+ * hairlines, and a blue marker on the row under the pointer.
  */
 export function Table({ className, ...props }: React.TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="scroll-x -my-2">
-      <table
-        className={cn("w-full border-separate border-spacing-x-0 border-spacing-y-2 text-sm", className)}
-        {...props}
-      />
+    <div className="scroll-x">
+      <table className={cn("w-full text-sm", className)} {...props} />
     </div>
   );
 }
@@ -415,8 +405,8 @@ export function Th({ className, ...props }: React.ThHTMLAttributes<HTMLTableCell
     <th
       scope="col"
       className={cn(
-        "px-5 pt-1 pb-0 text-left text-2xs font-bold tracking-[0.07em] uppercase",
-        "whitespace-nowrap text-text-subtle",
+        "px-3.5 py-2.5 text-left text-2xs font-semibold tracking-[0.07em] uppercase",
+        "whitespace-nowrap text-text-subtle border-b-2 border-border",
         className,
       )}
       {...props}
@@ -427,18 +417,23 @@ export function Th({ className, ...props }: React.ThHTMLAttributes<HTMLTableCell
 export function Td({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) {
   return (
     <td
-      className={cn(
-        "border-y border-border bg-surface px-5 py-3 align-middle transition-colors",
-        "first:rounded-l-[14px] first:border-l last:rounded-r-[14px] last:border-r",
-        className,
-      )}
+      className={cn("px-3.5 py-4 border-b border-border/70 align-middle", className)}
       {...props}
     />
   );
 }
 
 export function Tr({ className, ...props }: React.HTMLAttributes<HTMLTableRowElement>) {
-  return <tr className={cn("row-card", className)} {...props} />;
+  return (
+    <tr
+      className={cn(
+        "transition-colors hover:bg-[var(--row-hover)]",
+        "hover:[&>td:first-child]:shadow-[inset_3px_0_0_var(--accent)]",
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 /* ====================================================== Definition list ==== */

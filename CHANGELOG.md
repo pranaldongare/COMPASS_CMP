@@ -8,12 +8,6 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
-- **Row-card tables** (2026-10-11, chosen from three table styles): every
-  table in both apps draws each row as its own white, rounded strip with
-  8 px between rows and small capitals above. A row's left edge takes the
-  colour of its state badge (green, blue, amber, red - via
-  `data-state-tone` on a dotted Badge), and a row lifts a little on hover.
-  Replaces the clean-lines tables.
 - **Sign-in as "Light split"** (2026-10-11, chosen from three designs): the
   left 7/12 has COMPASS at the top left, the app's name as a kicker, the
   headline on two lines, the line under it, the dotted world map, and three
