@@ -68,4 +68,15 @@ def _development_routers() -> tuple[APIRouter, ...]:
     return (devcodes_router,)
 
 
-ROUTERS = (*ROUTERS, *_development_routers())
+def _integration_routers() -> tuple[APIRouter, ...]:
+    """The Databank integration stub (2026-10-12), only when switched on."""
+    from cmp.core.config import settings
+
+    if not settings.databank_stub_enabled:
+        return ()
+    from cmp.api.routers.integration import databank_router
+
+    return (databank_router,)
+
+
+ROUTERS = (*ROUTERS, *_development_routers(), *_integration_routers())

@@ -8,6 +8,15 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Databank integration stub** (2026-10-12, branch `databank-integration`):
+  the six calls of the CMP-Databank brief as typed contracts; CMP's endpoints
+  for asset events (with per-person and per-asset verdicts), consent lookup
+  and instruction results, mounted only with `DATABANK_STUB_ENABLED` (refused
+  in production) behind a service token; CMP's client for inventory, consent
+  changes and instructions; a runnable mock Databank; a demo; and the draft
+  OpenAPI for all six calls. In memory, nothing written to the database. The
+  console and portal proxies no longer forward `/api/integration`.
+  See docs/integration/databank/README.md.
 - **Sign-in as "Light split"** (2026-10-11, chosen from three designs): the
   left 7/12 has COMPASS at the top left, the app's name as a kicker, the
   headline on two lines, the line under it, the dotted world map, and three

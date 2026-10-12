@@ -1,0 +1,1334 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "COMPASS CMP <-> Databank",
+    "description": "The COMPASS CMP <-> Databank integration, version 1 - a draft for both teams\nto settle. CMP hosts calls 1, 2 and 6; Databank hosts calls 3, 4 and 5. JSON\nover HTTPS inside the organisation network, a service identity in each\ndirection (a bearer token in the stub), every event and instruction carrying\nits own ID so a repeat changes nothing.\n",
+    "version": "1.0.0-draft"
+  },
+  "paths": {
+    "/integration/v1/asset-events": {
+      "post": {
+        "tags": [
+          "hosted by CMP"
+        ],
+        "summary": "1 \u00b7 Asset events: registered, updated, deleted, released",
+        "description": "Databank tells CMP about its assets; a registration or update is answered\nwith a verdict per person and one for the asset (the strictest).",
+        "operationId": "asset_events_integration_v1_asset_events_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetEvents"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetEventResults"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integration/v1/consents/{consent_id}": {
+      "get": {
+        "tags": [
+          "hosted by CMP"
+        ],
+        "summary": "2 \u00b7 Consent lookup",
+        "description": "The current state of the chain any consent ID belongs to. Databank's\nfallback: it stores what consent events tell it and asks only when unsure.",
+        "operationId": "consent_lookup_integration_v1_consents__consent_id__get",
+        "parameters": [
+          {
+            "name": "consent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Consent Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integration/v1/persons/{person_id}/assets": {
+      "get": {
+        "tags": [
+          "hosted by Databank"
+        ],
+        "summary": "3 \u00b7 Inventory",
+        "operationId": "inventory_integration_v1_persons__person_id__assets_get",
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Person Id"
+            }
+          },
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "consent_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Consent Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Inventory"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integration/v1/consent-events": {
+      "post": {
+        "tags": [
+          "hosted by Databank"
+        ],
+        "summary": "4 \u00b7 Consent changed",
+        "operationId": "consent_events_integration_v1_consent_events_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentEvents"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acknowledgement"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integration/v1/instructions": {
+      "post": {
+        "tags": [
+          "hosted by Databank"
+        ],
+        "summary": "5 \u00b7 Instructions",
+        "operationId": "instructions_integration_v1_instructions_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Instruction"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstructionAccepted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integration/v1/instructions/{instruction_id}/results": {
+      "post": {
+        "tags": [
+          "hosted by CMP"
+        ],
+        "summary": "6 \u00b7 Instruction results",
+        "description": "Databank reports each item's outcome, in parts as items finish. CMP\ncloses the request only when every item is done.",
+        "operationId": "instruction_results_integration_v1_instructions__instruction_id__results_post",
+        "parameters": [
+          {
+            "name": "instruction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Instruction Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstructionResult"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstructionStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Acknowledgement": {
+        "properties": {
+          "accepted": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Accepted"
+          },
+          "duplicates": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Duplicates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accepted"
+        ],
+        "title": "Acknowledgement"
+      },
+      "Action": {
+        "type": "string",
+        "enum": [
+          "restrict",
+          "lift_restriction",
+          "erase",
+          "redact",
+          "hold",
+          "release_hold"
+        ],
+        "title": "Action"
+      },
+      "AssetEvent": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Event Id"
+          },
+          "type": {
+            "$ref": "#/components/schemas/EventType"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Occurred At"
+          },
+          "asset": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssetRecord"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "asset_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asset Id"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeleteReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "release": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Release"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "type",
+          "occurred_at"
+        ],
+        "title": "AssetEvent"
+      },
+      "AssetEventResults": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/EventResult"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "AssetEventResults"
+      },
+      "AssetEvents": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/AssetEvent"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "events"
+        ],
+        "title": "AssetEvents"
+      },
+      "AssetRecord": {
+        "properties": {
+          "asset_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Asset Id"
+          },
+          "asset_type": {
+            "$ref": "#/components/schemas/AssetType"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Captured At"
+          },
+          "subjects": {
+            "items": {
+              "$ref": "#/components/schemas/Subject"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Subjects"
+          },
+          "other_persons": {
+            "$ref": "#/components/schemas/OtherPersons",
+            "default": "none"
+          },
+          "asset_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Asset Version"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "site_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Site Id"
+          },
+          "batch_ref": {
+            "type": "string",
+            "title": "Batch Ref"
+          },
+          "content_sha256": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Content Sha256"
+          }
+        },
+        "type": "object",
+        "required": [
+          "asset_id",
+          "asset_type",
+          "captured_at",
+          "subjects",
+          "asset_version",
+          "project_id",
+          "site_id",
+          "batch_ref",
+          "content_sha256"
+        ],
+        "title": "AssetRecord",
+        "description": "An asset as Databank holds it."
+      },
+      "AssetState": {
+        "type": "string",
+        "enum": [
+          "quarantined",
+          "usable",
+          "restricted",
+          "erased"
+        ],
+        "title": "AssetState",
+        "description": "Databank's four states; only `usable` allows use."
+      },
+      "AssetType": {
+        "type": "string",
+        "enum": [
+          "image",
+          "video",
+          "audio",
+          "sensor",
+          "document",
+          "other"
+        ],
+        "title": "AssetType"
+      },
+      "ConsentEvent": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Event Id"
+          },
+          "consent": {
+            "$ref": "#/components/schemas/ConsentRecord"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "consent"
+        ],
+        "title": "ConsentEvent"
+      },
+      "ConsentEvents": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/ConsentEvent"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "events"
+        ],
+        "title": "ConsentEvents"
+      },
+      "ConsentRecord": {
+        "properties": {
+          "consent_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Consent Ids"
+          },
+          "current_consent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Current Consent Id"
+          },
+          "person_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Person Id"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ConsentState"
+          },
+          "purposes": {
+            "items": {
+              "$ref": "#/components/schemas/PurposeGrant"
+            },
+            "type": "array",
+            "title": "Purposes"
+          },
+          "changed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Changed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "consent_ids",
+          "current_consent_id",
+          "person_id",
+          "project_id",
+          "state",
+          "purposes",
+          "changed_at"
+        ],
+        "title": "ConsentRecord",
+        "description": "The record Databank asks for (call 2) and CMP sends (call 4)."
+      },
+      "ConsentState": {
+        "type": "string",
+        "enum": [
+          "in_force",
+          "partly_withdrawn",
+          "withdrawn",
+          "expired"
+        ],
+        "title": "ConsentState"
+      },
+      "DeleteReason": {
+        "type": "string",
+        "enum": [
+          "instruction",
+          "retention",
+          "quality",
+          "duplicate",
+          "other"
+        ],
+        "title": "DeleteReason"
+      },
+      "ErasureEvidence": {
+        "properties": {
+          "content_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Sha256"
+          },
+          "derivatives_deleted": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Derivatives Deleted"
+          },
+          "backups_expire_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backups Expire On"
+          }
+        },
+        "type": "object",
+        "title": "ErasureEvidence"
+      },
+      "EventResult": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Event Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EventStatus"
+          },
+          "asset_id": {
+            "type": "string",
+            "title": "Asset Id"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Verdict"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subjects": {
+            "items": {
+              "$ref": "#/components/schemas/SubjectVerdict"
+            },
+            "type": "array",
+            "title": "Subjects"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "status",
+          "asset_id"
+        ],
+        "title": "EventResult"
+      },
+      "EventStatus": {
+        "type": "string",
+        "enum": [
+          "accepted",
+          "duplicate",
+          "ignored_stale",
+          "rejected"
+        ],
+        "title": "EventStatus"
+      },
+      "EventType": {
+        "type": "string",
+        "enum": [
+          "registered",
+          "updated",
+          "deleted",
+          "released"
+        ],
+        "title": "EventType"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Instruction": {
+        "properties": {
+          "instruction_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Instruction Id"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/InstructionReason"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "person_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Person Id"
+          },
+          "issued_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Issued At"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InstructionItem"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "instruction_id",
+          "reason",
+          "person_id",
+          "issued_at",
+          "items"
+        ],
+        "title": "Instruction"
+      },
+      "InstructionAccepted": {
+        "properties": {
+          "instruction_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Instruction Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "accepted"
+          },
+          "duplicate": {
+            "type": "boolean",
+            "title": "Duplicate",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "instruction_id"
+        ],
+        "title": "InstructionAccepted"
+      },
+      "InstructionItem": {
+        "properties": {
+          "asset_id": {
+            "type": "string",
+            "title": "Asset Id"
+          },
+          "action": {
+            "$ref": "#/components/schemas/Action"
+          }
+        },
+        "type": "object",
+        "required": [
+          "asset_id",
+          "action"
+        ],
+        "title": "InstructionItem"
+      },
+      "InstructionReason": {
+        "type": "string",
+        "enum": [
+          "rights_request",
+          "consent_withdrawn",
+          "retention_lapsed",
+          "legal_hold"
+        ],
+        "title": "InstructionReason"
+      },
+      "InstructionResult": {
+        "properties": {
+          "instruction_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Instruction Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ItemResult"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "instruction_id",
+          "items"
+        ],
+        "title": "InstructionResult",
+        "description": "May arrive in parts as items finish: an early partial result is better\nthan a late complete one."
+      },
+      "InstructionStatus": {
+        "properties": {
+          "instruction_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Instruction Id"
+          },
+          "items_reported": {
+            "type": "integer",
+            "title": "Items Reported"
+          },
+          "items_done": {
+            "type": "integer",
+            "title": "Items Done"
+          },
+          "complete": {
+            "type": "boolean",
+            "title": "Complete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "instruction_id",
+          "items_reported",
+          "items_done",
+          "complete"
+        ],
+        "title": "InstructionStatus",
+        "description": "CMP's acknowledgement of a result: where the instruction now stands."
+      },
+      "Inventory": {
+        "properties": {
+          "person_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Person Id"
+          },
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/InventoryAsset"
+            },
+            "type": "array",
+            "title": "Assets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "person_id",
+          "assets"
+        ],
+        "title": "Inventory"
+      },
+      "InventoryAsset": {
+        "properties": {
+          "asset_id": {
+            "type": "string",
+            "title": "Asset Id"
+          },
+          "asset_version": {
+            "type": "integer",
+            "title": "Asset Version"
+          },
+          "asset_type": {
+            "$ref": "#/components/schemas/AssetType"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Captured At"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "consent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Consent Id"
+          },
+          "state": {
+            "$ref": "#/components/schemas/AssetState"
+          },
+          "derivatives": {
+            "type": "integer",
+            "title": "Derivatives",
+            "default": 0
+          },
+          "releases": {
+            "items": {
+              "$ref": "#/components/schemas/Release"
+            },
+            "type": "array",
+            "title": "Releases"
+          }
+        },
+        "type": "object",
+        "required": [
+          "asset_id",
+          "asset_version",
+          "asset_type",
+          "captured_at",
+          "project_id",
+          "consent_id",
+          "state"
+        ],
+        "title": "InventoryAsset"
+      },
+      "ItemResult": {
+        "properties": {
+          "asset_id": {
+            "type": "string",
+            "title": "Asset Id"
+          },
+          "action": {
+            "$ref": "#/components/schemas/Action"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/Outcome"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErasureEvidence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "asset_id",
+          "action",
+          "outcome"
+        ],
+        "title": "ItemResult"
+      },
+      "OtherPersons": {
+        "type": "string",
+        "enum": [
+          "none",
+          "incidental",
+          "unidentified"
+        ],
+        "title": "OtherPersons",
+        "description": "Anyone in the asset with no consent record."
+      },
+      "Outcome": {
+        "type": "string",
+        "enum": [
+          "done",
+          "partial",
+          "failed"
+        ],
+        "title": "Outcome"
+      },
+      "PurposeGrant": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "granted": {
+            "type": "boolean",
+            "title": "Granted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "granted"
+        ],
+        "title": "PurposeGrant"
+      },
+      "Release": {
+        "properties": {
+          "recipient": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Recipient"
+          },
+          "released_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Released On"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recipient",
+          "released_on"
+        ],
+        "title": "Release"
+      },
+      "Subject": {
+        "properties": {
+          "person_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Person Id"
+          },
+          "consent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Consent Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "person_id",
+          "consent_id"
+        ],
+        "title": "Subject",
+        "description": "One consenting person in an asset. Both IDs travel together, so CMP can\nreject a pair that does not belong together."
+      },
+      "SubjectVerdict": {
+        "properties": {
+          "person_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Person Id"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/Verdict"
+          },
+          "purposes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Purposes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "person_id",
+          "verdict"
+        ],
+        "title": "SubjectVerdict"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "Verdict": {
+        "type": "string",
+        "enum": [
+          "valid",
+          "restricted",
+          "invalid",
+          "unknown"
+        ],
+        "title": "Verdict",
+        "description": "CMP's judgement of a subject, and of the asset (the strictest of them)."
+      }
+    }
+  }
+}

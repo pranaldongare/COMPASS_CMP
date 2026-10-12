@@ -257,6 +257,19 @@ class Settings(BaseSettings):
     external_http_timeout_s: float = 10.0  # never infinite — checklist §13
     external_http_retries: int = 3
 
+    # ------------------------------------------------------------ Databank
+    # The Databank integration stub (2026-10-12; see cmp.integration.databank).
+    #: Mounts CMP's three integration endpoints with the mock consent register.
+    #: Refused in production: the verdicts come from a fixture file.
+    databank_stub_enabled: bool = False
+    #: The service identity each side presents, as a bearer token. A stand-in
+    #: for mutual TLS or signed tokens, whichever the organisation runs.
+    databank_service_token: SecretStr = SecretStr("")
+    #: Where Databank's own endpoints are (calls 3, 4 and 5). Empty: none.
+    databank_base_url: str = ""
+    #: The mock consent register; empty uses the fixtures that ship with it.
+    databank_stub_fixtures: str = ""
+
     # ------------------------------------------------------------- transports
     # Which adapter each seam in `cmp.infrastructure` uses. All three default to
     # the local, non-delivering option on purpose: a misconfigured staging box
@@ -356,6 +369,16 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def _production_guards(self) -> Settings:
         """Refuse to boot production with development defaults."""
+        if self.databank_stub_enabled:
+            if self.environment == "production":
+                raise ValueError(
+                    "DATABANK_STUB_ENABLED judges assets against a fixture file - "
+                    "never in production"
+                )
+            if len(self.databank_service_token.get_secret_value()) < 32:
+                raise ValueError(
+                    "DATABANK_SERVICE_TOKEN must be 32+ characters when the Databank stub is on"
+                )
         if self.environment == "production":
             weak = self.secret_key.get_secret_value()
             if weak.startswith("dev-only") or len(weak) < 32:

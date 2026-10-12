@@ -84,7 +84,15 @@ const nextConfig: NextConfig = {
    * exercises the same cookie path that ships.
    */
   async rewrites() {
-    return [{ source: "/api/:path*", destination: `${API_ORIGIN}/:path*` }];
+    // Everything under /api except /api/integration: the endpoints other
+    // systems call (the Databank integration) are reachable only on the
+    // internal network, never through this public edge (2026-10-12).
+    return [
+      {
+        source: "/api/:path((?!integration(?:/|$)).*)",
+        destination: `${API_ORIGIN}/:path`,
+      },
+    ];
   },
 
   async headers() {
