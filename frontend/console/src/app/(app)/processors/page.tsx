@@ -10,7 +10,7 @@
  */
 "use client";
 
-import { Ban, Eye, Pencil, Plus, UsersRound } from "lucide-react";
+import { Ban, Eye, FileSpreadsheet, Pencil, Plus, UsersRound } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
@@ -27,6 +27,7 @@ import { ProcessorForm } from "@/features/registry/components/forms";
 import { RespondentsPanel } from "@/features/registry/components/respondents";
 import { RestrictedCountries } from "@/features/registry/components/restricted-countries";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ImportWorkbook } from "@/features/registry/components/import-workbook";
 import { EmptyRecords } from "@/components/ui/graphics";
 import { RowActions } from "@/components/ui/overlay";
 import { Button, Td, Tr } from "@/components/ui/primitives";
@@ -44,6 +45,7 @@ export default function ProcessorsPage() {
   const [status, setStatus] = useFilterParam("status");
   const [q, setQ] = useFilterParam("q");
   const [creating, setCreating] = React.useState(false);
+  const [importing, setImporting] = React.useState(false);
   const [editing, setEditing] = React.useState<Processor | null>(null);
   const [respondentsFor, setRespondentsFor] = React.useState<Processor | null>(null);
   const suspend = useSuspendProcessor();
@@ -57,6 +59,8 @@ export default function ProcessorsPage() {
   });
 
   const canSuspend = me?.role === "dpo" || me?.role === "admin";
+  // Filling the registry from a spreadsheet is the administrator's (2026-10-14).
+  const canImport = me?.role === "admin";
 
   async function onSuspend(uuid: string, name: string) {
     try {
@@ -77,11 +81,21 @@ export default function ProcessorsPage() {
         title="Processors"
         description="Who processes personal data: our own teams (in-house) and outside organisations (external). Each needs a contract reference and a confirmed security assessment before it can operate a site."
         actions={
-          canSuspend ? (
-            <Button variant="primary" onClick={() => setCreating(true)}>
-              <Plus className="size-4" />
-              Register processor
-            </Button>
+          canSuspend || canImport ? (
+            <>
+              {canImport && (
+                <Button variant="secondary" onClick={() => setImporting(true)}>
+                  <FileSpreadsheet className="size-4" />
+                  Import from Excel
+                </Button>
+              )}
+              {canSuspend && (
+                <Button variant="primary" onClick={() => setCreating(true)}>
+                  <Plus className="size-4" />
+                  Register processor
+                </Button>
+              )}
+            </>
           ) : null
         }
       />
@@ -183,6 +197,16 @@ export default function ProcessorsPage() {
 
       {/* The s.16 list: shown to whoever the server says may keep it. */}
       {me?.writes?.includes("restricted_country") && <RestrictedCountries />}
+
+      <Dialog open={importing} onOpenChange={setImporting}>
+        <DialogContent
+          title="Import processors from Excel"
+          description="Check the workbook first: nothing is created until every row is valid."
+          size="lg"
+        >
+          <ImportWorkbook kind="processors" onDone={() => setImporting(false)} />
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={creating} onOpenChange={setCreating}>
         <DialogContent

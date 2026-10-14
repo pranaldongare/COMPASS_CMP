@@ -1840,6 +1840,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/processors/import/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The workbook to fill in for a processor import (sample=true: with example rows) */
+        get: operations["processor_template_processors_import_template_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/processors/import/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** What a processors workbook would create, skip and refuse - nothing is written */
+        post: operations["check_processor_import_processors_import_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/processors/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register the processors a workbook lists: all its rows, or none of them
+         * @description A row in error refuses the whole file (422, `import_rejected`, the report
+         *     in `details`). A processor whose legal name is registered is skipped.
+         */
+        post: operations["import_processors_processors_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/processors/{processor_uuid}/respondents": {
         parameters: {
             query?: never;
@@ -1955,6 +2010,62 @@ export interface paths {
          *     under an in-house one. Everyone else registers on somebody's behalf.
          */
         post: operations["create_source_sources_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sources/import/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The workbook to fill in for a data-source import (sample=true: with example rows) */
+        get: operations["source_template_sources_import_template_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sources/import/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** What a data-sources workbook would create, skip and refuse - nothing is written */
+        post: operations["check_source_import_sources_import_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sources/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register the data sources a workbook lists: all its rows, or none of them
+         * @description Each row names its processor by legal name or contract reference, which
+         *     must be registered and active; blank is a source run in-house. A row in
+         *     error refuses the whole file; a source code already registered is skipped.
+         */
+        post: operations["import_sources_sources_import_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5939,6 +6050,22 @@ export interface components {
              */
             file: string;
         };
+        /** Body_check_processor_import_processors_import_check_post */
+        Body_check_processor_import_processors_import_check_post: {
+            /**
+             * File
+             * @description The filled-in workbook (.xlsx), max 25 MB
+             */
+            file: string;
+        };
+        /** Body_check_source_import_sources_import_check_post */
+        Body_check_source_import_sources_import_check_post: {
+            /**
+             * File
+             * @description The filled-in workbook (.xlsx), max 25 MB
+             */
+            file: string;
+        };
         /** Body_create_import_imports_post */
         Body_create_import_imports_post: {
             /**
@@ -5961,6 +6088,22 @@ export interface components {
              * @description .docx notice template, max 25 MB
              */
             document: string;
+        };
+        /** Body_import_processors_processors_import_post */
+        Body_import_processors_processors_import_post: {
+            /**
+             * File
+             * @description The filled-in workbook (.xlsx), max 25 MB
+             */
+            file: string;
+        };
+        /** Body_import_sources_sources_import_post */
+        Body_import_sources_sources_import_post: {
+            /**
+             * File
+             * @description The filled-in workbook (.xlsx), max 25 MB
+             */
+            file: string;
         };
         /** Body_message_holder_breaches__breach_uuid__tickets__ticket_uuid__messages_post */
         Body_message_holder_breaches__breach_uuid__tickets__ticket_uuid__messages_post: {
@@ -7979,6 +8122,10 @@ export interface components {
             attention?: components["schemas"]["AttentionRow"][];
             /** Breaches */
             breaches?: components["schemas"]["BreachSummaryOut"][];
+            /** Trends */
+            trends?: {
+                [key: string]: number[];
+            };
         };
         /** DayCount */
         DayCount: {
@@ -8452,6 +8599,45 @@ export interface components {
             imported_by_uuid: string;
             /** Imported By Name */
             imported_by_name: string;
+        };
+        /** ImportProblemOut */
+        ImportProblemOut: {
+            /** Column */
+            column: string;
+            /** Message */
+            message: string;
+        };
+        /** ImportReportOut */
+        ImportReportOut: {
+            /** Kind */
+            kind: string;
+            /** Applied */
+            applied: boolean;
+            /** Total */
+            total: number;
+            /** Created */
+            created: number;
+            /** Skipped */
+            skipped: number;
+            /** Errors */
+            errors: number;
+            /** Rows */
+            rows: components["schemas"]["ImportRowOut"][];
+        };
+        /** ImportRowOut */
+        ImportRowOut: {
+            /** Row */
+            row: number;
+            /** Name */
+            name: string | null;
+            /** Outcome */
+            outcome: string;
+            /** Message */
+            message?: string | null;
+            /** Problems */
+            problems?: components["schemas"]["ImportProblemOut"][];
+            /** Uuid */
+            uuid?: string | null;
         };
         /** InstructionIn */
         InstructionIn: {
@@ -14752,6 +14938,103 @@ export interface operations {
             };
         };
     };
+    processor_template_processors_import_template_get: {
+        parameters: {
+            query?: {
+                sample?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_processor_import_processors_import_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_check_processor_import_processors_import_check_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_processors_processors_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_processors_processors_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_respondents_processors__processor_uuid__respondents_get: {
         parameters: {
             query?: never;
@@ -15007,6 +15290,103 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SourceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    source_template_sources_import_template_get: {
+        parameters: {
+            query?: {
+                sample?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_source_import_sources_import_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_check_source_import_sources_import_check_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_sources_sources_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_sources_sources_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportReportOut"];
                 };
             };
             /** @description Validation Error */

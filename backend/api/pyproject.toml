@@ -109,7 +109,7 @@ explicit_package_bases = true
 namespace_packages = true
 
 [[tool.mypy.overrides]]
-module = ["celery.*", "kombu.*", "slowapi.*", "prometheus_fastapi_instrumentator.*"]
+module = ["celery.*", "kombu.*", "slowapi.*", "prometheus_fastapi_instrumentator.*", "openpyxl.*"]
 ignore_missing_imports = true
 
 # Celery's decorators are untyped upstream, so every task and signal handler is

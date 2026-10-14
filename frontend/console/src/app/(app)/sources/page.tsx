@@ -8,7 +8,7 @@
  */
 "use client";
 
-import { Ban, Building2, Eye, Pencil, Plus, UserRoundCog } from "lucide-react";
+import { Ban, Building2, Eye, FileSpreadsheet, Pencil, Plus, UserRoundCog } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
@@ -28,6 +28,7 @@ import {
   SourceOwner,
 } from "@/features/registry/components/source-owner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ImportWorkbook } from "@/features/registry/components/import-workbook";
 import { RowActions, Tooltip } from "@/components/ui/overlay";
 import { EmptyRecords } from "@/components/ui/graphics";
 import { Alert, Badge, Button, Td, Tr } from "@/components/ui/primitives";
@@ -77,6 +78,7 @@ export default function SourcesPage() {
     setCreatingState(open);
     if (!open && newParam) setNewParam("");
   };
+  const [importing, setImporting] = React.useState(false);
   const [editing, setEditing] = React.useState<DataSource | null>(null);
   const [assigning, setAssigning] = React.useState<DataSource | null>(null);
   const suspend = useSuspendSource();
@@ -95,6 +97,8 @@ export default function SourcesPage() {
   });
 
   const canSuspend = me?.role === "dpo" || me?.role === "admin";
+  // Filling the registry from a spreadsheet is the administrator's (2026-10-14).
+  const canImport = me?.role === "admin";
   // Making somebody accountable is the DCO Admin's routing step as well as an
   // administrative one, so they hold it alongside the DPO and the administrator.
   const canAssignOwner = canSuspend || me?.role === "dco_admin";
@@ -124,11 +128,21 @@ export default function SourcesPage() {
         title="Data sources"
         description="Where records come from and which fields each one owns. A source that is not authoritative for a field must never overwrite it."
         actions={
-          canCreate ? (
-            <Button variant="primary" onClick={() => setCreating(true)}>
-              <Plus className="size-4" />
-              Register source
-            </Button>
+          canCreate || canImport ? (
+            <>
+              {canImport && (
+                <Button variant="secondary" onClick={() => setImporting(true)}>
+                  <FileSpreadsheet className="size-4" />
+                  Import from Excel
+                </Button>
+              )}
+              {canCreate && (
+                <Button variant="primary" onClick={() => setCreating(true)}>
+                  <Plus className="size-4" />
+                  Register source
+                </Button>
+              )}
+            </>
           ) : null
         }
       />
@@ -316,6 +330,16 @@ export default function SourcesPage() {
           </Tr>
         )}
       />
+
+      <Dialog open={importing} onOpenChange={setImporting}>
+        <DialogContent
+          title="Import data sources from Excel"
+          description="Check the workbook first: nothing is created until every row is valid."
+          size="lg"
+        >
+          <ImportWorkbook kind="sources" onDone={() => setImporting(false)} />
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={creating} onOpenChange={setCreating}>
         <DialogContent

@@ -7,7 +7,7 @@
  * draft -> active -> retired, and a retired purpose is still readable.
  */
 
-import { apiDelete, apiGet, apiPost, apiPut, queryString } from "@/lib/api";
+import { apiDelete, apiDownload, apiGet, apiPost, apiPut, queryString } from "@/lib/api";
 import type {
   Acknowledged,
   DataSource,
@@ -15,6 +15,8 @@ import type {
   Processor,
   Purpose,
   PurposeUsageEntry,
+  RegistryImportKind,
+  RegistryImportReport,
   RestrictedCountry,
   Uuid,
   ProcessorRespondent,
@@ -237,4 +239,41 @@ export function addRespondent(processorUuid: Uuid, body: RespondentInput): Promi
 
 export function removeRespondent(processorUuid: Uuid, respondentUuid: Uuid): Promise<Acknowledged> {
   return apiDelete<Acknowledged>(`/processors/${processorUuid}/respondents/${respondentUuid}`);
+}
+
+/* ------------------------------------------------- imports (2026-10-14) */
+
+const XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const IMPORT_PATH: Record<RegistryImportKind, string> = {
+  processors: "/processors/import",
+  sources: "/sources/import",
+};
+
+/** The workbook to fill in, or the same with example rows. Administrator only. */
+export function registryImportTemplate(kind: RegistryImportKind, sample = false) {
+  return apiDownload(`${IMPORT_PATH[kind]}/template${queryString({ sample: sample || undefined })}`);
+}
+
+function workbookForm(file: File): FormData {
+  // A browser that does not know the type sends it untyped; the API checks it.
+  const typed = file.type ? file : new File([file], file.name, { type: XLSX });
+  const form = new FormData();
+  form.set("file", typed, typed.name);
+  return form;
+}
+
+/** What a workbook would create, skip and refuse. Writes nothing. */
+export function checkRegistryImport(
+  kind: RegistryImportKind,
+  file: File,
+): Promise<RegistryImportReport> {
+  return apiPost<RegistryImportReport>(`${IMPORT_PATH[kind]}/check`, workbookForm(file));
+}
+
+/** Create every row of a workbook, or - if any row is in error - none. */
+export function applyRegistryImport(
+  kind: RegistryImportKind,
+  file: File,
+): Promise<RegistryImportReport> {
+  return apiPost<RegistryImportReport>(IMPORT_PATH[kind], workbookForm(file));
 }

@@ -113,3 +113,30 @@ export interface DataSource {
   owner_name: string | null;
   owner_role: Role | null;
 }
+
+/** What a registry spreadsheet holds (2026-10-14): an administrator's import. */
+export type RegistryImportKind = "processors" | "sources";
+
+/** One row of the spreadsheet, and what the import did or would do with it. */
+export interface RegistryImportRow {
+  /** The spreadsheet's row number, counting the headings as row 1. */
+  row: number;
+  name: string | null;
+  /** `ready` on a check: would be created. */
+  outcome: "ready" | "created" | "skipped" | "error";
+  message: string | null;
+  problems: { column: string; message: string }[];
+  uuid: Uuid | null;
+}
+
+/** A check (nothing written), or an import. All rows or none: one error refuses the file. */
+export interface RegistryImportReport {
+  kind: RegistryImportKind;
+  applied: boolean;
+  total: number;
+  /** Created, or - on a check - that would be. */
+  created: number;
+  skipped: number;
+  errors: number;
+  rows: RegistryImportRow[];
+}

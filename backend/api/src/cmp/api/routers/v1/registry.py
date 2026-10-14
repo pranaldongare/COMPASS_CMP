@@ -10,12 +10,13 @@ from datetime import UTC, date, datetime, timedelta
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, File, Query, Request, Response, UploadFile, status
 from pydantic import Field, field_validator, model_validator
 
 from cmp.api.dependencies import (
     CurrentUser,
     Paging,
+    RequireAdmin,
     RequireDPO,
     RequireDPOorAdmin,
     RequireResource,
@@ -27,6 +28,7 @@ from cmp.core.pagination import PageRequest
 from cmp.core.permissions import Role
 from cmp.db.pool import connection, transaction
 from cmp.db.repositories import registry as repo
+from cmp.domain.registry import imports
 from cmp.domain.registry import service as registry
 from cmp.schemas.common import (
     Acknowledged,
@@ -39,6 +41,7 @@ from cmp.schemas.common import (
     ShortText,
 )
 from cmp.validation import Email
+from cmp.validation.files import SPREADSHEET, check_upload
 
 router = APIRouter(tags=["registry"])
 
@@ -328,6 +331,92 @@ async def create_processor(
         )
 
 
+# ================================================================= imports
+# An administrator fills the registry from a spreadsheet (2026-10-14). Declared
+# before `/processors/{processor_uuid}/...` and `/sources/{source_uuid}/...` so
+# that `import` is never read as a UUID.
+class ImportProblemOut(Out):
+    column: str
+    message: str
+
+
+class ImportRowOut(Out):
+    #: The row number in the spreadsheet, counting the headings as row 1.
+    row: int
+    name: str | None
+    #: `ready` (a check: would be created), `created`, `skipped` or `error`.
+    outcome: str
+    message: str | None = None
+    problems: list[ImportProblemOut] = Field(default_factory=list)
+    uuid: UUID | None = None
+
+
+class ImportReportOut(Out):
+    kind: str
+    #: False for a check, and for an upload that was refused.
+    applied: bool
+    total: int
+    #: Created, or - on a check - that would be.
+    created: int
+    skipped: int
+    errors: int
+    rows: list[ImportRowOut]
+
+
+ImportFile = Annotated[UploadFile, File(description="The filled-in workbook (.xlsx), max 25 MB")]
+
+
+async def _workbook(file: UploadFile) -> bytes:
+    payload = await file.read()
+    check_upload(payload, file.content_type, SPREADSHEET)
+    return payload
+
+
+def _xlsx(content: bytes, name: str) -> Response:
+    return Response(
+        content=content,
+        media_type=SPREADSHEET.allowed_mime[0],
+        headers={
+            "Content-Disposition": f'attachment; filename="{name}"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+@router.get(
+    "/processors/import/template",
+    summary="The workbook to fill in for a processor import (sample=true: with example rows)",
+)
+async def processor_template(principal: RequireAdmin, sample: bool = False) -> Response:
+    name = "processors-sample.xlsx" if sample else "processors-template.xlsx"
+    return _xlsx(imports.template("processors", sample=sample), name)
+
+
+@router.post(
+    "/processors/import/check",
+    response_model=ImportReportOut,
+    summary="What a processors workbook would create, skip and refuse - nothing is written",
+)
+async def check_processor_import(principal: RequireAdmin, file: ImportFile) -> dict[str, Any]:
+    payload = await _workbook(file)
+    async with connection() as conn:
+        return await imports.processors(conn, payload=payload, apply=False)
+
+
+@router.post(
+    "/processors/import",
+    response_model=ImportReportOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register the processors a workbook lists: all its rows, or none of them",
+)
+async def import_processors(principal: RequireAdmin, file: ImportFile) -> dict[str, Any]:
+    """A row in error refuses the whole file (422, `import_rejected`, the report
+    in `details`). A processor whose legal name is registered is skipped."""
+    payload = await _workbook(file)
+    async with transaction() as conn:
+        return await imports.processors(conn, payload=payload, apply=True)
+
+
 @router.get(
     "/processors/{processor_uuid}/respondents",
     response_model=list[RespondentOut],
@@ -564,6 +653,41 @@ async def create_source(
             site_uuid=str(body.site_uuid) if body.site_uuid else None,
             is_authoritative_for=body.is_authoritative_for,
         )
+
+
+@router.get(
+    "/sources/import/template",
+    summary="The workbook to fill in for a data-source import (sample=true: with example rows)",
+)
+async def source_template(principal: RequireAdmin, sample: bool = False) -> Response:
+    name = "data-sources-sample.xlsx" if sample else "data-sources-template.xlsx"
+    return _xlsx(imports.template("sources", sample=sample), name)
+
+
+@router.post(
+    "/sources/import/check",
+    response_model=ImportReportOut,
+    summary="What a data-sources workbook would create, skip and refuse - nothing is written",
+)
+async def check_source_import(principal: RequireAdmin, file: ImportFile) -> dict[str, Any]:
+    payload = await _workbook(file)
+    async with connection() as conn:
+        return await imports.sources(conn, payload=payload, apply=False, user_id=principal.user_id)
+
+
+@router.post(
+    "/sources/import",
+    response_model=ImportReportOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register the data sources a workbook lists: all its rows, or none of them",
+)
+async def import_sources(principal: RequireAdmin, file: ImportFile) -> dict[str, Any]:
+    """Each row names its processor by legal name or contract reference, which
+    must be registered and active; blank is a source run in-house. A row in
+    error refuses the whole file; a source code already registered is skipped."""
+    payload = await _workbook(file)
+    async with transaction() as conn:
+        return await imports.sources(conn, payload=payload, apply=True, user_id=principal.user_id)
 
 
 @router.get("/sources/{source_uuid}", response_model=SourceOut)

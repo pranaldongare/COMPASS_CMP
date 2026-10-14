@@ -30,6 +30,22 @@ async def processor_by_uuid(conn: Conn, processor_uuid: str) -> Row | None:
     )
 
 
+async def processors_named(conn: Conn, text: str) -> list[Row]:
+    """Processors whose legal name or contract reference is `text`, any case.
+
+    How a spreadsheet names a processor (the registry import, 2026-10-14):
+    people write the name they know, not a UUID. More than one row means the
+    name is ambiguous and the caller should ask for the contract reference.
+    """
+    return await fetch_all(
+        conn,
+        f"SELECT p.processor_id, {PROCESSOR_COLUMNS} FROM processor p"
+        " WHERE lower(p.legal_name) = lower(%s) OR lower(p.contract_ref) = lower(%s)"
+        " ORDER BY p.processor_id",
+        (text, text),
+    )
+
+
 async def create_processor(
     conn: Conn,
     *,

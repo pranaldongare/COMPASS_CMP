@@ -74,6 +74,7 @@ import type {
   Processor,
   Project,
   Purpose,
+  RegistryImportReport,
   SiteListRow,
   User,
 } from "@/types";
@@ -156,6 +157,12 @@ export type _Processor = Covers<"Processor", Schemas["ProcessorOut"], Processor>
 // was joined and selected, the response model did not declare it, and the
 // payload lost it with nothing failing anywhere.
 export type _DataSource = Covers<"DataSource", Schemas["SourceOut"], DataSource>;
+// The administrator's spreadsheet import (2026-10-14): check and import alike.
+export type _RegistryImportReport = Covers<
+  "RegistryImportReport",
+  Schemas["ImportReportOut"],
+  RegistryImportReport
+>;
 
 export type _ConsentRow = Covers<"ConsentRow", Schemas["ConsentRow"], ConsentRow>;
 export type _ConsentListRow = Covers<
@@ -206,6 +213,7 @@ const _contractHolds: {
   Purpose: _Purpose;
   Processor: _Processor;
   DataSource: _DataSource;
+  RegistryImportReport: _RegistryImportReport;
   ConsentRow: _ConsentRow;
   ConsentListRow: _ConsentListRow;
   LinkListRow: _LinkListRow;
@@ -233,6 +241,7 @@ const _contractHolds: {
   Purpose: true,
   Processor: true,
   DataSource: true,
+  RegistryImportReport: true,
   ConsentRow: true,
   ConsentListRow: true,
   LinkListRow: true,

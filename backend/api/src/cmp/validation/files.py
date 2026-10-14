@@ -123,6 +123,16 @@ BREACH_EVIDENCE = UploadRules(
     ),
 )
 
+#: A registry import (2026-10-14): processors or data sources, one row each, in
+#: the workbook the template gives. Only .xlsx, which is a zip of XML and is
+#: read without running anything; the old binary .xls is refused.
+SPREADSHEET = UploadRules(
+    field="file",
+    max_bytes=25 * 1024 * 1024,
+    allowed_mime=("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",),
+    allowed_suffixes=(".xlsx",),
+)
+
 
 def check_upload(payload: bytes, content_type: str | None, rules: UploadRules) -> None:
     """Refuse an upload that breaks the rules, naming the field that failed.
