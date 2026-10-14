@@ -134,8 +134,10 @@ All read from `backend/dkms/.env` (unknown variables are ignored).
 
 ### The portals
 
-Only `NEXT_PUBLIC_*` reaches the browser. Everything is read when the server
-starts, so a change needs a restart.
+Only `NEXT_PUBLIC_*` reaches the browser. `NEXT_PUBLIC_*` values and
+`API_ORIGIN` are fixed when the portal is built (`next build`), so a change
+needs a new build. The rest is read when the server starts, so a change needs
+a restart.
 
 | Variable | Where | Default | What it does |
 |---|---|---|---|
@@ -143,7 +145,7 @@ starts, so a change needs a restart.
 | `NEXT_PUBLIC_SESSION_COOKIE` | both | `cmp_session` | The session cookie the decrypt route and `proxy.ts` look for. Must match the API's `COOKIE_NAME`. Not in `.env.example` |
 | `NEXT_PUBLIC_TICKET_COOKIE` | both | `cmp_ticket` | The cookie an outside holder's ticket page carries after its code (0049); the decrypt route accepts it as it accepts a session. Must match the API's `HOLDER_TICKET_COOKIE` |
 | `NEXT_PUBLIC_DEV_SHOW_CODES` | both, development | unset | `true` shows each one-time code in a popup, read from the API's development-only route; the API ignores it outside local/test |
-| `API_ORIGIN` | both, `next.config.ts` | `http://127.0.0.1:8000` | Where `/api` is proxied to |
+| `API_ORIGIN` | both, `next.config.ts` | `http://127.0.0.1:8000` | Where `/api` is proxied to. **Fixed at `next build`**: the rewrite is written into the build output, and a different value at `next start` is ignored (checked 2026-10-14, [deployment](../deployment/portal-frontend-aws.md#6-configuration-what-is-fixed-at-build-what-is-read-at-start)) |
 | `NEXT_PUBLIC_API_URL` | both | `/api` | Leave unset. Set, every request is cross-origin and the session cookie is dropped |
 | `NEXT_PUBLIC_APP_NAME` | both | per portal | |
 | `NEXT_PUBLIC_CSRF_HEADER`, `NEXT_PUBLIC_CSRF_COOKIE` | both | `X-CSRF-Token`, `cmp_csrf` | Must match the API's `CSRF_HEADER_NAME` and `CSRF_COOKIE_NAME` |

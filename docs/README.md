@@ -34,6 +34,7 @@ you need. **Every document is in this tree.** The one exception is a
 **Running it somewhere**
 
 - [Local development](operations/local-development.md) is also how it runs anywhere: a virtualenv per Python service, `npm run dev` per portal, PostgreSQL and Redis beside them. Why there are no containers is [ADR 0018](decisions/0018-pip-and-a-virtualenv-no-containers.md); how it was once meant to be containerised is in [history/](history/README.md)
+- [Deployment](deployment/README.md): putting the platform on real infrastructure. So far [the data-principal portal on AWS](deployment/portal-frontend-aws.md): the services, the architecture and the end-to-end process, and what must be fixed before go-live
 - [Runbook](operations/runbook.md): restarts, rebuilding a development database, an audit chain that does not verify, rate-limit buckets
 
 **Understanding why**
