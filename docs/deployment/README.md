@@ -1,9 +1,9 @@
 # Deployment
 
 How COMPASS CMP is put on real infrastructure. Local setup is in
-[operations/local-development.md](../operations/local-development.md); why
-nothing ships as a container is
-[ADR 0018](../decisions/0018-pip-and-a-virtualenv-no-containers.md).
+[operations/local-development.md](../operations/local-development.md).
+Everything runs as plain processes on servers, with no Docker
+([ADR 0018](../decisions/0018-pip-and-a-virtualenv-no-containers.md)).
 
 | Document | Covers | Status |
 |---|---|---|

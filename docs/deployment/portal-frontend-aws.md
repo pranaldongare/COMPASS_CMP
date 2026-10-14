@@ -11,6 +11,11 @@ them ([section 9](#9-what-the-portal-needs-from-the-rest-of-the-platform)).
 The staff console follows the same pattern with one difference
 ([section 13](#13-the-staff-console)).
 
+**No Docker.** The portal is deployed as a plain Node.js application: the build
+output is copied to EC2 servers and run with `next start` under systemd. No
+Docker image, no Dockerfile and no container service (ECS, EKS, Fargate) is
+used anywhere in this design.
+
 **Status:** proposal, 2026-10-14. Nothing here is provisioned yet. The facts
 about how the portal builds and runs were checked against a production build
 of the current code (`next build` and `next start`, Next.js 16.3.2) on
@@ -75,7 +80,7 @@ application, or reverses a decision that must be taken again on purpose.
 
 | Rule | Source | What it means on AWS |
 |---|---|---|
-| **No container image of ours** | [ADR 0018](../decisions/0018-pip-and-a-virtualenv-no-containers.md) | Every service is a process. The portal runs as `next start` on a virtual machine, not as a Docker image. Choosing ECS, Fargate, EKS or App Runner-from-image needs a new ADR first ([section 5](#5-options-considered-and-why-not)) |
+| **No Docker: the portal runs as a plain process** | [ADR 0018](../decisions/0018-pip-and-a-virtualenv-no-containers.md) | The portal runs as `next start` directly on an EC2 server, managed by systemd. Nothing is packaged as a Docker image |
 | **One origin per portal, `/api` proxied through it** | [ADR 0003](../decisions/0003-server-side-sessions-and-first-party-proxy.md) | The browser must reach the portal and its `/api` on the same hostname. `NEXT_PUBLIC_API_URL` stays unset. Splitting `/api` onto a different domain breaks sign-in with no error |
 | **Two portals, two hostnames** | [ADR 0009](../decisions/0009-two-portals-by-audience.md) | The portal and the console are deployed separately, each on its own domain |
 | **The key service is never public** | [DKMS docs](../dkms/README.md), `route.ts` | DKMS sits in a private subnet. Only the portal servers, the console servers and the API may reach it |
@@ -86,7 +91,7 @@ application, or reverses a decision that must be taken again on purpose.
 **Amazon EC2 instances in an Auto Scaling group, running the portal with
 `next start` under systemd, behind an Application Load Balancer, with
 Amazon CloudFront and AWS WAF in front.** It runs the portal exactly as
-development does (a Node.js process), so it keeps ADR 0018. It also gives the
+development does (a Node.js process, no Docker), so it keeps ADR 0018. It also gives the
 portal private network access to the API and the key service, which the
 fully managed options do not ([section 5](#5-options-considered-and-why-not)).
 
@@ -147,7 +152,7 @@ How a request travels:
 | **NAT gateway** *or* **VPC endpoints** | Outbound access from private instances for OS updates, SSM, CloudWatch, S3 | Endpoints for `ssm`, `ssmmessages`, `ec2messages`, `logs`, `monitoring`, `s3` (gateway) can replace most NAT traffic |
 | **Elastic Load Balancing (ALB)** | Spreads requests across instances, health checks, draining during deploys | Internal, HTTPS listener, target group on port 3001 |
 | **Amazon EC2 + Auto Scaling** | Runs the portal processes | Launch template + Auto Scaling group, minimum 2 instances across 2 AZs |
-| **EC2 Image Builder** *(recommended)* | A hardened "golden" AMI with Node.js, CodeDeploy agent and CloudWatch agent preinstalled | Rebuild monthly for OS patches |
+| **EC2 Image Builder** *(recommended)* | A hardened "golden" AMI (the EC2 server's disk image, not a Docker image) with Node.js, CodeDeploy agent and CloudWatch agent preinstalled | Rebuild monthly for OS patches |
 | **AWS Systems Manager** | Session Manager (shell access with no SSH and no open port 22), Parameter Store (portal settings), Patch Manager | Parameters under `/compass/<env>/portal/` |
 | **AWS CodePipeline** | Orchestrates source → build → deploy | Source from GitHub through an AWS CodeConnections connection |
 | **AWS CodeBuild** | Installs, type-checks, lints, tests and builds the portal | One build per environment, because some settings are baked in at build ([section 6](#6-configuration-what-is-fixed-at-build-what-is-read-at-start)) |
@@ -169,9 +174,8 @@ against the organisation's data-localisation position before provisioning.
 | Option | Why it is not the recommendation |
 |---|---|
 | **AWS Amplify Hosting** (managed Next.js) | Amplify's server compute cannot reach private resources in a VPC, and the portal must reach the API and DKMS privately. Making DKMS public to suit it is not acceptable. Also check Next.js 16 support before relying on it |
-| **ECS on Fargate / EKS / App Runner from an image** | All need a container image, which [ADR 0018](../decisions/0018-pip-and-a-virtualenv-no-containers.md) rules out. A good choice later, if the team wants identical units and scale-out. That is a new ADR and a Dockerfile written against the pinned dependencies |
 | **Lambda via OpenNext / SST** | Possible, but it re-packages Next.js into functions, splits the CSP proxy and the rewrites across Lambda and CloudFront, and adds a toolchain the team does not use. Cold starts would also hit a phone user on a consent link |
-| **Elastic Beanstalk (Node.js platform)** | Works without a Dockerfile and is a reasonable simpler alternative. It hides the same EC2 + ALB + Auto Scaling underneath with less control over the AMI, systemd and deployment hooks. Choose it if the team prefers fewer moving parts to configure |
+| **Elastic Beanstalk (Node.js platform)** | Also runs the portal as a plain Node.js process, and is a reasonable simpler alternative. It hides the same EC2 + ALB + Auto Scaling underneath with less control over the AMI, systemd and deployment hooks. Choose it if the team prefers fewer moving parts to configure |
 | **S3 + CloudFront static site** | Not possible: every page is rendered on the server ([section 1](#1-what-the-portal-is-when-it-runs)) |
 
 ## 6. Configuration: what is fixed at build, what is read at start
@@ -255,7 +259,7 @@ DKMS bound to `127.0.0.1` cannot be reached from the portal (see
 
 ### 7.5 Instance role and launch template
 
-**AMI** (build it with EC2 Image Builder, or bake it once by hand for staging):
+**AMI** - the EC2 server's operating-system disk image (build it with EC2 Image Builder, or prepare it once by hand for staging):
 
 - Amazon Linux 2023, latest.
 - **Node.js 24 LTS**, the same major version the team builds and tests with
@@ -368,7 +372,7 @@ aws ssm put-parameter --name $P/DKMS_URL                     --type String --val
 2. **Connection:** an AWS CodeConnections connection to the GitHub repository
    (`pranaldongare/COMPASS_CMP`), approved by a repository admin.
 3. **CodeBuild project** `compass-portal-<env>-build`:
-   Amazon Linux standard image of the chosen architecture, `buildspec` path
+   Amazon Linux build environment of the chosen architecture, `buildspec` path
    `frontend/portal/deploy/buildspec.yml` ([8.1](#81-buildspecyml)). Its role
    may read `/compass/<env>/portal/*` and write to the artifact bucket.
 4. **CodeDeploy application** `compass-portal`, deployment group
@@ -427,7 +431,7 @@ env:
 phases:
   install:
     runtime-versions:
-      nodejs: 24                  # if the image lacks 24, install the pinned version here instead
+      nodejs: 24                  # if the build environment lacks 24, install the pinned version here instead
   pre_build:
     commands:
       - cd frontend/portal
@@ -689,8 +693,6 @@ change outside this document. None of them is done yet.
 5. **CI is red** ([ADR 0018](../decisions/0018-pip-and-a-virtualenv-no-containers.md), *Consequences*).
    The CodeBuild stage above runs `npm run verify` itself, so the portal's
    release does not depend on GitHub Actions. Fixing CI remains its own task.
-6. **No container decision.** If the team prefers ECS/Fargate to EC2, write the
-   new ADR first ([section 5](#5-options-considered-and-why-not)).
 
 ## 13. The staff console
 
