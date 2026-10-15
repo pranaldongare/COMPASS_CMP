@@ -3271,7 +3271,15 @@ export interface paths {
          */
         get: operations["consent_records_archive_consent_records_get"];
         put?: never;
-        post?: never;
+        /**
+         * The consent records a list of consent IDs names, as PDFs in a ZIP
+         * @description For a list an auditor or the downstream store supplies. **All or none**:
+         *     an ID that does not exist or is outside your scope refuses the request
+         *     (422 `consent_records_not_found`, each such ID in `not_found`), so a list is
+         *     never answered by a quietly shorter archive. Same ZIP and manifest as the
+         *     filtered archive; every copy is audited.
+         */
+        post: operations["consent_records_by_id_consent_records_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7946,6 +7954,11 @@ export interface components {
             project_uuid: string;
             /** Project Name */
             project_name: string;
+        };
+        /** ConsentRecordsIn */
+        ConsentRecordsIn: {
+            /** Consent Uuids */
+            consent_uuids: string[];
         };
         /** ConsentRow */
         ConsentRow: {
@@ -17840,6 +17853,39 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consent_records_by_id_consent_records_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsentRecordsIn"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

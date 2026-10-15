@@ -12,6 +12,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Response
+from pydantic import Field
 
 from cmp.api.dependencies import Paging, RequireResource, RequireRole, reject_unknown_filters
 from cmp.api.uploads import generated
@@ -24,7 +25,7 @@ from cmp.db.repositories import consent as repo
 from cmp.db.repositories import projects as project_repo
 from cmp.domain.consent import record as consent_record
 from cmp.domain.consent import service as consent_service
-from cmp.schemas.common import Acknowledged, Out, Page
+from cmp.schemas.common import Acknowledged, Out, Page, Schema
 
 router = APIRouter(tags=["consent"])
 
@@ -287,6 +288,33 @@ async def consent_records_archive(
             site_uuid=str(site) if site else None,
             date_from=date_from,
             date_to=date_to,
+        )
+    return generated(payload, name, "application/zip")
+
+
+class ConsentRecordsIn(Schema):
+    #: The consent IDs whose records to download. Up to 200; repeats count once.
+    consent_uuids: Annotated[list[UUID], Field(min_length=1, max_length=200)]
+
+
+@router.post(
+    "/consent-records",
+    summary="The consent records a list of consent IDs names, as PDFs in a ZIP",
+    response_class=Response,
+    responses={200: {"content": {"application/zip": {}}}},
+)
+async def consent_records_by_id(body: ConsentRecordsIn, principal: RecordReader) -> Response:
+    """For a list an auditor or the downstream store supplies. **All or none**:
+    an ID that does not exist or is outside your scope refuses the request
+    (422 `consent_records_not_found`, each such ID in `not_found`), so a list is
+    never answered by a quietly shorter archive. Same ZIP and manifest as the
+    filtered archive; every copy is audited."""
+    async with transaction() as conn:
+        payload, name, _count = await consent_record.archive_of_ids(
+            conn,
+            [str(u) for u in body.consent_uuids],
+            role=principal.role,
+            user_id=principal.user_id,
         )
     return generated(payload, name, "application/zip")
 

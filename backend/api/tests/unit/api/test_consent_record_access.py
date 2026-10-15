@@ -21,9 +21,11 @@ STAFF = frozenset({Role.DPO, Role.DCO, Role.DCO_ADMIN, Role.RCO})
 
 
 def _guards(router: Any, path: str) -> list[Callable[..., Any]]:
-    [route] = [r for r in router.routes if isinstance(r, APIRoute) and r.path == path]
+    """Every guard on every route at `path` - the GET and POST of the archive alike."""
+    routes = [r for r in router.routes if isinstance(r, APIRoute) and r.path == path]
+    assert routes, f"{path} is not a route"
     found: list[Callable[..., Any]] = []
-    stack = [route.dependant]
+    stack = [r.dependant for r in routes]
     while stack:
         dependant = stack.pop()
         for sub in dependant.dependencies:
@@ -36,7 +38,13 @@ def _guards(router: Any, path: str) -> list[Callable[..., Any]]:
 def test_staff_records_admit_the_consent_readers_and_not_the_rnd_user() -> None:
     for path in ("/consents/{consent_uuid}/record", "/consent-records"):
         gates = [g for g in _guards(consents, path) if isinstance(g, RequireRole)]
-        assert gates, f"{path} has no role gate"
+        methods = {
+            m
+            for r in consents.routes
+            if isinstance(r, APIRoute) and r.path == path
+            for m in r.methods
+        }
+        assert len(gates) == len(methods), f"{path}: a method without its role gate"
         assert all(g.roles == STAFF for g in gates), path
         assert Role.RND_USER not in gates[0].roles
 

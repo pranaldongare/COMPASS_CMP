@@ -135,3 +135,9 @@ export function downloadConsentRecords(filters: {
 }) {
   return apiDownload(`/consent-records${queryString(filters)}`);
 }
+
+/** The records a list of consent IDs names, in a ZIP. All or none: an ID not
+ *  found, or not the caller's to see, refuses the list and is named. */
+export function downloadConsentRecordsByIds(consentUuids: Uuid[]) {
+  return apiDownload("/consent-records", { consent_uuids: consentUuids });
+}

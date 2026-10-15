@@ -1,8 +1,9 @@
 # 0031. A consent record is issued as a PDF, naming the person and masking one contact
 
-**Status:** accepted · 2026-10-15. `cmp.domain.consent.record`,
-`cmp.infrastructure.pdf`; routes `GET /consents/{consent_uuid}/record`,
-`GET /consent-records`, `GET /me/consents/{consent_uuid}/record`.
+**Status:** accepted · 2026-10-15; extended the same day (records by ID, at
+the end). `cmp.domain.consent.record`, `cmp.infrastructure.pdf`; routes
+`GET /consents/{consent_uuid}/record`, `GET` and `POST /consent-records`,
+`GET /me/consents/{consent_uuid}/record`.
 
 ## Context
 
@@ -93,3 +94,19 @@ are required.
   be;
 - a consent method is added that the record should describe (a guardian's
   verifiable consent under s.9 is the likely one).
+
+## Extended 2026-10-15: records by consent ID
+
+Staff who may download records can also ask for a list of them by consent ID:
+`POST /consent-records` with `{"consent_uuids": [...]}`, up to 200. This is
+for an auditor's sample, or the files a downstream store says it is missing.
+In the console, **By consent IDs** on Consents takes a pasted list or an
+uploaded `.csv`/`.txt`. A CSV with a `consent_uuid` column, such as the
+archive's own manifest, is read by that column alone.
+
+**All or none.** An ID that does not exist, or that is outside the caller's
+scope, refuses the request: 422 `consent_records_not_found`, with each such ID
+in `not_found`. The two cases are not told apart, as on every consent route.
+A list is never answered by a quietly shorter archive. The archive, manifest
+and auditing are the same as the filtered pull. The audit detail records
+`selection: "ids"` or `"filters"`.

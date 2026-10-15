@@ -208,6 +208,7 @@ A JSON copy is embedded in the PDF.
 |---|---|
 | DPO, DCO, DCO Admin, RCO, each in scope | `GET /consents/{consent_uuid}/record`: the console's **Download PDF** on a consent |
 | The same, many at once | `GET /consent-records?project=&site=&from=&to=`: a ZIP of every artefact in range, with `manifest.csv` (SHA-256 and identifiers, no names), at most 200; the console's **Download PDFs (ZIP)** on Consents, with its filters |
+| The same, by a list of consent IDs | `POST /consent-records` `{"consent_uuids": [...]}`: up to 200, all or none (an ID not found or out of scope refuses the list and is named, `consent_records_not_found`); the console's **By consent IDs** on Consents, pasted or uploaded as `.csv`/`.txt` |
 | The person, her own | `GET /me/consents/{consent_uuid}/record`: **Download PDF** on My consents |
 
 Every copy is audited as `consent.record_downloaded`. The response carries

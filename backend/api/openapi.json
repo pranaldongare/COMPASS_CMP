@@ -9356,6 +9356,42 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "consent"
+        ],
+        "summary": "The consent records a list of consent IDs names, as PDFs in a ZIP",
+        "description": "For a list an auditor or the downstream store supplies. **All or none**:\nan ID that does not exist or is outside your scope refuses the request\n(422 `consent_records_not_found`, each such ID in `not_found`), so a list is\nnever answered by a quietly shorter archive. Same ZIP and manifest as the\nfiltered archive; every copy is audited.",
+        "operationId": "consent_records_by_id_consent_records_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentRecordsIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/zip": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/projects/{project_uuid}/links": {
@@ -23664,6 +23700,26 @@
           "project_name"
         ],
         "title": "ConsentListRow"
+      },
+      "ConsentRecordsIn": {
+        "properties": {
+          "consent_uuids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Consent Uuids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "consent_uuids"
+        ],
+        "title": "ConsentRecordsIn"
       },
       "ConsentRow": {
         "properties": {

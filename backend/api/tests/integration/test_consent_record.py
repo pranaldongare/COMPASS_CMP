@@ -258,3 +258,51 @@ async def test_an_archive_too_large_is_refused_with_the_count(
         await record.archive(conn, role=Role.DPO, user_id=seeded["users"]["dpo"]["id"])
     assert caught.value.code == "archive_too_large"
     assert caught.value.details["matched"] >= 2
+
+
+async def test_a_list_of_ids_gives_exactly_those_records_once_each(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    first = await _consent(conn, seeded)
+    second = await _consent(conn, seeded)
+    ids = [str(second["consent_uuid"]), str(first["consent_uuid"]), str(second["consent_uuid"])]
+    zipped, _, count = await record.archive_of_ids(
+        conn, ids, role=Role.DPO, user_id=seeded["users"]["dpo"]["id"]
+    )
+    assert count == 2
+    with zipfile.ZipFile(io.BytesIO(zipped)) as zf:
+        manifest = list(csv.DictReader(io.StringIO(zf.read("manifest.csv").decode())))
+    # The order given, the repeat counted once.
+    assert [m["consent_uuid"] for m in manifest] == ids[:2]
+
+    rows = await fetch_all(
+        conn,
+        """SELECT detail_json->>'selection' AS selection FROM audit_log
+            WHERE event_type = 'consent.record_downloaded' AND entity_id = %s""",
+        (first["consent_id"],),
+    )
+    assert [r["selection"] for r in rows] == ["ids"]
+
+
+async def test_an_id_not_found_or_out_of_scope_refuses_the_list_and_names_it(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    consent = await _consent(conn, seeded)
+    unknown = "00000000-0000-4000-8000-000000000000"
+    with pytest.raises(ValidationFailed) as caught:
+        await record.archive_of_ids(
+            conn,
+            [str(consent["consent_uuid"]), unknown],
+            role=Role.DPO,
+            user_id=seeded["users"]["dpo"]["id"],
+        )
+    assert caught.value.code == "consent_records_not_found"
+    assert caught.value.details["not_found"] == [unknown]
+
+    # Somebody else's consent reads the same as one that does not exist.
+    stranger = await _bare_dco(conn)
+    with pytest.raises(ValidationFailed) as caught:
+        await record.archive_of_ids(
+            conn, [str(consent["consent_uuid"])], role=Role.DCO, user_id=stranger
+        )
+    assert caught.value.details["not_found"] == [str(consent["consent_uuid"])]

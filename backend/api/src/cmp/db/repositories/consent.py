@@ -783,3 +783,25 @@ async def artefacts_for_records(
     )
     total = await fetch_one(conn, f"SELECT count(*) AS n {base}", params)
     return [str(r["consent_uuid"]) for r in rows], int((total or {}).get("n", 0))
+
+
+async def uuids_in_scope(
+    conn: Conn, consent_uuids: list[str], *, role: Role | str, user_id: int
+) -> set[str]:
+    """Which of these consent artefacts exist and are in the caller's scope:
+    the check behind an archive asked for by ID (2026-10-15)."""
+    pred, params = _project_scope(role, user_id)
+    rows = await fetch_all(
+        conn,
+        f"""
+        SELECT ca.consent_uuid
+        FROM consent_artefact ca
+        JOIN notice n        ON n.notice_id = ca.notice_id
+        JOIN project p       ON p.project_id = n.project_id
+        JOIN consent_link cl ON cl.link_id = ca.link_id
+        JOIN project_site s  ON s.site_id = cl.site_id
+        WHERE ca.consent_uuid = ANY(%s::uuid[]) AND ({pred})
+        """,
+        [consent_uuids, *params],
+    )
+    return {str(r["consent_uuid"]) for r in rows}

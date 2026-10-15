@@ -10,3 +10,4 @@ export {
   DownloadConsentRecords,
   useCanDownloadRecords,
 } from "@/features/consent/components/consent-record";
+export { ConsentRecordsById } from "@/features/consent/components/records-by-id";

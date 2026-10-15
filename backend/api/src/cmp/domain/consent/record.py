@@ -464,14 +464,27 @@ def file_name(consent_uuid: str) -> str:
     return f"consent-{consent_uuid}.pdf"
 
 
-async def _audit(conn: Conn, artefact: dict[str, Any], *, copy: str, in_archive: bool) -> None:
+async def _audit(
+    conn: Conn,
+    artefact: dict[str, Any],
+    *,
+    copy: str,
+    in_archive: bool,
+    selection: str | None = None,
+) -> None:
     await audit.record(
         conn,
         event=Event.CONSENT_RECORD_DOWNLOADED,
         entity_type="consent_artefact",
         entity_id=artefact["consent_id"],
         subject_user_id=artefact["auth_user_id"],
-        detail={"format": "pdf", "copy": copy, "in_archive": in_archive},
+        detail={
+            "format": "pdf",
+            "copy": copy,
+            "in_archive": in_archive,
+            # How an archive was chosen: by filters, or by a list of IDs.
+            **({"selection": selection} if selection else {}),
+        },
     )
 
 
@@ -540,7 +553,49 @@ async def archive(
             code="archive_too_large",
             details={"matched": total, "limit": ARCHIVE_LIMIT},
         )
+    return await _zip(conn, uuids, role=role, selection="filters")
 
+
+async def archive_of_ids(
+    conn: Conn, consent_uuids: list[str], *, role: Any, user_id: int
+) -> tuple[bytes, str, int]:
+    """The records a list of consent IDs names, as an archive (2026-10-15).
+
+    For staff answering a specific request - an auditor's sample, a list the
+    downstream store says it is missing. Repeats count once; the order given
+    is kept. **All or none:** an ID that does not exist, or that is outside
+    the caller's scope, is not found - the two are not told apart, as on every
+    consent route - and the request is refused naming each one, so a list is
+    never answered by a quietly shorter archive.
+    """
+    wanted = list(dict.fromkeys(u.lower() for u in consent_uuids))
+    if not wanted:
+        raise ValidationFailed("Give at least one consent ID.", field="consent_uuids")
+    if len(wanted) > ARCHIVE_LIMIT:
+        raise ValidationFailed(
+            f"{len(wanted)} consent IDs; one archive holds at most {ARCHIVE_LIMIT}. "
+            "Split the list.",
+            code="archive_too_large",
+            field="consent_uuids",
+            details={"matched": len(wanted), "limit": ARCHIVE_LIMIT},
+        )
+    found = await repo.uuids_in_scope(conn, wanted, role=role, user_id=user_id)
+    missing = [u for u in wanted if u not in found]
+    if missing:
+        raise ValidationFailed(
+            f"{len(missing)} of {len(wanted)} consent IDs were not found, or are not yours "
+            "to see. Nothing was downloaded; remove them and try again.",
+            code="consent_records_not_found",
+            field="consent_uuids",
+            details={"not_found": missing, "requested": len(wanted)},
+        )
+    return await _zip(conn, wanted, role=role, selection="ids")
+
+
+async def _zip(
+    conn: Conn, uuids: list[str], *, role: Any, selection: str
+) -> tuple[bytes, str, int]:
+    """The archive itself: one PDF per record, a manifest, every copy audited."""
     artefacts = [dict(await repo.artefact_by_uuid(conn, u) or {}) for u in uuids]
     await _open_people(artefacts)
     records = [await gather(conn, a) for a in artefacts]
@@ -595,6 +650,6 @@ async def archive(
         zf.writestr("manifest.csv", manifest.getvalue())
 
     for artefact in artefacts:
-        await _audit(conn, artefact, copy="staff", in_archive=True)
+        await _audit(conn, artefact, copy="staff", in_archive=True, selection=selection)
     stamp = generated_at.strftime("%Y%m%dT%H%M%SZ")
     return buffer.getvalue(), f"consent-records-{stamp}.zip", len(records)

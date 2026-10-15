@@ -10,7 +10,8 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { apiGet, apiPost, reachableApiBase } from "@/lib/api/client";
+import { apiDownload, apiGet, apiPost, reachableApiBase } from "@/lib/api/client";
+import { ApiError } from "@/lib/errors/api-error";
 import { API, HttpResponse, http, server } from "@/test/server";
 
 // Real envelopes from the key service - the same three `deep.test.ts` uses.
@@ -201,5 +202,44 @@ describe("the API base a browser can reach", () => {
     expect(reachableApiBase("https://api.example.org", "172.17.236.160")).toBe(
       "https://api.example.org",
     );
+  });
+});
+
+describe("a file request that is refused", () => {
+  afterEach(() => server.resetHandlers());
+
+  it("says what the server said, not the status code (2026-10-15)", async () => {
+    server.use(
+      http.post(`${API}/files`, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: "consent_records_not_found",
+              message: "1 of 2 consent IDs were not found.",
+              request_id: "r",
+              not_found: ["00000000-0000-4000-8000-000000000000"],
+            },
+          },
+          { status: 422 },
+        ),
+      ),
+    );
+    const refused = await apiDownload("/files", { ids: ["a", "b"] }).catch((e: unknown) => e);
+    expect(refused).toBeInstanceOf(ApiError);
+    const error = refused as ApiError;
+    expect(error.code).toBe("consent_records_not_found");
+    expect(error.message).toBe("1 of 2 consent IDs were not found.");
+    expect(error.details.not_found).toEqual(["00000000-0000-4000-8000-000000000000"]);
+  });
+
+  it("still downloads by GET when no body is given", async () => {
+    server.use(
+      http.get(`${API}/files/one`, () =>
+        HttpResponse.arrayBuffer(new ArrayBuffer(3), {
+          headers: { "content-disposition": 'attachment; filename="one.pdf"' },
+        }),
+      ),
+    );
+    expect((await apiDownload("/files/one")).filename).toBe("one.pdf");
   });
 });

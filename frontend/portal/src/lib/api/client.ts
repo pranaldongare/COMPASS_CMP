@@ -136,7 +136,7 @@ http.interceptors.response.use(
     }
     return response;
   },
-  (error: AxiosError<{ error?: ApiErrorBody }>) => {
+  async (error: AxiosError<{ error?: ApiErrorBody }>) => {
     if (!error.response) {
       // No answer reached this page. Say which URL was tried and the three
       // usual reasons, once per failure, in the console - never a body or a
@@ -156,7 +156,18 @@ http.interceptors.response.use(
       return Promise.reject(networkError(message));
     }
 
-    const { status, data } = error.response;
+    const { status } = error.response;
+    // A file request (`responseType: "blob"`) gets its refusal as a Blob too:
+    // read it back as the JSON it is, or the person is told "Request failed
+    // with status code 422" instead of the server's sentence (2026-10-15).
+    let data: { error?: ApiErrorBody } | undefined = error.response.data;
+    if (typeof Blob !== "undefined" && (data as unknown) instanceof Blob) {
+      try {
+        data = JSON.parse(await (data as unknown as Blob).text()) as { error?: ApiErrorBody };
+      } catch {
+        data = undefined;
+      }
+    }
     const body: ApiErrorBody = data?.error ?? {
       code: "unexpected_response",
       message: error.message || "Request failed",
@@ -228,7 +239,12 @@ export async function apiDelete<T>(url: string, cfg?: AxiosRequestConfig): Promi
  * SHA-256, and a caller that ignores those is handing someone a file whose
  * provenance they cannot check.
  */
-export async function apiDownload(url: string): Promise<{
+export async function apiDownload(
+  url: string,
+  /** Sent as a POST with this JSON body: a file asked for by a list too long
+   *  for a URL (the consent records by ID, 2026-10-15). */
+  body?: unknown,
+): Promise<{
   blob: Blob;
   filename: string;
   generatedAt?: string;
@@ -237,7 +253,10 @@ export async function apiDownload(url: string): Promise<{
   recordedHash?: string;
   contentHash?: string;
 }> {
-  const response = await http.get(url, { responseType: "blob" });
+  const response =
+    body === undefined
+      ? await http.get(url, { responseType: "blob" })
+      : await http.post(url, body, { responseType: "blob" });
   const disposition = String(response.headers["content-disposition"] ?? "");
   const match = disposition.match(/filename="?([^"]+)"?/);
 
