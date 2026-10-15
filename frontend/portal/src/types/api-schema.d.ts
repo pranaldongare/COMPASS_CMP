@@ -1211,6 +1211,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/consents/{consent_uuid}/record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Her consent record as a PDF
+         * @description The same record staff file for audit, for her to keep (2026-10-15).
+         */
+        get: operations["my_consent_record_me_consents__consent_uuid__record_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/consents/{consent_uuid}/notice": {
         parameters: {
             query?: never;
@@ -3203,6 +3223,53 @@ export interface paths {
          *     both inclusive).
          */
         get: operations["list_all_consents_consents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/consents/{consent_uuid}/record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The consent record as a PDF, for audit
+         * @description What was decided, against which notice, in which words, when: the
+         *     person's name and one masked contact, the decision per purpose, the
+         *     history, and the notice text as shown, with its hash. A JSON copy is
+         *     embedded in the PDF. Each download is audited.
+         */
+        get: operations["consent_record_pdf_consents__consent_uuid__record_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/consent-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Consent records as PDFs in a ZIP, with a manifest, for a downstream store
+         * @description **Every** consent record in scope whose decision falls in the range -
+         *     withdrawals and the decisions they superseded alike, not only the current
+         *     ones - one PDF each, and `manifest.csv` with each file's SHA-256 and
+         *     identifiers (no names). At most 200 per archive: more is refused with
+         *     the count (`archive_too_large`), so a scheduled pull narrows its range.
+         */
+        get: operations["consent_records_archive_consent_records_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -13855,6 +13922,37 @@ export interface operations {
             };
         };
     };
+    my_consent_record_me_consents__consent_uuid__record_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                consent_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     my_consent_notice_me_consents__consent_uuid__notice_get: {
         parameters: {
             query?: never;
@@ -17685,6 +17783,71 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page_ConsentListRow_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consent_record_pdf_consents__consent_uuid__record_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                consent_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consent_records_archive_consent_records_get: {
+        parameters: {
+            query?: {
+                project?: string | null;
+                site?: string | null;
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": unknown;
                 };
             };
             /** @description Validation Error */

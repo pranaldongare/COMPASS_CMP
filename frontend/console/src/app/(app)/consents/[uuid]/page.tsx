@@ -57,6 +57,7 @@ import {
 import { StatusBadge } from "@/components/ui/status";
 import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
 import { useConsent, useConsentAssets, useConsentGrants } from "@/features/consent";
+import { DownloadConsentRecord } from "@/features/consent/components";
 import type { PurposeGrant } from "@/types";
 import {
   formatDate,
@@ -150,11 +151,14 @@ export default function ConsentDetailPage() {
           </>
         }
         actions={
-          <AuditTrailLink
-            entityType="consent_artefact"
-            uuid={record.consent_uuid}
-            label={`${record.subject_name} — ${record.project_name}`}
-          />
+          <>
+            <DownloadConsentRecord uuid={record.consent_uuid} />
+            <AuditTrailLink
+              entityType="consent_artefact"
+              uuid={record.consent_uuid}
+              label={`${record.subject_name} — ${record.project_name}`}
+            />
+          </>
         }
         facts={[
           {

@@ -86,7 +86,7 @@ hash and no email is written
 rows from before that change stand as written, because the trail is
 hash-chained and cannot be rewritten.
 
-## 2. API endpoints that carry PII — 229 endpoints in 22 modules
+## 2. API endpoints that carry PII — 230 endpoints in 22 modules
 
 Every GET, POST, PUT, PATCH and DELETE whose request or response includes a
 personal field. *In* is what the caller sends (body, path and query); *out* is
@@ -297,7 +297,7 @@ these need no session; they are marked **public**.
 | GET | `/projects/{project_uuid}/exports` | — | `exported_by_name` |
 | POST | `/projects/{project_uuid}/exports` | — | `exported_by_name` |
 
-### Users (`/users`) — 13 endpoints
+### Users (`/users`) — 14 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
@@ -311,6 +311,7 @@ these need no session; they are marked **public**.
 | POST | `/users/{user_uuid}/invite` | `user_uuid` | — |
 | POST | `/users/{user_uuid}/mfa/reset` | `user_uuid` | — |
 | GET | `/users/{user_uuid}/person-type-history` | `user_uuid` | `changed_by_name`, `changed_by_uuid`, `from_type`, `reason`, `to_type` |
+| PUT | `/users/{user_uuid}/processors` | `user_uuid` | — |
 | POST | `/users/{user_uuid}/reactivate` | `user_uuid` | — |
 | POST | `/users/{user_uuid}/role` | `reason`, `role`, `user_uuid` | — |
 | DELETE | `/users/{user_uuid}/sessions` | `user_uuid` | — |

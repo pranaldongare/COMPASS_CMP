@@ -1,6 +1,6 @@
 # Consent API
 
-Generated from `backend/api/openapi.json`. **12 operations.**
+Generated from `backend/api/openapi.json`. **14 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -8,16 +8,18 @@ For each operation the information is deliberately ordered as **API → Validati
 
 1. [`GET /links`](#1_get_links)
 2. [`GET /consents`](#2_get_consents)
-3. [`GET /projects/{project_uuid}/links`](#3_get_projects_project_uuid_links)
-4. [`GET /links/{link_uuid}`](#4_get_links_link_uuid)
-5. [`GET /links/{link_uuid}/stats`](#5_get_links_link_uuid_stats)
-6. [`POST /links/{link_uuid}/remint`](#6_post_links_link_uuid_remint)
-7. [`POST /links/{link_uuid}/revoke`](#7_post_links_link_uuid_revoke)
-8. [`GET /projects/{project_uuid}/consents`](#8_get_projects_project_uuid_consents)
-9. [`GET /projects/{project_uuid}/consents/summary`](#9_get_projects_project_uuid_consents_summary)
-10. [`GET /consents/{consent_uuid}`](#10_get_consents_consent_uuid)
-11. [`GET /consents/{consent_uuid}/grants`](#11_get_consents_consent_uuid_grants)
-12. [`GET /consents/{consent_uuid}/assets`](#12_get_consents_consent_uuid_assets)
+3. [`GET /consents/{consent_uuid}/record`](#3_get_consents_consent_uuid_record)
+4. [`GET /consent-records`](#4_get_consent_records)
+5. [`GET /projects/{project_uuid}/links`](#5_get_projects_project_uuid_links)
+6. [`GET /links/{link_uuid}`](#6_get_links_link_uuid)
+7. [`GET /links/{link_uuid}/stats`](#7_get_links_link_uuid_stats)
+8. [`POST /links/{link_uuid}/remint`](#8_post_links_link_uuid_remint)
+9. [`POST /links/{link_uuid}/revoke`](#9_post_links_link_uuid_revoke)
+10. [`GET /projects/{project_uuid}/consents`](#10_get_projects_project_uuid_consents)
+11. [`GET /projects/{project_uuid}/consents/summary`](#11_get_projects_project_uuid_consents_summary)
+12. [`GET /consents/{consent_uuid}`](#12_get_consents_consent_uuid)
+13. [`GET /consents/{consent_uuid}/grants`](#13_get_consents_consent_uuid_grants)
+14. [`GET /consents/{consent_uuid}/assets`](#14_get_consents_consent_uuid_assets)
 
 <a id="1_get_links"></a>
 ## 1. `GET /links` — All links in scope
@@ -185,8 +187,120 @@ No request body.
 }
 ```
 
-<a id="3_get_projects_project_uuid_links"></a>
-## 3. `GET /projects/{project_uuid}/links` — List Links
+<a id="3_get_consents_consent_uuid_record"></a>
+## 3. `GET /consents/{consent_uuid}/record` — The consent record as a PDF, for audit
+
+### API
+
+- **Operation ID:** `consent_record_pdf_consents__consent_uuid__record_get`
+- **Access:** Role-controlled `consent` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+What was decided, against which notice, in which words, when: the
+person's name and one masked contact, the decision per purpose, the
+history, and the notice text as shown, with its hash. A JSON copy is
+embedded in the PDF. Each download is audited.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `consent_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/pdf` | `object` |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/pdf` response:**
+
+```json
+"string"
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="4_get_consent_records"></a>
+## 4. `GET /consent-records` — Consent records as PDFs in a ZIP, with a manifest, for a downstream store
+
+### API
+
+- **Operation ID:** `consent_records_archive_consent_records_get`
+- **Access:** Role-controlled `consent` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+**Every** consent record in scope whose decision falls in the range -
+withdrawals and the decisions they superseded alike, not only the current
+ones - one PDF each, and `manifest.csv` with each file's SHA-256 and
+identifiers (no names). At most 200 per archive: more is refused with
+the count (`archive_too_large`), so a scheduled pull narrows its range.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `project` | query | No | `string` or `null` | format: `uuid` | — |
+| `site` | query | No | `string` or `null` | format: `uuid` | — |
+| `from` | query | No | `string` or `null` | format: `date-time` | — |
+| `to` | query | No | `string` or `null` | format: `date-time` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/zip` | `object` |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/zip` response:**
+
+```json
+"string"
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="5_get_projects_project_uuid_links"></a>
+## 5. `GET /projects/{project_uuid}/links` — List Links
 
 ### API
 
@@ -250,8 +364,8 @@ No request body.
 }
 ```
 
-<a id="4_get_links_link_uuid"></a>
-## 4. `GET /links/{link_uuid}` — Get Link
+<a id="6_get_links_link_uuid"></a>
+## 6. `GET /links/{link_uuid}` — Get Link
 
 ### API
 
@@ -313,8 +427,8 @@ No request body.
 }
 ```
 
-<a id="5_get_links_link_uuid_stats"></a>
-## 5. `GET /links/{link_uuid}/stats` — Link Stats
+<a id="7_get_links_link_uuid_stats"></a>
+## 7. `GET /links/{link_uuid}/stats` — Link Stats
 
 ### API
 
@@ -377,8 +491,8 @@ No request body.
 }
 ```
 
-<a id="6_post_links_link_uuid_remint"></a>
-## 6. `POST /links/{link_uuid}/remint` — Replace a link with a fresh one
+<a id="8_post_links_link_uuid_remint"></a>
+## 8. `POST /links/{link_uuid}/remint` — Replace a link with a fresh one
 
 ### API
 
@@ -444,8 +558,8 @@ No request body.
 }
 ```
 
-<a id="7_post_links_link_uuid_revoke"></a>
-## 7. `POST /links/{link_uuid}/revoke` — Revoke Link
+<a id="9_post_links_link_uuid_revoke"></a>
+## 9. `POST /links/{link_uuid}/revoke` — Revoke Link
 
 ### API
 
@@ -496,8 +610,8 @@ No request body.
 }
 ```
 
-<a id="8_get_projects_project_uuid_consents"></a>
-## 8. `GET /projects/{project_uuid}/consents` — List Consents
+<a id="10_get_projects_project_uuid_consents"></a>
+## 10. `GET /projects/{project_uuid}/consents` — List Consents
 
 ### API
 
@@ -573,8 +687,8 @@ No request body.
 }
 ```
 
-<a id="9_get_projects_project_uuid_consents_summary"></a>
-## 9. `GET /projects/{project_uuid}/consents/summary` — Consents Summary
+<a id="11_get_projects_project_uuid_consents_summary"></a>
+## 11. `GET /projects/{project_uuid}/consents/summary` — Consents Summary
 
 ### API
 
@@ -622,8 +736,8 @@ No request body.
 }
 ```
 
-<a id="10_get_consents_consent_uuid"></a>
-## 10. `GET /consents/{consent_uuid}` — Get Consent
+<a id="12_get_consents_consent_uuid"></a>
+## 12. `GET /consents/{consent_uuid}` — Get Consent
 
 ### API
 
@@ -691,8 +805,8 @@ No request body.
 }
 ```
 
-<a id="11_get_consents_consent_uuid_grants"></a>
-## 11. `GET /consents/{consent_uuid}/grants` — Consent Grants
+<a id="13_get_consents_consent_uuid_grants"></a>
+## 13. `GET /consents/{consent_uuid}/grants` — Consent Grants
 
 ### API
 
@@ -754,8 +868,8 @@ No request body.
 }
 ```
 
-<a id="12_get_consents_consent_uuid_assets"></a>
-## 12. `GET /consents/{consent_uuid}/assets` — Which assets contain this person
+<a id="14_get_consents_consent_uuid_assets"></a>
+## 14. `GET /consents/{consent_uuid}/assets` — Which assets contain this person
 
 ### API
 

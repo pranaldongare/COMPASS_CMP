@@ -215,6 +215,10 @@ class Event:
     CONSENT_GIVEN = "consent.given"
     CONSENT_DECLINED = "consent.declined"
     CONSENT_WITHDRAWN = "consent.withdrawn"
+    #: A consent record was taken away as a PDF (2026-10-15): by staff, one at a
+    #: time or in an archive, or by the person, a copy of her own. The PDF
+    #: carries her name and a masked contact, so each copy is a disclosure.
+    CONSENT_RECORD_DOWNLOADED = "consent.record_downloaded"
 
     # exchange
     EXPORT_GENERATED = "export.generated"

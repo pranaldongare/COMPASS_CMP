@@ -15,7 +15,7 @@
  */
 "use client";
 
-import { History, Share2, ShieldOff } from "lucide-react";
+import { FileDown, History, Share2, ShieldOff } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
 
@@ -45,7 +45,8 @@ import { HomeStrip } from "@/features/rights/components/home-strip";
 import { langTag } from "@/features/public-consent/components/languages";
 import type { MyConsent } from "@/types";
 import { ApiError } from "@/lib/errors";
-import { formatDateTime, formatDuration, humanise, shortHash } from "@/lib/format";
+import { formatDateTime, formatDuration, humanise, saveBlob, shortHash } from "@/lib/format";
+import { downloadMyConsentRecord } from "@/features/my-consents/api";
 import { useToast } from "@/providers";
 import { ActivityFeed } from "@/components/data-display/activity-feed";
 
@@ -199,6 +200,7 @@ function ConsentCard({
             <History className="size-4" />
             {trailOpen ? "Hide the record" : "What was recorded"}
           </Button>
+          <DownloadRecord consentUuid={consent.consent_uuid} />
           {active && (
             <Button variant="subtle" size="sm" onClick={() => setConfirming("all")}>
               <ShieldOff className="size-4" />
@@ -321,6 +323,34 @@ function ConsentCard({
         )}
       </CardBody>
     </Card>
+  );
+}
+
+/** Her copy of the record, as a PDF to keep (2026-10-15). */
+function DownloadRecord({ consentUuid }: { consentUuid: string }) {
+  const toast = useToast();
+  const [busy, setBusy] = React.useState(false);
+
+  async function download() {
+    setBusy(true);
+    try {
+      const got = await downloadMyConsentRecord(consentUuid);
+      saveBlob(got.blob, got.filename);
+    } catch (err) {
+      toast.error(
+        "Could not make the PDF",
+        err instanceof ApiError ? err.userMessage() : "Try again in a minute.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Button variant="ghost" size="sm" loading={busy} onClick={download}>
+      <FileDown className="size-4" />
+      Download PDF
+    </Button>
   );
 }
 

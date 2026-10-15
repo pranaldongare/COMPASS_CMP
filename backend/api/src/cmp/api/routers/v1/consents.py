@@ -11,15 +11,18 @@ from datetime import date, datetime, timedelta
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, Response
 
-from cmp.api.dependencies import Paging, RequireResource, reject_unknown_filters
+from cmp.api.dependencies import Paging, RequireResource, RequireRole, reject_unknown_filters
+from cmp.api.uploads import generated
 from cmp.core.errors import NotFound
 from cmp.core.pagination import PageRequest
+from cmp.core.permissions import Role
 from cmp.core.security import unseal_token
 from cmp.db.pool import connection, transaction
 from cmp.db.repositories import consent as repo
 from cmp.db.repositories import projects as project_repo
+from cmp.domain.consent import record as consent_record
 from cmp.domain.consent import service as consent_service
 from cmp.schemas.common import Acknowledged, Out, Page
 
@@ -29,6 +32,10 @@ consent_paging = Paging(repo.LIST_SORTS, "-affirmative_action_at")
 
 LinkReader = Annotated[Any, Depends(RequireResource("link"))]
 ConsentReader = Annotated[Any, Depends(RequireResource("consent"))]
+#: Who may take a consent record away as a PDF (2026-10-15): those who read
+#: consents in full. Not the R&D User, whose consent access is the summary
+#: counts; the scope of each is still the query's.
+RecordReader = Annotated[Any, Depends(RequireRole(Role.DPO, Role.DCO, Role.DCO_ADMIN, Role.RCO))]
 
 
 class LinkOut(Out):
@@ -230,6 +237,58 @@ async def list_all_consents(
             date_to=date_to,
         )
     return {"items": items, "next_cursor": cursor, "total": total}
+
+
+# ============================================================ consent records
+@router.get(
+    "/consents/{consent_uuid}/record",
+    summary="The consent record as a PDF, for audit",
+    response_class=Response,
+    responses={200: {"content": {"application/pdf": {}}}},
+)
+async def consent_record_pdf(consent_uuid: UUID, principal: RecordReader) -> Response:
+    """What was decided, against which notice, in which words, when: the
+    person's name and one masked contact, the decision per purpose, the
+    history, and the notice text as shown, with its hash. A JSON copy is
+    embedded in the PDF. Each download is audited."""
+    async with transaction() as conn:
+        payload, name = await consent_record.for_staff(
+            conn, str(consent_uuid), role=principal.role, user_id=principal.user_id
+        )
+    return generated(payload, name, "application/pdf")
+
+
+@router.get(
+    "/consent-records",
+    summary="Consent records as PDFs in a ZIP, with a manifest, for a downstream store",
+    response_class=Response,
+    responses={200: {"content": {"application/zip": {}}}},
+)
+async def consent_records_archive(
+    request: Request,
+    principal: RecordReader,
+    project: Annotated[UUID | None, Query()] = None,
+    site: Annotated[UUID | None, Query()] = None,
+    date_from: Annotated[datetime | None, Query(alias="from")] = None,
+    date_to: Annotated[datetime | None, Query(alias="to")] = None,
+) -> Response:
+    """**Every** consent record in scope whose decision falls in the range -
+    withdrawals and the decisions they superseded alike, not only the current
+    ones - one PDF each, and `manifest.csv` with each file's SHA-256 and
+    identifiers (no names). At most 200 per archive: more is refused with
+    the count (`archive_too_large`), so a scheduled pull narrows its range."""
+    reject_unknown_filters(request, {"project", "site", "from", "to"})
+    async with transaction() as conn:
+        payload, name, _count = await consent_record.archive(
+            conn,
+            role=principal.role,
+            user_id=principal.user_id,
+            project_uuid=str(project) if project else None,
+            site_uuid=str(site) if site else None,
+            date_from=date_from,
+            date_to=date_to,
+        )
+    return generated(payload, name, "application/zip")
 
 
 # ==================================================================== links

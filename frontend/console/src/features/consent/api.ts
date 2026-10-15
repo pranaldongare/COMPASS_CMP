@@ -7,7 +7,7 @@
  * rather than an omission from it.
  */
 
-import { apiGet, apiPost, queryString } from "@/lib/api";
+import { apiDownload, apiGet, apiPost, queryString } from "@/lib/api";
 import type { ListFilters } from "@/lib/query";
 import type {
   ConsentArtefact,
@@ -115,4 +115,23 @@ export interface RemintedLink {
  */
 export function remintLink(uuid: Uuid): Promise<RemintedLink> {
   return apiPost<RemintedLink>(`/links/${uuid}/remint`);
+}
+
+/* ------------------------------------------- consent records (2026-10-15) */
+
+/** The consent record as a PDF, for audit: her name and a masked contact, the
+ *  decision per purpose, its history, the notice as shown. Audited server-side. */
+export function downloadConsentRecord(uuid: Uuid) {
+  return apiDownload(`/consents/${uuid}/record`);
+}
+
+/** Every consent record in scope in a range - withdrawals and the decisions
+ *  they superseded alike - as PDFs in a ZIP with a manifest. At most 200. */
+export function downloadConsentRecords(filters: {
+  project?: string;
+  site?: string;
+  from?: string;
+  to?: string;
+}) {
+  return apiDownload(`/consent-records${queryString(filters)}`);
 }

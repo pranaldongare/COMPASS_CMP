@@ -84,3 +84,18 @@ def download(payload: bytes, filename: str, recorded: str) -> Response:
             "X-Content-SHA256": file_hash(payload),
         },
     )
+
+
+def generated(payload: bytes, filename: str, media_type: str) -> Response:
+    """A file the platform made for somebody to keep - a consent record, an
+    archive of them (2026-10-15). Never cached; its hash said, so the store it
+    goes to can check what arrived."""
+    return Response(
+        content=payload,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name(filename) or "file"}"',
+            "Cache-Control": "no-store, private",
+            "X-Content-SHA256": file_hash(payload),
+        },
+    )

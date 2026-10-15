@@ -41,6 +41,8 @@ fastapi==0.141.1
 fastapi-cli==0.0.32
 fastapi-cloud-cli==0.23.0
 fastar==0.12.0
+fonttools==4.67.0
+fpdf2==2.8.9
 greenlet==3.5.5 ; platform_machine == 'AMD64' or platform_machine == 'WIN32' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'ppc64le' or platform_machine == 'win32' or platform_machine == 'x86_64'
 gunicorn==26.1.0
 h11==0.16.0
@@ -59,6 +61,7 @@ mdurl==0.1.2
 openpyxl==3.1.5
 orjson==3.12.0
 packaging==26.3
+pillow==12.3.0
 prometheus-client==0.26.0
 prometheus-fastapi-instrumentator==8.1.0
 prompt-toolkit==3.0.53
@@ -93,6 +96,7 @@ typing-extensions==4.16.0
 typing-inspection==0.4.4
 tzdata==2026.3
 tzlocal==5.4.4
+uharfbuzz==0.56.3
 urllib3==2.7.0
 uvicorn==0.52.4
 uvloop==0.22.1 ; platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32'

@@ -12,6 +12,7 @@ import Link from "next/link";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
+import { DownloadConsentRecords } from "@/features/consent/components";
 import {
   FilterBar,
   FilterDate,
@@ -69,6 +70,16 @@ function ConsentsPageView() {
       <PageHeader
         title="Consents"
         description="The current position for every data subject in scope. Withdrawal supersedes rather than edits, so this always reflects the latest artefact."
+        actions={
+          <DownloadConsentRecords
+            filters={{
+              project: project || undefined,
+              site: site || undefined,
+              from: from ? `${from}T00:00:00` : undefined,
+              to: to ? `${to}T23:59:59` : undefined,
+            }}
+          />
+        }
       />
 
       <FilterBar>

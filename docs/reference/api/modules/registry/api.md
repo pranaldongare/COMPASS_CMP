@@ -1,6 +1,6 @@
 # Registry API
 
-Generated from `backend/api/openapi.json`. **23 operations.**
+Generated from `backend/api/openapi.json`. **29 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -16,19 +16,25 @@ For each operation the information is deliberately ordered as **API → Validati
 8. [`GET /purposes/{purpose_uuid}/usage`](#8_get_purposes_purpose_uuid_usage)
 9. [`GET /processors`](#9_get_processors)
 10. [`POST /processors`](#10_post_processors)
-11. [`GET /processors/{processor_uuid}/respondents`](#11_get_processors_processor_uuid_respondents)
-12. [`POST /processors/{processor_uuid}/respondents`](#12_post_processors_processor_uuid_respondents)
-13. [`DELETE /processors/{processor_uuid}/respondents/{respondent_uuid}`](#13_delete_processors_processor_uuid_respondents_respondent_uuid)
-14. [`GET /processors/{processor_uuid}`](#14_get_processors_processor_uuid)
-15. [`PUT /processors/{processor_uuid}`](#15_put_processors_processor_uuid)
-16. [`POST /processors/{processor_uuid}/suspend`](#16_post_processors_processor_uuid_suspend)
-17. [`GET /sources`](#17_get_sources)
-18. [`POST /sources`](#18_post_sources)
-19. [`GET /sources/{source_uuid}`](#19_get_sources_source_uuid)
-20. [`PUT /sources/{source_uuid}`](#20_put_sources_source_uuid)
-21. [`PUT /sources/{source_uuid}/owner`](#21_put_sources_source_uuid_owner)
-22. [`POST /sources/{source_uuid}/suspend`](#22_post_sources_source_uuid_suspend)
-23. [`GET /sources/{source_uuid}/batches`](#23_get_sources_source_uuid_batches)
+11. [`GET /processors/import/template`](#11_get_processors_import_template)
+12. [`POST /processors/import/check`](#12_post_processors_import_check)
+13. [`POST /processors/import`](#13_post_processors_import)
+14. [`GET /processors/{processor_uuid}/respondents`](#14_get_processors_processor_uuid_respondents)
+15. [`POST /processors/{processor_uuid}/respondents`](#15_post_processors_processor_uuid_respondents)
+16. [`DELETE /processors/{processor_uuid}/respondents/{respondent_uuid}`](#16_delete_processors_processor_uuid_respondents_respondent_uuid)
+17. [`GET /processors/{processor_uuid}`](#17_get_processors_processor_uuid)
+18. [`PUT /processors/{processor_uuid}`](#18_put_processors_processor_uuid)
+19. [`POST /processors/{processor_uuid}/suspend`](#19_post_processors_processor_uuid_suspend)
+20. [`GET /sources`](#20_get_sources)
+21. [`POST /sources`](#21_post_sources)
+22. [`GET /sources/import/template`](#22_get_sources_import_template)
+23. [`POST /sources/import/check`](#23_post_sources_import_check)
+24. [`POST /sources/import`](#24_post_sources_import)
+25. [`GET /sources/{source_uuid}`](#25_get_sources_source_uuid)
+26. [`PUT /sources/{source_uuid}`](#26_put_sources_source_uuid)
+27. [`PUT /sources/{source_uuid}/owner`](#27_put_sources_source_uuid_owner)
+28. [`POST /sources/{source_uuid}/suspend`](#28_post_sources_source_uuid_suspend)
+29. [`GET /sources/{source_uuid}/batches`](#29_get_sources_source_uuid_batches)
 
 <a id="1_get_purposes"></a>
 ## 1. `GET /purposes` — List Purposes
@@ -745,8 +751,210 @@ Request body required: **yes**.
 }
 ```
 
-<a id="11_get_processors_processor_uuid_respondents"></a>
-## 11. `GET /processors/{processor_uuid}/respondents` — Who answers a rights-request ticket for this processor
+<a id="11_get_processors_import_template"></a>
+## 11. `GET /processors/import/template` — The workbook to fill in for a processor import (sample=true: with example rows)
+
+### API
+
+- **Operation ID:** `processor_template_processors_import_template_get`
+- **Access:** Role-controlled `registry` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `sample` | query | No | `boolean` | default: `False` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | `object` |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+"string"
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="12_post_processors_import_check"></a>
+## 12. `POST /processors/import/check` — What a processors workbook would create, skip and refuse - nothing is written
+
+### API
+
+- **Operation ID:** `check_processor_import_processors_import_check_post`
+- **Access:** Role-controlled `registry` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+No path, query, header, or cookie parameters are declared for this operation.
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `multipart/form-data`  
+**Schema:** [`Body_check_processor_import_processors_import_check_post`](#schema-body_check_processor_import_processors_import_check_post)
+
+```json
+{
+  "file": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`ImportReportOut`](#schema-importreportout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "kind": "string",
+  "applied": true,
+  "total": 1,
+  "created": 1,
+  "skipped": 1,
+  "errors": 1,
+  "rows": [
+    {
+      "row": 1,
+      "name": "…",
+      "outcome": "string",
+      "message": "…",
+      "problems": [
+        "…"
+      ],
+      "uuid": "…"
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="13_post_processors_import"></a>
+## 13. `POST /processors/import` — Register the processors a workbook lists: all its rows, or none of them
+
+### API
+
+- **Operation ID:** `import_processors_processors_import_post`
+- **Access:** Role-controlled `registry` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+A row in error refuses the whole file (422, `import_rejected`, the report
+in `details`). A processor whose legal name is registered is skipped.
+
+### Validation
+
+No path, query, header, or cookie parameters are declared for this operation.
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `multipart/form-data`  
+**Schema:** [`Body_import_processors_processors_import_post`](#schema-body_import_processors_processors_import_post)
+
+```json
+{
+  "file": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `201` | Successful Response | `application/json` | [`ImportReportOut`](#schema-importreportout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `201` `application/json` response:**
+
+```json
+{
+  "kind": "string",
+  "applied": true,
+  "total": 1,
+  "created": 1,
+  "skipped": 1,
+  "errors": 1,
+  "rows": [
+    {
+      "row": 1,
+      "name": "…",
+      "outcome": "string",
+      "message": "…",
+      "problems": [
+        "…"
+      ],
+      "uuid": "…"
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="14_get_processors_processor_uuid_respondents"></a>
+## 14. `GET /processors/{processor_uuid}/respondents` — Who answers a rights-request ticket for this processor
 
 ### API
 
@@ -803,8 +1011,8 @@ No request body.
 }
 ```
 
-<a id="12_post_processors_processor_uuid_respondents"></a>
-## 12. `POST /processors/{processor_uuid}/respondents` — Name a respondent for this processor
+<a id="15_post_processors_processor_uuid_respondents"></a>
+## 15. `POST /processors/{processor_uuid}/respondents` — Name a respondent for this processor
 
 ### API
 
@@ -875,8 +1083,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="13_delete_processors_processor_uuid_respondents_respondent_uuid"></a>
-## 13. `DELETE /processors/{processor_uuid}/respondents/{respondent_uuid}` — Remove a respondent
+<a id="16_delete_processors_processor_uuid_respondents_respondent_uuid"></a>
+## 16. `DELETE /processors/{processor_uuid}/respondents/{respondent_uuid}` — Remove a respondent
 
 ### API
 
@@ -928,8 +1136,8 @@ No request body.
 }
 ```
 
-<a id="14_get_processors_processor_uuid"></a>
-## 14. `GET /processors/{processor_uuid}` — Get Processor
+<a id="17_get_processors_processor_uuid"></a>
+## 17. `GET /processors/{processor_uuid}` — Get Processor
 
 ### API
 
@@ -987,8 +1195,8 @@ No request body.
 }
 ```
 
-<a id="15_put_processors_processor_uuid"></a>
-## 15. `PUT /processors/{processor_uuid}` — Update Processor
+<a id="18_put_processors_processor_uuid"></a>
+## 18. `PUT /processors/{processor_uuid}` — Update Processor
 
 ### API
 
@@ -1058,8 +1266,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="16_post_processors_processor_uuid_suspend"></a>
-## 16. `POST /processors/{processor_uuid}/suspend` — Suspend Processor
+<a id="19_post_processors_processor_uuid_suspend"></a>
+## 19. `POST /processors/{processor_uuid}/suspend` — Suspend Processor
 
 ### API
 
@@ -1110,8 +1318,8 @@ No request body.
 }
 ```
 
-<a id="17_get_sources"></a>
-## 17. `GET /sources` — List Sources
+<a id="20_get_sources"></a>
+## 20. `GET /sources` — List Sources
 
 ### API
 
@@ -1212,8 +1420,8 @@ No request body.
 }
 ```
 
-<a id="18_post_sources"></a>
-## 18. `POST /sources` — Create Source
+<a id="21_post_sources"></a>
+## 21. `POST /sources` — Create Source
 
 ### API
 
@@ -1302,8 +1510,211 @@ Request body required: **yes**.
 }
 ```
 
-<a id="19_get_sources_source_uuid"></a>
-## 19. `GET /sources/{source_uuid}` — Get Source
+<a id="22_get_sources_import_template"></a>
+## 22. `GET /sources/import/template` — The workbook to fill in for a data-source import (sample=true: with example rows)
+
+### API
+
+- **Operation ID:** `source_template_sources_import_template_get`
+- **Access:** Role-controlled `registry` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `sample` | query | No | `boolean` | default: `False` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | `object` |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+"string"
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="23_post_sources_import_check"></a>
+## 23. `POST /sources/import/check` — What a data-sources workbook would create, skip and refuse - nothing is written
+
+### API
+
+- **Operation ID:** `check_source_import_sources_import_check_post`
+- **Access:** Role-controlled `registry` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+No path, query, header, or cookie parameters are declared for this operation.
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `multipart/form-data`  
+**Schema:** [`Body_check_source_import_sources_import_check_post`](#schema-body_check_source_import_sources_import_check_post)
+
+```json
+{
+  "file": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`ImportReportOut`](#schema-importreportout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "kind": "string",
+  "applied": true,
+  "total": 1,
+  "created": 1,
+  "skipped": 1,
+  "errors": 1,
+  "rows": [
+    {
+      "row": 1,
+      "name": "…",
+      "outcome": "string",
+      "message": "…",
+      "problems": [
+        "…"
+      ],
+      "uuid": "…"
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="24_post_sources_import"></a>
+## 24. `POST /sources/import` — Register the data sources a workbook lists: all its rows, or none of them
+
+### API
+
+- **Operation ID:** `import_sources_sources_import_post`
+- **Access:** Role-controlled `registry` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+Each row names its processor by legal name or contract reference, which
+must be registered and active; blank is a source run in-house. A row in
+error refuses the whole file; a source code already registered is skipped.
+
+### Validation
+
+No path, query, header, or cookie parameters are declared for this operation.
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `multipart/form-data`  
+**Schema:** [`Body_import_sources_sources_import_post`](#schema-body_import_sources_sources_import_post)
+
+```json
+{
+  "file": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `201` | Successful Response | `application/json` | [`ImportReportOut`](#schema-importreportout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `201` `application/json` response:**
+
+```json
+{
+  "kind": "string",
+  "applied": true,
+  "total": 1,
+  "created": 1,
+  "skipped": 1,
+  "errors": 1,
+  "rows": [
+    {
+      "row": 1,
+      "name": "…",
+      "outcome": "string",
+      "message": "…",
+      "problems": [
+        "…"
+      ],
+      "uuid": "…"
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="25_get_sources_source_uuid"></a>
+## 25. `GET /sources/{source_uuid}` — Get Source
 
 ### API
 
@@ -1370,8 +1781,8 @@ No request body.
 }
 ```
 
-<a id="20_put_sources_source_uuid"></a>
-## 20. `PUT /sources/{source_uuid}` — Update Source
+<a id="26_put_sources_source_uuid"></a>
+## 26. `PUT /sources/{source_uuid}` — Update Source
 
 ### API
 
@@ -1451,8 +1862,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="21_put_sources_source_uuid_owner"></a>
-## 21. `PUT /sources/{source_uuid}/owner` — Assign the person accountable for a source
+<a id="27_put_sources_source_uuid_owner"></a>
+## 27. `PUT /sources/{source_uuid}/owner` — Assign the person accountable for a source
 
 ### API
 
@@ -1515,8 +1926,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="22_post_sources_source_uuid_suspend"></a>
-## 22. `POST /sources/{source_uuid}/suspend` — Suspend Source
+<a id="28_post_sources_source_uuid_suspend"></a>
+## 28. `POST /sources/{source_uuid}/suspend` — Suspend Source
 
 ### API
 
@@ -1567,8 +1978,8 @@ No request body.
 }
 ```
 
-<a id="23_get_sources_source_uuid_batches"></a>
-## 23. `GET /sources/{source_uuid}/batches` — Source Batches
+<a id="29_get_sources_source_uuid_batches"></a>
+## 29. `GET /sources/{source_uuid}/batches` — Source Batches
 
 ### API
 
@@ -1631,12 +2042,53 @@ For state changes whose only interesting output is that they happened.
 | `ok` | `boolean` | No | default: `True` | — |
 | `message` | `string` or `null` | No | — | — |
 
+<a id="schema-body_check_processor_import_processors_import_check_post"></a>
+#### `Body_check_processor_import_processors_import_check_post`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `file` | `string` | Yes | — | The filled-in workbook (.xlsx), max 25 MB |
+
+<a id="schema-body_check_source_import_sources_import_check_post"></a>
+#### `Body_check_source_import_sources_import_check_post`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `file` | `string` | Yes | — | The filled-in workbook (.xlsx), max 25 MB |
+
+<a id="schema-body_import_processors_processors_import_post"></a>
+#### `Body_import_processors_processors_import_post`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `file` | `string` | Yes | — | The filled-in workbook (.xlsx), max 25 MB |
+
+<a id="schema-body_import_sources_sources_import_post"></a>
+#### `Body_import_sources_sources_import_post`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `file` | `string` | Yes | — | The filled-in workbook (.xlsx), max 25 MB |
+
 <a id="schema-httpvalidationerror"></a>
 #### `HTTPValidationError`
 
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
 | `detail` | array of [`ValidationError`](#schema-validationerror) | No | — | — |
+
+<a id="schema-importreportout"></a>
+#### `ImportReportOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `kind` | `string` | Yes | — | — |
+| `applied` | `boolean` | Yes | — | — |
+| `total` | `integer` | Yes | — | — |
+| `created` | `integer` | Yes | — | — |
+| `skipped` | `integer` | Yes | — | — |
+| `errors` | `integer` | Yes | — | — |
+| `rows` | array of [`ImportRowOut`](#schema-importrowout) | Yes | — | — |
 
 <a id="schema-page_processorout"></a>
 #### `Page_ProcessorOut_`
@@ -1857,3 +2309,23 @@ silently parked with whoever happens to be assigned next.
 | `type` | `string` | Yes | — | — |
 | `input` | `object` | No | — | — |
 | `ctx` | `object` | No | — | — |
+
+<a id="schema-importrowout"></a>
+#### `ImportRowOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `row` | `integer` | Yes | — | — |
+| `name` | `string` or `null` | Yes | — | — |
+| `outcome` | `string` | Yes | — | — |
+| `message` | `string` or `null` | No | — | — |
+| `problems` | array of [`ImportProblemOut`](#schema-importproblemout) | No | — | — |
+| `uuid` | `string` or `null` | No | format: `uuid` | — |
+
+<a id="schema-importproblemout"></a>
+#### `ImportProblemOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `column` | `string` | Yes | — | — |
+| `message` | `string` | Yes | — | — |

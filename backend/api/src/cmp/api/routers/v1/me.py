@@ -11,10 +11,11 @@ from datetime import datetime
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Query, Request, Response
 from pydantic import Field
 
 from cmp.api.dependencies import CurrentUser, RequireDataSubject
+from cmp.api.uploads import generated
 from cmp.auth.authentication import service as auth_service
 from cmp.core.errors import Forbidden, NotFound, ValidationFailed
 from cmp.db.pool import connection, transaction
@@ -24,6 +25,7 @@ from cmp.db.repositories import entities as entity_repo
 from cmp.db.repositories import exchange as exchange_repo
 from cmp.db.repositories import users as user_repo
 from cmp.domain.breach import notices as breach_notices
+from cmp.domain.consent import record as consent_record
 from cmp.domain.consent import service as consent_service
 from cmp.domain.users import service as users
 from cmp.schemas.common import Acknowledged, DateOfBirth, Mobile, OtpCode, Out, Schema, ShortText
@@ -224,6 +226,21 @@ async def my_consent(consent_uuid: UUID, principal: RequireDataSubject) -> dict[
             "notice_content_hash": artefact["notice_content_hash"],
             "grants": grants,
         }
+
+
+@router.get(
+    "/consents/{consent_uuid}/record",
+    summary="Her consent record as a PDF",
+    response_class=Response,
+    responses={200: {"content": {"application/pdf": {}}}},
+)
+async def my_consent_record(consent_uuid: UUID, principal: RequireDataSubject) -> Response:
+    """The same record staff file for audit, for her to keep (2026-10-15)."""
+    async with transaction() as conn:
+        payload, name = await consent_record.for_subject(
+            conn, str(consent_uuid), user_id=principal.user_id
+        )
+    return generated(payload, name, "application/pdf")
 
 
 @router.get("/consents/{consent_uuid}/notice", summary="The words she actually saw")

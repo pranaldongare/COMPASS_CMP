@@ -2841,6 +2841,46 @@
         }
       }
     },
+    "/me/consents/{consent_uuid}/record": {
+      "get": {
+        "tags": [
+          "me"
+        ],
+        "summary": "Her consent record as a PDF",
+        "description": "The same record staff file for audit, for her to keep (2026-10-15).",
+        "operationId": "my_consent_record_me_consents__consent_uuid__record_get",
+        "parameters": [
+          {
+            "name": "consent_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Consent Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/pdf": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/me/consents/{consent_uuid}/notice": {
       "get": {
         "tags": [
@@ -4510,6 +4550,130 @@
         }
       }
     },
+    "/processors/import/template": {
+      "get": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "The workbook to fill in for a processor import (sample=true: with example rows)",
+        "operationId": "processor_template_processors_import_template_get",
+        "parameters": [
+          {
+            "name": "sample",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Sample"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/processors/import/check": {
+      "post": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "What a processors workbook would create, skip and refuse - nothing is written",
+        "operationId": "check_processor_import_processors_import_check_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_check_processor_import_processors_import_check_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/processors/import": {
+      "post": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "Register the processors a workbook lists: all its rows, or none of them",
+        "description": "A row in error refuses the whole file (422, `import_rejected`, the report\nin `details`). A processor whose legal name is registered is skipped.",
+        "operationId": "import_processors_processors_import_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_processors_processors_import_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/processors/{processor_uuid}/respondents": {
       "get": {
         "tags": [
@@ -5010,6 +5174,130 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SourceOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sources/import/template": {
+      "get": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "The workbook to fill in for a data-source import (sample=true: with example rows)",
+        "operationId": "source_template_sources_import_template_get",
+        "parameters": [
+          {
+            "name": "sample",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Sample"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sources/import/check": {
+      "post": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "What a data-sources workbook would create, skip and refuse - nothing is written",
+        "operationId": "check_source_import_sources_import_check_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_check_source_import_sources_import_check_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sources/import": {
+      "post": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "Register the data sources a workbook lists: all its rows, or none of them",
+        "description": "Each row names its processor by legal name or contract reference, which\nmust be registered and active; blank is a source run in-house. A row in\nerror refuses the whole file; a source code already registered is skipped.",
+        "operationId": "import_sources_sources_import_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_sources_sources_import_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportReportOut"
                 }
               }
             }
@@ -8917,6 +9205,144 @@
                   "$ref": "#/components/schemas/Page_ConsentListRow_"
                 }
               }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/consents/{consent_uuid}/record": {
+      "get": {
+        "tags": [
+          "consent"
+        ],
+        "summary": "The consent record as a PDF, for audit",
+        "description": "What was decided, against which notice, in which words, when: the\nperson's name and one masked contact, the decision per purpose, the\nhistory, and the notice text as shown, with its hash. A JSON copy is\nembedded in the PDF. Each download is audited.",
+        "operationId": "consent_record_pdf_consents__consent_uuid__record_get",
+        "parameters": [
+          {
+            "name": "consent_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Consent Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/pdf": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/consent-records": {
+      "get": {
+        "tags": [
+          "consent"
+        ],
+        "summary": "Consent records as PDFs in a ZIP, with a manifest, for a downstream store",
+        "description": "**Every** consent record in scope whose decision falls in the range -\nwithdrawals and the decisions they superseded alike, not only the current\nones - one PDF each, and `manifest.csv` with each file's SHA-256 and\nidentifiers (no names). At most 200 per archive: more is refused with\nthe count (`archive_too_large`), so a scheduled pull narrows its range.",
+        "operationId": "consent_records_archive_consent_records_get",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project"
+            }
+          },
+          {
+            "name": "site",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Site"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/zip": {}
             }
           },
           "422": {
@@ -17912,6 +18338,36 @@
         ],
         "title": "Body_check_list_breaches__breach_uuid__affected_upload_check_post"
       },
+      "Body_check_processor_import_processors_import_check_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "The filled-in workbook (.xlsx), max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_check_processor_import_processors_import_check_post"
+      },
+      "Body_check_source_import_sources_import_check_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "The filled-in workbook (.xlsx), max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_check_source_import_sources_import_check_post"
+      },
       "Body_create_import_imports_post": {
         "properties": {
           "source": {
@@ -17952,6 +18408,36 @@
           "document"
         ],
         "title": "Body_import_notice_document_projects__project_uuid__notices_import_post"
+      },
+      "Body_import_processors_processors_import_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "The filled-in workbook (.xlsx), max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_processors_processors_import_post"
+      },
+      "Body_import_sources_sources_import_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "The filled-in workbook (.xlsx), max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_sources_sources_import_post"
       },
       "Body_message_holder_breaches__breach_uuid__tickets__ticket_uuid__messages_post": {
         "properties": {
@@ -23759,6 +24245,16 @@
             },
             "type": "array",
             "title": "Breaches"
+          },
+          "trends": {
+            "additionalProperties": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Trends"
           }
         },
         "type": "object",
@@ -25108,6 +25604,130 @@
           "imported_by_name"
         ],
         "title": "ImportBatchOut"
+      },
+      "ImportProblemOut": {
+        "properties": {
+          "column": {
+            "type": "string",
+            "title": "Column"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "column",
+          "message"
+        ],
+        "title": "ImportProblemOut"
+      },
+      "ImportReportOut": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "applied": {
+            "type": "boolean",
+            "title": "Applied"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "created": {
+            "type": "integer",
+            "title": "Created"
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped"
+          },
+          "errors": {
+            "type": "integer",
+            "title": "Errors"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ImportRowOut"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "applied",
+          "total",
+          "created",
+          "skipped",
+          "errors",
+          "rows"
+        ],
+        "title": "ImportReportOut"
+      },
+      "ImportRowOut": {
+        "properties": {
+          "row": {
+            "type": "integer",
+            "title": "Row"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "outcome": {
+            "type": "string",
+            "title": "Outcome"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "problems": {
+            "items": {
+              "$ref": "#/components/schemas/ImportProblemOut"
+            },
+            "type": "array",
+            "title": "Problems"
+          },
+          "uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uuid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "row",
+          "name",
+          "outcome"
+        ],
+        "title": "ImportRowOut"
       },
       "InstructionIn": {
         "properties": {

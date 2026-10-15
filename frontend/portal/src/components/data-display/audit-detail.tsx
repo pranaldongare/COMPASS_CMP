@@ -52,6 +52,8 @@ const EVENT_SENTENCES: Record<string, string> = {
   "consent.withdrawn":
     "Consent was withdrawn. The earlier record still stands as evidence of what was agreed at the time.",
   "consent.declined": "The notice was served and consent was refused.",
+  "consent.record_downloaded":
+    "The consent record was downloaded as a PDF. It carries the person's name and a masked contact.",
   "export.generated": "A file containing personal data was produced.",
   "export.downloaded": "A file containing personal data was downloaded.",
   "import.received": "A manifest was submitted.",

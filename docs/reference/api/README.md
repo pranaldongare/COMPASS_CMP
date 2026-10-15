@@ -1,6 +1,6 @@
 # API documentation
 
-Reference for **326 operations over 286 paths**, grouped by OpenAPI module/tag.
+Reference for **335 operations over 295 paths**, grouped by OpenAPI module/tag.
 
 ## How to read an endpoint
 
@@ -21,21 +21,21 @@ Generated values are structural examples, not production credentials or semantic
 | Auth | 14 | [`modules/auth/api.md`](modules/auth/api.md) |
 | Breach Tickets | 6 | [`modules/breach_tickets/api.md`](modules/breach_tickets/api.md) |
 | Breaches | 37 | [`modules/breaches/api.md`](modules/breaches/api.md) |
-| Consent | 12 | [`modules/consent/api.md`](modules/consent/api.md) |
+| Consent | 14 | [`modules/consent/api.md`](modules/consent/api.md) |
 | Cross-Border Transfers | 3 | [`modules/cross_border_transfers/api.md`](modules/cross_border_transfers/api.md) |
 | Dashboard | 3 | [`modules/dashboard/api.md`](modules/dashboard/api.md) |
 | Delegations | 6 | [`modules/delegations/api.md`](modules/delegations/api.md) |
 | Exchange | 19 | [`modules/exchange/api.md`](modules/exchange/api.md) |
 | Holder Tickets | 8 | [`modules/holder_tickets/api.md`](modules/holder_tickets/api.md) |
 | Legal Holds | 3 | [`modules/legal_holds/api.md`](modules/legal_holds/api.md) |
-| Me | 28 | [`modules/me/api.md`](modules/me/api.md) |
+| Me | 29 | [`modules/me/api.md`](modules/me/api.md) |
 | Messages | 6 | [`modules/messages/api.md`](modules/messages/api.md) |
 | Notice Templates | 10 | [`modules/notice_templates/api.md`](modules/notice_templates/api.md) |
 | Notices | 24 | [`modules/notices/api.md`](modules/notices/api.md) |
 | Projects | 27 | [`modules/projects/api.md`](modules/projects/api.md) |
 | Public Consent | 6 | [`modules/public_consent/api.md`](modules/public_consent/api.md) |
 | Public Information | 10 | [`modules/public_information/api.md`](modules/public_information/api.md) |
-| Registry | 23 | [`modules/registry/api.md`](modules/registry/api.md) |
+| Registry | 29 | [`modules/registry/api.md`](modules/registry/api.md) |
 | Rights | 50 | [`modules/rights/api.md`](modules/rights/api.md) |
 | System | 5 | [`modules/system/api.md`](modules/system/api.md) |
 | Tickets | 5 | [`modules/tickets/api.md`](modules/tickets/api.md) |

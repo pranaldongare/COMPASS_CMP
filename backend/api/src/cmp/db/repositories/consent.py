@@ -731,3 +731,55 @@ async def lock_capture(conn: Conn, *, user_id: int, notice_id: int) -> None:
     the second becomes a supersession, which is what she meant.
     """
     await conn.execute("SELECT pg_advisory_xact_lock(%s, %s)", (user_id, notice_id))
+
+
+async def artefacts_for_records(
+    conn: Conn,
+    *,
+    role: Role | str,
+    user_id: int,
+    project_uuid: str | None = None,
+    site_uuid: str | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    limit: int,
+) -> tuple[list[str], int]:
+    """Every consent artefact in the caller's scope, oldest first, for the
+    consent-record archive (2026-10-15): uuids, and how many matched.
+
+    **Every artefact, not the current ones.** The archive is what a downstream
+    system keeps, pulled by date range. Read from `v_current_consent`, a consent
+    given in January and withdrawn in March would be missing from January's
+    pull - the view shows only March's withdrawal - and the record of the
+    original decision would never reach the archive.
+    """
+    pred, sparams = _project_scope(role, user_id)
+    where = [pred]
+    params: list[Any] = [*sparams]
+    if project_uuid:
+        where.append("p.project_uuid = %s")
+        params.append(project_uuid)
+    if site_uuid:
+        where.append("s.site_uuid = %s")
+        params.append(site_uuid)
+    if date_from:
+        where.append("ca.affirmative_action_at >= %s")
+        params.append(date_from)
+    if date_to:
+        where.append("ca.affirmative_action_at <= %s")
+        params.append(date_to)
+    base = f"""
+        FROM consent_artefact ca
+        JOIN notice n        ON n.notice_id = ca.notice_id
+        JOIN project p       ON p.project_id = n.project_id
+        JOIN consent_link cl ON cl.link_id = ca.link_id
+        JOIN project_site s  ON s.site_id = cl.site_id
+        WHERE {" AND ".join(where)}
+    """
+    rows = await fetch_all(
+        conn,
+        f"SELECT ca.consent_uuid {base} ORDER BY ca.affirmative_action_at, ca.consent_id LIMIT %s",
+        [*params, limit],
+    )
+    total = await fetch_one(conn, f"SELECT count(*) AS n {base}", params)
+    return [str(r["consent_uuid"]) for r in rows], int((total or {}).get("n", 0))

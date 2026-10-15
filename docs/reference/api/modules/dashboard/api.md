@@ -71,7 +71,8 @@ No request body.
       "tickets_open": 1,
       "tickets_overdue": 1
     }
-  ]
+  ],
+  "trends": {}
 }
 ```
 
@@ -210,6 +211,7 @@ For state changes whose only interesting output is that they happened.
 | `recent` | array of `object` | Yes | — | — |
 | `attention` | array of [`AttentionRow`](#schema-attentionrow) | No | — | — |
 | `breaches` | array of [`BreachSummaryOut`](#schema-breachsummaryout) | No | — | — |
+| `trends` | `object` | No | — | — |
 
 <a id="schema-httpvalidationerror"></a>
 #### `HTTPValidationError`

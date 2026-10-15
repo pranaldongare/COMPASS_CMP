@@ -184,6 +184,37 @@ notice text beside the decision she is changing.
   above. A request is about all of it (2026-10-07); one confined to a single
   consent's chain can no longer be made, and those made before keep it.
 
+## 8. The record as a PDF, for audit
+
+Every consent artefact, including every withdrawal, can be issued as a PDF
+that an auditor files and a downstream system keeps (2026-10-15,
+[ADR 0031](../decisions/0031-a-consent-record-is-issued-as-a-pdf-naming-the-person.md)).
+It holds:
+
+- the status, and whether the record is still in force or was superseded,
+  and by what;
+- the person's name, one masked contact and her principal ID, and nothing
+  else about her;
+- the project, site and notice;
+- the decision per purpose, with data categories, retention and lawful basis;
+- the history of every decision on that notice;
+- the notice's withdrawal and rights links;
+- the notice text as shown, in the language shown, with the hash recorded at
+  capture beside the hash of the stored text.
+
+A JSON copy is embedded in the PDF.
+
+| Who | Route |
+|---|---|
+| DPO, DCO, DCO Admin, RCO, each in scope | `GET /consents/{consent_uuid}/record`: the console's **Download PDF** on a consent |
+| The same, many at once | `GET /consent-records?project=&site=&from=&to=`: a ZIP of every artefact in range, with `manifest.csv` (SHA-256 and identifiers, no names), at most 200; the console's **Download PDFs (ZIP)** on Consents, with its filters |
+| The person, her own | `GET /me/consents/{consent_uuid}/record`: **Download PDF** on My consents |
+
+Every copy is audited as `consent.record_downloaded`. The response carries
+`X-Content-SHA256`, so the receiving store can check what arrived. If the key
+service cannot open the name, nothing is produced (503). A PDF with
+ciphertext where a name should be is never issued.
+
 ## What she can see
 
 On the portal, signed in with a code to her mobile or email: every consent

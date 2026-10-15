@@ -7,7 +7,7 @@
  * could substitute to read somebody else's record.
  */
 
-import { apiGet, apiPost } from "@/lib/api";
+import { apiDownload, apiGet, apiPost } from "@/lib/api";
 import type {
   AuditEntry,
   ConsentHistoryEntry,
@@ -80,4 +80,11 @@ export function withdrawConsent(
  */
 export function listMyConsentTrail(uuid: Uuid): Promise<AuditEntry[]> {
   return apiGet<AuditEntry[]>(`/me/consents/${uuid}/trail`);
+}
+
+/** Her consent record as a PDF (2026-10-15): the same record the Privacy
+ *  Office files for audit - her name and a masked contact, the decision per
+ *  purpose, its history, and the notice as she was shown it. */
+export function downloadMyConsentRecord(uuid: Uuid) {
+  return apiDownload(`/me/consents/${uuid}/record`);
 }

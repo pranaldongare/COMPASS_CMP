@@ -37,6 +37,7 @@ one stays and points forward.
 | [0028](0028-a-notice-template-is-copied-never-served.md) | A notice template is a separate record, copied into a project's draft, never approved or served | accepted |
 | [0029](0029-copies-and-files-never-on-a-code-a-link-or-her-own-record.md) | The office copies emails and attaches files, never on a code, a link or a person's own record | accepted; extended 2026-10-08 |
 | [0030](0030-a-collection-owner-collects-for-named-processors.md) | A collection owner collects for named processors, and sees their data sources only | accepted |
+| [0031](0031-a-consent-record-is-issued-as-a-pdf-naming-the-person.md) | A consent record is issued as a PDF for audit, naming the person and masking one contact | accepted |
 
 ## Writing one
 
