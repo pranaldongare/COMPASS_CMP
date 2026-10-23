@@ -67,8 +67,12 @@ test.describe("a member of staff on the portal", () => {
     expect(me.nav).not.toContain("users");
 
     // And the console's endpoints refuse this session - the whole point.
+    // Through the public relay (backend/relay, ADR 0032) they are not even
+    // reachable: the relay refuses every staff route with 404 before it
+    // reaches the API.
+    const refused = process.env.E2E_VIA_RELAY ? 404 : 403;
     for (const path of ["/api/users", "/api/audit", "/api/requests", "/api/notices"]) {
-      expect((await page.request.get(path)).status(), path).toBe(403);
+      expect((await page.request.get(path)).status(), path).toBe(refused);
     }
     // While her own record answers.
     expect((await page.request.get("/api/me/consents")).status()).toBe(200);

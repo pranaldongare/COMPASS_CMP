@@ -1,0 +1,106 @@
+# /etc/systemd/system/cmp-relay-collector.service (inside the organisation)
+#
+# The relay's inside half (ADR 0032). It opens no port. It long-polls the
+# request queue on AWS through the organisation's outbound proxy, calls the
+# API, and sends each sealed reply back. The only connections it makes:
+#
+#   to the proxy, for   sqs.ap-south-1.amazonaws.com
+#                       <bucket>.s3.ap-south-1.amazonaws.com
+#                       rolesanywhere.ap-south-1.amazonaws.com
+#   directly, to        the API (RELAY_API_ORIGIN)
+#
+# /etc/compass/relay-collector.env (root:compass-relay, 0640) sets RELAY_*:
+# the queues, the bucket, the API origin and the paths of the key files. The
+# key files themselves live in /etc/compass/relay/ (compass-relay, 0600).
+# See backend/relay/.env.example.
+#
+# The host's clock must be kept by NTP against the organisation's internal
+# time server (chrony or systemd-timesyncd; no new egress). The collector
+# measures each deadline on AWS's clock, from the timestamps SQS puts on every
+# message, and logs relay.clock_skew when this host is more than 1 s off; the
+# correction follows a steady offset, not a clock that jumps (README,
+# "Network requirements for the collector").
+[Unit]
+Description=COMPASS relay collector (SQS to the API, ADR 0032)
+After=network-online.target time-sync.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=compass-relay
+Group=compass-relay
+WorkingDirectory=/opt/compass/relay
+EnvironmentFile=/etc/compass/relay-collector.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+# The organisation's outbound proxy. boto3 sends every AWS call through it,
+# and aws_signing_helper does too (--with-proxy in the AWS config). Only
+# HTTPS_PROXY is set: the API is reached over plain http on the internal
+# network, and must never be sent to the proxy.
+Environment=HTTPS_PROXY=http://proxy.example.internal:8080
+# Never proxied: the API's host, and loopback. Add the API's internal name if
+# RELAY_API_ORIGIN is not on this host.
+Environment=NO_PROXY=127.0.0.1,localhost
+# AWS credentials come only from IAM Roles Anywhere, through credential_process
+# in this file (deploy/aws-config.collector.example). No access key exists.
+Environment=AWS_CONFIG_FILE=/etc/compass/relay/aws-config
+Environment=AWS_PROFILE=cmp-relay-collector
+Environment=AWS_SHARED_CREDENTIALS_FILE=/dev/null
+# Not on EC2: never wait on the instance metadata service.
+Environment=AWS_EC2_METADATA_DISABLED=true
+ExecStart=/opt/compass/relay/.venv/bin/python -m cmp_relay.collector
+Restart=always
+RestartSec=3
+# On stop (SIGTERM) the collector drains:
+#   * a worker handling a request finishes it, and replies; none runs past
+#     its deadline (25 s, or 50 s for an upload: RELAY_UPLOAD_DEADLINE_S);
+#   * a worker whose long poll (up to 20 s) returns after the stop does not
+#     handle what it received: it hands each message back to the queue
+#     (ChangeMessageVisibility 0), so the next collector takes it at once;
+#   * no worker polls again.
+# 120 s covers the longest request a worker can be on, plus sending its reply
+# through the proxy. Keep it at least RELAY_UPLOAD_DEADLINE_S + 60 s if that
+# is ever raised. Only past it does systemd kill the process, and then a
+# write in flight may or may not have happened (its message is already
+# deleted) and the browser gets 504. With one collector, a restart pauses
+# collection for as long as the drain takes; requests whose deadline passes
+# meanwhile get the bridge's 504.
+KillSignal=SIGTERM
+TimeoutStopSec=120
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+# With the certificate's key in a TPM 2.0, replace PrivateDevices=true with
+#   DevicePolicy=closed
+#   DeviceAllow=/dev/tpmrm0 rw
+#   SupplementaryGroups=tss
+# DeviceAllow only opens the cgroup's device filter; the file's own
+# permissions still apply. /dev/tpmrm0 is root:tss 0660 under the tpm2-tss
+# udev rule (install the distribution's tpm2-tss or tpm-udev package; without
+# that rule the device is root-only and there may be no tss group). Instead of
+# the group, a site udev rule may give the device GROUP="compass-relay". Use
+# the resource manager, /dev/tpmrm0, never /dev/tpm0; if TPM_DEVICE is set for
+# the helper, it must name /dev/tpmrm0.
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+AmbientCapabilities=
+UMask=0077
+ReadOnlyPaths=/etc/compass/relay
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

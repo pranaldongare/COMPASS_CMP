@@ -221,6 +221,14 @@ async def serve_notice(
     _no_referrer(response)
     cookie = request.cookies.get(settings.cookie_name)
     session = await sessions.load(cookie) if cookie else None
+    if (
+        session is not None
+        and getattr(request.state, "relayed", False)
+        and session.role != Role.DATA_SUBJECT.value
+    ):
+        # Through the public relay only a data principal's session counts
+        # (ADR 0032); this route reads the cookie itself, so it says so here.
+        session = None
 
     async with transaction() as conn:
         return await service.serve_notice(

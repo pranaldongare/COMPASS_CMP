@@ -1,0 +1,59 @@
+# /etc/compass/relay/aws-config - the collector's AWS configuration (ADR 0032)
+#
+# cmp-relay-collector.service points AWS_CONFIG_FILE here and sets
+# AWS_PROFILE=cmp-relay-collector. Owner root:compass-relay, mode 0640.
+#
+# The collector has no access key. Each time boto3 needs credentials it runs
+# aws_signing_helper, which signs a CreateSession request with the collector's
+# certificate and private key and gets back one-hour credentials for
+# CollectorRole from IAM Roles Anywhere. boto3 refreshes them before they
+# expire. The three ARNs are outputs of deploy/cloudformation.yaml.
+#
+# Rules:
+#
+# * credential_process, never `aws_signing_helper serve`. `serve` answers on a
+#   local port like the EC2 metadata service, and anything on the host that can
+#   reach that port gets the role's credentials. credential_process hands them
+#   to this one process.
+# * Never --no-verify-ssl.
+# * The proxy must not inspect TLS to rolesanywhere.ap-south-1.amazonaws.com:
+#   set it no-decrypt (bypass). Inspection would NOT make this call fail. The
+#   helper trusts the operating system's certificate store, where an
+#   inspecting proxy's root certificate normally sits, and the request's
+#   signature covers the request, not the connection, so CreateSession still
+#   succeeds - and its response, the role's one-hour credentials, would be
+#   readable on the proxy. (boto3 trusts its own bundle, not the OS store, so
+#   an inspected SQS or S3 connection does fail; do not let that be the reason
+#   only sqs and s3 are exempted.)
+# * --with-proxy makes the helper use HTTPS_PROXY, which the unit sets. Without
+#   it the helper tries to connect directly and the firewall drops it.
+#
+# The private key:
+#
+# * In a file (as below): /etc/compass/relay/pki/collector.key, owner
+#   compass-relay, mode 0600. Unencrypted PEM, PKCS#8 or SEC1.
+# * In a TPM 2.0 (better: the key cannot be copied off the host): pass the
+#   TPM-wrapped key file (-----BEGIN TSS2 PRIVATE KEY-----) as --private-key,
+#   plus --tpm-key-password if it has one. The unit then needs access to
+#   /dev/tpmrm0 and membership of the tss group (SupplementaryGroups=tss):
+#   see the comment on PrivateDevices in cmp-relay-collector.service.
+# * In an HSM or smart card: --certificate "pkcs11:object=cmp-relay;type=cert"
+#   --private-key "pkcs11:object=cmp-relay;type=private"
+#   --pkcs11-lib /usr/lib64/<vendor>/libpkcs11.so
+#
+# The certificate's Common Name must equal the stack's CollectorCertificateCN,
+# and it must be issued by the CA in OrgCaCertificatePem (and, if the stack
+# sets CollectorIssuerCN, by a CA with that CN). When it is renewed, replace
+# the two files and restart the collector - and revoke the old certificate at
+# the CA and import the CA's new CRL against the trust anchor. Roles Anywhere
+# never fetches a CRL itself, so until then the old certificate and key still
+# get CollectorRole credentials (README, "Revoking or replacing the collector
+# certificate").
+#
+# credential_process must stay on one line.
+
+[profile cmp-relay-collector]
+region = ap-south-1
+retry_mode = standard
+max_attempts = 3
+credential_process = /usr/local/bin/aws_signing_helper credential-process --certificate /etc/compass/relay/pki/collector.crt --private-key /etc/compass/relay/pki/collector.key --trust-anchor-arn arn:aws:rolesanywhere:ap-south-1:111122223333:trust-anchor/00000000-0000-0000-0000-000000000000 --profile-arn arn:aws:rolesanywhere:ap-south-1:111122223333:profile/00000000-0000-0000-0000-000000000000 --role-arn arn:aws:iam::111122223333:role/cmp-relay-production-CollectorRole-EXAMPLE --region ap-south-1 --with-proxy

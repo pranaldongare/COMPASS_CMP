@@ -203,6 +203,7 @@ It closes the breach it made. The worker must have been restarted since
 | `E2E_OUTBOX` | both | `backend/api/var/outbox.log` | |
 | `E2E_BASE_URL` | both | `http://127.0.0.1:<E2E_PORT>` | set, the suite uses that server and builds nothing |
 | `E2E_SHOTS` | portal | empty | `rights.spec.ts` takes no screenshots |
+| `E2E_VIA_RELAY` | portal | empty | set when `E2E_BASE_URL` is a portal whose `/api` goes through the public relay (`backend/relay`, ADR 0032): `sealed-never-shown.spec.ts` then requires that no reply carries a sealed value, and `staff-as-principal.spec.ts` expects 404 rather than 403 for a console route, which the relay refuses before the API |
 | `E2E_PORT` | both | 3100 console, 3201 portal | the port the suite builds and serves on. **A server already on that port is reused, whatever it serves** - on 1 October 2026 another checkout's dev server on 3100 answered 404 for pages this branch has, and the failures looked like the app's. Check `lsof -iTCP:3100 -sTCP:LISTEN` first, or set another port |
 
 The console suite has five projects. `setup` signs in every role once, with

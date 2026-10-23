@@ -1,0 +1,542 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  COMPASS public-ingress relay, the AWS side (ADR 0032). The request queue the
+  inside collects from, one reply queue per portal instance, a bucket for
+  bodies too large for a message, the bridge's instance role, and the
+  collector's role behind IAM Roles Anywhere. Deploy in ap-south-1, the
+  portal's region. Needs CAPABILITY_IAM.
+
+# Everything here holds ciphertext only: the bridge seals each request to the
+# collector's public key before it is sent, and the collector seals each reply
+# under a key only the asking bridge holds (backend/relay/src/cmp_relay/
+# sealing.py). SSE-SQS and SSE-S3 are a second layer, not the one relied on,
+# which is why a customer-managed KMS key is not used: it would add a key
+# policy and a kms:Decrypt grant to both roles for no gain in what AWS can read.
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label: { default: Environment }
+        Parameters: [EnvironmentName]
+      - Label: { default: The collector (inside the organisation) }
+        Parameters: [OrgEgressCidrs, CollectorCertificateCN, CollectorIssuerCN, OrgCaCertificatePem]
+      - Label: { default: Alarms }
+        Parameters: [AlarmTopicArn]
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Description: Short lower-case name, part of every resource name (staging, production).
+    AllowedPattern: "^[a-z][a-z0-9-]{1,19}$"
+    ConstraintDescription: 2-20 characters, lower-case letters, digits and hyphens, starting with a letter.
+
+  OrgEgressCidrs:
+    Type: CommaDelimitedList
+    Description: >-
+      The organisation's public egress addresses as /32s (behind Zscaler, its
+      dedicated egress IPs). The collector's credentials are refused from
+      anywhere else. Comma-separated, e.g. 203.0.113.10/32,203.0.113.11/32.
+
+  CollectorCertificateCN:
+    Type: String
+    MinLength: 1
+    Description: >-
+      The Common Name of the collector's client certificate, issued by the
+      organisation's CA. Only a certificate with exactly this CN can take the
+      collector's role.
+
+  CollectorIssuerCN:
+    Type: String
+    Default: ""
+    Description: >-
+      Optional. The Common Name of the CA that signs the collector's
+      certificate (its issuer). Given, only a certificate with that issuer CN
+      as well as CollectorCertificateCN can take the collector's role. Use it
+      when the trust anchor is a root, or a CA that issues more than this one
+      certificate; best, a sub-CA that issues for the relay and nothing else.
+      Empty: the subject CN alone is checked.
+
+  OrgCaCertificatePem:
+    Type: String
+    MinLength: 64
+    Description: >-
+      The PEM of the CA certificate that issues the collector's certificate
+      (the Roles Anywhere trust anchor). An issuing CA, not a public root.
+      Pass it with --parameter-overrides OrgCaCertificatePem="$(cat ca.pem)".
+
+  AlarmTopicArn:
+    Type: String
+    Default: ""
+    AllowedPattern: "^$|^arn:aws[a-z-]*:sns:[a-z0-9-]+:[0-9]{12}:[A-Za-z0-9_-]+$"
+    Description: Optional SNS topic for the alarms (on-call). Empty leaves them without actions.
+
+Conditions:
+  HasAlarmTopic: !Not [!Equals [!Ref AlarmTopicArn, ""]]
+  HasCollectorIssuerCN: !Not [!Equals [!Ref CollectorIssuerCN, ""]]
+
+Resources:
+  # ------------------------------------------------------------------ queues
+
+  # Visibility 180 s, above retention: a message a collector has taken is never
+  # handed out again - not to a second collector while the first is still on
+  # it, and not after the first one dies either (it expires before it could
+  # reappear). So neither a write nor a read is retried after a crash. A
+  # collector that is stopping hands back what it took but did not start
+  # (ChangeMessageVisibility 0), so the next one takes it at once.
+  # Retention 60 s, the service minimum: a request nobody collected is gone
+  # soon after the browser stopped waiting (the deadlines are 25 s, 50 s for
+  # an upload). 1 MiB messages: a 256 KiB body inline, base64 twice, lands
+  # near 460 KiB.
+  RequestQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete  # nothing in it outlives 60 s
+    UpdateReplacePolicy: Delete
+    Properties:
+      QueueName: !Sub cmp-relay-${EnvironmentName}-requests
+      VisibilityTimeout: 180
+      MessageRetentionPeriod: 60
+      ReceiveMessageWaitTimeSeconds: 20
+      MaximumMessageSize: 1048576
+      SqsManagedSseEnabled: true
+
+  # One reply queue per portal instance (RELAY_REPLY_QUEUE_URL), never shared:
+  # exactly one bridge polls each. A bridge that receives a reply it does not
+  # know hands it back (ChangeMessageVisibility 0) and logs foreign_reply, so
+  # two bridges on one queue slow each other down and lose some replies. The
+  # collector answers only to a queue on its own list (RELAY_REPLY_QUEUE_URLS),
+  # so a forged request cannot send a reply anywhere else. Two queues, for two
+  # portal instances; more instances need more queues (README, "Known limits").
+  ReplyQueueA:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete  # nothing in it outlives 60 s
+    UpdateReplacePolicy: Delete
+    Properties:
+      QueueName: !Sub cmp-relay-${EnvironmentName}-replies-a
+      VisibilityTimeout: 30
+      MessageRetentionPeriod: 60
+      ReceiveMessageWaitTimeSeconds: 20
+      MaximumMessageSize: 1048576
+      SqsManagedSseEnabled: true
+
+  ReplyQueueB:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete  # nothing in it outlives 60 s
+    UpdateReplacePolicy: Delete
+    Properties:
+      QueueName: !Sub cmp-relay-${EnvironmentName}-replies-b
+      VisibilityTimeout: 30
+      MessageRetentionPeriod: 60
+      ReceiveMessageWaitTimeSeconds: 20
+      MaximumMessageSize: 1048576
+      SqsManagedSseEnabled: true
+
+  # The SDKs only speak HTTPS; these refuse anything that does not.
+  RequestQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues: [!Ref RequestQueue]
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "sqs:*"
+            Resource: !GetAtt RequestQueue.Arn
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+
+  ReplyQueueAPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues: [!Ref ReplyQueueA]
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "sqs:*"
+            Resource: !GetAtt ReplyQueueA.Arn
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+
+  ReplyQueueBPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues: [!Ref ReplyQueueB]
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "sqs:*"
+            Resource: !GetAtt ReplyQueueB.Arn
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+
+  # ------------------------------------------------------------------ bucket
+
+  # Bodies over 256 KiB, sealed: req/<request id> and res/<request id>. The
+  # reader deletes each object once read; the lifecycle rule removes what a
+  # crash left behind. Versioning stays off (never enabled), so a delete is a
+  # delete and no old version lingers.
+  BodiesBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      BucketName: !Sub cmp-relay-${EnvironmentName}-bodies-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-relay-bodies
+            Status: Enabled
+            ExpirationInDays: 1
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+
+  BodiesBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref BodiesBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !GetAtt BodiesBucket.Arn
+              - !Sub "${BodiesBucket.Arn}/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+          - Sid: DenyTlsOlderThan12
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !GetAtt BodiesBucket.Arn
+              - !Sub "${BodiesBucket.Arn}/*"
+            Condition:
+              NumericLessThan:
+                s3:TlsVersion: "1.2"
+
+  # --------------------------------------------------------------- the bridge
+
+  # What the bridge may do: send requests, read, clear and hand back replies,
+  # put request bodies, take reply bodies. Nothing else. A managed policy, so it can be
+  # attached to the portal instances' existing role
+  # (docs/deployment/portal-frontend-aws.md 7.5) instead of using BridgeRole:
+  # an instance has one role, and the bridge runs on the portal instances.
+  BridgeAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: COMPASS relay bridge - send requests, collect replies (ADR 0032).
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: SendRequests
+            Effect: Allow
+            Action: sqs:SendMessage
+            Resource: !GetAtt RequestQueue.Arn
+          - Sid: CollectReplies
+            Effect: Allow
+            Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:ChangeMessageVisibility
+              - sqs:GetQueueAttributes
+            Resource:
+              - !GetAtt ReplyQueueA.Arn
+              - !GetAtt ReplyQueueB.Arn
+          - Sid: PutRequestBodies
+            Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:DeleteObject
+            Resource: !Sub "${BodiesBucket.Arn}/req/*"
+          - Sid: TakeReplyBodies
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:DeleteObject
+            Resource: !Sub "${BodiesBucket.Arn}/res/*"
+
+  BridgeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: COMPASS relay bridge on the portal instances (ADR 0032).
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref BridgeAccessPolicy
+
+  BridgeInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref BridgeRole]
+
+  # ------------------------------------------------------------ the collector
+
+  # The collector is not on AWS. It proves itself with a client certificate
+  # from the organisation's CA (IAM Roles Anywhere) and receives one-hour
+  # credentials for CollectorRole. No access key exists to leak.
+  #
+  # Roles Anywhere never fetches a CRL or asks OCSP. A revoked certificate is
+  # refused only once the CA's CRL is imported against this trust anchor
+  # (aws rolesanywhere import-crl, kept current with update-crl before the
+  # CRL's nextUpdate). Not a template resource: a CRL can outgrow a parameter
+  # (4 KB), and it changes on the CA's schedule, not the stack's (README,
+  # "Revoking or replacing the collector certificate").
+  TrustAnchor:
+    Type: AWS::RolesAnywhere::TrustAnchor
+    Properties:
+      Name: !Sub cmp-relay-${EnvironmentName}-collector-ca
+      Enabled: true
+      Source:
+        SourceType: CERTIFICATE_BUNDLE
+        SourceData:
+          X509CertificateData: !Ref OrgCaCertificatePem
+
+  CollectorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: COMPASS relay collector inside the organisation, via Roles Anywhere (ADR 0032).
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          # Only this trust anchor, only a certificate with this exact CN, and,
+          # when CollectorIssuerCN is given, only one that CA signed.
+          - Effect: Allow
+            Principal:
+              Service: rolesanywhere.amazonaws.com
+            Action:
+              - sts:AssumeRole
+              - sts:TagSession
+              - sts:SetSourceIdentity
+            Condition:
+              StringEquals:
+                aws:PrincipalTag/x509Subject/CN: !Ref CollectorCertificateCN
+                aws:PrincipalTag/x509Issuer/CN: !If
+                  - HasCollectorIssuerCN
+                  - !Ref CollectorIssuerCN
+                  - !Ref AWS::NoValue
+              ArnEquals:
+                aws:SourceArn: !GetAtt TrustAnchor.TrustAnchorArn
+      Policies:
+        - PolicyName: relay-collector
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: TakeRequests
+                Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:ChangeMessageVisibility
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt RequestQueue.Arn
+              - Sid: SendReplies
+                Effect: Allow
+                Action: sqs:SendMessage
+                Resource:
+                  - !GetAtt ReplyQueueA.Arn
+                  - !GetAtt ReplyQueueB.Arn
+              - Sid: TakeRequestBodies
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:DeleteObject
+                Resource: !Sub "${BodiesBucket.Arn}/req/*"
+              - Sid: PutReplyBodies
+                Effect: Allow
+                Action: s3:PutObject
+                Resource: !Sub "${BodiesBucket.Arn}/res/*"
+              # Credentials copied off the collector are useless anywhere but
+              # the organisation's own egress. Calls AWS makes on the role's
+              # behalf are not blocked (aws:ViaAWSService).
+              - Sid: OnlyFromTheOrganisation
+                Effect: Deny
+                Action: "*"
+                Resource: "*"
+                Condition:
+                  NotIpAddress:
+                    aws:SourceIp: !Ref OrgEgressCidrs
+                  Bool:
+                    aws:ViaAWSService: "false"
+
+  CollectorProfile:
+    Type: AWS::RolesAnywhere::Profile
+    Properties:
+      Name: !Sub cmp-relay-${EnvironmentName}-collector
+      Enabled: true
+      DurationSeconds: 3600
+      RoleArns:
+        - !GetAtt CollectorRole.Arn
+
+  # ------------------------------------------------------------------ alarms
+
+  # Retention is 60 s, so a message older than 30 s means nobody is collecting
+  # it. On the request queue: the collector inside is not collecting (the
+  # inside is unreachable, its proxy is down, or its credentials stopped
+  # working). On a reply queue: the bridge on that portal instance is not
+  # collecting its replies (stopped, crashed, or pointed at another queue).
+  #
+  # What these do not see: a collector that collects and then drops every
+  # request without a reply (a reply queue missing from RELAY_REPLY_QUEUE_URLS,
+  # a bridge sealing to a retired collector key). Both queues stay empty while
+  # the bridge answers 503. The portal's own Target 5xx and CloudFront 5xx
+  # alarms (docs/deployment/portal-frontend-aws.md, section 10) are the
+  # backstop there.
+  RequestsWaitingAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub cmp-relay-${EnvironmentName}-requests-waiting
+      AlarmDescription: >-
+        The oldest public request has waited over 30 s for two minutes: the
+        collector inside is not collecting. Visitors are seeing "We can't reach
+        our records right now".
+      Namespace: AWS/SQS
+      MetricName: ApproximateAgeOfOldestMessage
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt RequestQueue.QueueName
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 30
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: !If [HasAlarmTopic, [!Ref AlarmTopicArn], !Ref "AWS::NoValue"]
+      OKActions: !If [HasAlarmTopic, [!Ref AlarmTopicArn], !Ref "AWS::NoValue"]
+
+  RequestsPilingUpAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub cmp-relay-${EnvironmentName}-requests-piling-up
+      AlarmDescription: >-
+        Over 100 public requests are waiting: the collector is slow or down,
+        or the portal is under a burst it cannot keep up with.
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt RequestQueue.QueueName
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 100
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: !If [HasAlarmTopic, [!Ref AlarmTopicArn], !Ref "AWS::NoValue"]
+      OKActions: !If [HasAlarmTopic, [!Ref AlarmTopicArn], !Ref "AWS::NoValue"]
+
+  RepliesWaitingAAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub cmp-relay-${EnvironmentName}-replies-waiting-a
+      AlarmDescription: >-
+        The oldest reply on reply queue A has waited over 30 s for two
+        minutes: the bridge on portal instance A is not collecting its replies
+        (stopped, crashed, or configured with another queue). Its visitors are
+        waiting for answers that have arrived, and get 504.
+      Namespace: AWS/SQS
+      MetricName: ApproximateAgeOfOldestMessage
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt ReplyQueueA.QueueName
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 30
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: !If [HasAlarmTopic, [!Ref AlarmTopicArn], !Ref "AWS::NoValue"]
+      OKActions: !If [HasAlarmTopic, [!Ref AlarmTopicArn], !Ref "AWS::NoValue"]
+
+  RepliesWaitingBAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub cmp-relay-${EnvironmentName}-replies-waiting-b
+      AlarmDescription: >-
+        The oldest reply on reply queue B has waited over 30 s for two
+        minutes: the bridge on portal instance B is not collecting its replies
+        (stopped, crashed, or configured with another queue). Its visitors are
+        waiting for answers that have arrived, and get 504.
+      Namespace: AWS/SQS
+      MetricName: ApproximateAgeOfOldestMessage
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt ReplyQueueB.QueueName
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 30
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: !If [HasAlarmTopic, [!Ref AlarmTopicArn], !Ref "AWS::NoValue"]
+      OKActions: !If [HasAlarmTopic, [!Ref AlarmTopicArn], !Ref "AWS::NoValue"]
+
+Outputs:
+  RequestQueueUrl:
+    Description: RELAY_REQUEST_QUEUE_URL, both sides.
+    Value: !Ref RequestQueue
+  ReplyQueueAUrl:
+    Description: RELAY_REPLY_QUEUE_URL of portal instance A, and of no other.
+    Value: !Ref ReplyQueueA
+  ReplyQueueBUrl:
+    Description: RELAY_REPLY_QUEUE_URL of portal instance B, and of no other.
+    Value: !Ref ReplyQueueB
+  ReplyQueueUrls:
+    Description: RELAY_REPLY_QUEUE_URLS, the collector.
+    Value: !Join [",", [!Ref ReplyQueueA, !Ref ReplyQueueB]]
+  BodiesBucketName:
+    Description: RELAY_BUCKET, both sides.
+    Value: !Ref BodiesBucket
+  BodiesBucketHost:
+    Description: The bucket's host name, for the organisation's egress allow-list.
+    Value: !Sub "${BodiesBucket}.s3.${AWS::Region}.amazonaws.com"
+  BridgeRoleArn:
+    Value: !GetAtt BridgeRole.Arn
+  BridgeInstanceProfileName:
+    Value: !Ref BridgeInstanceProfile
+  BridgeAccessPolicyArn:
+    Description: Attach to the portal instances' existing role instead of using BridgeRole.
+    Value: !Ref BridgeAccessPolicy
+  CollectorRoleArn:
+    Description: aws_signing_helper --role-arn
+    Value: !GetAtt CollectorRole.Arn
+  TrustAnchorArn:
+    Description: aws_signing_helper --trust-anchor-arn
+    Value: !GetAtt TrustAnchor.TrustAnchorArn
+  ProfileArn:
+    Description: aws_signing_helper --profile-arn
+    Value: !GetAtt CollectorProfile.ProfileArn

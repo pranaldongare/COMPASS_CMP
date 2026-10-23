@@ -7,8 +7,9 @@ the last one added is the first one entered. `install()` reads bottom-up for
 inbound order:
 
     request context  ->  security headers  ->  body limit  ->  access log
+        ->  relay open sealed
 
-Two placements in that list are load-bearing rather than arbitrary:
+Three placements in that list are load-bearing rather than arbitrary:
 
 * **Request context is first.** Everything after it — including the failure of
   anything after it — needs somewhere to record which request it was. A 500 with
@@ -16,6 +17,12 @@ Two placements in that list are load-bearing rather than arbitrary:
 * **Body limit is above the routes.** An oversized payload is refused before a
   Pydantic model or a file handler ever sees it. Parsing two gigabytes to
   discover it is too large is the attack this exists to stop.
+* **Relay open sealed is last, and still outside compression.** It opens the
+  sealed values in a JSON reply to a request the public relay vouches for, so
+  it must read the reply before anything compresses it - it removes
+  `Accept-Encoding` from such a request, and GZip below then leaves it alone -
+  and it must strip the relay's key before any route could repeat it. Off
+  unless `RELAY_INGRESS_KEY` is set.
 
 Host allow-listing, CORS and compression are Starlette's own, registered by
 `bootstrap.middleware` before these - so they run after them, inside the access
@@ -28,6 +35,7 @@ from fastapi import FastAPI
 
 from cmp.api.middleware.access_log import AccessLogMiddleware
 from cmp.api.middleware.body_limit import BodyLimitMiddleware
+from cmp.api.middleware.relay_open_sealed import RelayOpenSealedMiddleware
 from cmp.api.middleware.request_context import (
     SENSITIVE_PATH_PREFIXES,
     RequestContextMiddleware,
@@ -41,6 +49,7 @@ __all__ = [
     "SENSITIVE_PATH_PREFIXES",
     "AccessLogMiddleware",
     "BodyLimitMiddleware",
+    "RelayOpenSealedMiddleware",
     "RequestContextMiddleware",
     "SecurityHeadersMiddleware",
     "clean_request_id",
@@ -56,6 +65,7 @@ def install(app: FastAPI) -> None:
     Registered outermost-last, so read this bottom-up for the order a request
     actually passes through them.
     """
+    app.add_middleware(RelayOpenSealedMiddleware)
     app.add_middleware(AccessLogMiddleware)
     app.add_middleware(BodyLimitMiddleware)
     app.add_middleware(SecurityHeadersMiddleware)

@@ -16,6 +16,18 @@ output is copied to EC2 servers and run with `next start` under systemd. No
 Docker image, no Dockerfile and no container service (ECS, EKS, Fargate) is
 used anywhere in this design.
 
+> **If the API stays inside the organisation's network** (no inbound
+> connections), the portal reaches it through the public relay instead of a
+> private network path: [backend/relay](../../backend/relay/README.md) and
+> [ADR 0032](../decisions/0032-a-public-request-reaches-the-inside-only-when-the-inside-collects-it.md)
+> (proof of concept, 2026-10-23). Three things below change in that shape:
+> `API_ORIGIN` is the bridge on each instance (`http://127.0.0.1:8080`) and
+> neither the API nor DKMS is reachable from AWS; the front door's timeouts
+> must exceed the relay's upload deadline plus 5 s, and behind CloudFront the
+> bridge needs `RELAY_CLIENT_IP_HOP=2`; and each portal instance needs a reply
+> queue of its own, so the Auto Scaling group cannot simply scale out until a
+> queue per instance is created at boot.
+
 **Status:** proposal, 2026-10-14. Nothing here is provisioned yet. The facts
 about how the portal builds and runs were checked against a production build
 of the current code (`next build` and `next start`, Next.js 16.3.2) on

@@ -10,6 +10,11 @@ A browser on `localhost:3000` talking to an API on `127.0.0.1:8000` is a
 *cross-site* request as far as the cookie is concerned, and the cookie is
 silently dropped — which presents as a login that returns 200 and then 401s on
 the next call. The console proxies `/api/*` for exactly this reason.
+
+A request that came in through the public relay (`state.relayed`, set by
+`middleware.relay_open_sealed` once the relay's key matched) is honoured only
+with a data principal's session: the portal is the only thing behind the
+relay, and a staff session presented there is one that left the console.
 """
 
 from __future__ import annotations
@@ -24,6 +29,10 @@ from cmp.auth.sessions.service import Session
 from cmp.core.config import settings
 from cmp.core.constants import BACKGROUND_HEADER
 from cmp.core.errors import Unauthenticated
+from cmp.core.logging import get_logger
+from cmp.core.permissions import Role
+
+log = get_logger("cmp.sessions")
 
 
 async def session_from_request(request: Request) -> Session:
@@ -33,9 +42,24 @@ async def session_from_request(request: Request) -> Session:
 
     # A page's own background poll is authenticated but is not activity.
     background = request.headers.get(BACKGROUND_HEADER) == "1"
-    session = await sessions.load(token, touch=not background)
+    relayed = bool(getattr(request.state, "relayed", False))
+    # Through the relay the role is read before the idle window slides: a
+    # session refused there must not be kept alive from outside either.
+    session = await sessions.load(token, touch=not background and not relayed)
     if session is None:
         raise Unauthenticated("Your session has expired")
+    if relayed:
+        # The role the session acts with, not the account's: a staff member
+        # signed in on the portal with a code holds a data principal's session.
+        if session.role != Role.DATA_SUBJECT.value:
+            log.warning(
+                "relay.session_refused", sid=session.sid, user_id=session.user_id, role=session.role
+            )
+            raise Unauthenticated("Sign in to continue")
+        if not background:
+            session = await sessions.load(token)
+            if session is None:
+                raise Unauthenticated("Your session has expired")
 
     # Double-submit CSRF. Checked here rather than in middleware because it needs
     # the session's own token, and because safe methods must be exempt.

@@ -6,12 +6,12 @@ key service, and the two portals.
 
 | Process | Settings | Template |
 |---|---|---|
-| API, worker, beat | `backend/api/src/cmp/core/config.py`, 95 fields | `backend/api/.env.example` |
+| API, worker, beat | `backend/api/src/cmp/core/config.py`, 96 fields | `backend/api/.env.example` |
 | Key service | `backend/dkms/app/config.py`, 14 fields | `backend/dkms/.env.example` |
 | Console, portal | `process.env` in `next.config.ts`, `src/lib/config`, `src/proxy.ts`, `src/app/dkms/decrypt/route.ts` | `frontend/*/.env.example` |
 
 The API's `Settings` refuses an unknown variable (`extra="forbid"`): a typo
-fails at startup. `backend/api/.env.example` lists 68 of the 95 fields. Of
+fails at startup. `backend/api/.env.example` lists 69 of the 96 fields. Of
 the other 27, four are email settings the template sets under their newer
 names (`SMTP_HOST` as `SMTP_SERVER`, `NOTIFICATION_EMAIL_FROM` as
 `SENDER_EMAIL`) or keeps only as legacy (`EMAIL_TRANSPORT`, `SMTP_USE_TLS`).
@@ -42,6 +42,7 @@ The API (`_production_guards` in `core/config.py`):
 | `SMS_TRANSPORT` is not `http` | The same, for the data principal's primary sign-in; and `SMS_HTTP_URL` must be `https://` |
 | `DKMS_ENABLED` is false | Personal data would be written in the clear, and nothing would ever report it |
 | `BLIND_INDEX_KEY` starts `dev-only` or is under 32 bytes | Every lookup hash could be recomputed by anyone holding this repository |
+| `RELAY_INGRESS_KEY` is set and under 32 characters | Whoever presents it is served opened personal values ([the public relay](#the-public-relay)). Empty, the relay's opening is off, which production allows |
 | `BREACH_TICKET_EMAIL_DOMAINS` is empty or only `cmp.local` | "Internal" is only as good as the list: empty, nobody could hold a breach ticket; the development domain alone, nobody real could (S3-08). The organisation's own list is needed before production (decided 2026-10-06) |
 
 In any environment, the API and the worker also refuse `STORAGE_BACKEND=object`:
@@ -153,6 +154,106 @@ a restart.
 | `NEXT_PUBLIC_STAFF_PORTAL_URL` | portal | `http://localhost:3000` in development; **none for `next build`** | Where staff who land on the portal are sent. The same build-time check |
 | `DEV_ORIGINS` | both, development | empty | Extra origins the dev server serves its assets to, comma-separated |
 
+### The public relay
+
+When the data principal's portal runs on AWS and reaches the API only through
+Amazon SQS (`backend/relay`: a bridge beside the portal, a collector inside
+the network that accepts no inbound connection), two settings on the API's
+side matter. The relay's own settings are in `backend/relay/.env.example`.
+
+| Setting | Set in | Default | What it does |
+|---|---|---|---|
+| `RELAY_INGRESS_KEY` | the API's `.env` | empty: off | The secret the collector presents in `X-CMP-Relay-Key`. A request carrying it is a public, relayed request (`api/middleware/relay_open_sealed.py`): its input is searched for `SE::` before the route runs (422 `sealed_value_refused`), a staff session on it is refused (401), and the `SE::` values in its JSON reply are opened by the API before the reply leaves, because a portal on AWS cannot reach the key service its decrypt route would otherwise call. A wrong key, or none, is served as stored, exactly as before; the header is removed before any route sees it either way. **Must equal the contents of the collector's `RELAY_INGRESS_KEY_FILE`**: copy the file `python -m cmp_relay.keys ingress-key` writes, never generate a second value. 32+ characters in production. Only the API reads it, not the worker |
+| `FORWARDED_ALLOW_IPS` | the API process's environment (the service unit, the shell), **not** `.env` | `127.0.0.1` | uvicorn's, not the API's: the addresses whose `X-Forwarded-For` uvicorn believes. Put in `.env` it stops the API at startup, because `Settings` refuses a key it does not know |
+
+**Opening is narrow on purpose.** ADR 0016 has the portal's server open sealed
+values; with the relay the API does it, but only for a reply it is serving to a
+request that came through the relay with the key. The collector never reaches
+the key service. If the key service is down the reply goes out as stored and
+the page shows ciphertext, which is the failure the portal's own decrypt route
+has today. Only `application/json` is opened; downloads stream through
+untouched. Two rules keep it from becoming a way to decrypt anything:
+
+- **No sealed value in.** The opener opens every `SE::` string in a relayed
+  reply, whoever's it is, and `seal()` passes an already-sealed value through
+  untouched. So any input the API stores or echoes back (a name, an
+  attachment's file name, the User-Agent kept with a session, a message's
+  body) would carry someone else's ciphertext in and bring it back opened. The API
+  therefore searches every relayed request with its own parser, the one its
+  routes use, before the route runs: query parameter names and values
+  (decoded), every header value except `Cookie`, JSON keys and strings, form
+  field names and values and upload file names; any other body as UTF-8 and as
+  latin-1. `SE::` anywhere is 422 `sealed_value_refused`. JSON nested too deep
+  to walk is refused too; a form the parser cannot read goes to the route,
+  which fails on it with its own error. Only the bytes of an uploaded file are
+  not searched: they are the person's own document, and they come back only as
+  a download, never inside JSON. The collector runs a check of its own first,
+  but the API's is the one relied on: only the API parses input exactly as its
+  routes do.
+- **Only a data principal's session.** A relayed request carrying a staff
+  session - one signed in at the console with a password and a second factor -
+  is refused with 401 on every route, including those both portals share
+  (`/auth/me`, `/auth/sessions`, `/notifications`). The check is on the
+  session's effective role, so a member of staff who signs in on the portal
+  with a code, and so holds a data principal's session, is served as anyone
+  else. The staff routes themselves are not on the relay's allow-list (404).
+
+**The visitor's address.** The collector sends every relayed request with
+exactly one `X-Forwarded-For`: the visitor's address as the bridge read it,
+replacing whatever the visitor sent. The bridge takes the entry
+`RELAY_CLIENT_IP_HOP` counts from the right of the header it receives, and
+each proxy in front of the portal appends the address it was connected from:
+
+- **An ALB with WAF and no CloudFront: `1`, the default.** The ALB appends the
+  visitor. This is the recommended shape for the relay, because TLS from the
+  browser then ends in ap-south-1, in India, not at whichever CloudFront edge
+  is nearest the visitor.
+- **CloudFront -> ALB -> portal: `2`.** CloudFront appends the visitor, then
+  the ALB appends CloudFront's own address. With `1` every visitor would be
+  recorded as one of a few CloudFront addresses, and one person's failed
+  sign-ins would spend the per-address budget (`AUTH_FAILURES_PER_ADDRESS`)
+  for everyone behind the same one.
+
+Either count assumes the ALB's defaults (`routing.http.xff_header_processing.mode`
+`append`, `routing.http.xff_client_port.enabled` off; the portal's `/api`
+rewrite adds no entry), and is to be confirmed in staging with a header echo
+([portal-frontend-aws.md §12](../deployment/portal-frontend-aws.md#12-must-be-resolved-before-go-live)).
+What the API records from the collector's header:
+
+- *Outside production* `client_ip` takes the socket address, which uvicorn
+  replaces with the `X-Forwarded-For` value only for a connection from an
+  address in `FORWARDED_ALLOW_IPS`. A collector on the API's own host, calling
+  `http://127.0.0.1:8000`, needs nothing set. A collector on another host
+  needs its address there (comma-separated for several), or every relayed
+  request is recorded as coming from the collector - one address, which the
+  per-address sign-in budget (`AUTH_FAILURES_PER_ADDRESS`) then charges for
+  every visitor at once. Never `*`: any caller on the inside network could
+  then choose the address written to the audit trail.
+- *In production* `client_ip` reads the first `X-Forwarded-For` entry itself,
+  from any caller ([ADR 0018](../decisions/0018-pip-and-a-virtualenv-no-containers.md)).
+  The collector's single header makes that the visitor for relayed traffic.
+  A caller that reaches the API directly can still set its own; that is the
+  open item in [portal-frontend-aws.md §12](../deployment/portal-frontend-aws.md#12-must-be-resolved-before-go-live),
+  which the relay narrows to the inside network but does not close.
+
+**Timeouts on the way in.** The bridge waits for a reply until the deadline
+plus 2 s: 25 s for a request, 50 s for any `multipart/form-data` request
+(`RELAY_DEADLINE_S`, `RELAY_UPLOAD_DEADLINE_S` in `backend/relay/.env.example`).
+Everything in front of it must wait longer, or the browser is shown a failure
+while the inside may still record the write, and the person's retry makes it
+twice:
+
+- **The front door.** The ALB's idle timeout and, with CloudFront in front,
+  its origin response timeout must each exceed the longest deadline + 5 s.
+  Both are 60 s by default, which fits 25 s and 50 s. Raise
+  `RELAY_UPLOAD_DEADLINE_S` only together with both.
+- **The portal.** `next.config.ts` raises the rewrite proxy's limits
+  (`experimental.proxyClientMaxBodySize` 26 MB, `proxyTimeout` 180 s) and the
+  client gives a file upload a 180-second timeout, so a 25 MB upload is not cut
+  at Next's 10 MB default or timed out at 30 s. Both are above the bridge's
+  wait, so neither is the one that gives up first; the front door's 60 s is the
+  limit that binds.
+
 ## Transports default to not delivering
 
 `console` for email and SMS, `local` for storage. A misconfigured staging box
@@ -169,5 +270,7 @@ production the settings refuse to load at all.
 
 Belong in a secret manager. `.env` is gitignored from every directory in the
 tree, and `.env.example` carries placeholders only. `DKMS_MASTER_KEY`,
-`DKMS_HASH_KEY` and `BLIND_INDEX_KEY` are secrets like `SECRET_KEY`; the
-hash key is the one secret two processes must share.
+`DKMS_HASH_KEY`, `BLIND_INDEX_KEY` and `RELAY_INGRESS_KEY` are secrets like
+`SECRET_KEY`. Two are shared by two processes: the hash key (the key service's
+`DKMS_HASH_KEY` and the API's `BLIND_INDEX_KEY`), and the relay's ingress key
+(the API's `RELAY_INGRESS_KEY` and the file the collector reads).

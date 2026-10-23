@@ -1,0 +1,65 @@
+# /etc/systemd/system/cmp-relay-bridge.service (baked into the portal AMI)
+#
+# The relay's AWS side (ADR 0032). It runs on every portal instance beside
+# compass-portal.service and listens on loopback only: the portal's /api
+# rewrite (API_ORIGIN=http://127.0.0.1:8080) is its one caller. It reaches SQS
+# and S3 with the instance's role (deploy/cloudformation.yaml: BridgeRole, or
+# BridgeAccessPolicy attached to the portal's own role).
+#
+# /etc/compass/relay-bridge.env (root:compass, 0640) sets RELAY_* for this
+# instance: its own RELAY_REPLY_QUEUE_URL (never the same as another
+# instance's), the collector's public key, the request queue, the bucket, and
+# RELAY_CLIENT_IP_HOP=2 when CloudFront is in front of the load balancer. See
+# backend/relay/.env.example.
+#
+# The bridge stamps every deadline with this host's clock, and the collector
+# takes that clock to be AWS's: keep chrony on Amazon Time Sync
+# (169.254.169.123, the default on Amazon Linux 2023).
+[Unit]
+Description=COMPASS relay bridge (public portal to SQS, ADR 0032)
+After=network-online.target time-sync.target
+Wants=network-online.target
+Before=compass-portal.service
+
+[Service]
+Type=exec
+User=compass
+Group=compass
+WorkingDirectory=/opt/compass/relay
+EnvironmentFile=/etc/compass/relay-bridge.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/compass/relay/.venv/bin/python -m cmp_relay.bridge
+Restart=always
+RestartSec=3
+# A request waits at most its deadline plus 2 s (25 + 2) for its reply; let
+# those finish when the service is stopped for a deploy. An upload in flight
+# (up to 50 + 2 s) can be cut: the browser sees an error, and the collector
+# may still record it (README, "Known limits").
+KillSignal=SIGTERM
+TimeoutStopSec=30
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+AmbientCapabilities=
+UMask=0077
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

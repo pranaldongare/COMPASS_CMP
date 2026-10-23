@@ -130,6 +130,16 @@ class Settings(BaseSettings):
     #: service exists to prevent.
     dkms_enabled: bool = False
 
+    # ---------------------------------------------------------- public relay
+    #: RELAY_INGRESS_KEY: the shared secret the inside relay collector
+    #: (`backend/relay`) presents in `X-CMP-Relay-Key`. A request carrying it
+    #: came from the public portal through the queue, and the sealed values in
+    #: its JSON reply are opened here before it leaves, because the portal on
+    #: AWS cannot reach the key service (`api.middleware.relay_open_sealed`).
+    #: Empty: the middleware is off and every reply is served as stored. 32+
+    #: characters in production; never the same value as any other secret.
+    relay_ingress_key: SecretStr = SecretStr("")
+
     #: Development only: show each one-time code the console transports write
     #: in a popup on the portal that asked for it, so signing in does not mean
     #: reading `var/outbox.log` - which, on a phone or a second machine opened
@@ -401,6 +411,13 @@ class Settings(BaseSettings):
             bik = self.blind_index_key.get_secret_value()
             if bik.startswith("dev-only") or len(bik) < 32:
                 raise ValueError("BLIND_INDEX_KEY must be a real 32+ byte secret in production")
+            # Whoever holds it is served opened personal values. Off (empty) is
+            # allowed; a short one is a key somebody could guess.
+            relay_key = self.relay_ingress_key.get_secret_value()
+            if relay_key and len(relay_key) < 32:
+                raise ValueError(
+                    "RELAY_INGRESS_KEY must be a real 32+ character secret in production, or empty"
+                )
         if self.dev_show_codes and self.environment not in ("local", "test"):
             # Not production-only: a staging deployment real people sign in
             # to must not print their codes on the screen either.

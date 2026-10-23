@@ -33,10 +33,17 @@ for (const path of ["/my-consents", "/account", "/my-requests"]) {
     const text = await page.locator("body").innerText();
     expect(text, `ciphertext rendered on ${path}`).not.toContain("SE::");
     if (path === "/account") {
-      // The account page always carries the person's own name and contact,
-      // so here the API is required to have sealed something - otherwise a
-      // database with everything in the clear would pass this file trivially.
-      expect(watch.sawSealed(), "the API served the account sealed").toBe(true);
+      if (process.env.E2E_VIA_RELAY) {
+        // Through the public relay (backend/relay, ADR 0032) the API opens the
+        // sealed values of a relayed reply inside, so the browser must never
+        // receive one at all.
+        expect(watch.sawSealed(), "a relayed reply carried a sealed value").toBe(false);
+      } else {
+        // The account page always carries the person's own name and contact,
+        // so here the API is required to have sealed something - otherwise a
+        // database with everything in the clear would pass this file trivially.
+        expect(watch.sawSealed(), "the API served the account sealed").toBe(true);
+      }
       expect(text).toMatch(/[^\s@]+@[^\s@]+\.[^\s@]+|\+91/);
     } else if (!watch.sawSealed()) {
       test.info().annotations.push({

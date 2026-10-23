@@ -38,6 +38,7 @@ one stays and points forward.
 | [0029](0029-copies-and-files-never-on-a-code-a-link-or-her-own-record.md) | The office copies emails and attaches files, never on a code, a link or a person's own record | accepted; extended 2026-10-08 |
 | [0030](0030-a-collection-owner-collects-for-named-processors.md) | A collection owner collects for named processors, and sees their data sources only | accepted |
 | [0031](0031-a-consent-record-is-issued-as-a-pdf-naming-the-person.md) | A consent record is issued as a PDF for audit, naming the person and masking one contact | accepted |
+| [0032](0032-a-public-request-reaches-the-inside-only-when-the-inside-collects-it.md) | A public request reaches the inside only when the inside collects it from a queue, sealed | proposed 2026-10-23 |
 
 ## Writing one
 
