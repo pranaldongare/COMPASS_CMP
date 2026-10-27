@@ -20,6 +20,7 @@ you need. **Every document is in this tree.** The one exception is a
 - [Domain model](architecture/domain-model.md): the tables, the state machines, and the invariants the database holds
 - [Roles and access](domain/roles-and-access.md): the eight roles and what each may reach
 - Behaviour, by obligation: [consent lifecycle](domain/consent-lifecycle.md), [collection and routing](domain/collection-and-routing.md), [rights requests](domain/rights-requests.md) (and [the ticket redesign](domain/rights-tickets-redesign.md) of 2026-10-08: the guided path, the review step, holders outside the console), [personal data breaches](domain/breaches.md), [messages the platform sends](domain/messages.md), [reading the audit trail](domain/audit-trail.md)
+- The HR track: [hr-track.md](domain/hr-track.md) - a second consent track governed by a Legal office: categories, approved template versions, activities, SSO on employee links, and how requests and breaches are routed by office; the wall between the offices is [offices-and-tenancy.md](architecture/offices-and-tenancy.md); the schema is [hr-track-migration-plan.md](database/hr-track-migration-plan.md); the plan, [hr-track-implementation-plan.md](plans/hr-track-implementation-plan.md), with its [open points](plans/hr-track-open-points.md) and [UAT cases](uat/hr-track-uat-cases.md)
 - [Personal data](domain/personal-data.md): every table, store and endpoint that holds or moves something about a person, and what protects it
 - [PII fields and endpoints](domain/pii-fields-and-endpoints.md): the short form — the 108 personal columns by table, and every endpoint that carries one, by module
 - [Notification management strategy](notifications/README.md): every module's emails end to end - when, to, CC, attachment, subject and body - in one file per module (users, projects, consent, rights, breach), the rules for copies and files, and the plan of 2026-10-08
@@ -93,6 +94,7 @@ when it changes; the third is reviewed by hand against it:
 | [architecture/dependency-rules.md](architecture/dependency-rules.md) | The import graph and how it stays acyclic |
 | [architecture/request-lifecycle.md](architecture/request-lifecycle.md) | Middleware order, dependencies, the transaction boundary |
 | [architecture/rights-module.md](architecture/rights-module.md) | The rights module's design: clock, state machine, tickets, scope, nominations |
+| [architecture/offices-and-tenancy.md](architecture/offices-and-tenancy.md) | How two offices share one database and never see each other's rows |
 | [database/schema.md](database/schema.md) | Table groups and the shapes that are not obvious |
 | [database/migrations.md](database/migrations.md) | The revision chain, and how to add one |
 | [database/transactions.md](database/transactions.md) | What must commit together, and the timeouts |

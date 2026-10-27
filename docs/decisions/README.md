@@ -38,6 +38,9 @@ one stays and points forward.
 | [0029](0029-copies-and-files-never-on-a-code-a-link-or-her-own-record.md) | The office copies emails and attaches files, never on a code, a link or a person's own record | accepted; extended 2026-10-08 |
 | [0030](0030-a-collection-owner-collects-for-named-processors.md) | A collection owner collects for named processors, and sees their data sources only | accepted |
 | [0031](0031-a-consent-record-is-issued-as-a-pdf-naming-the-person.md) | A consent record is issued as a PDF for audit, naming the person and masking one contact | accepted |
+| [0032](0032-offices-are-logical-tenants-in-one-database.md) | Offices are logical tenants in one database, enforced by row-level security | proposed 2026-10-26 |
+| [0033](0033-hr-consent-is-governed-by-an-approved-template-version.md) | HR consent is governed by a template version Legal approves once; an activity inherits it and needs no approval of its own | proposed 2026-10-27 |
+| [0034](0034-an-employee-link-signs-in-through-the-organisations-sso.md) | An employee consent link signs in through the organisation's SSO, and the account is matched on the employee ID | proposed 2026-10-27 |
 
 ## Writing one
 
