@@ -47,6 +47,11 @@ class Session:
     #: The role on the account row. Display only - "you are using your staff
     #: account as a data principal" - and never consulted for permission.
     account_role: str
+    #: The office this session acts in (ADR 0032): the account's office code
+    #: for a staff session, None for one that works across both offices - the
+    #: administrator, a data principal, a breach-only login. The pool applies
+    #: it to every connection the request draws.
+    office: str | None
     created_at: float
     last_seen_at: float
     expires_at: float
@@ -102,6 +107,7 @@ async def create(
     partial: bool = False,
     mfa_verified: bool = False,
     account_role: str | None = None,
+    office: str | None = None,
 ) -> tuple[str, Session]:
     """Mint a session. Returns (raw token for the cookie, session record).
 
@@ -109,6 +115,9 @@ async def create(
     and defaults to the same. They differ for exactly one reason: a person with
     a staff account has signed in where only data principals go, and the session
     must carry a data principal's powers and not one more.
+
+    `office` is the office the session reads and writes in; None reads across
+    both, so only a staff sign-in passes it.
     """
     token = new_token(32)
     fp = token_fingerprint(token)
@@ -123,6 +132,9 @@ async def create(
         "user_uuid": user_uuid,
         "role": role,
         "account_role": account_role or role,
+        # Always written, empty for none: a record without the field is one
+        # minted before offices existed, and `load` refuses it.
+        "office": office or "",
         "created_at": str(now),
         "last_seen_at": str(now),
         "expires_at": str(now + ttl),
@@ -155,6 +167,7 @@ def _from_mapping(m: dict[str, str]) -> Session:
         role=m["role"],
         # Sessions minted before the field existed acted as their account role.
         account_role=m.get("account_role") or m["role"],
+        office=m.get("office") or None,
         created_at=float(m["created_at"]),
         last_seen_at=float(m["last_seen_at"]),
         expires_at=float(m["expires_at"]),
@@ -183,6 +196,13 @@ async def load(token: str, *, touch: bool = True) -> Session | None:
     if session.is_expired:
         await destroy(token)
         log.info("session.expired", sid=session.sid, user_id=session.user_id)
+        return None
+    if "office" not in m:
+        # Minted before offices existed (0051). Read as "no office" it would act
+        # across both, so a DPO's old session would read the Legal office's
+        # registers. It ends instead; signing in again gives the right one.
+        await destroy(token)
+        log.info("session.predates_offices", sid=session.sid, user_id=session.user_id)
         return None
 
     # Slide the idle window. Writing on every request is one cheap HSET; the

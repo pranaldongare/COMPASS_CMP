@@ -375,13 +375,14 @@ async def seed_purposes(conn: Any, admin_id: int) -> dict[str, dict[str, Any]]:
                                     data_categories, retention_period, retention_basis,
                                     erasure_trigger, consent_validity_period,
                                     lapse_behaviour, cross_border_permitted,
-                                    permitted_for_minors, status, created_by)
+                                    permitted_for_minors, status, created_by, office_id)
                VALUES (%(purpose_code)s, %(name)s, %(description)s, %(uses)s,
                        %(lawful_basis)s::lawful_basis, %(data_categories)s,
                        %(retention)s, %(retention_basis)s::retention_basis,
                        %(erasure_trigger)s::erasure_trigger, %(validity)s,
                        %(lapse_behaviour)s::lapse_behaviour, %(cross_border_permitted)s,
-                       %(permitted_for_minors)s, 'active', %(admin)s)
+                       %(permitted_for_minors)s, 'active', %(admin)s,
+                       (SELECT office_id FROM office WHERE office_code = 'rnd'))
                ON CONFLICT (purpose_code) DO UPDATE
                   SET name = EXCLUDED.name,
                       description = EXCLUDED.description,
@@ -437,8 +438,9 @@ async def seed_notice(
     project = await fetch_one(
         conn,
         """INSERT INTO project (project_name, internal_project_name, description,
-                                requesting_team, created_by, project_status)
-           VALUES (%s, %s, %s, %s, %s, 'in_draft')
+                                requesting_team, created_by, project_status, office_id)
+           VALUES (%s, %s, %s, %s, %s, 'in_draft',
+                   (SELECT office_id FROM office WHERE office_code = 'rnd'))
            RETURNING project_id, project_uuid""",
         (
             PROJECT["project_name"],

@@ -57,6 +57,10 @@ class UserOut(Out):
     role: str
     person_type: str | None
     status: str
+    #: The office the account works in (ADR 0032); None for a role that works
+    #: across both - the administrator, a data principal, a breach-only login.
+    office_uuid: UUID | None = None
+    office_name: str | None = None
     created_at: Any
     updated_at: Any
     #: Present only on the create response, naming what was assigned in the same
@@ -93,6 +97,9 @@ class CreateUser(Schema):
     #: DCO, in-house teams for an RCO. The processor of every source above is
     #: added whether or not it is named here.
     processor_uuids: list[UUID] = Field(default_factory=list)
+    #: The office the account works in (ADR 0032, `GET /offices`). Required
+    #: for every role but the administrator, and refused for it.
+    office_uuid: UUID | None = None
 
 
 class SetProcessors(Schema):
@@ -109,6 +116,9 @@ class UpdateUser(Schema):
 class RoleChange(Schema):
     role: str
     reason: Annotated[str | None, Field(default=None, max_length=500)] = None
+    #: The office the new role works in. Left out, the account keeps its own;
+    #: refused for a role that works across both.
+    office_uuid: UUID | None = None
 
 
 class PersonTypeHistoryOut(Out):
@@ -220,6 +230,7 @@ async def create_user(body: CreateUser, principal: RequireAdmin) -> dict[str, An
             source_uuids=[str(u) for u in body.source_uuids],
             processor_uuids=[str(u) for u in body.processor_uuids],
             actor_id=principal.user_id,
+            office_uuid=str(body.office_uuid) if body.office_uuid else None,
         )
     return {**user, "sources": assigned}
 
@@ -291,9 +302,15 @@ async def update_user(user_uuid: UUID, body: UpdateUser, principal: RequireAdmin
 async def change_role(user_uuid: UUID, body: RoleChange, principal: RequireAdmin) -> dict[str, Any]:
     async with transaction() as conn:
         user = await users.change_role(
-            conn, str(user_uuid), role=body.role, reason=body.reason, actor_id=principal.user_id
+            conn,
+            str(user_uuid),
+            role=body.role,
+            reason=body.reason,
+            actor_id=principal.user_id,
+            office_uuid=str(body.office_uuid) if body.office_uuid else None,
         )
-    # A role change must not leave a session carrying the old role's permissions.
+    # A role change must not leave a session carrying the old role's
+    # permissions, or the old office's rows (ADR 0032).
     revoked = await sessions.revoke_all(user["id"])
     return {"ok": True, "message": f"Role changed. {revoked} session(s) terminated."}
 

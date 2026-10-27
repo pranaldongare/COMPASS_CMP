@@ -23,7 +23,7 @@ from fastapi import FastAPI
 
 from cmp.core.config import settings
 from cmp.core.logging import configure_logging, get_logger
-from cmp.db.pool import close_pool, open_pool, schema_version
+from cmp.db.pool import assert_policies_bind, close_pool, open_pool, schema_version
 from cmp.db.redis import close_redis, open_redis
 
 log = get_logger("cmp.bootstrap.lifespan")
@@ -40,6 +40,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     )
 
     await open_pool()
+    # The office wall is row-level security, which a superuser walks through
+    # (ADR 0032). Outside local and test that is a deployment error, found here.
+    await assert_policies_bind()
     await open_redis()
 
     # Recorded on app state so /ready can report it. A process serving against a

@@ -57,10 +57,10 @@ security for its tenants.
   offices, bounded as they are today - by the account, the ticket, or the
   matrix.
 - **The office is set once per unit of work.** The office travels in the
-  request context; the pool runs
-  `SELECT set_config('app.office', '<office_code>' | 'all', false)` as the
-  first statement on every connection it hands out, and `RESET app.office`
-  when the connection goes back. Session-level, because `connection()` is
+  request context; the database layer's `connection()` and `transaction()`
+  run `SELECT set_config('app.office', '<office_code>' | 'all', false)` as
+  the first statement on every connection they hand out, and
+  `RESET app.office` before the connection goes back. Session-level, because `connection()` is
   autocommit and a transaction-local setting would end with the statement
   that set it; the reset on return is what keeps it from reaching the next
   request that draws the connection. The setting holds the office code

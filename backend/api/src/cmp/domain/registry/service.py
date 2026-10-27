@@ -16,6 +16,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
+from cmp.core import offices
 from cmp.core.errors import Conflict, NotFound, PurposeInUse, ValidationFailed
 from cmp.core.permissions import Role
 from cmp.db.repositories import registry as repo
@@ -29,7 +30,8 @@ from cmp.infrastructure.dkms import opened
 # =============================================================== purposes
 async def create_purpose(conn: Conn, *, fields: dict[str, Any], actor_id: int) -> dict[str, Any]:
     try:
-        purpose = await repo.create_purpose(conn, created_by=actor_id, **fields)
+        # The DPO's catalogue; the Legal office keeps its own (ADR 0033).
+        purpose = await repo.create_purpose(conn, created_by=actor_id, office=offices.RND, **fields)
     except Exception as exc:
         if unique_violation(exc):
             raise Conflict("That purpose code already exists", code="purpose_code_taken") from exc

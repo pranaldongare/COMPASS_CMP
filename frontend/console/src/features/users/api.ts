@@ -13,6 +13,7 @@ import type {
   StaffMember,
   Acknowledged,
   CollectorProcessor,
+  Office,
   Page,
   PersonTypeHistoryEntry,
   User,
@@ -37,6 +38,9 @@ export interface UserInput {
   source_uuids?: string[];
   /** The processors a DCO or an RCO collects for (0050). */
   processor_uuids?: string[];
+  /** The office the account works in (ADR 0032). Every role but the
+   *  administrator needs one; the server says which, and refuses a mismatch. */
+  office_uuid?: string | null;
 }
 
 /** The whole set of a DCO's or an RCO's processors; what is left out is taken away. */
@@ -62,7 +66,7 @@ export function updateUser(uuid: Uuid, body: Partial<UserInput>): Promise<User> 
 
 export function changeUserRole(
   uuid: Uuid,
-  body: { role: string; reason?: string },
+  body: { role: string; reason?: string; office_uuid?: string | null },
 ): Promise<Acknowledged> {
   return apiPost<Acknowledged>(`/users/${uuid}/role`, body);
 }
@@ -100,6 +104,11 @@ export function resetMfa(uuid: Uuid): Promise<Acknowledged> {
 export async function forceLogout(uuid: Uuid): Promise<Acknowledged> {
   const { data } = await http.delete<Acknowledged>(`/users/${uuid}/sessions`);
   return data;
+}
+
+/** The offices an account can work in, for the administrator's picker (ADR 0032). */
+export function listOffices(): Promise<Office[]> {
+  return apiGet<Office[]>("/offices");
 }
 
 /** Active staff, four fields, for naming a processor's respondent. DPO and admin only. */

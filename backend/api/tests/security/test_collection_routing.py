@@ -22,7 +22,7 @@ from cmp.core.permissions import Role
 from cmp.db.repositories import projects as project_repo
 from cmp.db.repositories import registry as registry_repo
 from cmp.db.sql import fetch_one
-from tests.conftest import hashed
+from tests.conftest import hashed, office_of
 
 pytestmark = pytest.mark.asyncio
 
@@ -30,9 +30,10 @@ pytestmark = pytest.mark.asyncio
 async def _user(conn: Any, role: str, email: str) -> int:
     row = await fetch_one(
         conn,
-        """INSERT INTO auth_user (full_name, email, email_hash, role, status)
-           VALUES (%s, %s, %s, %s::user_role, 'active') RETURNING id""",
-        (email.split("@")[0], email, hashed("email", email), role),
+        """INSERT INTO auth_user (full_name, email, email_hash, role, status, office_id)
+           VALUES (%s, %s, %s, %s::user_role, 'active',
+                   (SELECT office_id FROM office WHERE office_code = %s)) RETURNING id""",
+        (email.split("@")[0], email, hashed("email", email), role, office_of(role)),
     )
     assert row is not None
     return int(row["id"])
@@ -41,8 +42,9 @@ async def _user(conn: Any, role: str, email: str) -> int:
 async def _project(conn: Any, name: str, created_by: int, processor_id: int) -> dict[str, Any]:
     project = await fetch_one(
         conn,
-        """INSERT INTO project (project_name, description, created_by, project_status)
-           VALUES (%s, 'A project', %s, 'approved')
+        """INSERT INTO project (project_name, description, created_by, project_status, office_id)
+           VALUES (%s, 'A project', %s, 'approved',
+               (SELECT office_id FROM office WHERE office_code = 'rnd'))
            RETURNING project_id, project_uuid""",
         (name, created_by),
     )

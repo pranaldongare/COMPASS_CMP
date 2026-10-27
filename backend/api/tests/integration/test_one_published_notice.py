@@ -138,8 +138,9 @@ async def test_the_database_refuses_two_published_notices_on_one_project(
 async def test_another_projects_notice_code_is_refused(conn: Any, seeded: dict[str, Any]) -> None:
     other = await fetch_one(
         conn,
-        """INSERT INTO project (project_name, description, created_by, project_status)
-           VALUES ('Other Study', 'd', %s, 'in_draft') RETURNING project_uuid""",
+        """INSERT INTO project (project_name, description, created_by, project_status, office_id)
+           VALUES ('Other Study', 'd', %s, 'in_draft',
+               (SELECT office_id FROM office WHERE office_code = 'rnd')) RETURNING project_uuid""",
         (seeded["users"]["dpo"]["id"],),
     )
     assert other is not None

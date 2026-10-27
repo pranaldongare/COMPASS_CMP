@@ -24,6 +24,11 @@ class RequestContext:
     ip_address: str | None = None
     user_agent: str | None = None
     session_id: str | None = None
+    #: The office this request acts in (ADR 0032): an office code, or None
+    #: for a caller who works across both - the administrator, a data
+    #: principal, a ticket holder, a request with no session, the worker.
+    #: The pool turns it into `app.office` on every connection it hands out.
+    office: str | None = None
     extra: dict[str, str] = field(default_factory=dict)
 
 
@@ -56,7 +61,7 @@ def use_context(ctx: RequestContext) -> Iterator[RequestContext]:
         _ctx.reset(token)
 
 
-def bind_actor(user_id: int, user_uuid: str, role: str) -> None:
+def bind_actor(user_id: int, user_uuid: str, role: str, office: str | None) -> None:
     """Attach the resolved identity once authentication has run."""
     cur = _ctx.get()
     _ctx.set(
@@ -68,6 +73,7 @@ def bind_actor(user_id: int, user_uuid: str, role: str) -> None:
             ip_address=cur.ip_address,
             user_agent=cur.user_agent,
             session_id=cur.session_id,
+            office=office,
             extra=cur.extra,
         )
     )

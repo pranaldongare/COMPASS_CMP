@@ -37,6 +37,9 @@ export const userSchema = z.object({
   // routing, and is discovered to be idle later — so the question is asked while
   // the person creating the account still has the context to answer it.
   source_uuids: z.array(z.string()).default([]),
+  // The office the account works in (ADR 0032). Optional here: which roles
+  // need one is the server's rule, and its refusal names the field.
+  office_uuid: optional(z.string()),
 });
 
 export type UserValues = z.infer<typeof userSchema>;
@@ -51,6 +54,8 @@ export type UserValues = z.infer<typeof userSchema>;
 export const roleSchema = z.object({
   role: z.string().min(1, "Choose the new role"),
   reason: optional(z.string().trim().max(500, "Keep the reason under 500 characters")),
+  // Left empty, the account keeps its office (ADR 0032).
+  office_uuid: optional(z.string()),
 });
 
 export type RoleValues = z.infer<typeof roleSchema>;

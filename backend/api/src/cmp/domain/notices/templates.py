@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from typing import Any, Final
 
+from cmp.core import offices
 from cmp.core.enums import LanguageCode
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
 from cmp.db.repositories import notice_templates as repo
@@ -94,6 +95,9 @@ async def create(
         applicable_to=applicable_to,
         note=note,
         created_by=actor_id,
+        # The DPO's templates (ADR 0028); the Legal office's are versioned
+        # under its categories (ADR 0033).
+        office=offices.RND,
     )
     await _record(conn, made, Event.NOTICE_TEMPLATE_CREATED)
     if rendered_text and rendered_text.strip():

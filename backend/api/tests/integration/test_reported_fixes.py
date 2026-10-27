@@ -46,8 +46,9 @@ class TestTransitionWithAnAlreadyPublishedNotice:
         """The guard still guards. Only the *order* was relaxed, not the rule."""
         empty = await conn.execute(
             """INSERT INTO project (project_name, description, created_by, dco_user_id,
-                                    project_status)
-               VALUES ('No Notice Project', 'd', %s, %s, 'in_draft')
+                                    project_status, office_id)
+               VALUES ('No Notice Project', 'd', %s, %s, 'in_draft',
+                   (SELECT office_id FROM office WHERE office_code = 'rnd'))
                RETURNING project_id""",
             (seeded["users"]["rnd_user"]["id"], seeded["users"]["dco"]["id"]),
         )
@@ -72,8 +73,9 @@ class TestSiteIsNotRequiredToPublish:
     ) -> None:
         draft = await conn.execute(
             """INSERT INTO project (project_name, description, created_by, dco_user_id,
-                                    project_status)
-               VALUES ('Siteless Project', 'd', %s, %s, 'in_draft')
+                                    project_status, office_id)
+               VALUES ('Siteless Project', 'd', %s, %s, 'in_draft',
+                   (SELECT office_id FROM office WHERE office_code = 'rnd'))
                RETURNING project_id""",
             (seeded["users"]["rnd_user"]["id"], seeded["users"]["dco"]["id"]),
         )
@@ -147,8 +149,9 @@ class TestCopyingANotice:
     ) -> None:
         target = await conn.execute(
             """INSERT INTO project (project_name, description, created_by, dco_user_id,
-                                    project_status)
-               VALUES ('Copy Target', 'd', %s, %s, 'in_draft')
+                                    project_status, office_id)
+               VALUES ('Copy Target', 'd', %s, %s, 'in_draft',
+                   (SELECT office_id FROM office WHERE office_code = 'rnd'))
                RETURNING project_uuid""",
             (seeded["users"]["rnd_user"]["id"], seeded["users"]["dco"]["id"]),
         )

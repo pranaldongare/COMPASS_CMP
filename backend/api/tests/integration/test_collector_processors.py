@@ -212,8 +212,10 @@ async def test_cover_lends_the_delegators_processors(conn: Any, seeded: dict[str
     await _source(conn, "SRC-COVER", other)
     colleague = await fetch_one(
         conn,
-        """INSERT INTO auth_user (full_name, email, email_hash, role, status, password_hash)
-           VALUES ('Colleague', 'colleague@test.local', %s, 'dco', 'active', 'x')
+        """INSERT INTO auth_user (full_name, email, email_hash, role, status, password_hash,
+                                  office_id)
+           VALUES ('Colleague', 'colleague@test.local', %s, 'dco', 'active', 'x',
+               (SELECT office_id FROM office WHERE office_code = 'rnd'))
            RETURNING id""",
         (hashed("email", "colleague@test.local"),),
     )

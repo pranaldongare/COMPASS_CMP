@@ -145,6 +145,9 @@ def catalogue(dsn: dict[str, str]) -> dict[str, Any]:
 
     with psycopg.connect(**dsn, row_factory=dict_row) as conn:  # type: ignore[call-overload]
         q = conn.execute
+        # Across both offices (ADR 0032); the catalogue is not policed, but a
+        # row read here one day would be.
+        q("SELECT set_config('app.office', 'all', false)")
 
         version = q("SHOW server_version").fetchone()["server_version"].split()[0]
         tables = q(

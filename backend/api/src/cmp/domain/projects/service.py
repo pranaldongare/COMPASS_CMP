@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from cmp.core import offices
 from cmp.core.errors import Conflict, Forbidden, NotFound, ValidationFailed
 from cmp.core.logging import get_logger
 from cmp.core.permissions import Role
@@ -99,6 +100,9 @@ async def create(
         requesting_team=requesting_team,
         created_by=actor_id,
         dco_user_id=None,
+        # An R&D project is the DPO office's; the HR track's activities are
+        # made by their own service (ADR 0033).
+        office=offices.RND,
     )
     await repo.set_processors(
         conn,

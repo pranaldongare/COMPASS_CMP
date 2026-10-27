@@ -79,12 +79,24 @@ the application's database role (`CMP_DB_APP_ROLE`, default `cmp_app`). In
 local development that role does not exist - you connect as the owner - so
 those blocks do nothing and the triggers are the enforcement you will see.
 
+**Offices (0051).** Every office-bearing table has row-level security,
+enabled and forced, with one `office_isolation` policy that reads the
+`app.office` setting the pool applies to each connection
+([offices-and-tenancy.md](../architecture/offices-and-tenancy.md)). A
+connection opened outside the pool - `psql`, a one-off script - reads nothing
+from those tables until it runs `SELECT set_config('app.office', 'all',
+false)`. Locally you connect as the container's superuser, which no policy
+binds, so you will not see the wall; `tests/integration/enforcement/test_office_isolation.py`
+proves it under a role of its own, and outside `local` and `test` the API
+refuses to start as a superuser or a role with `BYPASSRLS`.
+
 ## The tables
 
-58 tables, one view, 39 enum types, in groups:
+60 tables, one view, 39 enum types, in groups:
 
 | Group | Tables |
 |---|---|
+| Offices | `office` (the DPO office and the Legal office, ADR 0032) |
 | Identity | `auth_user` (every account, staff and principal), `person_type_history`, `delegation` |
 | Registry | `purpose`, `processor`, `processor_respondent`, `data_source` |
 | Projects | `project`, `project_status_history`, `project_approval`, `project_site`, `project_processor` |

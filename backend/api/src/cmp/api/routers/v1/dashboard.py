@@ -15,6 +15,7 @@ from pydantic import Field
 
 from cmp.api.dependencies import CurrentUser
 from cmp.api.routers.v1.breaches import BreachSummaryOut
+from cmp.core.context import current_context
 from cmp.core.errors import Forbidden, NotFound
 from cmp.core.permissions import Role
 from cmp.db.pool import connection, transaction
@@ -388,6 +389,10 @@ async def dashboard(principal: CurrentUser) -> dict[str, Any]:
                 # A breach-only login (S3-09): its open breach tickets, below,
                 # and nothing else.
                 data = {"role": "breach_holder", "counts": {}, "queues": [], "recent": []}
+            case Role.LEGAL | Role.HR_USER:
+                # The HR track's roles (ADR 0032): their tickets, below, until
+                # the dashboards of their own registers arrive with them.
+                data = {"role": principal.role.value, "counts": {}, "queues": [], "recent": []}
             case _:
                 raise Forbidden("No dashboard for this role")
         # Every member of staff, whatever their role: a rights request's
@@ -563,7 +568,7 @@ async def _dpo(conn: Any) -> dict[str, Any]:
         conn,
         [
             e
-            for e in await audit_repo.recent(conn, limit=60)
+            for e in await audit_repo.recent(conn, limit=60, office=current_context().office)
             if not str(e["event_type"]).startswith("auth.")
         ][:8],
         reader_role=Role.DPO,

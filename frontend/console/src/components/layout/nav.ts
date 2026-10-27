@@ -240,6 +240,9 @@ const DAILY_WORK: Record<string, string[]> = {
   rco: ["dashboard", "projects", "sites", "links", "tickets", "collections"],
   admin: ["dashboard", "users", "requests", "messages", "processors", "sources", "audit"],
   breach_holder: ["tickets"],
+  // The HR track (ADR 0032): their registers join as the increments land.
+  legal: ["dashboard", "tickets"],
+  hr_user: ["dashboard", "tickets"],
 };
 
 /** In the account menu and the header's bell, not the sidebar as well. */

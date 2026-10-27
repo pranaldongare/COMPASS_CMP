@@ -18,6 +18,7 @@ from typing import Any
 
 from psycopg.types.json import Jsonb
 
+from cmp.core.offices import OFFICE_ID_NAMED
 from cmp.core.pagination import PageRequest, build_page
 from cmp.core.permissions import Role
 from cmp.db.sql import Conn, Row, fetch_all, fetch_one, fetch_val, keyset_clause
@@ -147,8 +148,12 @@ async def create(
     trigger_evidence_hash: str | None = None,
     about_dpo: bool = False,
     consent_id: int | None = None,
+    office: str | None,
 ) -> Row:
-    """Insert a request. The reference is minted here and never reused."""
+    """Insert a request. The reference is minted here and never reused.
+
+    `office` is the office that answers it; None leaves it in the shared
+    intake (ADR 0032)."""
     # The contact is sealed like everything else, with its blind index beside
     # it for the lookups that verify a request through it. A caller copying the
     # contact off another row hands in ciphertext; the index has to come from
@@ -176,7 +181,7 @@ async def create(
            verification_method, verification_status, verified_at, verified_by,
            verification_note, linked_request_id, nomination_id, trigger_event,
            trigger_evidence_ref, trigger_evidence_hash, about_dpo, consent_id,
-           submitted_contact_hash, submitted_name_ngrams)
+           submitted_contact_hash, submitted_name_ngrams, office_id)
         VALUES
           ('RR-' || to_char(now(), 'YYYY') || '-'
              || lpad(nextval('rights_request_ref_seq')::text, 6, '0'),
@@ -189,7 +194,10 @@ async def create(
            %(verified_by)s, %(verification_note)s, %(linked_request_id)s,
            %(nomination_id)s, %(trigger_event)s::rights_trigger_event,
            %(trigger_evidence_ref)s, %(trigger_evidence_hash)s, %(about_dpo)s,
-           %(consent_id)s, %(submitted_contact_hash)s, %(submitted_name_ngrams)s)
+           %(consent_id)s, %(submitted_contact_hash)s, %(submitted_name_ngrams)s,
+           """
+        + OFFICE_ID_NAMED
+        + """)
         RETURNING request_id, request_uuid, reference, received_at, due_at
         """,
         {
@@ -216,6 +224,7 @@ async def create(
             "trigger_evidence_hash": trigger_evidence_hash,
             "about_dpo": about_dpo,
             "consent_id": consent_id,
+            "office": office,
         },
     )
     assert row is not None

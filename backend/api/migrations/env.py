@@ -49,6 +49,13 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     engine = create_engine(DB_URL, poolclass=pool.NullPool, future=True)
     with engine.connect() as connection:
+        # Every policed table answers nothing to a connection that has not
+        # said which office it reads (ADR 0032). A migration reads across
+        # both, and `FORCE ROW LEVEL SECURITY` binds the owner it runs as.
+        # Session-level and committed, so it outlives each migration's own
+        # transaction.
+        connection.exec_driver_sql("SELECT set_config('app.office', 'all', false)")
+        connection.commit()
         context.configure(
             connection=connection,
             target_metadata=target_metadata,

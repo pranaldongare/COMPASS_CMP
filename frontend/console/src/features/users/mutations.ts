@@ -69,10 +69,11 @@ export function useSetUserProcessors(uuid: Uuid): Result<CollectorProcessor[], s
 
 export function useChangeRole(
   uuid: Uuid,
-): Result<Acknowledged, { role: string; reason?: string }> {
+): Result<Acknowledged, { role: string; reason?: string; office_uuid?: string | null }> {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { role: string; reason?: string }) => changeUserRole(uuid, body),
+    mutationFn: (body: { role: string; reason?: string; office_uuid?: string | null }) =>
+      changeUserRole(uuid, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.users.all }),
   });
 }

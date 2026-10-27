@@ -39,7 +39,7 @@ from cmp.db.repositories import users as user_repo
 from cmp.db.sql import fetch_all
 from cmp.domain.audit.service import Event
 from cmp.tasks import dispatch as dispatch_mod
-from tests.conftest import plain
+from tests.conftest import office_of, plain
 
 pytestmark = pytest.mark.integration
 
@@ -108,6 +108,7 @@ async def provision(
         status=status,
         mobile=mobile,
         password_hash=hash_password(new_token(32)),
+        office=office_of(role),
     )
 
 

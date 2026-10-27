@@ -353,8 +353,9 @@ class TestTheSchemaHoldsTheRule:
     async def test_staff_still_need_an_email(self, conn: Any) -> None:
         with pytest.raises(psycopg.errors.CheckViolation):
             await conn.execute(
-                """INSERT INTO auth_user (full_name, mobile, mobile_hash, role, status)
-                   VALUES ('No Email', '+915550000903', %s, 'dco', 'active')""",
+                """INSERT INTO auth_user (full_name, mobile, mobile_hash, role, status, office_id)
+                   VALUES ('No Email', '+915550000903', %s, 'dco', 'active',
+                       (SELECT office_id FROM office WHERE office_code = 'rnd'))""",
                 (hashed("mobile", "+915550000903"),),
             )
 

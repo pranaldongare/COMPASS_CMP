@@ -142,6 +142,9 @@ async def authenticate(
         partial=mfa_needed,
         mfa_verified=not mfa_needed,
         account_role=user["role"],
+        # The office the console session reads and writes in (ADR 0032);
+        # none for the administrator and a breach-only login.
+        office=user.get("office_code"),
     )
 
     if mfa_needed:
@@ -351,6 +354,9 @@ async def open_principal_session(
     Before this existed the session took the account's role, and a code to a
     staff mailbox produced a full staff session: the password and the second
     factor that every staff role requires, bypassed by reading one email.
+
+    No office: a data principal's records are hers on both tracks, bounded by
+    the account rather than by an office (ADR 0032).
     """
     return await sessions.create(
         user_id=user["id"],
@@ -840,6 +846,8 @@ async def me_payload(conn: Conn, *, user_id: int, session: sessions.Session) -> 
         # of staff that they are using their staff account as a data principal.
         "role": session.role,
         "account_role": session.account_role,
+        # The office this session acts in (ADR 0032); null across both.
+        "office": session.office,
         "person_type": user["person_type"],
         "status": user["status"],
         # Carried on first paint so the interface does not need a second call to

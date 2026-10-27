@@ -17,8 +17,9 @@ from typing import Any
 from cmp.auth.authentication import service as auth_service
 from cmp.core.enums import UserStatus
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
-from cmp.core.permissions import Role
+from cmp.core.permissions import OFFICE_ROLES, ROLE_TITLES, Role
 from cmp.core.security import hash_password, new_token
+from cmp.db.repositories import offices as office_repo
 from cmp.db.repositories import registry as registry_repo
 from cmp.db.repositories import users as repo
 from cmp.db.sql import Conn, unique_violation
@@ -45,6 +46,35 @@ def _not_by_hand(role: str) -> None:
         raise ValidationFailed(
             "A temporary ticket holder is made by a breach ticket, not by hand", field="role"
         )
+
+
+async def _office_for(
+    conn: Conn, role: str, office_uuid: str | None, *, current: str | None = None
+) -> str | None:
+    """The code of the office an account in `role` works in (ADR 0032), or None.
+
+    A role that works in an office needs one: the one named, else the one the
+    account already has (`current`). Any other role works across both and is
+    refused one, rather than given one it would never use.
+    """
+    title = ROLE_TITLES.get(role, role)
+    if role not in OFFICE_ROLES:
+        if office_uuid:
+            raise ValidationFailed(
+                f"{title}: this role works across both offices; leave the office empty",
+                field="office_uuid",
+            )
+        return None
+    if office_uuid:
+        office = await office_repo.by_uuid(conn, office_uuid)
+        if not office:
+            raise NotFound("Office")
+        return str(office["office_code"])
+    if current:
+        return current
+    raise ValidationFailed(
+        f"{title}: this role works in one office; choose it", field="office_uuid"
+    )
 
 
 async def _collector_processors(
@@ -140,6 +170,7 @@ async def create_staff(
     source_uuids: list[str],
     processor_uuids: list[str] | None = None,
     actor_id: int | None = None,
+    office_uuid: str | None = None,
 ) -> tuple[dict[str, Any], list[str]]:
     """Provision a staff account, with the processors it collects for and the
     sources it is accountable for.
@@ -165,6 +196,7 @@ async def create_staff(
             field="source_uuids",
         )
     processors = await _collector_processors(conn, role, processor_uuids or [])
+    office = await _office_for(conn, role, office_uuid)
 
     try:
         user = await repo.create(
@@ -178,6 +210,7 @@ async def create_staff(
             person_type=person_type,
             status="pending",
             password_hash=hash_password(new_token(32)),
+            office=office,
         )
     except Exception as exc:
         if unique_violation(exc):
@@ -222,7 +255,14 @@ async def create_staff(
         entity_type="auth_user",
         entity_id=user["id"],
         subject_user_id=user["id"],
-        detail={"role": role, "sources": assigned, "processors": len(processors)},
+        detail={
+            "role": role,
+            "sources": assigned,
+            "processors": len(processors),
+            # Not `office`: that key says whose record a row is about, and an
+            # account belongs to neither office's trail alone.
+            "account_office": office,
+        },
     )
 
     # An account nobody has been told about is an account nobody can use, so
@@ -312,8 +352,17 @@ async def update_profile(
 
 
 async def change_role(
-    conn: Conn, user_uuid: str, *, role: str, reason: str | None, actor_id: int
+    conn: Conn,
+    user_uuid: str,
+    *,
+    role: str,
+    reason: str | None,
+    actor_id: int,
+    office_uuid: str | None = None,
 ) -> dict[str, Any]:
+    """A new role, and the office it works in. A role that works in an office
+    keeps the account's office unless another is named; any other role
+    leaves it. The caller ends every session either way."""
     _known_role(role)
     _not_by_hand(role)
     user = await repo.require_by_uuid(conn, user_uuid)
@@ -322,8 +371,9 @@ async def change_role(
     if user["id"] == actor_id:
         # Self-demotion is how an organisation ends up with no administrator.
         raise Conflict("You cannot change your own role", code="self_role_change")
+    office = await _office_for(conn, role, office_uuid, current=user.get("office_code"))
 
-    await repo.set_role(conn, user["id"], role)
+    await repo.set_role(conn, user["id"], role, office=office)
     # The processors were a DCO's third parties or an RCO's own teams; in any
     # other role, or the other of the two, they are the wrong kind or no kind.
     cleared = await registry_repo.clear_collector_processors(conn, user["id"])
@@ -338,6 +388,7 @@ async def change_role(
             "to": role,
             "reason_given": bool(reason),
             "processors_cleared": cleared,
+            "account_office": {"from": user.get("office_code"), "to": office},
         },
     )
     from cmp.domain import alerts

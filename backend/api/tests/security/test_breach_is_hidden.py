@@ -122,7 +122,8 @@ async def test_no_picker_offers_a_breach_only_login(conn: Any, seeded: dict[str,
     from cmp.db.repositories import users as user_repo
 
     await conn.execute(
-        "UPDATE auth_user SET role = 'breach_holder' WHERE id = %s",
+        # A breach-only login works in no office (0051).
+        "UPDATE auth_user SET role = 'breach_holder', office_id = NULL WHERE id = %s",
         (seeded["users"]["rnd_user"]["id"],),
     )
     staff = await user_repo.staff_directory(conn)

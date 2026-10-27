@@ -1,7 +1,8 @@
 # Schema
 
-58 tables, 39 enums, 1 view, 50 triggers, 94 named CHECK constraints and 161
-foreign keys, as of migration 0049. Those counts are read from the PostgreSQL
+60 tables, 39 enums, 1 view, 60 triggers, 95 named CHECK constraints and 173
+foreign keys, as of migration 0051; 45 of the tables carry an
+`office_isolation` row-level security policy (ADR 0032). Those counts are read from the PostgreSQL
 catalogs after replaying every migration, not maintained by hand.
 
 The migrations are the source of truth: 0001 transcribed the original

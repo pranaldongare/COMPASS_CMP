@@ -2564,6 +2564,31 @@
         }
       }
     },
+    "/offices": {
+      "get": {
+        "tags": [
+          "offices"
+        ],
+        "summary": "The offices an account can work in",
+        "operationId": "list_offices_offices_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OfficeOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Offices Offices Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/me": {
       "get": {
         "tags": [
@@ -24248,6 +24273,18 @@
             },
             "type": "array",
             "title": "Processor Uuids"
+          },
+          "office_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office Uuid"
           }
         },
         "additionalProperties": false,
@@ -27228,6 +27265,17 @@
             "type": "string",
             "title": "Account Role"
           },
+          "office": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office"
+          },
           "person_type": {
             "anyOf": [
               {
@@ -28525,6 +28573,30 @@
         "additionalProperties": false,
         "type": "object",
         "title": "NoticeUpdate"
+      },
+      "OfficeOut": {
+        "properties": {
+          "office_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Office Uuid"
+          },
+          "office_code": {
+            "type": "string",
+            "title": "Office Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "office_uuid",
+          "office_code",
+          "name"
+        ],
+        "title": "OfficeOut"
       },
       "OrgBoardBriefOut": {
         "properties": {
@@ -32730,6 +32802,18 @@
               }
             ],
             "title": "Reason"
+          },
+          "office_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office Uuid"
           }
         },
         "additionalProperties": false,
@@ -35030,6 +35114,29 @@
           "status": {
             "type": "string",
             "title": "Status"
+          },
+          "office_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office Uuid"
+          },
+          "office_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office Name"
           },
           "created_at": {
             "title": "Created At"

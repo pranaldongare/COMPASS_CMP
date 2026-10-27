@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from cmp.core.offices import OFFICE_ID_NAMED
 from cmp.core.pagination import PageRequest, build_page
 from cmp.db.sql import Conn, Row, fetch_all, fetch_one, keyset_clause
 from cmp.infrastructure.dkms import seal
@@ -456,27 +457,28 @@ async def purpose_by_id(conn: Conn, purpose_id: int) -> Row | None:
     )
 
 
-async def create_purpose(conn: Conn, *, created_by: int, **f: Any) -> Row:
+async def create_purpose(conn: Conn, *, created_by: int, office: str, **f: Any) -> Row:
     row = await fetch_one(
         conn,
-        """
+        f"""
         INSERT INTO purpose (purpose_code, name, description, uses, lawful_basis, s7_clause,
                              data_categories, retention_period, retention_basis,
                              erasure_trigger, consent_validity_period, cross_border_permitted,
-                             permitted_for_minors, lapse_behaviour, created_by)
+                             permitted_for_minors, lapse_behaviour, created_by, office_id)
         VALUES (%(purpose_code)s, %(name)s, %(description)s, %(uses)s,
                 %(lawful_basis)s::lawful_basis, %(s7_clause)s::s7_clause,
                 %(data_categories)s, %(retention_period)s::interval,
                 %(retention_basis)s::retention_basis, %(erasure_trigger)s::erasure_trigger,
                 %(consent_validity_period)s::interval, %(cross_border_permitted)s,
-                %(permitted_for_minors)s, %(lapse_behaviour)s::lapse_behaviour, %(created_by)s)
+                %(permitted_for_minors)s, %(lapse_behaviour)s::lapse_behaviour, %(created_by)s,
+                {OFFICE_ID_NAMED})
         RETURNING purpose_id, purpose_uuid, purpose_code, version, status, name, description,
                   uses, lawful_basis, s7_clause, data_categories, retention_period,
                   retention_basis, erasure_trigger, consent_validity_period,
                   cross_border_permitted, permitted_for_minors, lapse_behaviour,
                   created_at, updated_at
         """,
-        {**f, "created_by": created_by},
+        {**f, "created_by": created_by, "office": office},
     )
     assert row is not None
     return row

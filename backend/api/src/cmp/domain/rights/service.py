@@ -19,6 +19,7 @@ from typing import Any, Final
 
 from cmp.auth.authentication import otp
 from cmp.auth.rate_limit import service as ratelimit
+from cmp.core import offices
 from cmp.core.config import settings
 from cmp.core.enums import Disposition, NominationStatus
 from cmp.core.enums import RightsItemState as ItemState
@@ -248,6 +249,9 @@ async def create(
         trigger_evidence_hash=trigger_evidence_hash,
         about_dpo=about_dpo,
         consent_id=consent_id,
+        # The DPO office answers every request until requests are routed by
+        # office; written, not left to the shared intake (ADR 0032).
+        office=offices.RND,
     )
     full = await reload(conn, row)
     await _record(

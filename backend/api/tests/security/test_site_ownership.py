@@ -39,8 +39,9 @@ pytestmark = pytest.mark.asyncio
 async def _make_dco(conn: Any, name: str, email: str) -> int:
     row = await fetch_one(
         conn,
-        """INSERT INTO auth_user (full_name, email, email_hash, role, status)
-           VALUES (%s, %s, %s, 'dco', 'active') RETURNING id""",
+        """INSERT INTO auth_user (full_name, email, email_hash, role, status, office_id)
+           VALUES (%s, %s, %s, 'dco', 'active',
+               (SELECT office_id FROM office WHERE office_code = 'rnd')) RETURNING id""",
         (name, email, hashed("email", email)),
     )
     assert row is not None

@@ -69,6 +69,7 @@ erDiagram
 
 | Group | Tables | Notes |
 |---|---|---|
+| Offices | `office` | The DPO office (`rnd`) and the Legal office (`hr`), rows not an enum. Every governance record names its office; an officer's connection reads only its own ([ADR 0032](../decisions/0032-offices-are-logical-tenants-in-one-database.md), [offices-and-tenancy.md](offices-and-tenancy.md)) |
 | Identity | `auth_user`, `person_type_history`, `delegation` | One table for every account, staff and data principal, distinguished by `role`. Email nullable; a CHECK requires it for staff and a trigger requires a mobile for a data principal. Name, contacts, username, date of birth and organisation id are sealed; each contact, the username and the organisation id carry a keyed hash in a `*_hash` column beside them, and the name carries `full_name_ngrams`. `minor_until`, eighteen years after birth, is kept in the clear for the s.9 test. Person type (external, employee, ex-employee, vendor) is tracked with its history. |
 | Registry | `purpose`, `processor`, `processor_respondent`, `data_source` | Reference data. Sources belong to a processor and an owner; respondents are retired by date, never deleted. |
 | Projects | `project`, `project_processor`, `project_approval`, `project_site`, `project_status_history` | A project names processors (each decided by the DPO), proves its approval, and collects at sites. A site is a source deployed for a project with an optional owner override. Status changes are history rows. |
@@ -112,6 +113,7 @@ its status. No table stores a consent status.
 | `rights_item_state` / `rights_scope_decision` | `proposed`, `decided`, `instructed`, `applied` / `erase`, `redact`, `retain`, `quarantine` |
 | `nomination_status` / `rights_trigger_event` | `pending`, `active`, `declined`, `revoked` / `death`, `incapacity` |
 | `user_status` | `pending`, `active`, `suspended`, `deactivated` |
+| `user_role` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`, `admin`, `data_subject`, `breach_holder`, `legal`, `hr_user` |
 
 Every enumeration is a Postgres type and a Python `StrEnum` of the same
 values; `tests/integration/database/test_enum_parity.py` fails when they drift.
@@ -124,6 +126,9 @@ with raw SQL that bypasses the service layer.
 
 | Rule | Mechanism |
 |---|---|
+| An officer's connection reads and writes only its office's rows | row-level security, `office_isolation` on every office-bearing table and each child through its parent (0051); `FORCE` binds the owner, nothing binds a superuser |
+| A notice, a link and an export are their parent's office; a record's office never changes | `cmp_office_from_parent()`, `cmp_office_is_fixed()` (0051) |
+| An account holds an office exactly when its role works in one | `CHECK auth_user_office_by_role` (0051) |
 | Consent evidence is append-only | statement trigger refusing `UPDATE`/`DELETE` on `consent_artefact` and `consent_purpose_grant`; the application role's grant is revoked |
 | The artefact carries the hash of the text served, and served precedes action | `cmp_consent_coherent()`, `CHECK served_before_action` |
 | A published notice never changes | `cmp_notice_freeze()` |

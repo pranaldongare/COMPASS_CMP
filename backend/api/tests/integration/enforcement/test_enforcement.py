@@ -275,9 +275,10 @@ class TestPurposeConstraints:
             await conn.execute(
                 """INSERT INTO purpose (purpose_code, name, description, uses,
                                         lawful_basis, data_categories, retention_period,
-                                        retention_basis, erasure_trigger, created_by)
+                                        retention_basis, erasure_trigger, created_by, office_id)
                    VALUES ('P-EMPTY', 'x', 'd', 'u', 'consent_s6', ARRAY[]::text[],
-                           interval '1 year', 'business_policy', 'withdrawal', %s)""",
+                           interval '1 year', 'business_policy', 'withdrawal', %s,
+                               (SELECT office_id FROM office WHERE office_code = 'rnd'))""",
                 (seeded["users"]["dpo"]["id"],),
             )
         assert "categories_not_empty" in str(exc.value)
@@ -290,10 +291,11 @@ class TestPurposeConstraints:
                 """INSERT INTO purpose (purpose_code, name, description, uses,
                                         lawful_basis, s7_clause, data_categories,
                                         retention_period, retention_basis,
-                                        erasure_trigger, created_by)
+                                        erasure_trigger, created_by, office_id)
                    VALUES ('P-BAD', 'x', 'd', 'u', 'consent_s6', 's7_other',
                            ARRAY['name'], interval '1 year', 'business_policy',
-                           'withdrawal', %s)""",
+                           'withdrawal', %s,
+                               (SELECT office_id FROM office WHERE office_code = 'rnd'))""",
                 (seeded["users"]["dpo"]["id"],),
             )
         assert "s7_clause_required" in str(exc.value)
@@ -303,10 +305,11 @@ class TestPurposeConstraints:
             await conn.execute(
                 """INSERT INTO purpose (purpose_code, name, description, uses,
                                         lawful_basis, data_categories, retention_period,
-                                        retention_basis, erasure_trigger, created_by)
+                                        retention_basis, erasure_trigger, created_by, office_id)
                    VALUES ('P-BAD2', 'x', 'd', 'u', 'legitimate_use_s7',
                            ARRAY['name'], interval '1 year', 'business_policy',
-                           'withdrawal', %s)""",
+                           'withdrawal', %s,
+                               (SELECT office_id FROM office WHERE office_code = 'rnd'))""",
                 (seeded["users"]["dpo"]["id"],),
             )
 

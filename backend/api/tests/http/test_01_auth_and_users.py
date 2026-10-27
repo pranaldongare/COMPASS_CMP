@@ -167,7 +167,18 @@ class TestTheStaffRegister:
         admin = await session_for("admin")
         dpo = await session_for("dpo")
         email, org = fresh_email("staff"), fresh("EMP-")
+        offices = (await call(http, "GET", "/offices", session=admin)).json()
+        rnd = next(o["office_uuid"] for o in offices if o["office_code"] == "rnd")
 
+        # Every role but the administrator works in one office (ADR 0032).
+        await call(
+            http,
+            "POST",
+            "/users",
+            session=admin,
+            expect=422,
+            json={"full_name": "Http Staffer", "email": email, "role": "rco"},
+        )
         created = await call(
             http,
             "POST",
@@ -180,10 +191,12 @@ class TestTheStaffRegister:
                 "role": "rco",
                 "organization_id": org,
                 "mobile": fresh_mobile(),
+                "office_uuid": rnd,
             },
         )
         user = created.json()
         uid = user["uuid"]
+        assert user["office_uuid"] == rnd
         assert user["full_name"].startswith("SE::") and user["email"].startswith("SE::")
         # The invitation went to the address in the clear - opened at sending.
         assert (

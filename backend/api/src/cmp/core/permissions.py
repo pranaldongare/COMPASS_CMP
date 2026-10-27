@@ -27,7 +27,7 @@ from typing import Final
 
 
 class Role(StrEnum):
-    """The eight roles. Values match the `user_role` PostgreSQL enum exactly.
+    """The ten roles. Values match the `user_role` PostgreSQL enum exactly.
 
     Two of them exist because collection has two shapes:
 
@@ -53,6 +53,12 @@ class Role(StrEnum):
     #: the personal pages, nothing else; granted only by a breach ticket, never
     #: by hand, and taken away when the breach closes.
     BREACH_HOLDER = "breach_holder"
+    #: The Legal office's officer (ADR 0032): governs the HR track as the DPO
+    #: governs the R&D track. Same kind of authority, the other office's rows.
+    LEGAL = "legal"
+    #: An HR point of contact: creates the HR track's consent activities in
+    #: the categories assigned to them (ADR 0033).
+    HR_USER = "hr_user"
 
 
 #: What each role is called in a sentence written to a person.
@@ -68,7 +74,25 @@ ROLE_TITLES: Final[dict[str, str]] = {
     Role.ADMIN.value: "Administrator",
     Role.DATA_SUBJECT.value: "Data Subject",
     Role.BREACH_HOLDER.value: "Temporary ticket holder",
+    Role.LEGAL.value: "Legal PoC",
+    Role.HR_USER.value: "HR PoC",
 }
+
+#: The roles that work in one office (ADR 0032), whose account names it
+#: (`auth_user.office_id`, required by CHECK) and whose session reads only
+#: its rows. The administrator, a data principal and a breach-only login
+#: work across both, bounded by the matrix, the account or the ticket.
+OFFICE_ROLES: Final[frozenset[str]] = frozenset(
+    {
+        Role.DPO.value,
+        Role.LEGAL.value,
+        Role.RND_USER.value,
+        Role.DCO.value,
+        Role.RCO.value,
+        Role.DCO_ADMIN.value,
+        Role.HR_USER.value,
+    }
+)
 
 
 class Scope(StrEnum):
@@ -326,6 +350,8 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.DCO_ADMIN: Grant(Scope.OWN, write=True),
         Role.RCO: Grant(Scope.OWN, write=True),
         Role.RND_USER: Grant(Scope.OWN, write=True),
+        Role.LEGAL: Grant(Scope.OWN, write=True),
+        Role.HR_USER: Grant(Scope.OWN, write=True),
         # BD-19: so the shared Tickets page needs no role check. Since 0049 a
         # temporary holder may hold a rights ticket too: `reach.place` gives an
         # internal holder with no console login a temporary one for it.
@@ -341,6 +367,8 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.DCO_ADMIN: Grant(Scope.OWN, write=True),
         Role.RCO: Grant(Scope.OWN, write=True),
         Role.RND_USER: Grant(Scope.OWN, write=True),
+        Role.LEGAL: Grant(Scope.OWN, write=True),
+        Role.HR_USER: Grant(Scope.OWN, write=True),
         # The temporary role's whole reason to exist (S3-09).
         Role.BREACH_HOLDER: Grant(Scope.OWN, write=True),
     },
@@ -496,6 +524,10 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     # Its tickets and its own account: nothing else (S3-09). It lands on
     # Tickets, which is first.
     Role.BREACH_HOLDER: PERSONAL,
+    # The HR track's two roles (ADR 0032). The dashboard and their tickets
+    # until their registers arrive with the increments that build them.
+    Role.LEGAL: ("dashboard", *PERSONAL),
+    Role.HR_USER: ("dashboard", *PERSONAL),
 }
 
 

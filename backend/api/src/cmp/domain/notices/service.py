@@ -358,6 +358,8 @@ async def detach_purpose(conn: Conn, *, notice_id: int, purpose_uuid: str) -> No
         entity_type="notice_purpose",
         entity_id=purpose["purpose_id"],
         detail={"notice_id": notice_id, "purpose": purpose_uuid},
+        # The row is gone; whose it was is the notice's.
+        office_of=("notice", notice_id),
     )
 
 

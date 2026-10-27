@@ -153,6 +153,9 @@ def main() -> int:
         psycopg.connect(settings.dsn, row_factory=dict_row) as conn,
         conn.transaction(force_rollback=True),
     ):
+        # Across both offices (ADR 0032): a connection that says nothing reads
+        # nothing from a policed table.
+        conn.execute("SELECT set_config('app.office', 'all', true)")
         if not args.target:
             list_tables(conn)
             return 0

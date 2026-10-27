@@ -155,7 +155,8 @@ class TestABreachOnlyLoginOnThePortal:
         """ADR 0013 holds for the temporary role (S3-09): a code to its mailbox
         signs in a data principal, never the breach-only role."""
         await conn.execute(
-            "UPDATE auth_user SET role = 'breach_holder' WHERE id = %s",
+            # A breach-only login works in no office (0051).
+            "UPDATE auth_user SET role = 'breach_holder', office_id = NULL WHERE id = %s",
             (seeded["users"]["rco"]["id"],),
         )
         result = await sign_in_by_code(conn, redis_conn, queued, "rco@test.local")

@@ -52,8 +52,9 @@ async def test_r_and_d_sees_what_is_waiting_on_the_dpo_apart(
     rnd = seeded["users"]["rnd_user"]["id"]
     waiting = await fetch_one(
         conn,
-        """INSERT INTO project (project_name, description, created_by, project_status)
-           VALUES ('Waiting on review', 'd', %s, 'pending_approval') RETURNING project_uuid""",
+        """INSERT INTO project (project_name, description, created_by, project_status, office_id)
+           VALUES ('Waiting on review', 'd', %s, 'pending_approval',
+               (SELECT office_id FROM office WHERE office_code = 'rnd')) RETURNING project_uuid""",
         (rnd,),
     )
     data = await dashboard._rnd(conn, rnd)

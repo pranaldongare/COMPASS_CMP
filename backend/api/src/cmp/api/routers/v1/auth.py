@@ -94,6 +94,9 @@ class MeResponse(Out):
     #: What the account row says. For telling somebody they are using their
     #: staff account as a data principal; never for deciding anything.
     account_role: str
+    #: The office this session reads and writes in (ADR 0032): `rnd` or `hr`
+    #: for a staff session in one, null for one across both.
+    office: str | None = None
     person_type: str | None
     status: str
     #: Served as stored - sealed - and opened by the portal. See `MeOut`.

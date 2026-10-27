@@ -25,6 +25,7 @@ import difflib
 import re
 from typing import Any
 
+from cmp.core import offices
 from cmp.core.errors import Conflict, ValidationFailed
 from cmp.db.repositories import notices as repo
 from cmp.db.repositories import projects as project_repo
@@ -360,6 +361,8 @@ async def _create_purpose(
     row = await registry_repo.create_purpose(
         conn,
         created_by=actor_id,
+        # A notice imported for an R&D project brings the DPO office's purposes.
+        office=offices.RND,
         purpose_code=code,
         name=parsed.name,
         description=parsed.description,

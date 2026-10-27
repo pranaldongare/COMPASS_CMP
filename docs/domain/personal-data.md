@@ -799,7 +799,7 @@ rediscover them.
 
 | Control | Where |
 |---|---|
-| 78 personal columns - people's names and contacts, date of birth, free text, file names, the consent IP - are ciphertext at rest, and the API serves them that way | [docs/dkms/](../dkms/README.md), [encryption at rest](../security/encryption-at-rest.md) |
+| 79 personal columns - people's names and contacts, date of birth, free text, file names, the consent IP - are ciphertext at rest, and the API serves them that way | [docs/dkms/](../dkms/README.md), [encryption at rest](../security/encryption-at-rest.md) |
 | A password is Argon2, and `password_hash` appears in **no** response schema | `auth_user`, and the absence is the point |
 | A one-time code is never stored — Redis holds a keyed digest, and the check, the consumption and the attempt count are one atomic script | `cmp/auth/authentication/otp.py` |
 | A session token is never stored; Redis is keyed by its fingerprint | `cmp/auth/sessions/service.py` |
@@ -808,6 +808,7 @@ rediscover them.
 | A code sign-in acts as `data_subject` whatever the account's role, so a code to a staff mailbox cannot produce a staff session | [ADR 0013](../decisions/0013-every-account-is-a-data-principal.md) |
 | Out of scope is 404, not 403; every real 403 is audited | [ADR 0004](../decisions/0004-scope-in-the-where-clause.md) |
 | Scope is compiled into the `WHERE` clause, so an out-of-scope row is never selected in the first place | `cmp/db/repositories/*` |
+| An officer's connection reads only its own office's rows - the DPO office's or the Legal office's - enforced by PostgreSQL's row-level security behind the query's scope | [ADR 0032](../decisions/0032-offices-are-logical-tenants-in-one-database.md), [offices-and-tenancy.md](../architecture/offices-and-tenancy.md) |
 | Tokens are scrubbed from access logs by the application | `cmp/api/middleware/access_log.py` |
 | Celery task events carry the argument *count*, not the arguments | `cmp/tasks/dispatch.py` |
 | Export CSV cells beginning with a formula character are written as text | `cmp/domain/exchange/service.py` |
@@ -817,7 +818,7 @@ rediscover them.
 
 ## Encrypting it: the DKMS layer
 
-Seventy-eight columns, in 29 tables - the people's names and contacts, the
+Seventy-nine columns, in 30 tables - the people's names and contacts, the
 date of birth, the free text and file names about them, every narrative on
 the breach register, and the consent IP - are encrypted by a separate key
 service before they reach the database, and the API serves them as

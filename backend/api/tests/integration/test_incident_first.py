@@ -232,8 +232,10 @@ async def test_a_breach_logged_before_the_order_keeps_its_number(
     for ref in ("BR-1999-0001", "BR-1999-0002"):
         row = await fetch_one(
             conn,
-            """INSERT INTO breach (reference, title, detected_at, location_kind, recorded_by)
-               VALUES (%s, 'SE::legacy', now() - interval '3 days', 'platform', %s)
+            """INSERT INTO breach (reference, title, detected_at, location_kind, recorded_by,
+                office_id)
+               VALUES (%s, 'SE::legacy', now() - interval '3 days', 'platform', %s,
+                   (SELECT office_id FROM office WHERE office_code = 'rnd'))
                RETURNING breach_id""",
             (ref, dpo),
         )

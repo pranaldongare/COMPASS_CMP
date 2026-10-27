@@ -29,9 +29,10 @@ async def _mandatory_notice(conn: Any, seeded: dict[str, Any]) -> tuple[str, str
         await conn.execute(
             """INSERT INTO purpose (purpose_code, name, description, uses, lawful_basis,
                                     data_categories, retention_period, retention_basis,
-                                    erasure_trigger, status, created_by)
+                                    erasure_trigger, status, created_by, office_id)
                VALUES ('P-OPT-UX1', 'Optional purpose', 'd', 'u', 'consent_s6', ARRAY['name'],
-                       interval '1 year', 'business_policy', 'withdrawal', 'active', %s)
+                       interval '1 year', 'business_policy', 'withdrawal', 'active', %s,
+                           (SELECT office_id FROM office WHERE office_code = 'rnd'))
                RETURNING purpose_id, purpose_uuid""",
             (dpo,),
         )

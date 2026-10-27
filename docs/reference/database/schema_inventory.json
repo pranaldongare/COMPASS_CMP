@@ -1,6 +1,6 @@
 {
-  "commit": "02cd603d03f4224bb7f13ec77fb219904692deeb",
-  "migration_head": "0050",
+  "commit": "187a4d2b9b356592a303b18975ccfd75a4a4d82c",
+  "migration_head": "0051",
   "migrations": [
     {
       "revision": "0001",
@@ -201,6 +201,10 @@
     {
       "revision": "0050",
       "source": "backend/api/migrations/versions/0050_collection_owner_processors.py"
+    },
+    {
+      "revision": "0051",
+      "source": "backend/api/migrations/versions/0051_offices_and_row_level_security.py"
     }
   ],
   "postgres_version": "16.15",
@@ -208,7 +212,7 @@
     {
       "name": "v_current_consent",
       "kind": "v",
-      "comment": null
+      "comment": "The head of every consent chain. security_invoker: the caller's office policies apply (ADR 0032)"
     },
     {
       "name": "alembic_version",
@@ -424,6 +428,11 @@
       "name": "notice_template_purpose",
       "kind": "r",
       "comment": null
+    },
+    {
+      "name": "office",
+      "kind": "r",
+      "comment": "A governance office: rnd (the DPO office) or hr (the Legal office). Every governance record names one; an officer sees only its own (ADR 0032)"
     },
     {
       "name": "person_type_history",
@@ -900,6 +909,15 @@
       "comment": null
     },
     {
+      "table_name": "auth_user",
+      "name": "office_id",
+      "position": 27,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The office this account works in; NULL for the administrator, a data principal and a breach-only login"
+    },
+    {
       "table_name": "breach",
       "name": "breach_id",
       "position": 1,
@@ -1114,6 +1132,15 @@
       "not_null": false,
       "default_value": null,
       "comment": "As logged: yes, no or unknown. Yes made it reportable to CERT-In"
+    },
+    {
+      "table_name": "breach",
+      "name": "office_id",
+      "position": 36,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
     },
     {
       "table_name": "breach_affected",
@@ -3168,6 +3195,15 @@
       "comment": "The link token, encrypted under a key derived from the application secret. Lets the URL be shown again to whoever needs to share it. NULL on links minted before 0011, whose tokens were never kept - those stay unrecoverable and the interface says so rather than showing a blank link."
     },
     {
+      "table_name": "consent_link",
+      "name": "office_id",
+      "position": 15,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
       "table_name": "consent_purpose_grant",
       "name": "grant_id",
       "position": 1,
@@ -3652,6 +3688,15 @@
       "not_null": false,
       "default_value": null,
       "comment": "Each destination of the export, its country, and the ground the transfer rested on (S2-04)"
+    },
+    {
+      "table_name": "export_log",
+      "name": "office_id",
+      "position": 12,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
     },
     {
       "table_name": "import_batch",
@@ -4329,6 +4374,15 @@
       "comment": "The template this notice was made from, if any. The notice is a copy: changing the template changes nothing here"
     },
     {
+      "table_name": "notice",
+      "name": "office_id",
+      "position": 21,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
       "table_name": "notice_language",
       "name": "notice_language_id",
       "position": 1,
@@ -4644,6 +4698,15 @@
       "comment": null
     },
     {
+      "table_name": "notice_template",
+      "name": "office_id",
+      "position": 16,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
       "table_name": "notice_template_language",
       "name": "template_language_id",
       "position": 1,
@@ -4740,6 +4803,69 @@
       "type": "boolean",
       "not_null": true,
       "default_value": "false",
+      "comment": null
+    },
+    {
+      "table_name": "office",
+      "name": "office_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('office_office_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "office",
+      "name": "office_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "office",
+      "name": "office_code",
+      "position": 3,
+      "type": "character varying(12)",
+      "not_null": true,
+      "default_value": null,
+      "comment": "What app.office holds for a session of this office, and what the policies compare"
+    },
+    {
+      "table_name": "office",
+      "name": "name",
+      "position": 4,
+      "type": "character varying(120)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "office",
+      "name": "contact",
+      "position": 5,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The office's contact, sealed (CONTACT)"
+    },
+    {
+      "table_name": "office",
+      "name": "grievance_route",
+      "position": 6,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "office",
+      "name": "created_at",
+      "position": 7,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
       "comment": null
     },
     {
@@ -5082,6 +5208,15 @@
       "type": "timestamp with time zone",
       "not_null": true,
       "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "project",
+      "name": "office_id",
+      "position": 13,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
       "comment": null
     },
     {
@@ -5622,6 +5757,15 @@
       "type": "timestamp with time zone",
       "not_null": true,
       "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "purpose",
+      "name": "office_id",
+      "position": 22,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
       "comment": null
     },
     {
@@ -6199,6 +6343,15 @@
       "not_null": false,
       "default_value": null,
       "comment": null
+    },
+    {
+      "table_name": "rights_request",
+      "name": "office_id",
+      "position": 49,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The office that answers the request; NULL while it is in the shared intake"
     },
     {
       "table_name": "rights_request_attachment",
@@ -7289,6 +7442,39 @@
     },
     {
       "table_name": "auth_user",
+      "name": "auth_user_office_by_role",
+      "kind": "c",
+      "definition": "CHECK (((office_id IS NOT NULL) = (role = ANY (ARRAY['dpo'::user_role, 'legal'::user_role, 'rnd_user'::user_role, 'dco'::user_role, 'rco'::user_role, 'dco_admin'::user_role, 'hr_user'::user_role]))))",
+      "columns": [
+        "office_id",
+        "role"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "auth_user",
+      "name": "auth_user_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (office_id) REFERENCES office(office_id)",
+      "columns": [
+        "office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "auth_user",
       "name": "auth_user_organization_id_indexed",
       "kind": "c",
       "definition": "CHECK (((organization_id IS NULL) OR (organization_id_hash IS NOT NULL)))",
@@ -7520,6 +7706,23 @@
       "referenced_table": "data_source",
       "referenced_columns": [
         "source_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach",
+      "name": "breach_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (office_id) REFERENCES office(office_id)",
+      "columns": [
+        "office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
       ],
       "delete_action": "a",
       "update_action": "a",
@@ -9930,6 +10133,23 @@
     },
     {
       "table_name": "consent_link",
+      "name": "consent_link_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (office_id) REFERENCES office(office_id)",
+      "columns": [
+        "office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "consent_link",
       "name": "consent_link_pkey",
       "kind": "p",
       "definition": "PRIMARY KEY (link_id)",
@@ -10488,6 +10708,23 @@
       "referenced_table": "auth_user",
       "referenced_columns": [
         "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "export_log",
+      "name": "export_log_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (office_id) REFERENCES office(office_id)",
+      "columns": [
+        "office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
       ],
       "delete_action": "a",
       "update_action": "a",
@@ -11092,6 +11329,23 @@
     },
     {
       "table_name": "notice",
+      "name": "notice_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (office_id) REFERENCES office(office_id)",
+      "columns": [
+        "office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice",
       "name": "notice_pkey",
       "kind": "p",
       "definition": "PRIMARY KEY (notice_id)",
@@ -11387,6 +11641,23 @@
     },
     {
       "table_name": "notice_template",
+      "name": "notice_template_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (office_id) REFERENCES office(office_id)",
+      "columns": [
+        "office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice_template",
       "name": "notice_template_pkey",
       "kind": "p",
       "definition": "PRIMARY KEY (template_id)",
@@ -11588,6 +11859,51 @@
       ],
       "delete_action": "a",
       "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "office",
+      "name": "office_office_code_key",
+      "kind": "u",
+      "definition": "UNIQUE (office_code)",
+      "columns": [
+        "office_code"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "office",
+      "name": "office_office_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (office_uuid)",
+      "columns": [
+        "office_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "office",
+      "name": "office_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (office_id)",
+      "columns": [
+        "office_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
       "deferrable": false,
       "initially_deferred": false
     },
@@ -11809,6 +12125,23 @@
       "referenced_table": "auth_user",
       "referenced_columns": [
         "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "project",
+      "name": "project_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (office_id) REFERENCES office(office_id)",
+      "columns": [
+        "office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
       ],
       "delete_action": "a",
       "update_action": "a",
@@ -12273,6 +12606,23 @@
     },
     {
       "table_name": "purpose",
+      "name": "purpose_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (office_id) REFERENCES office(office_id)",
+      "columns": [
+        "office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "purpose",
       "name": "purpose_pkey",
       "kind": "p",
       "definition": "PRIMARY KEY (purpose_id)",
@@ -12695,6 +13045,23 @@
       "referenced_table": "nomination",
       "referenced_columns": [
         "nomination_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request",
+      "name": "rights_request_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (office_id) REFERENCES office(office_id)",
+      "columns": [
+        "office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
       ],
       "delete_action": "a",
       "update_action": "a",
@@ -13582,6 +13949,11 @@
     },
     {
       "table_name": "auth_user",
+      "name": "idx_auth_user_office",
+      "definition": "CREATE INDEX idx_auth_user_office ON public.auth_user USING btree (office_id) WHERE (office_id IS NOT NULL)"
+    },
+    {
+      "table_name": "auth_user",
       "name": "idx_user_role_status",
       "definition": "CREATE INDEX idx_user_role_status ON public.auth_user USING btree (role, status)"
     },
@@ -13604,6 +13976,11 @@
       "table_name": "breach",
       "name": "breach_reference_key",
       "definition": "CREATE UNIQUE INDEX breach_reference_key ON public.breach USING btree (reference)"
+    },
+    {
+      "table_name": "breach",
+      "name": "idx_breach_office",
+      "definition": "CREATE INDEX idx_breach_office ON public.breach USING btree (office_id)"
     },
     {
       "table_name": "breach_affected",
@@ -13992,6 +14369,11 @@
     },
     {
       "table_name": "consent_link",
+      "name": "idx_consent_link_office",
+      "definition": "CREATE INDEX idx_consent_link_office ON public.consent_link USING btree (office_id)"
+    },
+    {
+      "table_name": "consent_link",
       "name": "idx_link_notice",
       "definition": "CREATE INDEX idx_link_notice ON public.consent_link USING btree (notice_id)"
     },
@@ -14122,6 +14504,11 @@
     },
     {
       "table_name": "export_log",
+      "name": "idx_export_log_office",
+      "definition": "CREATE INDEX idx_export_log_office ON public.export_log USING btree (office_id)"
+    },
+    {
+      "table_name": "export_log",
       "name": "idx_export_project",
       "definition": "CREATE INDEX idx_export_project ON public.export_log USING btree (project_id, exported_at DESC)"
     },
@@ -14232,6 +14619,11 @@
     },
     {
       "table_name": "notice",
+      "name": "idx_notice_office",
+      "definition": "CREATE INDEX idx_notice_office ON public.notice USING btree (office_id)"
+    },
+    {
+      "table_name": "notice",
       "name": "idx_notice_project",
       "definition": "CREATE INDEX idx_notice_project ON public.notice USING btree (project_id, version DESC)"
     },
@@ -14297,6 +14689,11 @@
     },
     {
       "table_name": "notice_template",
+      "name": "idx_notice_template_office",
+      "definition": "CREATE INDEX idx_notice_template_office ON public.notice_template USING btree (office_id)"
+    },
+    {
+      "table_name": "notice_template",
       "name": "notice_template_pkey",
       "definition": "CREATE UNIQUE INDEX notice_template_pkey ON public.notice_template USING btree (template_id)"
     },
@@ -14329,6 +14726,21 @@
       "table_name": "notice_template_purpose",
       "name": "notice_template_purpose_pkey",
       "definition": "CREATE UNIQUE INDEX notice_template_purpose_pkey ON public.notice_template_purpose USING btree (template_purpose_id)"
+    },
+    {
+      "table_name": "office",
+      "name": "office_office_code_key",
+      "definition": "CREATE UNIQUE INDEX office_office_code_key ON public.office USING btree (office_code)"
+    },
+    {
+      "table_name": "office",
+      "name": "office_office_uuid_key",
+      "definition": "CREATE UNIQUE INDEX office_office_uuid_key ON public.office USING btree (office_uuid)"
+    },
+    {
+      "table_name": "office",
+      "name": "office_pkey",
+      "definition": "CREATE UNIQUE INDEX office_pkey ON public.office USING btree (office_id)"
     },
     {
       "table_name": "person_type_history",
@@ -14384,6 +14796,11 @@
       "table_name": "project",
       "name": "idx_project_dco",
       "definition": "CREATE INDEX idx_project_dco ON public.project USING btree (dco_user_id, created_at DESC)"
+    },
+    {
+      "table_name": "project",
+      "name": "idx_project_office",
+      "definition": "CREATE INDEX idx_project_office ON public.project USING btree (office_id)"
     },
     {
       "table_name": "project",
@@ -14482,6 +14899,11 @@
     },
     {
       "table_name": "purpose",
+      "name": "idx_purpose_office",
+      "definition": "CREATE INDEX idx_purpose_office ON public.purpose USING btree (office_id)"
+    },
+    {
+      "table_name": "purpose",
       "name": "purpose_pkey",
       "definition": "CREATE UNIQUE INDEX purpose_pkey ON public.purpose USING btree (purpose_id)"
     },
@@ -14534,6 +14956,11 @@
       "table_name": "rights_request",
       "name": "idx_rights_request_linked",
       "definition": "CREATE INDEX idx_rights_request_linked ON public.rights_request USING btree (linked_request_id)"
+    },
+    {
+      "table_name": "rights_request",
+      "name": "idx_rights_request_office",
+      "definition": "CREATE INDEX idx_rights_request_office ON public.rights_request USING btree (office_id)"
     },
     {
       "table_name": "rights_request",
@@ -15009,7 +15436,9 @@
         "data_subject",
         "dco_admin",
         "rco",
-        "breach_holder"
+        "breach_holder",
+        "legal",
+        "hr_user"
       ]
     },
     {
@@ -15047,6 +15476,11 @@
       "table_name": "auth_user",
       "name": "trg_subject_needs_mobile",
       "definition": "CREATE TRIGGER trg_subject_needs_mobile BEFORE INSERT ON public.auth_user FOR EACH ROW EXECUTE FUNCTION cmp_subject_needs_mobile()"
+    },
+    {
+      "table_name": "breach",
+      "name": "trg_breach_office_fixed",
+      "definition": "CREATE TRIGGER trg_breach_office_fixed BEFORE UPDATE OF office_id ON public.breach FOR EACH ROW EXECUTE FUNCTION cmp_office_is_fixed()"
     },
     {
       "table_name": "breach",
@@ -15155,6 +15589,16 @@
     },
     {
       "table_name": "consent_link",
+      "name": "trg_consent_link_office_fixed",
+      "definition": "CREATE TRIGGER trg_consent_link_office_fixed BEFORE UPDATE OF office_id ON public.consent_link FOR EACH ROW EXECUTE FUNCTION cmp_office_is_fixed()"
+    },
+    {
+      "table_name": "consent_link",
+      "name": "trg_consent_link_office_from_parent",
+      "definition": "CREATE TRIGGER trg_consent_link_office_from_parent BEFORE INSERT ON public.consent_link FOR EACH ROW EXECUTE FUNCTION cmp_office_from_parent('notice', 'notice_id', 'notice_id')"
+    },
+    {
+      "table_name": "consent_link",
       "name": "trg_link_coherent",
       "definition": "CREATE TRIGGER trg_link_coherent BEFORE INSERT ON public.consent_link FOR EACH ROW EXECUTE FUNCTION cmp_link_coherent()"
     },
@@ -15189,6 +15633,16 @@
       "definition": "CREATE TRIGGER trg_export_log_append_only BEFORE DELETE OR UPDATE ON public.export_log FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
     },
     {
+      "table_name": "export_log",
+      "name": "trg_export_log_office_fixed",
+      "definition": "CREATE TRIGGER trg_export_log_office_fixed BEFORE UPDATE OF office_id ON public.export_log FOR EACH ROW EXECUTE FUNCTION cmp_office_is_fixed()"
+    },
+    {
+      "table_name": "export_log",
+      "name": "trg_export_log_office_from_parent",
+      "definition": "CREATE TRIGGER trg_export_log_office_from_parent BEFORE INSERT ON public.export_log FOR EACH ROW EXECUTE FUNCTION cmp_office_from_parent('project', 'project_id', 'project_id')"
+    },
+    {
       "table_name": "legal_hold",
       "name": "trg_legal_hold_release_only",
       "definition": "CREATE TRIGGER trg_legal_hold_release_only BEFORE DELETE OR UPDATE ON public.legal_hold FOR EACH ROW EXECUTE FUNCTION cmp_legal_hold_release_only()"
@@ -15202,6 +15656,16 @@
       "table_name": "notice",
       "name": "trg_notice_freeze",
       "definition": "CREATE TRIGGER trg_notice_freeze BEFORE UPDATE ON public.notice FOR EACH ROW EXECUTE FUNCTION cmp_notice_freeze()"
+    },
+    {
+      "table_name": "notice",
+      "name": "trg_notice_office_fixed",
+      "definition": "CREATE TRIGGER trg_notice_office_fixed BEFORE UPDATE OF office_id ON public.notice FOR EACH ROW EXECUTE FUNCTION cmp_office_is_fixed()"
+    },
+    {
+      "table_name": "notice",
+      "name": "trg_notice_office_from_parent",
+      "definition": "CREATE TRIGGER trg_notice_office_from_parent BEFORE INSERT ON public.notice FOR EACH ROW EXECUTE FUNCTION cmp_office_from_parent('project', 'project_id', 'project_id')"
     },
     {
       "table_name": "notice",
@@ -15224,9 +15688,19 @@
       "definition": "CREATE TRIGGER trg_notice_purpose_freeze BEFORE INSERT OR DELETE OR UPDATE ON public.notice_purpose FOR EACH ROW EXECUTE FUNCTION cmp_notice_purpose_freeze()"
     },
     {
+      "table_name": "notice_template",
+      "name": "trg_notice_template_office_fixed",
+      "definition": "CREATE TRIGGER trg_notice_template_office_fixed BEFORE UPDATE OF office_id ON public.notice_template FOR EACH ROW EXECUTE FUNCTION cmp_office_is_fixed()"
+    },
+    {
       "table_name": "person_type_history",
       "name": "trg_person_type_history_append_only",
       "definition": "CREATE TRIGGER trg_person_type_history_append_only BEFORE DELETE OR UPDATE ON public.person_type_history FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
+      "table_name": "project",
+      "name": "trg_project_office_fixed",
+      "definition": "CREATE TRIGGER trg_project_office_fixed BEFORE UPDATE OF office_id ON public.project FOR EACH ROW EXECUTE FUNCTION cmp_office_is_fixed()"
     },
     {
       "table_name": "project",
@@ -15247,6 +15721,11 @@
       "table_name": "project_status_history",
       "name": "trg_project_history_append_only",
       "definition": "CREATE TRIGGER trg_project_history_append_only BEFORE DELETE OR UPDATE ON public.project_status_history FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
+      "table_name": "purpose",
+      "name": "trg_purpose_office_fixed",
+      "definition": "CREATE TRIGGER trg_purpose_office_fixed BEFORE UPDATE OF office_id ON public.purpose FOR EACH ROW EXECUTE FUNCTION cmp_office_is_fixed()"
     },
     {
       "table_name": "purpose",
@@ -15425,6 +15904,9 @@
       "name": "notice_template_template_id_seq"
     },
     {
+      "name": "office_office_id_seq"
+    },
+    {
       "name": "person_type_history_history_id_seq"
     },
     {
@@ -15541,6 +16023,12 @@
       "name": "cmp_notice_purpose_freeze"
     },
     {
+      "name": "cmp_office_from_parent"
+    },
+    {
+      "name": "cmp_office_is_fixed"
+    },
+    {
       "name": "cmp_primary_site_dco"
     },
     {
@@ -15563,13 +16051,13 @@
     }
   ],
   "counts": {
-    "application_tables": 59,
+    "application_tables": 60,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 718,
-    "foreign_keys": 164,
+    "table_columns": 734,
+    "foreign_keys": 173,
     "enums": 39,
-    "triggers": 50,
-    "checks": 94
+    "triggers": 60,
+    "checks": 95
   }
 }

@@ -1078,6 +1078,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/offices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The offices an account can work in */
+        get: operations["list_offices_offices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me": {
         parameters: {
             query?: never;
@@ -8181,6 +8198,8 @@ export interface components {
             source_uuids?: string[];
             /** Processor Uuids */
             processor_uuids?: string[];
+            /** Office Uuid */
+            office_uuid?: string | null;
         };
         /** Dashboard */
         Dashboard: {
@@ -9187,6 +9206,8 @@ export interface components {
             role: string;
             /** Account Role */
             account_role: string;
+            /** Office */
+            office?: string | null;
             /** Person Type */
             person_type: string | null;
             /** Status */
@@ -9599,6 +9620,18 @@ export interface components {
             note?: string | null;
             /** Change Class */
             change_class?: string | null;
+        };
+        /** OfficeOut */
+        OfficeOut: {
+            /**
+             * Office Uuid
+             * Format: uuid
+             */
+            office_uuid: string;
+            /** Office Code */
+            office_code: string;
+            /** Name */
+            name: string;
         };
         /**
          * OrgBoardBriefOut
@@ -10875,6 +10908,8 @@ export interface components {
             role: string;
             /** Reason */
             reason?: string | null;
+            /** Office Uuid */
+            office_uuid?: string | null;
         };
         /** SendBackIn */
         SendBackIn: {
@@ -11675,6 +11710,10 @@ export interface components {
             person_type: string | null;
             /** Status */
             status: string;
+            /** Office Uuid */
+            office_uuid?: string | null;
+            /** Office Name */
+            office_name?: string | null;
             /** Created At */
             created_at: unknown;
             /** Updated At */
@@ -13706,6 +13745,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_offices_offices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfficeOut"][];
                 };
             };
         };

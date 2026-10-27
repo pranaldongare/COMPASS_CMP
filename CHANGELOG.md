@@ -8,6 +8,16 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Offices as tenants** (ADR 0032): every governance record names its office
+  (`rnd`, `hr`); an officer's connection is set to its office and
+  PostgreSQL's row-level security refuses every other office's rows; two
+  roles, Legal PoC and HR PoC, with their dashboard and tickets for now. The
+  administrator names each account's office (`GET /offices`, `office_uuid`
+  on `POST /users` and a role change); `/auth/me` carries the session's
+  office; an audit row records the office of the record it is about, and an
+  officer's trail is filtered on it. The API refuses to start outside
+  local/test as a database user no policy binds. Sessions from before the
+  change end; everyone signs in once more. Migration 0051.
 - **Sign-in as "Light split"** (2026-10-11, chosen from three designs): the
   left 7/12 has COMPASS at the top left, the app's name as a kicker, the
   headline on two lines, the line under it, the dotted world map, and three

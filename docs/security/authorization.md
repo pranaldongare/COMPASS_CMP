@@ -106,6 +106,19 @@ the route is not registered, the matrix has no write grant, the `UPDATE` and
 The Privacy Office is audited by this table. A DPO who can edit her own audit
 trail makes it worthless as evidence.
 
+## Two offices
+
+Since 0051 two offices share the database, and an officer sees only its own
+office's rows ([ADR 0032](../decisions/0032-offices-are-logical-tenants-in-one-database.md),
+[offices-and-tenancy.md](../architecture/offices-and-tenancy.md)). Scope in the
+query remains the mechanism - section 2 above is unchanged, and the DPO's
+`ALL` is compiled into the `WHERE` as before. Behind it, the pool sets
+`app.office` on every connection from the session's office, and PostgreSQL's
+row-level security refuses every other office's rows: a predicate a future
+route forgets returns nothing rather than the other office's register. The
+audit trail, which is not policed, records each row's office and is filtered
+on it for an officer.
+
 ## What a portal opens rests on this
 
 Personal values leave the API sealed, and the portals open them in their own

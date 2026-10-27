@@ -179,6 +179,8 @@ No request body.
       "role": "string",
       "person_type": "…",
       "status": "string",
+      "office_uuid": "…",
+      "office_name": "…",
       "created_at": "string",
       "updated_at": "string",
       "sources": "…",
@@ -243,7 +245,8 @@ Request body required: **yes**.
   ],
   "processor_uuids": [
     "00000000-0000-4000-8000-000000000000"
-  ]
+  ],
+  "office_uuid": "00000000-0000-4000-8000-000000000000"
 }
 ```
 
@@ -267,6 +270,8 @@ Request body required: **yes**.
   "role": "string",
   "person_type": "string",
   "status": "string",
+  "office_uuid": "00000000-0000-4000-8000-000000000000",
+  "office_name": "string",
   "created_at": "string",
   "updated_at": "string",
   "sources": [
@@ -397,6 +402,8 @@ No request body.
   "role": "string",
   "person_type": "string",
   "status": "string",
+  "office_uuid": "00000000-0000-4000-8000-000000000000",
+  "office_name": "string",
   "created_at": "string",
   "updated_at": "string",
   "sources": [
@@ -482,6 +489,8 @@ Request body required: **yes**.
   "role": "string",
   "person_type": "string",
   "status": "string",
+  "office_uuid": "00000000-0000-4000-8000-000000000000",
+  "office_name": "string",
   "created_at": "string",
   "updated_at": "string",
   "sources": [
@@ -612,7 +621,8 @@ Request body required: **yes**.
 ```json
 {
   "role": "string",
-  "reason": "string"
+  "reason": "string",
+  "office_uuid": "00000000-0000-4000-8000-000000000000"
 }
 ```
 
@@ -953,6 +963,7 @@ For state changes whose only interesting output is that they happened.
 | `person_type` | `string` or `null` | No | — | — |
 | `source_uuids` | array of `string` | No | — | — |
 | `processor_uuids` | array of `string` | No | — | — |
+| `office_uuid` | `string` or `null` | No | format: `uuid` | — |
 
 <a id="schema-httpvalidationerror"></a>
 #### `HTTPValidationError`
@@ -977,6 +988,7 @@ For state changes whose only interesting output is that they happened.
 |---|---|---:|---|---|
 | `role` | `string` | Yes | — | — |
 | `reason` | `string` or `null` | No | max length: `500` | — |
+| `office_uuid` | `string` or `null` | No | format: `uuid` | — |
 
 <a id="schema-setprocessors"></a>
 #### `SetProcessors`
@@ -1008,6 +1020,8 @@ For state changes whose only interesting output is that they happened.
 | `role` | `string` | Yes | — | — |
 | `person_type` | `string` or `null` | Yes | — | — |
 | `status` | `string` | Yes | — | — |
+| `office_uuid` | `string` or `null` | No | format: `uuid` | — |
+| `office_name` | `string` or `null` | No | — | — |
 | `created_at` | `object` | Yes | — | — |
 | `updated_at` | `object` | Yes | — | — |
 | `sources` | array of `string` or `null` | No | — | — |

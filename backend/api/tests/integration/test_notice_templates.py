@@ -44,8 +44,9 @@ async def _template(conn: Any, seeded: dict[str, Any], **kw: Any) -> dict[str, A
 
 async def _draft_project(conn: Any, creator_id: int, name: str = "Gait Study Two") -> str:
     cur = await conn.execute(
-        """INSERT INTO project (project_name, description, created_by, project_status)
-           VALUES (%s, 'd', %s, 'in_draft') RETURNING project_uuid""",
+        """INSERT INTO project (project_name, description, created_by, project_status, office_id)
+           VALUES (%s, 'd', %s, 'in_draft',
+               (SELECT office_id FROM office WHERE office_code = 'rnd')) RETURNING project_uuid""",
         (name, creator_id),
     )
     return str((await cur.fetchone())["project_uuid"])

@@ -27,6 +27,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request, Response
 
 from cmp.api.dependencies import Paging, RequireDPOorAdmin, reject_unknown_filters
+from cmp.core.context import current_context
 from cmp.core.csv_safety import text_cell
 from cmp.core.errors import NotFound, ValidationFailed
 from cmp.core.pagination import PageRequest
@@ -217,6 +218,9 @@ async def _filters(
         date_from=date_from,
         date_to=date_to,
         q=q,
+        # The office the request reads in: an officer's own, none for the
+        # administrator (ADR 0032).
+        office=current_context().office,
     )
 
 
@@ -471,7 +475,7 @@ async def verify(
 @router.get("/{log_uuid}", response_model=AuditEntry)
 async def get_entry(log_uuid: UUID, principal: RequireDPOorAdmin) -> dict[str, Any]:
     async with connection() as conn:
-        entry = await repo.by_uuid(conn, str(log_uuid))
+        entry = await repo.by_uuid(conn, str(log_uuid), office=current_context().office)
         if not entry:
             raise NotFound("Audit entry")
         (enriched,) = await entity_repo.attach(conn, [entry], reader_role=principal.role)

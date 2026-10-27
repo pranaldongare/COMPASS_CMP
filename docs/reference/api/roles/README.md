@@ -12,3 +12,5 @@ Generated from `cmp.core.permissions`; denied resources are shown explicitly.
 | `admin` | [Administrator](admin.md) |
 | `data_subject` | [Data Subject](data_subject.md) |
 | `breach_holder` | [Temporary ticket holder](breach_holder.md) |
+| `legal` | [Legal PoC](legal.md) |
+| `hr_user` | [HR PoC](hr_user.md) |

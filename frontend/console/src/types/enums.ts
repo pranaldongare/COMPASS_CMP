@@ -25,7 +25,13 @@ export type Role =
    *  the organisation with no console account, asked to act on a breach or
    *  answer a rights ticket. Reaches only the tickets addressed to it, and is
    *  never given by hand. */
-  | "breach_holder";
+  | "breach_holder"
+  /** Legal PoC: the Legal office's officer, who governs the HR track as the
+   *  DPO governs the R&D track (ADR 0032). */
+  | "legal"
+  /** HR PoC: creates the HR track's consent activities in the categories
+   *  assigned to them (ADR 0033). */
+  | "hr_user";
 
 /** The roles that can be accountable for a data source.
  *

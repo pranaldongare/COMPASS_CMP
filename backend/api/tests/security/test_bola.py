@@ -35,8 +35,9 @@ pytestmark = pytest.mark.integration
 async def _other_rnd_user(conn: Any, seeded: dict[str, Any]) -> dict[str, Any]:
     """A second R&D User who owns nothing in the seeded world."""
     result = await conn.execute(
-        """INSERT INTO auth_user (full_name, email, email_hash, role, status)
-           VALUES ('Other Researcher', 'other.rnd@test.local', %s, 'rnd_user', 'active')
+        """INSERT INTO auth_user (full_name, email, email_hash, role, status, office_id)
+           VALUES ('Other Researcher', 'other.rnd@test.local', %s, 'rnd_user', 'active',
+               (SELECT office_id FROM office WHERE office_code = 'rnd'))
            RETURNING id, uuid""",
         (hashed("email", "other.rnd@test.local"),),
     )
@@ -104,8 +105,9 @@ class TestProjectScope:
         self, conn: Any, seeded: dict[str, Any]
     ) -> None:
         other = await conn.execute(
-            """INSERT INTO auth_user (full_name, email, email_hash, role, status)
-               VALUES ('Other DCO', 'other.dco@test.local', %s, 'dco', 'active')
+            """INSERT INTO auth_user (full_name, email, email_hash, role, status, office_id)
+               VALUES ('Other DCO', 'other.dco@test.local', %s, 'dco', 'active',
+                   (SELECT office_id FROM office WHERE office_code = 'rnd'))
                RETURNING id""",
             (hashed("email", "other.dco@test.local"),),
         )

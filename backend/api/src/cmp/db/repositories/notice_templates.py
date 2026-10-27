@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from cmp.core.offices import OFFICE_ID
 from cmp.db.sql import Conn, Row, execute, fetch_all, fetch_one
 
 TEMPLATE_COLUMNS = """
@@ -38,13 +39,14 @@ async def create(
     applicable_to: str | None,
     note: str | None,
     created_by: int,
+    office: str,
 ) -> Row:
     row = await fetch_one(
         conn,
-        """INSERT INTO notice_template (title, withdraw_url, exercise_rights_url,
-                                        board_complaint_url, dpo_contact, applicable_to,
-                                        note, created_by)
-           VALUES (%s, %s, %s, %s, %s, %s::notice_audience, %s, %s)
+        f"""INSERT INTO notice_template (title, withdraw_url, exercise_rights_url,
+                                         board_complaint_url, dpo_contact, applicable_to,
+                                         note, created_by, office_id)
+           VALUES (%s, %s, %s, %s, %s, %s::notice_audience, %s, %s, {OFFICE_ID})
            RETURNING template_id""",
         (
             title,
@@ -55,6 +57,7 @@ async def create(
             applicable_to,
             note,
             created_by,
+            office,
         ),
     )
     assert row is not None

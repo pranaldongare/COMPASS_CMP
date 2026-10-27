@@ -252,6 +252,11 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
     "import_batch": {
         "file_name": DataType.FILE_NAME,
     },
+    # How an office is reached (0051): a person's address or number as often
+    # as a shared one.
+    "office": {
+        "contact": DataType.CONTACT,
+    },
 }
 
 #: The sealed columns the platform finds rows by, and the blind index beside

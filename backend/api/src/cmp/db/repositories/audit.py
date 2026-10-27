@@ -110,6 +110,18 @@ class AuditFilters:
     #: the actor and the subject. Not indexed; narrow the dates first on a
     #: large trail.
     q: str | None = None
+    #: The reader's office (ADR 0032): its rows, and the rows about no office
+    #: - accounts, sign-ins, history from before the offices - which both
+    #: officers read. None for a reader across both, the administrator.
+    office: str | None = None
+
+
+def office_clause(office: str | None) -> tuple[str, list[Any]]:
+    """The trail as one office reads it. The rows are not policed - the chain
+    is one - so the office each row recorded is compared here."""
+    if office is None:
+        return "TRUE", []
+    return "(l.detail_json ->> 'office' = %s OR l.detail_json ->> 'office' IS NULL)", [office]
 
 
 def _like(term: str) -> str:
@@ -118,8 +130,8 @@ def _like(term: str) -> str:
 
 
 def _where(f: AuditFilters) -> tuple[str, list[Any]]:
-    where: list[str] = ["1 = 1"]
-    params: list[Any] = []
+    clause, params = office_clause(f.office)
+    where: list[str] = [clause]
     if f.actor_uuid:
         where.append("actor.uuid = %s")
         params.append(f.actor_uuid)
@@ -238,8 +250,11 @@ async def export_rows(conn: Conn, filters: AuditFilters, *, limit: int = EXPORT_
     )
 
 
-async def by_uuid(conn: Conn, log_uuid: str) -> Row | None:
-    return await fetch_one(conn, f"SELECT {_SELECT}{_FROM} WHERE l.log_uuid = %s", (log_uuid,))
+async def by_uuid(conn: Conn, log_uuid: str, *, office: str | None = None) -> Row | None:
+    clause, params = office_clause(office)
+    return await fetch_one(
+        conn, f"SELECT {_SELECT}{_FROM} WHERE l.log_uuid = %s AND {clause}", (log_uuid, *params)
+    )
 
 
 async def for_subject(conn: Conn, subject_user_id: int, *, limit: int = 50) -> list[Row]:
@@ -531,19 +546,23 @@ async def for_consent(conn: Conn, consent_ids: Sequence[int], *, limit: int = 10
     )
 
 
-async def recent(conn: Conn, *, limit: int = 15, event_type: str | None = None) -> list[Row]:
+async def recent(
+    conn: Conn, *, limit: int = 15, event_type: str | None = None, office: str | None = None
+) -> list[Row]:
     """The latest entries across every project.
 
-    Unscoped, so only for callers who already read every row — a DPO and an
-    administrator. There is no `user_id` parameter, and there should not be one:
-    a scoped feed is `for_projects`, and a function that could do either
-    depending on an argument is a function somebody will call with the wrong
-    argument.
+    Unscoped within an office, so only for callers who already read every row
+    of theirs — a DPO and an administrator. There is no `user_id` parameter,
+    and there should not be one: a scoped feed is `for_projects`, and a
+    function that could do either depending on an argument is a function
+    somebody will call with the wrong argument. `office` is the reader's.
     """
-    clause = "WHERE l.event_type = %s" if event_type else ""
-    params: list[Any] = [event_type] if event_type else []
+    clause, params = office_clause(office)
+    if event_type:
+        clause += " AND l.event_type = %s"
+        params.append(event_type)
     return await fetch_all(
         conn,
-        f"SELECT {_SELECT}{_FROM} {clause} ORDER BY l.occurred_at DESC LIMIT %s",
+        f"SELECT {_SELECT}{_FROM} WHERE {clause} ORDER BY l.occurred_at DESC LIMIT %s",
         [*params, limit],
     )

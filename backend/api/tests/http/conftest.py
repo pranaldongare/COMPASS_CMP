@@ -106,6 +106,7 @@ async def session_for(db_pool: Any, redis_conn: Any) -> SessionFactory:
     from cmp.auth.sessions import service as sessions
     from cmp.core.security import hash_password
     from cmp.db.repositories import users as user_repo
+    from tests.conftest import office_of
 
     async def make(
         role: str,
@@ -135,6 +136,7 @@ async def session_for(db_pool: Any, redis_conn: Any) -> SessionFactory:
                     if role == "data_subject"
                     else hash_password("HttpSuite!2026"),
                     dob=dob,
+                    office=office_of(role),
                 )
         token, session = await sessions.create(
             user_id=int(user["id"]),
@@ -143,6 +145,8 @@ async def session_for(db_pool: Any, redis_conn: Any) -> SessionFactory:
             ip_address="127.0.0.1",
             user_agent="http-suite",
             mfa_verified=True,
+            # As a staff sign-in would: the office on the account (ADR 0032).
+            office=user.get("office_code") if role == user["role"] else None,
         )
         return Session(dict(user), token, session.csrf_token)
 

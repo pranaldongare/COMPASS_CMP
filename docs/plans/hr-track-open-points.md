@@ -35,6 +35,21 @@ _(date · increment · the call made · why · what would change it)_
 | A-7 | 1 | Both new roles get the own-ticket grants (`ticket`, `breach_ticket`: OWN + write) every staff role holds | The navigation row `("dashboard", *PERSONAL)` puts Tickets in their menu; without the grant the matrix-integrity test fails and HR-E8/E9 cannot run | - |
 | A-8 | 1 | The UAT cases live in `docs/uat/hr-track-uat-cases.md`, beside the existing UAT pack, not under `docs/operations/` | The repository keeps UAT in `docs/uat/` | - |
 
+### Made during increment 1 (2026-10-27)
+
+| # | The call | Why | What would change it |
+|---|---|---|---|
+| A-9 | `notice_template_language` and `notice_template_purpose` are policed through `notice_template`; the architecture page now lists them | The page listed only the template; its text and purposes would otherwise be readable across the wall | - |
+| A-10 | `asset_consent` is policed through `data_asset` → `collection` → `project`, not through the consent | Half the rows record an asset whose consent is not known (`consent_id` NULL) | - |
+| A-11 | A record's office never changes once written (`cmp_office_is_fixed`, every office-bearing table but `rights_request`) | The policy stops an officer moving a row; nothing stopped a session reading both. Increment 7 opens `rights_request` (and `breach`, if a breach can move) by claim and transfer | A breach transfer in increment 7 |
+| A-12 | The audit row's office is found in the same `INSERT` from the record it names (`_OFFICE_ID_OF`); `office_of=` names another record when the entity is gone (a detached purpose: its notice). Rows recorded against entity id 0 (an import validated before a batch exists, the link sweep) carry no office and are read by both officers. Account events carry `account_office`, not `office` | One round trip per row; `office` in `detail_json` means "whose record", which an account is not | - |
+| A-13 | Until increment 8, the Legal PoC's and the HR PoC's dashboard is their tickets, as a breach-only login's is | The dashboard refused any role it did not know (403 on first paint) | Increment 8 |
+| A-14 | `GET /offices` is open to any staff session; the console offers the office on account creation and on a role change, with an empty choice ("no office" / "keep") and the server's refusal naming the field | The picker needs the list; which roles need an office is the server's rule, not the console's | - |
+| A-15 | Every existing creation path (projects, purposes, the DPO's templates, breaches, rights requests) writes `rnd` explicitly, not the caller's office | They are the R&D track's paths; the HR track's arrive with their own services and write `hr`. A Legal PoC cannot reach them yet | Increments 2, 4 and 7, which add the `hr` paths |
+| A-16 | The local `.env` was left as it is; `.env.example` now lists `legal` and `hr_user` in `MFA_REQUIRED_ROLES` | `.env` is the developer's own file | The developer adds them, or the HR roles sign in locally without a second factor |
+| A-17 | The office is reset by `connection()` and `transaction()` themselves on the way out (`_forget_office`), not by the pool's `reset=` callback the plan names | `psycopg_pool` runs a `reset` callback on a worker task of the loop that opened the pool; the suite gives each test its own loop around one pool, so returned connections never came back (every test after the first timed out). Inline, tests and production run the same path | - |
+| A-18 | `data_source` (its `site_id`) and `nomination` (its `invoked_request_id`) reference policed tables and stay unpoliced, as the architecture page lists them; the parity test names each with its reason | The registry and a person's nominee are shared by both offices | - |
+
 ### Found in analysis, for later increments (owner to answer before that increment)
 
 | # | Increment | Finding | Owner | Until settled, the agent |

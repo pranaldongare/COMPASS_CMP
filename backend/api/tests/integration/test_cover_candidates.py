@@ -14,7 +14,7 @@ from typing import Any
 import pytest
 
 from cmp.db.repositories import delegations as repo
-from tests.conftest import hashed
+from tests.conftest import hashed, office_of
 
 pytestmark = pytest.mark.integration
 
@@ -22,9 +22,10 @@ pytestmark = pytest.mark.integration
 async def _staff(conn: Any, role: str, email: str, status: str = "active") -> Any:
     return await (
         await conn.execute(
-            """INSERT INTO auth_user (full_name, email, email_hash, role, status)
-               VALUES (%s, %s, %s, %s::user_role, %s::user_status) RETURNING id, uuid""",
-            (f"Colleague {email}", email, hashed("email", email), role, status),
+            """INSERT INTO auth_user (full_name, email, email_hash, role, status, office_id)
+               VALUES (%s, %s, %s, %s::user_role, %s::user_status,
+                       (SELECT office_id FROM office WHERE office_code = %s)) RETURNING id, uuid""",
+            (f"Colleague {email}", email, hashed("email", email), role, status, office_of(role)),
         )
     ).fetchone()
 

@@ -350,7 +350,83 @@ class Event:
 _INSERT = """
 INSERT INTO audit_log (event_type, actor_user_id, subject_user_id,
                        entity_type, entity_id, detail_json)
-VALUES (%s, %s, %s, %s, %s, %s)
+VALUES (%(event)s, %(actor)s, %(subject)s, %(entity_type)s, %(entity_id)s, %(detail)s)
+RETURNING log_id, log_uuid, occurred_at
+"""
+
+#: The office of the record an event is about, by the record's table: the
+#: query that finds its `office_id` from the id the row names (ADR 0032).
+#: The trail is one chain and is not policed, so each row says whose it is,
+#: and an officer's read of it is filtered on that. The office is the
+#: record's, not the actor's: a consent captured on the Legal office's link
+#: by a data principal is on Legal's trail, and an administrator's change to
+#: a DPO-office record is on the DPO's. A table that is not here - accounts,
+#: the registry of processors and sources, messages - belongs to no office,
+#: and its rows are read by both officers.
+_OFFICE_ID_OF: Final[dict[str, str]] = {
+    "project": "SELECT office_id FROM project WHERE project_id = %(id)s",
+    "purpose": "SELECT office_id FROM purpose WHERE purpose_id = %(id)s",
+    "notice_template": "SELECT office_id FROM notice_template WHERE template_id = %(id)s",
+    "notice": "SELECT office_id FROM notice WHERE notice_id = %(id)s",
+    "consent_link": "SELECT office_id FROM consent_link WHERE link_id = %(id)s",
+    "export_log": "SELECT office_id FROM export_log WHERE export_id = %(id)s",
+    "breach": "SELECT office_id FROM breach WHERE breach_id = %(id)s",
+    "rights_request": "SELECT office_id FROM rights_request WHERE request_id = %(id)s",
+    "project_site": """SELECT p.office_id FROM project_site s JOIN project p USING (project_id)
+                       WHERE s.site_id = %(id)s""",
+    "project_approval": """SELECT p.office_id FROM project_approval a
+                           JOIN project p USING (project_id) WHERE a.approval_id = %(id)s""",
+    "project_status_history": """SELECT p.office_id FROM project_status_history h
+                                 JOIN project p USING (project_id) WHERE h.history_id = %(id)s""",
+    "import_batch": """SELECT p.office_id FROM import_batch b JOIN project p USING (project_id)
+                       WHERE b.batch_id = %(id)s""",
+    "collection": """SELECT p.office_id FROM collection c JOIN project p USING (project_id)
+                     WHERE c.collection_id = %(id)s""",
+    "data_asset": """SELECT p.office_id FROM data_asset a
+                     JOIN collection c USING (collection_id) JOIN project p USING (project_id)
+                     WHERE a.asset_id = %(id)s""",
+    "asset_consent": """SELECT p.office_id FROM asset_consent ac
+                        JOIN data_asset a USING (asset_id)
+                        JOIN collection c USING (collection_id) JOIN project p USING (project_id)
+                        WHERE ac.asset_consent_id = %(id)s""",
+    # A hold on an asset is that asset's office's; a hold on a person is no
+    # office's.
+    "legal_hold": """SELECT p.office_id FROM legal_hold h
+                     JOIN data_asset a USING (asset_id)
+                     JOIN collection c USING (collection_id) JOIN project p USING (project_id)
+                     WHERE h.hold_id = %(id)s""",
+    "notice_purpose": """SELECT n.office_id FROM notice_purpose np JOIN notice n USING (notice_id)
+                         WHERE np.notice_purpose_id = %(id)s""",
+    "notice_language": """SELECT n.office_id FROM notice_language nl JOIN notice n USING (notice_id)
+                          WHERE nl.notice_language_id = %(id)s""",
+    "consent_artefact": """SELECT l.office_id FROM consent_artefact ca
+                           JOIN consent_link l USING (link_id) WHERE ca.consent_id = %(id)s""",
+    "consent_purpose_grant": """SELECT l.office_id FROM consent_purpose_grant g
+                                JOIN consent_artefact ca USING (consent_id)
+                                JOIN consent_link l USING (link_id) WHERE g.grant_id = %(id)s""",
+    "export_line": """SELECT e.office_id FROM export_line x JOIN export_log e USING (export_id)
+                      WHERE x.line_id = %(id)s""",
+    "rights_request_holder": """SELECT r.office_id FROM rights_request_holder h
+                                JOIN rights_request r USING (request_id)
+                                WHERE h.holder_id = %(id)s""",
+    "rights_request_item": """SELECT r.office_id FROM rights_request_item i
+                              JOIN rights_request r USING (request_id) WHERE i.item_id = %(id)s""",
+    "breach_notice": """SELECT b.office_id FROM breach_notice n JOIN breach b USING (breach_id)
+                        WHERE n.notice_id = %(id)s""",
+    "breach_ticket": """SELECT b.office_id FROM breach_ticket t JOIN breach b USING (breach_id)
+                        WHERE t.ticket_id = %(id)s""",
+}
+
+#: The same insert, with the office found in the same statement: one round
+#: trip, and the office the row records is the one the database holds.
+_INSERT_WITH_OFFICE = """
+INSERT INTO audit_log (event_type, actor_user_id, subject_user_id,
+                       entity_type, entity_id, detail_json)
+SELECT %(event)s, %(actor)s, %(subject)s, %(entity_type)s, %(entity_id)s,
+       CASE WHEN o.office_code IS NULL THEN %(detail)s
+            ELSE %(detail)s || jsonb_build_object('office', o.office_code) END
+  FROM (SELECT (SELECT f.office_code FROM office f WHERE f.office_id = ({lookup}))
+               AS office_code) o
 RETURNING log_id, log_uuid, occurred_at
 """
 
@@ -364,12 +440,17 @@ async def record(
     subject_user_id: int | None = None,
     actor_user_id: int | None = None,
     detail: dict[str, Any] | None = None,
+    office_of: tuple[str, int] | None = None,
 ) -> dict[str, Any]:
     """Write one audit row on the caller's connection, inside the caller's transaction.
 
     `actor_user_id` defaults to the authenticated actor from the request context.
     Pass it explicitly only where there is no request - a Celery beat sweep acts
     as the system, and a system action has no actor rather than a fake one.
+
+    The row records the office of the record it is about (`_OFFICE_ID_OF`).
+    `office_of` names that record when it is not the entity itself - a row
+    about something just deleted, whose office is its parent's.
     """
     if entity_type not in ENTITY_TYPES:
         # A programming error, and one that silently corrupts the DSAR query if
@@ -391,10 +472,20 @@ async def record(
         # "did this known address appear" - and nothing else. ADR 0015.
         payload.setdefault("ip", index_of("ip", ctx.ip_address))
 
+    office_type, office_id = office_of or (entity_type, entity_id)
+    lookup = _OFFICE_ID_OF.get(office_type) if "office" not in payload else None
     row = await fetch_one(
         conn,
-        _INSERT,
-        (event, actor, subject_user_id, entity_type, entity_id, Jsonb(payload)),
+        _INSERT_WITH_OFFICE.format(lookup=lookup) if lookup else _INSERT,
+        {
+            "event": event,
+            "actor": actor,
+            "subject": subject_user_id,
+            "entity_type": entity_type,
+            "entity_id": entity_id,
+            "detail": Jsonb(payload),
+            "id": office_id,
+        },
     )
     assert row is not None  # RETURNING on a successful INSERT always yields a row
 

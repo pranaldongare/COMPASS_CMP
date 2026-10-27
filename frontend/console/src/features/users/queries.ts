@@ -5,10 +5,23 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { getUser, listPersonTypeHistory, listStaff, listUsers } from "@/features/users/api";
+import {
+  getUser,
+  listOffices,
+  listPersonTypeHistory,
+  listStaff,
+  listUsers,
+} from "@/features/users/api";
 import type { ApiError } from "@/lib/errors";
 import { keys } from "@/lib/query";
-import type { Page, PersonTypeHistoryEntry, StaffMember, User, Uuid } from "@/types";
+import type {
+  Office,
+  Page,
+  PersonTypeHistoryEntry,
+  StaffMember,
+  User,
+  Uuid,
+} from "@/types";
 
 export function useUsers(filters: Record<string, unknown> = {}) {
   return useQuery<Page<User>, ApiError>({
@@ -22,6 +35,15 @@ export function useStaff(enabled = true) {
     queryKey: keys.users.staff,
     queryFn: listStaff,
     enabled,
+  });
+}
+
+/** The two offices (ADR 0032). Rows, not a constant: a third is an INSERT. */
+export function useOffices() {
+  return useQuery<Office[], ApiError>({
+    queryKey: keys.users.offices,
+    queryFn: listOffices,
+    staleTime: Infinity,
   });
 }
 

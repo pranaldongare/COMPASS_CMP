@@ -42,6 +42,7 @@ The API (`_production_guards` in `core/config.py`):
 | `SMS_TRANSPORT` is not `http` | The same, for the data principal's primary sign-in; and `SMS_HTTP_URL` must be `https://` |
 | `DKMS_ENABLED` is false | Personal data would be written in the clear, and nothing would ever report it |
 | `BLIND_INDEX_KEY` starts `dev-only` or is under 32 bytes | Every lookup hash could be recomputed by anyone holding this repository |
+| The database user (`POSTGRES_USER`) is a superuser or holds `BYPASSRLS` | No row-level security policy binds such a role, so the wall between the offices would stand in the schema and stop nothing ([ADR 0032](../decisions/0032-offices-are-logical-tenants-in-one-database.md)). Checked against the live database at startup, outside `local` and `test` |
 | `BREACH_TICKET_EMAIL_DOMAINS` is empty or only `cmp.local` | "Internal" is only as good as the list: empty, nobody could hold a breach ticket; the development domain alone, nobody real could (S3-08). The organisation's own list is needed before production (decided 2026-10-06) |
 
 In any environment, the API and the worker also refuse `STORAGE_BACKEND=object`:
@@ -68,7 +69,8 @@ boot: the second failure is loud and costs ten minutes.
 | Redis / Celery | `REDIS_URL`, `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND`: three logical databases, so a broker flush does not drop sessions |
 | Session | 8h absolute, 30min idle; HttpOnly, Secure, SameSite=Lax |
 | Lockout | 5 attempts / 30 min window / 30 min lockout, per account however it is named (`LOGIN_*`). Per address: `AUTH_FAILURES_PER_ADDRESS` 30 failed attempts across every account in `AUTH_FAILURES_WINDOW_S` 900, at staff sign-in, code sign-in and password reset; successes do not count |
-| OTP & MFA | 6 digits, 10 minutes, 5 verify attempts; MFA codes live 5 minutes; `MFA_REQUIRED_ROLES` defaults to every staff role ([ADR 0006](../decisions/0006-mfa-for-every-staff-role.md)) |
+| OTP & MFA | 6 digits, 10 minutes, 5 verify attempts; MFA codes live 5 minutes; `MFA_REQUIRED_ROLES` defaults to every staff role ([ADR 0006](../decisions/0006-mfa-for-every-staff-role.md)). An environment that lists the roles must list `legal` and `hr_user` too (0051), or those two sign in with a password alone |
+| Offices | nothing to configure: the two offices are rows in `office`; the setting `app.office` is the pool's, never an environment variable |
 | Provisioning | `STAFF_INVITE_TTL_H` 48 — how long the code in a staff invitation lasts, in hours. It is the reset flow's own code, so an expired invitation needs no separate path: "Forgotten your password?" sends a working replacement |
 | URLs | `PUBLIC_BASE_URL` (the data-principal portal, port 3001: consent and acceptance links, and an outside holder's ticket link) and `CONSOLE_BASE_URL` (the staff console, port 3000: ticket and request links) |
 | Messages | `ORGANISATION_NAME`, the `{organisation}` every message may name and the sender's name; the words themselves are edited in the console ([messages.md](../domain/messages.md)) |

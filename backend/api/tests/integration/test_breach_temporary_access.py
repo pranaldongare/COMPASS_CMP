@@ -252,12 +252,17 @@ async def test_a_promotion_meanwhile_is_left_alone_and_keeps_the_ticket(
     uuid = await _recorded(conn, seeded)
     made = await _by_email(conn, seeded, uuid, "subject@test.local")
     holder = await _account(conn, "subject@test.local")
+    rnd = await (
+        await conn.execute("SELECT office_uuid FROM office WHERE office_code = 'rnd'")
+    ).fetchone()
     await users.change_role(
         conn,
         str(holder["uuid"]),
         role="dco",
         reason="Joined the team",
         actor_id=int(seeded["users"]["admin"]["id"]),
+        # A collection owner works in the DPO office (0051).
+        office_uuid=str(rnd["office_uuid"]),
     )
     await _close_breach(conn, seeded, uuid)
     assert (await _account(conn, "subject@test.local"))["role"] == "dco"

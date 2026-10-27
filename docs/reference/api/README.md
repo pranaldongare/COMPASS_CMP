@@ -1,6 +1,6 @@
 # API documentation
 
-Reference for **336 operations over 295 paths**, grouped by OpenAPI module/tag.
+Reference for **337 operations over 296 paths**, grouped by OpenAPI module/tag.
 
 ## How to read an endpoint
 
@@ -32,6 +32,7 @@ Generated values are structural examples, not production credentials or semantic
 | Messages | 6 | [`modules/messages/api.md`](modules/messages/api.md) |
 | Notice Templates | 10 | [`modules/notice_templates/api.md`](modules/notice_templates/api.md) |
 | Notices | 24 | [`modules/notices/api.md`](modules/notices/api.md) |
+| Offices | 1 | [`modules/offices/api.md`](modules/offices/api.md) |
 | Projects | 27 | [`modules/projects/api.md`](modules/projects/api.md) |
 | Public Consent | 6 | [`modules/public_consent/api.md`](modules/public_consent/api.md) |
 | Public Information | 10 | [`modules/public_information/api.md`](modules/public_information/api.md) |

@@ -1,10 +1,13 @@
 # Roles and access
 
-Eight roles. Six are staff and sign in on the console with a password and an
-emailed code; the seventh is the data principal, who signs in on the portal
-with a code alone; the eighth, the temporary ticket holder, is a temporary
+Ten roles. Eight are staff and sign in on the console with a password and an
+emailed code; the ninth is the data principal, who signs in on the portal
+with a code alone; the tenth, the temporary ticket holder, is a temporary
 login for a breach ticket (S3-09) or a rights ticket (0049) that signs in
-like staff but reaches nothing except the tickets addressed to it. What each
+like staff but reaches nothing except the tickets addressed to it. Two of the
+staff roles, the Legal PoC and the HR PoC, belong to the HR track and the
+Legal office ([ADR 0032](../decisions/0032-offices-are-logical-tenants-in-one-database.md));
+until their increments land they reach their dashboard and their tickets. What each
 may reach is a static matrix in `backend/api/src/cmp/core/permissions.py`,
 consulted before any work is done,
 and the rows each may see are a scope compiled into every query.
@@ -20,6 +23,8 @@ and the rows each may see are a scope compiled into every query.
 | Research Collection Owner | `rco` | A DCO for in-house collection | The same as a DCO, restricted to the organisation's own sources and sites: the in-house teams the administrator assigned them |
 | R&D User | `rnd_user` | Owns a study | Registers the project, names the collectors, brings the notice as a filled-in document, a copy of an approved one, or from a notice template by its ID, uploads approval proofs, asks to add a collector after approval |
 | Data principal | `data_subject` | The person the data is about | Reads and withdraws her consents, sees her disclosures, makes and follows rights requests, names a nominee |
+| Legal PoC | `legal` | The Legal office | Governs the HR track: categories, HR purposes, templates and their versions, the category's processors; sees every HR register and the HR audit trail; runs the HR track's rights queue, breaches and legal holds |
+| HR PoC | `hr_user` | An HR point of contact | Creates activities in the categories assigned to them from an approved template version, chooses purposes, writes the description, mints and shares the open link, watches the activity's register by name, exports the consented list, answers tickets addressed to them |
 | Temporary ticket holder | `breach_holder` | Somebody inside the organisation, with no console login, asked to act on a breach or - since 0049 - to answer a rights ticket | Answers the breach and rights tickets addressed to them, and brings colleagues into a breach ticket; nothing else. Never given by hand: set when the DPO (or a holder) asks them by email, or a rights ticket is sent to their internal address; the administrator's End temporary access is the off switch ([ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)) |
 
 ## The matrix
@@ -106,6 +111,26 @@ another person's ticket is 404. Holding one opens the ticket and nothing of the
 register: the managing routes stay under `breach`, and answer every holder but
 the DPO 404 ([ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)).
 
+## Two offices
+
+An officer's `ALL` is the office's all. The DPO and the Legal PoC hold the
+same kind of grant on the same resources; which rows those grants reach is
+decided by the office on the account (`auth_user.office_id`), applied as the
+`app.office` setting on every connection and enforced by row-level security
+([offices-and-tenancy.md](../architecture/offices-and-tenancy.md)). Every role
+but the administrator works in one office - the DPO and the R&D track's
+authors and collection owners in the DPO office (`rnd`), the Legal PoC and
+the HR PoC in the Legal office (`hr`) - and the administrator, a data
+principal and a temporary ticket holder work across both, bounded by the
+matrix, the account or the ticket. An HR PoC's scope within the HR office is
+the categories assigned to them (`hr_poc_category`), compiled into the query
+as a collection owner's sites are.
+
+Both new roles hold, for now, what every staff role holds: `ticket` and
+`breach_ticket`, OWN + write. Their registers' grants arrive with the
+increments that build them
+([hr-track-implementation-plan.md](../plans/hr-track-implementation-plan.md)).
+
 ## Navigation
 
 The console draws its navigation from `GET /auth/me`, which returns the
@@ -120,6 +145,7 @@ matrix, so it cannot drift into showing a button that answers 403.
 | R&D User | dashboard, projects, notices, processors, approvals, imports, collections, tickets, notifications, profile |
 | Data principal | consents, requests, notifications, profile |
 | Temporary ticket holder | tickets, notifications, profile |
+| Legal PoC, HR PoC | dashboard, tickets, notifications, profile |
 
 A temporary ticket holder has no dashboard: the console sends it from
 `/dashboard` to **My tasks**, reading `nav` rather than its role.
@@ -140,6 +166,7 @@ daily destinations in the order the work runs (`DAILY_WORK` in
 | DCO Admin | Dashboard, Collection sites, Data sources, My tasks, Consent links, Projects |
 | DCO, RCO | Dashboard, My projects, Collection sites, Consent links, My tasks, Collections |
 | Administrator | Dashboard, Users, Grievances about the DPO, Message templates, Processors, Data sources, Audit trail |
+| Legal PoC, HR PoC | Dashboard, My tasks |
 
 Profile and notifications are not in the sidebar: the account menu holds
 **My profile** and sign-out, and the bell opens notifications. Pages are

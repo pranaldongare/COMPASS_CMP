@@ -64,8 +64,9 @@ async def _fresh_project(conn: Any, seeded: dict[str, Any], name: str) -> dict[s
 
     return await fetch_one(
         conn,
-        """INSERT INTO project (project_name, description, created_by, project_status)
-           VALUES (%s, 'imported', %s, 'in_draft')
+        """INSERT INTO project (project_name, description, created_by, project_status, office_id)
+           VALUES (%s, 'imported', %s, 'in_draft',
+               (SELECT office_id FROM office WHERE office_code = 'rnd'))
            RETURNING project_id, project_uuid""",
         (name, seeded["users"]["rnd_user"]["id"]),
     )

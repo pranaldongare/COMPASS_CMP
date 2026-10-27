@@ -27,6 +27,9 @@ export interface Me {
    *  `data_subject`; on this console the two are always equal. */
   account_role: Role;
   role: Role;
+  /** The office this session reads and writes in (ADR 0032): `rnd` or `hr`;
+   *  null for the administrator, who works across both. */
+  office?: string | null;
   person_type: PersonType | null;
   status: UserStatus;
   /** ISO date. Null on accounts registered through a consent link, which never
@@ -107,10 +110,22 @@ export interface User {
   role: Role;
   person_type: PersonType | null;
   status: UserStatus;
+  /** The office the account works in (ADR 0032); null for a role that works
+   *  across both - the administrator, a data principal, a breach-only login. */
+  office_uuid?: Uuid | null;
+  office_name?: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
   /** A DCO's or an RCO's processors (0050), on one account's page only. */
   processors?: CollectorProcessor[] | null;
+}
+
+/** A governance office (ADR 0032): the DPO office or the Legal office. Every
+ *  role but the administrator works in one. */
+export interface Office {
+  office_uuid: Uuid;
+  office_code: string;
+  name: string;
 }
 
 /** A processor a DCO or an RCO collects for: they see its data sources, and

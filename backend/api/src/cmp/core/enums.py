@@ -41,6 +41,10 @@ class UserRole(StrEnum):
     RCO = "rco"
     #: A breach-only login (S3-09): its own breach tickets, nothing else.
     BREACH_HOLDER = "breach_holder"
+    #: The Legal office's officer (0051, ADR 0032).
+    LEGAL = "legal"
+    #: An HR point of contact (0051, ADR 0033).
+    HR_USER = "hr_user"
 
 
 class PersonType(StrEnum):

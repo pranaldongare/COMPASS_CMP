@@ -107,6 +107,10 @@ const ROLE: Record<Role, { tone: Tone; label: string }> = {
   admin: { tone: "warning", label: "Administrator" },
   data_subject: { tone: "neutral", label: "Data Subject" },
   breach_holder: { tone: "neutral", label: "Temporary ticket holder" },
+  // The Legal office's officer holds the DPO's kind of authority on its own
+  // track, so it shares the DPO's tone; an HR PoC, an author's.
+  legal: { tone: "accent", label: "Legal PoC" },
+  hr_user: { tone: "neutral", label: "HR PoC" },
 };
 
 const REGISTRY: Record<string, Record<string, { tone: Tone; label: string }>> = {

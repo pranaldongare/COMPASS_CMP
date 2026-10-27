@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict AWgsGfDYRx8weGuHa4XfLhba7TgAldKSL3VCvM2MOxAqHydOOfsRpUVmw08bgaV
+\restrict 82gCa3NKoDJN5G0f9KvYtA25nI38FNxwpm9afy9ZwRgPBJiwrY9FsxqNcfwt0wq
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -510,7 +510,9 @@ CREATE TYPE public.user_role AS ENUM (
     'data_subject',
     'dco_admin',
     'rco',
-    'breach_holder'
+    'breach_holder',
+    'legal',
+    'hr_user'
 );
 
 
@@ -1068,6 +1070,50 @@ $$;
 
 
 --
+-- Name: cmp_office_from_parent(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_office_from_parent() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $_$
+DECLARE
+  parent_office int;
+BEGIN
+  EXECUTE format('SELECT office_id FROM %I WHERE %I = $1', TG_ARGV[0], TG_ARGV[2])
+    INTO parent_office USING (to_jsonb(NEW) ->> TG_ARGV[1])::int;
+  IF parent_office IS NULL THEN
+    RAISE EXCEPTION '%: its % is not one this session can see', TG_TABLE_NAME, TG_ARGV[0]
+      USING ERRCODE = 'foreign_key_violation';
+  END IF;
+  IF NEW.office_id IS NULL THEN
+    NEW.office_id := parent_office;
+  ELSIF NEW.office_id <> parent_office THEN
+    RAISE EXCEPTION '%: its office must be its %''s', TG_TABLE_NAME, TG_ARGV[0]
+      USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NEW;
+END;
+$_$;
+
+
+--
+-- Name: cmp_office_is_fixed(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_office_is_fixed() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF NEW.office_id IS DISTINCT FROM OLD.office_id THEN
+    RAISE EXCEPTION '%: a record''s office never changes', TG_TABLE_NAME
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+--
 -- Name: cmp_primary_site_dco(integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1298,6 +1344,8 @@ CREATE TABLE public.asset_consent (
     CONSTRAINT consent_matches_role CHECK ((((subject_role = 'consented'::public.subject_role) AND (consent_id IS NOT NULL)) OR ((subject_role <> 'consented'::public.subject_role) AND (consent_id IS NULL))))
 );
 
+ALTER TABLE ONLY public.asset_consent FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: asset_consent_asset_consent_id_seq; Type: SEQUENCE; Schema: public; Owner: -
@@ -1386,8 +1434,10 @@ CREATE TABLE public.auth_user (
     organization_id_hash text,
     minor_until date,
     full_name_ngrams text[],
+    office_id integer,
     CONSTRAINT auth_user_email_indexed CHECK (((email IS NULL) OR (email_hash IS NOT NULL))),
     CONSTRAINT auth_user_mobile_indexed CHECK (((mobile IS NULL) OR (mobile_hash IS NOT NULL))),
+    CONSTRAINT auth_user_office_by_role CHECK (((office_id IS NOT NULL) = (role = ANY (ARRAY['dpo'::public.user_role, 'legal'::public.user_role, 'rnd_user'::public.user_role, 'dco'::public.user_role, 'rco'::public.user_role, 'dco_admin'::public.user_role, 'hr_user'::public.user_role])))),
     CONSTRAINT auth_user_organization_id_indexed CHECK (((organization_id IS NULL) OR (organization_id_hash IS NOT NULL))),
     CONSTRAINT auth_user_secondary_email_differs CHECK (((secondary_email_hash IS NULL) OR (email_hash IS NULL) OR (secondary_email_hash <> email_hash))),
     CONSTRAINT auth_user_secondary_email_indexed CHECK (((secondary_email IS NULL) OR (secondary_email_hash IS NOT NULL))),
@@ -1429,6 +1479,13 @@ COMMENT ON COLUMN public.auth_user.secondary_email_verified_at IS 'When a code s
 --
 
 COMMENT ON COLUMN public.auth_user.minor_until IS 'The date this person stops being a child under s.9: date of birth plus eighteen years. Kept in the clear so the test stays a comparison; dob itself is sealed';
+
+
+--
+-- Name: COLUMN auth_user.office_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.auth_user.office_id IS 'The office this account works in; NULL for the administrator, a data principal and a breach-only login';
 
 
 --
@@ -1480,12 +1537,15 @@ CREATE TABLE public.breach (
     entities_involved text,
     third_parties text,
     cyber_attack character varying(8),
+    office_id integer NOT NULL,
     CONSTRAINT breach_began_before_detected CHECK (((began_at IS NULL) OR (began_at <= detected_at))),
     CONSTRAINT breach_cyber_attack CHECK (((cyber_attack)::text = ANY ((ARRAY['yes'::character varying, 'no'::character varying, 'unknown'::character varying])::text[]))),
     CONSTRAINT breach_location_kind CHECK (((location_kind)::text = ANY ((ARRAY['platform'::character varying, 'processor'::character varying, 'data_source'::character varying, 'other'::character varying])::text[]))),
     CONSTRAINT breach_location_named CHECK (((((location_kind)::text = 'processor'::text) = (location_processor_id IS NOT NULL)) AND (((location_kind)::text = 'data_source'::text) = (location_source_id IS NOT NULL)))),
     CONSTRAINT breach_status CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'closed'::character varying])::text[])))
 );
+
+ALTER TABLE ONLY public.breach FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -1601,6 +1661,8 @@ CREATE TABLE public.breach_affected (
     CONSTRAINT breach_affected_found_by CHECK (((found_by)::text = ANY ((ARRAY['processor'::character varying, 'data_source'::character varying, 'platform'::character varying, 'dpo'::character varying, 'upload'::character varying])::text[])))
 );
 
+ALTER TABLE ONLY public.breach_affected FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: breach_affected_affected_id_seq; Type: SEQUENCE; Schema: public; Owner: -
@@ -1642,6 +1704,8 @@ CREATE TABLE public.breach_affected_revision (
     CONSTRAINT breach_affected_revision_counts CHECK (((derived >= 0) AND (added_by_hand >= 0) AND (excluded >= 0) AND (newly_listed >= 0))),
     CONSTRAINT breach_affected_revision_scopes_list CHECK ((jsonb_typeof(scopes) = 'array'::text))
 );
+
+ALTER TABLE ONLY public.breach_affected_revision FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -1696,6 +1760,8 @@ CREATE TABLE public.breach_assessment (
     CONSTRAINT breach_assessment_categories_list CHECK ((jsonb_typeof(categories) = 'array'::text))
 );
 
+ALTER TABLE ONLY public.breach_assessment FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: breach_assessment_assessment_id_seq; Type: SEQUENCE; Schema: public; Owner: -
@@ -1737,6 +1803,8 @@ CREATE TABLE public.breach_attachment (
     CONSTRAINT breach_attachment_kind CHECK (((kind)::text = ANY ((ARRAY['email'::character varying, 'proof'::character varying, 'chat'::character varying, 'other'::character varying])::text[]))),
     CONSTRAINT breach_attachment_size CHECK ((size_bytes > 0))
 );
+
+ALTER TABLE ONLY public.breach_attachment FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -1825,6 +1893,8 @@ CREATE TABLE public.breach_contact (
     CONSTRAINT breach_contact_reachable CHECK (((email IS NOT NULL) OR (mobile IS NOT NULL)))
 );
 
+ALTER TABLE ONLY public.breach_contact FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: TABLE breach_contact; Type: COMMENT; Schema: public; Owner: -
@@ -1891,6 +1961,8 @@ CREATE TABLE public.breach_determination (
     CONSTRAINT breach_determination_outcome CHECK (((outcome)::text = ANY ((ARRAY['pending'::character varying, 'yes'::character varying, 'no'::character varying])::text[])))
 );
 
+ALTER TABLE ONLY public.breach_determination FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: breach_determination_determination_id_seq; Type: SEQUENCE; Schema: public; Owner: -
@@ -1947,6 +2019,8 @@ CREATE TABLE public.breach_notice (
     CONSTRAINT breach_notice_complete CHECK (((approved_at IS NULL) OR ((what_happened IS NOT NULL) AND (consequences IS NOT NULL) AND (measures IS NOT NULL) AND (protective_steps IS NOT NULL) AND (contact IS NOT NULL))))
 );
 
+ALTER TABLE ONLY public.breach_notice FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: TABLE breach_notice; Type: COMMENT; Schema: public; Owner: -
@@ -1977,6 +2051,8 @@ CREATE TABLE public.breach_notice_delivery (
     CONSTRAINT breach_notice_delivery_portal_is_an_account CHECK ((((channel)::text <> 'portal'::text) OR (auth_user_id IS NOT NULL))),
     CONSTRAINT breach_notice_delivery_status CHECK (((status)::text = ANY ((ARRAY['queued'::character varying, 'delivered'::character varying, 'failed'::character varying])::text[])))
 );
+
+ALTER TABLE ONLY public.breach_notice_delivery FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -2043,6 +2119,8 @@ CREATE TABLE public.breach_obligation (
     CONSTRAINT breach_obligation_kind CHECK (((kind)::text = ANY ((ARRAY['cert_in'::character varying, 'board_intimation'::character varying, 'board_report'::character varying, 'principals'::character varying, 'org_board'::character varying])::text[])))
 );
 
+ALTER TABLE ONLY public.breach_obligation FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: breach_obligation_event; Type: TABLE; Schema: public; Owner: -
@@ -2068,6 +2146,8 @@ CREATE TABLE public.breach_obligation_event (
     CONSTRAINT breach_obligation_event_extension CHECK ((((kind)::text <> 'extended'::text) OR ((due_at IS NOT NULL) AND (requested_at IS NOT NULL)))),
     CONSTRAINT breach_obligation_event_kind CHECK (((kind)::text = ANY ((ARRAY['completed'::character varying, 'not_applicable'::character varying, 'reinstated'::character varying, 'extended'::character varying, 'reopened'::character varying])::text[])))
 );
+
+ALTER TABLE ONLY public.breach_obligation_event FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -2130,6 +2210,8 @@ CREATE TABLE public.breach_recording (
     recorded_by integer NOT NULL,
     recorded_at timestamp with time zone DEFAULT now() NOT NULL
 );
+
+ALTER TABLE ONLY public.breach_recording FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -2212,6 +2294,8 @@ CREATE TABLE public.breach_status_history (
     changed_by integer NOT NULL,
     changed_at timestamp with time zone DEFAULT now() NOT NULL
 );
+
+ALTER TABLE ONLY public.breach_status_history FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -2317,6 +2401,8 @@ CREATE TABLE public.breach_ticket (
     holder_read_at timestamp with time zone
 );
 
+ALTER TABLE ONLY public.breach_ticket FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: TABLE breach_ticket; Type: COMMENT; Schema: public; Owner: -
@@ -2358,6 +2444,8 @@ CREATE TABLE public.breach_ticket_event (
     CONSTRAINT breach_ticket_event_reason CHECK ((((kind)::text <> ALL ((ARRAY['sent_back'::character varying, 'withdrawn'::character varying, 'reopened'::character varying])::text[])) OR (reason IS NOT NULL))),
     CONSTRAINT breach_ticket_event_summary CHECK ((((kind)::text <> 'returned'::text) OR (summary IS NOT NULL)))
 );
+
+ALTER TABLE ONLY public.breach_ticket_event FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -2420,6 +2508,8 @@ CREATE TABLE public.breach_ticket_message (
     CONSTRAINT breach_ticket_message_kind CHECK (((kind)::text = ANY ((ARRAY['instruction'::character varying, 'message'::character varying, 'return'::character varying, 'status'::character varying])::text[]))),
     CONSTRAINT breach_ticket_message_side CHECK (((author_side)::text = ANY ((ARRAY['office'::character varying, 'holder'::character varying, 'system'::character varying])::text[])))
 );
+
+ALTER TABLE ONLY public.breach_ticket_message FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -2492,6 +2582,8 @@ CREATE TABLE public.breach_upload (
     CONSTRAINT breach_upload_kind CHECK (((kind)::text = ANY ((ARRAY['contacts'::character varying, 'assets'::character varying])::text[])))
 );
 
+ALTER TABLE ONLY public.breach_upload FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: TABLE breach_upload; Type: COMMENT; Schema: public; Owner: -
@@ -2545,6 +2637,8 @@ CREATE TABLE public.collection (
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
+ALTER TABLE ONLY public.collection FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: collection_collection_id_seq; Type: SEQUENCE; Schema: public; Owner: -
@@ -2564,6 +2658,32 @@ CREATE SEQUENCE public.collection_collection_id_seq
 --
 
 ALTER SEQUENCE public.collection_collection_id_seq OWNED BY public.collection.collection_id;
+
+
+--
+-- Name: collection_owner_processor; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.collection_owner_processor (
+    user_id integer NOT NULL,
+    processor_id integer NOT NULL,
+    assigned_by integer,
+    assigned_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: TABLE collection_owner_processor; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.collection_owner_processor IS 'The processors a DCO or an RCO collects for; they see and register data sources under these only (0050)';
+
+
+--
+-- Name: COLUMN collection_owner_processor.assigned_by; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.collection_owner_processor.assigned_by IS 'The administrator who assigned it; NULL when derived from source ownership by 0050';
 
 
 --
@@ -2587,6 +2707,8 @@ CREATE TABLE public.consent_artefact (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT served_before_action CHECK ((served_at <= affirmative_action_at))
 );
+
+ALTER TABLE ONLY public.consent_artefact FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -2634,8 +2756,11 @@ CREATE TABLE public.consent_link (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     revoked_by integer,
     revoked_at timestamp with time zone,
-    token_sealed bytea
+    token_sealed bytea,
+    office_id integer NOT NULL
 );
+
+ALTER TABLE ONLY public.consent_link FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -2683,6 +2808,8 @@ CREATE TABLE public.consent_purpose_grant (
     granted boolean NOT NULL
 );
 
+ALTER TABLE ONLY public.consent_purpose_grant FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: consent_purpose_grant_grant_id_seq; Type: SEQUENCE; Schema: public; Owner: -
@@ -2719,6 +2846,8 @@ CREATE TABLE public.data_asset (
     has_unmapped_subjects boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
+
+ALTER TABLE ONLY public.data_asset FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -2851,6 +2980,8 @@ CREATE TABLE public.export_line (
     destination_country character(2)
 );
 
+ALTER TABLE ONLY public.export_line FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: export_line_line_id_seq; Type: SEQUENCE; Schema: public; Owner: -
@@ -2887,8 +3018,11 @@ CREATE TABLE public.export_log (
     row_count integer NOT NULL,
     file_hash text NOT NULL,
     file_ref text,
-    transfer_basis jsonb
+    transfer_basis jsonb,
+    office_id integer NOT NULL
 );
+
+ALTER TABLE ONLY public.export_log FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -2951,6 +3085,8 @@ CREATE TABLE public.import_batch (
     imported_by integer NOT NULL,
     received_at timestamp with time zone DEFAULT now() NOT NULL
 );
+
+ALTER TABLE ONLY public.import_batch FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -3196,8 +3332,11 @@ CREATE TABLE public.notice (
     note text,
     applicable_to public.notice_audience,
     template_id integer,
+    office_id integer NOT NULL,
     CONSTRAINT publishable CHECK (((status <> 'published'::public.notice_status) OR ((recipients_text IS NOT NULL) AND (published_at IS NOT NULL))))
 );
+
+ALTER TABLE ONLY public.notice FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -3238,6 +3377,8 @@ CREATE TABLE public.notice_language (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
+
+ALTER TABLE ONLY public.notice_language FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -3298,6 +3439,8 @@ CREATE TABLE public.notice_purpose (
     CONSTRAINT override_is_attributed CHECK ((((data_categories_override IS NULL) AND (uses_override IS NULL)) OR ((overridden_by IS NOT NULL) AND (overridden_at IS NOT NULL))))
 );
 
+ALTER TABLE ONLY public.notice_purpose FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: COLUMN notice_purpose.data_categories_override; Type: COMMENT; Schema: public; Owner: -
@@ -3353,9 +3496,12 @@ CREATE TABLE public.notice_template (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     retired_at timestamp with time zone,
+    office_id integer NOT NULL,
     CONSTRAINT notice_template_retired_at CHECK ((((status)::text = 'retired'::text) = (retired_at IS NOT NULL))),
     CONSTRAINT notice_template_status CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'retired'::character varying])::text[])))
 );
+
+ALTER TABLE ONLY public.notice_template FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -3404,6 +3550,8 @@ CREATE TABLE public.notice_template_language (
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
+ALTER TABLE ONLY public.notice_template_language FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: notice_template_language_template_language_id_seq; Type: SEQUENCE; Schema: public; Owner: -
@@ -3436,6 +3584,8 @@ CREATE TABLE public.notice_template_purpose (
     display_order integer DEFAULT 0 NOT NULL,
     is_mandatory boolean DEFAULT false NOT NULL
 );
+
+ALTER TABLE ONLY public.notice_template_purpose FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -3476,6 +3626,62 @@ CREATE SEQUENCE public.notice_template_template_id_seq
 --
 
 ALTER SEQUENCE public.notice_template_template_id_seq OWNED BY public.notice_template.template_id;
+
+
+--
+-- Name: office; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.office (
+    office_id integer NOT NULL,
+    office_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    office_code character varying(12) NOT NULL,
+    name character varying(120) NOT NULL,
+    contact text,
+    grievance_route text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: TABLE office; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.office IS 'A governance office: rnd (the DPO office) or hr (the Legal office). Every governance record names one; an officer sees only its own (ADR 0032)';
+
+
+--
+-- Name: COLUMN office.office_code; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.office.office_code IS 'What app.office holds for a session of this office, and what the policies compare';
+
+
+--
+-- Name: COLUMN office.contact; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.office.contact IS 'The office''s contact, sealed (CONTACT)';
+
+
+--
+-- Name: office_office_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.office_office_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: office_office_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.office_office_id_seq OWNED BY public.office.office_id;
 
 
 --
@@ -3619,8 +3825,11 @@ CREATE TABLE public.project (
     created_by integer NOT NULL,
     dco_user_id integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    office_id integer NOT NULL
 );
+
+ALTER TABLE ONLY public.project FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -3639,6 +3848,8 @@ CREATE TABLE public.project_approval (
     uploaded_by integer NOT NULL,
     uploaded_at timestamp with time zone DEFAULT now() NOT NULL
 );
+
+ALTER TABLE ONLY public.project_approval FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -3678,6 +3889,8 @@ CREATE TABLE public.project_processor (
     CONSTRAINT processor_decision_is_attributed CHECK (((status = 'pending'::public.processor_request_status) OR (decided_at IS NULL) OR (decided_by IS NOT NULL))),
     CONSTRAINT processor_rejection_has_a_reason CHECK (((status <> 'rejected'::public.processor_request_status) OR ((decided_by IS NOT NULL) AND (decided_at IS NOT NULL) AND (COALESCE(length(TRIM(BOTH FROM decision_reason)), 0) > 0))))
 );
+
+ALTER TABLE ONLY public.project_processor FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -3761,6 +3974,8 @@ CREATE TABLE public.project_site (
     CONSTRAINT site_override_is_attributed CHECK (((dco_override_user_id IS NULL) OR ((dco_override_by IS NOT NULL) AND (dco_override_at IS NOT NULL))))
 );
 
+ALTER TABLE ONLY public.project_site FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: COLUMN project_site.source_id; Type: COMMENT; Schema: public; Owner: -
@@ -3818,6 +4033,8 @@ CREATE TABLE public.project_status_history (
     occurred_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
+ALTER TABLE ONLY public.project_status_history FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: project_status_history_history_id_seq; Type: SEQUENCE; Schema: public; Owner: -
@@ -3865,9 +4082,12 @@ CREATE TABLE public.purpose (
     created_by integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    office_id integer NOT NULL,
     CONSTRAINT categories_not_empty CHECK ((cardinality(data_categories) >= 1)),
     CONSTRAINT s7_clause_required CHECK ((((lawful_basis = 'legitimate_use_s7'::public.lawful_basis) AND (s7_clause IS NOT NULL)) OR ((lawful_basis = 'consent_s6'::public.lawful_basis) AND (s7_clause IS NULL))))
 );
+
+ALTER TABLE ONLY public.purpose FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -3953,6 +4173,8 @@ CREATE TABLE public.rights_item_execution (
     CONSTRAINT item_execution_store CHECK (((store)::text = ANY ((ARRAY['holder_copy'::character varying, 'platform_pointer'::character varying, 'legal_hold'::character varying])::text[])))
 );
 
+ALTER TABLE ONLY public.rights_item_execution FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: rights_item_execution_execution_id_seq; Type: SEQUENCE; Schema: public; Owner: -
@@ -4027,6 +4249,7 @@ CREATE TABLE public.rights_request (
     consent_id integer,
     submitted_contact_hash text,
     submitted_name_ngrams text[],
+    office_id integer,
     CONSTRAINT rights_closed_has_outcome CHECK (((status <> 'closed'::public.rights_request_status) OR (outcome IS NOT NULL))),
     CONSTRAINT rights_due_after_receipt CHECK ((due_at > received_at)),
     CONSTRAINT rights_nominee_has_nomination CHECK (((channel <> 'nominee'::public.rights_request_channel) OR (nomination_id IS NOT NULL))),
@@ -4034,6 +4257,8 @@ CREATE TABLE public.rights_request (
     CONSTRAINT rights_request_contact_indexed CHECK (((submitted_contact IS NULL) OR (submitted_contact_hash IS NOT NULL))),
     CONSTRAINT rights_verified_is_attributed CHECK (((verification_status <> 'verified'::public.rights_verification_status) OR ((verified_at IS NOT NULL) AND (verification_method IS NOT NULL))))
 );
+
+ALTER TABLE ONLY public.rights_request FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -4048,6 +4273,13 @@ COMMENT ON TABLE public.rights_request IS 'A data principal''s request under ss.
 --
 
 COMMENT ON COLUMN public.rights_request.due_at IS 'Copied from the published response period at receipt. A period changed later does not move a request already running.';
+
+
+--
+-- Name: COLUMN rights_request.office_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.rights_request.office_id IS 'The office that answers the request; NULL while it is in the shared intake';
 
 
 --
@@ -4067,6 +4299,8 @@ CREATE TABLE public.rights_request_attachment (
     added_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT rights_request_attachment_size CHECK ((size_bytes > 0))
 );
+
+ALTER TABLE ONLY public.rights_request_attachment FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -4164,6 +4398,8 @@ CREATE TABLE public.rights_request_holder (
     CONSTRAINT holder_returned_has_date CHECK (((ticket_status <> 'returned'::public.rights_ticket_status) OR (returned_at IS NOT NULL)))
 );
 
+ALTER TABLE ONLY public.rights_request_holder FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: COLUMN rights_request_holder.return_outcome; Type: COMMENT; Schema: public; Owner: -
@@ -4238,6 +4474,8 @@ CREATE TABLE public.rights_request_item (
     CONSTRAINT item_decision_has_basis CHECK (((decision IS NULL) OR (basis IS NOT NULL))),
     CONSTRAINT item_retain_has_until CHECK (((decision IS DISTINCT FROM 'retain'::public.rights_scope_decision) OR (retain_until IS NOT NULL)))
 );
+
+ALTER TABLE ONLY public.rights_request_item FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -4323,6 +4561,8 @@ CREATE TABLE public.rights_response_file (
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
+ALTER TABLE ONLY public.rights_response_file FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: rights_response_file_file_id_seq; Type: SEQUENCE; Schema: public; Owner: -
@@ -4364,6 +4604,8 @@ CREATE TABLE public.rights_ticket_message (
     CONSTRAINT ticket_message_side CHECK (((author_side)::text = ANY ((ARRAY['office'::character varying, 'holder'::character varying, 'system'::character varying])::text[])))
 );
 
+ALTER TABLE ONLY public.rights_ticket_message FORCE ROW LEVEL SECURITY;
+
 
 --
 -- Name: rights_ticket_message_message_id_seq; Type: SEQUENCE; Schema: public; Owner: -
@@ -4389,7 +4631,7 @@ ALTER SEQUENCE public.rights_ticket_message_message_id_seq OWNED BY public.right
 -- Name: v_current_consent; Type: VIEW; Schema: public; Owner: -
 --
 
-CREATE VIEW public.v_current_consent AS
+CREATE VIEW public.v_current_consent WITH (security_invoker='true') AS
  SELECT consent_id,
     consent_uuid,
     auth_user_id,
@@ -4408,6 +4650,13 @@ CREATE VIEW public.v_current_consent AS
   WHERE (NOT (EXISTS ( SELECT 1
            FROM public.consent_artefact s
           WHERE (s.supersedes_consent_id = ca.consent_id))));
+
+
+--
+-- Name: VIEW v_current_consent; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON VIEW public.v_current_consent IS 'The head of every consent chain. security_invoker: the caller''s office policies apply (ADR 0032)';
 
 
 --
@@ -4695,6 +4944,13 @@ ALTER TABLE ONLY public.notice_template_language ALTER COLUMN template_language_
 --
 
 ALTER TABLE ONLY public.notice_template_purpose ALTER COLUMN template_purpose_id SET DEFAULT nextval('public.notice_template_purpose_template_purpose_id_seq'::regclass);
+
+
+--
+-- Name: office office_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.office ALTER COLUMN office_id SET DEFAULT nextval('public.office_office_id_seq'::regclass);
 
 
 --
@@ -5249,6 +5505,14 @@ ALTER TABLE ONLY public.collection
 
 
 --
+-- Name: collection_owner_processor collection_owner_processor_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.collection_owner_processor
+    ADD CONSTRAINT collection_owner_processor_pkey PRIMARY KEY (user_id, processor_id);
+
+
+--
 -- Name: collection collection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5606,6 +5870,30 @@ ALTER TABLE ONLY public.notice_template
 
 ALTER TABLE ONLY public.notice_template
     ADD CONSTRAINT notice_template_template_uuid_key UNIQUE (template_uuid);
+
+
+--
+-- Name: office office_office_code_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.office
+    ADD CONSTRAINT office_office_code_key UNIQUE (office_code);
+
+
+--
+-- Name: office office_office_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.office
+    ADD CONSTRAINT office_office_uuid_key UNIQUE (office_uuid);
+
+
+--
+-- Name: office office_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.office
+    ADD CONSTRAINT office_pkey PRIMARY KEY (office_id);
 
 
 --
@@ -6039,6 +6327,13 @@ CREATE INDEX idx_auth_user_full_name_ngrams ON public.auth_user USING gin (full_
 
 
 --
+-- Name: idx_auth_user_office; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_auth_user_office ON public.auth_user USING btree (office_id) WHERE (office_id IS NOT NULL);
+
+
+--
 -- Name: idx_batch_project; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6109,6 +6404,13 @@ CREATE INDEX idx_breach_obligation_event ON public.breach_obligation_event USING
 
 
 --
+-- Name: idx_breach_office; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_breach_office ON public.breach USING btree (office_id);
+
+
+--
 -- Name: idx_breach_status_history; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6158,10 +6460,24 @@ CREATE INDEX idx_collection_batch ON public.collection USING btree (batch_id);
 
 
 --
+-- Name: idx_collection_owner_processor_processor; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_collection_owner_processor_processor ON public.collection_owner_processor USING btree (processor_id);
+
+
+--
 -- Name: idx_collection_project; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_collection_project ON public.collection USING btree (project_id, collected_on DESC);
+
+
+--
+-- Name: idx_consent_link_office; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_consent_link_office ON public.consent_link USING btree (office_id);
 
 
 --
@@ -6197,6 +6513,13 @@ CREATE INDEX idx_export_line_export ON public.export_line USING btree (export_id
 --
 
 CREATE INDEX idx_export_line_user ON public.export_line USING btree (auth_user_id);
+
+
+--
+-- Name: idx_export_log_office; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_export_log_office ON public.export_log USING btree (office_id);
 
 
 --
@@ -6298,6 +6621,13 @@ CREATE INDEX idx_notice_lang_notice ON public.notice_language USING btree (notic
 
 
 --
+-- Name: idx_notice_office; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_notice_office ON public.notice USING btree (office_id);
+
+
+--
 -- Name: idx_notice_project; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6319,6 +6649,13 @@ CREATE INDEX idx_notice_template ON public.notice USING btree (template_id) WHER
 
 
 --
+-- Name: idx_notice_template_office; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_notice_template_office ON public.notice_template USING btree (office_id);
+
+
+--
 -- Name: idx_processor_respondent_live; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6337,6 +6674,13 @@ CREATE INDEX idx_project_created_by ON public.project USING btree (created_by, c
 --
 
 CREATE INDEX idx_project_dco ON public.project USING btree (dco_user_id, created_at DESC);
+
+
+--
+-- Name: idx_project_office; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_office ON public.project USING btree (office_id);
 
 
 --
@@ -6372,6 +6716,13 @@ CREATE INDEX idx_project_status ON public.project USING btree (project_status, c
 --
 
 CREATE INDEX idx_ptype_hist_user ON public.person_type_history USING btree (auth_user_id, changed_at DESC);
+
+
+--
+-- Name: idx_purpose_office; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_purpose_office ON public.purpose USING btree (office_id);
 
 
 --
@@ -6421,6 +6772,13 @@ CREATE INDEX idx_rights_request_contact_hash ON public.rights_request USING btre
 --
 
 CREATE INDEX idx_rights_request_linked ON public.rights_request USING btree (linked_request_id);
+
+
+--
+-- Name: idx_rights_request_office; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rights_request_office ON public.rights_request USING btree (office_id);
 
 
 --
@@ -6697,6 +7055,13 @@ CREATE TRIGGER trg_breach_obligation_event_append_only BEFORE DELETE OR UPDATE O
 
 
 --
+-- Name: breach trg_breach_office_fixed; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_office_fixed BEFORE UPDATE OF office_id ON public.breach FOR EACH ROW EXECUTE FUNCTION public.cmp_office_is_fixed();
+
+
+--
 -- Name: breach_obligation_event trg_breach_org_board_reported_to; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -6774,6 +7139,20 @@ CREATE TRIGGER trg_consent_coherent BEFORE INSERT ON public.consent_artefact FOR
 
 
 --
+-- Name: consent_link trg_consent_link_office_fixed; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_consent_link_office_fixed BEFORE UPDATE OF office_id ON public.consent_link FOR EACH ROW EXECUTE FUNCTION public.cmp_office_is_fixed();
+
+
+--
+-- Name: consent_link trg_consent_link_office_from_parent; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_consent_link_office_from_parent BEFORE INSERT ON public.consent_link FOR EACH ROW EXECUTE FUNCTION public.cmp_office_from_parent('notice', 'notice_id', 'notice_id');
+
+
+--
 -- Name: auth_user trg_contact_belongs_to_one_person; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -6792,6 +7171,20 @@ CREATE TRIGGER trg_export_line_append_only BEFORE DELETE OR UPDATE ON public.exp
 --
 
 CREATE TRIGGER trg_export_log_append_only BEFORE DELETE OR UPDATE ON public.export_log FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: export_log trg_export_log_office_fixed; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_export_log_office_fixed BEFORE UPDATE OF office_id ON public.export_log FOR EACH ROW EXECUTE FUNCTION public.cmp_office_is_fixed();
+
+
+--
+-- Name: export_log trg_export_log_office_from_parent; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_export_log_office_from_parent BEFORE INSERT ON public.export_log FOR EACH ROW EXECUTE FUNCTION public.cmp_office_from_parent('project', 'project_id', 'project_id');
 
 
 --
@@ -6865,10 +7258,31 @@ CREATE TRIGGER trg_notice_language_touch BEFORE UPDATE ON public.notice_language
 
 
 --
+-- Name: notice trg_notice_office_fixed; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_notice_office_fixed BEFORE UPDATE OF office_id ON public.notice FOR EACH ROW EXECUTE FUNCTION public.cmp_office_is_fixed();
+
+
+--
+-- Name: notice trg_notice_office_from_parent; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_notice_office_from_parent BEFORE INSERT ON public.notice FOR EACH ROW EXECUTE FUNCTION public.cmp_office_from_parent('project', 'project_id', 'project_id');
+
+
+--
 -- Name: notice_purpose trg_notice_purpose_freeze; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER trg_notice_purpose_freeze BEFORE INSERT OR DELETE OR UPDATE ON public.notice_purpose FOR EACH ROW EXECUTE FUNCTION public.cmp_notice_purpose_freeze();
+
+
+--
+-- Name: notice_template trg_notice_template_office_fixed; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_notice_template_office_fixed BEFORE UPDATE OF office_id ON public.notice_template FOR EACH ROW EXECUTE FUNCTION public.cmp_office_is_fixed();
 
 
 --
@@ -6893,10 +7307,24 @@ CREATE TRIGGER trg_project_history_append_only BEFORE DELETE OR UPDATE ON public
 
 
 --
+-- Name: project trg_project_office_fixed; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_project_office_fixed BEFORE UPDATE OF office_id ON public.project FOR EACH ROW EXECUTE FUNCTION public.cmp_office_is_fixed();
+
+
+--
 -- Name: project trg_project_touch; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER trg_project_touch BEFORE UPDATE ON public.project FOR EACH ROW EXECUTE FUNCTION public.cmp_touch_updated_at();
+
+
+--
+-- Name: purpose trg_purpose_office_fixed; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_purpose_office_fixed BEFORE UPDATE OF office_id ON public.purpose FOR EACH ROW EXECUTE FUNCTION public.cmp_office_is_fixed();
 
 
 --
@@ -6978,6 +7406,14 @@ ALTER TABLE ONLY public.audit_log
 
 ALTER TABLE ONLY public.audit_log
     ADD CONSTRAINT audit_log_subject_user_id_fkey FOREIGN KEY (subject_user_id) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: auth_user auth_user_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_user
+    ADD CONSTRAINT auth_user_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.office(office_id);
 
 
 --
@@ -7197,6 +7633,14 @@ ALTER TABLE ONLY public.breach_obligation_event
 
 
 --
+-- Name: breach breach_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach
+    ADD CONSTRAINT breach_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.office(office_id);
+
+
+--
 -- Name: breach breach_recorded_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7381,6 +7825,30 @@ ALTER TABLE ONLY public.collection
 
 
 --
+-- Name: collection_owner_processor collection_owner_processor_assigned_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.collection_owner_processor
+    ADD CONSTRAINT collection_owner_processor_assigned_by_fkey FOREIGN KEY (assigned_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: collection_owner_processor collection_owner_processor_processor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.collection_owner_processor
+    ADD CONSTRAINT collection_owner_processor_processor_id_fkey FOREIGN KEY (processor_id) REFERENCES public.processor(processor_id);
+
+
+--
+-- Name: collection_owner_processor collection_owner_processor_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.collection_owner_processor
+    ADD CONSTRAINT collection_owner_processor_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.auth_user(id);
+
+
+--
 -- Name: collection collection_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7458,6 +7926,14 @@ ALTER TABLE ONLY public.consent_link
 
 ALTER TABLE ONLY public.consent_link
     ADD CONSTRAINT consent_link_notice_id_fkey FOREIGN KEY (notice_id) REFERENCES public.notice(notice_id);
+
+
+--
+-- Name: consent_link consent_link_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.consent_link
+    ADD CONSTRAINT consent_link_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.office(office_id);
 
 
 --
@@ -7594,6 +8070,14 @@ ALTER TABLE ONLY public.export_line
 
 ALTER TABLE ONLY public.export_log
     ADD CONSTRAINT export_log_exported_by_fkey FOREIGN KEY (exported_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: export_log export_log_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.export_log
+    ADD CONSTRAINT export_log_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.office(office_id);
 
 
 --
@@ -7765,6 +8249,14 @@ ALTER TABLE ONLY public.notice_language
 
 
 --
+-- Name: notice notice_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice
+    ADD CONSTRAINT notice_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.office(office_id);
+
+
+--
 -- Name: notice notice_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7826,6 +8318,14 @@ ALTER TABLE ONLY public.notice_template_language
 
 ALTER TABLE ONLY public.notice_template_language
     ADD CONSTRAINT notice_template_language_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: notice_template notice_template_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template
+    ADD CONSTRAINT notice_template_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.office(office_id);
 
 
 --
@@ -7906,6 +8406,14 @@ ALTER TABLE ONLY public.project
 
 ALTER TABLE ONLY public.project
     ADD CONSTRAINT project_dco_user_id_fkey FOREIGN KEY (dco_user_id) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: project project_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project
+    ADD CONSTRAINT project_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.office(office_id);
 
 
 --
@@ -8002,6 +8510,14 @@ ALTER TABLE ONLY public.project_status_history
 
 ALTER TABLE ONLY public.purpose
     ADD CONSTRAINT purpose_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: purpose purpose_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.purpose
+    ADD CONSTRAINT purpose_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.office(office_id);
 
 
 --
@@ -8173,6 +8689,14 @@ ALTER TABLE ONLY public.rights_request
 
 
 --
+-- Name: rights_request rights_request_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rights_request
+    ADD CONSTRAINT rights_request_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.office(office_id);
+
+
+--
 -- Name: rights_request rights_request_responded_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8237,8 +8761,773 @@ ALTER TABLE ONLY public.rights_ticket_message
 
 
 --
+-- Name: asset_consent; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.asset_consent ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: breach; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: breach_affected; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach_affected ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: breach_affected_revision; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach_affected_revision ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: breach_assessment; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach_assessment ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: breach_attachment; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach_attachment ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: breach_contact; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach_contact ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: breach_determination; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach_determination ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: breach_notice; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach_notice ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: breach_notice_delivery; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach_notice_delivery ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: breach_obligation; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach_obligation ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: breach_obligation_event; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach_obligation_event ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: breach_recording; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach_recording ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: breach_status_history; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach_status_history ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: breach_ticket; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach_ticket ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: breach_ticket_event; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach_ticket_event ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: breach_ticket_message; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach_ticket_message ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: breach_upload; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach_upload ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: collection; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.collection ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: consent_artefact; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.consent_artefact ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: consent_link; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.consent_link ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: consent_purpose_grant; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.consent_purpose_grant ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: data_asset; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.data_asset ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: export_line; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.export_line ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: export_log; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.export_log ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: import_batch; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.import_batch ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: notice; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.notice ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: notice_language; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.notice_language ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: notice_purpose; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.notice_purpose ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: notice_template; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.notice_template ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: notice_template_language; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.notice_template_language ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: notice_template_purpose; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.notice_template_purpose ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: asset_consent office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.asset_consent USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.data_asset p
+  WHERE (p.asset_id = asset_consent.asset_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.data_asset p
+  WHERE (p.asset_id = asset_consent.asset_id)))));
+
+
+--
+-- Name: breach office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach USING (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true))))));
+
+
+--
+-- Name: breach_affected office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach_affected USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_affected.breach_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_affected.breach_id)))));
+
+
+--
+-- Name: breach_affected_revision office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach_affected_revision USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_affected_revision.breach_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_affected_revision.breach_id)))));
+
+
+--
+-- Name: breach_assessment office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach_assessment USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_assessment.breach_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_assessment.breach_id)))));
+
+
+--
+-- Name: breach_attachment office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach_attachment USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_attachment.breach_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_attachment.breach_id)))));
+
+
+--
+-- Name: breach_contact office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach_contact USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_contact.breach_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_contact.breach_id)))));
+
+
+--
+-- Name: breach_determination office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach_determination USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_determination.breach_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_determination.breach_id)))));
+
+
+--
+-- Name: breach_notice office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach_notice USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_notice.breach_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_notice.breach_id)))));
+
+
+--
+-- Name: breach_notice_delivery office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach_notice_delivery USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach_notice p
+  WHERE (p.notice_id = breach_notice_delivery.notice_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach_notice p
+  WHERE (p.notice_id = breach_notice_delivery.notice_id)))));
+
+
+--
+-- Name: breach_obligation office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach_obligation USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_obligation.breach_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_obligation.breach_id)))));
+
+
+--
+-- Name: breach_obligation_event office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach_obligation_event USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach_obligation p
+  WHERE (p.obligation_id = breach_obligation_event.obligation_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach_obligation p
+  WHERE (p.obligation_id = breach_obligation_event.obligation_id)))));
+
+
+--
+-- Name: breach_recording office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach_recording USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_recording.breach_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_recording.breach_id)))));
+
+
+--
+-- Name: breach_status_history office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach_status_history USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_status_history.breach_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_status_history.breach_id)))));
+
+
+--
+-- Name: breach_ticket office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach_ticket USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_ticket.breach_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_ticket.breach_id)))));
+
+
+--
+-- Name: breach_ticket_event office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach_ticket_event USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach_ticket p
+  WHERE (p.ticket_id = breach_ticket_event.ticket_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach_ticket p
+  WHERE (p.ticket_id = breach_ticket_event.ticket_id)))));
+
+
+--
+-- Name: breach_ticket_message office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach_ticket_message USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach_ticket p
+  WHERE (p.ticket_id = breach_ticket_message.ticket_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach_ticket p
+  WHERE (p.ticket_id = breach_ticket_message.ticket_id)))));
+
+
+--
+-- Name: breach_upload office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach_upload USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_upload.breach_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach p
+  WHERE (p.breach_id = breach_upload.breach_id)))));
+
+
+--
+-- Name: collection office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.collection USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.project p
+  WHERE (p.project_id = collection.project_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.project p
+  WHERE (p.project_id = collection.project_id)))));
+
+
+--
+-- Name: consent_artefact office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.consent_artefact USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.consent_link p
+  WHERE (p.link_id = consent_artefact.link_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.consent_link p
+  WHERE (p.link_id = consent_artefact.link_id)))));
+
+
+--
+-- Name: consent_link office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.consent_link USING (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true))))));
+
+
+--
+-- Name: consent_purpose_grant office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.consent_purpose_grant USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.consent_artefact p
+  WHERE (p.consent_id = consent_purpose_grant.consent_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.consent_artefact p
+  WHERE (p.consent_id = consent_purpose_grant.consent_id)))));
+
+
+--
+-- Name: data_asset office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.data_asset USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.collection p
+  WHERE (p.collection_id = data_asset.collection_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.collection p
+  WHERE (p.collection_id = data_asset.collection_id)))));
+
+
+--
+-- Name: export_line office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.export_line USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.export_log p
+  WHERE (p.export_id = export_line.export_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.export_log p
+  WHERE (p.export_id = export_line.export_id)))));
+
+
+--
+-- Name: export_log office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.export_log USING (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true))))));
+
+
+--
+-- Name: import_batch office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.import_batch USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.project p
+  WHERE (p.project_id = import_batch.project_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.project p
+  WHERE (p.project_id = import_batch.project_id)))));
+
+
+--
+-- Name: notice office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.notice USING (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true))))));
+
+
+--
+-- Name: notice_language office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.notice_language USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.notice p
+  WHERE (p.notice_id = notice_language.notice_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.notice p
+  WHERE (p.notice_id = notice_language.notice_id)))));
+
+
+--
+-- Name: notice_purpose office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.notice_purpose USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.notice p
+  WHERE (p.notice_id = notice_purpose.notice_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.notice p
+  WHERE (p.notice_id = notice_purpose.notice_id)))));
+
+
+--
+-- Name: notice_template office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.notice_template USING (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true))))));
+
+
+--
+-- Name: notice_template_language office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.notice_template_language USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.notice_template p
+  WHERE (p.template_id = notice_template_language.template_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.notice_template p
+  WHERE (p.template_id = notice_template_language.template_id)))));
+
+
+--
+-- Name: notice_template_purpose office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.notice_template_purpose USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.notice_template p
+  WHERE (p.template_id = notice_template_purpose.template_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.notice_template p
+  WHERE (p.template_id = notice_template_purpose.template_id)))));
+
+
+--
+-- Name: project office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.project USING (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true))))));
+
+
+--
+-- Name: project_approval office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.project_approval USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.project p
+  WHERE (p.project_id = project_approval.project_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.project p
+  WHERE (p.project_id = project_approval.project_id)))));
+
+
+--
+-- Name: project_processor office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.project_processor USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.project p
+  WHERE (p.project_id = project_processor.project_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.project p
+  WHERE (p.project_id = project_processor.project_id)))));
+
+
+--
+-- Name: project_site office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.project_site USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.project p
+  WHERE (p.project_id = project_site.project_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.project p
+  WHERE (p.project_id = project_site.project_id)))));
+
+
+--
+-- Name: project_status_history office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.project_status_history USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.project p
+  WHERE (p.project_id = project_status_history.project_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.project p
+  WHERE (p.project_id = project_status_history.project_id)))));
+
+
+--
+-- Name: purpose office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.purpose USING (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true))))));
+
+
+--
+-- Name: rights_item_execution office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.rights_item_execution USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.rights_request_item p
+  WHERE (p.item_id = rights_item_execution.item_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.rights_request_item p
+  WHERE (p.item_id = rights_item_execution.item_id)))));
+
+
+--
+-- Name: rights_request office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.rights_request USING (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id IS NULL) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id IS NULL) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true))))));
+
+
+--
+-- Name: rights_request_attachment office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.rights_request_attachment USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.rights_request p
+  WHERE (p.request_id = rights_request_attachment.request_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.rights_request p
+  WHERE (p.request_id = rights_request_attachment.request_id)))));
+
+
+--
+-- Name: rights_request_holder office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.rights_request_holder USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.rights_request p
+  WHERE (p.request_id = rights_request_holder.request_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.rights_request p
+  WHERE (p.request_id = rights_request_holder.request_id)))));
+
+
+--
+-- Name: rights_request_item office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.rights_request_item USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.rights_request p
+  WHERE (p.request_id = rights_request_item.request_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.rights_request p
+  WHERE (p.request_id = rights_request_item.request_id)))));
+
+
+--
+-- Name: rights_response_file office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.rights_response_file USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.rights_request p
+  WHERE (p.request_id = rights_response_file.request_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.rights_request p
+  WHERE (p.request_id = rights_response_file.request_id)))));
+
+
+--
+-- Name: rights_ticket_message office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.rights_ticket_message USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.rights_request_holder p
+  WHERE (p.holder_id = rights_ticket_message.holder_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.rights_request_holder p
+  WHERE (p.holder_id = rights_ticket_message.holder_id)))));
+
+
+--
+-- Name: project; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.project ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: project_approval; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.project_approval ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: project_processor; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.project_processor ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: project_site; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.project_site ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: project_status_history; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.project_status_history ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: purpose; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.purpose ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: rights_item_execution; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.rights_item_execution ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: rights_request; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.rights_request ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: rights_request_attachment; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.rights_request_attachment ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: rights_request_holder; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.rights_request_holder ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: rights_request_item; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.rights_request_item ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: rights_response_file; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.rights_response_file ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: rights_ticket_message; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.rights_ticket_message ENABLE ROW LEVEL SECURITY;
+
+--
 -- PostgreSQL database dump complete
 --
 
-\unrestrict AWgsGfDYRx8weGuHa4XfLhba7TgAldKSL3VCvM2MOxAqHydOOfsRpUVmw08bgaV
+\unrestrict 82gCa3NKoDJN5G0f9KvYtA25nI38FNxwpm9afy9ZwRgPBJiwrY9FsxqNcfwt0wq
 

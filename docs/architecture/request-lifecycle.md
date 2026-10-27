@@ -35,6 +35,8 @@ Dependencies                                   api/dependencies/
   │   CSRF on unsafe verbs      csrf.py
   │   Principal ← session       authentication.py
   │   matrix + row scope        authorization.py
+  │   office ← session          bind_actor(..., office): the office the
+  │                              session acts in, or none
   │   cursor, limit, sort       pagination.py
   │   unknown filters refused   filters.py
   ▼
@@ -44,6 +46,8 @@ Domain service, in ONE transaction             domain/*/service.py
   ▼
 Repository                                     db/repositories/
   │   hand-written SQL; scope is a WHERE predicate
+  │   the pool sets app.office from the context on checkout and
+  │   resets it on return; PostgreSQL's policies answer the rest
   │   a write: personal columns sealed first     infrastructure/dkms/rows.py
   │     seal() → one call to the key service      POST /bulk_encrypt
   │   a lookup by a sealed value: its keyed hash  infrastructure/dkms/blind.py

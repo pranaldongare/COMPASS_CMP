@@ -33,9 +33,10 @@ async def _two_purpose_notice(conn: Any, seeded: dict[str, Any]) -> dict[str, An
         conn,
         """INSERT INTO purpose (purpose_code, name, description, uses, lawful_basis,
                                 data_categories, retention_period, retention_basis,
-                                erasure_trigger, status, created_by)
+                                erasure_trigger, status, created_by, office_id)
            VALUES ('P-STATES', 'Second purpose', 'd', 'u', 'consent_s6', ARRAY['name'],
-                   interval '1 year', 'business_policy', 'withdrawal', 'active', %s)
+                   interval '1 year', 'business_policy', 'withdrawal', 'active', %s,
+                       (SELECT office_id FROM office WHERE office_code = 'rnd'))
            RETURNING purpose_id""",
         (dpo,),
     )
@@ -43,8 +44,9 @@ async def _two_purpose_notice(conn: Any, seeded: dict[str, Any]) -> dict[str, An
     project = await fetch_one(
         conn,
         """INSERT INTO project (project_name, description, created_by, dco_user_id,
-                                project_status)
-           VALUES ('States Project', 'Two purposes', %s, %s, 'approved')
+                                project_status, office_id)
+           VALUES ('States Project', 'Two purposes', %s, %s, 'approved',
+               (SELECT office_id FROM office WHERE office_code = 'rnd'))
            RETURNING project_id""",
         (seeded["users"]["rnd_user"]["id"], seeded["users"]["dco"]["id"]),
     )

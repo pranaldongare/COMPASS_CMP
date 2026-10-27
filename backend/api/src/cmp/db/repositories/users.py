@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from cmp.core.offices import OFFICE_ID
 from cmp.core.pagination import PageRequest, build_page
 from cmp.db.sql import Conn, Row, execute, fetch_all, fetch_one, keyset_clause, require_one
 from cmp.infrastructure.dkms import seal
@@ -31,6 +32,11 @@ PUBLIC_COLUMNS = """
   -- The blind indexes of the sealed contacts. Keyed hashes, not personal data;
   -- here so a row can be matched against a contact without opening anything.
   u.email_hash, u.mobile_hash, u.secondary_email_hash,
+  -- The office the account works in (ADR 0032); NULL across both. Lookups
+  -- rather than a join, because these columns also follow RETURNING.
+  (SELECT o.office_uuid FROM office o WHERE o.office_id = u.office_id) AS office_uuid,
+  (SELECT o.office_code FROM office o WHERE o.office_id = u.office_id) AS office_code,
+  (SELECT o.name FROM office o WHERE o.office_id = u.office_id) AS office_name,
   u.created_at, u.updated_at
 """
 
@@ -98,7 +104,8 @@ async def credentials_by_login(conn: Conn, login: str) -> Row | None:
         conn,
         """
         SELECT u.id, u.uuid, u.email, u.username, u.full_name, u.role, u.status,
-               u.password_hash
+               u.password_hash,
+               (SELECT o.office_code FROM office o WHERE o.office_id = u.office_id) AS office_code
         FROM auth_user u
         WHERE u.email_hash = %s OR u.username_hash = %s
         """,
@@ -212,6 +219,9 @@ async def create(
     status: str = "pending",
     password_hash: str | None = None,
     registered_via_link_id: int | None = None,
+    #: The office code of a role that works in one (ADR 0032); the database
+    #: refuses an office for any other role, and its absence for these.
+    office: str | None = None,
     #: Section 9 makes this load-bearing for a data subject: it decides whether
     #: the account is a child's. Optional here because a consent link does not
     #: ask, and an assumed date would be worse than an absent one.
@@ -243,12 +253,20 @@ async def create(
                                role, person_type, status, password_hash,
                                registered_via_link_id, dob, minor_until,
                                email_hash, mobile_hash, username_hash, organization_id_hash,
-                               full_name_ngrams)
+                               full_name_ngrams, office_id)
         VALUES (%s, %s, %s, %s, %s, %s::user_role, %s::person_type, %s::user_status, %s, %s,
-                %s, %s::date + INTERVAL '18 years', %s, %s, %s, %s, %s)
+                %s, %s::date + INTERVAL '18 years', %s, %s, %s, %s, %s, """
+        + OFFICE_ID
+        + """)
         RETURNING id, uuid, username, full_name, email, mobile, organization_id,
                   role, person_type, status, dob, cmp_is_minor(minor_until) AS is_minor,
                   email_hash, mobile_hash, secondary_email_hash,
+                  (SELECT o.office_uuid FROM office o WHERE o.office_id = auth_user.office_id)
+                    AS office_uuid,
+                  (SELECT o.office_code FROM office o WHERE o.office_id = auth_user.office_id)
+                    AS office_code,
+                  (SELECT o.name FROM office o WHERE o.office_id = auth_user.office_id)
+                    AS office_name,
                   created_at, updated_at
         """,
         (
@@ -269,6 +287,7 @@ async def create(
             index_of("username", username),
             index_of("text", organization_id),
             ngrams_of(full_name),
+            office,
         ),
     )
     assert row is not None
@@ -374,14 +393,17 @@ async def set_secondary_email(conn: Conn, user_id: int, email: str | None) -> Ro
     return row
 
 
-async def set_role(conn: Conn, user_id: int, role: str) -> Row:
+async def set_role(conn: Conn, user_id: int, role: str, *, office: str | None = None) -> Row:
+    """The role and the office together, in one statement: the database holds
+    the two to each other (`auth_user_office_by_role`), so a role that works in
+    an office arrives with it and any other role clears it."""
     row = await fetch_one(
         conn,
-        """
-        UPDATE auth_user SET role = %s::user_role WHERE id = %s
+        f"""
+        UPDATE auth_user SET role = %s::user_role, office_id = {OFFICE_ID} WHERE id = %s
         RETURNING id, uuid, full_name, email, role, status
         """,
-        (role, user_id),
+        (role, office, user_id),
     )
     assert row is not None
     return row

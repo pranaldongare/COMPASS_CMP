@@ -39,7 +39,7 @@ async def current_principal(request: Request) -> Principal:
     if session.partial:
         raise MfaRequired("Multi-factor verification is required")
 
-    bind_actor(session.user_id, session.user_uuid, session.role)
+    bind_actor(session.user_id, session.user_uuid, session.role, session.office)
     return Principal(
         user_id=session.user_id,
         uuid=session.user_uuid,
@@ -51,7 +51,7 @@ async def current_principal(request: Request) -> Principal:
 async def partial_principal(request: Request) -> Principal:
     """The half-authenticated caller between password and MFA."""
     session = await session_from_request(request)
-    bind_actor(session.user_id, session.user_uuid, session.role)
+    bind_actor(session.user_id, session.user_uuid, session.role, session.office)
     return Principal(
         user_id=session.user_id,
         uuid=session.user_uuid,

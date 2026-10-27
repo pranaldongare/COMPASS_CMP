@@ -218,8 +218,9 @@ async def test_role_access_and_cover_reach_the_people_concerned(
     assert _to(queued, "send_staff_access_ended") == [await _email(conn, int(rco["id"]))]
 
     await conn.execute(
-        """INSERT INTO auth_user (full_name, email, email_hash, role, status)
-           VALUES ('Second DPO', 'dpo2@test.local', 'h-dpo2', 'dpo', 'active')"""
+        """INSERT INTO auth_user (full_name, email, email_hash, role, status, office_id)
+           VALUES ('Second DPO', 'dpo2@test.local', 'h-dpo2', 'dpo', 'active',
+               (SELECT office_id FROM office WHERE office_code = 'rnd'))"""
     )
     second = await (
         await conn.execute("SELECT id, uuid FROM auth_user WHERE email = 'dpo2@test.local'")

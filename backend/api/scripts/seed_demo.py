@@ -799,6 +799,9 @@ async def invite_staff(api: Api, admin: Actor) -> dict[str, Actor]:
     """The administrator invites each person; the invitation's code sets the
     password, which activates the account; then each signs in."""
     staff: dict[str, Actor] = {}
+    # Every one of them works in the DPO office (ADR 0032).
+    offices = (await api.call("GET", "/offices", actor=admin)).json()
+    rnd = next(o["office_uuid"] for o in offices if o["office_code"] == "rnd")
     for s in STAFF:
         await api.call(
             "POST",
@@ -811,6 +814,7 @@ async def invite_staff(api: Api, admin: Actor) -> dict[str, Actor]:
                 "role": s["role"],
                 "organization_id": s["org"],
                 "person_type": "employee",
+                "office_uuid": rnd,
             },
         )
         code = api.code(INVITATION, 4)

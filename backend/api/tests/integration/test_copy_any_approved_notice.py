@@ -39,14 +39,16 @@ async def _second_researcher(conn: Any) -> dict[str, Any]:
             person_type="employee",
             status="active",
             password_hash=None,
+            office="rnd",
         )
     )
 
 
 async def _own_draft_project(conn: Any, creator_id: int) -> str:
     row = await conn.execute(
-        """INSERT INTO project (project_name, description, created_by, project_status)
-           VALUES ('Second Study', 'd', %s, 'in_draft') RETURNING project_uuid""",
+        """INSERT INTO project (project_name, description, created_by, project_status, office_id)
+           VALUES ('Second Study', 'd', %s, 'in_draft',
+               (SELECT office_id FROM office WHERE office_code = 'rnd')) RETURNING project_uuid""",
         (creator_id,),
     )
     return str((await row.fetchone())["project_uuid"])

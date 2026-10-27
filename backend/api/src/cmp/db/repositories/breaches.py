@@ -16,6 +16,7 @@ from typing import Any
 
 from psycopg.types.json import Jsonb
 
+from cmp.core.offices import OFFICE_ID
 from cmp.db.sql import Conn, fetch_all, fetch_one
 from cmp.infrastructure.dkms import seal
 
@@ -84,6 +85,7 @@ async def create(
     recorded_by: int,
     logged: dict[str, str | None] | None = None,
     cyber_attack: str | None = None,
+    office: str,
 ) -> Row:
     told = {c: (logged or {}).get(c) for c in LOGGED_TEXT}
     sealed = await seal("breach", {"title": title, "location_detail": location_detail, **told})
@@ -94,10 +96,10 @@ async def create(
         f"""
         INSERT INTO breach (reference, title, detected_at, began_at, location_kind,
                             location_processor_id, location_source_id, location_detail,
-                            recorded_by, {columns}, cyber_attack)
+                            recorded_by, {columns}, cyber_attack, office_id)
         VALUES ('INC-' || to_char(now(), 'YYYY') || '-'
                   || lpad(nextval('breach_incident_ref_seq')::text, 4, '0'),
-                %s, %s, %s, %s, %s, %s, %s, %s, {marks}, %s)
+                %s, %s, %s, %s, %s, %s, %s, %s, {marks}, %s, {OFFICE_ID})
         RETURNING breach_id, breach_uuid
         """,
         (
@@ -111,6 +113,7 @@ async def create(
             recorded_by,
             *(sealed[c] for c in LOGGED_TEXT),
             cyber_attack,
+            office,
         ),
     )
     assert row is not None
@@ -487,6 +490,7 @@ NOT_ABOUT_A_PRINCIPAL: dict[str, str] = {
     "breach_affected_revision": "a note on a revision of this list",
     "breach_notice": "what everyone a breach touched is told; it names nobody",
     "breach_attachment": "the office's evidence on an incident; a person it names is added by hand",
+    "office": "how a governance office is reached (0051): the office's contact, not a principal's",
     "breach_contact": "someone a breach touched who has no account; already on that breach's list",
     "breach_upload": "the name of a list of people or assets sent for a breach",
     "message_copy": "a mailbox the office copies a message to - staff or a team, not a principal",

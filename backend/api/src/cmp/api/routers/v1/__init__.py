@@ -23,6 +23,7 @@ from cmp.api.routers.v1.me import router as me_router
 from cmp.api.routers.v1.messages import router as messages_router
 from cmp.api.routers.v1.notice_templates import router as notice_templates_router
 from cmp.api.routers.v1.notices import router as notices_router
+from cmp.api.routers.v1.offices import router as offices_router
 from cmp.api.routers.v1.projects import router as projects_router
 from cmp.api.routers.v1.registry import router as registry_router
 from cmp.api.routers.v1.rights import router as rights_router
@@ -46,6 +47,7 @@ __all__ = [
     "messages_router",
     "notice_templates_router",
     "notices_router",
+    "offices_router",
     "projects_router",
     "registry_router",
     "rights_router",

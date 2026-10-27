@@ -20,6 +20,14 @@ approves projects, runs the rights queue, and reads the audit trail. Role
 **Administrator.** Provisions accounts and roles, sees the audit trail, and is
 the independent reviewer for a grievance about the DPO. Role `admin`.
 
+**Legal PoC.** The officer of the Legal office: governs the HR track as the
+DPO governs the R&D track - categories, HR purposes, template versions, and
+the HR track's rights requests and breaches. Role `legal`.
+
+**HR PoC.** An HR point of contact who creates consent activities in the
+categories the administrator assigned them, shares each activity's link,
+and answers the tickets addressed to them. Role `hr_user`.
+
 **Data Collection Owner (DCO).** Accountable for collection at a third party's
 sites: registers rigs and sites, mints consent links, exports and imports.
 Role `dco`.
@@ -72,6 +80,11 @@ the DPO decides each.
 processor and owned by one person. A site is a source standing somewhere.
 
 ## Projects and collection
+
+**Office.** The governance tenant: the DPO office (`rnd`) or the Legal office
+(`hr`). Every project, purpose, template, notice, link, export, request and
+breach names its office, and an officer sees only its own, enforced by
+row-level security ([ADR 0032](decisions/0032-offices-are-logical-tenants-in-one-database.md)).
 
 **Project.** The unit of governance: a study or programme with purposes,
 processors, a notice and an approval. States: `in_draft`,

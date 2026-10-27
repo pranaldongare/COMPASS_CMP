@@ -30,9 +30,11 @@ REFERENCES office(office_id)`:
 Children carry no column of their own and are policed through their parent:
 `consent_artefact` and `consent_purpose_grant` through `consent_link`;
 `export_line` through `export_log`; `notice_language`, `notice_purpose`
-through `notice`; `project_site`, `project_processor`, `project_approval`,
-`project_status_history`, `import_batch`, `collection`, `data_asset`,
-`asset_consent` through `project`; `rights_request_holder`,
+through `notice`; `notice_template_language`, `notice_template_purpose`
+through `notice_template`; `project_site`, `project_processor`, `project_approval`,
+`project_status_history`, `import_batch`, `collection` through `project`,
+`data_asset` through `collection` and `asset_consent` through `data_asset`
+(half its rows name no consent, so not through the link); `rights_request_holder`,
 `rights_request_item`, `rights_item_execution`, `rights_ticket_message`,
 `rights_response_file`, `rights_request_attachment` through
 `rights_request`; every `breach_*` table through `breach`;
@@ -88,10 +90,14 @@ and is applied by the pool:
    code, or `'all'` when the context has none. Session-level, because
    `connection()` is autocommit and a transaction-local setting would end
    with the statement that set it.
-3. The pool is opened with `reset=_reset`, which runs
-   `RESET app.office` when a connection goes back, so the setting can never
-   survive to the next request that draws that connection. A connection
-   that bypasses the pool (psql, a one-off script) has no setting and reads
+3. Both context managers run `RESET app.office` on the way back
+   (`_forget_office`), whether the body finished or raised, so the setting
+   can never survive to the next request that draws that connection. On the
+   request's own task, not as the pool's `reset` callback: `psycopg_pool`
+   runs that callback on a worker task of the event loop that opened the
+   pool, which the test suite's per-test event loops never run, and a
+   connection whose reset never runs never returns. A connection that
+   bypasses the pool (psql, a one-off script) has no setting and reads
    nothing from a policed table until it sets `'all'`.
 4. The worker's tasks use the same `transaction()` with an empty context, so
    they run as `'all'`. Migrations, the seed and `reseal.py` run as the

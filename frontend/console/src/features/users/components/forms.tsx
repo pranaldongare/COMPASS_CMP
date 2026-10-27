@@ -23,10 +23,10 @@ import * as React from "react";
 import { FormError, useApiForm } from "@/components/forms";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Alert, Button, Field, Input, Select, Textarea } from "@/components/ui/primitives";
-import { useChangeRole, useCreateUser, useUpdateUser } from "@/features/users";
+import { useChangeRole, useCreateUser, useOffices, useUpdateUser } from "@/features/users";
 import { useEnums } from "@/features/meta";
 import { useSources } from "@/features/registry";
-import type { User } from "@/types";
+import type { Office, User } from "@/types";
 import { useToast } from "@/providers";
 import { roleSchema, userSchema } from "@/features/users/schemas";
 import { ProcessorPicker, type PickedProcessor } from "@/features/users/components/processors";
@@ -48,7 +48,9 @@ export function UserForm({ user, onDone }: { user?: User; onDone: () => void }) 
     organization_id: user?.organization_id ?? "",
     person_type: user?.person_type ?? "employee",
     source_uuids: [] as string[],
+    office_uuid: "",
   });
+  const { data: offices } = useOffices();
 
   const role = form.watch("role");
   const sourceUuids = form.watch("source_uuids") ?? [];
@@ -95,6 +97,7 @@ export function UserForm({ user, onDone }: { user?: User; onDone: () => void }) 
       person_type: values.person_type || null,
       source_uuids: values.source_uuids ?? [],
       processor_uuids: ownsSources ? processors.map((p) => p.processor_uuid) : [],
+      office_uuid: values.office_uuid || null,
     };
 
     // A number typed on somebody else's behalf is a claim about their phone, so
@@ -186,6 +189,14 @@ export function UserForm({ user, onDone }: { user?: User; onDone: () => void }) 
               </Select>
             )}
           </Field>
+
+          {!user && (
+            <OfficeField
+              offices={offices}
+              error={form.formState.errors.office_uuid?.message}
+              register={form.register("office_uuid")}
+            />
+          )}
 
           <Field
             label="Person type"
@@ -299,13 +310,15 @@ export function RoleChangeForm({ user, onDone }: { user: User; onDone: () => voi
   const { data: enums } = useEnums();
   const change = useChangeRole(user.uuid);
 
-  const form = useApiForm(roleSchema, { role: user.role, reason: "" });
+  const { data: offices } = useOffices();
+  const form = useApiForm(roleSchema, { role: user.role, reason: "", office_uuid: "" });
   const next = form.watch("role");
 
   const onSubmit = form.submit(async (values) => {
     const result = await change.mutateAsync({
       role: values.role,
       reason: values.reason || undefined,
+      office_uuid: values.office_uuid || null,
     });
     toast.success("Role changed", result.message ?? undefined);
     onDone();
@@ -335,6 +348,13 @@ export function RoleChangeForm({ user, onDone }: { user: User; onDone: () => voi
           )}
         </Field>
 
+        <OfficeField
+          offices={offices}
+          error={form.formState.errors.office_uuid?.message}
+          register={form.register("office_uuid")}
+          keeping={user.office_name}
+        />
+
         <Field label="Reason" hint="Recorded in the audit trail alongside the change.">
           {(p) => (
             <Textarea
@@ -361,5 +381,50 @@ export function RoleChangeForm({ user, onDone }: { user: User; onDone: () => voi
         </Button>
       </DialogFooter>
     </form>
+  );
+}
+
+/* ================================================================== office */
+
+/**
+ * The office an account works in (ADR 0032). Every role but the administrator
+ * works in one - which, and the refusal when it is missing or not wanted, are
+ * the server's; this only offers the offices it lists. `keeping` names the
+ * account's office on a role change, which an empty choice leaves as it is.
+ */
+function OfficeField({
+  offices,
+  error,
+  register,
+  keeping,
+}: {
+  offices: Office[] | undefined;
+  error: string | undefined;
+  register: React.ComponentProps<"select">;
+  keeping?: string | null;
+}) {
+  return (
+    <Field
+      label="Office"
+      hint={
+        keeping
+          ? `Left as it is, they stay in the ${keeping}. An administrator works across both offices.`
+          : "Every role but the administrator works in one office, and sees only its records."
+      }
+      error={error}
+    >
+      {(p) => (
+        <Select {...p} {...register}>
+          <option value="">
+            {keeping ? `Keep the ${keeping}` : "No office (administrator)"}
+          </option>
+          {offices?.map((o) => (
+            <option key={o.office_uuid} value={o.office_uuid}>
+              {o.name}
+            </option>
+          ))}
+        </Select>
+      )}
+    </Field>
   );
 }

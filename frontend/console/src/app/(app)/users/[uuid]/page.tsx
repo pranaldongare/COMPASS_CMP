@@ -189,6 +189,10 @@ export default function UserDetailPage() {
                 <DescriptionItem term="Role">
                   <StatusBadge kind="role" value={u.role} dot={false} />
                 </DescriptionItem>
+                {/* ADR 0032: whose records this account reads. */}
+                <DescriptionItem term="Office">
+                  {u.office_name ?? "Across both offices"}
+                </DescriptionItem>
                 <DescriptionItem term="Person type">
                   {u.person_type ? humanise(u.person_type) : "Not set"}
                 </DescriptionItem>

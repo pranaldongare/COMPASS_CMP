@@ -207,6 +207,8 @@ export const keys = {
     collectionOwners: ["users", "collection-owners"] as const,
     detail: (uuid: Uuid) => ["users", "detail", uuid] as const,
     personTypeHistory: (uuid: Uuid) => ["users", "detail", uuid, "person-type"] as const,
+    /** The offices an account can work in (ADR 0032). */
+    offices: ["users", "offices"] as const,
   },
 
   /** The data principal's own records, which are a different endpoint set from

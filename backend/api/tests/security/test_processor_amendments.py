@@ -32,8 +32,9 @@ pytestmark = pytest.mark.asyncio
 async def _approved_project(conn: Any, seeded: dict[str, Any], name: str) -> dict[str, Any]:
     project = await fetch_one(
         conn,
-        """INSERT INTO project (project_name, description, created_by, project_status)
-           VALUES (%s, 'A project', %s, 'approved')
+        """INSERT INTO project (project_name, description, created_by, project_status, office_id)
+           VALUES (%s, 'A project', %s, 'approved',
+               (SELECT office_id FROM office WHERE office_code = 'rnd'))
            RETURNING project_id, project_uuid""",
         (name, seeded["users"]["rnd_user"]["id"]),
     )
@@ -72,8 +73,10 @@ class TestWhereTheRequestGoes:
         """
         project = await fetch_one(
             conn,
-            """INSERT INTO project (project_name, description, created_by, project_status)
-               VALUES ('Draft study', 'd', %s, 'in_draft')
+            """INSERT INTO project (project_name, description, created_by, project_status,
+                office_id)
+               VALUES ('Draft study', 'd', %s, 'in_draft',
+                   (SELECT office_id FROM office WHERE office_code = 'rnd'))
                RETURNING project_id, project_uuid""",
             (seeded["users"]["rnd_user"]["id"],),
         )
@@ -109,8 +112,10 @@ class TestWhereTheRequestGoes:
         what the DPO is in the middle of approving."""
         project = await fetch_one(
             conn,
-            """INSERT INTO project (project_name, description, created_by, project_status)
-               VALUES ('Under review', 'd', %s, 'pending_approval')
+            """INSERT INTO project (project_name, description, created_by, project_status,
+                office_id)
+               VALUES ('Under review', 'd', %s, 'pending_approval',
+                   (SELECT office_id FROM office WHERE office_code = 'rnd'))
                RETURNING project_id, project_uuid""",
             (seeded["users"]["rnd_user"]["id"],),
         )

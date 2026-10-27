@@ -157,8 +157,9 @@ async def test_staff_outside_the_scope_find_nothing(conn: Any, seeded: dict[str,
 async def _bare_dco(conn: Any) -> int:
     row = await (
         await conn.execute(
-            """INSERT INTO auth_user (full_name, email, email_hash, role, status)
-               VALUES ('Far Away', 'far.away.dco@test.local', %s, 'dco', 'active')
+            """INSERT INTO auth_user (full_name, email, email_hash, role, status, office_id)
+               VALUES ('Far Away', 'far.away.dco@test.local', %s, 'dco', 'active',
+                   (SELECT office_id FROM office WHERE office_code = 'rnd'))
                RETURNING id""",
             (hashed("email", "far.away.dco@test.local"),),
         )

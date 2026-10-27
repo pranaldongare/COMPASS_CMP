@@ -27,6 +27,7 @@ ROUTERS: tuple[APIRouter, ...] = (
     public.holder_tickets_router,
     # Identity and the reference registry.
     v1.users_router,
+    v1.offices_router,
     v1.me_router,
     # The principal's own requests and nomination live under /me with the rest
     # of her surface; the DPO's register is its own area, in the oversight group.

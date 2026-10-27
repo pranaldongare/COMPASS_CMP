@@ -21,6 +21,7 @@ from __future__ import annotations
 from typing import Any
 
 from cmp.core.errors import Conflict
+from cmp.core.offices import OFFICE_ID
 from cmp.core.pagination import PageRequest, build_page
 from cmp.core.permissions import Role, Scope, scope_of
 from cmp.db.sql import Conn, Row, fetch_all, fetch_one, keyset_clause, require_one
@@ -273,13 +274,14 @@ async def create(
     requesting_team: str | None,
     created_by: int,
     dco_user_id: int | None,
+    office: str,
 ) -> Row:
     row = await fetch_one(
         conn,
-        """
+        f"""
         INSERT INTO project (project_name, internal_project_name, description,
-                             requesting_team, created_by, dco_user_id)
-        VALUES (%s, %s, %s, %s, %s, %s)
+                             requesting_team, created_by, dco_user_id, office_id)
+        VALUES (%s, %s, %s, %s, %s, %s, {OFFICE_ID})
         RETURNING project_id, project_uuid, project_name, internal_project_name,
                   description, requesting_team, project_status, created_at, updated_at
         """,
@@ -290,6 +292,7 @@ async def create(
             requesting_team,
             created_by,
             dco_user_id,
+            office,
         ),
     )
     assert row is not None

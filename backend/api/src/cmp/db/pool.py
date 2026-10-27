@@ -6,6 +6,12 @@ operation instead of four writes that can half-succeed.
 
 Session-level `statement_timeout` and `lock_timeout` are set on every checkout.
 A query with no timeout is a query that can hold a lock until the pool starves.
+
+The office (ADR 0032). Every connection `connection()` and `transaction()` hand
+out first says which office it reads - `app.office`, the request context's
+office code or `all` - and has it reset before it goes back, so the setting
+never reaches the next request that draws the connection. PostgreSQL's
+row-level security does the rest (`docs/architecture/offices-and-tenancy.md`).
 """
 
 from __future__ import annotations
@@ -20,6 +26,7 @@ from psycopg_pool import AsyncConnectionPool
 
 from cmp.core import after_commit
 from cmp.core.config import settings
+from cmp.core.context import current_context
 from cmp.core.errors import CmpError, ServiceUnavailable
 from cmp.core.logging import get_logger
 
@@ -35,10 +42,46 @@ _SESSION_SETUP: Final = (
 )
 
 
+#: What `app.office` holds for a caller who works across both offices.
+ALL_OFFICES: Final = "all"
+
+
 async def _configure(conn: psycopg.AsyncConnection[Any]) -> None:
     conn.row_factory = dict_row
     await conn.execute(_SESSION_SETUP)
     await conn.commit()
+
+
+async def _forget_office(conn: psycopg.AsyncConnection[Any]) -> None:
+    """On the way back to the pool: the office goes with the request that set it.
+
+    Here, on the request's own task, rather than as the pool's `reset`
+    callback: `psycopg_pool` runs that callback on a worker task of the event
+    loop that opened the pool, and a connection whose reset never runs never
+    returns. The next checkout sets the office again in any case; this is so
+    that a connection drawn some other way - a script, a test - finds none.
+
+    A connection that cannot take the statement is a broken one, which the
+    pool discards rather than hands out; the error of the request that broke it
+    is the one worth raising.
+    """
+    if conn.broken or conn.closed:
+        return
+    try:
+        await conn.set_autocommit(True)
+        await conn.execute("RESET app.office")
+    except psycopg.Error as exc:
+        log.warning("db.office_not_reset", error=str(exc))
+
+
+async def _apply_office(conn: psycopg.AsyncConnection[Any]) -> None:
+    """Say which office this connection reads, before anything else runs on it.
+
+    Session-level (`false`), because `connection()` is autocommit and a
+    transaction-local setting would end with the statement that set it.
+    """
+    office = current_context().office or ALL_OFFICES
+    await conn.execute("SELECT set_config('app.office', %s, false)", (office,))
 
 
 async def _probe() -> None:
@@ -108,7 +151,11 @@ async def connection() -> AsyncIterator[psycopg.AsyncConnection[Any]]:
     try:
         async with get_pool().connection() as conn:
             await conn.set_autocommit(True)
-            yield conn
+            await _apply_office(conn)
+            try:
+                yield conn
+            finally:
+                await _forget_office(conn)
     except psycopg.OperationalError as exc:
         log.error("db.unavailable", error=str(exc))
         raise ServiceUnavailable("Database is unavailable") from exc
@@ -127,6 +174,8 @@ async def transaction() -> AsyncIterator[psycopg.AsyncConnection[Any]]:
     kept: CmpError | None = None
     try:
         async with get_pool().connection() as conn:
+            await conn.set_autocommit(True)
+            await _apply_office(conn)
             await conn.set_autocommit(False)
             try:
                 # Side effects a service defers run once the transaction below
@@ -140,7 +189,7 @@ async def transaction() -> AsyncIterator[psycopg.AsyncConnection[Any]]:
                                 raise
                             kept = exc
             finally:
-                await conn.set_autocommit(True)
+                await _forget_office(conn)
     except psycopg.OperationalError as exc:
         log.error("db.unavailable", error=str(exc))
         raise ServiceUnavailable("Database is unavailable") from exc
@@ -168,3 +217,34 @@ async def schema_version() -> str | None:
             return str(row["version_num"]) if row else None
     except Exception:
         return None
+
+
+async def policies_bind() -> bool:
+    """Whether the database user is one row-level security applies to.
+
+    No policy binds a superuser or a role with BYPASSRLS, however the tables
+    are set: the wall between the offices (ADR 0032) would stand in the schema
+    and stop nothing.
+    """
+    async with connection() as conn:
+        cur = await conn.execute(
+            "SELECT rolsuper OR rolbypassrls AS bypasses FROM pg_roles WHERE rolname = current_user"
+        )
+        row = await cur.fetchone()
+        return not (row and row["bypasses"])
+
+
+async def assert_policies_bind() -> None:
+    """Refuse to serve, outside local and test, as a user the policies cannot bind.
+
+    Locally the database container's own superuser is the user, and the
+    enforcement tests prove the wall under a role of their own instead.
+    """
+    if settings.environment in ("local", "test"):
+        return
+    if not await policies_bind():
+        raise RuntimeError(
+            f"The database user {settings.postgres_user!r} is a superuser or holds BYPASSRLS, "
+            "so the office policies would not apply (ADR 0032). Run the API as a role "
+            "without either."
+        )

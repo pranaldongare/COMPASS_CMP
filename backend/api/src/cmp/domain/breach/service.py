@@ -29,6 +29,7 @@ from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from typing import Any, Final
 
+from cmp.core import offices
 from cmp.core.config import settings
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
 from cmp.db.repositories import breach_tickets as ticket_repo
@@ -203,6 +204,8 @@ async def record(
         recorded_by=actor_id,
         logged=told,
         cyber_attack=cyber_attack or None,
+        # The DPO office's register until breaches are logged by office.
+        office=offices.RND,
     )
     await repo.add_status_history(
         conn,

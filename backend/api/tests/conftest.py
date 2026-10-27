@@ -121,6 +121,10 @@ async def conn(db_pool: Any) -> AsyncIterator[Any]:
     over.
     """
     async with db_pool.connection() as connection:
+        # Across both offices, as the worker and the seed run (ADR 0032): a
+        # fixture writes whatever world its test needs. The pool resets it.
+        await connection.set_autocommit(True)
+        await connection.execute("SELECT set_config('app.office', 'all', false)")
         await connection.set_autocommit(False)
         transaction = connection.transaction(force_rollback=True)
         await transaction.__aenter__()
@@ -162,8 +166,10 @@ async def seeded(conn: Any, request_context: Any) -> dict[str, Any]:
     ]:
         row = await fetch_one(
             conn,
-            """INSERT INTO auth_user (full_name, email, email_hash, role, status, password_hash)
-               VALUES (%s, %s, %s, %s::user_role, 'active', %s)
+            """INSERT INTO auth_user (full_name, email, email_hash, role, status, password_hash,
+                                      office_id)
+               VALUES (%s, %s, %s, %s::user_role, 'active', %s,
+                       (SELECT office_id FROM office WHERE office_code = %s))
                RETURNING id, uuid""",
             (
                 f"Test {role}",
@@ -171,6 +177,7 @@ async def seeded(conn: Any, request_context: Any) -> dict[str, Any]:
                 hashed("email", email),
                 role,
                 hash_password("TestPassw0rd!123"),
+                office_of(role),
             ),
         )
         ids[role] = row
@@ -179,9 +186,10 @@ async def seeded(conn: Any, request_context: Any) -> dict[str, Any]:
         conn,
         """INSERT INTO purpose (purpose_code, name, description, uses, lawful_basis,
                                 data_categories, retention_period, retention_basis,
-                                erasure_trigger, status, created_by)
+                                erasure_trigger, status, created_by, office_id)
            VALUES ('P-TEST', 'Test purpose', 'd', 'u', 'consent_s6', ARRAY['name'],
-                   interval '1 year', 'business_policy', 'withdrawal', 'active', %s)
+                   interval '1 year', 'business_policy', 'withdrawal', 'active', %s,
+                       (SELECT office_id FROM office WHERE office_code = 'rnd'))
            RETURNING purpose_id, purpose_uuid""",
         (ids["dpo"]["id"],),
     )
@@ -189,8 +197,9 @@ async def seeded(conn: Any, request_context: Any) -> dict[str, Any]:
     project = await fetch_one(
         conn,
         """INSERT INTO project (project_name, description, created_by, dco_user_id,
-                                project_status)
-           VALUES ('Test Project', 'A test project', %s, %s, 'approved')
+                                project_status, office_id)
+           VALUES ('Test Project', 'A test project', %s, %s, 'approved',
+               (SELECT office_id FROM office WHERE office_code = 'rnd'))
            RETURNING project_id, project_uuid""",
         (ids["rnd_user"]["id"], ids["dco"]["id"]),
     )
@@ -356,3 +365,15 @@ def hashed(kind: str, value: Any) -> str | None:
     from cmp.infrastructure.dkms.blind import index_of
 
     return index_of(kind, value) if value is not None else None  # type: ignore[arg-type]
+
+
+def office_of(role: str) -> str | None:
+    """The office code an account in `role` works in, for a fixture that
+    inserts one directly (ADR 0032): the database requires an office for every
+    role in `OFFICE_ROLES` and refuses one for the rest."""
+    from cmp.core import offices
+    from cmp.core.permissions import OFFICE_ROLES, Role
+
+    if role not in OFFICE_ROLES:
+        return None
+    return offices.HR if role in (Role.LEGAL, Role.HR_USER) else offices.RND

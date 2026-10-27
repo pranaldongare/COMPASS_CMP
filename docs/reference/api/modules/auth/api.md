@@ -497,6 +497,7 @@ No request body.
   "secondary_email_verified_at": "2026-09-17T12:00:00Z",
   "role": "string",
   "account_role": "string",
+  "office": "string",
   "person_type": "string",
   "status": "string",
   "dob": "string",
@@ -830,6 +831,7 @@ For state changes whose only interesting output is that they happened.
 | `secondary_email_verified_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `role` | `string` | Yes | — | — |
 | `account_role` | `string` | Yes | — | — |
+| `office` | `string` or `null` | No | — | — |
 | `person_type` | `string` or `null` | Yes | — | — |
 | `status` | `string` | Yes | — | — |
 | `dob` | `string` or `null` | No | — | — |
