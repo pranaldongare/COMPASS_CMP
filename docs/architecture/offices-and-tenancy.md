@@ -42,12 +42,16 @@ through `notice_template`; `project_site`, `project_processor`, `project_approva
 `template_version`; `category_processor`, `hr_poc_category` through
 `hr_category`.
 
-Not policed: `auth_user` (one person, both tracks), `audit_log` (one chain;
-the read is filtered), `processor`, `processor_respondent`, `data_source`,
-`collection_owner_processor`, `delegation`, `nomination`, `legal_hold`
-(scoped through its request or asset in the query), `message_template`,
+Not policed: `auth_user` and `person_type_history` (one person, both
+tracks), `audit_log` (one chain; the read is filtered), `processor`,
+`processor_respondent`, `data_source`, `collection_owner_processor`,
+`delegation`, `nomination`, `legal_hold`, `message_template`,
 `message_copy`, `restricted_country`, `breach_temporary_access`. These
 hold no office-specific consent evidence or are deliberately shared.
+`legal_hold` carries no office scope in its queries yet (`list_holds()`
+returns every hold); only the matrix, which gives it to the DPO alone,
+keeps it within one office, and increment 7 scopes it before the Legal
+PoC holds it (open point F-21).
 
 ## Who belongs where
 

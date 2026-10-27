@@ -1198,7 +1198,7 @@ Module: **Exchange**. Application table.
 
 ## collection_owner_processor
 
-Module: **—**. Application table.
+Module: **Registry**. Application table.
 
 The processors a DCO or an RCO collects for; they see and register data sources under these only (0050)
 
@@ -2149,7 +2149,7 @@ Module: **Notices**. Application table.
 
 ## office
 
-Module: **—**. Application table.
+Module: **Platform**. Application table.
 
 A governance office: rnd (the DPO office) or hr (the Legal office). Every governance record names one; an officer sees only its own (ADR 0032)
 

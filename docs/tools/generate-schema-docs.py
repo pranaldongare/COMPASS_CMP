@@ -47,7 +47,13 @@ MIGRATIONS = ROOT / "backend" / "api" / "migrations" / "versions"
 #: column says so.
 MODULES: dict[str, list[str]] = {
     "identity": ["auth_user", "person_type_history", "delegation"],
-    "registry": ["purpose", "processor", "processor_respondent", "data_source"],
+    "registry": [
+        "purpose",
+        "processor",
+        "processor_respondent",
+        "data_source",
+        "collection_owner_processor",
+    ],
     "projects": [
         "project",
         "project_processor",
@@ -103,7 +109,7 @@ MODULES: dict[str, list[str]] = {
         "breach_upload",
         "breach_contact",
     ],
-    "platform": ["audit_log", "message_template", "message_copy", "restricted_country"],
+    "platform": ["audit_log", "message_template", "message_copy", "restricted_country", "office"],
 }
 MODULE_OF = {table: module for module, tables in MODULES.items() for table in tables}
 

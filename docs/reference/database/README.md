@@ -1,6 +1,6 @@
 # COMPASS complete database schema
 
-The diagrams, the table reference and the enum reference are generated from the catalogue of a scratch database built by replaying migrations **0001 → 0049**, on 2026-10-08; rebuild them with `python3 docs/tools/generate-schema-docs.py --database <db>`. The notes on this page follow them by hand.
+The table reference, the enum reference, the inventory JSON and the Graphviz sources in `source/` are generated from the catalogue of a scratch database built by replaying migrations **0001 → 0051**, on 2026-10-27; `schema.sql` is a `pg_dump --schema-only` of the same database. The committed SVGs still show **0049**: Graphviz was not installed when the rest was regenerated, so render them with `--render` (or `dot -Tsvg` on each source). Rebuild with `python3 docs/tools/generate-schema-docs.py --database <db>`. The notes on this page follow them by hand.
 
 ## Open the diagrams
 
@@ -17,14 +17,14 @@ The complete SVG is a large, zoomable vector drawing. Open it in a browser or ve
 | Module | Application tables / views | Diagram |
 | --- | --- | --- |
 | Identity | `auth_user`, `person_type_history`, `delegation` | [Open SVG](modules/identity.svg) |
-| Registry | `purpose`, `processor`, `processor_respondent`, `data_source` | [Open SVG](modules/registry.svg) |
+| Registry | `purpose`, `processor`, `processor_respondent`, `data_source`, `collection_owner_processor` | [Open SVG](modules/registry.svg) |
 | Projects | `project`, `project_processor`, `project_approval`, `project_site`, `project_status_history` | [Open SVG](modules/projects.svg) |
 | Notices | `notice`, `notice_language`, `notice_purpose`, `notice_template`, `notice_template_purpose`, `notice_template_language` | [Open SVG](modules/notices.svg) |
 | Consent | `consent_link`, `consent_artefact`, `consent_purpose_grant`, `v_current_consent` | [Open SVG](modules/consent.svg) |
 | Exchange | `export_log`, `export_line`, `import_batch`, `collection`, `data_asset`, `asset_consent` | [Open SVG](modules/exchange.svg) |
 | Rights | `rights_request`, `rights_request_holder`, `rights_request_item`, `rights_ticket_message`, `rights_response_file`, `rights_request_attachment`, `rights_item_execution`, `legal_hold`, `nomination` | [Open SVG](modules/rights.svg) |
 | Breach | `breach`, `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event`, `breach_affected_revision`, `breach_affected`, `breach_notice`, `breach_notice_delivery`, `breach_recording`, `breach_ticket`, `breach_ticket_event`, `breach_ticket_message`, `breach_temporary_access`, `breach_attachment`, `breach_upload`, `breach_contact` | [Open SVG](modules/breach.svg) |
-| Platform | `audit_log`, `message_template`, `message_copy`, `restricted_country` | [Open SVG](modules/platform.svg) |
+| Platform | `audit_log`, `message_template`, `message_copy`, `restricted_country`, `office` | [Open SVG](modules/platform.svg) |
 
 Module diagrams include full local tables and their outgoing foreign keys. Referenced tables outside the module appear as key-only context; incoming relationships from other modules are shown in the complete diagram.
 
@@ -82,6 +82,10 @@ Since **0027–0030** the personal columns are `text` rather than `varchar(n)` -
 **0048** adds the review step on rights tickets: `rights_request_holder.accepted_at` and `accepted_by`, and a CHECK that only a returned ticket is accepted.
 
 **0049** adds holders outside the console: the portal link on `rights_request_holder` (`link_token`, `link_token_sealed`, `link_issued_at`), and rights tickets' temporary logins in `breach_temporary_access` (`holder_id`; one ticket of one kind per grant, by CHECK).
+
+**0050** adds `collection_owner_processor`: the processors each DCO and RCO collects for.
+
+**0051** adds the offices (ADR 0032): `office`, with `rnd` and `hr`; `office_id` on `project`, `purpose`, `notice_template`, `notice`, `consent_link`, `export_log`, `breach`, `rights_request` and `auth_user`; row-level security with one `office_isolation` policy on 45 tables; `v_current_consent` recreated `security_invoker`; the roles `legal` and `hr_user`. How it works: [offices-and-tenancy.md](../../architecture/offices-and-tenancy.md).
 
 ## Reading relationships and keys
 
