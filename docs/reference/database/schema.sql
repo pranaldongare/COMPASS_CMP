@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict jhZppLnMGHc3SvSL5PsaN4vkeEnpas0qiOoIwNGU24Crq2HPRJY4FQ0EzZdjKPr
+\restrict 9xEwZgqoDHDBPPze9KfY0ZWEvcc4CnDRa2pkXiGWCYKvW8bJ3AcNUJDQDfEnYcN
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -529,6 +529,51 @@ CREATE TYPE public.user_status AS ENUM (
 
 
 --
+-- Name: cmp_activity_version_coherent(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_activity_version_coherent() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  rnd int := (SELECT office_id FROM office WHERE office_code = 'rnd');
+  v_status varchar(12);
+  v_category int;
+BEGIN
+  IF TG_OP = 'UPDATE'
+     AND NEW.template_version_id IS NOT DISTINCT FROM OLD.template_version_id
+     AND NEW.category_id IS NOT DISTINCT FROM OLD.category_id THEN
+    RETURN NEW;
+  END IF;
+  IF NEW.office_id = rnd THEN
+    IF NEW.category_id IS NOT NULL OR NEW.template_version_id IS NOT NULL
+       OR NEW.activity_description IS NOT NULL THEN
+      RAISE EXCEPTION 'project: an R&D project names no category, version or description'
+        USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+  END IF;
+  IF NEW.category_id IS NULL OR NEW.template_version_id IS NULL THEN
+    RAISE EXCEPTION 'project: an activity names its category and template version'
+      USING ERRCODE = 'check_violation';
+  END IF;
+  SELECT v.status, t.category_id INTO v_status, v_category
+    FROM template_version v JOIN notice_template t ON t.template_id = v.template_id
+   WHERE v.version_id = NEW.template_version_id;
+  IF v_status IS DISTINCT FROM 'approved' THEN
+    RAISE EXCEPTION 'project: an activity is made from an approved template version'
+      USING ERRCODE = 'check_violation';
+  END IF;
+  IF v_category IS DISTINCT FROM NEW.category_id THEN
+    RAISE EXCEPTION 'project: the version''s template belongs to another category'
+      USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+--
 -- Name: cmp_append_only(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -880,6 +925,27 @@ BEGIN
     RAISE EXCEPTION USING
       MESSAGE = 'Purpose is not part of the notice this consent was given against',
       ERRCODE = '23514';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: cmp_hr_notice_purposes_in_version(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_hr_notice_purposes_in_version() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  v int := (SELECT template_version_id FROM notice WHERE notice_id = NEW.notice_id);
+BEGIN
+  IF v IS NOT NULL AND NOT EXISTS (
+       SELECT 1 FROM template_version_purpose
+        WHERE version_id = v AND purpose_id = NEW.purpose_id) THEN
+    RAISE EXCEPTION 'notice_purpose: the purpose is not on the notice''s template version'
+      USING ERRCODE = 'check_violation';
   END IF;
   RETURN NEW;
 END;
@@ -1348,6 +1414,84 @@ BEGIN
       USING ERRCODE = 'check_violation';
   END IF;
   RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: cmp_template_version_freeze(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_template_version_freeze() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF OLD.status = 'draft' THEN
+    RETURN NEW;
+  END IF;
+  IF OLD.status = 'approved' AND NEW.status = 'retired'
+     AND NEW.template_id = OLD.template_id
+     AND NEW.version = OLD.version
+     AND NEW.reconsent_required = OLD.reconsent_required
+     AND NEW.slot_guidance IS NOT DISTINCT FROM OLD.slot_guidance
+     AND NEW.slot_max_length = OLD.slot_max_length
+     AND NEW.withdraw_url = OLD.withdraw_url
+     AND NEW.exercise_rights_url = OLD.exercise_rights_url
+     AND NEW.board_complaint_url = OLD.board_complaint_url
+     AND NEW.dpo_contact = OLD.dpo_contact
+     AND NEW.applicable_to IS NOT DISTINCT FROM OLD.applicable_to
+     AND NEW.approved_by = OLD.approved_by
+     AND NEW.approved_at = OLD.approved_at THEN
+    RETURN NEW;
+  END IF;
+  RAISE EXCEPTION
+    USING MESSAGE = 'An approved template version is frozen; open the next version instead',
+          ERRCODE = '42501';
+END;
+$$;
+
+
+--
+-- Name: cmp_template_version_of_category(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_template_version_of_category() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM notice_template t
+                  WHERE t.template_id = NEW.template_id AND t.category_id IS NOT NULL) THEN
+    RAISE EXCEPTION 'template_version: a DPO office template is not versioned (ADR 0028)'
+      USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: cmp_template_version_part_freeze(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_template_version_part_freeze() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  target int := CASE TG_OP WHEN 'DELETE' THEN OLD.version_id ELSE NEW.version_id END;
+  parent varchar(12);
+BEGIN
+  SELECT status INTO parent FROM template_version WHERE version_id = target;
+  IF parent IS DISTINCT FROM 'draft' THEN
+    RAISE EXCEPTION
+      USING MESSAGE = 'An approved template version is frozen; open the next version instead',
+            ERRCODE = '42501';
+  END IF;
+  IF TG_OP = 'UPDATE' AND NEW.version_id <> OLD.version_id THEN
+    RAISE EXCEPTION
+      USING MESSAGE = 'A version''s text or purpose does not move to another version',
+            ERRCODE = '42501';
+  END IF;
+  RETURN CASE TG_OP WHEN 'DELETE' THEN OLD ELSE NEW END;
 END;
 $$;
 
@@ -2863,7 +3007,9 @@ CREATE TABLE public.consent_link (
     revoked_by integer,
     revoked_at timestamp with time zone,
     token_sealed bytea,
-    office_id integer NOT NULL
+    office_id integer NOT NULL,
+    audience_mode character varying(4) DEFAULT 'otp'::character varying NOT NULL,
+    CONSTRAINT consent_link_audience_mode CHECK (((audience_mode)::text = ANY ((ARRAY['sso'::character varying, 'otp'::character varying])::text[])))
 );
 
 ALTER TABLE ONLY public.consent_link FORCE ROW LEVEL SECURITY;
@@ -2881,6 +3027,13 @@ COMMENT ON COLUMN public.consent_link.token IS 'Keyed digest of the token, and s
 --
 
 COMMENT ON COLUMN public.consent_link.token_sealed IS 'The link token, encrypted under a key derived from the application secret. Lets the URL be shown again to whoever needs to share it. NULL on links minted before 0011, whose tokens were never kept - those stay unrecoverable and the interface says so rather than showing a blank link.';
+
+
+--
+-- Name: COLUMN consent_link.audience_mode; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.consent_link.audience_mode IS 'How the link signs a person in: sso through the organisation (employees) or otp by a code (ADR 0034)';
 
 
 --
@@ -3539,6 +3692,7 @@ CREATE TABLE public.notice (
     applicable_to public.notice_audience,
     template_id integer,
     office_id integer NOT NULL,
+    template_version_id integer,
     CONSTRAINT publishable CHECK (((status <> 'published'::public.notice_status) OR ((recipients_text IS NOT NULL) AND (published_at IS NOT NULL))))
 );
 
@@ -4040,10 +4194,21 @@ CREATE TABLE public.project (
     dco_user_id integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    office_id integer NOT NULL
+    office_id integer NOT NULL,
+    category_id integer,
+    template_version_id integer,
+    activity_description text,
+    CONSTRAINT project_description_length CHECK (((activity_description IS NULL) OR (char_length(activity_description) <= 4000)))
 );
 
 ALTER TABLE ONLY public.project FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: COLUMN project.template_version_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.project.template_version_id IS 'An activity''s approved template version (ADR 0033); NULL for every R&D project';
 
 
 --
@@ -4842,6 +5007,164 @@ ALTER SEQUENCE public.rights_ticket_message_message_id_seq OWNED BY public.right
 
 
 --
+-- Name: template_version; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.template_version (
+    version_id integer NOT NULL,
+    version_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    template_id integer NOT NULL,
+    version integer NOT NULL,
+    status character varying(12) DEFAULT 'draft'::character varying NOT NULL,
+    reconsent_required boolean DEFAULT false NOT NULL,
+    slot_guidance text,
+    slot_max_length integer DEFAULT 1200 NOT NULL,
+    withdraw_url text NOT NULL,
+    exercise_rights_url text NOT NULL,
+    board_complaint_url text NOT NULL,
+    dpo_contact character varying(255) NOT NULL,
+    applicable_to public.notice_audience,
+    created_by integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    approved_by integer,
+    approved_at timestamp with time zone,
+    retired_by integer,
+    retired_at timestamp with time zone,
+    CONSTRAINT template_version_approved CHECK ((((status)::text = 'draft'::text) = (approved_at IS NULL))),
+    CONSTRAINT template_version_approver CHECK (((approved_at IS NULL) = (approved_by IS NULL))),
+    CONSTRAINT template_version_audience CHECK ((((status)::text = 'draft'::text) OR (applicable_to IS NOT NULL))),
+    CONSTRAINT template_version_number CHECK ((version >= 1)),
+    CONSTRAINT template_version_retired CHECK ((((status)::text = 'retired'::text) = (retired_at IS NOT NULL))),
+    CONSTRAINT template_version_retirer CHECK (((retired_at IS NULL) = (retired_by IS NULL))),
+    CONSTRAINT template_version_slot CHECK (((slot_max_length >= 100) AND (slot_max_length <= 4000))),
+    CONSTRAINT template_version_status CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'approved'::character varying, 'retired'::character varying])::text[])))
+);
+
+ALTER TABLE ONLY public.template_version FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: TABLE template_version; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.template_version IS 'A version of a Legal office template: the legal text Legal approves once; frozen when approved (ADR 0033)';
+
+
+--
+-- Name: COLUMN template_version.reconsent_required; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.template_version.reconsent_required IS 'Set by Legal when the change is material: an activity moved to it asks its participants again';
+
+
+--
+-- Name: COLUMN template_version.slot_max_length; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.template_version.slot_max_length IS 'The longest description an activity may write into {description}, in characters';
+
+
+--
+-- Name: template_version_language; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.template_version_language (
+    version_language_id integer NOT NULL,
+    version_id integer NOT NULL,
+    language_code public.language_code NOT NULL,
+    locked_text text NOT NULL,
+    content_hash text,
+    updated_by integer NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+ALTER TABLE ONLY public.template_version_language FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: COLUMN template_version_language.content_hash; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.template_version_language.content_hash IS 'sha256 of locked_text, set when the version is approved; an activity re-checks it before use';
+
+
+--
+-- Name: template_version_language_version_language_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.template_version_language_version_language_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: template_version_language_version_language_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.template_version_language_version_language_id_seq OWNED BY public.template_version_language.version_language_id;
+
+
+--
+-- Name: template_version_purpose; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.template_version_purpose (
+    version_purpose_id integer NOT NULL,
+    version_id integer NOT NULL,
+    purpose_id integer NOT NULL,
+    is_mandatory boolean DEFAULT false NOT NULL,
+    display_order integer DEFAULT 0 NOT NULL
+);
+
+ALTER TABLE ONLY public.template_version_purpose FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: template_version_purpose_version_purpose_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.template_version_purpose_version_purpose_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: template_version_purpose_version_purpose_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.template_version_purpose_version_purpose_id_seq OWNED BY public.template_version_purpose.version_purpose_id;
+
+
+--
+-- Name: template_version_version_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.template_version_version_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: template_version_version_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.template_version_version_id_seq OWNED BY public.template_version.version_id;
+
+
+--
 -- Name: v_current_consent; Type: VIEW; Schema: public; Owner: -
 --
 
@@ -5305,6 +5628,27 @@ ALTER TABLE ONLY public.rights_response_file ALTER COLUMN file_id SET DEFAULT ne
 --
 
 ALTER TABLE ONLY public.rights_ticket_message ALTER COLUMN message_id SET DEFAULT nextval('public.rights_ticket_message_message_id_seq'::regclass);
+
+
+--
+-- Name: template_version version_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version ALTER COLUMN version_id SET DEFAULT nextval('public.template_version_version_id_seq'::regclass);
+
+
+--
+-- Name: template_version_language version_language_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version_language ALTER COLUMN version_language_id SET DEFAULT nextval('public.template_version_language_version_language_id_seq'::regclass);
+
+
+--
+-- Name: template_version_purpose version_purpose_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version_purpose ALTER COLUMN version_purpose_id SET DEFAULT nextval('public.template_version_purpose_version_purpose_id_seq'::regclass);
 
 
 --
@@ -6492,6 +6836,62 @@ ALTER TABLE ONLY public.rights_ticket_message
 
 
 --
+-- Name: template_version_language template_version_language_once; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version_language
+    ADD CONSTRAINT template_version_language_once UNIQUE (version_id, language_code);
+
+
+--
+-- Name: template_version_language template_version_language_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version_language
+    ADD CONSTRAINT template_version_language_pkey PRIMARY KEY (version_language_id);
+
+
+--
+-- Name: template_version template_version_once; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version
+    ADD CONSTRAINT template_version_once UNIQUE (template_id, version);
+
+
+--
+-- Name: template_version template_version_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version
+    ADD CONSTRAINT template_version_pkey PRIMARY KEY (version_id);
+
+
+--
+-- Name: template_version_purpose template_version_purpose_once; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version_purpose
+    ADD CONSTRAINT template_version_purpose_once UNIQUE (version_id, purpose_id);
+
+
+--
+-- Name: template_version_purpose template_version_purpose_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version_purpose
+    ADD CONSTRAINT template_version_purpose_pkey PRIMARY KEY (version_purpose_id);
+
+
+--
+-- Name: template_version template_version_version_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version
+    ADD CONSTRAINT template_version_version_uuid_key UNIQUE (version_uuid);
+
+
+--
 -- Name: auth_user_email_hash_key; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6982,10 +7382,24 @@ CREATE INDEX idx_notice_template_office ON public.notice_template USING btree (o
 
 
 --
+-- Name: idx_notice_template_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_notice_template_version ON public.notice USING btree (template_version_id) WHERE (template_version_id IS NOT NULL);
+
+
+--
 -- Name: idx_processor_respondent_live; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_processor_respondent_live ON public.processor_respondent USING btree (processor_id) WHERE (removed_at IS NULL);
+
+
+--
+-- Name: idx_project_category; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_category ON public.project USING btree (category_id) WHERE (category_id IS NOT NULL);
 
 
 --
@@ -7035,6 +7449,13 @@ CREATE INDEX idx_project_processor_project ON public.project_processor USING btr
 --
 
 CREATE INDEX idx_project_status ON public.project USING btree (project_status, created_at DESC);
+
+
+--
+-- Name: idx_project_template_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_template_version ON public.project USING btree (template_version_id) WHERE (template_version_id IS NOT NULL);
 
 
 --
@@ -7164,6 +7585,13 @@ CREATE INDEX idx_status_hist_project ON public.project_status_history USING btre
 
 
 --
+-- Name: idx_template_version_template; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_template_version_template ON public.template_version USING btree (template_id);
+
+
+--
 -- Name: idx_ticket_message_holder; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7280,6 +7708,13 @@ CREATE UNIQUE INDEX uq_restricted_country_active ON public.restricted_country US
 --
 
 CREATE UNIQUE INDEX uq_rights_holder_processor ON public.rights_request_holder USING btree (request_id, processor_id) WHERE (processor_id IS NOT NULL);
+
+
+--
+-- Name: project trg_activity_version_coherent; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_activity_version_coherent BEFORE INSERT OR UPDATE OF template_version_id, category_id ON public.project FOR EACH ROW EXECUTE FUNCTION public.cmp_activity_version_coherent();
 
 
 --
@@ -7542,6 +7977,13 @@ CREATE TRIGGER trg_hr_category_touch BEFORE UPDATE ON public.hr_category FOR EAC
 
 
 --
+-- Name: notice_purpose trg_hr_notice_purposes_in_version; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_hr_notice_purposes_in_version BEFORE INSERT ON public.notice_purpose FOR EACH ROW EXECUTE FUNCTION public.cmp_hr_notice_purposes_in_version();
+
+
+--
 -- Name: notice_template trg_hr_template_has_category; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -7714,6 +8156,41 @@ CREATE TRIGGER trg_source_owner AFTER UPDATE OF owner_user_id ON public.data_sou
 --
 
 CREATE TRIGGER trg_subject_needs_mobile BEFORE INSERT ON public.auth_user FOR EACH ROW EXECUTE FUNCTION public.cmp_subject_needs_mobile();
+
+
+--
+-- Name: template_version trg_template_version_freeze; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_template_version_freeze BEFORE UPDATE ON public.template_version FOR EACH ROW EXECUTE FUNCTION public.cmp_template_version_freeze();
+
+
+--
+-- Name: template_version_language trg_template_version_language_freeze; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_template_version_language_freeze BEFORE INSERT OR DELETE OR UPDATE ON public.template_version_language FOR EACH ROW EXECUTE FUNCTION public.cmp_template_version_part_freeze();
+
+
+--
+-- Name: template_version trg_template_version_of_category; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_template_version_of_category BEFORE INSERT ON public.template_version FOR EACH ROW EXECUTE FUNCTION public.cmp_template_version_of_category();
+
+
+--
+-- Name: template_version_purpose trg_template_version_purpose_freeze; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_template_version_purpose_freeze BEFORE INSERT OR DELETE OR UPDATE ON public.template_version_purpose FOR EACH ROW EXECUTE FUNCTION public.cmp_template_version_part_freeze();
+
+
+--
+-- Name: template_version trg_template_version_touch; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_template_version_touch BEFORE UPDATE ON public.template_version FOR EACH ROW EXECUTE FUNCTION public.cmp_touch_updated_at();
 
 
 --
@@ -8780,6 +9257,14 @@ ALTER TABLE ONLY public.notice_template_purpose
 
 
 --
+-- Name: notice notice_template_version_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice
+    ADD CONSTRAINT notice_template_version_id_fkey FOREIGN KEY (template_version_id) REFERENCES public.template_version(version_id);
+
+
+--
 -- Name: person_type_history person_type_history_auth_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8825,6 +9310,14 @@ ALTER TABLE ONLY public.project_approval
 
 ALTER TABLE ONLY public.project_approval
     ADD CONSTRAINT project_approval_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: project project_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project
+    ADD CONSTRAINT project_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.hr_category(category_id);
 
 
 --
@@ -8937,6 +9430,14 @@ ALTER TABLE ONLY public.project_status_history
 
 ALTER TABLE ONLY public.project_status_history
     ADD CONSTRAINT project_status_history_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(project_id);
+
+
+--
+-- Name: project project_template_version_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project
+    ADD CONSTRAINT project_template_version_id_fkey FOREIGN KEY (template_version_id) REFERENCES public.template_version(version_id);
 
 
 --
@@ -9193,6 +9694,70 @@ ALTER TABLE ONLY public.rights_ticket_message
 
 ALTER TABLE ONLY public.rights_ticket_message
     ADD CONSTRAINT rights_ticket_message_holder_id_fkey FOREIGN KEY (holder_id) REFERENCES public.rights_request_holder(holder_id);
+
+
+--
+-- Name: template_version template_version_approved_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version
+    ADD CONSTRAINT template_version_approved_by_fkey FOREIGN KEY (approved_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: template_version template_version_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version
+    ADD CONSTRAINT template_version_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: template_version_language template_version_language_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version_language
+    ADD CONSTRAINT template_version_language_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: template_version_language template_version_language_version_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version_language
+    ADD CONSTRAINT template_version_language_version_id_fkey FOREIGN KEY (version_id) REFERENCES public.template_version(version_id);
+
+
+--
+-- Name: template_version_purpose template_version_purpose_purpose_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version_purpose
+    ADD CONSTRAINT template_version_purpose_purpose_id_fkey FOREIGN KEY (purpose_id) REFERENCES public.purpose(purpose_id);
+
+
+--
+-- Name: template_version_purpose template_version_purpose_version_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version_purpose
+    ADD CONSTRAINT template_version_purpose_version_id_fkey FOREIGN KEY (version_id) REFERENCES public.template_version(version_id);
+
+
+--
+-- Name: template_version template_version_retired_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version
+    ADD CONSTRAINT template_version_retired_by_fkey FOREIGN KEY (retired_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: template_version template_version_template_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_version
+    ADD CONSTRAINT template_version_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.notice_template(template_id);
 
 
 --
@@ -9934,6 +10499,39 @@ CREATE POLICY office_isolation ON public.rights_ticket_message USING (((current_
 
 
 --
+-- Name: template_version office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.template_version USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.notice_template p
+  WHERE (p.template_id = template_version.template_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.notice_template p
+  WHERE (p.template_id = template_version.template_id)))));
+
+
+--
+-- Name: template_version_language office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.template_version_language USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.template_version p
+  WHERE (p.version_id = template_version_language.version_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.template_version p
+  WHERE (p.version_id = template_version_language.version_id)))));
+
+
+--
+-- Name: template_version_purpose office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.template_version_purpose USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.template_version p
+  WHERE (p.version_id = template_version_purpose.version_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.template_version p
+  WHERE (p.version_id = template_version_purpose.version_id)))));
+
+
+--
 -- Name: project; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -10012,8 +10610,26 @@ ALTER TABLE public.rights_response_file ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.rights_ticket_message ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: template_version; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.template_version ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: template_version_language; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.template_version_language ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: template_version_purpose; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.template_version_purpose ENABLE ROW LEVEL SECURITY;
+
+--
 -- PostgreSQL database dump complete
 --
 
-\unrestrict jhZppLnMGHc3SvSL5PsaN4vkeEnpas0qiOoIwNGU24Crq2HPRJY4FQ0EzZdjKPr
+\unrestrict 9xEwZgqoDHDBPPze9KfY0ZWEvcc4CnDRa2pkXiGWCYKvW8bJ3AcNUJDQDfEnYcN
 

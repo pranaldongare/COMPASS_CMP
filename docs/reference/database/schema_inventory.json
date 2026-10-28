@@ -1,6 +1,6 @@
 {
-  "commit": "9dbb1f9c9b5ee932f93d1e007c91ada3aff455ee",
-  "migration_head": "0052",
+  "commit": "704b16b13fe782f9da09c13f47f0d89b861f489f",
+  "migration_head": "0053",
   "migrations": [
     {
       "revision": "0001",
@@ -209,6 +209,10 @@
     {
       "revision": "0052",
       "source": "backend/api/migrations/versions/0052_hr_categories.py"
+    },
+    {
+      "revision": "0053",
+      "source": "backend/api/migrations/versions/0053_template_versions.py"
     }
   ],
   "postgres_version": "16.15",
@@ -535,6 +539,21 @@
     },
     {
       "name": "rights_ticket_message",
+      "kind": "r",
+      "comment": null
+    },
+    {
+      "name": "template_version",
+      "kind": "r",
+      "comment": "A version of a Legal office template: the legal text Legal approves once; frozen when approved (ADR 0033)"
+    },
+    {
+      "name": "template_version_language",
+      "kind": "r",
+      "comment": null
+    },
+    {
+      "name": "template_version_purpose",
       "kind": "r",
       "comment": null
     }
@@ -3313,6 +3332,15 @@
       "comment": null
     },
     {
+      "table_name": "consent_link",
+      "name": "audience_mode",
+      "position": 17,
+      "type": "character varying(4)",
+      "not_null": true,
+      "default_value": "'otp'::character varying",
+      "comment": "How the link signs a person in: sso through the organisation (employees) or otp by a code (ADR 0034)"
+    },
+    {
       "table_name": "consent_purpose_grant",
       "name": "grant_id",
       "position": 1,
@@ -4636,6 +4664,15 @@
       "comment": null
     },
     {
+      "table_name": "notice",
+      "name": "template_version_id",
+      "position": 22,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
       "table_name": "notice_language",
       "name": "notice_language_id",
       "position": 1,
@@ -5478,6 +5515,33 @@
       "position": 13,
       "type": "integer",
       "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "project",
+      "name": "category_id",
+      "position": 17,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "project",
+      "name": "template_version_id",
+      "position": 18,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": "An activity's approved template version (ADR 0033); NULL for every R&D project"
+    },
+    {
+      "table_name": "project",
+      "name": "activity_description",
+      "position": 19,
+      "type": "text",
+      "not_null": false,
       "default_value": null,
       "comment": null
     },
@@ -7396,6 +7460,294 @@
       "type": "text",
       "not_null": false,
       "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "version_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('template_version_version_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "version_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "version",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "status",
+      "position": 5,
+      "type": "character varying(12)",
+      "not_null": true,
+      "default_value": "'draft'::character varying",
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "reconsent_required",
+      "position": 6,
+      "type": "boolean",
+      "not_null": true,
+      "default_value": "false",
+      "comment": "Set by Legal when the change is material: an activity moved to it asks its participants again"
+    },
+    {
+      "table_name": "template_version",
+      "name": "slot_guidance",
+      "position": 7,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "slot_max_length",
+      "position": 8,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "1200",
+      "comment": "The longest description an activity may write into {description}, in characters"
+    },
+    {
+      "table_name": "template_version",
+      "name": "withdraw_url",
+      "position": 9,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "exercise_rights_url",
+      "position": 10,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "board_complaint_url",
+      "position": 11,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "dpo_contact",
+      "position": 12,
+      "type": "character varying(255)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "applicable_to",
+      "position": 13,
+      "type": "notice_audience",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "created_by",
+      "position": 14,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "created_at",
+      "position": 15,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "updated_at",
+      "position": 16,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "approved_by",
+      "position": 17,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "approved_at",
+      "position": 18,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "retired_by",
+      "position": 19,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version",
+      "name": "retired_at",
+      "position": 20,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version_language",
+      "name": "version_language_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('template_version_language_version_language_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "template_version_language",
+      "name": "version_id",
+      "position": 2,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version_language",
+      "name": "language_code",
+      "position": 3,
+      "type": "language_code",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version_language",
+      "name": "locked_text",
+      "position": 4,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version_language",
+      "name": "content_hash",
+      "position": 5,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "sha256 of locked_text, set when the version is approved; an activity re-checks it before use"
+    },
+    {
+      "table_name": "template_version_language",
+      "name": "updated_by",
+      "position": 6,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version_language",
+      "name": "updated_at",
+      "position": 7,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "template_version_purpose",
+      "name": "version_purpose_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('template_version_purpose_version_purpose_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "template_version_purpose",
+      "name": "version_id",
+      "position": 2,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version_purpose",
+      "name": "purpose_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "template_version_purpose",
+      "name": "is_mandatory",
+      "position": 4,
+      "type": "boolean",
+      "not_null": true,
+      "default_value": "false",
+      "comment": null
+    },
+    {
+      "table_name": "template_version_purpose",
+      "name": "display_order",
+      "position": 5,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "0",
       "comment": null
     },
     {
@@ -10492,6 +10844,21 @@
     },
     {
       "table_name": "consent_link",
+      "name": "consent_link_audience_mode",
+      "kind": "c",
+      "definition": "CHECK (((audience_mode)::text = ANY ((ARRAY['sso'::character varying, 'otp'::character varying])::text[])))",
+      "columns": [
+        "audience_mode"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "consent_link",
       "name": "consent_link_created_by_fkey",
       "kind": "f",
       "definition": "FOREIGN KEY (created_by) REFERENCES auth_user(id)",
@@ -12010,6 +12377,23 @@
     },
     {
       "table_name": "notice",
+      "name": "notice_template_version_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (template_version_id) REFERENCES template_version(version_id)",
+      "columns": [
+        "template_version_id"
+      ],
+      "referenced_table": "template_version",
+      "referenced_columns": [
+        "version_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice",
       "name": "publishable",
       "kind": "c",
       "definition": "CHECK (((status <> 'published'::notice_status) OR ((recipients_text IS NOT NULL) AND (published_at IS NOT NULL))))",
@@ -12731,6 +13115,23 @@
     },
     {
       "table_name": "project",
+      "name": "project_category_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (category_id) REFERENCES hr_category(category_id)",
+      "columns": [
+        "category_id"
+      ],
+      "referenced_table": "hr_category",
+      "referenced_columns": [
+        "category_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "project",
       "name": "project_created_by_fkey",
       "kind": "f",
       "definition": "FOREIGN KEY (created_by) REFERENCES auth_user(id)",
@@ -12760,6 +13161,21 @@
       ],
       "delete_action": "a",
       "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "project",
+      "name": "project_description_length",
+      "kind": "c",
+      "definition": "CHECK (((activity_description IS NULL) OR (char_length(activity_description) <= 4000)))",
+      "columns": [
+        "activity_description"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
       "deferrable": false,
       "initially_deferred": false
     },
@@ -12807,6 +13223,23 @@
       "referenced_columns": [],
       "delete_action": " ",
       "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "project",
+      "name": "project_template_version_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (template_version_id) REFERENCES template_version(version_id)",
+      "columns": [
+        "template_version_id"
+      ],
+      "referenced_table": "template_version",
+      "referenced_columns": [
+        "version_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
       "deferrable": false,
       "initially_deferred": false
     },
@@ -14486,6 +14919,375 @@
       "update_action": " ",
       "deferrable": false,
       "initially_deferred": false
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_approved",
+      "kind": "c",
+      "definition": "CHECK ((((status)::text = 'draft'::text) = (approved_at IS NULL)))",
+      "columns": [
+        "status",
+        "approved_at"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_approved_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (approved_by) REFERENCES auth_user(id)",
+      "columns": [
+        "approved_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_approver",
+      "kind": "c",
+      "definition": "CHECK (((approved_at IS NULL) = (approved_by IS NULL)))",
+      "columns": [
+        "approved_at",
+        "approved_by"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_audience",
+      "kind": "c",
+      "definition": "CHECK ((((status)::text = 'draft'::text) OR (applicable_to IS NOT NULL)))",
+      "columns": [
+        "status",
+        "applicable_to"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_created_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (created_by) REFERENCES auth_user(id)",
+      "columns": [
+        "created_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_number",
+      "kind": "c",
+      "definition": "CHECK ((version >= 1))",
+      "columns": [
+        "version"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_once",
+      "kind": "u",
+      "definition": "UNIQUE (template_id, version)",
+      "columns": [
+        "template_id",
+        "version"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (version_id)",
+      "columns": [
+        "version_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_retired",
+      "kind": "c",
+      "definition": "CHECK ((((status)::text = 'retired'::text) = (retired_at IS NOT NULL)))",
+      "columns": [
+        "status",
+        "retired_at"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_retired_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (retired_by) REFERENCES auth_user(id)",
+      "columns": [
+        "retired_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_retirer",
+      "kind": "c",
+      "definition": "CHECK (((retired_at IS NULL) = (retired_by IS NULL)))",
+      "columns": [
+        "retired_at",
+        "retired_by"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_slot",
+      "kind": "c",
+      "definition": "CHECK (((slot_max_length >= 100) AND (slot_max_length <= 4000)))",
+      "columns": [
+        "slot_max_length"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_status",
+      "kind": "c",
+      "definition": "CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'approved'::character varying, 'retired'::character varying])::text[])))",
+      "columns": [
+        "status"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_template_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (template_id) REFERENCES notice_template(template_id)",
+      "columns": [
+        "template_id"
+      ],
+      "referenced_table": "notice_template",
+      "referenced_columns": [
+        "template_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_version_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (version_uuid)",
+      "columns": [
+        "version_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version_language",
+      "name": "template_version_language_once",
+      "kind": "u",
+      "definition": "UNIQUE (version_id, language_code)",
+      "columns": [
+        "version_id",
+        "language_code"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version_language",
+      "name": "template_version_language_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (version_language_id)",
+      "columns": [
+        "version_language_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version_language",
+      "name": "template_version_language_updated_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (updated_by) REFERENCES auth_user(id)",
+      "columns": [
+        "updated_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version_language",
+      "name": "template_version_language_version_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (version_id) REFERENCES template_version(version_id)",
+      "columns": [
+        "version_id"
+      ],
+      "referenced_table": "template_version",
+      "referenced_columns": [
+        "version_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version_purpose",
+      "name": "template_version_purpose_once",
+      "kind": "u",
+      "definition": "UNIQUE (version_id, purpose_id)",
+      "columns": [
+        "version_id",
+        "purpose_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version_purpose",
+      "name": "template_version_purpose_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (version_purpose_id)",
+      "columns": [
+        "version_purpose_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version_purpose",
+      "name": "template_version_purpose_purpose_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (purpose_id) REFERENCES purpose(purpose_id)",
+      "columns": [
+        "purpose_id"
+      ],
+      "referenced_table": "purpose",
+      "referenced_columns": [
+        "purpose_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "template_version_purpose",
+      "name": "template_version_purpose_version_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (version_id) REFERENCES template_version(version_id)",
+      "columns": [
+        "version_id"
+      ],
+      "referenced_table": "template_version",
+      "referenced_columns": [
+        "version_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
     }
   ],
   "indexes": [
@@ -15321,6 +16123,11 @@
     },
     {
       "table_name": "notice",
+      "name": "idx_notice_template_version",
+      "definition": "CREATE INDEX idx_notice_template_version ON public.notice USING btree (template_version_id) WHERE (template_version_id IS NOT NULL)"
+    },
+    {
+      "table_name": "notice",
       "name": "notice_notice_code_version_key",
       "definition": "CREATE UNIQUE INDEX notice_notice_code_version_key ON public.notice USING btree (notice_code, version)"
     },
@@ -15481,6 +16288,11 @@
     },
     {
       "table_name": "project",
+      "name": "idx_project_category",
+      "definition": "CREATE INDEX idx_project_category ON public.project USING btree (category_id) WHERE (category_id IS NOT NULL)"
+    },
+    {
+      "table_name": "project",
       "name": "idx_project_created_by",
       "definition": "CREATE INDEX idx_project_created_by ON public.project USING btree (created_by, created_at DESC)"
     },
@@ -15498,6 +16310,11 @@
       "table_name": "project",
       "name": "idx_project_status",
       "definition": "CREATE INDEX idx_project_status ON public.project USING btree (project_status, created_at DESC)"
+    },
+    {
+      "table_name": "project",
+      "name": "idx_project_template_version",
+      "definition": "CREATE INDEX idx_project_template_version ON public.project USING btree (template_version_id) WHERE (template_version_id IS NOT NULL)"
     },
     {
       "table_name": "project",
@@ -15788,6 +16605,46 @@
       "table_name": "rights_ticket_message",
       "name": "rights_ticket_message_pkey",
       "definition": "CREATE UNIQUE INDEX rights_ticket_message_pkey ON public.rights_ticket_message USING btree (message_id)"
+    },
+    {
+      "table_name": "template_version",
+      "name": "idx_template_version_template",
+      "definition": "CREATE INDEX idx_template_version_template ON public.template_version USING btree (template_id)"
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_once",
+      "definition": "CREATE UNIQUE INDEX template_version_once ON public.template_version USING btree (template_id, version)"
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_pkey",
+      "definition": "CREATE UNIQUE INDEX template_version_pkey ON public.template_version USING btree (version_id)"
+    },
+    {
+      "table_name": "template_version",
+      "name": "template_version_version_uuid_key",
+      "definition": "CREATE UNIQUE INDEX template_version_version_uuid_key ON public.template_version USING btree (version_uuid)"
+    },
+    {
+      "table_name": "template_version_language",
+      "name": "template_version_language_once",
+      "definition": "CREATE UNIQUE INDEX template_version_language_once ON public.template_version_language USING btree (version_id, language_code)"
+    },
+    {
+      "table_name": "template_version_language",
+      "name": "template_version_language_pkey",
+      "definition": "CREATE UNIQUE INDEX template_version_language_pkey ON public.template_version_language USING btree (version_language_id)"
+    },
+    {
+      "table_name": "template_version_purpose",
+      "name": "template_version_purpose_once",
+      "definition": "CREATE UNIQUE INDEX template_version_purpose_once ON public.template_version_purpose USING btree (version_id, purpose_id)"
+    },
+    {
+      "table_name": "template_version_purpose",
+      "name": "template_version_purpose_pkey",
+      "definition": "CREATE UNIQUE INDEX template_version_purpose_pkey ON public.template_version_purpose USING btree (version_purpose_id)"
     }
   ],
   "enums": [
@@ -16386,6 +17243,11 @@
     },
     {
       "table_name": "notice_purpose",
+      "name": "trg_hr_notice_purposes_in_version",
+      "definition": "CREATE TRIGGER trg_hr_notice_purposes_in_version BEFORE INSERT ON public.notice_purpose FOR EACH ROW EXECUTE FUNCTION cmp_hr_notice_purposes_in_version()"
+    },
+    {
+      "table_name": "notice_purpose",
       "name": "trg_notice_purpose_freeze",
       "definition": "CREATE TRIGGER trg_notice_purpose_freeze BEFORE INSERT OR DELETE OR UPDATE ON public.notice_purpose FOR EACH ROW EXECUTE FUNCTION cmp_notice_purpose_freeze()"
     },
@@ -16403,6 +17265,11 @@
       "table_name": "person_type_history",
       "name": "trg_person_type_history_append_only",
       "definition": "CREATE TRIGGER trg_person_type_history_append_only BEFORE DELETE OR UPDATE ON public.person_type_history FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
+      "table_name": "project",
+      "name": "trg_activity_version_coherent",
+      "definition": "CREATE TRIGGER trg_activity_version_coherent BEFORE INSERT OR UPDATE OF template_version_id, category_id ON public.project FOR EACH ROW EXECUTE FUNCTION cmp_activity_version_coherent()"
     },
     {
       "table_name": "project",
@@ -16458,6 +17325,31 @@
       "table_name": "rights_ticket_message",
       "name": "trg_ticket_message_append_only",
       "definition": "CREATE TRIGGER trg_ticket_message_append_only BEFORE DELETE OR UPDATE ON public.rights_ticket_message FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
+      "table_name": "template_version",
+      "name": "trg_template_version_freeze",
+      "definition": "CREATE TRIGGER trg_template_version_freeze BEFORE UPDATE ON public.template_version FOR EACH ROW EXECUTE FUNCTION cmp_template_version_freeze()"
+    },
+    {
+      "table_name": "template_version",
+      "name": "trg_template_version_of_category",
+      "definition": "CREATE TRIGGER trg_template_version_of_category BEFORE INSERT ON public.template_version FOR EACH ROW EXECUTE FUNCTION cmp_template_version_of_category()"
+    },
+    {
+      "table_name": "template_version",
+      "name": "trg_template_version_touch",
+      "definition": "CREATE TRIGGER trg_template_version_touch BEFORE UPDATE ON public.template_version FOR EACH ROW EXECUTE FUNCTION cmp_touch_updated_at()"
+    },
+    {
+      "table_name": "template_version_language",
+      "name": "trg_template_version_language_freeze",
+      "definition": "CREATE TRIGGER trg_template_version_language_freeze BEFORE INSERT OR DELETE OR UPDATE ON public.template_version_language FOR EACH ROW EXECUTE FUNCTION cmp_template_version_part_freeze()"
+    },
+    {
+      "table_name": "template_version_purpose",
+      "name": "trg_template_version_purpose_freeze",
+      "definition": "CREATE TRIGGER trg_template_version_purpose_freeze BEFORE INSERT OR DELETE OR UPDATE ON public.template_version_purpose FOR EACH ROW EXECUTE FUNCTION cmp_template_version_part_freeze()"
     }
   ],
   "views": [
@@ -16675,9 +17567,21 @@
     },
     {
       "name": "rights_ticket_message_message_id_seq"
+    },
+    {
+      "name": "template_version_language_version_language_id_seq"
+    },
+    {
+      "name": "template_version_purpose_version_purpose_id_seq"
+    },
+    {
+      "name": "template_version_version_id_seq"
     }
   ],
   "functions": [
+    {
+      "name": "cmp_activity_version_coherent"
+    },
     {
       "name": "cmp_append_only"
     },
@@ -16713,6 +17617,9 @@
     },
     {
       "name": "cmp_grant_in_notice"
+    },
+    {
+      "name": "cmp_hr_notice_purposes_in_version"
     },
     {
       "name": "cmp_is_minor"
@@ -16769,17 +17676,26 @@
       "name": "cmp_template_category_fits"
     },
     {
+      "name": "cmp_template_version_freeze"
+    },
+    {
+      "name": "cmp_template_version_of_category"
+    },
+    {
+      "name": "cmp_template_version_part_freeze"
+    },
+    {
       "name": "cmp_touch_updated_at"
     }
   ],
   "counts": {
-    "application_tables": 63,
+    "application_tables": 66,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 761,
-    "foreign_keys": 184,
+    "table_columns": 798,
+    "foreign_keys": 195,
     "enums": 39,
-    "triggers": 63,
-    "checks": 100
+    "triggers": 70,
+    "checks": 110
   }
 }

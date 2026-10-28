@@ -75,6 +75,8 @@ export interface NoticeTemplate {
   category_uuid?: Uuid | null;
   category_code?: string | null;
   category_name?: string | null;
+  /** How many versions a Legal office template has (0053). */
+  version_count?: number;
 }
 
 export interface NoticeTemplatePurpose {
@@ -110,6 +112,72 @@ export interface NoticeTemplateDetail extends NoticeTemplate {
   purposes: NoticeTemplatePurpose[];
   languages: NoticeTemplateLanguage[];
   notices: NoticeTemplateUse[];
+}
+
+/** A version of a Legal office template (0053, ADR 0033): the legal text
+ *  Legal approves once, with the purposes an activity may choose. Frozen
+ *  once approved. */
+export interface TemplateVersion {
+  version_uuid: Uuid;
+  version: number;
+  status: "draft" | "approved" | "retired";
+  /** Moving an activity to it asks its participants to consent again. */
+  reconsent_required: boolean;
+  /** Shown to the HR PoC beside the description box. */
+  slot_guidance: string | null;
+  slot_max_length: number;
+  withdraw_url: string;
+  exercise_rights_url: string;
+  board_complaint_url: string;
+  dpo_contact: string;
+  applicable_to: NoticeAudience | null;
+  template_uuid: Uuid;
+  template_code: string;
+  template_title: string;
+  category_uuid: Uuid | null;
+  category_code: string | null;
+  created_by_name: string;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  approved_by_name: string | null;
+  approved_at: Timestamp | null;
+  retired_at: Timestamp | null;
+  language_count: number;
+  purpose_count: number;
+  activity_count: number;
+}
+
+export interface TemplateVersionLanguage {
+  language_code: LanguageCode;
+  /** With {{purposes}} and {{description}} exactly once each. */
+  locked_text: string;
+  /** Set at approval. */
+  content_hash: string | null;
+  updated_at: Timestamp;
+  updated_by_name: string;
+}
+
+export interface TemplateVersionPurpose {
+  purpose_uuid: Uuid;
+  purpose_code: string;
+  name: string;
+  status: string;
+  lawful_basis: string;
+  data_categories: string[];
+  is_mandatory: boolean;
+  display_order: number;
+}
+
+export interface TemplateVersionDetail extends TemplateVersion {
+  languages: TemplateVersionLanguage[];
+  purposes: TemplateVersionPurpose[];
+}
+
+/** What an activity made from a version would serve, per language. */
+export interface TemplateVersionPreview {
+  language_code: LanguageCode;
+  text: string;
+  content_hash: string;
 }
 
 /** What an R&D User sees when they look an ID up: what it carries. */

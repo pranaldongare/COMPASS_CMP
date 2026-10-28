@@ -86,6 +86,11 @@ export const keys = {
     list: (params?: Params) => ["notice-templates", params ?? {}] as const,
     detail: (uuid: Uuid) => ["notice-template", uuid] as const,
     byCode: (code: string) => ["notice-template", "code", code] as const,
+    /** A Legal office template's versions (0053), under the template's key. */
+    versions: (uuid: Uuid) => ["notice-template", uuid, "versions"] as const,
+    version: (uuid: Uuid, n: number) => ["notice-template", uuid, "versions", n] as const,
+    preview: (uuid: Uuid, n: number, description: string) =>
+      ["notice-template", uuid, "versions", n, "preview", description] as const,
   },
 
   /** The Legal office's categories of HR activity (0052). */

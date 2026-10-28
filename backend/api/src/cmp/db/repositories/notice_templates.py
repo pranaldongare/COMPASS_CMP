@@ -20,7 +20,9 @@ TEMPLATE_COLUMNS = """
   t.note, t.status, t.created_at, t.updated_at, t.retired_at,
   u.full_name AS created_by_name,
   (SELECT o.office_code FROM office o WHERE o.office_id = t.office_id) AS office_code,
-  c.category_uuid, c.category_code, c.name AS category_name,
+  t.category_id, c.category_uuid, c.category_code, c.name AS category_name,
+  (SELECT count(*) FROM template_version v WHERE v.template_id = t.template_id)
+    AS version_count,
   (SELECT count(*) FROM notice_template_purpose tp WHERE tp.template_id = t.template_id)
     AS purpose_count,
   (SELECT count(*) FROM notice_template_language tl WHERE tl.template_id = t.template_id)

@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 335,
-  "registered_business_and_system_operations": 338,
+  "documented_operations": 345,
+  "registered_business_and_system_operations": 348,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -13792,6 +13792,416 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/users.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/hr/categories.py"
       ]
+    },
+    {
+      "module": "notices",
+      "method": "GET",
+      "path": "/notice-templates/{template_uuid}/versions",
+      "summary": "A Legal office template's versions",
+      "function": "list_versions",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "TemplateReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\"))]",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "notice_template",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "Newest first, within the caller's office. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py"
+      ]
+    },
+    {
+      "module": "notices",
+      "method": "POST",
+      "path": "/notice-templates/{template_uuid}/versions",
+      "summary": "Open the next version as a draft",
+      "function": "open_version",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "TemplateWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\", write=True))]",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "notice_template",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "A copy of the last version's text, purposes and fields, or the template's links, contact and audience for the first. One draft at a time (409 `version_draft_open`); a retired template takes none. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py"
+      ]
+    },
+    {
+      "module": "notices",
+      "method": "GET",
+      "path": "/notice-templates/{template_uuid}/versions/{number}",
+      "summary": "Get Version",
+      "function": "get_version",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "TemplateReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\"))]",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "notice_template",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "With its locked text per language (and each hash once approved) and its purposes. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py"
+      ]
+    },
+    {
+      "module": "notices",
+      "method": "PATCH",
+      "path": "/notice-templates/{template_uuid}/versions/{number}",
+      "summary": "Edit a draft version",
+      "function": "update_version",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "TemplateWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\", write=True))]",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "notice_template",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The slot's guidance and limit (100-4000), the re-consent flag, the Rule 3 links, the contact and the audience. 409 `version_not_draft` once approved. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py"
+      ]
+    },
+    {
+      "module": "notices",
+      "method": "PUT",
+      "path": "/notice-templates/{template_uuid}/versions/{number}/languages/{code}",
+      "summary": "A draft version's locked text in one language",
+      "function": "set_version_language",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "TemplateWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\", write=True))]",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "notice_template",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "Added or replaced; its hash is cleared until approval. Draft only. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py"
+      ]
+    },
+    {
+      "module": "notices",
+      "method": "DELETE",
+      "path": "/notice-templates/{template_uuid}/versions/{number}/languages/{code}",
+      "summary": "Remove Version Language",
+      "function": "remove_version_language",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "TemplateWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\", write=True))]",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "notice_template",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "Draft only. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py"
+      ]
+    },
+    {
+      "module": "notices",
+      "method": "PUT",
+      "path": "/notice-templates/{template_uuid}/versions/{number}/purposes",
+      "summary": "The purposes an activity may choose, and which are mandatory",
+      "function": "set_version_purposes",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "TemplateWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\", write=True))]",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "notice_template",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The whole list, in order; each the template office's own and not retired. Draft only. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py"
+      ]
+    },
+    {
+      "module": "notices",
+      "method": "POST",
+      "path": "/notice-templates/{template_uuid}/versions/{number}/approve",
+      "summary": "Approve a draft version: hashed and frozen",
+      "function": "approve_version",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "TemplateWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\", write=True))]",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "notice_template",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "409 `purpose_not_active` naming the purpose; 422 for a language missing a slot (`language`, `placeholder`), no English text, or no audience. Then each language's hash is stored and `cmp_template_version_freeze` holds it. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py"
+      ]
+    },
+    {
+      "module": "notices",
+      "method": "POST",
+      "path": "/notice-templates/{template_uuid}/versions/{number}/status",
+      "summary": "Retire an approved version",
+      "function": "set_version_status",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "TemplateWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\", write=True))]",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "notice_template",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "approved -> retired only (409 otherwise). Activities already on it continue. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py"
+      ]
+    },
+    {
+      "module": "notices",
+      "method": "GET",
+      "path": "/notice-templates/{template_uuid}/versions/{number}/preview",
+      "summary": "What an activity made from it would serve",
+      "function": "preview_version",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "TemplateReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\"))]",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "notice_template",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "Every purpose on the list and the description given (or a sample), composed per language with its hash; a description with a slot or a link is 422. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py"
+      ]
     }
   ],
   "amended": [
@@ -13899,6 +14309,11 @@
       "on": "2026-10-28",
       "commit": "HR track increment 2",
       "note": "Columns `legal` and `hr_user` added to every row (NO unless stated). Nine operations added: the seven under /hr/categories, GET /users/hr-pocs and PUT /users/{user_uuid}/categories. Purposes' writes, the notice templates and the account register amended to the matrix guards that admit the Legal PoC. Evidence links point at HEAD."
+    },
+    {
+      "on": "2026-10-28",
+      "commit": "HR track increment 3",
+      "note": "Ten operations added under /notice-templates/{template_uuid}/versions (0053). Evidence links point at HEAD."
     }
   ]
 }

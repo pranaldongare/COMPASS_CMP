@@ -593,6 +593,22 @@ async def purpose_usage(conn: Conn, purpose_id: int) -> list[Row]:
     )
 
 
+async def purpose_on_a_template(conn: Conn, purpose_id: int) -> bool:
+    """Whether a notice template or a template version lists this purpose.
+
+    Neither is a notice, so `purpose_usage` does not see them; a purpose only
+    they name is still somebody's (open point OP-9).
+    """
+    row = await fetch_one(
+        conn,
+        """SELECT EXISTS (SELECT 1 FROM notice_template_purpose WHERE purpose_id = %(p)s)
+               OR EXISTS (SELECT 1 FROM template_version_purpose WHERE purpose_id = %(p)s)
+               AS used""",
+        {"p": purpose_id},
+    )
+    return bool(row and row["used"])
+
+
 async def purpose_is_published_anywhere(conn: Conn, purpose_id: int) -> bool:
     row = await fetch_one(
         conn,

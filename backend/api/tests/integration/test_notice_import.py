@@ -449,6 +449,41 @@ async def test_a_purpose_another_notice_picked_up_is_never_discarded(
     assert survived is not None, "a purpose another notice uses must not be swept"
 
 
+async def test_a_purpose_only_a_template_lists_is_never_discarded(
+    conn: Any, seeded: dict[str, Any], document: bytes
+) -> None:
+    """Open point OP-9: a template's purpose is somebody's, though no notice
+    carries it."""
+    from cmp.db.repositories import registry as registry_repo
+
+    project = await _fresh_project(conn, seeded, "Template Purpose Project")
+    kwargs = {
+        "project_uuid": str(project["project_uuid"]),
+        "actor_id": seeded["users"]["rnd_user"]["id"],
+        "role": "rnd_user",
+    }
+    first = await importer.commit(conn, payload=document, **kwargs)
+    borrowed = (await notice_repo.purposes_of(conn, first["notice_id"]))[0]
+    template = await conn.execute(
+        """INSERT INTO notice_template (title, withdraw_url, exercise_rights_url,
+                                        board_complaint_url, dpo_contact, created_by, office_id)
+           VALUES ('Keeps a purpose', 'https://x/w', 'https://x/r', 'https://x/b',
+                   'dpo@test.local', %s, (SELECT office_id FROM office WHERE office_code = 'rnd'))
+           RETURNING template_id""",
+        (seeded["users"]["dpo"]["id"],),
+    )
+    template_id = (await template.fetchone())["template_id"]
+    await conn.execute(
+        "INSERT INTO notice_template_purpose (template_id, purpose_id) VALUES (%s, %s)",
+        (template_id, borrowed["purpose_id"]),
+    )
+
+    await importer.commit(conn, payload=document, **kwargs)
+
+    survived = await registry_repo.purpose_by_id(conn, borrowed["purpose_id"])
+    assert survived is not None, "a purpose a template lists must not be swept"
+
+
 async def test_a_published_notice_is_never_overwritten(
     conn: Any, seeded: dict[str, Any], document: bytes
 ) -> None:

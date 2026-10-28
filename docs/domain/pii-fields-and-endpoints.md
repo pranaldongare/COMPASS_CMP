@@ -87,7 +87,7 @@ hash and no email is written
 rows from before that change stand as written, because the trail is
 hash-chained and cannot be rewritten.
 
-## 2. API endpoints that carry PII — 235 endpoints in 23 modules
+## 2. API endpoints that carry PII — 244 endpoints in 23 modules
 
 Every GET, POST, PUT, PATCH and DELETE whose request or response includes a
 personal field. *In* is what the caller sends (body, path and query); *out* is
@@ -344,7 +344,7 @@ these need no session; they are marked **public**.
 | POST | `/projects/{project_uuid}/transition` | `reason` | — |
 | PUT | `/sites/{site_uuid}/owner` | `owner_user_uuid` | — |
 
-### Notices — 21 endpoints
+### Notices — 30 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
@@ -358,6 +358,15 @@ these need no session; they are marked **public**.
 | POST | `/notice-templates/{template_uuid}/purposes` | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
 | DELETE | `/notice-templates/{template_uuid}/purposes/{purpose_uuid}` | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
 | POST | `/notice-templates/{template_uuid}/status` | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| GET | `/notice-templates/{template_uuid}/versions` | — | `approved_by_name`, `created_by_name`, `dpo_contact` |
+| POST | `/notice-templates/{template_uuid}/versions` | — | `approved_by_name`, `created_by_name`, `dpo_contact`, `updated_by_name` |
+| GET | `/notice-templates/{template_uuid}/versions/{number}` | — | `approved_by_name`, `created_by_name`, `dpo_contact`, `updated_by_name` |
+| PATCH | `/notice-templates/{template_uuid}/versions/{number}` | `dpo_contact` | `approved_by_name`, `created_by_name`, `dpo_contact`, `updated_by_name` |
+| POST | `/notice-templates/{template_uuid}/versions/{number}/approve` | — | `approved_by_name`, `created_by_name`, `dpo_contact`, `updated_by_name` |
+| PUT | `/notice-templates/{template_uuid}/versions/{number}/languages/{code}` | — | `approved_by_name`, `created_by_name`, `dpo_contact`, `updated_by_name` |
+| DELETE | `/notice-templates/{template_uuid}/versions/{number}/languages/{code}` | — | `approved_by_name`, `created_by_name`, `dpo_contact`, `updated_by_name` |
+| PUT | `/notice-templates/{template_uuid}/versions/{number}/purposes` | — | `approved_by_name`, `created_by_name`, `dpo_contact`, `updated_by_name` |
+| POST | `/notice-templates/{template_uuid}/versions/{number}/status` | — | `approved_by_name`, `created_by_name`, `dpo_contact`, `updated_by_name` |
 | GET | `/notices/{notice_uuid}` | — | `dpo_contact` |
 | PUT | `/notices/{notice_uuid}` | `dpo_contact` | `dpo_contact` |
 | POST | `/notices/{notice_uuid}/publish` | — | `dpo_contact` |

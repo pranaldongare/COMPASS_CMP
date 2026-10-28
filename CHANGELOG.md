@@ -27,6 +27,17 @@ as a release yet.
   its own, in the query as well as by the policies. Each role is held to
   its track's office. The notification feed and a resend keep to the
   reader's office. Migration 0052.
+- **Template versions** (ADR 0033, part 2): a Legal office template is
+  versioned. The Legal PoC opens version *n* as a draft (a copy of *n-1*),
+  writes its locked text with the `{{purposes}}` and `{{description}}`
+  slots, lists the purposes an activity may choose and the mandatory ones,
+  sets the description's guidance and limit and whether a move to it needs
+  re-consent, previews the composed notice with its hash, and approves it:
+  every purpose active, every language with both slots, English present.
+  Approval hashes each language and the database freezes the version; a
+  retired version starts nothing new. The composer that will build each
+  activity's notice is in place. The Word importer no longer deletes a
+  purpose a template or a version lists. Migration 0053.
 - **Sign-in as "Light split"** (2026-10-11, chosen from three designs): the
   left 7/12 has COMPASS at the top left, the app's name as a kicker, the
   headline on two lines, the line under it, the dotted world map, and three

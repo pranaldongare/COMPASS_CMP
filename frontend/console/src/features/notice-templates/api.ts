@@ -6,7 +6,7 @@
  * into that project's own draft notice.
  */
 
-import { apiDelete, apiGet, apiPost, apiPut, queryString } from "@/lib/api";
+import { apiDelete, apiGet, apiPatch, apiPost, apiPut, queryString } from "@/lib/api";
 import type {
   LanguageCode,
   Notice,
@@ -14,6 +14,9 @@ import type {
   NoticeTemplate,
   NoticeTemplateDetail,
   NoticeTemplateFound,
+  TemplateVersion,
+  TemplateVersionDetail,
+  TemplateVersionPreview,
   Uuid,
 } from "@/types";
 
@@ -106,4 +109,91 @@ export function noticeFromTemplate(projectUuid: Uuid, templateCode: string): Pro
   return apiPost<Notice>(`/projects/${projectUuid}/notices/from-template`, {
     template_code: templateCode.trim(),
   });
+}
+
+// ------------------------------------------------------------------ versions
+//
+// A Legal office template's versions (0053, ADR 0033): the legal text Legal
+// approves once. A DPO office template has none.
+
+export interface VersionInput {
+  reconsent_required?: boolean;
+  slot_guidance?: string | null;
+  slot_max_length?: number;
+  withdraw_url?: string;
+  exercise_rights_url?: string;
+  board_complaint_url?: string;
+  dpo_contact?: string;
+  applicable_to?: NoticeAudience | null;
+}
+
+const versionsOf = (uuid: Uuid) => `${base(uuid)}/versions`;
+
+export function listTemplateVersions(uuid: Uuid): Promise<TemplateVersion[]> {
+  return apiGet<TemplateVersion[]>(versionsOf(uuid));
+}
+
+export function getTemplateVersion(uuid: Uuid, n: number): Promise<TemplateVersionDetail> {
+  return apiGet<TemplateVersionDetail>(`${versionsOf(uuid)}/${n}`);
+}
+
+/** The next version, as a draft carrying what the last one said. */
+export function openTemplateVersion(uuid: Uuid): Promise<TemplateVersionDetail> {
+  return apiPost<TemplateVersionDetail>(versionsOf(uuid), {});
+}
+
+export function updateTemplateVersion(
+  uuid: Uuid,
+  n: number,
+  body: VersionInput,
+): Promise<TemplateVersionDetail> {
+  return apiPatch<TemplateVersionDetail>(`${versionsOf(uuid)}/${n}`, body);
+}
+
+export function setVersionLanguage(
+  uuid: Uuid,
+  n: number,
+  code: LanguageCode,
+  lockedText: string,
+): Promise<TemplateVersionDetail> {
+  return apiPut<TemplateVersionDetail>(`${versionsOf(uuid)}/${n}/languages/${code}`, {
+    locked_text: lockedText,
+  });
+}
+
+export function removeVersionLanguage(
+  uuid: Uuid,
+  n: number,
+  code: LanguageCode,
+): Promise<TemplateVersionDetail> {
+  return apiDelete<TemplateVersionDetail>(`${versionsOf(uuid)}/${n}/languages/${code}`);
+}
+
+/** The whole list, in order. */
+export function setVersionPurposes(
+  uuid: Uuid,
+  n: number,
+  purposes: { purpose_uuid: Uuid; is_mandatory: boolean }[],
+): Promise<TemplateVersionDetail> {
+  return apiPut<TemplateVersionDetail>(`${versionsOf(uuid)}/${n}/purposes`, { purposes });
+}
+
+export function approveTemplateVersion(uuid: Uuid, n: number): Promise<TemplateVersionDetail> {
+  return apiPost<TemplateVersionDetail>(`${versionsOf(uuid)}/${n}/approve`, {});
+}
+
+export function retireTemplateVersion(uuid: Uuid, n: number): Promise<TemplateVersionDetail> {
+  return apiPost<TemplateVersionDetail>(`${versionsOf(uuid)}/${n}/status`, {
+    status: "retired",
+  });
+}
+
+export function previewTemplateVersion(
+  uuid: Uuid,
+  n: number,
+  description: string,
+): Promise<TemplateVersionPreview[]> {
+  return apiGet<TemplateVersionPreview[]>(
+    `${versionsOf(uuid)}/${n}/preview${queryString({ description: description || undefined })}`,
+  );
 }

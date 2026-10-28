@@ -34,6 +34,7 @@ GROUP_LABELS: Final[dict[str, str]] = {
     "notice": "Notices",
     "notice_template": "Notice templates",
     "hr_category": "HR categories",
+    "template_version": "Template versions",
     "consent": "Consent",
     "export": "Exports",
     "import": "Imports",

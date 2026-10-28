@@ -886,6 +886,95 @@ async def invite_staff(
     return staff
 
 
+#: The Legal office's purposes (0052): the first mandatory on the wellness
+#: template's version, the second optional.
+HR_PURPOSES: list[dict[str, Any]] = [
+    {
+        "purpose_code": "PUR-HR-WELLNESS",
+        "name": "Wellness programme participation",
+        "description": "Running the wellness programmes an employee signs up for.",
+        "uses": "Scheduling sessions, arranging the provider, measuring take-up.",
+        "data_categories": ["name", "employee_id", "health_questionnaire"],
+    },
+    {
+        "purpose_code": "PUR-HR-WELLNESS-SURVEY",
+        "name": "Wellness feedback survey",
+        "description": "Asking participants how a programme went.",
+        "uses": "Sending a short survey after the programme and reading the answers.",
+        "data_categories": ["name", "email"],
+    },
+]
+
+#: Version 1 of the wellness template (0053): the locked text with its slots.
+HR_LOCKED_TEXT = """\
+The Legal office of the organisation will process your personal data for the
+wellness programme described below, with your consent.
+
+What we will use your data for:
+{{purposes}}
+
+About this programme:
+{{description}}
+
+You can withdraw your consent at any time from your consents page; it is as
+easy as giving it. Withdrawing does not affect what was done before.
+"""
+
+
+async def hr_purpose(api: Api, legal: Actor, p: dict[str, Any]) -> str:
+    """An HR purpose, written and activated by the Legal PoC."""
+    made = await api.call(
+        "POST",
+        "/purposes",
+        actor=legal,
+        expect=(201,),
+        json={
+            **p,
+            "lawful_basis": "consent_s6",
+            "retention_days": 365,
+            "retention_basis": "business_policy",
+            "erasure_trigger": "withdrawal",
+        },
+    )
+    uuid = str(made.json()["purpose_uuid"])
+    await api.call("POST", f"/purposes/{uuid}/activate", actor=legal)
+    return uuid
+
+
+async def hr_template_version(
+    api: Api, legal: Actor, template_uuid: str, purpose_uuids: list[str]
+) -> None:
+    """Version 1 of a template, written and approved by the Legal PoC: the
+    first purpose mandatory, the rest optional."""
+    base = f"/notice-templates/{template_uuid}/versions"
+    await api.call("POST", base, actor=legal, expect=(201,))
+    await api.call(
+        "PATCH",
+        f"{base}/1",
+        actor=legal,
+        json={
+            "slot_guidance": "Say what the programme is, who runs it, and when it happens.",
+            "slot_max_length": 800,
+        },
+    )
+    await api.call(
+        "PUT", f"{base}/1/languages/english", actor=legal, json={"locked_text": HR_LOCKED_TEXT}
+    )
+    await api.call(
+        "PUT",
+        f"{base}/1/purposes",
+        actor=legal,
+        json={
+            "purposes": [
+                {"purpose_uuid": uuid, "is_mandatory": i == 0}
+                for i, uuid in enumerate(purpose_uuids)
+            ]
+        },
+    )
+    await api.call("POST", f"{base}/1/approve", actor=legal)
+    api.counts["template versions"] += 1
+
+
 async def hr_registry(
     api: Api, staff: dict[str, Actor], admin: Actor, processors: dict[str, str]
 ) -> None:
@@ -923,25 +1012,8 @@ async def hr_registry(
             },
         )
         api.counts["HR categories"] += 1
-    purpose = await api.call(
-        "POST",
-        "/purposes",
-        actor=legal,
-        expect=(201,),
-        json={
-            "purpose_code": "PUR-HR-WELLNESS",
-            "name": "Wellness programme participation",
-            "description": "Running the wellness programmes an employee signs up for.",
-            "uses": "Scheduling sessions, arranging the provider, measuring take-up.",
-            "lawful_basis": "consent_s6",
-            "data_categories": ["name", "employee_id", "health_questionnaire"],
-            "retention_days": 365,
-            "retention_basis": "business_policy",
-            "erasure_trigger": "withdrawal",
-        },
-    )
-    await api.call("POST", f"/purposes/{purpose.json()['purpose_uuid']}/activate", actor=legal)
-    await api.call(
+    purposes = [await hr_purpose(api, legal, p) for p in HR_PURPOSES]
+    template = await api.call(
         "POST",
         "/notice-templates",
         actor=legal,
@@ -956,6 +1028,7 @@ async def hr_registry(
             "category_uuid": category_uuid["WELLNESS"],
         },
     )
+    await hr_template_version(api, legal, template.json()["template_uuid"], purposes)
     for s in HR_STAFF:
         if s["role"] != "hr_user":
             continue

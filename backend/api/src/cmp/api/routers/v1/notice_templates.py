@@ -31,6 +31,7 @@ from cmp.core.errors import ValidationFailed
 from cmp.db.pool import connection, transaction
 from cmp.db.repositories import notice_templates as repo
 from cmp.domain.notices import templates as service
+from cmp.domain.notices import versions
 from cmp.schemas.common import HttpUrl, NoticeText, Out, Schema
 
 router = APIRouter(tags=["notice templates"])
@@ -107,6 +108,8 @@ class TemplateOut(Out):
     category_uuid: UUID | None = None
     category_code: str | None = None
     category_name: str | None = None
+    #: How many versions a Legal office template has (0053); 0 for the DPO's.
+    version_count: int = 0
 
 
 class TemplatePurposeOut(Out):
@@ -310,3 +313,252 @@ async def remove_template_language(
     async with transaction() as conn:
         template = await service.require(conn, str(template_uuid))
         return await service.remove_language(conn, template, language_code=code)
+
+
+# ================================================================ versions
+#
+# The Legal office's templates are versioned (0053, ADR 0033): a version is
+# the legal text Legal approves once, and every activity made from it
+# inherits that approval. A DPO office template is not (409).
+
+V = "/notice-templates/{template_uuid}/versions"
+
+
+class VersionLanguageOut(Out):
+    language_code: str
+    locked_text: str
+    #: Set when the version is approved; an activity checks it before use.
+    content_hash: str | None
+    updated_at: datetime
+    updated_by_name: str
+
+
+class VersionPurposeOut(Out):
+    purpose_uuid: UUID
+    purpose_code: str
+    name: str
+    status: str
+    lawful_basis: str
+    data_categories: list[str]
+    is_mandatory: bool
+    display_order: int
+
+
+class VersionOut(Out):
+    version_uuid: UUID
+    version: int
+    status: str
+    reconsent_required: bool
+    slot_guidance: str | None
+    slot_max_length: int
+    withdraw_url: str
+    exercise_rights_url: str
+    board_complaint_url: str
+    dpo_contact: str
+    applicable_to: str | None
+    template_uuid: UUID
+    template_code: str
+    template_title: str
+    category_uuid: UUID | None
+    category_code: str | None
+    created_by_name: str
+    created_at: datetime
+    updated_at: datetime
+    approved_by_name: str | None
+    approved_at: datetime | None
+    retired_at: datetime | None
+    language_count: int
+    purpose_count: int
+    #: How many activities were made from it.
+    activity_count: int
+
+
+class VersionDetail(VersionOut):
+    languages: list[VersionLanguageOut]
+    purposes: list[VersionPurposeOut]
+
+
+class VersionUpdate(Schema):
+    reconsent_required: bool | None = None
+    #: Shown to the HR PoC beside the description box.
+    slot_guidance: Annotated[str | None, Field(default=None, max_length=2000)] = None
+    slot_max_length: Annotated[int | None, Field(default=None, ge=100, le=4000)] = None
+    withdraw_url: HttpUrl | None = None
+    exercise_rights_url: HttpUrl | None = None
+    board_complaint_url: HttpUrl | None = None
+    dpo_contact: Annotated[str | None, Field(default=None, min_length=3, max_length=255)] = None
+    applicable_to: NoticeAudience | None = None
+
+
+class VersionLanguageIn(Schema):
+    #: The legal text, with `{{purposes}}` and `{{description}}` exactly once each.
+    locked_text: NoticeText
+
+
+class VersionPurposeIn(Schema):
+    purpose_uuid: UUID
+    is_mandatory: bool = False
+    display_order: Annotated[int | None, Field(default=None, ge=0, le=999)] = None
+
+
+class VersionPurposesIn(Schema):
+    #: The whole list, in order: what is not named is taken off.
+    purposes: list[VersionPurposeIn] = Field(default_factory=list, max_length=50)
+
+
+class VersionStatusIn(Schema):
+    status: Annotated[str, Field(pattern="^retired$", description="retired")]
+
+
+class VersionPreview(Out):
+    language_code: str
+    text: str
+    content_hash: str
+
+
+async def _version(conn: Any, template_uuid: UUID, number: int) -> tuple[Any, Any]:
+    template = await service.require(conn, str(template_uuid))
+    return template, await versions.require(conn, template, number)
+
+
+@router.get(V, response_model=list[VersionOut], summary="A Legal office template's versions")
+async def list_versions(template_uuid: UUID, principal: TemplateReader) -> list[dict[str, Any]]:
+    async with connection() as conn:
+        template = await service.require(conn, str(template_uuid))
+        return await versions.list_versions(conn, template)
+
+
+@router.post(
+    V,
+    response_model=VersionDetail,
+    status_code=status.HTTP_201_CREATED,
+    summary="Open the next version as a draft",
+)
+async def open_version(template_uuid: UUID, principal: TemplateWriter) -> dict[str, Any]:
+    """A copy of the last version's content, or the template's links and
+    contact for the first. One draft at a time."""
+    async with transaction() as conn:
+        template = await service.require(conn, str(template_uuid))
+        return await versions.open_version(conn, template, actor_id=principal.user_id)
+
+
+@router.get(f"{V}/{{number}}", response_model=VersionDetail)
+async def get_version(
+    template_uuid: UUID, number: int, principal: TemplateReader
+) -> dict[str, Any]:
+    async with connection() as conn:
+        _, version = await _version(conn, template_uuid, number)
+        return await versions.detail(conn, version)
+
+
+@router.patch(f"{V}/{{number}}", response_model=VersionDetail, summary="Edit a draft version")
+async def update_version(
+    template_uuid: UUID, number: int, body: VersionUpdate, principal: TemplateWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        _, version = await _version(conn, template_uuid, number)
+        return await versions.update(conn, version, fields=body.model_dump(exclude_unset=True))
+
+
+@router.put(
+    f"{V}/{{number}}/languages/{{code}}",
+    response_model=VersionDetail,
+    summary="A draft version's locked text in one language",
+)
+async def set_version_language(
+    template_uuid: UUID,
+    number: int,
+    code: str,
+    body: VersionLanguageIn,
+    principal: TemplateWriter,
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        _, version = await _version(conn, template_uuid, number)
+        return await versions.set_language(
+            conn,
+            version,
+            language_code=code,
+            locked_text=body.locked_text,
+            actor_id=principal.user_id,
+        )
+
+
+@router.delete(f"{V}/{{number}}/languages/{{code}}", response_model=VersionDetail)
+async def remove_version_language(
+    template_uuid: UUID, number: int, code: str, principal: TemplateWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        _, version = await _version(conn, template_uuid, number)
+        return await versions.remove_language(conn, version, language_code=code)
+
+
+@router.put(
+    f"{V}/{{number}}/purposes",
+    response_model=VersionDetail,
+    summary="The purposes an activity may choose, and which are mandatory",
+)
+async def set_version_purposes(
+    template_uuid: UUID, number: int, body: VersionPurposesIn, principal: TemplateWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        _, version = await _version(conn, template_uuid, number)
+        return await versions.set_purposes(
+            conn,
+            version,
+            purposes=[
+                {
+                    "purpose_uuid": str(p.purpose_uuid),
+                    "is_mandatory": p.is_mandatory,
+                    **({"display_order": p.display_order} if p.display_order is not None else {}),
+                }
+                for p in body.purposes
+            ],
+        )
+
+
+@router.post(
+    f"{V}/{{number}}/approve",
+    response_model=VersionDetail,
+    summary="Approve a draft version: hashed and frozen",
+)
+async def approve_version(
+    template_uuid: UUID, number: int, principal: TemplateWriter
+) -> dict[str, Any]:
+    """Refused while a purpose is not active (409), or a language lacks a slot
+    or the English text is missing (422). Then every activity made from it
+    inherits this approval."""
+    async with transaction() as conn:
+        template, version = await _version(conn, template_uuid, number)
+        return await versions.approve(conn, template, version, actor_id=principal.user_id)
+
+
+@router.post(
+    f"{V}/{{number}}/status",
+    response_model=VersionDetail,
+    summary="Retire an approved version",
+)
+async def set_version_status(
+    template_uuid: UUID, number: int, body: VersionStatusIn, principal: TemplateWriter
+) -> dict[str, Any]:
+    """No new activity starts on a retired version; those on it go on."""
+    async with transaction() as conn:
+        _, version = await _version(conn, template_uuid, number)
+        return await versions.retire(conn, version, actor_id=principal.user_id)
+
+
+@router.get(
+    f"{V}/{{number}}/preview",
+    response_model=list[VersionPreview],
+    summary="What an activity made from it would serve",
+)
+async def preview_version(
+    template_uuid: UUID,
+    number: int,
+    principal: TemplateReader,
+    description: Annotated[str | None, Query(max_length=4000)] = None,
+) -> list[dict[str, Any]]:
+    """Every purpose on the list and the description given (or a sample), per
+    language, with the hash that text would carry."""
+    async with connection() as conn:
+        _, version = await _version(conn, template_uuid, number)
+        return await versions.preview(conn, version, description=description)

@@ -15,7 +15,7 @@ at each increment's review.
 | OP-6 | Phase 2 integration: a machine credential for HRMS events and a consent-check API, over the SQS relay | Product owner, against ADR 0003 | builds nothing; the withdrawal notice by email is the phase 1 contract |
 | OP-7 | `max_uses` on consent links is never consumed in the portal flow (observed 2026-10-26, pre-existing) | Product owner | leaves it; a one-line note in `06-known-gaps.md` |
 | OP-8 | Self-registration always records `person_type = external` (pre-existing); increment 5 changes it only when the sign-up arrived from a link whose category sets a default | Product owner | as stated |
-| OP-9 | Re-importing a Word notice can delete catalogue purposes referenced only by a template or a version (pre-existing; `importer._discard_orphans` checks `notice_purpose` only) | Engineer | extends the "still used" check to `notice_template_purpose` and `template_version_purpose` in increment 3, with a test |
+| OP-9 | **Done in increment 3 (C-4).** Re-importing a Word notice can delete catalogue purposes referenced only by a template or a version (pre-existing; `importer._discard_orphans` checks `notice_purpose` only) | Engineer | extends the "still used" check to `notice_template_purpose` and `template_version_purpose` in increment 3, with a test |
 | OP-10 | The `change_summary` Legal may want on a version for the re-consent message | Legal | adds the column in 0053 only if asked before increment 3 lands; otherwise the version's title is used |
 
 ## Appended by the agent
@@ -64,13 +64,28 @@ _(date · increment · the call made · why · what would change it)_
 | B-8 | `endpoint_permissions.json` gains the two roles' columns on every row and the nine new operations; the access-control Markdown pages (`endpoint_permissions.md`, `module_permissions.md`, `roles_and_scopes.md`) are not yet redrawn with them | The JSON feeds the personal-data scan and the HTTP suite's coverage check; the Markdown matrices are hand-kept and gain the columns once increment 4 completes the grants | Increment 4 |
 | B-9 | The demo seed adds the Legal PoC and two HR PoCs (`meera.nair`, `rahul.desai`, `ananya.sen` @cmp.local) and three categories (WELLNESS, CSR, BGV) with processors, an HR purpose and a template; the development database was given the same through the API | So the Legal office can be tried in the console | - |
 
+### Made during increment 3 (2026-10-28)
+
+| # | The call | Why | What would change it |
+|---|---|---|---|
+| C-1 | F-3 settled by its default: the Rule 3 links, the contact and the audience are columns of the version, copied from the template (or the last version) when it opens, editable while a draft, frozen with it; approval refuses a version with no audience | An activity's notice is published without anybody reviewing it, and publication refuses an empty audience; the template itself stays editable, so its fields cannot be what an approved version stands on | Legal wanting the contact or links to follow the template after approval |
+| C-2 | F-1 applied: `cmp_activity_version_coherent()` fires on `INSERT` and on `UPDATE OF template_version_id, category_id`, and returns early when neither changed | Retiring a version must not stop its activities being closed or edited | - |
+| C-3 | F-2 applied: `consent_link.audience_mode` is in 0053 | Increment 4 mints links with it; 0054 keeps the person types, the category's default person type and the SSO subject | - |
+| C-4 | OP-9 done: the Word importer's orphan sweep keeps a purpose any notice template or template version lists | A template's purpose is somebody's, though no notice carries it | - |
+| C-5 | OP-10 left: no `change_summary` column; the re-consent message (increment 4) names the template's title and the version number | Nobody asked before increment 3 | Legal asking for its own words; a nullable column in a later migration |
+| C-6 | English text is required for approval; other languages are allowed on a version but the HR track serves English (ADR 0033 out of scope) | ADR 0033: "English required" | Languages other than English on the HR track |
+| C-7 | The `{{purposes}}` block renders each chosen purpose as "- Name (required/optional)", then "What it is used for: …" and "Data: …", in the version's order | The composer must be deterministic; the wording is Legal's to change in the locked text around the block, not inside it | Legal wanting a different block layout (a composer change, which changes every later hash) |
+| C-8 | "No link" in the description means no scheme (`x://`), no `www.`, no `mailto:`; a bare domain in prose is allowed | A bare domain does nothing in a served text and is common in names ("example.org's programme") | Legal asking for bare domains to be refused too |
+| C-9 | One draft at a time per template (409 `version_draft_open`); a version opens as a copy of the last, whatever its status | Two drafts would race for the next number and confuse "which is the one to approve" | - |
+| C-10 | On a Legal office template the console shows Details and Versions; the template's own text, purposes and "used by" tabs (the R&D model) are hidden | What an activity serves is a version's; the template-level text would be a second, unused copy | - |
+
 ### Found in analysis, for later increments (owner to answer before that increment)
 
 | # | Increment | Finding | Owner | Until settled, the agent |
 |---|---|---|---|---|
-| F-1 | 3/4 | `cmp_activity_version_coherent()` as written checks for an approved version on every `UPDATE` of `project`; retiring a version would block closing and every other update on the activities that use it (contradicts `hr-track.md` §1.7) | Engineer | checks on `INSERT` and when `template_version_id` changes only |
-| F-2 | 4 | `consent_link.audience_mode` is needed by increment 4's `create_link` but arrives in 0054 (increment 5) | Engineer | adds the column in 0053; 0054 keeps the person types and the rest |
-| F-3 | 3/4 | Notice fields the HR track does not specify: `applicable_to` (publication refuses it empty), the contact (the portal labels it "Data Protection Officer"), the Rule 3 links (on the editable template, outside the frozen version), the recipients list (today from sites only) | Legal | freezes them onto the version at approval; the contact is the HR office's |
+| F-1 | 3/4 | **Applied in increment 3 (C-2).** `cmp_activity_version_coherent()` as written checks for an approved version on every `UPDATE` of `project`; retiring a version would block closing and every other update on the activities that use it (contradicts `hr-track.md` §1.7) | Engineer | checks on `INSERT` and when `template_version_id` changes only |
+| F-2 | 4 | **Applied in increment 3 (C-3).** `consent_link.audience_mode` is needed by increment 4's `create_link` but arrives in 0054 (increment 5) | Engineer | adds the column in 0053; 0054 keeps the person types and the rest |
+| F-3 | 3/4 | **Settled by default in increment 3 (C-1).** Notice fields the HR track does not specify: `applicable_to` (publication refuses it empty), the contact (the portal labels it "Data Protection Officer"), the Rule 3 links (on the editable template, outside the frozen version), the recipients list (today from sites only) | Legal | freezes them onto the version at approval; the contact is the HR office's |
 | F-4 | 4 | HR PoC scope: by category for projects, but notices, links and consents are scoped by site owner (`site_scope_predicate` lists roles) | Engineer | scopes by category everywhere |
 | F-5 | 4 | Re-consent after an upgrade: a version-2 consent today starts a second chain beside the version-1 one (supersession is per person and notice) | Legal | leaves both standing (OP-4) unless told to supersede |
 | F-6 | 2/3 | `purpose_code` and `(notice_code, version)` are unique across both offices; under the wall a "code taken" check cannot see the other office's codes (a 23505 or a leak by error) | Engineer | prefixes generated HR codes by office |

@@ -1,6 +1,6 @@
 # COMPASS complete database schema
 
-The table reference, the enum reference, the inventory JSON and the Graphviz sources in `source/` are generated from the catalogue of a scratch database built by replaying migrations **0001 → 0052**, on 2026-10-28; `schema.sql` is a `pg_dump --schema-only` of the same database. The committed SVGs still show **0049**: Graphviz was not installed when the rest was regenerated, so render them with `--render` (or `dot -Tsvg` on each source). Rebuild with `python3 docs/tools/generate-schema-docs.py --database <db>`. The notes on this page follow them by hand.
+The table reference, the enum reference, the inventory JSON and the Graphviz sources in `source/` are generated from the catalogue of a scratch database built by replaying migrations **0001 → 0053**, on 2026-10-28; `schema.sql` is a `pg_dump --schema-only` of the same database. The committed SVGs still show **0049**: Graphviz was not installed when the rest was regenerated, so render them with `--render` (or `dot -Tsvg` on each source). Rebuild with `python3 docs/tools/generate-schema-docs.py --database <db>`. The notes on this page follow them by hand.
 
 ## Open the diagrams
 

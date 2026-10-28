@@ -3337,6 +3337,144 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notice-templates/{template_uuid}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A Legal office template's versions */
+        get: operations["list_versions_notice_templates__template_uuid__versions_get"];
+        put?: never;
+        /**
+         * Open the next version as a draft
+         * @description A copy of the last version's content, or the template's links and
+         *     contact for the first. One draft at a time.
+         */
+        post: operations["open_version_notice_templates__template_uuid__versions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notice-templates/{template_uuid}/versions/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Version */
+        get: operations["get_version_notice_templates__template_uuid__versions__number__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edit a draft version */
+        patch: operations["update_version_notice_templates__template_uuid__versions__number__patch"];
+        trace?: never;
+    };
+    "/notice-templates/{template_uuid}/versions/{number}/languages/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** A draft version's locked text in one language */
+        put: operations["set_version_language_notice_templates__template_uuid__versions__number__languages__code__put"];
+        post?: never;
+        /** Remove Version Language */
+        delete: operations["remove_version_language_notice_templates__template_uuid__versions__number__languages__code__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notice-templates/{template_uuid}/versions/{number}/purposes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** The purposes an activity may choose, and which are mandatory */
+        put: operations["set_version_purposes_notice_templates__template_uuid__versions__number__purposes_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notice-templates/{template_uuid}/versions/{number}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve a draft version: hashed and frozen
+         * @description Refused while a purpose is not active (409), or a language lacks a slot
+         *     or the English text is missing (422). Then every activity made from it
+         *     inherits this approval.
+         */
+        post: operations["approve_version_notice_templates__template_uuid__versions__number__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notice-templates/{template_uuid}/versions/{number}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retire an approved version
+         * @description No new activity starts on a retired version; those on it go on.
+         */
+        post: operations["set_version_status_notice_templates__template_uuid__versions__number__status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notice-templates/{template_uuid}/versions/{number}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What an activity made from it would serve
+         * @description Every purpose on the list and the description given (or a sample), per
+         *     language, with the hash that text would carry.
+         */
+        get: operations["preview_version_notice_templates__template_uuid__versions__number__preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/links": {
         parameters: {
             query?: never;
@@ -11611,6 +11749,11 @@ export interface components {
             category_code?: string | null;
             /** Category Name */
             category_name?: string | null;
+            /**
+             * Version Count
+             * @default 0
+             */
+            version_count: number;
             /** Purposes */
             purposes: components["schemas"]["TemplatePurposeOut"][];
             /** Languages */
@@ -11675,6 +11818,11 @@ export interface components {
             category_code?: string | null;
             /** Category Name */
             category_name?: string | null;
+            /**
+             * Version Count
+             * @default 0
+             */
+            version_count: number;
             /** Purposes */
             purposes: components["schemas"]["TemplatePurposeOut"][];
             /** Languages */
@@ -11781,6 +11929,11 @@ export interface components {
             category_code?: string | null;
             /** Category Name */
             category_name?: string | null;
+            /**
+             * Version Count
+             * @default 0
+             */
+            version_count: number;
         };
         /** TemplatePurposeIn */
         TemplatePurposeIn: {
@@ -12141,6 +12294,238 @@ export interface components {
             environment: string;
             /** Schema Version */
             schema_version?: string | null;
+        };
+        /** VersionDetail */
+        VersionDetail: {
+            /**
+             * Version Uuid
+             * Format: uuid
+             */
+            version_uuid: string;
+            /** Version */
+            version: number;
+            /** Status */
+            status: string;
+            /** Reconsent Required */
+            reconsent_required: boolean;
+            /** Slot Guidance */
+            slot_guidance: string | null;
+            /** Slot Max Length */
+            slot_max_length: number;
+            /** Withdraw Url */
+            withdraw_url: string;
+            /** Exercise Rights Url */
+            exercise_rights_url: string;
+            /** Board Complaint Url */
+            board_complaint_url: string;
+            /** Dpo Contact */
+            dpo_contact: string;
+            /** Applicable To */
+            applicable_to: string | null;
+            /**
+             * Template Uuid
+             * Format: uuid
+             */
+            template_uuid: string;
+            /** Template Code */
+            template_code: string;
+            /** Template Title */
+            template_title: string;
+            /** Category Uuid */
+            category_uuid: string | null;
+            /** Category Code */
+            category_code: string | null;
+            /** Created By Name */
+            created_by_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Approved By Name */
+            approved_by_name: string | null;
+            /** Approved At */
+            approved_at: string | null;
+            /** Retired At */
+            retired_at: string | null;
+            /** Language Count */
+            language_count: number;
+            /** Purpose Count */
+            purpose_count: number;
+            /** Activity Count */
+            activity_count: number;
+            /** Languages */
+            languages: components["schemas"]["VersionLanguageOut"][];
+            /** Purposes */
+            purposes: components["schemas"]["VersionPurposeOut"][];
+        };
+        /** VersionLanguageIn */
+        VersionLanguageIn: {
+            /** Locked Text */
+            locked_text: string;
+        };
+        /** VersionLanguageOut */
+        VersionLanguageOut: {
+            /** Language Code */
+            language_code: string;
+            /** Locked Text */
+            locked_text: string;
+            /** Content Hash */
+            content_hash: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Updated By Name */
+            updated_by_name: string;
+        };
+        /** VersionOut */
+        VersionOut: {
+            /**
+             * Version Uuid
+             * Format: uuid
+             */
+            version_uuid: string;
+            /** Version */
+            version: number;
+            /** Status */
+            status: string;
+            /** Reconsent Required */
+            reconsent_required: boolean;
+            /** Slot Guidance */
+            slot_guidance: string | null;
+            /** Slot Max Length */
+            slot_max_length: number;
+            /** Withdraw Url */
+            withdraw_url: string;
+            /** Exercise Rights Url */
+            exercise_rights_url: string;
+            /** Board Complaint Url */
+            board_complaint_url: string;
+            /** Dpo Contact */
+            dpo_contact: string;
+            /** Applicable To */
+            applicable_to: string | null;
+            /**
+             * Template Uuid
+             * Format: uuid
+             */
+            template_uuid: string;
+            /** Template Code */
+            template_code: string;
+            /** Template Title */
+            template_title: string;
+            /** Category Uuid */
+            category_uuid: string | null;
+            /** Category Code */
+            category_code: string | null;
+            /** Created By Name */
+            created_by_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Approved By Name */
+            approved_by_name: string | null;
+            /** Approved At */
+            approved_at: string | null;
+            /** Retired At */
+            retired_at: string | null;
+            /** Language Count */
+            language_count: number;
+            /** Purpose Count */
+            purpose_count: number;
+            /** Activity Count */
+            activity_count: number;
+        };
+        /** VersionPreview */
+        VersionPreview: {
+            /** Language Code */
+            language_code: string;
+            /** Text */
+            text: string;
+            /** Content Hash */
+            content_hash: string;
+        };
+        /** VersionPurposeIn */
+        VersionPurposeIn: {
+            /**
+             * Purpose Uuid
+             * Format: uuid
+             */
+            purpose_uuid: string;
+            /**
+             * Is Mandatory
+             * @default false
+             */
+            is_mandatory: boolean;
+            /** Display Order */
+            display_order?: number | null;
+        };
+        /** VersionPurposeOut */
+        VersionPurposeOut: {
+            /**
+             * Purpose Uuid
+             * Format: uuid
+             */
+            purpose_uuid: string;
+            /** Purpose Code */
+            purpose_code: string;
+            /** Name */
+            name: string;
+            /** Status */
+            status: string;
+            /** Lawful Basis */
+            lawful_basis: string;
+            /** Data Categories */
+            data_categories: string[];
+            /** Is Mandatory */
+            is_mandatory: boolean;
+            /** Display Order */
+            display_order: number;
+        };
+        /** VersionPurposesIn */
+        VersionPurposesIn: {
+            /** Purposes */
+            purposes?: components["schemas"]["VersionPurposeIn"][];
+        };
+        /** VersionStatusIn */
+        VersionStatusIn: {
+            /**
+             * Status
+             * @description retired
+             */
+            status: string;
+        };
+        /** VersionUpdate */
+        VersionUpdate: {
+            /** Reconsent Required */
+            reconsent_required?: boolean | null;
+            /** Slot Guidance */
+            slot_guidance?: string | null;
+            /** Slot Max Length */
+            slot_max_length?: number | null;
+            /** Withdraw Url */
+            withdraw_url?: string | null;
+            /** Exercise Rights Url */
+            exercise_rights_url?: string | null;
+            /** Board Complaint Url */
+            board_complaint_url?: string | null;
+            /** Dpo Contact */
+            dpo_contact?: string | null;
+            applicable_to?: components["schemas"]["NoticeAudience"] | null;
         };
         /** Vocabulary */
         Vocabulary: {
@@ -18454,6 +18839,344 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_versions_notice_templates__template_uuid__versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_version_notice_templates__template_uuid__versions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_version_notice_templates__template_uuid__versions__number__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_uuid: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_version_notice_templates__template_uuid__versions__number__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_uuid: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_version_language_notice_templates__template_uuid__versions__number__languages__code__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_uuid: string;
+                number: number;
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionLanguageIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_version_language_notice_templates__template_uuid__versions__number__languages__code__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_uuid: string;
+                number: number;
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_version_purposes_notice_templates__template_uuid__versions__number__purposes_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_uuid: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionPurposesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_version_notice_templates__template_uuid__versions__number__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_uuid: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_version_status_notice_templates__template_uuid__versions__number__status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_uuid: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionStatusIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_version_notice_templates__template_uuid__versions__number__preview_get: {
+        parameters: {
+            query?: {
+                description?: string | null;
+            };
+            header?: never;
+            path: {
+                template_uuid: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionPreview"][];
                 };
             };
             /** @description Validation Error */

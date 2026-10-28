@@ -60,11 +60,12 @@ import {
   useSetTemplateLanguage,
 } from "@/features/notice-templates/mutations";
 import { useNoticeTemplate } from "@/features/notice-templates/queries";
+import { VersionsPanel } from "@/features/notice-templates/components/versions-panel";
 import { AUDIENCES } from "@/features/notices/components/notice-form";
 import { usePurposes } from "@/features/registry";
 import { copyText } from "@/lib/browser";
 import { formatDateTime } from "@/lib/format";
-import { useToast } from "@/providers";
+import { useAuth, useToast } from "@/providers";
 import type { LanguageCode, NoticeTemplateDetail, NoticeTemplateLanguage } from "@/types";
 
 function messageOf(err: unknown, fallback: string): string {
@@ -73,7 +74,7 @@ function messageOf(err: unknown, fallback: string): string {
     : fallback;
 }
 
-const TABS = ["details", "text", "used-by"] as const;
+const TABS = ["details", "text", "used-by", "versions"] as const;
 type TemplateTab = (typeof TABS)[number];
 /** Card anchors inside a tab, so a link can name the card it means. */
 const SECTIONS: Record<string, TemplateTab> = {
@@ -84,6 +85,7 @@ const SECTIONS: Record<string, TemplateTab> = {
 
 export default function NoticeTemplatePage() {
   const params = useParams<{ uuid: string }>();
+  const { me } = useAuth();
   const template = useNoticeTemplate(params?.uuid);
   const [editing, setEditing] = React.useState(false);
   const [tab, setTab, hash] = useHashTab(TABS, "details", SECTIONS);
@@ -105,6 +107,10 @@ export default function NoticeTemplatePage() {
   }
   const t = template.data;
   if (!t) return null;
+  // A Legal office template is versioned (0053): what its activities serve is
+  // a version's text and purposes, not the template's own.
+  const versioned = t.office_code !== "rnd";
+  const shown = versioned && (tab === "text" || tab === "used-by") ? "versions" : tab;
 
   return (
     <>
@@ -147,43 +153,65 @@ export default function NoticeTemplatePage() {
             <RetireButton template={t} />
           </>
         }
-        facts={[
-          { label: "Template ID", value: t.template_code, icon: Hash, tint: 0 },
-          {
-            label: "Purposes",
-            value: t.purposes.length,
-            icon: ListChecks,
-            tint: 1,
-            href: "#purposes",
-          },
-          {
-            label: "Languages",
-            value: t.languages.length,
-            icon: LanguagesIcon,
-            tint: 2,
-            href: "#text",
-          },
-          {
-            label: "Used by",
-            value: `${t.notices.length} notice${t.notices.length === 1 ? "" : "s"}`,
-            icon: FileText,
-            tint: 3,
-            href: "#used-by",
-          },
-        ]}
+        facts={
+          versioned
+            ? [
+                { label: "Template ID", value: t.template_code, icon: Hash, tint: 0 },
+                { label: "Category", value: t.category_code ?? "—", icon: ListChecks, tint: 1 },
+                {
+                  label: "Versions",
+                  value: t.version_count ?? 0,
+                  icon: LanguagesIcon,
+                  tint: 2,
+                  href: "#versions",
+                },
+              ]
+            : [
+                { label: "Template ID", value: t.template_code, icon: Hash, tint: 0 },
+                {
+                  label: "Purposes",
+                  value: t.purposes.length,
+                  icon: ListChecks,
+                  tint: 1,
+                  href: "#purposes",
+                },
+                {
+                  label: "Languages",
+                  value: t.languages.length,
+                  icon: LanguagesIcon,
+                  tint: 2,
+                  href: "#text",
+                },
+                {
+                  label: "Used by",
+                  value: `${t.notices.length} notice${t.notices.length === 1 ? "" : "s"}`,
+                  icon: FileText,
+                  tint: 3,
+                  href: "#used-by",
+                },
+              ]
+        }
       />
 
-      <Tabs value={tab} onValueChange={setTab} label="Template sections" layout="underline">
+      <Tabs value={shown} onValueChange={setTab} label="Template sections" layout="underline">
         <TabList>
           <Tab value="details" icon={ScrollText}>
             Details
           </Tab>
-          <Tab value="text" icon={LanguagesIcon} count={t.languages.length}>
-            Text
-          </Tab>
-          <Tab value="used-by" icon={FileText} count={t.notices.length}>
-            Used by
-          </Tab>
+          {versioned ? (
+            <Tab value="versions" icon={LanguagesIcon} count={t.version_count ?? 0}>
+              Versions
+            </Tab>
+          ) : (
+            <>
+              <Tab value="text" icon={LanguagesIcon} count={t.languages.length}>
+                Text
+              </Tab>
+              <Tab value="used-by" icon={FileText} count={t.notices.length}>
+                Used by
+              </Tab>
+            </>
+          )}
         </TabList>
 
         <TabPanel value="details" className="space-y-5">
@@ -205,11 +233,21 @@ export default function NoticeTemplatePage() {
           </div>
           <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
             <Details template={t} />
-            <div id="purposes" className="scroll-mt-20">
-              <Purposes template={t} />
-            </div>
+            {!versioned && (
+              <div id="purposes" className="scroll-mt-20">
+                <Purposes template={t} />
+              </div>
+            )}
           </div>
         </TabPanel>
+        {versioned && (
+          <TabPanel value="versions" className="space-y-5">
+            <VersionsPanel
+              template={t}
+              canWrite={me?.writes.includes("notice_template") ?? false}
+            />
+          </TabPanel>
+        )}
         <TabPanel value="text" className="space-y-5">
           <div id="languages" className="scroll-mt-20">
             <Languages template={t} />

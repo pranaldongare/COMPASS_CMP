@@ -9,7 +9,13 @@ import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-q
 
 import * as api from "@/features/notice-templates/api";
 import { effects, keys, type Result } from "@/lib/query";
-import type { LanguageCode, Notice, NoticeTemplateDetail, Uuid } from "@/types";
+import type {
+  LanguageCode,
+  Notice,
+  NoticeTemplateDetail,
+  TemplateVersionDetail,
+  Uuid,
+} from "@/types";
 
 function settle(qc: QueryClient, template: NoticeTemplateDetail) {
   qc.setQueryData(keys.noticeTemplate.detail(template.template_uuid), template);
@@ -90,5 +96,90 @@ export function useNoticeFromTemplate(projectUuid: Uuid): Result<Notice, string>
       effects.noticesChanged(qc, projectUuid);
       void qc.invalidateQueries({ queryKey: ["notice-templates"] });
     },
+  });
+}
+
+// ------------------------------------------------------------------ versions
+
+/** Every version write answers with the whole version; the template's list
+ *  and its counts refresh with it. */
+function settleVersion(qc: QueryClient, uuid: Uuid, version: TemplateVersionDetail) {
+  qc.setQueryData(keys.noticeTemplate.version(uuid, version.version), version);
+  void qc.invalidateQueries({ queryKey: keys.noticeTemplate.versions(uuid) });
+  void qc.invalidateQueries({ queryKey: keys.noticeTemplate.detail(uuid) });
+}
+
+export function useOpenTemplateVersion(uuid: Uuid): Result<TemplateVersionDetail, void> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.openTemplateVersion(uuid),
+    onSuccess: (v) => settleVersion(qc, uuid, v),
+  });
+}
+
+export function useUpdateTemplateVersion(
+  uuid: Uuid,
+  n: number,
+): Result<TemplateVersionDetail, api.VersionInput> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body) => api.updateTemplateVersion(uuid, n, body),
+    onSuccess: (v) => settleVersion(qc, uuid, v),
+  });
+}
+
+export function useSetVersionLanguage(
+  uuid: Uuid,
+  n: number,
+): Result<TemplateVersionDetail, { language_code: LanguageCode; locked_text: string }> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ language_code, locked_text }) =>
+      api.setVersionLanguage(uuid, n, language_code, locked_text),
+    onSuccess: (v) => settleVersion(qc, uuid, v),
+  });
+}
+
+export function useRemoveVersionLanguage(
+  uuid: Uuid,
+  n: number,
+): Result<TemplateVersionDetail, LanguageCode> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (code) => api.removeVersionLanguage(uuid, n, code),
+    onSuccess: (v) => settleVersion(qc, uuid, v),
+  });
+}
+
+export function useSetVersionPurposes(
+  uuid: Uuid,
+  n: number,
+): Result<TemplateVersionDetail, { purpose_uuid: Uuid; is_mandatory: boolean }[]> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (purposes) => api.setVersionPurposes(uuid, n, purposes),
+    onSuccess: (v) => settleVersion(qc, uuid, v),
+  });
+}
+
+export function useApproveTemplateVersion(
+  uuid: Uuid,
+  n: number,
+): Result<TemplateVersionDetail, void> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.approveTemplateVersion(uuid, n),
+    onSuccess: (v) => settleVersion(qc, uuid, v),
+  });
+}
+
+export function useRetireTemplateVersion(
+  uuid: Uuid,
+  n: number,
+): Result<TemplateVersionDetail, void> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.retireTemplateVersion(uuid, n),
+    onSuccess: (v) => settleVersion(qc, uuid, v),
   });
 }

@@ -84,6 +84,15 @@ _SPECS: dict[str, _Spec] = {
         href="/notices/templates/{uuid}",
         noun="Notice template",
     ),
+    "template_version": _Spec(
+        # A version has no page of its own; it lives on its template's.
+        sql="""SELECT v.version_id AS id, t.template_uuid::text AS uuid,
+                      t.template_code || ' v' || v.version AS label
+               FROM template_version v JOIN notice_template t USING (template_id)
+               WHERE v.version_id = ANY(%s)""",
+        href="/notices/templates/{uuid}#versions",
+        noun="Template version",
+    ),
     "hr_category": _Spec(
         sql="""SELECT category_id AS id, category_uuid::text AS uuid,
                       category_code || ' — ' || name AS label

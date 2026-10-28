@@ -334,10 +334,10 @@ async def _discard_orphans(conn: Conn, *, purpose_ids: list[int]) -> list[str]:
     """Delete purposes left behind by a superseded import.
 
     Guarded twice over, because deleting from the register is not a thing to get
-    wrong: a purpose goes only if no notice still carries it *and* no consent was
-    ever granted against it. Anything else stays, and a DPO can retire it by
-    hand. A purpose that some other notice picked up in the meantime is somebody
-    else's now.
+    wrong: a purpose goes only if no notice, template or template version still
+    carries it *and* no consent was ever granted against it. Anything else
+    stays, and a DPO can retire it by hand. A purpose that some other notice
+    picked up in the meantime is somebody else's now.
     """
     gone: list[str] = []
     for purpose_id in purpose_ids:
@@ -345,7 +345,7 @@ async def _discard_orphans(conn: Conn, *, purpose_ids: list[int]) -> list[str]:
         if not row:
             continue
         still_used = await registry_repo.purpose_usage(conn, purpose_id)
-        if still_used:
+        if still_used or await registry_repo.purpose_on_a_template(conn, purpose_id):
             continue
         if await registry_repo.purpose_has_grants(conn, purpose_id):
             continue

@@ -80,12 +80,54 @@ async def _world(conn: Any, seeded: dict[str, Any], office: str) -> dict[str, in
     p = {"office": office, "tag": tag, "dpo": users["dpo"]["id"], "rnd": users["rnd_user"]["id"]}
     ids: dict[str, int] = {}
 
+    # A Legal office project is an activity: an approved version of a
+    # template in its category (0053). Written ahead, for the project only.
+    p["activity_category"] = p["activity_version"] = None
+    if office != "rnd":
+        p["activity_category"] = (
+            await _one(
+                conn,
+                f"""INSERT INTO hr_category (category_code, name, office_id, created_by)
+                    VALUES (upper(replace('A_' || %(tag)s, '-', '_')), 'Activity', {o}, %(dpo)s)
+                    RETURNING category_id""",
+                p,
+            )
+        )["category_id"]
+        activity_template = (
+            await _one(
+                conn,
+                f"""INSERT INTO notice_template (title, withdraw_url, exercise_rights_url,
+                                                 board_complaint_url, dpo_contact, created_by,
+                                                 office_id, category_id)
+                    VALUES ('Activity ' || %(tag)s, 'https://x/w', 'https://x/r',
+                            'https://dpb.gov.in', 'office@test.local', %(dpo)s, {o},
+                            %(activity_category)s)
+                    RETURNING template_id""",
+                p,
+            )
+        )["template_id"]
+        p["activity_version"] = (
+            await _one(
+                conn,
+                """INSERT INTO template_version (template_id, version, status, created_by,
+                                                 withdraw_url, exercise_rights_url,
+                                                 board_complaint_url, dpo_contact,
+                                                 applicable_to, approved_by, approved_at)
+                   VALUES (%(template)s, 1, 'approved', %(dpo)s, 'https://x/w', 'https://x/r',
+                           'https://dpb.gov.in', 'office@test.local', 'data_subject',
+                           %(dpo)s, now())
+                   RETURNING version_id""",
+                {**p, "template": activity_template},
+            )
+        )["version_id"]
+
     ids["project"] = (
         await _one(
             conn,
             f"""INSERT INTO project (project_name, description, created_by, project_status,
-                                     office_id)
-                VALUES ('Wall ' || %(tag)s, 'd', %(rnd)s, 'approved', {o})
+                                     office_id, category_id, template_version_id)
+                VALUES ('Wall ' || %(tag)s, 'd', %(rnd)s, 'approved', {o},
+                        %(activity_category)s, %(activity_version)s)
                 RETURNING project_id""",
             p,
         )

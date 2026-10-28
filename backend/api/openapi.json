@@ -9455,6 +9455,589 @@
         }
       }
     },
+    "/notice-templates/{template_uuid}/versions": {
+      "get": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "A Legal office template's versions",
+        "operationId": "list_versions_notice_templates__template_uuid__versions_get",
+        "parameters": [
+          {
+            "name": "template_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VersionOut"
+                  },
+                  "title": "Response List Versions Notice Templates  Template Uuid  Versions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "Open the next version as a draft",
+        "description": "A copy of the last version's content, or the template's links and\ncontact for the first. One draft at a time.",
+        "operationId": "open_version_notice_templates__template_uuid__versions_post",
+        "parameters": [
+          {
+            "name": "template_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notice-templates/{template_uuid}/versions/{number}": {
+      "get": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "Get Version",
+        "operationId": "get_version_notice_templates__template_uuid__versions__number__get",
+        "parameters": [
+          {
+            "name": "template_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Uuid"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "Edit a draft version",
+        "operationId": "update_version_notice_templates__template_uuid__versions__number__patch",
+        "parameters": [
+          {
+            "name": "template_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Uuid"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notice-templates/{template_uuid}/versions/{number}/languages/{code}": {
+      "put": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "A draft version's locked text in one language",
+        "operationId": "set_version_language_notice_templates__template_uuid__versions__number__languages__code__put",
+        "parameters": [
+          {
+            "name": "template_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Uuid"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Number"
+            }
+          },
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionLanguageIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "Remove Version Language",
+        "operationId": "remove_version_language_notice_templates__template_uuid__versions__number__languages__code__delete",
+        "parameters": [
+          {
+            "name": "template_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Uuid"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Number"
+            }
+          },
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notice-templates/{template_uuid}/versions/{number}/purposes": {
+      "put": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "The purposes an activity may choose, and which are mandatory",
+        "operationId": "set_version_purposes_notice_templates__template_uuid__versions__number__purposes_put",
+        "parameters": [
+          {
+            "name": "template_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Uuid"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionPurposesIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notice-templates/{template_uuid}/versions/{number}/approve": {
+      "post": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "Approve a draft version: hashed and frozen",
+        "description": "Refused while a purpose is not active (409), or a language lacks a slot\nor the English text is missing (422). Then every activity made from it\ninherits this approval.",
+        "operationId": "approve_version_notice_templates__template_uuid__versions__number__approve_post",
+        "parameters": [
+          {
+            "name": "template_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Uuid"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notice-templates/{template_uuid}/versions/{number}/status": {
+      "post": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "Retire an approved version",
+        "description": "No new activity starts on a retired version; those on it go on.",
+        "operationId": "set_version_status_notice_templates__template_uuid__versions__number__status_post",
+        "parameters": [
+          {
+            "name": "template_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Uuid"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionStatusIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notice-templates/{template_uuid}/versions/{number}/preview": {
+      "get": {
+        "tags": [
+          "notice templates"
+        ],
+        "summary": "What an activity made from it would serve",
+        "description": "Every purpose on the list and the description given (or a sample), per\nlanguage, with the hash that text would carry.",
+        "operationId": "preview_version_notice_templates__template_uuid__versions__number__preview_get",
+        "parameters": [
+          {
+            "name": "template_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Uuid"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Number"
+            }
+          },
+          {
+            "name": "description",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4000
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Description"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VersionPreview"
+                  },
+                  "title": "Response Preview Version Notice Templates  Template Uuid  Versions  Number  Preview Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/links": {
       "get": {
         "tags": [
@@ -34876,6 +35459,11 @@
             ],
             "title": "Category Name"
           },
+          "version_count": {
+            "type": "integer",
+            "title": "Version Count",
+            "default": 0
+          },
           "purposes": {
             "items": {
               "$ref": "#/components/schemas/TemplatePurposeOut"
@@ -35056,6 +35644,11 @@
               }
             ],
             "title": "Category Name"
+          },
+          "version_count": {
+            "type": "integer",
+            "title": "Version Count",
+            "default": 0
           },
           "purposes": {
             "items": {
@@ -35321,6 +35914,11 @@
               }
             ],
             "title": "Category Name"
+          },
+          "version_count": {
+            "type": "integer",
+            "title": "Version Count",
+            "default": 0
           }
         },
         "type": "object",
@@ -36498,6 +37096,703 @@
           "environment"
         ],
         "title": "Version"
+      },
+      "VersionDetail": {
+        "properties": {
+          "version_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Version Uuid"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "reconsent_required": {
+            "type": "boolean",
+            "title": "Reconsent Required"
+          },
+          "slot_guidance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Guidance"
+          },
+          "slot_max_length": {
+            "type": "integer",
+            "title": "Slot Max Length"
+          },
+          "withdraw_url": {
+            "type": "string",
+            "title": "Withdraw Url"
+          },
+          "exercise_rights_url": {
+            "type": "string",
+            "title": "Exercise Rights Url"
+          },
+          "board_complaint_url": {
+            "type": "string",
+            "title": "Board Complaint Url"
+          },
+          "dpo_contact": {
+            "type": "string",
+            "title": "Dpo Contact"
+          },
+          "applicable_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicable To"
+          },
+          "template_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Template Uuid"
+          },
+          "template_code": {
+            "type": "string",
+            "title": "Template Code"
+          },
+          "template_title": {
+            "type": "string",
+            "title": "Template Title"
+          },
+          "category_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Uuid"
+          },
+          "category_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Code"
+          },
+          "created_by_name": {
+            "type": "string",
+            "title": "Created By Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "approved_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By Name"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "retired_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retired At"
+          },
+          "language_count": {
+            "type": "integer",
+            "title": "Language Count"
+          },
+          "purpose_count": {
+            "type": "integer",
+            "title": "Purpose Count"
+          },
+          "activity_count": {
+            "type": "integer",
+            "title": "Activity Count"
+          },
+          "languages": {
+            "items": {
+              "$ref": "#/components/schemas/VersionLanguageOut"
+            },
+            "type": "array",
+            "title": "Languages"
+          },
+          "purposes": {
+            "items": {
+              "$ref": "#/components/schemas/VersionPurposeOut"
+            },
+            "type": "array",
+            "title": "Purposes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version_uuid",
+          "version",
+          "status",
+          "reconsent_required",
+          "slot_guidance",
+          "slot_max_length",
+          "withdraw_url",
+          "exercise_rights_url",
+          "board_complaint_url",
+          "dpo_contact",
+          "applicable_to",
+          "template_uuid",
+          "template_code",
+          "template_title",
+          "category_uuid",
+          "category_code",
+          "created_by_name",
+          "created_at",
+          "updated_at",
+          "approved_by_name",
+          "approved_at",
+          "retired_at",
+          "language_count",
+          "purpose_count",
+          "activity_count",
+          "languages",
+          "purposes"
+        ],
+        "title": "VersionDetail"
+      },
+      "VersionLanguageIn": {
+        "properties": {
+          "locked_text": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Locked Text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "locked_text"
+        ],
+        "title": "VersionLanguageIn"
+      },
+      "VersionLanguageOut": {
+        "properties": {
+          "language_code": {
+            "type": "string",
+            "title": "Language Code"
+          },
+          "locked_text": {
+            "type": "string",
+            "title": "Locked Text"
+          },
+          "content_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Hash"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "updated_by_name": {
+            "type": "string",
+            "title": "Updated By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "language_code",
+          "locked_text",
+          "content_hash",
+          "updated_at",
+          "updated_by_name"
+        ],
+        "title": "VersionLanguageOut"
+      },
+      "VersionOut": {
+        "properties": {
+          "version_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Version Uuid"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "reconsent_required": {
+            "type": "boolean",
+            "title": "Reconsent Required"
+          },
+          "slot_guidance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Guidance"
+          },
+          "slot_max_length": {
+            "type": "integer",
+            "title": "Slot Max Length"
+          },
+          "withdraw_url": {
+            "type": "string",
+            "title": "Withdraw Url"
+          },
+          "exercise_rights_url": {
+            "type": "string",
+            "title": "Exercise Rights Url"
+          },
+          "board_complaint_url": {
+            "type": "string",
+            "title": "Board Complaint Url"
+          },
+          "dpo_contact": {
+            "type": "string",
+            "title": "Dpo Contact"
+          },
+          "applicable_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicable To"
+          },
+          "template_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Template Uuid"
+          },
+          "template_code": {
+            "type": "string",
+            "title": "Template Code"
+          },
+          "template_title": {
+            "type": "string",
+            "title": "Template Title"
+          },
+          "category_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Uuid"
+          },
+          "category_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Code"
+          },
+          "created_by_name": {
+            "type": "string",
+            "title": "Created By Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "approved_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By Name"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "retired_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retired At"
+          },
+          "language_count": {
+            "type": "integer",
+            "title": "Language Count"
+          },
+          "purpose_count": {
+            "type": "integer",
+            "title": "Purpose Count"
+          },
+          "activity_count": {
+            "type": "integer",
+            "title": "Activity Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version_uuid",
+          "version",
+          "status",
+          "reconsent_required",
+          "slot_guidance",
+          "slot_max_length",
+          "withdraw_url",
+          "exercise_rights_url",
+          "board_complaint_url",
+          "dpo_contact",
+          "applicable_to",
+          "template_uuid",
+          "template_code",
+          "template_title",
+          "category_uuid",
+          "category_code",
+          "created_by_name",
+          "created_at",
+          "updated_at",
+          "approved_by_name",
+          "approved_at",
+          "retired_at",
+          "language_count",
+          "purpose_count",
+          "activity_count"
+        ],
+        "title": "VersionOut"
+      },
+      "VersionPreview": {
+        "properties": {
+          "language_code": {
+            "type": "string",
+            "title": "Language Code"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "content_hash": {
+            "type": "string",
+            "title": "Content Hash"
+          }
+        },
+        "type": "object",
+        "required": [
+          "language_code",
+          "text",
+          "content_hash"
+        ],
+        "title": "VersionPreview"
+      },
+      "VersionPurposeIn": {
+        "properties": {
+          "purpose_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Purpose Uuid"
+          },
+          "is_mandatory": {
+            "type": "boolean",
+            "title": "Is Mandatory",
+            "default": false
+          },
+          "display_order": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 999.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Order"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "purpose_uuid"
+        ],
+        "title": "VersionPurposeIn"
+      },
+      "VersionPurposeOut": {
+        "properties": {
+          "purpose_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Purpose Uuid"
+          },
+          "purpose_code": {
+            "type": "string",
+            "title": "Purpose Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "lawful_basis": {
+            "type": "string",
+            "title": "Lawful Basis"
+          },
+          "data_categories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Data Categories"
+          },
+          "is_mandatory": {
+            "type": "boolean",
+            "title": "Is Mandatory"
+          },
+          "display_order": {
+            "type": "integer",
+            "title": "Display Order"
+          }
+        },
+        "type": "object",
+        "required": [
+          "purpose_uuid",
+          "purpose_code",
+          "name",
+          "status",
+          "lawful_basis",
+          "data_categories",
+          "is_mandatory",
+          "display_order"
+        ],
+        "title": "VersionPurposeOut"
+      },
+      "VersionPurposesIn": {
+        "properties": {
+          "purposes": {
+            "items": {
+              "$ref": "#/components/schemas/VersionPurposeIn"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Purposes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "VersionPurposesIn"
+      },
+      "VersionStatusIn": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "pattern": "^retired$",
+            "title": "Status",
+            "description": "retired"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "VersionStatusIn"
+      },
+      "VersionUpdate": {
+        "properties": {
+          "reconsent_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reconsent Required"
+          },
+          "slot_guidance": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Guidance"
+          },
+          "slot_max_length": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 4000.0,
+                "minimum": 100.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Max Length"
+          },
+          "withdraw_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 8,
+                "pattern": "^https?://[^\\s<>\\\"]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Withdraw Url"
+          },
+          "exercise_rights_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 8,
+                "pattern": "^https?://[^\\s<>\\\"]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exercise Rights Url"
+          },
+          "board_complaint_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 8,
+                "pattern": "^https?://[^\\s<>\\\"]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Board Complaint Url"
+          },
+          "dpo_contact": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dpo Contact"
+          },
+          "applicable_to": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NoticeAudience"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "VersionUpdate"
       },
       "Vocabulary": {
         "properties": {

@@ -6,11 +6,22 @@ import { useQuery } from "@tanstack/react-query";
 import {
   findNoticeTemplate,
   getNoticeTemplate,
+  getTemplateVersion,
   listNoticeTemplates,
+  listTemplateVersions,
+  previewTemplateVersion,
 } from "@/features/notice-templates/api";
 import type { ApiError } from "@/lib/errors";
 import { keys } from "@/lib/query";
-import type { NoticeTemplate, NoticeTemplateDetail, NoticeTemplateFound, Uuid } from "@/types";
+import type {
+  NoticeTemplate,
+  NoticeTemplateDetail,
+  NoticeTemplateFound,
+  TemplateVersion,
+  TemplateVersionDetail,
+  TemplateVersionPreview,
+  Uuid,
+} from "@/types";
 
 export function useNoticeTemplates(
   filters: { status?: string; q?: string; category?: string } = {},
@@ -38,6 +49,37 @@ export function useFindNoticeTemplate(code: string | null) {
     queryKey: keys.noticeTemplate.byCode(normalised),
     queryFn: () => findNoticeTemplate(normalised),
     enabled: normalised.length >= 3,
+    retry: false,
+  });
+}
+
+/** A Legal office template's versions (0053), newest first. */
+export function useTemplateVersions(uuid: Uuid | undefined, enabled = true) {
+  return useQuery<TemplateVersion[], ApiError>({
+    queryKey: keys.noticeTemplate.versions(uuid ?? ""),
+    queryFn: () => listTemplateVersions(uuid!),
+    enabled: Boolean(uuid) && enabled,
+  });
+}
+
+export function useTemplateVersion(uuid: Uuid | undefined, n: number | null) {
+  return useQuery<TemplateVersionDetail, ApiError>({
+    queryKey: keys.noticeTemplate.version(uuid ?? "", n ?? 0),
+    queryFn: () => getTemplateVersion(uuid!, n!),
+    enabled: Boolean(uuid) && n !== null,
+  });
+}
+
+/** Only once asked for: a preview composes every language. */
+export function useVersionPreview(
+  uuid: Uuid,
+  n: number,
+  description: string | null,
+) {
+  return useQuery<TemplateVersionPreview[], ApiError>({
+    queryKey: keys.noticeTemplate.preview(uuid, n, description ?? ""),
+    queryFn: () => previewTemplateVersion(uuid, n, description ?? ""),
+    enabled: description !== null,
     retry: false,
   });
 }

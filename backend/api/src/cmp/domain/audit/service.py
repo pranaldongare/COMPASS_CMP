@@ -87,6 +87,8 @@ ENTITY_TYPES: Final[frozenset[str]] = frozenset(
         # The Legal office's category of HR activity (0052, ADR 0033): its
         # processors and its HR PoCs are recorded against it.
         "hr_category",
+        # A version of a Legal office template: what Legal approves (0053).
+        "template_version",
     }
 )
 
@@ -218,6 +220,12 @@ class Event:
     HR_CATEGORY_RETIRED = "hr_category.retired"
     HR_CATEGORY_REACTIVATED = "hr_category.reactivated"
     HR_CATEGORY_PROCESSORS_SET = "hr_category.processors_set"
+    #: A Legal office template's versions (0053): opened as a draft, edited,
+    #: approved (frozen, with each language's hash in the detail), retired.
+    TEMPLATE_VERSION_OPENED = "template_version.opened"
+    TEMPLATE_VERSION_UPDATED = "template_version.updated"
+    TEMPLATE_VERSION_APPROVED = "template_version.approved"
+    TEMPLATE_VERSION_RETIRED = "template_version.retired"
 
     # consent
     LINK_CREATED = "link.created"
@@ -381,6 +389,9 @@ _OFFICE_ID_OF: Final[dict[str, str]] = {
     "purpose": "SELECT office_id FROM purpose WHERE purpose_id = %(id)s",
     "notice_template": "SELECT office_id FROM notice_template WHERE template_id = %(id)s",
     "hr_category": "SELECT office_id FROM hr_category WHERE category_id = %(id)s",
+    "template_version": """SELECT t.office_id FROM template_version v
+                           JOIN notice_template t USING (template_id)
+                           WHERE v.version_id = %(id)s""",
     "notice": "SELECT office_id FROM notice WHERE notice_id = %(id)s",
     "consent_link": "SELECT office_id FROM consent_link WHERE link_id = %(id)s",
     "export_log": "SELECT office_id FROM export_log WHERE export_id = %(id)s",

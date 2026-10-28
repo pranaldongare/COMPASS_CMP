@@ -1,6 +1,6 @@
 # Notice Templates API
 
-Generated from `backend/api/openapi.json`. **10 operations.**
+Generated from `backend/api/openapi.json`. **20 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -16,6 +16,16 @@ For each operation the information is deliberately ordered as **API → Validati
 8. [`DELETE /notice-templates/{template_uuid}/purposes/{purpose_uuid}`](#8_delete_notice_templates_template_uuid_purposes_purpose_uuid)
 9. [`PUT /notice-templates/{template_uuid}/languages/{code}`](#9_put_notice_templates_template_uuid_languages_code)
 10. [`DELETE /notice-templates/{template_uuid}/languages/{code}`](#10_delete_notice_templates_template_uuid_languages_code)
+11. [`GET /notice-templates/{template_uuid}/versions`](#11_get_notice_templates_template_uuid_versions)
+12. [`POST /notice-templates/{template_uuid}/versions`](#12_post_notice_templates_template_uuid_versions)
+13. [`GET /notice-templates/{template_uuid}/versions/{number}`](#13_get_notice_templates_template_uuid_versions_number)
+14. [`PATCH /notice-templates/{template_uuid}/versions/{number}`](#14_patch_notice_templates_template_uuid_versions_number)
+15. [`PUT /notice-templates/{template_uuid}/versions/{number}/languages/{code}`](#15_put_notice_templates_template_uuid_versions_number_languages_code)
+16. [`DELETE /notice-templates/{template_uuid}/versions/{number}/languages/{code}`](#16_delete_notice_templates_template_uuid_versions_number_languages_code)
+17. [`PUT /notice-templates/{template_uuid}/versions/{number}/purposes`](#17_put_notice_templates_template_uuid_versions_number_purposes)
+18. [`POST /notice-templates/{template_uuid}/versions/{number}/approve`](#18_post_notice_templates_template_uuid_versions_number_approve)
+19. [`POST /notice-templates/{template_uuid}/versions/{number}/status`](#19_post_notice_templates_template_uuid_versions_number_status)
+20. [`GET /notice-templates/{template_uuid}/versions/{number}/preview`](#20_get_notice_templates_template_uuid_versions_number_preview)
 
 <a id="1_get_notice_templates"></a>
 ## 1. `GET /notice-templates` — The office's notice templates, newest first
@@ -71,7 +81,8 @@ No request body.
     "office_code": "string",
     "category_uuid": "00000000-0000-4000-8000-000000000000",
     "category_code": "string",
-    "category_name": "string"
+    "category_name": "string",
+    "version_count": 0
   }
 ]
 ```
@@ -162,6 +173,7 @@ Request body required: **yes**.
   "category_uuid": "00000000-0000-4000-8000-000000000000",
   "category_code": "string",
   "category_name": "string",
+  "version_count": 0,
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -266,6 +278,7 @@ No request body.
   "category_uuid": "00000000-0000-4000-8000-000000000000",
   "category_code": "string",
   "category_name": "string",
+  "version_count": 0,
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -359,6 +372,7 @@ No request body.
   "category_uuid": "00000000-0000-4000-8000-000000000000",
   "category_code": "string",
   "category_name": "string",
+  "version_count": 0,
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -478,6 +492,7 @@ Request body required: **yes**.
   "category_uuid": "00000000-0000-4000-8000-000000000000",
   "category_code": "string",
   "category_name": "string",
+  "version_count": 0,
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -591,6 +606,7 @@ Request body required: **yes**.
   "category_uuid": "00000000-0000-4000-8000-000000000000",
   "category_code": "string",
   "category_name": "string",
+  "version_count": 0,
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -706,6 +722,7 @@ Request body required: **yes**.
   "category_uuid": "00000000-0000-4000-8000-000000000000",
   "category_code": "string",
   "category_name": "string",
+  "version_count": 0,
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -811,6 +828,7 @@ No request body.
   "category_uuid": "00000000-0000-4000-8000-000000000000",
   "category_code": "string",
   "category_name": "string",
+  "version_count": 0,
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -925,6 +943,7 @@ Request body required: **yes**.
   "category_uuid": "00000000-0000-4000-8000-000000000000",
   "category_code": "string",
   "category_name": "string",
+  "version_count": 0,
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -1030,6 +1049,7 @@ No request body.
   "category_uuid": "00000000-0000-4000-8000-000000000000",
   "category_code": "string",
   "category_name": "string",
+  "version_count": 0,
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -1064,6 +1084,994 @@ No request body.
     }
   ]
 }
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="11_get_notice_templates_template_uuid_versions"></a>
+## 11. `GET /notice-templates/{template_uuid}/versions` — A Legal office template's versions
+
+### API
+
+- **Operation ID:** `list_versions_notice_templates__template_uuid__versions_get`
+- **Access:** Role-controlled `notice templates` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `template_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | array of [`VersionOut`](#schema-versionout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+[
+  {
+    "version_uuid": "00000000-0000-4000-8000-000000000000",
+    "version": 1,
+    "status": "string",
+    "reconsent_required": true,
+    "slot_guidance": "string",
+    "slot_max_length": 1,
+    "withdraw_url": "string",
+    "exercise_rights_url": "string",
+    "board_complaint_url": "string",
+    "dpo_contact": "string",
+    "applicable_to": "string",
+    "template_uuid": "00000000-0000-4000-8000-000000000000",
+    "template_code": "string",
+    "template_title": "string",
+    "category_uuid": "00000000-0000-4000-8000-000000000000",
+    "category_code": "string",
+    "created_by_name": "string",
+    "created_at": "2026-09-17T12:00:00Z",
+    "updated_at": "2026-09-17T12:00:00Z",
+    "approved_by_name": "string",
+    "approved_at": "2026-09-17T12:00:00Z",
+    "retired_at": "2026-09-17T12:00:00Z",
+    "language_count": 1,
+    "purpose_count": 1,
+    "activity_count": 1
+  }
+]
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="12_post_notice_templates_template_uuid_versions"></a>
+## 12. `POST /notice-templates/{template_uuid}/versions` — Open the next version as a draft
+
+### API
+
+- **Operation ID:** `open_version_notice_templates__template_uuid__versions_post`
+- **Access:** Role-controlled `notice templates` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+A copy of the last version's content, or the template's links and
+contact for the first. One draft at a time.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `template_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `201` | Successful Response | `application/json` | [`VersionDetail`](#schema-versiondetail) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `201` `application/json` response:**
+
+```json
+{
+  "version_uuid": "00000000-0000-4000-8000-000000000000",
+  "version": 1,
+  "status": "string",
+  "reconsent_required": true,
+  "slot_guidance": "string",
+  "slot_max_length": 1,
+  "withdraw_url": "string",
+  "exercise_rights_url": "string",
+  "board_complaint_url": "string",
+  "dpo_contact": "string",
+  "applicable_to": "string",
+  "template_uuid": "00000000-0000-4000-8000-000000000000",
+  "template_code": "string",
+  "template_title": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "created_by_name": "string",
+  "created_at": "2026-09-17T12:00:00Z",
+  "updated_at": "2026-09-17T12:00:00Z",
+  "approved_by_name": "string",
+  "approved_at": "2026-09-17T12:00:00Z",
+  "retired_at": "2026-09-17T12:00:00Z",
+  "language_count": 1,
+  "purpose_count": 1,
+  "activity_count": 1,
+  "languages": [
+    {
+      "language_code": "string",
+      "locked_text": "string",
+      "content_hash": "…",
+      "updated_at": "2026-09-17T12:00:00Z",
+      "updated_by_name": "string"
+    }
+  ],
+  "purposes": [
+    {
+      "purpose_uuid": "00000000-0000-4000-8000-000000000000",
+      "purpose_code": "string",
+      "name": "string",
+      "status": "string",
+      "lawful_basis": "string",
+      "data_categories": [
+        "…"
+      ],
+      "is_mandatory": true,
+      "display_order": 1
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="13_get_notice_templates_template_uuid_versions_number"></a>
+## 13. `GET /notice-templates/{template_uuid}/versions/{number}` — Get Version
+
+### API
+
+- **Operation ID:** `get_version_notice_templates__template_uuid__versions__number__get`
+- **Access:** Role-controlled `notice templates` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `template_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `number` | path | Yes | `integer` | — | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`VersionDetail`](#schema-versiondetail) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "version_uuid": "00000000-0000-4000-8000-000000000000",
+  "version": 1,
+  "status": "string",
+  "reconsent_required": true,
+  "slot_guidance": "string",
+  "slot_max_length": 1,
+  "withdraw_url": "string",
+  "exercise_rights_url": "string",
+  "board_complaint_url": "string",
+  "dpo_contact": "string",
+  "applicable_to": "string",
+  "template_uuid": "00000000-0000-4000-8000-000000000000",
+  "template_code": "string",
+  "template_title": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "created_by_name": "string",
+  "created_at": "2026-09-17T12:00:00Z",
+  "updated_at": "2026-09-17T12:00:00Z",
+  "approved_by_name": "string",
+  "approved_at": "2026-09-17T12:00:00Z",
+  "retired_at": "2026-09-17T12:00:00Z",
+  "language_count": 1,
+  "purpose_count": 1,
+  "activity_count": 1,
+  "languages": [
+    {
+      "language_code": "string",
+      "locked_text": "string",
+      "content_hash": "…",
+      "updated_at": "2026-09-17T12:00:00Z",
+      "updated_by_name": "string"
+    }
+  ],
+  "purposes": [
+    {
+      "purpose_uuid": "00000000-0000-4000-8000-000000000000",
+      "purpose_code": "string",
+      "name": "string",
+      "status": "string",
+      "lawful_basis": "string",
+      "data_categories": [
+        "…"
+      ],
+      "is_mandatory": true,
+      "display_order": 1
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="14_patch_notice_templates_template_uuid_versions_number"></a>
+## 14. `PATCH /notice-templates/{template_uuid}/versions/{number}` — Edit a draft version
+
+### API
+
+- **Operation ID:** `update_version_notice_templates__template_uuid__versions__number__patch`
+- **Access:** Role-controlled `notice templates` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `template_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `number` | path | Yes | `integer` | — | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`VersionUpdate`](#schema-versionupdate)
+
+```json
+{
+  "reconsent_required": true,
+  "slot_guidance": "string",
+  "slot_max_length": 100.0,
+  "withdraw_url": "string",
+  "exercise_rights_url": "string",
+  "board_complaint_url": "string",
+  "dpo_contact": "string",
+  "applicable_to": "data_subject"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`VersionDetail`](#schema-versiondetail) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "version_uuid": "00000000-0000-4000-8000-000000000000",
+  "version": 1,
+  "status": "string",
+  "reconsent_required": true,
+  "slot_guidance": "string",
+  "slot_max_length": 1,
+  "withdraw_url": "string",
+  "exercise_rights_url": "string",
+  "board_complaint_url": "string",
+  "dpo_contact": "string",
+  "applicable_to": "string",
+  "template_uuid": "00000000-0000-4000-8000-000000000000",
+  "template_code": "string",
+  "template_title": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "created_by_name": "string",
+  "created_at": "2026-09-17T12:00:00Z",
+  "updated_at": "2026-09-17T12:00:00Z",
+  "approved_by_name": "string",
+  "approved_at": "2026-09-17T12:00:00Z",
+  "retired_at": "2026-09-17T12:00:00Z",
+  "language_count": 1,
+  "purpose_count": 1,
+  "activity_count": 1,
+  "languages": [
+    {
+      "language_code": "string",
+      "locked_text": "string",
+      "content_hash": "…",
+      "updated_at": "2026-09-17T12:00:00Z",
+      "updated_by_name": "string"
+    }
+  ],
+  "purposes": [
+    {
+      "purpose_uuid": "00000000-0000-4000-8000-000000000000",
+      "purpose_code": "string",
+      "name": "string",
+      "status": "string",
+      "lawful_basis": "string",
+      "data_categories": [
+        "…"
+      ],
+      "is_mandatory": true,
+      "display_order": 1
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="15_put_notice_templates_template_uuid_versions_number_languages_code"></a>
+## 15. `PUT /notice-templates/{template_uuid}/versions/{number}/languages/{code}` — A draft version's locked text in one language
+
+### API
+
+- **Operation ID:** `set_version_language_notice_templates__template_uuid__versions__number__languages__code__put`
+- **Access:** Role-controlled `notice templates` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `template_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `number` | path | Yes | `integer` | — | — |
+| `code` | path | Yes | `string` | — | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`VersionLanguageIn`](#schema-versionlanguagein)
+
+```json
+{
+  "locked_text": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`VersionDetail`](#schema-versiondetail) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "version_uuid": "00000000-0000-4000-8000-000000000000",
+  "version": 1,
+  "status": "string",
+  "reconsent_required": true,
+  "slot_guidance": "string",
+  "slot_max_length": 1,
+  "withdraw_url": "string",
+  "exercise_rights_url": "string",
+  "board_complaint_url": "string",
+  "dpo_contact": "string",
+  "applicable_to": "string",
+  "template_uuid": "00000000-0000-4000-8000-000000000000",
+  "template_code": "string",
+  "template_title": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "created_by_name": "string",
+  "created_at": "2026-09-17T12:00:00Z",
+  "updated_at": "2026-09-17T12:00:00Z",
+  "approved_by_name": "string",
+  "approved_at": "2026-09-17T12:00:00Z",
+  "retired_at": "2026-09-17T12:00:00Z",
+  "language_count": 1,
+  "purpose_count": 1,
+  "activity_count": 1,
+  "languages": [
+    {
+      "language_code": "string",
+      "locked_text": "string",
+      "content_hash": "…",
+      "updated_at": "2026-09-17T12:00:00Z",
+      "updated_by_name": "string"
+    }
+  ],
+  "purposes": [
+    {
+      "purpose_uuid": "00000000-0000-4000-8000-000000000000",
+      "purpose_code": "string",
+      "name": "string",
+      "status": "string",
+      "lawful_basis": "string",
+      "data_categories": [
+        "…"
+      ],
+      "is_mandatory": true,
+      "display_order": 1
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="16_delete_notice_templates_template_uuid_versions_number_languages_code"></a>
+## 16. `DELETE /notice-templates/{template_uuid}/versions/{number}/languages/{code}` — Remove Version Language
+
+### API
+
+- **Operation ID:** `remove_version_language_notice_templates__template_uuid__versions__number__languages__code__delete`
+- **Access:** Role-controlled `notice templates` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `template_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `number` | path | Yes | `integer` | — | — |
+| `code` | path | Yes | `string` | — | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`VersionDetail`](#schema-versiondetail) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "version_uuid": "00000000-0000-4000-8000-000000000000",
+  "version": 1,
+  "status": "string",
+  "reconsent_required": true,
+  "slot_guidance": "string",
+  "slot_max_length": 1,
+  "withdraw_url": "string",
+  "exercise_rights_url": "string",
+  "board_complaint_url": "string",
+  "dpo_contact": "string",
+  "applicable_to": "string",
+  "template_uuid": "00000000-0000-4000-8000-000000000000",
+  "template_code": "string",
+  "template_title": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "created_by_name": "string",
+  "created_at": "2026-09-17T12:00:00Z",
+  "updated_at": "2026-09-17T12:00:00Z",
+  "approved_by_name": "string",
+  "approved_at": "2026-09-17T12:00:00Z",
+  "retired_at": "2026-09-17T12:00:00Z",
+  "language_count": 1,
+  "purpose_count": 1,
+  "activity_count": 1,
+  "languages": [
+    {
+      "language_code": "string",
+      "locked_text": "string",
+      "content_hash": "…",
+      "updated_at": "2026-09-17T12:00:00Z",
+      "updated_by_name": "string"
+    }
+  ],
+  "purposes": [
+    {
+      "purpose_uuid": "00000000-0000-4000-8000-000000000000",
+      "purpose_code": "string",
+      "name": "string",
+      "status": "string",
+      "lawful_basis": "string",
+      "data_categories": [
+        "…"
+      ],
+      "is_mandatory": true,
+      "display_order": 1
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="17_put_notice_templates_template_uuid_versions_number_purposes"></a>
+## 17. `PUT /notice-templates/{template_uuid}/versions/{number}/purposes` — The purposes an activity may choose, and which are mandatory
+
+### API
+
+- **Operation ID:** `set_version_purposes_notice_templates__template_uuid__versions__number__purposes_put`
+- **Access:** Role-controlled `notice templates` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `template_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `number` | path | Yes | `integer` | — | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`VersionPurposesIn`](#schema-versionpurposesin)
+
+```json
+{
+  "purposes": [
+    {
+      "purpose_uuid": "00000000-0000-4000-8000-000000000000",
+      "is_mandatory": false,
+      "display_order": "…"
+    }
+  ]
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`VersionDetail`](#schema-versiondetail) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "version_uuid": "00000000-0000-4000-8000-000000000000",
+  "version": 1,
+  "status": "string",
+  "reconsent_required": true,
+  "slot_guidance": "string",
+  "slot_max_length": 1,
+  "withdraw_url": "string",
+  "exercise_rights_url": "string",
+  "board_complaint_url": "string",
+  "dpo_contact": "string",
+  "applicable_to": "string",
+  "template_uuid": "00000000-0000-4000-8000-000000000000",
+  "template_code": "string",
+  "template_title": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "created_by_name": "string",
+  "created_at": "2026-09-17T12:00:00Z",
+  "updated_at": "2026-09-17T12:00:00Z",
+  "approved_by_name": "string",
+  "approved_at": "2026-09-17T12:00:00Z",
+  "retired_at": "2026-09-17T12:00:00Z",
+  "language_count": 1,
+  "purpose_count": 1,
+  "activity_count": 1,
+  "languages": [
+    {
+      "language_code": "string",
+      "locked_text": "string",
+      "content_hash": "…",
+      "updated_at": "2026-09-17T12:00:00Z",
+      "updated_by_name": "string"
+    }
+  ],
+  "purposes": [
+    {
+      "purpose_uuid": "00000000-0000-4000-8000-000000000000",
+      "purpose_code": "string",
+      "name": "string",
+      "status": "string",
+      "lawful_basis": "string",
+      "data_categories": [
+        "…"
+      ],
+      "is_mandatory": true,
+      "display_order": 1
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="18_post_notice_templates_template_uuid_versions_number_approve"></a>
+## 18. `POST /notice-templates/{template_uuid}/versions/{number}/approve` — Approve a draft version: hashed and frozen
+
+### API
+
+- **Operation ID:** `approve_version_notice_templates__template_uuid__versions__number__approve_post`
+- **Access:** Role-controlled `notice templates` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+Refused while a purpose is not active (409), or a language lacks a slot
+or the English text is missing (422). Then every activity made from it
+inherits this approval.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `template_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `number` | path | Yes | `integer` | — | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`VersionDetail`](#schema-versiondetail) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "version_uuid": "00000000-0000-4000-8000-000000000000",
+  "version": 1,
+  "status": "string",
+  "reconsent_required": true,
+  "slot_guidance": "string",
+  "slot_max_length": 1,
+  "withdraw_url": "string",
+  "exercise_rights_url": "string",
+  "board_complaint_url": "string",
+  "dpo_contact": "string",
+  "applicable_to": "string",
+  "template_uuid": "00000000-0000-4000-8000-000000000000",
+  "template_code": "string",
+  "template_title": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "created_by_name": "string",
+  "created_at": "2026-09-17T12:00:00Z",
+  "updated_at": "2026-09-17T12:00:00Z",
+  "approved_by_name": "string",
+  "approved_at": "2026-09-17T12:00:00Z",
+  "retired_at": "2026-09-17T12:00:00Z",
+  "language_count": 1,
+  "purpose_count": 1,
+  "activity_count": 1,
+  "languages": [
+    {
+      "language_code": "string",
+      "locked_text": "string",
+      "content_hash": "…",
+      "updated_at": "2026-09-17T12:00:00Z",
+      "updated_by_name": "string"
+    }
+  ],
+  "purposes": [
+    {
+      "purpose_uuid": "00000000-0000-4000-8000-000000000000",
+      "purpose_code": "string",
+      "name": "string",
+      "status": "string",
+      "lawful_basis": "string",
+      "data_categories": [
+        "…"
+      ],
+      "is_mandatory": true,
+      "display_order": 1
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="19_post_notice_templates_template_uuid_versions_number_status"></a>
+## 19. `POST /notice-templates/{template_uuid}/versions/{number}/status` — Retire an approved version
+
+### API
+
+- **Operation ID:** `set_version_status_notice_templates__template_uuid__versions__number__status_post`
+- **Access:** Role-controlled `notice templates` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+No new activity starts on a retired version; those on it go on.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `template_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `number` | path | Yes | `integer` | — | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`VersionStatusIn`](#schema-versionstatusin)
+
+```json
+{
+  "status": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`VersionDetail`](#schema-versiondetail) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "version_uuid": "00000000-0000-4000-8000-000000000000",
+  "version": 1,
+  "status": "string",
+  "reconsent_required": true,
+  "slot_guidance": "string",
+  "slot_max_length": 1,
+  "withdraw_url": "string",
+  "exercise_rights_url": "string",
+  "board_complaint_url": "string",
+  "dpo_contact": "string",
+  "applicable_to": "string",
+  "template_uuid": "00000000-0000-4000-8000-000000000000",
+  "template_code": "string",
+  "template_title": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "created_by_name": "string",
+  "created_at": "2026-09-17T12:00:00Z",
+  "updated_at": "2026-09-17T12:00:00Z",
+  "approved_by_name": "string",
+  "approved_at": "2026-09-17T12:00:00Z",
+  "retired_at": "2026-09-17T12:00:00Z",
+  "language_count": 1,
+  "purpose_count": 1,
+  "activity_count": 1,
+  "languages": [
+    {
+      "language_code": "string",
+      "locked_text": "string",
+      "content_hash": "…",
+      "updated_at": "2026-09-17T12:00:00Z",
+      "updated_by_name": "string"
+    }
+  ],
+  "purposes": [
+    {
+      "purpose_uuid": "00000000-0000-4000-8000-000000000000",
+      "purpose_code": "string",
+      "name": "string",
+      "status": "string",
+      "lawful_basis": "string",
+      "data_categories": [
+        "…"
+      ],
+      "is_mandatory": true,
+      "display_order": 1
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="20_get_notice_templates_template_uuid_versions_number_preview"></a>
+## 20. `GET /notice-templates/{template_uuid}/versions/{number}/preview` — What an activity made from it would serve
+
+### API
+
+- **Operation ID:** `preview_version_notice_templates__template_uuid__versions__number__preview_get`
+- **Access:** Role-controlled `notice templates` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+Every purpose on the list and the description given (or a sample), per
+language, with the hash that text would carry.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `template_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `number` | path | Yes | `integer` | — | — |
+| `description` | query | No | `string` or `null` | max length: `4000` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | array of [`VersionPreview`](#schema-versionpreview) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+[
+  {
+    "language_code": "string",
+    "text": "string",
+    "content_hash": "string"
+  }
+]
 ```
 
 **Example `422` `application/json` response:**
@@ -1119,6 +2127,7 @@ No request body.
 | `category_uuid` | `string` or `null` | No | format: `uuid` | — |
 | `category_code` | `string` or `null` | No | — | — |
 | `category_name` | `string` or `null` | No | — | — |
+| `version_count` | `integer` | No | default: `0` | — |
 | `purposes` | array of [`TemplatePurposeOut`](#schema-templatepurposeout) | Yes | — | — |
 | `languages` | array of [`TemplateLanguageOut`](#schema-templatelanguageout) | Yes | — | — |
 | `notices` | array of [`TemplateNoticeOut`](#schema-templatenoticeout) | Yes | — | — |
@@ -1152,6 +2161,7 @@ else it was used.
 | `category_uuid` | `string` or `null` | No | format: `uuid` | — |
 | `category_code` | `string` or `null` | No | — | — |
 | `category_name` | `string` or `null` | No | — | — |
+| `version_count` | `integer` | No | default: `0` | — |
 | `purposes` | array of [`TemplatePurposeOut`](#schema-templatepurposeout) | Yes | — | — |
 | `languages` | array of [`TemplateLanguageOut`](#schema-templatelanguageout) | Yes | — | — |
 
@@ -1190,6 +2200,74 @@ else it was used.
 | `dpo_contact` | `string` or `null` | No | min length: `3`; max length: `255` | — |
 | `applicable_to` | [`NoticeAudience`](#schema-noticeaudience) or `null` | No | — | — |
 | `note` | `string` or `null` | No | max length: `4000` | — |
+
+<a id="schema-versiondetail"></a>
+#### `VersionDetail`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `version_uuid` | `string` | Yes | format: `uuid` | — |
+| `version` | `integer` | Yes | — | — |
+| `status` | `string` | Yes | — | — |
+| `reconsent_required` | `boolean` | Yes | — | — |
+| `slot_guidance` | `string` or `null` | Yes | — | — |
+| `slot_max_length` | `integer` | Yes | — | — |
+| `withdraw_url` | `string` | Yes | — | — |
+| `exercise_rights_url` | `string` | Yes | — | — |
+| `board_complaint_url` | `string` | Yes | — | — |
+| `dpo_contact` | `string` | Yes | — | — |
+| `applicable_to` | `string` or `null` | Yes | — | — |
+| `template_uuid` | `string` | Yes | format: `uuid` | — |
+| `template_code` | `string` | Yes | — | — |
+| `template_title` | `string` | Yes | — | — |
+| `category_uuid` | `string` or `null` | Yes | format: `uuid` | — |
+| `category_code` | `string` or `null` | Yes | — | — |
+| `created_by_name` | `string` | Yes | — | — |
+| `created_at` | `string` | Yes | format: `date-time` | — |
+| `updated_at` | `string` | Yes | format: `date-time` | — |
+| `approved_by_name` | `string` or `null` | Yes | — | — |
+| `approved_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `retired_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `language_count` | `integer` | Yes | — | — |
+| `purpose_count` | `integer` | Yes | — | — |
+| `activity_count` | `integer` | Yes | — | — |
+| `languages` | array of [`VersionLanguageOut`](#schema-versionlanguageout) | Yes | — | — |
+| `purposes` | array of [`VersionPurposeOut`](#schema-versionpurposeout) | Yes | — | — |
+
+<a id="schema-versionlanguagein"></a>
+#### `VersionLanguageIn`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `locked_text` | `string` | Yes | min length: `1` | — |
+
+<a id="schema-versionpurposesin"></a>
+#### `VersionPurposesIn`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `purposes` | array of [`VersionPurposeIn`](#schema-versionpurposein) | No | — | — |
+
+<a id="schema-versionstatusin"></a>
+#### `VersionStatusIn`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `status` | `string` | Yes | pattern: `^retired$` | retired |
+
+<a id="schema-versionupdate"></a>
+#### `VersionUpdate`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `reconsent_required` | `boolean` or `null` | No | — | — |
+| `slot_guidance` | `string` or `null` | No | max length: `2000` | — |
+| `slot_max_length` | `integer` or `null` | No | minimum: `100.0`; maximum: `4000.0` | — |
+| `withdraw_url` | `string` or `null` | No | min length: `8`; max length: `2000`; pattern: `^https?://[^\s<>\"]+$` | — |
+| `exercise_rights_url` | `string` or `null` | No | min length: `8`; max length: `2000`; pattern: `^https?://[^\s<>\"]+$` | — |
+| `board_complaint_url` | `string` or `null` | No | min length: `8`; max length: `2000`; pattern: `^https?://[^\s<>\"]+$` | — |
+| `dpo_contact` | `string` or `null` | No | min length: `3`; max length: `255` | — |
+| `applicable_to` | [`NoticeAudience`](#schema-noticeaudience) or `null` | No | — | — |
 
 <a id="schema-cmp_api_routers_v1_notice_templates_templatein"></a>
 #### `cmp__api__routers__v1__notice_templates__TemplateIn`
@@ -1269,3 +2347,37 @@ document written for employees and for the public at once is two documents
 with different obligations wearing one name.
 
 Type: enum: `data_subject`, `employee`, `ex_employee`, `others`
+
+<a id="schema-versionlanguageout"></a>
+#### `VersionLanguageOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `language_code` | `string` | Yes | — | — |
+| `locked_text` | `string` | Yes | — | — |
+| `content_hash` | `string` or `null` | Yes | — | — |
+| `updated_at` | `string` | Yes | format: `date-time` | — |
+| `updated_by_name` | `string` | Yes | — | — |
+
+<a id="schema-versionpurposeout"></a>
+#### `VersionPurposeOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `purpose_uuid` | `string` | Yes | format: `uuid` | — |
+| `purpose_code` | `string` | Yes | — | — |
+| `name` | `string` | Yes | — | — |
+| `status` | `string` | Yes | — | — |
+| `lawful_basis` | `string` | Yes | — | — |
+| `data_categories` | array of `string` | Yes | — | — |
+| `is_mandatory` | `boolean` | Yes | — | — |
+| `display_order` | `integer` | Yes | — | — |
+
+<a id="schema-versionpurposein"></a>
+#### `VersionPurposeIn`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `purpose_uuid` | `string` | Yes | format: `uuid` | — |
+| `is_mandatory` | `boolean` | No | default: `False` | — |
+| `display_order` | `integer` or `null` | No | minimum: `0.0`; maximum: `999.0` | — |

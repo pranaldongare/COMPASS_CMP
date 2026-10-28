@@ -75,6 +75,9 @@ CHILDREN = {
     "breach_upload",
     "category_processor",
     "hr_poc_category",
+    "template_version",
+    "template_version_language",
+    "template_version_purpose",
 }
 
 #: Tables with a key to a policed table that are deliberately not policed,

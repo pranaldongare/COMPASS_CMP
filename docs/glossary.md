@@ -86,6 +86,18 @@ processor and owned by one person. A site is a source standing somewhere.
 breach names its office, and an officer sees only its own, enforced by
 row-level security ([ADR 0032](decisions/0032-offices-are-logical-tenants-in-one-database.md)).
 
+**Template version.** On the HR track, the unit Legal approves: the locked
+legal text per language with a purposes slot and a description slot, the
+purpose list with its mandatory flags, the description slot's guidance and
+limit, and a re-consent flag. Frozen and hashed on approval; an activity
+inherits the version it was created on
+([ADR 0033](decisions/0033-hr-consent-is-governed-by-an-approved-template-version.md)).
+
+**Description slot.** The one free text in an HR notice, written by the HR
+PoC inside the limits the version sets - no link, no `{{`, within the
+version's length - rendered inside the served text and so inside the hash
+the consent artefact records.
+
 **Category.** The Legal office's registry of kinds of HR activity (wellness,
 CSR, background verification, …), each with its templates, the processors
 that hold data collected under it, and the HR PoCs assigned to run its
