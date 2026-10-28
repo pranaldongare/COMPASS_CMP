@@ -36,7 +36,10 @@ ConsentReader = Annotated[Any, Depends(RequireResource("consent"))]
 #: Who may take a consent record away as a PDF (2026-10-15): those who read
 #: consents in full. Not the R&D User, whose consent access is the summary
 #: counts; the scope of each is still the query's.
-RecordReader = Annotated[Any, Depends(RequireRole(Role.DPO, Role.DCO, Role.DCO_ADMIN, Role.RCO))]
+RecordReader = Annotated[
+    Any,
+    Depends(RequireRole(Role.DPO, Role.DCO, Role.DCO_ADMIN, Role.RCO, Role.LEGAL, Role.HR_USER)),
+]
 
 
 class LinkOut(Out):

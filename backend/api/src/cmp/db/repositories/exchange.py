@@ -37,13 +37,15 @@ def _scope(resource: str, role: Role | str, user_id: int) -> tuple[str, list[Any
     """
     match scope_of(resource, role):
         case Scope.ALL:
-            return "TRUE", []
+            # Every row of the caller's office (ADR 0032).
+            return "cmp_office_visible(p.office_id)", []
         case Scope.SCOPED:
             from cmp.db.repositories.projects import scope_predicate
 
+            # Within the office already: the project predicate carries it.
             return scope_predicate(role, user_id)
         case Scope.OWN:
-            return "p.created_by = %s", [user_id]
+            return "p.created_by = %s AND cmp_office_visible(p.office_id)", [user_id]
         case _:
             return "FALSE", []
 

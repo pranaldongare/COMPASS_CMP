@@ -26,7 +26,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Response
 
-from cmp.api.dependencies import Paging, RequireDPOorAdmin, reject_unknown_filters
+from cmp.api.dependencies import AuditReader, Paging, reject_unknown_filters
 from cmp.core.context import current_context
 from cmp.core.csv_safety import text_cell
 from cmp.core.errors import NotFound, ValidationFailed
@@ -227,7 +227,7 @@ async def _filters(
 @router.get("", response_model=Page[AuditEntry], summary="Search the trail")
 async def search(
     request: Request,
-    principal: RequireDPOorAdmin,
+    principal: AuditReader,
     page: Annotated[PageRequest, Depends(audit_paging)],
     actor: Actor = None,
     actor_role: ActorRole = None,
@@ -268,7 +268,7 @@ async def search(
 )
 async def summary(
     request: Request,
-    principal: RequireDPOorAdmin,
+    principal: AuditReader,
     actor: Actor = None,
     actor_role: ActorRole = None,
     subject: Subject = None,
@@ -308,7 +308,7 @@ async def summary(
 
 
 @router.get("/vocabulary", response_model=Vocabulary, summary="What the trail can be filtered by")
-async def vocabulary(principal: RequireDPOorAdmin) -> dict[str, Any]:
+async def vocabulary(principal: AuditReader) -> dict[str, Any]:
     """Every entity type and event type the trail may carry, with labels, and
     the pickers the console offers. Served rather than hard-coded on the
     client, so a new event appears in the filters the day it lands."""
@@ -317,7 +317,7 @@ async def vocabulary(principal: RequireDPOorAdmin) -> dict[str, Any]:
 
 @router.get("/lookup", response_model=list[LookupHit], summary="Find a record to filter on")
 async def lookup(
-    principal: RequireDPOorAdmin,
+    principal: AuditReader,
     kind: Annotated[str, Query(max_length=30)],
     q: Annotated[str, Query(min_length=1, max_length=100)],
 ) -> list[dict[str, Any]]:
@@ -351,7 +351,7 @@ EXPORT_COLUMNS = (
 @router.get("/export.csv", summary="Download the rows a filter selects, as CSV")
 async def export_csv(
     request: Request,
-    principal: RequireDPOorAdmin,
+    principal: AuditReader,
     actor: Actor = None,
     actor_role: ActorRole = None,
     subject: Subject = None,
@@ -448,7 +448,7 @@ async def export_csv(
 
 @router.get("/verify", response_model=VerifyResult, summary="Verify the hash chain")
 async def verify(
-    principal: RequireDPOorAdmin,
+    principal: AuditReader,
     from_log_id: Annotated[int, Query(ge=0)] = 0,
 ) -> dict[str, Any]:
     """Recompute the chain and report the first row that does not verify.
@@ -473,7 +473,7 @@ async def verify(
 
 
 @router.get("/{log_uuid}", response_model=AuditEntry)
-async def get_entry(log_uuid: UUID, principal: RequireDPOorAdmin) -> dict[str, Any]:
+async def get_entry(log_uuid: UUID, principal: AuditReader) -> dict[str, Any]:
     async with connection() as conn:
         entry = await repo.by_uuid(conn, str(log_uuid), office=current_context().office)
         if not entry:

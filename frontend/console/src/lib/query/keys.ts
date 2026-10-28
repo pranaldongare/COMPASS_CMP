@@ -93,6 +93,13 @@ export const keys = {
       ["notice-template", uuid, "versions", n, "preview", description] as const,
   },
 
+  /** HR activities (ADR 0033): projects of the Legal office. */
+  hrActivity: {
+    list: (params?: Params) => ["hr-activities", params ?? {}] as const,
+    detail: (uuid: Uuid) => ["hr-activity", uuid] as const,
+    options: ["hr-activities", "options"] as const,
+  },
+
   /** The Legal office's categories of HR activity (0052). */
   hrCategory: {
     list: (params?: Params) => ["hr-categories", params ?? {}] as const,

@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `hr-categories`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `hr-activities`, `hr-categories`, `links`, `consents`, `exports`, `tickets`, `notifications`, `profile`.
 
 ## Resource access
 
@@ -14,23 +14,23 @@ Navigation returned after sign-in: `dashboard`, `hr-categories`, `tickets`, `not
 | `breach` | No | No | `none` | Denied |
 | `breach_ticket` | Yes | Yes | `own` | Own or addressed rows |
 | `collection` | No | No | `none` | Denied |
-| `consent` | No | No | `none` | Denied |
+| `consent` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `data_source` | No | No | `none` | Denied |
-| `export` | No | No | `none` | Denied |
+| `export` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `hr_category` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `import` | No | No | `none` | Denied |
 | `legal_hold` | No | No | `none` | Denied |
-| `link` | No | No | `none` | Denied |
+| `link` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `me` | No | No | `none` | Denied |
 | `message_template` | No | No | `none` | Denied |
-| `notice` | No | No | `none` | Denied |
+| `notice` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `notice_template` | No | No | `none` | Denied |
 | `processor` | No | No | `none` | Denied |
-| `project` | No | No | `none` | Denied |
+| `project` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `purpose` | No | No | `none` | Denied |
 | `restricted_country` | No | No | `none` | Denied |
 | `rights_request` | No | No | `none` | Denied |
-| `site` | No | No | `none` | Denied |
+| `site` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `ticket` | Yes | Yes | `own` | Own or addressed rows |
 | `user` | No | No | `none` | Denied |
 

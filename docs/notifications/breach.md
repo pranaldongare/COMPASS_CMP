@@ -148,7 +148,7 @@ Key `breach_ticket_access` · channels: email
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_breach_ticket_access` (`backend/api/src/cmp/tasks/notifications/staff.py:68`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:567` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:573` |
 | Variables | `full_name` (The person given access.), `code` (The six-digit one-time code.), `hours` (How many hours the code is valid for.), `reset_url` (The console page where they set their password, with their address filled in.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `The {organisation} Privacy Office has asked for your help`

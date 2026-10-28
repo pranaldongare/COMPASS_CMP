@@ -87,7 +87,7 @@ hash and no email is written
 rows from before that change stand as written, because the trail is
 hash-chained and cannot be rewritten.
 
-## 2. API endpoints that carry PII — 244 endpoints in 23 modules
+## 2. API endpoints that carry PII — 248 endpoints in 23 modules
 
 Every GET, POST, PUT, PATCH and DELETE whose request or response includes a
 personal field. *In* is what the caller sends (body, path and query); *out* is
@@ -433,10 +433,14 @@ these need no session; they are marked **public**.
 |---|---|---|---|
 | POST | `/breach-tickets/{ticket_uuid}/colleagues` | `email`, `full_name`, `mobile` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
 
-### Hr — 3 endpoints
+### Hr — 7 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
+| GET | `/hr/activities` | — | `created_by_name` |
+| POST | `/hr/activities` | — | `url_path` |
+| GET | `/hr/activities/{activity_uuid}` | — | `created_by_name`, `url_path` |
+| POST | `/hr/activities/{activity_uuid}/close` | `reason` | — |
 | GET | `/hr/categories/{category_uuid}` | — | `email`, `full_name`, `respondent_email`, `respondent_name` |
 | GET | `/hr/categories/{category_uuid}/processors` | — | `respondent_email`, `respondent_name` |
 | PUT | `/hr/categories/{category_uuid}/processors` | — | `respondent_email`, `respondent_name` |

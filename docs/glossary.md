@@ -98,6 +98,12 @@ PoC inside the limits the version sets - no link, no `{{`, within the
 version's length - rendered inside the served text and so inside the hash
 the consent artefact records.
 
+**Activity.** A project of the Legal office: one run of a category - a
+wellness week, a CSR drive - made by an HR PoC from an approved template
+version, with the purposes chosen from the version's list and one
+description, live as it is created with one open consent link and no
+approval step ([ADR 0033](decisions/0033-hr-consent-is-governed-by-an-approved-template-version.md)).
+
 **Category.** The Legal office's registry of kinds of HR activity (wellness,
 CSR, background verification, …), each with its templates, the processors
 that hold data collected under it, and the HR PoCs assigned to run its

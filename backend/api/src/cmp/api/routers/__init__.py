@@ -36,6 +36,8 @@ ROUTERS: tuple[APIRouter, ...] = (
     v1.registry_router,
     # The Legal office's registry (ADR 0033).
     v1.hr_categories_router,
+    # The HR track's activities (ADR 0033).
+    v1.hr_activities_router,
     # The project lifecycle, in the order it is walked.
     v1.projects_router,
     v1.notices_router,

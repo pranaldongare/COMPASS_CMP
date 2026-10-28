@@ -56,6 +56,9 @@ class Message(StrEnum):
     # consent
     CONSENT_RECEIPT = "consent_receipt"
     WITHDRAWAL_CONFIRMATION = "withdrawal_confirmation"
+    #: An HR activity moved to a version Legal flagged as a material change
+    #: (ADR 0033): she is asked to decide again; her consent stands meanwhile.
+    HR_RECONSENT_REQUEST = "hr_reconsent_request"
     # rights
     RIGHTS_ACKNOWLEDGEMENT = "rights_acknowledgement"
     RIGHTS_VERIFICATION_CODE = "rights_verification_code"
@@ -411,6 +414,44 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "Her consent record (consent-record.txt): what she agreed to and when, the notice "
             "version and its fingerprint."
         ),
+    ),
+    Junction(
+        key=Message.HR_RECONSENT_REQUEST,
+        title="Re-consent request (HR activity)",
+        description=(
+            "Sent to every participant with a current consent when an HR activity moves to a "
+            "template version Legal flagged as a material change. Her consent stands until "
+            "she decides."
+        ),
+        group="Consent",
+        channels=BOTH,
+        variables=(
+            Variable("activity_name", "The activity's name.", "Wellness week, Pune"),
+            Variable(
+                "change_summary",
+                "What changed: the template and its new version.",
+                "Wellness programme sign-up, version 2",
+            ),
+            Variable(
+                "link_url",
+                "The activity's consent link, where she decides again.",
+                "https://portal.example.org/c/9xK2…",
+            ),
+            ORGANISATION,
+        ),
+        email_subject="Your consent for {activity_name} needs renewing",
+        email_body=(
+            "The terms for {activity_name} have changed ({change_summary}), and the Legal "
+            "office has asked everyone taking part to look at them again.\n\n"
+            "Your existing consent stands until you decide. To read the new notice and "
+            "decide, open:\n{link_url}\n\n"
+            "You can also withdraw at any time from your consents page." + _SIGN_OFF_EMAIL
+        ),
+        sms_body=(
+            "{organisation}: the terms for {activity_name} have changed. Your consent stands "
+            "until you decide; read and decide here: {link_url}"
+        ),
+        to="Each participant with a current consent on the activity, at her primary contact.",
     ),
     Junction(
         key=Message.WITHDRAWAL_CONFIRMATION,

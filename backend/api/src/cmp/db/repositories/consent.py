@@ -35,13 +35,15 @@ def _project_scope(role: Role | str, user_id: int) -> tuple[str, list[Any]]:
     """
     match scope_of("consent", role):
         case Scope.ALL:
-            return "TRUE", []
+            # Every consent of the caller's office (ADR 0032).
+            return "cmp_office_visible(p.office_id)", []
         case Scope.SCOPED:
             from cmp.db.repositories.projects import site_scope_predicate
 
+            # Within the office already: the site predicate carries it.
             return site_scope_predicate(role, user_id, alias="s")
         case Scope.OWN:
-            return "p.created_by = %s", [user_id]
+            return "p.created_by = %s AND cmp_office_visible(p.office_id)", [user_id]
         case _:
             return "FALSE", []
 
@@ -60,16 +62,28 @@ async def create_link(
     expires_at: datetime,
     max_uses: int | None,
     created_by: int,
+    #: `sso` or `otp` (0053, ADR 0034); every link before the HR track is `otp`.
+    audience_mode: str = "otp",
 ) -> Row:
     row = await fetch_one(
         conn,
         """
         INSERT INTO consent_link (notice_id, site_id, token, token_sealed,
-                                  expires_at, max_uses, created_by)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-        RETURNING link_id, link_uuid, expires_at, max_uses, use_count, status, created_at
+                                  expires_at, max_uses, created_by, audience_mode)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING link_id, link_uuid, expires_at, max_uses, use_count, status, created_at,
+                  audience_mode
         """,
-        (notice_id, site_id, token_stored, token_sealed, expires_at, max_uses, created_by),
+        (
+            notice_id,
+            site_id,
+            token_stored,
+            token_sealed,
+            expires_at,
+            max_uses,
+            created_by,
+            audience_mode,
+        ),
     )
     assert row is not None
     return row
@@ -107,7 +121,7 @@ async def link_by_uuid(conn: Conn, link_uuid: str, *, role: Role | str, user_id:
         conn,
         f"""
         SELECT cl.link_id, cl.link_uuid, cl.token_sealed, cl.expires_at, cl.max_uses,
-               cl.use_count,
+               cl.use_count, cl.audience_mode,
                cl.status, cl.created_at, cl.revoked_at,
                n.notice_uuid, n.notice_code, n.version,
                p.project_uuid, p.project_name,
@@ -207,7 +221,7 @@ async def links_for_project(conn: Conn, project_id: int) -> list[Row]:
         conn,
         """
         SELECT cl.link_uuid, cl.token_sealed, cl.expires_at, cl.max_uses, cl.use_count,
-               cl.status,
+               cl.status, cl.audience_mode,
                cl.created_at, cl.revoked_at,
                s.site_uuid, s.site_label,
                n.notice_uuid, n.notice_code, n.version

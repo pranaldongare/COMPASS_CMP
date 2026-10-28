@@ -214,6 +214,11 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.DCO_ADMIN: Grant(Scope.SCOPED, write=True),
         Role.RCO: Grant(Scope.SCOPED, write=True),
         Role.RND_USER: Grant(Scope.OWN, write=True),
+        # The HR track's activities are projects of the Legal office (ADR
+        # 0033): Legal reads them all, an HR PoC those of the categories
+        # assigned to them. The office narrows both (ADR 0032).
+        Role.LEGAL: Grant(Scope.ALL),
+        Role.HR_USER: Grant(Scope.SCOPED, write=True),
     },
     "approval": {
         Role.DPO: Grant(Scope.ALL),
@@ -234,6 +239,9 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.DCO_ADMIN: Grant(Scope.SCOPED, write=True),
         Role.RCO: Grant(Scope.SCOPED, write=True),
         Role.RND_USER: Grant(Scope.OWN),
+        # An activity's one implicit site, which the HR PoC runs.
+        Role.LEGAL: Grant(Scope.ALL),
+        Role.HR_USER: Grant(Scope.SCOPED),
     },
     "notice": {
         Role.DPO: Grant(Scope.ALL, write=True),
@@ -256,6 +264,9 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         # rather than by resource, so this row cannot express it on its own; see
         # `api/routers/v1/notices.py` and the test that pins which is which.
         Role.RND_USER: Grant(Scope.OWN, write=True),
+        # An activity's notice, composed from its template version (ADR 0033).
+        Role.LEGAL: Grant(Scope.ALL),
+        Role.HR_USER: Grant(Scope.SCOPED),
     },
     "link": {
         Role.DPO: Grant(Scope.ALL, write=True),
@@ -265,6 +276,9 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         # row that differed here would be a rule nobody could explain.
         Role.DCO_ADMIN: Grant(Scope.SCOPED, write=True),
         Role.RCO: Grant(Scope.SCOPED, write=True),
+        # An activity's one open link: re-minted or revoked by its HR PoC.
+        Role.LEGAL: Grant(Scope.ALL),
+        Role.HR_USER: Grant(Scope.SCOPED, write=True),
     },
     "consent": {
         Role.DPO: Grant(Scope.ALL),
@@ -275,6 +289,9 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.DCO_ADMIN: Grant(Scope.SCOPED),
         Role.RCO: Grant(Scope.SCOPED),
         Role.RND_USER: Grant(Scope.OWN),  # summary counts only, enforced per-route
+        # An activity's register, by name: Legal's all, the HR PoC's theirs.
+        Role.LEGAL: Grant(Scope.ALL),
+        Role.HR_USER: Grant(Scope.SCOPED),
     },
     "export": {
         Role.DPO: Grant(Scope.ALL, write=True),
@@ -284,6 +301,9 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         # row that differed here would be a rule nobody could explain.
         Role.DCO_ADMIN: Grant(Scope.SCOPED, write=True),
         Role.RCO: Grant(Scope.SCOPED, write=True),
+        # The consented list of an activity, for the HRMS and the vendors.
+        Role.LEGAL: Grant(Scope.ALL, write=True),
+        Role.HR_USER: Grant(Scope.SCOPED, write=True),
     },
     "import": {
         Role.DPO: Grant(Scope.ALL, write=True),
@@ -322,6 +342,8 @@ MATRIX: dict[str, dict[Role, Grant]] = {
     "audit": {
         Role.DPO: Grant(Scope.ALL),
         Role.ADMIN: Grant(Scope.ALL),
+        # The Legal office's trail: its own rows and the office-less ones.
+        Role.LEGAL: Grant(Scope.ALL),
     },
     # The words of every message the platform sends. The two supervising
     # roles may replace them; everyone else receives them.
@@ -572,14 +594,26 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     # increments land.
     Role.LEGAL: (
         "dashboard",
+        "hr-activities",
         "hr-categories",
         "templates",
         "purposes",
+        "consents",
+        "exports",
         "processors",
         "users",
+        "audit",
         *PERSONAL,
     ),
-    Role.HR_USER: ("dashboard", "hr-categories", *PERSONAL),
+    Role.HR_USER: (
+        "dashboard",
+        "hr-activities",
+        "hr-categories",
+        "links",
+        "consents",
+        "exports",
+        *PERSONAL,
+    ),
 }
 
 

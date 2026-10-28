@@ -1,6 +1,6 @@
 # Hr API
 
-Generated from `backend/api/openapi.json`. **7 operations.**
+Generated from `backend/api/openapi.json`. **13 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -13,6 +13,12 @@ For each operation the information is deliberately ordered as **API → Validati
 5. [`POST /hr/categories/{category_uuid}/status`](#5_post_hr_categories_category_uuid_status)
 6. [`GET /hr/categories/{category_uuid}/processors`](#6_get_hr_categories_category_uuid_processors)
 7. [`PUT /hr/categories/{category_uuid}/processors`](#7_put_hr_categories_category_uuid_processors)
+8. [`GET /hr/activities`](#8_get_hr_activities)
+9. [`POST /hr/activities`](#9_post_hr_activities)
+10. [`GET /hr/activities/options`](#10_get_hr_activities_options)
+11. [`GET /hr/activities/{activity_uuid}`](#11_get_hr_activities_activity_uuid)
+12. [`POST /hr/activities/{activity_uuid}/upgrade`](#12_post_hr_activities_activity_uuid_upgrade)
+13. [`POST /hr/activities/{activity_uuid}/close`](#13_post_hr_activities_activity_uuid_close)
 
 <a id="1_get_hr_categories"></a>
 ## 1. `GET /hr/categories` — The Legal office's categories
@@ -523,7 +529,482 @@ Request body required: **yes**.
 }
 ```
 
+<a id="8_get_hr_activities"></a>
+## 8. `GET /hr/activities` — HR activities in scope
+
+### API
+
+- **Operation ID:** `list_activities_hr_activities_get`
+- **Access:** Role-controlled `hr` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+Legal's all; an HR PoC's, of the categories assigned to them.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `status` | query | No | `string` or `null` | — | — |
+| `category` | query | No | `string` or `null` | format: `uuid` | — |
+| `q` | query | No | `string` or `null` | max length: `100` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | array of [`ActivityOut`](#schema-activityout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+[
+  {
+    "activity_uuid": "00000000-0000-4000-8000-000000000000",
+    "name": "string",
+    "description": "string",
+    "status": "string",
+    "category_uuid": "00000000-0000-4000-8000-000000000000",
+    "category_code": "string",
+    "category_name": "string",
+    "version_uuid": "00000000-0000-4000-8000-000000000000",
+    "template_version": 1,
+    "version_status": "string",
+    "reconsent_required": true,
+    "template_uuid": "00000000-0000-4000-8000-000000000000",
+    "template_code": "string",
+    "template_title": "string",
+    "created_by_uuid": "00000000-0000-4000-8000-000000000000",
+    "created_by_name": "string",
+    "notice_uuid": "00000000-0000-4000-8000-000000000000",
+    "notice_code": "string",
+    "notice_version": 1,
+    "consent_count": 1,
+    "link_status": "string",
+    "created_at": "2026-09-17T12:00:00Z",
+    "updated_at": "2026-09-17T12:00:00Z"
+  }
+]
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="9_post_hr_activities"></a>
+## 9. `POST /hr/activities` — Create an activity, live, with its link
+
+### API
+
+- **Operation ID:** `create_activity_hr_activities_post`
+- **Access:** Role-controlled `hr` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+One transaction: project, site, notice composed and published, link.
+A purpose off the version's list or a mandatory one left out, a
+description outside the slot: 422 and nothing written. A retired version:
+409.
+
+### Validation
+
+No path, query, header, or cookie parameters are declared for this operation.
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`ActivityIn`](#schema-activityin)
+
+```json
+{
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "template_version_uuid": "00000000-0000-4000-8000-000000000000",
+  "purpose_uuids": [
+    "00000000-0000-4000-8000-000000000000"
+  ],
+  "name": "string",
+  "description": "string",
+  "audience_mode": "sso",
+  "link_expires_at": "2026-09-17T12:00:00Z"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `201` | Successful Response | `application/json` | [`ActivityCreated`](#schema-activitycreated) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `201` `application/json` response:**
+
+```json
+{
+  "activity_uuid": "00000000-0000-4000-8000-000000000000",
+  "notice_uuid": "00000000-0000-4000-8000-000000000000",
+  "link_uuid": "00000000-0000-4000-8000-000000000000",
+  "url_path": "string",
+  "expires_at": "2026-09-17T12:00:00Z",
+  "audience_mode": "string"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="10_get_hr_activities_options"></a>
+## 10. `GET /hr/activities/options` — What an activity can be made from
+
+### API
+
+- **Operation ID:** `activity_options_hr_activities_options_get`
+- **Access:** Role-controlled `hr` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+The HR PoC's active categories, each with its templates' approved
+versions and their purposes, the mandatory ones marked.
+
+### Validation
+
+No path, query, header, or cookie parameters are declared for this operation.
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | array of [`OptionCategory`](#schema-optioncategory) |
+
+**Example `200` `application/json` response:**
+
+```json
+[
+  {
+    "category_uuid": "00000000-0000-4000-8000-000000000000",
+    "category_code": "string",
+    "name": "string",
+    "versions": [
+      {
+        "version_uuid": "…",
+        "version": "…",
+        "template_uuid": "…",
+        "template_code": "…",
+        "template_title": "…",
+        "slot_guidance": "…",
+        "slot_max_length": "…",
+        "reconsent_required": "…",
+        "purposes": "…"
+      }
+    ]
+  }
+]
+```
+
+<a id="11_get_hr_activities_activity_uuid"></a>
+## 11. `GET /hr/activities/{activity_uuid}` — Get Activity
+
+### API
+
+- **Operation ID:** `get_activity_hr_activities__activity_uuid__get`
+- **Access:** Role-controlled `hr` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `activity_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`ActivityDetail`](#schema-activitydetail) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "activity_uuid": "00000000-0000-4000-8000-000000000000",
+  "name": "string",
+  "description": "string",
+  "status": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "category_name": "string",
+  "version_uuid": "00000000-0000-4000-8000-000000000000",
+  "template_version": 1,
+  "version_status": "string",
+  "reconsent_required": true,
+  "template_uuid": "00000000-0000-4000-8000-000000000000",
+  "template_code": "string",
+  "template_title": "string",
+  "created_by_uuid": "00000000-0000-4000-8000-000000000000",
+  "created_by_name": "string",
+  "notice_uuid": "00000000-0000-4000-8000-000000000000",
+  "notice_code": "string",
+  "notice_version": 1,
+  "consent_count": 1,
+  "link_status": "string",
+  "created_at": "2026-09-17T12:00:00Z",
+  "updated_at": "2026-09-17T12:00:00Z",
+  "link": {
+    "link_uuid": "00000000-0000-4000-8000-000000000000",
+    "status": "string",
+    "expires_at": "2026-09-17T12:00:00Z",
+    "use_count": 1,
+    "audience_mode": "string",
+    "url_path": "…"
+  }
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="12_post_hr_activities_activity_uuid_upgrade"></a>
+## 12. `POST /hr/activities/{activity_uuid}/upgrade` — Move an activity to another approved version
+
+### API
+
+- **Operation ID:** `upgrade_activity_hr_activities__activity_uuid__upgrade_post`
+- **Access:** Role-controlled `hr` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+A new notice version, published; the live link moves to it. A version
+flagged for re-consent asks every participant again, after commit.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `activity_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`UpgradeIn`](#schema-upgradein)
+
+```json
+{
+  "template_version_uuid": "00000000-0000-4000-8000-000000000000",
+  "purpose_uuids": [
+    "00000000-0000-4000-8000-000000000000"
+  ],
+  "description": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`UpgradeOut`](#schema-upgradeout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "activity_uuid": "00000000-0000-4000-8000-000000000000",
+  "notice_uuid": "00000000-0000-4000-8000-000000000000",
+  "version": 1,
+  "reconsent_requested": 1
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="13_post_hr_activities_activity_uuid_close"></a>
+## 13. `POST /hr/activities/{activity_uuid}/close` — Close an activity
+
+### API
+
+- **Operation ID:** `close_activity_hr_activities__activity_uuid__close_post`
+- **Access:** Role-controlled `hr` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+Its link stops resolving; consents given stand.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `activity_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`CloseIn`](#schema-closein)
+
+```json
+{
+  "reason": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`Closed`](#schema-closed) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "project_uuid": "00000000-0000-4000-8000-000000000000",
+  "to": "string",
+  "links_revoked": 1
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
 # Referenced schemas
+
+<a id="schema-activitycreated"></a>
+#### `ActivityCreated`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `activity_uuid` | `string` | Yes | format: `uuid` | — |
+| `notice_uuid` | `string` or `null` | Yes | format: `uuid` | — |
+| `link_uuid` | `string` | Yes | format: `uuid` | — |
+| `url_path` | `string` | Yes | — | — |
+| `expires_at` | `string` | Yes | format: `date-time` | — |
+| `audience_mode` | `string` | Yes | — | — |
+
+<a id="schema-activitydetail"></a>
+#### `ActivityDetail`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `activity_uuid` | `string` | Yes | format: `uuid` | — |
+| `name` | `string` | Yes | — | — |
+| `description` | `string` or `null` | Yes | — | — |
+| `status` | `string` | Yes | — | — |
+| `category_uuid` | `string` | Yes | format: `uuid` | — |
+| `category_code` | `string` | Yes | — | — |
+| `category_name` | `string` | Yes | — | — |
+| `version_uuid` | `string` | Yes | format: `uuid` | — |
+| `template_version` | `integer` | Yes | — | — |
+| `version_status` | `string` | Yes | — | — |
+| `reconsent_required` | `boolean` | Yes | — | — |
+| `template_uuid` | `string` | Yes | format: `uuid` | — |
+| `template_code` | `string` | Yes | — | — |
+| `template_title` | `string` | Yes | — | — |
+| `created_by_uuid` | `string` | Yes | format: `uuid` | — |
+| `created_by_name` | `string` | Yes | — | — |
+| `notice_uuid` | `string` or `null` | Yes | format: `uuid` | — |
+| `notice_code` | `string` or `null` | Yes | — | — |
+| `notice_version` | `integer` or `null` | Yes | — | — |
+| `consent_count` | `integer` | Yes | — | — |
+| `link_status` | `string` or `null` | Yes | — | — |
+| `created_at` | `string` | Yes | format: `date-time` | — |
+| `updated_at` | `string` | Yes | format: `date-time` | — |
+| `link` | [`ActivityLink`](#schema-activitylink) or `null` | Yes | — | — |
+
+<a id="schema-activityin"></a>
+#### `ActivityIn`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `category_uuid` | `string` | Yes | format: `uuid` | — |
+| `template_version_uuid` | `string` | Yes | format: `uuid` | — |
+| `purpose_uuids` | array of `string` | Yes | — | — |
+| `name` | `string` | Yes | min length: `1`; max length: `200` | — |
+| `description` | `string` | Yes | min length: `1`; max length: `4000` | — |
+| `audience_mode` | enum: `sso`, `otp` | Yes | — | — |
+| `link_expires_at` | `string` | Yes | format: `date-time` | — |
 
 <a id="schema-categorydetailout"></a>
 #### `CategoryDetailOut`
@@ -597,12 +1078,59 @@ trail name the category, so it does not change.
 | `name` | `string` or `null` | No | min length: `1`; max length: `200` | — |
 | `description` | `string` or `null` | No | min length: `1`; max length: `20000` | — |
 
+<a id="schema-closein"></a>
+#### `CloseIn`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `reason` | `string` or `null` | No | max length: `2000` | — |
+
+<a id="schema-closed"></a>
+#### `Closed`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `project_uuid` | `string` | Yes | format: `uuid` | — |
+| `to` | `string` | Yes | — | — |
+| `links_revoked` | `integer` | Yes | — | — |
+
 <a id="schema-httpvalidationerror"></a>
 #### `HTTPValidationError`
 
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
 | `detail` | array of [`ValidationError`](#schema-validationerror) | No | — | — |
+
+<a id="schema-upgradein"></a>
+#### `UpgradeIn`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `template_version_uuid` | `string` | Yes | format: `uuid` | — |
+| `purpose_uuids` | array of `string` | Yes | — | — |
+| `description` | `string` | Yes | min length: `1`; max length: `4000` | — |
+
+<a id="schema-upgradeout"></a>
+#### `UpgradeOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `activity_uuid` | `string` | Yes | format: `uuid` | — |
+| `notice_uuid` | `string` | Yes | format: `uuid` | — |
+| `version` | `integer` | Yes | — | — |
+| `reconsent_requested` | `integer` | Yes | — | — |
+
+<a id="schema-activitylink"></a>
+#### `ActivityLink`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `link_uuid` | `string` | Yes | format: `uuid` | — |
+| `status` | `string` | Yes | — | — |
+| `expires_at` | `string` | Yes | format: `date-time` | — |
+| `use_count` | `integer` | Yes | — | — |
+| `audience_mode` | `string` | Yes | — | — |
+| `url_path` | `string` or `null` | Yes | — | — |
 
 <a id="schema-categoryprocessorout"></a>
 #### `CategoryProcessorOut`

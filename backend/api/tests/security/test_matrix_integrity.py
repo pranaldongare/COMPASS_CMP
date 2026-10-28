@@ -173,6 +173,7 @@ class TestRoleListsAreDerivedRatherThanTyped:
             "requests": "rights_request",
             "tickets": "ticket",
             "hr-categories": "hr_category",
+            "hr-activities": "project",
             "templates": "notice_template",
         }
 

@@ -68,3 +68,83 @@ export interface HrPoc {
   full_name: string;
   email: string | null;
 }
+
+/** An HR activity (ADR 0033): a project of the Legal office, made by an HR
+ *  PoC from an approved template version, live as it is created. */
+export interface HrActivity {
+  activity_uuid: Uuid;
+  name: string;
+  /** The one free text, served inside the notice. */
+  description: string | null;
+  status: string;
+  category_uuid: Uuid;
+  category_code: string;
+  category_name: string;
+  version_uuid: Uuid;
+  template_version: number;
+  version_status: string;
+  reconsent_required: boolean;
+  template_uuid: Uuid;
+  template_code: string;
+  template_title: string;
+  created_by_uuid: Uuid;
+  created_by_name: string;
+  notice_uuid: Uuid | null;
+  notice_code: string | null;
+  notice_version: number | null;
+  consent_count: number;
+  link_status: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface HrActivityLink {
+  link_uuid: Uuid;
+  status: string;
+  expires_at: Timestamp;
+  use_count: number;
+  /** `sso` (employees, through the organisation) or `otp` (a code). */
+  audience_mode: "sso" | "otp";
+  url_path: string | null;
+}
+
+export interface HrActivityDetail extends HrActivity {
+  link: HrActivityLink | null;
+}
+
+/** What the wizard offers: a category, its approved versions and purposes. */
+export interface ActivityOptionPurpose {
+  purpose_uuid: Uuid;
+  purpose_code: string;
+  name: string;
+  is_mandatory: boolean;
+  display_order: number;
+}
+
+export interface ActivityOptionVersion {
+  version_uuid: Uuid;
+  version: number;
+  template_uuid: Uuid;
+  template_code: string;
+  template_title: string;
+  slot_guidance: string | null;
+  slot_max_length: number;
+  reconsent_required: boolean;
+  purposes: ActivityOptionPurpose[];
+}
+
+export interface ActivityOptionCategory {
+  category_uuid: Uuid;
+  category_code: string;
+  name: string;
+  versions: ActivityOptionVersion[];
+}
+
+export interface HrActivityCreated {
+  activity_uuid: Uuid;
+  notice_uuid: Uuid | null;
+  link_uuid: Uuid;
+  url_path: string;
+  expires_at: Timestamp;
+  audience_mode: "sso" | "otp";
+}

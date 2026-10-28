@@ -49,6 +49,7 @@ const SECTION_OF: ReadonlyArray<
   // as a section of their own (0052).
   ["/notices/templates", ["notices", "templates"]],
   ["/hr-categories", "hr-categories"],
+  ["/hr-activities", "hr-activities"],
   ["/purposes", "purposes"],
   ["/processors", "processors"],
   ["/sources", "sources"],

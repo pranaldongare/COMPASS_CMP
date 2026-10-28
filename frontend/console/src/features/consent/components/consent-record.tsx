@@ -18,7 +18,7 @@ import { useToast } from "@/providers";
 import { useOptionalAuth } from "@/providers/auth-provider";
 import type { Uuid } from "@/types";
 
-const RECORD_ROLES = new Set(["dpo", "dco", "dco_admin", "rco"]);
+const RECORD_ROLES = new Set(["dpo", "dco", "dco_admin", "rco", "legal", "hr_user"]);
 
 /** Whether the signed-in role may take consent records away as PDFs. */
 export function useCanDownloadRecords(): boolean {

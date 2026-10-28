@@ -79,6 +79,24 @@ _(date · increment · the call made · why · what would change it)_
 | C-9 | One draft at a time per template (409 `version_draft_open`); a version opens as a copy of the last, whatever its status | Two drafts would race for the next number and confuse "which is the one to approve" | - |
 | C-10 | On a Legal office template the console shows Details and Versions; the template's own text, purposes and "used by" tabs (the R&D model) are hidden | What an activity serves is a version's; the template-level text would be a second, unused copy | - |
 
+### Made during increment 4 (2026-10-28)
+
+| # | The call | Why | What would change it |
+|---|---|---|---|
+| D-1 | F-4 applied: an HR PoC's scope is the categories assigned to them in every read - projects, sites, notices, links, consents, exports | A site-owner rule would follow whoever runs the site, not the category the administrator assigned | - |
+| D-2 | Every project, notice, consent, link, site and export read carries `cmp_office_visible` (extends B-2) | The DPO's local console otherwise lists the Legal office's activities: the policies do not bind a superuser | - |
+| D-3 | An activity's one site stands under the category's HR system (`processor_role = hrms`), else its first in-house processor; with neither, creation is 422 naming the category | The plan names "the in-house HR processor" without saying which; the category's HR system is the one the data lands in | A category wanting its own "activity processor" |
+| D-4 | An activity notice's recipient line names the category's live processors with what each is ("X Ltd (HR system); Y Pvt (vendor)"), not the site | F-3: today's line comes from sites, and an activity has one; the processors are who actually hold the data | - |
+| D-5 | F-6 applied to notice codes: an activity's is `HR-<name>-<year>`. Purpose and category codes are still unique across both offices and typed by hand; a clash with the other office's code reads as "already exists" | Generated codes can be namespaced; typed ones cannot without a schema change | Purpose codes unique per office (a migration) |
+| D-6 | An activity's notice languages are approved and the notice published by the HR PoC's act at creation (`approved_by` the HR PoC); Legal's approval is the version's, recorded on `template_version` and in each hash | The HR PoC's act is what makes this notice live; the legal sign-off it relies on is the version's, provable by hash | - |
+| D-7 | An activity is closed by its HR PoC or by the Legal PoC; the DPO and the collection owners close only R&D projects | Each office closes its own | - |
+| D-8 | No `/hr/activities/{uuid}/consents` or `/link`: the activity page reads `/projects/{uuid}/consents` and replaces or revokes the link through `/links/{uuid}/...`, which now scope by category | One route per act; the plan's own note says to reuse them | - |
+| D-9 | The re-consent request goes by email or SMS to each participant with a current consent on any notice of the activity, after commit; `change_summary` is the template's title and the version number (C-5). F-5 left: a consent on the new version starts its own chain beside the old | OP-4 keeps the old consent in force | Legal telling us to supersede |
+| D-10 | The dashboards for the Legal PoC and the HR PoC ("Needs attention", figures) are increment 8's | The plan lists them in both 4 and 8; the registers come first | - |
+| D-11 | The "project approved" email is not sent when the approver is the project's own creator - an activity going live by its HR PoC's act | Nobody needs telling what they have just done | - |
+| D-12 | The audit trail's routes take the matrix's `audit` grant (`AuditReader`), which the Legal PoC now holds; the trail was already filtered by office (A-12) | Legal reads the HR audit trail (hr-track.md §6) | - |
+| D-13 | The raw-SQL tests of `cmp_activity_version_coherent()` are in `tests/integration/enforcement/test_template_version_freeze.py`, not a file of their own | They share the version fixtures | - |
+
 ### Found in analysis, for later increments (owner to answer before that increment)
 
 | # | Increment | Finding | Owner | Until settled, the agent |
@@ -86,9 +104,9 @@ _(date · increment · the call made · why · what would change it)_
 | F-1 | 3/4 | **Applied in increment 3 (C-2).** `cmp_activity_version_coherent()` as written checks for an approved version on every `UPDATE` of `project`; retiring a version would block closing and every other update on the activities that use it (contradicts `hr-track.md` §1.7) | Engineer | checks on `INSERT` and when `template_version_id` changes only |
 | F-2 | 4 | **Applied in increment 3 (C-3).** `consent_link.audience_mode` is needed by increment 4's `create_link` but arrives in 0054 (increment 5) | Engineer | adds the column in 0053; 0054 keeps the person types and the rest |
 | F-3 | 3/4 | **Settled by default in increment 3 (C-1).** Notice fields the HR track does not specify: `applicable_to` (publication refuses it empty), the contact (the portal labels it "Data Protection Officer"), the Rule 3 links (on the editable template, outside the frozen version), the recipients list (today from sites only) | Legal | freezes them onto the version at approval; the contact is the HR office's |
-| F-4 | 4 | HR PoC scope: by category for projects, but notices, links and consents are scoped by site owner (`site_scope_predicate` lists roles) | Engineer | scopes by category everywhere |
+| F-4 | 4 | **Applied in increment 4 (D-1).** HR PoC scope: by category for projects, but notices, links and consents are scoped by site owner (`site_scope_predicate` lists roles) | Engineer | scopes by category everywhere |
 | F-5 | 4 | Re-consent after an upgrade: a version-2 consent today starts a second chain beside the version-1 one (supersession is per person and notice) | Legal | leaves both standing (OP-4) unless told to supersede |
-| F-6 | 2/3 | `purpose_code` and `(notice_code, version)` are unique across both offices; under the wall a "code taken" check cannot see the other office's codes (a 23505 or a leak by error) | Engineer | prefixes generated HR codes by office |
+| F-6 | 2/3 | **Notice codes done in increment 4 (D-5); purpose codes open.** `purpose_code` and `(notice_code, version)` are unique across both offices; under the wall a "code taken" check cannot see the other office's codes (a 23505 or a leak by error) | Engineer | prefixes generated HR codes by office |
 | F-7 | 5 | `trg_subject_needs_mobile` refuses a `data_subject` without a mobile, so "create the employee, then ask for the mobile" fails on insert | Engineer | holds the validated assertion in Redis until the mobile is confirmed, then creates the account in one insert |
 | F-8 | 5 | Account pre-hijack: the unauthenticated `POST /c/{token}/register` accepts `organization_id`, so anyone can pre-create an account with someone else's employee ID that their first SSO sign-in would then match | Engineer | closes the input before matching ships |
 | F-9 | 5 | The callback must be `${PUBLIC_BASE_URL}/api/auth/sso/callback`: the portal forwards only `/api/*` to the API | IT | uses the `/api/` path in `SSO_REDIRECT_URL` and the configuration page |

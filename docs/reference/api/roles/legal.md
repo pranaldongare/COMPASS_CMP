@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `hr-categories`, `templates`, `purposes`, `processors`, `users`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `hr-activities`, `hr-categories`, `templates`, `purposes`, `consents`, `exports`, `processors`, `users`, `audit`, `tickets`, `notifications`, `profile`.
 
 ## Resource access
 
@@ -10,27 +10,27 @@ Navigation returned after sign-in: `dashboard`, `hr-categories`, `templates`, `p
 |---|---:|---:|---|---|
 | `approval` | No | No | `none` | Denied |
 | `asset` | No | No | `none` | Denied |
-| `audit` | No | No | `none` | Denied |
+| `audit` | Yes | No | `all` | All rows |
 | `breach` | No | No | `none` | Denied |
 | `breach_ticket` | Yes | Yes | `own` | Own or addressed rows |
 | `collection` | No | No | `none` | Denied |
-| `consent` | No | No | `none` | Denied |
+| `consent` | Yes | No | `all` | All rows |
 | `data_source` | No | No | `none` | Denied |
-| `export` | No | No | `none` | Denied |
+| `export` | Yes | Yes | `all` | All rows |
 | `hr_category` | Yes | Yes | `all` | All rows |
 | `import` | No | No | `none` | Denied |
 | `legal_hold` | No | No | `none` | Denied |
-| `link` | No | No | `none` | Denied |
+| `link` | Yes | No | `all` | All rows |
 | `me` | No | No | `none` | Denied |
 | `message_template` | No | No | `none` | Denied |
-| `notice` | No | No | `none` | Denied |
+| `notice` | Yes | No | `all` | All rows |
 | `notice_template` | Yes | Yes | `all` | All rows |
 | `processor` | Yes | No | `all` | All rows |
-| `project` | No | No | `none` | Denied |
+| `project` | Yes | No | `all` | All rows |
 | `purpose` | Yes | Yes | `all` | All rows |
 | `restricted_country` | No | No | `none` | Denied |
 | `rights_request` | No | No | `none` | Denied |
-| `site` | No | No | `none` | Denied |
+| `site` | Yes | No | `all` | All rows |
 | `ticket` | Yes | Yes | `own` | Own or addressed rows |
 | `user` | Yes | No | `all` | All rows |
 

@@ -180,11 +180,16 @@ console shows what production will:
 | Notice templates: by uuid, by code, the list | `db/repositories/notice_templates.py` (`_IN_OFFICE`) |
 | Categories, and an HR PoC's own | `db/repositories/hr_categories.py` (`scope_predicate`, `categories_of_user`) |
 | The notification feed, a holder's tickets for the office, a resend | `office_clause()` on the trail (`dashboard.staff_feed`, `audit.ticket_events_for_office`, `audit.breach_ticket_events_for_office`, `audit.by_uuid`) |
+| Projects and activities, and everything read through them: sites, notices, links, consents, exports, collections, the dashboards | `projects.scope_predicate` and `site_scope_predicate` wrap every role's scope in `cmp_office_visible(p.office_id)`; `notices._project_scope`, `consent._project_scope` and `exchange._scope` do the same for an ALL or OWN scope (increment 4) |
+| An activity's template version, by uuid | `template_versions.by_uuid` |
 
-The R&D track's other registers - projects, notices, links, exports,
-requests, breaches - still rely on the policies alone; they hold no Legal
-office rows until the increments that write them, and each adds the
-predicate when it does.
+Rights requests and breaches still rely on the policies alone; they hold no
+Legal office rows until increment 7, which adds the predicate.
+
+An HR PoC's scope inside the Legal office is the categories assigned to
+them (`hr_poc_category`), in every one of those reads (open point F-4): an
+activity, its site, its notice, its link, its consents and its exports are
+theirs exactly when its category is.
 
 A write lands in the caller's office: the router passes `principal.office`
 to the service (a purpose, a template, a category), and a principal with

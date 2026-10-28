@@ -90,6 +90,10 @@ async def project_moved(
         for email in await _role(conn, "dpo"):
             _queue(tasks.send_project_submitted, email, name, by, uuid)
         return
+    if to == "approved" and project.get("created_by") == actor_id:
+        # An HR activity goes live by its creator's own act (ADR 0033);
+        # nobody needs telling what they have just done.
+        return
     owner = await _person(conn, project.get("created_by"))
     if owner is None:
         return

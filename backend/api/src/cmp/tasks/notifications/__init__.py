@@ -28,7 +28,7 @@ from cmp.tasks.notifications.alerts import (
 from cmp.tasks.notifications.batch import send_office_note
 from cmp.tasks.notifications.breach import send_breach_notice
 from cmp.tasks.notifications.breach_tickets import send_breach_ticket_waiting
-from cmp.tasks.notifications.consent import send_consent_receipt
+from cmp.tasks.notifications.consent import send_consent_receipt, send_reconsent_request
 from cmp.tasks.notifications.rights import (
     send_holder_instruction,
     send_nomination_accepted,
@@ -71,6 +71,7 @@ __all__ = [
     "send_project_collector_assigned",
     "send_project_sent_back",
     "send_project_submitted",
+    "send_reconsent_request",
     "send_rights_acknowledgement",
     "send_rights_closed",
     "send_rights_due_digest",

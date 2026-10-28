@@ -226,6 +226,10 @@ class Event:
     TEMPLATE_VERSION_UPDATED = "template_version.updated"
     TEMPLATE_VERSION_APPROVED = "template_version.approved"
     TEMPLATE_VERSION_RETIRED = "template_version.retired"
+    #: An HR activity (ADR 0033): created live, in one transaction, from an
+    #: approved version; moved to another version. Recorded against `project`.
+    ACTIVITY_CREATED = "activity.created"
+    ACTIVITY_UPGRADED = "activity.upgraded"
 
     # consent
     LINK_CREATED = "link.created"

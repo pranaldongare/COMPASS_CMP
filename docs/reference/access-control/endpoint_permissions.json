@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 345,
-  "registered_business_and_system_operations": 348,
+  "documented_operations": 351,
+  "registered_business_and_system_operations": 354,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -14,11 +14,12 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPOorAdmin",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
+      "gate": "AuditReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"audit\"))]",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "",
@@ -32,11 +33,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO/Admin may inspect the audit trail and verify its chain. No API to edit audit entries is registered."
+        "DPO/Admin may inspect the audit trail and verify its chain. No API to edit audit entries is registered.",
+        "The Legal PoC reads the Legal office's rows and the office-less ones. (2026-10-28, ADR 0032)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/audit.py#L66"
@@ -52,11 +54,12 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPOorAdmin",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
+      "gate": "AuditReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"audit\"))]",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "",
@@ -70,11 +73,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO/Admin may inspect the audit trail and verify its chain. No API to edit audit entries is registered."
+        "DPO/Admin may inspect the audit trail and verify its chain. No API to edit audit entries is registered.",
+        "The Legal PoC reads the Legal office's rows and the office-less ones. (2026-10-28, ADR 0032)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/audit.py#L99"
@@ -90,11 +94,12 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPOorAdmin",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
+      "gate": "AuditReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"audit\"))]",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "",
@@ -108,11 +113,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO/Admin may inspect the audit trail and verify its chain. No API to edit audit entries is registered."
+        "DPO/Admin may inspect the audit trail and verify its chain. No API to edit audit entries is registered.",
+        "The Legal PoC reads the Legal office's rows and the office-less ones. (2026-10-28, ADR 0032)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/audit.py#L125"
@@ -731,8 +737,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
@@ -774,8 +780,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
@@ -817,8 +823,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
@@ -860,8 +866,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
@@ -902,8 +908,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only)."
@@ -943,8 +949,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only)."
@@ -984,8 +990,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
@@ -1026,8 +1032,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
@@ -1068,8 +1074,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only)."
@@ -1110,8 +1116,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
@@ -1153,8 +1159,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
@@ -1196,8 +1202,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only)."
@@ -1839,8 +1845,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading."
@@ -1880,8 +1886,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading."
@@ -1921,8 +1927,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading."
@@ -1962,8 +1968,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading."
@@ -2313,8 +2319,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading."
@@ -2354,8 +2360,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.",
@@ -3624,8 +3630,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -3705,8 +3711,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -3746,8 +3752,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -3826,8 +3832,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -3867,8 +3873,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -3982,8 +3988,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.",
@@ -4024,8 +4030,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -4061,8 +4067,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.",
@@ -4103,8 +4109,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -4179,8 +4185,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.",
@@ -4299,8 +4305,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -4340,8 +4346,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -4541,8 +4547,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -4583,8 +4589,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -4627,8 +4633,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -4670,8 +4676,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -4716,8 +4722,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -4759,8 +4765,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -4805,8 +4811,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -4849,8 +4855,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -4895,8 +4901,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -4939,8 +4945,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -4983,8 +4989,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -5025,8 +5031,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -5069,8 +5075,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5115,8 +5121,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5155,8 +5161,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -5197,8 +5203,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5243,8 +5249,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5291,8 +5297,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -5333,8 +5339,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5379,8 +5385,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -5421,8 +5427,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5465,8 +5471,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5509,8 +5515,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5556,8 +5562,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5597,8 +5603,8 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5645,8 +5651,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5697,8 +5703,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -9988,11 +9994,12 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPOorAdmin",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
+      "gate": "AuditReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"audit\"))]",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "",
@@ -10006,11 +10013,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO/Admin only. Counts by event, area, actor role and day over exactly the rows the same filters would list; the filters are validated as on GET /audit (an unknown entity uuid matches nothing)."
+        "DPO/Admin only. Counts by event, area, actor role and day over exactly the rows the same filters would list; the filters are validated as on GET /audit (an unknown entity uuid matches nothing).",
+        "The Legal PoC reads the Legal office's rows and the office-less ones. (2026-10-28, ADR 0032)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/c7d3f6ba15a5cfdc6f9df6632c9c7e336c9936fa/backend/api/src/cmp/api/routers/v1/audit.py#L258"
@@ -10026,11 +10034,12 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPOorAdmin",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
+      "gate": "AuditReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"audit\"))]",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "",
@@ -10044,11 +10053,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO/Admin only. Static: every entity type and event type the trail may carry, with labels, and the pickers the console offers. No row data."
+        "DPO/Admin only. Static: every entity type and event type the trail may carry, with labels, and the pickers the console offers. No row data.",
+        "The Legal PoC reads the Legal office's rows and the office-less ones. (2026-10-28, ADR 0032)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/c7d3f6ba15a5cfdc6f9df6632c9c7e336c9936fa/backend/api/src/cmp/api/routers/v1/audit.py#L302"
@@ -10064,11 +10074,12 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPOorAdmin",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
+      "gate": "AuditReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"audit\"))]",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "",
@@ -10082,11 +10093,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO/Admin only. Finds data principals, staff, consent records, processors, data sources, projects, notices, sites and rights requests, unscoped (the two supervising roles read every row). A person is matched by the whole email, mobile or username through its keyed hash, by uuid, or by three or more characters of a name through the hashed name runs; sealed labels and hints are returned for the console to open. `kind` must be a known lookup kind, else 422; at most ten answers."
+        "DPO/Admin only. Finds data principals, staff, consent records, processors, data sources, projects, notices, sites and rights requests, unscoped (the two supervising roles read every row). A person is matched by the whole email, mobile or username through its keyed hash, by uuid, or by three or more characters of a name through the hashed name runs; sealed labels and hints are returned for the console to open. `kind` must be a known lookup kind, else 422; at most ten answers.",
+        "The Legal PoC reads the Legal office's rows and the office-less ones. (2026-10-28, ADR 0032)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/c7d3f6ba15a5cfdc6f9df6632c9c7e336c9936fa/backend/api/src/cmp/api/routers/v1/audit.py#L310",
@@ -10103,11 +10115,12 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPOorAdmin",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
+      "gate": "AuditReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"audit\"))]",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "",
@@ -10121,11 +10134,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO/Admin only. Newest first, at most 10,000 rows, free-text cells neutralised against spreadsheet formulas. The download is itself recorded in the trail as `audit.exported`, with the filters used and the caller as actor."
+        "DPO/Admin only. Newest first, at most 10,000 rows, free-text cells neutralised against spreadsheet formulas. The download is itself recorded in the trail as `audit.exported`, with the filters used and the caller as actor.",
+        "The Legal PoC reads the Legal office's rows and the office-less ones. (2026-10-28, ADR 0032)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/c7d3f6ba15a5cfdc6f9df6632c9c7e336c9936fa/backend/api/src/cmp/api/routers/v1/audit.py#L343"
@@ -12569,8 +12583,8 @@
         "rnd_user": "OWN",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
-        "hr_user": "NO"
+        "legal": "ALL",
+        "hr_user": "SCOPED"
       },
       "conditions": [
         "Whoever may bring a notice to a project. Case and spacing in the ID are forgiven; 404 for an unknown one. Returns what the template carries - its fields, purposes and languages - never which projects used it. (2026-10-07)"
@@ -14202,6 +14216,259 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py"
       ]
+    },
+    {
+      "module": "hr",
+      "method": "GET",
+      "path": "/hr/activities",
+      "summary": "HR activities in scope",
+      "function": "list_activities",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "ActivityReader",
+      "resolved_gate": "Annotated[Any, Depends(RequireResource(\"project\"))]",
+      "route_roles": [
+        "dpo",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user"
+      ],
+      "inline_role_checks": [],
+      "resource": "project",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "SCOPED",
+        "dco_admin": "SCOPED",
+        "rco": "SCOPED",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED"
+      },
+      "conditions": [
+        "Only projects with a template version; within the caller's office, so the R&D roles list none. Legal's all; an HR PoC's of the categories assigned to them. (2026-10-28, ADR 0033)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/hr_activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/hr/activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/hr_activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/projects/state_machine.py"
+      ]
+    },
+    {
+      "module": "hr",
+      "method": "GET",
+      "path": "/hr/activities/options",
+      "summary": "What an activity can be made from",
+      "function": "activity_options",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "HrPoc",
+      "resolved_gate": "Annotated[Any, Depends(RequireRole(Role.HR_USER))]",
+      "route_roles": [
+        "hr_user"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "NO",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "SCOPED"
+      },
+      "conditions": [
+        "The HR PoC's active categories, each with its active templates' approved versions and their purposes, the mandatory ones marked. (2026-10-28, ADR 0033)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/hr_activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/hr/activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/hr_activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/projects/state_machine.py"
+      ]
+    },
+    {
+      "module": "hr",
+      "method": "POST",
+      "path": "/hr/activities",
+      "summary": "Create an activity, live, with its link",
+      "function": "create_activity",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "HrPoc",
+      "resolved_gate": "Annotated[Any, Depends(RequireRole(Role.HR_USER))]",
+      "route_roles": [
+        "hr_user"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": true,
+      "access": {
+        "dpo": "NO",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "SCOPED"
+      },
+      "conditions": [
+        "One transaction: project (hr office), site run by the HR PoC under the category's HR system, notice composed from the version and published by the HR transition, link with `audience_mode`. 422 for a purpose off the list, a mandatory one missing, a description outside the slot, a past expiry; 409 for a retired version or one whose text no longer hashes to its approval; 404 for a category not assigned. (2026-10-28, ADR 0033)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/hr_activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/hr/activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/hr_activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/projects/state_machine.py"
+      ]
+    },
+    {
+      "module": "hr",
+      "method": "GET",
+      "path": "/hr/activities/{activity_uuid}",
+      "summary": "Get Activity",
+      "function": "get_activity",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "ActivityReader",
+      "resolved_gate": "Annotated[Any, Depends(RequireResource(\"project\"))]",
+      "route_roles": [
+        "dpo",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user"
+      ],
+      "inline_role_checks": [],
+      "resource": "project",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "SCOPED",
+        "dco_admin": "SCOPED",
+        "rco": "SCOPED",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED"
+      },
+      "conditions": [
+        "With its live link and the path to share. 404 outside scope. (2026-10-28, ADR 0033)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/hr_activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/hr/activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/hr_activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/projects/state_machine.py"
+      ]
+    },
+    {
+      "module": "hr",
+      "method": "POST",
+      "path": "/hr/activities/{activity_uuid}/upgrade",
+      "summary": "Move an activity to another approved version",
+      "function": "upgrade_activity",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "HrPoc",
+      "resolved_gate": "Annotated[Any, Depends(RequireRole(Role.HR_USER))]",
+      "route_roles": [
+        "hr_user"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": true,
+      "access": {
+        "dpo": "NO",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "SCOPED"
+      },
+      "conditions": [
+        "A new notice version composed and published; the live link moves to it. A version flagged `reconsent_required` queues `hr_reconsent_request` to each participant with a current consent, after commit. (2026-10-28, ADR 0033)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/hr_activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/hr/activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/hr_activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/projects/state_machine.py"
+      ]
+    },
+    {
+      "module": "hr",
+      "method": "POST",
+      "path": "/hr/activities/{activity_uuid}/close",
+      "summary": "Close an activity",
+      "function": "close_activity",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "ActivityCloser",
+      "resolved_gate": "Annotated[Any, Depends(RequireRole(Role.HR_USER, Role.LEGAL))]",
+      "route_roles": [
+        "hr_user",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": true,
+      "access": {
+        "dpo": "NO",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED"
+      },
+      "conditions": [
+        "The project closes and its links are revoked; consents stand. A retired version does not stop it (F-1). (2026-10-28, ADR 0033)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/hr_activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/hr/activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/hr_activities.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/projects/state_machine.py"
+      ]
     }
   ],
   "amended": [
@@ -14314,6 +14581,11 @@
       "on": "2026-10-28",
       "commit": "HR track increment 3",
       "note": "Ten operations added under /notice-templates/{template_uuid}/versions (0053). Evidence links point at HEAD."
+    },
+    {
+      "on": "2026-10-28",
+      "commit": "HR track increment 4",
+      "note": "Six operations added under /hr/activities. The Legal PoC and the HR PoC now hold project, notice, link, consent, export and site (and Legal audit), so the existing routes guarded by those resources carry their scope; consent records open to both."
     }
   ]
 }

@@ -75,9 +75,30 @@ _COLLECTED_BY_A_THIRD_PARTY = """EXISTS (
 )"""
 
 
+#: An HR PoC's activities: those of the categories assigned to them (ADR
+#: 0033). Their write is the same set: an activity has no primary owner
+#: beyond its category's HR PoCs.
+_IN_MY_CATEGORIES = """EXISTS (
+    SELECT 1 FROM hr_poc_category a
+     WHERE a.category_id = p.category_id AND a.user_id = %s
+)"""
+
+#: Every project read is within the caller's office (ADR 0032), whatever the
+#: role's scope inside it - the same test as the policies, which do not bind
+#: a superuser.
+_IN_OFFICE = "cmp_office_visible(p.office_id)"
+
+
 def scope_predicate(
     role: Role | str, user_id: int, *, write: bool = False
 ) -> tuple[str, list[Any]]:
+    """The WHERE fragment for the projects this caller may reach: their
+    role's scope (`_role_scope`), within their office."""
+    pred, params = _role_scope(role, user_id, write=write)
+    return f"({pred}) AND {_IN_OFFICE}", params
+
+
+def _role_scope(role: Role | str, user_id: int, *, write: bool = False) -> tuple[str, list[Any]]:
     """The WHERE fragment that implements row scope for this role.
 
     A DCO's scope is two different predicates, and the difference is the point of
@@ -105,6 +126,8 @@ def scope_predicate(
     """
     if Role(role) is Role.DCO_ADMIN:
         return _COLLECTED_BY_A_THIRD_PARTY, []
+    if Role(role) is Role.HR_USER:
+        return _IN_MY_CATEGORIES, [user_id]
 
     scope = scope_of("project", role)
     match scope:
@@ -150,7 +173,8 @@ def site_scope_predicate(
     another DCO's campus either, which is the same rule applied consistently
     rather than a special case for the in-house boundary.
 
-    * **DPO, administrator** - every site.
+    * **DPO, administrator, Legal PoC** - every site of their office.
+    * **HR PoC** - the site of each activity in a category assigned to them.
     * **DCO Admin** - every site not collected in-house. Routing third-party
       collection is the job, and a site with no processor yet is included
       because assigning one is part of it.
@@ -163,8 +187,25 @@ def site_scope_predicate(
     """
     r = Role(role)
 
-    if r in (Role.DPO, Role.ADMIN):
-        return "TRUE", []
+    if r in (Role.DPO, Role.ADMIN, Role.LEGAL):
+        # Every site of the caller's office (ADR 0032).
+        return (
+            f"""EXISTS (SELECT 1 FROM project p_scope
+                         WHERE p_scope.project_id = {alias}.project_id
+                           AND cmp_office_visible(p_scope.office_id))""",
+            [],
+        )
+
+    if r is Role.HR_USER:
+        # The one site of each activity in their categories (ADR 0033).
+        return (
+            f"""EXISTS (SELECT 1 FROM project p_scope
+                          JOIN hr_poc_category a_scope ON a_scope.category_id = p_scope.category_id
+                         WHERE p_scope.project_id = {alias}.project_id
+                           AND a_scope.user_id = %s
+                           AND cmp_office_visible(p_scope.office_id))""",
+            [user_id],
+        )
 
     if r is Role.DCO_ADMIN:
         return (
@@ -215,7 +256,10 @@ async def by_uuid(
         SELECT p.project_id, {PROJECT_COLUMNS},
                creator.uuid AS created_by_uuid, creator.full_name AS created_by_name,
                dco.uuid     AS dco_uuid,        dco.full_name     AS dco_name,
-               n.notice_uuid AS current_notice_uuid
+               n.notice_uuid AS current_notice_uuid,
+               (SELECT o.office_code FROM office o WHERE o.office_id = p.office_id)
+                 AS office_code,
+               p.category_id, p.template_version_id, p.activity_description
         FROM project p
         JOIN auth_user creator ON creator.id = p.created_by
         LEFT JOIN auth_user dco ON dco.id = p.dco_user_id
@@ -275,13 +319,19 @@ async def create(
     created_by: int,
     dco_user_id: int | None,
     office: str,
+    category_id: int | None = None,
+    template_version_id: int | None = None,
+    activity_description: str | None = None,
 ) -> Row:
+    """A project; with the last three, an HR activity (ADR 0033), which
+    `cmp_activity_version_coherent()` checks as it is written."""
     row = await fetch_one(
         conn,
         f"""
         INSERT INTO project (project_name, internal_project_name, description,
-                             requesting_team, created_by, dco_user_id, office_id)
-        VALUES (%s, %s, %s, %s, %s, %s, {OFFICE_ID})
+                             requesting_team, created_by, dco_user_id, office_id,
+                             category_id, template_version_id, activity_description)
+        VALUES (%s, %s, %s, %s, %s, %s, {OFFICE_ID}, %s, %s, %s)
         RETURNING project_id, project_uuid, project_name, internal_project_name,
                   description, requesting_team, project_status, created_at, updated_at
         """,
@@ -293,6 +343,9 @@ async def create(
             created_by,
             dco_user_id,
             office,
+            category_id,
+            template_version_id,
+            activity_description,
         ),
     )
     assert row is not None
@@ -324,6 +377,19 @@ async def update_draft(
     )
     assert row is not None
     return row
+
+
+async def set_activity_version(
+    conn: Conn, project_id: int, *, version_id: int, description: str
+) -> None:
+    """An activity moved to another version (ADR 0033); the description is
+    served inside its notice, and the project's own description follows it."""
+    await conn.execute(
+        """UPDATE project SET template_version_id = %s, activity_description = %s,
+                              description = %s
+            WHERE project_id = %s""",
+        (version_id, description, description, project_id),
+    )
 
 
 async def set_status(conn: Conn, project_id: int, status: str) -> None:
@@ -709,7 +775,33 @@ async def facts(conn: Conn, project_id: int) -> dict[str, Any]:
           -- consenting to text nobody signed off.
           (coalesce(nl.language_count, 0) >= 1
              AND coalesce(nl.unapproved_languages, 0) = 0) AS notice_language_approved,
-          coalesce(ap.proof_count, 0)                     AS approval_with_proof_count
+          coalesce(ap.proof_count, 0)                     AS approval_with_proof_count,
+          (SELECT o.office_code FROM office o WHERE o.office_id = p.office_id) AS office_code,
+          -- An HR activity's version (ADR 0033): approved and not retired ...
+          coalesce(tv.status = 'approved', FALSE)         AS template_version_approved,
+          -- ... every language still hashing to what Legal approved ...
+          coalesce(tv.languages > 0 AND tv.intact = tv.languages, FALSE)
+                                                          AS template_version_hash_matches,
+          -- ... the notice's purposes on its list, its mandatory ones there ...
+          (n.notice_id IS NOT NULL AND NOT EXISTS (
+             SELECT 1 FROM notice_purpose x
+              WHERE x.notice_id = n.notice_id
+                AND NOT EXISTS (SELECT 1 FROM template_version_purpose vp
+                                 WHERE vp.version_id = p.template_version_id
+                                   AND vp.purpose_id = x.purpose_id)))
+                                                          AS purposes_within_version,
+          (n.notice_id IS NOT NULL AND NOT EXISTS (
+             SELECT 1 FROM template_version_purpose vp
+              WHERE vp.version_id = p.template_version_id AND vp.is_mandatory
+                AND NOT EXISTS (SELECT 1 FROM notice_purpose x
+                                 WHERE x.notice_id = n.notice_id
+                                   AND x.purpose_id = vp.purpose_id)))
+                                                          AS mandatory_purposes_included,
+          -- ... and the description within its slot.
+          (p.activity_description IS NOT NULL
+             AND char_length(trim(p.activity_description)) BETWEEN 1 AND tv.slot_max_length
+             AND position('{{' in p.activity_description) = 0)
+                                                          AS description_within_slot
         FROM project p
         LEFT JOIN LATERAL (
           SELECT x.notice_id, x.status, x.withdraw_url, x.exercise_rights_url,
@@ -736,6 +828,17 @@ async def facts(conn: Conn, project_id: int) -> dict[str, Any]:
             FROM notice_language y
            WHERE y.notice_id = n.notice_id
         ) nl ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT v.status, v.slot_max_length,
+                 (SELECT count(*) FROM template_version_language l
+                   WHERE l.version_id = v.version_id)                      AS languages,
+                 (SELECT count(*) FROM template_version_language l
+                   WHERE l.version_id = v.version_id
+                     AND l.content_hash = encode(sha256(convert_to(l.locked_text, 'UTF8')), 'hex'))
+                                                                           AS intact
+            FROM template_version v
+           WHERE v.version_id = p.template_version_id
+        ) tv ON TRUE
         LEFT JOIN LATERAL (
           SELECT count(*) AS proof_count FROM project_approval z
           WHERE z.project_id = p.project_id

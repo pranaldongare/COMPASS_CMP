@@ -68,7 +68,7 @@ def _slug(text: str, *, limit: int = 20) -> str:
     return "-".join(out)
 
 
-async def generate_code(conn: Conn, *, project_name: str) -> str:
+async def generate_code(conn: Conn, *, project_name: str, prefix: str = "NTC") -> str:
     """Mint a notice code nobody has to think about.
 
     A notice code is an internal identifier that has to be stable across versions
@@ -79,8 +79,12 @@ async def generate_code(conn: Conn, *, project_name: str) -> str:
     The shape is NTC-<project>-<year>, with a numeric suffix only where that is
     already taken. The suffix is a collision breaker, not a version: versions live
     in `notice.version` and share the code.
+
+    An HR activity's notice is `HR-<activity>-<year>` (open point F-6): codes
+    are unique across both offices, and an office's session cannot see the
+    other's to step around them, so each office mints in its own namespace.
     """
-    base = f"NTC-{_slug(project_name)}-{datetime.now(UTC).year}"
+    base = f"{prefix}-{_slug(project_name)}-{datetime.now(UTC).year}"
 
     if await repo.max_version(conn, base) == 0:
         return base

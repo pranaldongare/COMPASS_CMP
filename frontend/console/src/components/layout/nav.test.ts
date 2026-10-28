@@ -18,8 +18,8 @@ const NAV: Record<string, string[]> = {
   dco_admin: ["dashboard", "projects", "sites", "sources", "links", "consents", "exports", "imports", "collections", "delegate", "tickets", "notifications", "profile"],
   dco: ["dashboard", "projects", "sites", "sources", "links", "consents", "exports", "imports", "collections", "delegate", "tickets", "notifications", "profile"],
   admin: ["dashboard", "users", "messages", "processors", "sources", "requests", "audit", "delegate", "tickets", "notifications", "profile"],
-  legal: ["dashboard", "hr-categories", "templates", "purposes", "processors", "users", "tickets", "notifications", "profile"],
-  hr_user: ["dashboard", "hr-categories", "tickets", "notifications", "profile"],
+  legal: ["dashboard", "hr-activities", "hr-categories", "templates", "purposes", "consents", "exports", "processors", "users", "audit", "tickets", "notifications", "profile"],
+  hr_user: ["dashboard", "hr-activities", "hr-categories", "links", "consents", "exports", "tickets", "notifications", "profile"],
 };
 
 function me(role: string): Me {
@@ -39,8 +39,8 @@ describe("sidebarFor", () => {
     ["dco", ["Dashboard", "My projects", "Collection sites", "Consent links", "My tasks", "Collections"]],
     ["rco", ["Dashboard", "My projects", "Collection sites", "Consent links", "My tasks", "Collections"]],
     ["admin", ["Dashboard", "Users", "Grievances about the DPO", "Message templates", "Processors", "Data sources", "Audit trail"]],
-    ["legal", ["Dashboard", "HR categories", "Notice templates", "Purposes", "My tasks"]],
-    ["hr_user", ["Dashboard", "HR categories", "My tasks"]],
+    ["legal", ["Dashboard", "HR activities", "HR categories", "Notice templates", "Purposes", "My tasks"]],
+    ["hr_user", ["Dashboard", "HR activities", "Consent links", "Consents", "My tasks"]],
   ])("opens %s's sidebar with its daily work", (role, expected) => {
     expect(first(role)).toEqual(expected);
   });

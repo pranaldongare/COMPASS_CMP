@@ -82,6 +82,7 @@ async def create_link(
     max_uses: int | None,
     actor_id: int,
     role: str,
+    audience_mode: str = "otp",
 ) -> dict[str, Any]:
     """Mint a site's consent link.
 
@@ -127,6 +128,7 @@ async def create_link(
         expires_at=expires_at,
         max_uses=max_uses,
         created_by=actor_id,
+        audience_mode=audience_mode,
     )
     await audit.record(
         conn,
@@ -138,6 +140,7 @@ async def create_link(
             "notice": str(notice["notice_uuid"]),
             "expires_at": expires_at.isoformat(),
             "max_uses": max_uses,
+            "audience_mode": audience_mode,
         },
     )
     return {**link, "token": raw, "site_uuid": site_uuid, "notice_uuid": notice["notice_uuid"]}
@@ -796,6 +799,7 @@ async def replace_link(
         max_uses=link["max_uses"],
         actor_id=actor_id,
         role=role,
+        audience_mode=str(link.get("audience_mode") or "otp"),
     )
     await audit.record(
         conn,

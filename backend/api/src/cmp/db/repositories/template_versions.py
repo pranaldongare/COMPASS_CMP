@@ -77,6 +77,18 @@ async def by_uuid(conn: Conn, version_uuid: str) -> Row | None:
     )
 
 
+async def approved_for_category(conn: Conn, category_id: int) -> list[Row]:
+    """The approved versions of a category's active templates: what an
+    activity can be made from (ADR 0033)."""
+    return await fetch_all(
+        conn,
+        f"""SELECT {VERSION_COLUMNS}
+            WHERE t.category_id = %s AND t.status = 'active' AND v.status = 'approved'
+            ORDER BY t.template_code, v.version DESC""",
+        (category_id,),
+    )
+
+
 async def latest(conn: Conn, template_id: int) -> Row | None:
     return await fetch_one(
         conn,

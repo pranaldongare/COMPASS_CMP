@@ -34,6 +34,13 @@ NOTICE_RETURNING = """
 
 
 def _project_scope(role: Role | str, user_id: int) -> tuple[str, list[Any]]:
+    """The notices this caller may read: their role's scope, within their
+    office (ADR 0032)."""
+    pred, params = _role_scope(role, user_id)
+    return f"({pred}) AND cmp_office_visible(p.office_id)", params
+
+
+def _role_scope(role: Role | str, user_id: int) -> tuple[str, list[Any]]:
     match scope_of("notice", role):
         case Scope.ALL:
             return "TRUE", []
@@ -48,6 +55,13 @@ def _project_scope(role: Role | str, user_id: int) -> tuple[str, list[Any]]:
                                  JOIN processor pr ON pr.processor_id = pp.processor_id
                                 WHERE pp.project_id = p.project_id AND NOT pr.is_in_house)""",
                     [],
+                )
+            if Role(role) is Role.HR_USER:
+                # An activity's notice: the categories assigned to them.
+                return (
+                    """EXISTS (SELECT 1 FROM hr_poc_category a
+                                WHERE a.category_id = p.category_id AND a.user_id = %s)""",
+                    [user_id],
                 )
             return "p.dco_user_id = %s", [user_id]
         case Scope.OWN:
@@ -171,14 +185,17 @@ async def create(
     applicable_to: str | None = None,
     change_class: str | None = None,
     template_id: int | None = None,
+    template_version_id: int | None = None,
 ) -> Row:
     row = await fetch_one(
         conn,
         """
         INSERT INTO notice (notice_code, project_id, version, withdraw_url,
                             exercise_rights_url, board_complaint_url, dpo_contact,
-                            note, applicable_to, change_class, template_id)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::notice_audience, %s::change_class, %s)
+                            note, applicable_to, change_class, template_id,
+                            template_version_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::notice_audience, %s::change_class, %s,
+                %s)
         RETURNING """
         + NOTICE_RETURNING,
         (
@@ -193,6 +210,7 @@ async def create(
             applicable_to,
             change_class,
             template_id,
+            template_version_id,
         ),
     )
     assert row is not None
@@ -428,6 +446,23 @@ async def recipients_text(conn: Conn, project_id: int) -> str:
     A hand-typed recipient list is a list that stops matching the sites the data
     actually goes to, and the notice then misstates the disclosure.
     """
+    held = await fetch_all(
+        conn,
+        """SELECT pr.legal_name, cp.processor_role
+             FROM project p
+             JOIN category_processor cp ON cp.category_id = p.category_id
+                                       AND cp.removed_at IS NULL
+             JOIN processor pr ON pr.processor_id = cp.processor_id
+            WHERE p.project_id = %s
+            ORDER BY cp.category_processor_id""",
+        (project_id,),
+    )
+    if held:
+        # An HR activity's data is held by its category's processors - the HR
+        # system, its databases, the vendors (ADR 0033) - not by a site.
+        role = {"hrms": "HR system", "database": "HR database", "vendor": "vendor"}
+        return "; ".join(f"{r['legal_name']} ({role[r['processor_role']]})" for r in held)
+
     rows = await fetch_all(
         conn,
         """

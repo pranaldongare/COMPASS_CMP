@@ -6110,6 +6110,311 @@
         }
       }
     },
+    "/hr/activities": {
+      "get": {
+        "tags": [
+          "hr"
+        ],
+        "summary": "HR activities in scope",
+        "description": "Legal's all; an HR PoC's, of the categories assigned to them.",
+        "operationId": "list_activities_hr_activities_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActivityOut"
+                  },
+                  "title": "Response List Activities Hr Activities Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "hr"
+        ],
+        "summary": "Create an activity, live, with its link",
+        "description": "One transaction: project, site, notice composed and published, link.\nA purpose off the version's list or a mandatory one left out, a\ndescription outside the slot: 422 and nothing written. A retired version:\n409.",
+        "operationId": "create_activity_hr_activities_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivityIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hr/activities/options": {
+      "get": {
+        "tags": [
+          "hr"
+        ],
+        "summary": "What an activity can be made from",
+        "description": "The HR PoC's active categories, each with its templates' approved\nversions and their purposes, the mandatory ones marked.",
+        "operationId": "activity_options_hr_activities_options_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OptionCategory"
+                  },
+                  "type": "array",
+                  "title": "Response Activity Options Hr Activities Options Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hr/activities/{activity_uuid}": {
+      "get": {
+        "tags": [
+          "hr"
+        ],
+        "summary": "Get Activity",
+        "operationId": "get_activity_hr_activities__activity_uuid__get",
+        "parameters": [
+          {
+            "name": "activity_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Activity Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hr/activities/{activity_uuid}/upgrade": {
+      "post": {
+        "tags": [
+          "hr"
+        ],
+        "summary": "Move an activity to another approved version",
+        "description": "A new notice version, published; the live link moves to it. A version\nflagged for re-consent asks every participant again, after commit.",
+        "operationId": "upgrade_activity_hr_activities__activity_uuid__upgrade_post",
+        "parameters": [
+          {
+            "name": "activity_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Activity Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpgradeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpgradeOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hr/activities/{activity_uuid}/close": {
+      "post": {
+        "tags": [
+          "hr"
+        ],
+        "summary": "Close an activity",
+        "description": "Its link stops resolving; consents given stand.",
+        "operationId": "close_activity_hr_activities__activity_uuid__close_post",
+        "parameters": [
+          {
+            "name": "activity_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Activity Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Closed"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/sites": {
       "get": {
         "tags": [
@@ -18890,6 +19195,506 @@
         "title": "Acknowledged",
         "description": "For state changes whose only interesting output is that they happened."
       },
+      "ActivityCreated": {
+        "properties": {
+          "activity_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Activity Uuid"
+          },
+          "notice_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notice Uuid"
+          },
+          "link_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Link Uuid"
+          },
+          "url_path": {
+            "type": "string",
+            "title": "Url Path"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "audience_mode": {
+            "type": "string",
+            "title": "Audience Mode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "activity_uuid",
+          "notice_uuid",
+          "link_uuid",
+          "url_path",
+          "expires_at",
+          "audience_mode"
+        ],
+        "title": "ActivityCreated"
+      },
+      "ActivityDetail": {
+        "properties": {
+          "activity_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Activity Uuid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "category_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Uuid"
+          },
+          "category_code": {
+            "type": "string",
+            "title": "Category Code"
+          },
+          "category_name": {
+            "type": "string",
+            "title": "Category Name"
+          },
+          "version_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Version Uuid"
+          },
+          "template_version": {
+            "type": "integer",
+            "title": "Template Version"
+          },
+          "version_status": {
+            "type": "string",
+            "title": "Version Status"
+          },
+          "reconsent_required": {
+            "type": "boolean",
+            "title": "Reconsent Required"
+          },
+          "template_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Template Uuid"
+          },
+          "template_code": {
+            "type": "string",
+            "title": "Template Code"
+          },
+          "template_title": {
+            "type": "string",
+            "title": "Template Title"
+          },
+          "created_by_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Created By Uuid"
+          },
+          "created_by_name": {
+            "type": "string",
+            "title": "Created By Name"
+          },
+          "notice_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notice Uuid"
+          },
+          "notice_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notice Code"
+          },
+          "notice_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notice Version"
+          },
+          "consent_count": {
+            "type": "integer",
+            "title": "Consent Count"
+          },
+          "link_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActivityLink"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "activity_uuid",
+          "name",
+          "description",
+          "status",
+          "category_uuid",
+          "category_code",
+          "category_name",
+          "version_uuid",
+          "template_version",
+          "version_status",
+          "reconsent_required",
+          "template_uuid",
+          "template_code",
+          "template_title",
+          "created_by_uuid",
+          "created_by_name",
+          "notice_uuid",
+          "notice_code",
+          "notice_version",
+          "consent_count",
+          "link_status",
+          "created_at",
+          "updated_at",
+          "link"
+        ],
+        "title": "ActivityDetail"
+      },
+      "ActivityIn": {
+        "properties": {
+          "category_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Uuid"
+          },
+          "template_version_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Template Version Uuid"
+          },
+          "purpose_uuids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Purpose Uuids"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Description"
+          },
+          "audience_mode": {
+            "type": "string",
+            "enum": [
+              "sso",
+              "otp"
+            ],
+            "title": "Audience Mode"
+          },
+          "link_expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Link Expires At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "category_uuid",
+          "template_version_uuid",
+          "purpose_uuids",
+          "name",
+          "description",
+          "audience_mode",
+          "link_expires_at"
+        ],
+        "title": "ActivityIn"
+      },
+      "ActivityLink": {
+        "properties": {
+          "link_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Link Uuid"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "use_count": {
+            "type": "integer",
+            "title": "Use Count"
+          },
+          "audience_mode": {
+            "type": "string",
+            "title": "Audience Mode"
+          },
+          "url_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "link_uuid",
+          "status",
+          "expires_at",
+          "use_count",
+          "audience_mode",
+          "url_path"
+        ],
+        "title": "ActivityLink"
+      },
+      "ActivityOut": {
+        "properties": {
+          "activity_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Activity Uuid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "category_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Uuid"
+          },
+          "category_code": {
+            "type": "string",
+            "title": "Category Code"
+          },
+          "category_name": {
+            "type": "string",
+            "title": "Category Name"
+          },
+          "version_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Version Uuid"
+          },
+          "template_version": {
+            "type": "integer",
+            "title": "Template Version"
+          },
+          "version_status": {
+            "type": "string",
+            "title": "Version Status"
+          },
+          "reconsent_required": {
+            "type": "boolean",
+            "title": "Reconsent Required"
+          },
+          "template_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Template Uuid"
+          },
+          "template_code": {
+            "type": "string",
+            "title": "Template Code"
+          },
+          "template_title": {
+            "type": "string",
+            "title": "Template Title"
+          },
+          "created_by_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Created By Uuid"
+          },
+          "created_by_name": {
+            "type": "string",
+            "title": "Created By Name"
+          },
+          "notice_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notice Uuid"
+          },
+          "notice_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notice Code"
+          },
+          "notice_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notice Version"
+          },
+          "consent_count": {
+            "type": "integer",
+            "title": "Consent Count"
+          },
+          "link_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "activity_uuid",
+          "name",
+          "description",
+          "status",
+          "category_uuid",
+          "category_code",
+          "category_name",
+          "version_uuid",
+          "template_version",
+          "version_status",
+          "reconsent_required",
+          "template_uuid",
+          "template_code",
+          "template_title",
+          "created_by_uuid",
+          "created_by_name",
+          "notice_uuid",
+          "notice_code",
+          "notice_version",
+          "consent_count",
+          "link_status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ActivityOut"
+      },
       "AgentAssign": {
         "properties": {
           "expires_at": {
@@ -24416,6 +25221,49 @@
           "next_checkpoint"
         ],
         "title": "ClockOut"
+      },
+      "CloseIn": {
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CloseIn"
+      },
+      "Closed": {
+        "properties": {
+          "project_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Uuid"
+          },
+          "to": {
+            "type": "string",
+            "title": "To"
+          },
+          "links_revoked": {
+            "type": "integer",
+            "title": "Links Revoked"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_uuid",
+          "to",
+          "links_revoked"
+        ],
+        "title": "Closed"
       },
       "CodeIn": {
         "properties": {
@@ -30157,6 +31005,137 @@
           "name"
         ],
         "title": "OfficeOut"
+      },
+      "OptionCategory": {
+        "properties": {
+          "category_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Uuid"
+          },
+          "category_code": {
+            "type": "string",
+            "title": "Category Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/OptionVersion"
+            },
+            "type": "array",
+            "title": "Versions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category_uuid",
+          "category_code",
+          "name",
+          "versions"
+        ],
+        "title": "OptionCategory"
+      },
+      "OptionPurpose": {
+        "properties": {
+          "purpose_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Purpose Uuid"
+          },
+          "purpose_code": {
+            "type": "string",
+            "title": "Purpose Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "is_mandatory": {
+            "type": "boolean",
+            "title": "Is Mandatory"
+          },
+          "display_order": {
+            "type": "integer",
+            "title": "Display Order"
+          }
+        },
+        "type": "object",
+        "required": [
+          "purpose_uuid",
+          "purpose_code",
+          "name",
+          "is_mandatory",
+          "display_order"
+        ],
+        "title": "OptionPurpose"
+      },
+      "OptionVersion": {
+        "properties": {
+          "version_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Version Uuid"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "template_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Template Uuid"
+          },
+          "template_code": {
+            "type": "string",
+            "title": "Template Code"
+          },
+          "template_title": {
+            "type": "string",
+            "title": "Template Title"
+          },
+          "slot_guidance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Guidance"
+          },
+          "slot_max_length": {
+            "type": "integer",
+            "title": "Slot Max Length"
+          },
+          "reconsent_required": {
+            "type": "boolean",
+            "title": "Reconsent Required"
+          },
+          "purposes": {
+            "items": {
+              "$ref": "#/components/schemas/OptionPurpose"
+            },
+            "type": "array",
+            "title": "Purposes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version_uuid",
+          "version",
+          "template_uuid",
+          "template_code",
+          "template_title",
+          "slot_guidance",
+          "slot_max_length",
+          "reconsent_required",
+          "purposes"
+        ],
+        "title": "OptionVersion"
       },
       "OrgBoardBriefOut": {
         "properties": {
@@ -36789,6 +37768,69 @@
         "additionalProperties": false,
         "type": "object",
         "title": "UpdateUser"
+      },
+      "UpgradeIn": {
+        "properties": {
+          "template_version_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Template Version Uuid"
+          },
+          "purpose_uuids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Purpose Uuids"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Description"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "template_version_uuid",
+          "purpose_uuids",
+          "description"
+        ],
+        "title": "UpgradeIn"
+      },
+      "UpgradeOut": {
+        "properties": {
+          "activity_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Activity Uuid"
+          },
+          "notice_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Notice Uuid"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "reconsent_requested": {
+            "type": "integer",
+            "title": "Reconsent Requested"
+          }
+        },
+        "type": "object",
+        "required": [
+          "activity_uuid",
+          "notice_uuid",
+          "version",
+          "reconsent_requested"
+        ],
+        "title": "UpgradeOut"
       },
       "UserOut": {
         "properties": {

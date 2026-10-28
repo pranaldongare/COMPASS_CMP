@@ -13,8 +13,17 @@ Four reachable states, five transitions, and nothing else. From DATA-MODEL.md:
 | `pending_approval`  | `in_draft`         | DPO                     | a reason                                                        |
 | `approved`          | `closed`           | DPO or a collection owner | -                                                             |
 
-There is no path from `in_draft` to `approved`, and none back from `approved`
-except to `closed`.
+There is no path from `in_draft` to `approved` on the R&D track, and none back
+from `approved` except to `closed`.
+
+**The HR track's activity (ADR 0033)** is a project of the Legal office, and it
+has one transition of its own: `in_draft -> approved`, by the HR PoC, in the
+same request that creates it. Legal's sign-off happened once, on the template
+version, so the guard is the version rather than a person: approved and not
+retired, its text still hashing to what Legal approved, the notice's purposes
+within its list and including its mandatory ones, the description within its
+slot. `_submit` and the DPO's review never apply to it; `_activate` never
+applies to an R&D project. Which one `in_draft` offers is the office's.
 
 **Why `under_process` is gone.** It used to sit between the two states above, and
 belonged to the DPO: the R&D User assembled a project, the DPO published its
@@ -114,6 +123,18 @@ class ProjectFacts:
     has_processor: bool = False
     has_description: bool = False
     review_recorded: bool = False
+    #: The project's office (ADR 0032): `rnd` for a study, `hr` for an activity.
+    office: str = "rnd"
+    #: An activity's template version is approved and not retired (ADR 0033).
+    template_version_approved: bool = False
+    #: Every language of that version still hashes to what Legal approved.
+    template_version_hash_matches: bool = False
+    #: The notice's purposes are on the version's list ...
+    purposes_within_version: bool = False
+    #: ... and include every purpose the version makes mandatory.
+    mandatory_purposes_included: bool = False
+    #: The description fits the version's slot.
+    description_within_slot: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -203,18 +224,62 @@ def _submit(f: ProjectFacts) -> Transition:
     )
 
 
+def _activate(f: ProjectFacts) -> Transition:
+    """An HR activity goes live as it is created (ADR 0033).
+
+    No review: Legal reviewed the template version once, and every check here
+    is that the activity is a faithful instance of what Legal approved. The
+    HR PoC is the actor because creating the activity is their act; the
+    notice publishes with it, as the DPO's approval publishes a study's.
+    """
+    return Transition(
+        to=ProjectStatus.APPROVED,
+        actors=frozenset({Role.HR_USER}),
+        publishes_notice=True,
+        requirements=(
+            Requirement(
+                f.template_version_approved,
+                "The template version is not approved, or Legal has retired it",
+            ),
+            Requirement(
+                f.template_version_hash_matches,
+                "The template version's text no longer matches what Legal approved",
+            ),
+            Requirement(f.has_notice, "The activity has no notice"),
+            Requirement(
+                f.purposes_within_version,
+                "A purpose on the notice is not on the template version's list",
+            ),
+            Requirement(
+                f.mandatory_purposes_included,
+                "A purpose the template version makes mandatory is missing",
+            ),
+            Requirement(
+                f.description_within_slot,
+                "The description does not fit the template version's slot",
+            ),
+        ),
+    )
+
+
+def _from_draft(f: ProjectFacts) -> list[Transition]:
+    """The way out of draft is the office's: a study is submitted to the DPO,
+    an activity goes live on its version."""
+    return [_submit(f)] if f.office == "rnd" else [_activate(f)]
+
+
 def _transitions(status: ProjectStatus, f: ProjectFacts) -> list[Transition]:
     """Every transition out of `status`, with its preconditions evaluated."""
     match status:
         case ProjectStatus.IN_DRAFT:
-            return [_submit(f)]
+            return _from_draft(f)
 
         case ProjectStatus.UNDER_PROCESS:
             # Unreachable, and offered the same way out as `in_draft` rather than
             # nothing. A row that somehow arrives here - a replayed history, an
             # older client - should be able to move forward, not be stranded in a
             # state with no exits.
-            return [_submit(f)]
+            return _from_draft(f)
 
         case ProjectStatus.PENDING_APPROVAL:
             return [
@@ -263,7 +328,10 @@ def _transitions(status: ProjectStatus, f: ProjectFacts) -> list[Transition]:
             return [
                 Transition(
                     to=ProjectStatus.CLOSED,
-                    actors=frozenset({Role.DPO}) | COLLECTION_OWNERS,
+                    actors=frozenset({Role.DPO}) | COLLECTION_OWNERS
+                    if f.office == "rnd"
+                    # An activity is closed by its HR PoC or by Legal.
+                    else frozenset({Role.LEGAL, Role.HR_USER}),
                 )
             ]
 

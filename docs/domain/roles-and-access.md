@@ -32,31 +32,33 @@ and the rows each may see are a scope compiled into every query.
 Each cell is a scope, and `+w` means the role may also write. A blank cell is
 denied: no wildcard, no inheritance.
 
-| Resource | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-|---|---|---|---|---|---|---|---|---|
-| user | all | all +w | | | | | | |
-| purpose | all +w | all | all | all | all | all | | |
-| processor | all +w | all +w | all | all | all | all | | |
-| data_source | all +w | all +w | all +w | all +w | all +w | all | | |
-| project | all +w | | scoped +w | scoped +w | scoped +w | own +w | | |
-| approval | all | | scoped | scoped | scoped | own +w | | |
-| site | all +w | | scoped +w | scoped +w | scoped +w | own | | |
-| notice | all +w | | scoped | scoped | scoped | own +w | | |
-| link | all +w | | scoped +w | scoped +w | scoped +w | | | |
-| consent | all | | scoped | scoped | scoped | own | | |
-| export | all +w | | scoped +w | scoped +w | scoped +w | | | |
-| import | all +w | | scoped +w | scoped +w | scoped +w | own | | |
-| collection | all | | scoped | scoped | scoped | own | | |
-| asset | all | | scoped | scoped | scoped | own | | |
-| audit | all | all | | | | | | |
-| message_template | all +w | all +w | | | | | | |
-| rights_request | all +w | scoped +w | | | | | | |
-| legal_hold | all +w | | | | | | | |
-| restricted_country | all +w | all | | | | | | |
-| breach | all +w | | | | | | | |
-| ticket | own +w | own +w | own +w | own +w | own +w | own +w | | own +w |
-| breach_ticket | own +w | own +w | own +w | own +w | own +w | own +w | | own +w |
-| me | | | | | | | own +w | |
+| Resource | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+|---|---|---|---|---|---|---|---|---|---|---|
+| user | all | all +w |  |  |  |  |  |  | all |  |
+| purpose | all +w | all | all | all | all | all |  |  | all +w |  |
+| hr_category |  | all |  |  |  |  |  |  | all +w | scoped |
+| processor | all +w | all +w | all | all | all | all |  |  | all |  |
+| data_source | all +w | all +w | all +w | all +w | all +w | all |  |  |  |  |
+| project | all +w |  | scoped +w | scoped +w | scoped +w | own +w |  |  | all | scoped +w |
+| approval | all |  | scoped | scoped | scoped | own +w |  |  |  |  |
+| site | all +w |  | scoped +w | scoped +w | scoped +w | own |  |  | all | scoped |
+| notice | all +w |  | scoped | scoped | scoped | own +w |  |  | all | scoped |
+| notice_template | all +w |  |  |  |  |  |  |  | all +w |  |
+| link | all +w |  | scoped +w | scoped +w | scoped +w |  |  |  | all | scoped +w |
+| consent | all |  | scoped | scoped | scoped | own |  |  | all | scoped |
+| export | all +w |  | scoped +w | scoped +w | scoped +w |  |  |  | all +w | scoped +w |
+| import | all +w |  | scoped +w | scoped +w | scoped +w | own |  |  |  |  |
+| collection | all |  | scoped | scoped | scoped | own |  |  |  |  |
+| asset | all |  | scoped | scoped | scoped | own |  |  |  |  |
+| audit | all | all |  |  |  |  |  |  | all |  |
+| message_template | all +w | all +w |  |  |  |  |  |  |  |  |
+| rights_request | all +w | scoped +w |  |  |  |  |  |  |  |  |
+| legal_hold | all +w |  |  |  |  |  |  |  |  |  |
+| restricted_country | all +w | all |  |  |  |  |  |  |  |  |
+| breach | all +w |  |  |  |  |  |  |  |  |  |
+| ticket | own +w | own +w | own +w | own +w | own +w | own +w |  | own +w | own +w | own +w |
+| breach_ticket | own +w | own +w | own +w | own +w | own +w | own +w |  | own +w | own +w | own +w |
+| me |  |  |  |  |  |  | own +w |  |  |  |
 
 The R&D User's write on a notice is narrower than the row can say. They bring
 one, by uploading the filled-in document, re-uploading a corrected one, or
@@ -134,8 +136,15 @@ office's), `processor` ALL read and `user` ALL read; the HR PoC `hr_category`
 SCOPED, the categories assigned to them. The administrator reads every
 category, to assign HR PoCs on the account's page (`PUT /users/{uuid}/categories`).
 A role without a grant - the DPO's - is answered 404 on a category, as on
-another office's record. The matrix above gains the two columns when
-increment 4 completes their grants
+another office's record.
+
+Since increment 4 they hold the HR activity's registers too (ADR 0033): an
+activity is a project of the Legal office, so the Legal PoC reads every
+project, notice, link, consent and site of the office, may export, and
+reads the office's audit trail; an HR PoC holds the same resources SCOPED
+to the categories assigned to them (`hr_poc_category`), with write on
+project (to create, upgrade and close an activity), link and export.
+Rights requests, legal holds and breaches follow in increment 7
 ([hr-track-implementation-plan.md](../plans/hr-track-implementation-plan.md)).
 
 Each role of one track works in that track's office (`OFFICE_OF_ROLE`, open
@@ -158,8 +167,8 @@ matrix, so it cannot drift into showing a button that answers 403.
 | R&D User | dashboard, projects, notices, processors, approvals, imports, collections, tickets, notifications, profile |
 | Data principal | consents, requests, notifications, profile |
 | Temporary ticket holder | tickets, notifications, profile |
-| Legal PoC | dashboard, hr-categories, templates, purposes, processors, users, tickets, notifications, profile |
-| HR PoC | dashboard, hr-categories, tickets, notifications, profile |
+| Legal PoC | dashboard, hr-activities, hr-categories, templates, purposes, consents, exports, processors, users, audit, tickets, notifications, profile |
+| HR PoC | dashboard, hr-activities, hr-categories, links, consents, exports, tickets, notifications, profile |
 
 A temporary ticket holder has no dashboard: the console sends it from
 `/dashboard` to **My tasks**, reading `nav` rather than its role.
@@ -180,8 +189,8 @@ daily destinations in the order the work runs (`DAILY_WORK` in
 | DCO Admin | Dashboard, Collection sites, Data sources, My tasks, Consent links, Projects |
 | DCO, RCO | Dashboard, My projects, Collection sites, Consent links, My tasks, Collections |
 | Administrator | Dashboard, Users, Grievances about the DPO, Message templates, Processors, Data sources, Audit trail |
-| Legal PoC | Dashboard, HR categories, Notice templates, Purposes, My tasks |
-| HR PoC | Dashboard, HR categories, My tasks |
+| Legal PoC | Dashboard, HR activities, HR categories, Notice templates, Purposes, My tasks |
+| HR PoC | Dashboard, HR activities, Consent links, Consents, My tasks |
 
 Profile and notifications are not in the sidebar: the account menu holds
 **My profile** and sign-out, and the bell opens notifications. Pages are

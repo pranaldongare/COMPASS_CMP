@@ -135,6 +135,7 @@ with raw SQL that bypasses the service layer.
 | Only a template with a category is versioned | `cmp_template_version_of_category()` (0053) |
 | An approved template version never changes, but to be retired | `cmp_template_version_freeze()`, `cmp_template_version_part_freeze()` (0053) |
 | An HR activity names an approved version of a template in its category; an R&D project names none | `cmp_activity_version_coherent()`, on insert and when the version or category changes (0053) |
+| An HR activity goes `in_draft -> approved` by its HR PoC, guarded by its version, never through the DPO | `domain/projects/state_machine.py` (`_activate`): version approved, its text hashing to the approval, purposes within the list and with its mandatory ones, the description within the slot |
 | A purpose on an HR notice is on its version's list | `cmp_hr_notice_purposes_in_version()` (0053) |
 | A category's code is fixed in shape, and a retired category says when | `CHECK hr_category_code_shape`, `CHECK hr_category_retired_at` (0052) |
 | Consent evidence is append-only | statement trigger refusing `UPDATE`/`DELETE` on `consent_artefact` and `consent_purpose_grant`; the application role's grant is revoked |

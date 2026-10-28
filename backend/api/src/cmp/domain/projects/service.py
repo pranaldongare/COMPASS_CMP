@@ -47,6 +47,12 @@ async def _facts(conn: Conn, project_id: int) -> ProjectFacts:
         # A DPO reaching pending_approval -> approved *is* the review. The act of
         # calling the transition with the DPO role records it.
         review_recorded=True,
+        office=str(raw.get("office_code") or "rnd"),
+        template_version_approved=bool(raw.get("template_version_approved")),
+        template_version_hash_matches=bool(raw.get("template_version_hash_matches")),
+        purposes_within_version=bool(raw.get("purposes_within_version")),
+        mandatory_purposes_included=bool(raw.get("mandatory_purposes_included")),
+        description_within_slot=bool(raw.get("description_within_slot")),
     )
 
 

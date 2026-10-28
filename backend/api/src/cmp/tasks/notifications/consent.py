@@ -89,3 +89,18 @@ def consent_record(
         "",
     ]
     return Attachment("consent-record.txt", "text/plain", "\n".join(lines).encode("utf-8"))
+
+
+@shared_task(name="cmp.notifications.send_reconsent_request", **RETRY_KW)
+def send_reconsent_request(
+    contact: str, activity_name: str, change_summary: str, link_url: str
+) -> dict[str, Any]:
+    """An HR activity moved to a version Legal flagged as material (ADR 0033):
+    she is asked to decide again. Her consent stands meanwhile (OP-4)."""
+    return deliver(
+        Message.HR_RECONSENT_REQUEST,
+        to=contact,
+        activity_name=activity_name,
+        change_summary=change_summary,
+        link_url=link_url,
+    )

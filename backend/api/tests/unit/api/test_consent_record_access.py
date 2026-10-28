@@ -1,7 +1,8 @@
 """Who may take a consent record away as a PDF (2026-10-15).
 
-Staff who read consents in full - the DPO, a DCO, a DCO Admin, an RCO, each in
-their own scope - and the person, for her own. Not the R&D User, whose access to
+Staff who read consents in full - the DPO, a DCO, a DCO Admin, an RCO, and on
+the HR track the Legal PoC and an HR PoC (ADR 0033), each in their own scope -
+and the person, for her own. Not the R&D User, whose access to
 consents is the project's summary counts: a PDF names the person.
 """
 
@@ -17,7 +18,7 @@ from cmp.api.routers.v1.consents import router as consents
 from cmp.api.routers.v1.me import router as me
 from cmp.core.permissions import Role
 
-STAFF = frozenset({Role.DPO, Role.DCO, Role.DCO_ADMIN, Role.RCO})
+STAFF = frozenset({Role.DPO, Role.DCO, Role.DCO_ADMIN, Role.RCO, Role.LEGAL, Role.HR_USER})
 
 
 def _guards(router: Any, path: str) -> list[Callable[..., Any]]:

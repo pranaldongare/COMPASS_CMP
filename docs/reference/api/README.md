@@ -1,6 +1,6 @@
 # API documentation
 
-Reference for **356 operations over 309 paths**, grouped by OpenAPI module/tag.
+Reference for **362 operations over 314 paths**, grouped by OpenAPI module/tag.
 
 ## How to read an endpoint
 
@@ -27,7 +27,7 @@ Generated values are structural examples, not production credentials or semantic
 | Delegations | 6 | [`modules/delegations/api.md`](modules/delegations/api.md) |
 | Exchange | 19 | [`modules/exchange/api.md`](modules/exchange/api.md) |
 | Holder Tickets | 8 | [`modules/holder_tickets/api.md`](modules/holder_tickets/api.md) |
-| Hr | 7 | [`modules/hr/api.md`](modules/hr/api.md) |
+| Hr | 13 | [`modules/hr/api.md`](modules/hr/api.md) |
 | Legal Holds | 3 | [`modules/legal_holds/api.md`](modules/legal_holds/api.md) |
 | Me | 29 | [`modules/me/api.md`](modules/me/api.md) |
 | Messages | 6 | [`modules/messages/api.md`](modules/messages/api.md) |

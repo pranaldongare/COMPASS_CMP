@@ -29,6 +29,7 @@ import {
   ShieldAlert,
   ScrollText,
   ShieldCheck,
+  Sparkles,
   Tags,
   Upload,
   UserRound,
@@ -100,6 +101,14 @@ export const SECTIONS: NavSection[] = [
         label: "Notice templates",
         icon: FileStack,
         keywords: "tpl hr",
+      },
+      // One run of a category: live as it is created (ADR 0033).
+      {
+        key: "hr-activities",
+        href: "/hr-activities",
+        label: "HR activities",
+        icon: Sparkles,
+        keywords: "wellness csr bgv hr activity",
       },
       // The kinds of HR activity the Legal office governs (ADR 0033).
       {
@@ -260,8 +269,8 @@ const DAILY_WORK: Record<string, string[]> = {
   admin: ["dashboard", "users", "requests", "messages", "processors", "sources", "audit"],
   breach_holder: ["tickets"],
   // The HR track (ADR 0032): their registers join as the increments land.
-  legal: ["dashboard", "hr-categories", "templates", "purposes", "tickets"],
-  hr_user: ["dashboard", "hr-categories", "tickets"],
+  legal: ["dashboard", "hr-activities", "hr-categories", "templates", "purposes", "tickets"],
+  hr_user: ["dashboard", "hr-activities", "links", "consents", "tickets"],
 };
 
 /** In the account menu and the header's bell, not the sidebar as well. */

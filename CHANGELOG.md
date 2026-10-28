@@ -38,6 +38,19 @@ as a release yet.
   retired version starts nothing new. The composer that will build each
   activity's notice is in place. The Word importer no longer deletes a
   purpose a template or a version lists. Migration 0053.
+- **HR activities** (ADR 0033, part 3): an HR PoC creates an activity in a
+  category assigned to them from an approved template version - the
+  mandatory purposes always, others as chosen, one description, who signs in
+  (`sso` or `otp`) and until when - and it is live in one request: the
+  project, its one site under the category's HR system run by the HR PoC,
+  its notice composed from the version and published by the state
+  machine's new HR transition, and its open link. An activity is upgraded
+  to another approved version (a new notice version; the link moves; a
+  version flagged for re-consent emails or texts each participant, whose
+  consent stands meanwhile) and closed by its HR PoC or Legal. The Legal PoC
+  reads every activity, its consents and exports, and the office's audit
+  trail; an HR PoC those of their categories. Every project, notice, link,
+  consent and export read now carries the caller's office in the query.
 - **Sign-in as "Light split"** (2026-10-11, chosen from three designs): the
   left 7/12 has COMPASS at the top left, the app's name as a kicker, the
   headline on two lines, the line under it, the dotted world map, and three

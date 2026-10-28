@@ -2315,6 +2315,112 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/hr/activities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * HR activities in scope
+         * @description Legal's all; an HR PoC's, of the categories assigned to them.
+         */
+        get: operations["list_activities_hr_activities_get"];
+        put?: never;
+        /**
+         * Create an activity, live, with its link
+         * @description One transaction: project, site, notice composed and published, link.
+         *     A purpose off the version's list or a mandatory one left out, a
+         *     description outside the slot: 422 and nothing written. A retired version:
+         *     409.
+         */
+        post: operations["create_activity_hr_activities_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/hr/activities/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What an activity can be made from
+         * @description The HR PoC's active categories, each with its templates' approved
+         *     versions and their purposes, the mandatory ones marked.
+         */
+        get: operations["activity_options_hr_activities_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/hr/activities/{activity_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Activity */
+        get: operations["get_activity_hr_activities__activity_uuid__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/hr/activities/{activity_uuid}/upgrade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move an activity to another approved version
+         * @description A new notice version, published; the live link moves to it. A version
+         *     flagged for re-consent asks every participant again, after commit.
+         */
+        post: operations["upgrade_activity_hr_activities__activity_uuid__upgrade_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/hr/activities/{activity_uuid}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Close an activity
+         * @description Its link stops resolving; consents given stand.
+         */
+        post: operations["close_activity_hr_activities__activity_uuid__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sites": {
         parameters: {
             query?: never;
@@ -6170,6 +6276,221 @@ export interface components {
             /** Message */
             message?: string | null;
         };
+        /** ActivityCreated */
+        ActivityCreated: {
+            /**
+             * Activity Uuid
+             * Format: uuid
+             */
+            activity_uuid: string;
+            /** Notice Uuid */
+            notice_uuid: string | null;
+            /**
+             * Link Uuid
+             * Format: uuid
+             */
+            link_uuid: string;
+            /** Url Path */
+            url_path: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Audience Mode */
+            audience_mode: string;
+        };
+        /** ActivityDetail */
+        ActivityDetail: {
+            /**
+             * Activity Uuid
+             * Format: uuid
+             */
+            activity_uuid: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Category Uuid
+             * Format: uuid
+             */
+            category_uuid: string;
+            /** Category Code */
+            category_code: string;
+            /** Category Name */
+            category_name: string;
+            /**
+             * Version Uuid
+             * Format: uuid
+             */
+            version_uuid: string;
+            /** Template Version */
+            template_version: number;
+            /** Version Status */
+            version_status: string;
+            /** Reconsent Required */
+            reconsent_required: boolean;
+            /**
+             * Template Uuid
+             * Format: uuid
+             */
+            template_uuid: string;
+            /** Template Code */
+            template_code: string;
+            /** Template Title */
+            template_title: string;
+            /**
+             * Created By Uuid
+             * Format: uuid
+             */
+            created_by_uuid: string;
+            /** Created By Name */
+            created_by_name: string;
+            /** Notice Uuid */
+            notice_uuid: string | null;
+            /** Notice Code */
+            notice_code: string | null;
+            /** Notice Version */
+            notice_version: number | null;
+            /** Consent Count */
+            consent_count: number;
+            /** Link Status */
+            link_status: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            link: components["schemas"]["ActivityLink"] | null;
+        };
+        /** ActivityIn */
+        ActivityIn: {
+            /**
+             * Category Uuid
+             * Format: uuid
+             */
+            category_uuid: string;
+            /**
+             * Template Version Uuid
+             * Format: uuid
+             */
+            template_version_uuid: string;
+            /** Purpose Uuids */
+            purpose_uuids: string[];
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Audience Mode
+             * @enum {string}
+             */
+            audience_mode: "sso" | "otp";
+            /**
+             * Link Expires At
+             * Format: date-time
+             */
+            link_expires_at: string;
+        };
+        /** ActivityLink */
+        ActivityLink: {
+            /**
+             * Link Uuid
+             * Format: uuid
+             */
+            link_uuid: string;
+            /** Status */
+            status: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Use Count */
+            use_count: number;
+            /** Audience Mode */
+            audience_mode: string;
+            /** Url Path */
+            url_path: string | null;
+        };
+        /** ActivityOut */
+        ActivityOut: {
+            /**
+             * Activity Uuid
+             * Format: uuid
+             */
+            activity_uuid: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Category Uuid
+             * Format: uuid
+             */
+            category_uuid: string;
+            /** Category Code */
+            category_code: string;
+            /** Category Name */
+            category_name: string;
+            /**
+             * Version Uuid
+             * Format: uuid
+             */
+            version_uuid: string;
+            /** Template Version */
+            template_version: number;
+            /** Version Status */
+            version_status: string;
+            /** Reconsent Required */
+            reconsent_required: boolean;
+            /**
+             * Template Uuid
+             * Format: uuid
+             */
+            template_uuid: string;
+            /** Template Code */
+            template_code: string;
+            /** Template Title */
+            template_title: string;
+            /**
+             * Created By Uuid
+             * Format: uuid
+             */
+            created_by_uuid: string;
+            /** Created By Name */
+            created_by_name: string;
+            /** Notice Uuid */
+            notice_uuid: string | null;
+            /** Notice Code */
+            notice_code: string | null;
+            /** Notice Version */
+            notice_version: number | null;
+            /** Consent Count */
+            consent_count: number;
+            /** Link Status */
+            link_status: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** AgentAssign */
         AgentAssign: {
             /**
@@ -8027,6 +8348,23 @@ export interface components {
             }[];
             /** Next Checkpoint */
             next_checkpoint: string | null;
+        };
+        /** CloseIn */
+        CloseIn: {
+            /** Reason */
+            reason?: string | null;
+        };
+        /** Closed */
+        Closed: {
+            /**
+             * Project Uuid
+             * Format: uuid
+             */
+            project_uuid: string;
+            /** To */
+            to: string;
+            /** Links Revoked */
+            links_revoked: number;
         };
         /** CodeIn */
         CodeIn: {
@@ -10091,6 +10429,63 @@ export interface components {
             office_code: string;
             /** Name */
             name: string;
+        };
+        /** OptionCategory */
+        OptionCategory: {
+            /**
+             * Category Uuid
+             * Format: uuid
+             */
+            category_uuid: string;
+            /** Category Code */
+            category_code: string;
+            /** Name */
+            name: string;
+            /** Versions */
+            versions: components["schemas"]["OptionVersion"][];
+        };
+        /** OptionPurpose */
+        OptionPurpose: {
+            /**
+             * Purpose Uuid
+             * Format: uuid
+             */
+            purpose_uuid: string;
+            /** Purpose Code */
+            purpose_code: string;
+            /** Name */
+            name: string;
+            /** Is Mandatory */
+            is_mandatory: boolean;
+            /** Display Order */
+            display_order: number;
+        };
+        /** OptionVersion */
+        OptionVersion: {
+            /**
+             * Version Uuid
+             * Format: uuid
+             */
+            version_uuid: string;
+            /** Version */
+            version: number;
+            /**
+             * Template Uuid
+             * Format: uuid
+             */
+            template_uuid: string;
+            /** Template Code */
+            template_code: string;
+            /** Template Title */
+            template_title: string;
+            /** Slot Guidance */
+            slot_guidance: string | null;
+            /** Slot Max Length */
+            slot_max_length: number;
+            /** Reconsent Required */
+            reconsent_required: boolean;
+            /** Purposes */
+            purposes: components["schemas"]["OptionPurpose"][];
         };
         /**
          * OrgBoardBriefOut
@@ -12208,6 +12603,35 @@ export interface components {
             mobile?: string | null;
             /** Organization Id */
             organization_id?: string | null;
+        };
+        /** UpgradeIn */
+        UpgradeIn: {
+            /**
+             * Template Version Uuid
+             * Format: uuid
+             */
+            template_version_uuid: string;
+            /** Purpose Uuids */
+            purpose_uuids: string[];
+            /** Description */
+            description: string;
+        };
+        /** UpgradeOut */
+        UpgradeOut: {
+            /**
+             * Activity Uuid
+             * Format: uuid
+             */
+            activity_uuid: string;
+            /**
+             * Notice Uuid
+             * Format: uuid
+             */
+            notice_uuid: string;
+            /** Version */
+            version: number;
+            /** Reconsent Requested */
+            reconsent_requested: number;
         };
         /** UserOut */
         UserOut: {
@@ -16784,6 +17208,193 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CategoryProcessorOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_activities_hr_activities_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                category?: string | null;
+                q?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_activity_hr_activities_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    activity_options_hr_activities_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OptionCategory"][];
+                };
+            };
+        };
+    };
+    get_activity_hr_activities__activity_uuid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upgrade_activity_hr_activities__activity_uuid__upgrade_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpgradeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpgradeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_activity_hr_activities__activity_uuid__close_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CloseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Closed"];
                 };
             };
             /** @description Validation Error */
